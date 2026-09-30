@@ -1,8 +1,16 @@
 import browser from 'webextension-polyfill';
 
+import { BACKGROUND_TAB_ID } from '../constants';
 import { logger } from '../utils/logger';
 
 import Cookies = browser.Cookies;
+
+/**
+ * Cookie store id of the regular profile in Chromium
+ * (`kOriginalProfileStoreId` in Chromium sources). The incognito profile
+ * store has the id `1`.
+ */
+const ORIGINAL_PROFILE_STORE_ID = '0';
 
 /**
  * Cookie store scope. Determines which cookie store a `browser.cookies.*`
@@ -51,6 +59,13 @@ export interface CookieStoreRequestInfo {
 }
 
 /**
+ * Cookie store fields captured from webRequest details and stored in the
+ * request context. Chromium does not report either field, so `incognito` is
+ * always `undefined` there and the private state is derived from the tab.
+ */
+export type CookieStoreRequestFields = Pick<CookieStoreRequestInfo, 'cookieStoreId' | 'incognito'>;
+
+/**
  * Checks whether the extension itself runs in an off-the-record context,
  * i.e. a Chromium split-mode incognito background page/service worker.
  *
@@ -63,13 +78,14 @@ export const isExtensionContextIncognito = (): boolean => {
 /**
  * Cached cookie store list for Chromium spanning mode.
  *
- * A cached list is only trusted when it contains the requested tab id: tab
- * ids are unique within a browser session and a tab cannot migrate between
- * cookie stores, so a cache hit is always authoritative. A miss forces a
- * single refresh, which covers incognito windows opened or closed since the
- * list was cached.
+ * The in-flight promise is cached so concurrent lookups share a single
+ * `getAllCookieStores()` call. A cached list is only trusted when it contains
+ * the requested tab id: tab ids are unique within a browser session and a tab
+ * cannot migrate between cookie stores, so a cache hit is always
+ * authoritative. A miss forces a single refresh, which covers incognito
+ * windows opened or closed since the list was cached.
  */
-let cookieStoresCache: Cookies.CookieStore[] | null = null;
+let cookieStoresCache: Promise<Cookies.CookieStore[]> | null = null;
 
 /**
  * Clears the cached cookie store list. Primarily intended for tests.
@@ -79,16 +95,37 @@ export const clearCookieStoreScopeCache = (): void => {
 };
 
 /**
- * Returns the browser's cookie stores, using the cached list when available.
+ * Returns the browser's cookie stores, using the cached promise when
+ * available.
  *
- * @returns List of cookie stores.
+ * @returns Promise with the list of cookie stores.
  */
-const getCookieStores = async (): Promise<Cookies.CookieStore[]> => {
+const getCookieStores = (): Promise<Cookies.CookieStore[]> => {
     if (cookieStoresCache === null) {
-        cookieStoresCache = await browser.cookies.getAllCookieStores();
+        cookieStoresCache = browser.cookies.getAllCookieStores().catch((e) => {
+            // Do not cache a failed lookup: the next call should retry.
+            cookieStoresCache = null;
+
+            throw e;
+        });
     }
 
     return cookieStoresCache;
+};
+
+/**
+ * Returns the browser's cookie stores, logging and swallowing lookup errors.
+ *
+ * @returns List of cookie stores, or `null` when the lookup failed.
+ */
+const getCookieStoresSafe = async (): Promise<Cookies.CookieStore[] | null> => {
+    try {
+        return await getCookieStores();
+    } catch (e) {
+        logger.error('[tsweb.cookie-store-scope]: cannot get cookie stores: ', e);
+
+        return null;
+    }
 };
 
 /**
@@ -104,23 +141,33 @@ const findCookieStoreIdForTab = async (tabId: number): Promise<string | null> =>
         return stores.find((store) => store.tabIds.includes(tabId));
     };
 
-    try {
-        let store = findStore(await getCookieStores());
+    let stores = await getCookieStoresSafe();
 
-        if (!store) {
-            // The cached store list may be stale (an incognito window has been
-            // opened or closed since it was cached), refresh it once before
-            // giving up.
-            cookieStoresCache = null;
-            store = findStore(await getCookieStores());
-        }
-
-        return store?.id ?? null;
-    } catch (e) {
-        logger.debug('[tsweb.cookie-store-scope]: cannot get cookie stores: ', e);
-
+    if (stores === null) {
         return null;
     }
+
+    let store = findStore(stores);
+
+    if (!store) {
+        // The cached store list may be stale (an incognito window has been
+        // opened or closed since it was cached), refresh it once before
+        // giving up.
+        cookieStoresCache = null;
+        stores = await getCookieStoresSafe();
+
+        if (stores === null) {
+            return null;
+        }
+
+        store = findStore(stores);
+    }
+
+    if (!store) {
+        logger.debug('[tsweb.cookie-store-scope]: no cookie store found for tab: ', tabId);
+    }
+
+    return store?.id ?? null;
 };
 
 /**
@@ -169,8 +216,8 @@ const resolveTabIncognitoState = async (
  *
  * Residual limitations, all deliberately conservative:
  * - Chromium spanning mode: requests not tied to a tab (e.g. service worker
- *   requests) carry no private-browsing signal in webRequest details, so the
- *   cookie jar is left untouched;
+ *   requests) have no private-browsing signal, so they skip the jar while an
+ *   incognito store exists and use the default store otherwise;
  * - Chromium spanning mode: if the tab state cannot be determined even by the
  *   browser (`tabs.get` fails), or the store list cannot be retrieved, the
  *   cookie jar is left untouched — a private request must not fall back to
@@ -199,12 +246,13 @@ export const resolveCookieStoreScope = async (
     isTabIncognito: (tabId: number) => boolean | undefined,
     contextIncognito: boolean = isExtensionContextIncognito(),
 ): Promise<CookieStoreScope | null> => {
-    if (isFirefox) {
-        if (request.cookieStoreId !== undefined) {
-            // Covers the default jar, private windows and containers.
-            return { storeId: request.cookieStoreId };
-        }
+    // Only the browser fills this field, so trust it whenever it is present.
+    // On Firefox it covers the default jar, private windows and containers.
+    if (request.cookieStoreId !== undefined) {
+        return { storeId: request.cookieStoreId };
+    }
 
+    if (isFirefox) {
         // Firefox should always report cookieStoreId for tab-related requests.
         // If a private request arrives without store info, we cannot address
         // its jar safely.
@@ -222,13 +270,20 @@ export const resolveCookieStoreScope = async (
         return {};
     }
 
-    // Chromium spanning mode: requests not related to a tab (e.g. service
-    // worker requests) carry no private-browsing signal in webRequest details,
-    // so the target store cannot be determined — skip the jar instead of
-    // writing a private-session cookie into the regular store.
     const { tabId } = request;
-    if (tabId === undefined || tabId < 0) {
-        return null;
+
+    if (tabId === undefined || tabId === BACKGROUND_TAB_ID) {
+        // A request not tied to a tab (e.g. a service worker fetch) carries no
+        // private-browsing signal. When an incognito store exists it may
+        // originate from a private context, so fail closed; when only the
+        // regular store exists, the request cannot be private.
+        const stores = await getCookieStoresSafe();
+
+        if (stores === null || stores.some((store) => store.id !== ORIGINAL_PROFILE_STORE_ID)) {
+            return null;
+        }
+
+        return {};
     }
 
     const isTabPrivate = await resolveTabIncognitoState(tabId, isTabIncognito);

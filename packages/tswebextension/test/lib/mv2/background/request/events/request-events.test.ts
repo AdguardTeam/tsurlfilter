@@ -385,15 +385,12 @@ describe('Request Events', () => {
     });
 
     describe('cookie store details capture', () => {
-        it('should keep cookieStoreId and incognito when the context is created by the header event', () => {
+        it('should store cookieStoreId and incognito from the onBeforeRequest details', () => {
             RequestEvents.init();
 
             const requestId = 'cookie-store-details-1';
 
-            // No prior onBeforeRequest for this id: the context is created by
-            // the onBeforeSendHeaders update fallback, so the store details
-            // must be captured there as well.
-            browser.webRequest.onBeforeSendHeaders.dispatch(<WebRequest.OnBeforeSendHeadersDetailsType>{
+            browser.webRequest.onBeforeRequest.dispatch(<WebRequest.OnBeforeRequestDetailsType>{
                 ...commonRequestData,
                 requestId,
                 cookieStoreId: 'firefox-container-4',

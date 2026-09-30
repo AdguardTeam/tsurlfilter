@@ -37,7 +37,6 @@ export class BrowserCookieApi {
         scope: CookieStoreScope | null,
     ): Promise<boolean> {
         if (scope === null) {
-            logger.debug('[tsweb.BrowserCookieApi.removeCookie]: skipped, cookie store scope is unresolved');
             return false;
         }
 
@@ -61,7 +60,6 @@ export class BrowserCookieApi {
      */
     async modifyCookie(cookie: ParsedCookie, scope: CookieStoreScope | null): Promise<boolean> {
         if (scope === null) {
-            logger.debug('[tsweb.BrowserCookieApi.modifyCookie]: skipped, cookie store scope is unresolved');
             return false;
         }
 
@@ -102,7 +100,6 @@ export class BrowserCookieApi {
         scope: CookieStoreScope | null,
     ): Promise<Cookies.Cookie[]> {
         if (scope === null) {
-            logger.debug('[tsweb.BrowserCookieApi.findCookies]: skipped, cookie store scope is unresolved');
             return [];
         }
 

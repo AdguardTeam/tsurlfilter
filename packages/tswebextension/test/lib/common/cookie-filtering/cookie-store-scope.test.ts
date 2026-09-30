@@ -99,7 +99,12 @@ describe('resolveCookieStoreScope', () => {
     });
 
     describe('Chromium spanning mode', () => {
-        it('skips the jar for requests not related to a tab', async () => {
+        it('skips the jar for tabless requests while an incognito store exists', async () => {
+            getAllCookieStores.mockResolvedValue([
+                { id: '0', tabIds: [1] },
+                { id: '1', tabIds: [2] },
+            ]);
+
             const scope = await resolveCookieStoreScope(
                 { tabId: -1 },
                 false,
@@ -112,8 +117,40 @@ describe('resolveCookieStoreScope', () => {
             expect(getTab).not.toHaveBeenCalled();
         });
 
-        it('skips the jar for requests without a tab id', async () => {
+        it('skips the jar for tabless requests when only the incognito store exists', async () => {
+            getAllCookieStores.mockResolvedValue([{ id: '1', tabIds: [2] }]);
+
             const scope = await resolveCookieStoreScope({}, false, isTabIncognito, false);
+
+            expect(scope).toBeNull();
+            expect(isTabIncognito).not.toHaveBeenCalled();
+            expect(getTab).not.toHaveBeenCalled();
+        });
+
+        it('uses the default store for tabless requests when no incognito store exists', async () => {
+            getAllCookieStores.mockResolvedValue([{ id: '0', tabIds: [1] }]);
+
+            const scope = await resolveCookieStoreScope(
+                { tabId: -1 },
+                false,
+                isTabIncognito,
+                false,
+            );
+
+            expect(scope).toEqual({});
+            expect(isTabIncognito).not.toHaveBeenCalled();
+            expect(getTab).not.toHaveBeenCalled();
+        });
+
+        it('skips the jar for tabless requests when the store list cannot be retrieved', async () => {
+            getAllCookieStores.mockRejectedValue(new Error('cannot get cookie stores'));
+
+            const scope = await resolveCookieStoreScope(
+                { tabId: -1 },
+                false,
+                isTabIncognito,
+                false,
+            );
 
             expect(scope).toBeNull();
             expect(isTabIncognito).not.toHaveBeenCalled();

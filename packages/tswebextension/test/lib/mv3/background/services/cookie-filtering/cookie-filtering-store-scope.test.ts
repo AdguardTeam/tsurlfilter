@@ -193,18 +193,18 @@ describe('CookieFiltering cookie store scope, MV3 (AG-55093)', () => {
         await runResponseCase(
             [cookieRule],
             'pick=secret_value',
-            { cookieStoreId: 'firefox-private-window-1' },
+            { cookieStoreId: 'firefox-private' },
         );
 
         expect(cookiesStub.getAll).toHaveBeenCalledWith(expect.objectContaining({
             name: 'pick',
-            storeId: 'firefox-private-window-1',
+            storeId: 'firefox-private',
         }));
         expect(cookiesStub.set).toHaveBeenCalledTimes(1);
         expect(cookiesStub.set).toHaveBeenCalledWith(expect.objectContaining({
             name: 'pick',
             value: 'secret_value',
-            storeId: 'firefox-private-window-1',
+            storeId: 'firefox-private',
         }));
     });
 
@@ -313,6 +313,25 @@ describe('CookieFiltering cookie store scope, MV3 (AG-55093)', () => {
         expect(tabsGetStub).toHaveBeenCalledWith(5);
         expect(cookiesStub.remove).not.toHaveBeenCalled();
         expect(cookiesStub.set).not.toHaveBeenCalled();
+    });
+
+    it('Chromium spanning: does not touch the jar when the incognito store cannot be resolved', async () => {
+        const cookieRule = createNetworkRule('||example.org^$cookie=pick;maxAge=3600', 1);
+        detectorState.isFirefox = false;
+
+        getTabIncognitoStateMock.mockImplementation((tabId) => tabId === 5);
+        // Only the regular store is reported (e.g. the incognito store is gone).
+        cookiesStub.getAllCookieStores.mockResolvedValue([{ id: '0', tabIds: [1] }]);
+
+        await runResponseCase(
+            [cookieRule],
+            'pick=secret_value',
+            { tabId: 5 },
+        );
+
+        expect(cookiesStub.getAll).not.toHaveBeenCalled();
+        expect(cookiesStub.set).not.toHaveBeenCalled();
+        expect(cookiesStub.remove).not.toHaveBeenCalled();
     });
 
     it('does not resolve the store scope when no cookie rules matched', async () => {

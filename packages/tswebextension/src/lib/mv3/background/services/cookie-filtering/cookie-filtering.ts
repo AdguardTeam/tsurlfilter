@@ -138,26 +138,26 @@ export class CookieFiltering {
         const cookieRules = matchingResult.getCookieRules();
 
         // No cookie rule matched this request — nothing can be applied to the
-        // jar, so skip the store scope resolution and the cookies snapshot.
+        // jar, so skip the store scope resolution.
         if (cookieRules.length === 0) {
             return;
         }
 
-        // Snapshot the cookies list before the first await: the synchronous
-        // header-rewriting path mutates `context.cookies` while the store
-        // scope resolution is in flight.
-        const cookiesSnapshot = [...cookies];
-
         // Resolve the cookie store of the session the request originated from,
         // so jar operations never fall back to the default (normal) store
-        // for private/container requests (AG-55093).
+        // for private/container requests.
         const scope = await resolveCookieStoreScope(
             context,
             browserDetectorMV3.isFirefox(),
             (id) => tabsApi.getTabIncognitoState(id),
         );
 
-        const promises = cookiesSnapshot.map(async (cookie) => {
+        if (scope === null) {
+            logger.debug('[tsweb.CookieFiltering.applyRules]: cookie store scope is unresolved, skipping jar operations: ', requestUrl, tabId);
+            return;
+        }
+
+        const promises = cookies.map(async (cookie) => {
             await this.applyRulesToCookie(cookie, cookieRules, requestUrl, tabId, scope);
         });
 
@@ -174,7 +174,7 @@ export class CookieFiltering {
      * which covered "children"-cookies by 'path' value.
      *
      * @param cookie Cookie, for which need to find the "parent" cookie.
-     * @param scope Target cookie store scope.
+     * @param scope Target cookie store scope, `null` to skip the lookup.
      *
      * @returns Item of parent cookie {@link ParsedCookie} or null if not found.
      */

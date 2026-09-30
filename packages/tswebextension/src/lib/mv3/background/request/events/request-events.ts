@@ -322,7 +322,8 @@ export class RequestEvents {
             contentType,
             method: method as HTTPMethod,
             // Firefox webRequest details used to target the originating
-            // session's cookie store when filtering cookies (AG-55093)
+            // session's cookie store when filtering cookies
+            // (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3553).
             cookieStoreId,
             incognito,
         };
@@ -342,24 +343,12 @@ export class RequestEvents {
     private static handleOnBeforeSendHeaders(
         details: WebRequest.OnBeforeSendHeadersDetailsType,
     ): RequestData<WebRequest.OnBeforeSendHeadersDetailsType> {
-        const {
-            requestId,
-            timeStamp,
-            requestHeaders,
-            cookieStoreId,
-            incognito,
-        } = details;
+        const { requestId, timeStamp, requestHeaders } = details;
 
         const context = requestContextStorage.update(requestId, {
             state: RequestContextState.BeforeSendHeaders,
             timestamp: timeStamp,
             requestHeaders,
-            // Firefox webRequest details used to target the originating
-            // session's cookie store when filtering cookies (AG-55093).
-            // Captured here as well to cover requests whose context was
-            // created without store info (e.g. `onBeforeRequest` was missed).
-            cookieStoreId,
-            incognito,
         });
 
         return { details, context };
@@ -378,19 +367,11 @@ export class RequestEvents {
         const {
             requestId,
             responseHeaders,
-            cookieStoreId,
-            incognito,
         } = details;
 
         const context = requestContextStorage.update(requestId, {
             state: RequestContextState.HeadersReceived,
             responseHeaders,
-            // Firefox webRequest details used to target the originating
-            // session's cookie store when filtering cookies (AG-55093).
-            // Captured here as well to cover requests whose context was
-            // created without store info (e.g. `onBeforeRequest` was missed).
-            cookieStoreId,
-            incognito,
         });
 
         return { details, context };

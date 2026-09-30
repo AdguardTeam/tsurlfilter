@@ -543,6 +543,10 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      * Checks whether the tab with the specified ID is open
      * in incognito mode or not.
      *
+     * Note: a missing tab context also yields `false`, so `false` may mean
+     * "regular" or "unknown". Use {@link getTabIncognitoState} when the
+     * unknown case must be distinguished.
+     *
      * @param tabId Tab ID.
      *
      * @returns True if the tab is open in incognito mode, false otherwise.

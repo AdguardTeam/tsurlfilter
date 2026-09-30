@@ -2,6 +2,7 @@ import { type WebRequest } from 'webextension-polyfill';
 
 import { type CosmeticResult, type HTTPMethod, type MatchingResult } from '@adguard/tsurlfilter';
 
+import { type CookieStoreRequestFields } from '../../../common/cookie-filtering/cookie-store-scope';
 import { type ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
 import { type ContentType } from '../../../common/request-type';
 import { logger } from '../../../common/utils/logger';
@@ -26,7 +27,7 @@ export const enum RequestContextState {
 /**
  * Request context data.
  */
-export type RequestContext = TabFrameRequestContextMV2 & {
+export type RequestContext = TabFrameRequestContextMV2 & CookieStoreRequestFields & {
     /**
      * During redirect processing, multiple events are processed in the same request lifecycle.
      * We need a unique identifier to separate these requests in the filtering log.
@@ -52,19 +53,6 @@ export type RequestContext = TabFrameRequestContextMV2 & {
     statusCode?: number;
     cookies?: ParsedCookie[];
     contentTypeHeader?: string;
-
-    /**
-     * Firefox webRequest details: the cookie store id of the contextual
-     * identity the request originated from (default jar, private window,
-     * or a Multi-Account Containers jar).
-     */
-    cookieStoreId?: string;
-
-    /**
-     * True when the request originates from a private browsing window
-     * (webRequest details field `incognito`).
-     */
-    incognito?: boolean;
 
     /**
      * Filtering data from {@link EngineApi.matchRequest}.

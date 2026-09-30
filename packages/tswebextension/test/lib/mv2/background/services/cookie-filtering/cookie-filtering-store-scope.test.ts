@@ -187,18 +187,18 @@ describe('CookieFiltering cookie store scope (AG-55093)', () => {
         await runResponseCase(
             [cookieRule],
             'pick=secret_value',
-            { cookieStoreId: 'firefox-private-window-1' },
+            { cookieStoreId: 'firefox-private' },
         );
 
         expect(cookiesStub.getAll).toHaveBeenCalledWith(expect.objectContaining({
             name: 'pick',
-            storeId: 'firefox-private-window-1',
+            storeId: 'firefox-private',
         }));
         expect(cookiesStub.set).toHaveBeenCalledTimes(1);
         expect(cookiesStub.set).toHaveBeenCalledWith(expect.objectContaining({
             name: 'pick',
             value: 'secret_value',
-            storeId: 'firefox-private-window-1',
+            storeId: 'firefox-private',
         }));
     });
 
