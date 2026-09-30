@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Cosmetic rules with multiple domains in the `$domain` modifier not matching
+  their permitted domains.
 - Domain-scoped cosmetic and JavaScript rules not matching hosts with labels
   ending in an underscore.
 

@@ -4,7 +4,7 @@ import { ADG_SCRIPTLET_MASK } from '@adguard/agtree';
 
 import { type CosmeticRuleParts, CosmeticRuleType } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage';
-import { DomainModifier } from '../../modifiers/domain-modifier';
+import { COMMA_SEPARATOR, DomainModifier, PIPE_SEPARATOR } from '../../modifiers/domain-modifier';
 import { type Request } from '../../request';
 import { type CosmeticRule } from '../../rules/cosmetic-rule';
 import { fastHash } from '../../utils/string-utils';
@@ -149,10 +149,24 @@ export class CosmeticLookupTable {
             return;
         }
 
-        const domains = ruleParts.text
-            .slice(ruleParts.domainsStart, ruleParts.domainsEnd)
-            .split(',')
-            .map((d) => d.trim());
+        const domainsText = ruleParts.text.slice(ruleParts.domainsStart, ruleParts.domainsEnd);
+
+        // Regexp domains may contain list separators, so use the parsed rule to classify them.
+        if (domainsText.includes('/')) {
+            const cosmeticRule = this.ruleStorage.retrieveCosmeticRule(storageIdx);
+            if (cosmeticRule) {
+                if (cosmeticRule.isGeneric()) {
+                    this.genericRules.push(cosmeticRule);
+                } else {
+                    this.seqScanRuleIndexes.push(storageIdx);
+                }
+            }
+            return;
+        }
+
+        // Classic domain lists end at the cosmetic separator; $domain values end inside the modifiers.
+        const separator = ruleParts.domainsEnd === ruleParts.separatorStart ? COMMA_SEPARATOR : PIPE_SEPARATOR;
+        const domains = domainsText.split(separator).map((d) => d.trim());
 
         if (!domains.length || domains.every((d) => d.startsWith('~'))) {
             const cosmeticRule = this.ruleStorage.retrieveCosmeticRule(storageIdx);
