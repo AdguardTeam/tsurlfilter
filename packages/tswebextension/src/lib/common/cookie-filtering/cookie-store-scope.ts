@@ -168,9 +168,9 @@ const resolveTabIncognitoState = async (
  * Resolves the cookie store scope for a webRequest-driven cookie operation.
  *
  * Residual limitations, all deliberately conservative:
- * - Chromium spanning mode: requests not tied to a tab (`tabId < 0`) carry no
- *   private-browsing signal in webRequest details, so they use the default
- *   store;
+ * - Chromium spanning mode: requests not tied to a tab (e.g. service worker
+ *   requests) carry no private-browsing signal in webRequest details, so the
+ *   cookie jar is left untouched;
  * - Chromium spanning mode: if the tab state cannot be determined even by the
  *   browser (`tabs.get` fails), or the store list cannot be retrieved, the
  *   cookie jar is left untouched — a private request must not fall back to
@@ -222,11 +222,13 @@ export const resolveCookieStoreScope = async (
         return {};
     }
 
-    // Chromium spanning mode: requests not related to a tab belong to the
-    // regular profile's cookie store.
+    // Chromium spanning mode: requests not related to a tab (e.g. service
+    // worker requests) carry no private-browsing signal in webRequest details,
+    // so the target store cannot be determined — skip the jar instead of
+    // writing a private-session cookie into the regular store.
     const { tabId } = request;
     if (tabId === undefined || tabId < 0) {
-        return {};
+        return null;
     }
 
     const isTabPrivate = await resolveTabIncognitoState(tabId, isTabIncognito);

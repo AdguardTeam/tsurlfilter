@@ -315,6 +315,20 @@ describe('CookieFiltering cookie store scope, MV3 (AG-55093)', () => {
         expect(cookiesStub.set).not.toHaveBeenCalled();
     });
 
+    it('does not resolve the store scope when no cookie rules matched', async () => {
+        detectorState.isFirefox = false;
+
+        await runRequestCase(
+            [],
+            'c_user=test_value',
+            { tabId: 5 },
+        );
+
+        expect(getTabIncognitoStateMock).not.toHaveBeenCalled();
+        expect(cookiesStub.remove).not.toHaveBeenCalled();
+        expect(cookiesStub.set).not.toHaveBeenCalled();
+    });
+
     it('Chromium: regular requests operate on the default jar without extra fields', async () => {
         const cookieRule = createNetworkRule('||example.org^$cookie=c_user', 1);
         detectorState.isFirefox = false;

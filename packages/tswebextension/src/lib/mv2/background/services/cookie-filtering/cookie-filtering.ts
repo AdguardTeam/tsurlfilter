@@ -372,6 +372,12 @@ export class CookieFiltering {
 
         const cookieRules = matchingResult.getCookieRules();
 
+        // No cookie rule matched this request — nothing can be applied to the
+        // jar, so skip the store scope resolution and the cookies snapshot.
+        if (cookieRules.length === 0) {
+            return;
+        }
+
         // Snapshot the cookies list before the first await: the synchronous
         // header-rewriting path mutates `context.cookies` while the store
         // scope resolution is in flight.

@@ -99,7 +99,7 @@ describe('resolveCookieStoreScope', () => {
     });
 
     describe('Chromium spanning mode', () => {
-        it('returns the default store scope for requests not related to a tab', async () => {
+        it('skips the jar for requests not related to a tab', async () => {
             const scope = await resolveCookieStoreScope(
                 { tabId: -1 },
                 false,
@@ -107,15 +107,15 @@ describe('resolveCookieStoreScope', () => {
                 false,
             );
 
-            expect(scope).toEqual({});
+            expect(scope).toBeNull();
             expect(isTabIncognito).not.toHaveBeenCalled();
             expect(getTab).not.toHaveBeenCalled();
         });
 
-        it('returns the default store scope for requests without a tab id', async () => {
+        it('skips the jar for requests without a tab id', async () => {
             const scope = await resolveCookieStoreScope({}, false, isTabIncognito, false);
 
-            expect(scope).toEqual({});
+            expect(scope).toBeNull();
             expect(isTabIncognito).not.toHaveBeenCalled();
             expect(getTab).not.toHaveBeenCalled();
         });
