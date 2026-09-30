@@ -122,9 +122,9 @@ describe('Test cosmetic engine', () => {
 
     it.each([
         '[$domain=example.*|other.org]##.banner',
-        '[$domain=/example\\\\.(com|org)/|other.org]##.banner',
-        '[$domain=/example\\\\.(com\\|org)/|other.org]##.banner',
-        '/example\\.(com|org)/,other.org##.banner',
+        String.raw`[$domain=/example\\.(com|org)/|other.org]##.banner`,
+        String.raw`[$domain=/example\\.(com\|org)/|other.org]##.banner`,
+        String.raw`/example\.(com|org)/,other.org##.banner`,
     ])('preserves wildcard and regexp domains in %s', (rule) => {
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rule)]);
 
@@ -140,7 +140,7 @@ describe('Test cosmetic engine', () => {
 
     it.each([
         '[$domain=~example.com|~example.org]##.banner',
-        '[$domain=~/example\\\\.(com|org)/|~other.org]##.banner',
+        String.raw`[$domain=~/example\\.(com|org)/|~other.org]##.banner`,
     ])('keeps excluded-only domain modifiers generic in %s', (rule) => {
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rule)]);
 
@@ -310,6 +310,72 @@ describe('Test cosmetic engine', () => {
 
         expect(result.elementHiding.generic.length).toEqual(0);
         expect(result.elementHiding.specific.length).toEqual(1);
+    });
+
+    it.each([
+        {
+            domains: '[$domain=example.co.uk|co.uk]',
+            separator: '##',
+            content: '.banner',
+            category: 'elementHiding' as const,
+        },
+        {
+            domains: 'example.co.uk,co.uk',
+            separator: '##',
+            content: '.banner',
+            category: 'elementHiding' as const,
+        },
+        {
+            domains: '[$domain=example.co.uk|co.uk]',
+            separator: '#%#',
+            content: "//scriptlet('set-constant', 'test', 'true')",
+            category: 'JS' as const,
+        },
+        {
+            domains: 'example.co.uk,co.uk',
+            separator: '#%#',
+            content: "//scriptlet('set-constant', 'test', 'true')",
+            category: 'JS' as const,
+        },
+    ])('matches a stored $category rule once across overlapping domains in $domains', ({
+        domains, separator, content, category,
+    }) => {
+        const rule = `${domains}${separator}${content}`;
+        const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rule)]);
+
+        for (const hostname of ['example.co.uk', 'sub.example.co.uk', 'other.co.uk', 'unrelated.org']) {
+            const result = cosmeticEngine.match(createRequest(`https://${hostname}`), CosmeticOption.CosmeticOptionAll);
+
+            expect(result[category].specific.map((matchingRule) => matchingRule.getContent())).toEqual(
+                hostname === 'unrelated.org' ? [] : [content],
+            );
+        }
+    });
+
+    it.each([
+        { rule: '[$domain=example.co.uk|co.uk]##.banner', category: 'elementHiding' as const },
+        { rule: 'example.co.uk,co.uk##.banner', category: 'elementHiding' as const },
+        {
+            rule: "[$domain=example.co.uk|co.uk]#%#//scriptlet('set-constant', 'test', 'true')",
+            category: 'JS' as const,
+        },
+        { rule: "example.co.uk,co.uk#%#//scriptlet('set-constant', 'test', 'true')", category: 'JS' as const },
+    ])('preserves distinct source records for overlapping-domain $category rules: $rule', ({ rule, category }) => {
+        const cosmeticEngine = createCosmeticEngine([
+            new StringRuleList(1, [rule, rule].join('\n')),
+            new StringRuleList(2, rule),
+        ]);
+
+        const result = cosmeticEngine.match(createRequest('https://example.co.uk'), CosmeticOption.CosmeticOptionAll);
+
+        expect(result[category].specific.map((matchingRule) => [
+            matchingRule.getFilterListId(),
+            matchingRule.getIndex(),
+        ])).toEqual([
+            [1, 0],
+            [1, rule.length + 1],
+            [2, 0],
+        ]);
     });
 
     it('finds empty domain rules', () => {

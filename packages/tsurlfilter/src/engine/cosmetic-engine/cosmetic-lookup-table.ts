@@ -7,6 +7,7 @@ import { type RuleStorage } from '../../filterlist/rule-storage';
 import { COMMA_SEPARATOR, DomainModifier, PIPE_SEPARATOR } from '../../modifiers/domain-modifier';
 import { type Request } from '../../request';
 import { type CosmeticRule } from '../../rules/cosmetic-rule';
+import { SimpleRegex } from '../../rules/simple-regex';
 import { fastHash } from '../../utils/string-utils';
 
 /**
@@ -22,8 +23,9 @@ export class CosmeticLookupTable {
     /**
      * List of domain-specific rules that are not organized into any index structure.
      * These rules are sequentially scanned one by one.
-     * For performance reasons, we store only rule indexes here, and retrieve the rules from the storage
-     * on the first match.
+     * Only rule indexes are stored here. Regexp rules are parsed during insertion to classify their
+     * domain restrictions; wildcard-only rules are retrieved lazily during lookup.
+     * Retrieved rules are cached by the rule storage.
      */
     private seqScanRuleIndexes: number[];
 
@@ -152,7 +154,7 @@ export class CosmeticLookupTable {
         const domainsText = ruleParts.text.slice(ruleParts.domainsStart, ruleParts.domainsEnd);
 
         // Regexp domains may contain list separators, so use the parsed rule to classify them.
-        if (domainsText.includes('/')) {
+        if (domainsText.includes(SimpleRegex.MASK_REGEX_RULE)) {
             const cosmeticRule = this.ruleStorage.retrieveCosmeticRule(storageIdx);
             if (cosmeticRule) {
                 if (cosmeticRule.isGeneric()) {
@@ -176,7 +178,7 @@ export class CosmeticLookupTable {
             return;
         }
 
-        if (domains.some(DomainModifier.isWildcardOrRegexDomain)) {
+        if (domains.some(DomainModifier.isWildcardDomain)) {
             this.seqScanRuleIndexes.push(storageIdx);
             return;
         }
@@ -203,6 +205,7 @@ export class CosmeticLookupTable {
     public findByHostname(request: Request): CosmeticRule[] {
         const result: CosmeticRule[] = [];
         const { subdomains } = request;
+        const checkedRuleIndexes = new Set<number>();
 
         for (let i = 0; i < subdomains.length; i += 1) {
             const subdomain = subdomains[i];
@@ -212,8 +215,13 @@ export class CosmeticLookupTable {
                 continue;
             }
 
-            const uniqueRulesIndexes = new Set(rulesIndexes);
-            for (const ruleIndex of uniqueRulesIndexes) {
+            for (const ruleIndex of rulesIndexes) {
+                // A stored rule may be indexed under several matching hostname buckets.
+                if (checkedRuleIndexes.has(ruleIndex)) {
+                    continue;
+                }
+                checkedRuleIndexes.add(ruleIndex);
+
                 const rule = this.ruleStorage.retrieveRule(ruleIndex, true, false) as CosmeticRule;
                 if (rule && !rule.isAllowlist() && rule.match(request)) {
                     result.push(rule);
