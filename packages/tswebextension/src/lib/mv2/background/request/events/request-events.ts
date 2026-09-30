@@ -213,6 +213,8 @@ export class RequestEvents {
             documentLifecycle,
             parentDocumentId,
             frameAncestors,
+            cookieStoreId,
+            incognito,
         } = details;
 
         let { url, frameId } = details;
@@ -323,6 +325,10 @@ export class RequestEvents {
             referrerUrl,
             contentType,
             method: method as HTTPMethod,
+            // Firefox webRequest details used to target the originating
+            // session's cookie store when filtering cookies (AG-55093)
+            cookieStoreId,
+            incognito,
         });
 
         return { details, context: requestContext };
@@ -338,12 +344,24 @@ export class RequestEvents {
     private static handleOnBeforeSendHeaders(
         details: WebRequest.OnBeforeSendHeadersDetailsType,
     ): RequestData<WebRequest.OnBeforeSendHeadersDetailsType> {
-        const { requestId, timeStamp, requestHeaders } = details;
+        const {
+            requestId,
+            timeStamp,
+            requestHeaders,
+            cookieStoreId,
+            incognito,
+        } = details;
 
         const context = requestContextStorage.update(requestId, {
             state: RequestContextState.BeforeSendHeaders,
             timestamp: timeStamp,
             requestHeaders,
+            // Firefox webRequest details used to target the originating
+            // session's cookie store when filtering cookies (AG-55093).
+            // Captured here as well to cover requests whose context was
+            // created without store info (e.g. `onBeforeRequest` was missed).
+            cookieStoreId,
+            incognito,
         });
 
         return { details, context };
@@ -383,6 +401,8 @@ export class RequestEvents {
             requestId,
             responseHeaders,
             statusCode,
+            cookieStoreId,
+            incognito,
         } = details;
 
         const isFirefox = browserDetectorMV2.isFirefox();
@@ -399,6 +419,12 @@ export class RequestEvents {
             state: RequestContextState.HeadersReceived,
             responseHeaders,
             statusCode,
+            // Firefox webRequest details used to target the originating
+            // session's cookie store when filtering cookies (AG-55093).
+            // Captured here as well to cover requests whose context was
+            // created without store info (e.g. `onBeforeRequest` was missed).
+            cookieStoreId,
+            incognito,
         });
 
         return { details, context };

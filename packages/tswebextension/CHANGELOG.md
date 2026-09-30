@@ -29,8 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Domain-scoped cosmetic and JavaScript rules not applying on hosts with labels
   ending in an underscore in MV2 and MV3 extensions, and incorrect third-party
   request classification for such hosts.
+- Browsing session from incognito window sometimes leaks to normal window when
+  "delete third-party cookies" option is enabled [AdguardBrowserExtension#3553].
 
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
+[AdguardBrowserExtension#3553]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3553
 
 ### Security
 

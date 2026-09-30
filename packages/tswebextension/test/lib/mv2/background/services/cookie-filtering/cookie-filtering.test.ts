@@ -60,6 +60,15 @@ describe('Cookie filtering', () => {
         mockFilteringLog = new MockFilteringLog();
         cookieFiltering = new CookieFiltering(mockFilteringLog, engineApi, tabsApi);
 
+        // The store scope resolver asks the browser for the tab state when the
+        // tab context is unknown; default to a regular tab.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (polyfillBrowser as any).tabs = {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ...(polyfillBrowser as any).tabs,
+            get: vi.fn(async () => ({ incognito: false })),
+        };
+
         requestId = '1';
 
         context = {
@@ -97,6 +106,12 @@ describe('Cookie filtering', () => {
         cookieFiltering.onBeforeSendHeaders(context);
 
         cookieFiltering.onHeadersReceived(context);
+
+        // Wait for the fire-and-forget `applyRules` promise chain to settle,
+        // since it is async and is not awaited by the handlers.
+        await new Promise((resolve) => {
+            setTimeout(resolve, 0);
+        });
 
         requestContextStorage.delete(requestId);
     };

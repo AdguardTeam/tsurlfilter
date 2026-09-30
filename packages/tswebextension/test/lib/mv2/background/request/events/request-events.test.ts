@@ -10,7 +10,12 @@ import { type WebRequest } from 'webextension-polyfill';
 
 import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
 
-import { type RequestContext, RequestContextState, RequestEvents } from '../../../../../../src/lib';
+import {
+    type RequestContext,
+    RequestContextState,
+    requestContextStorage,
+    RequestEvents,
+} from '../../../../../../src/lib';
 import { defaultFilteringLog, FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
 import { DocumentLifecycle } from '../../../../../../src/lib/common/interfaces';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
@@ -376,6 +381,29 @@ describe('Request Events', () => {
             expect(tabReloadCalls).toHaveLength(0);
 
             filteringLogSpy.mockRestore();
+        });
+    });
+
+    describe('cookie store details capture', () => {
+        it('should keep cookieStoreId and incognito when the context is created by the header event', () => {
+            RequestEvents.init();
+
+            const requestId = 'cookie-store-details-1';
+
+            // No prior onBeforeRequest for this id: the context is created by
+            // the onBeforeSendHeaders update fallback, so the store details
+            // must be captured there as well.
+            browser.webRequest.onBeforeSendHeaders.dispatch(<WebRequest.OnBeforeSendHeadersDetailsType>{
+                ...commonRequestData,
+                requestId,
+                cookieStoreId: 'firefox-container-4',
+                incognito: true,
+            });
+
+            expect(requestContextStorage.get(requestId)).toEqual(expect.objectContaining({
+                cookieStoreId: 'firefox-container-4',
+                incognito: true,
+            }));
         });
     });
 });

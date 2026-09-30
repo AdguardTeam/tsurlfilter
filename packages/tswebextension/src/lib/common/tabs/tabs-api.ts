@@ -558,6 +558,31 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
     }
 
     /**
+     * Returns the incognito state of the tab with the specified ID, or
+     * `undefined` when it cannot be determined yet.
+     *
+     * Unlike {@link isIncognitoTab}, this method distinguishes a tab that is
+     * known to be regular from a tab whose context does not exist yet or was
+     * created synthetically (see {@link createTabContextIfNotExists}), because
+     * in those cases `incognito` is defaulted to `false` and may be wrong.
+     * Callers that must not act on a private tab's data should treat
+     * `undefined` as unknown and resolve the state from the browser.
+     *
+     * @param tabId Tab ID.
+     *
+     * @returns `true`/`false` when known, `undefined` otherwise.
+     */
+    public getTabIncognitoState(tabId: number): boolean | undefined {
+        const tabContext = this.getTabContext(tabId);
+
+        if (!tabContext || tabContext.isSyntheticTab) {
+            return undefined;
+        }
+
+        return tabContext.info.incognito;
+    }
+
+    /**
      * Checks whether the tab with the specified ID
      * can display the extension page or not.
      *

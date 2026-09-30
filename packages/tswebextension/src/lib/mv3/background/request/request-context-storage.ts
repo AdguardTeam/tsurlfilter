@@ -45,6 +45,19 @@ export type RequestContext = TabFrameRequestContextMV3 & {
     cookies?: ParsedCookie[];
 
     /**
+     * Firefox webRequest details: the cookie store id of the contextual
+     * identity the request originated from (default jar, private window,
+     * or a Multi-Account Containers jar).
+     */
+    cookieStoreId?: string;
+
+    /**
+     * True when the request originates from a private browsing window
+     * (webRequest details field `incognito`).
+     */
+    incognito?: boolean;
+
+    /**
      * Filtering data from {@link EngineApi.matchRequest}.
      */
     matchingResult?: MatchingResult | null;
