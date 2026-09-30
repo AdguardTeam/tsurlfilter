@@ -1,4 +1,5 @@
 import {
+    afterAll,
     beforeEach,
     describe,
     expect,
@@ -12,11 +13,15 @@ import {
     isExtensionContextIncognito,
     resolveCookieStoreScope,
 } from '../../../../src/lib/common/cookie-filtering/cookie-store-scope';
+import {
+    restoreBrowserStubs,
+    stubBrowserCookies,
+    stubBrowserTabsGet,
+    type TestCookieStore,
+    type TestTab,
+} from '../../../helpers/browser-stubs';
 
 vi.mock('../../../../src/lib/common/utils/logger');
-
-type TestCookieStore = { id: string; tabIds: number[] };
-type TestTab = { incognito: boolean };
 
 describe('resolveCookieStoreScope', () => {
     let getAllCookieStores: ReturnType<typeof vi.fn<() => Promise<TestCookieStore[]>>>;
@@ -27,19 +32,15 @@ describe('resolveCookieStoreScope', () => {
         clearCookieStoreScopeCache();
 
         getAllCookieStores = vi.fn(async (): Promise<TestCookieStore[]> => []);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (polyfillBrowser as any).cookies = { getAllCookieStores };
+        stubBrowserCookies({ getAllCookieStores });
 
         getTab = vi.fn(async (): Promise<TestTab> => ({ incognito: false }));
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (polyfillBrowser as any).tabs = {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ...(polyfillBrowser as any).tabs,
-            get: getTab,
-        };
+        stubBrowserTabsGet(getTab);
 
         isTabIncognito = vi.fn(() => false);
     });
+
+    afterAll(restoreBrowserStubs);
 
     describe('Firefox', () => {
         it('returns the reported cookie store id', async () => {

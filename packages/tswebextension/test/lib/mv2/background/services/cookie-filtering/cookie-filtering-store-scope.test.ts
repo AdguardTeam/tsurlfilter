@@ -1,11 +1,11 @@
 import {
+    afterAll,
     beforeEach,
     describe,
     expect,
     it,
     vi,
 } from 'vitest';
-import polyfillBrowser from 'webextension-polyfill';
 
 import {
     HTTPMethod,
@@ -24,6 +24,13 @@ import {
 import { clearCookieStoreScopeCache } from '../../../../../../src/lib/common/cookie-filtering/cookie-store-scope';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 import { CookieFiltering } from '../../../../../../src/lib/mv2/background/services/cookie-filtering/cookie-filtering';
+import {
+    restoreBrowserStubs,
+    stubBrowserCookies,
+    stubBrowserTabsGet,
+    type TestCookieStore,
+    type TestTab,
+} from '../../../../../helpers/browser-stubs';
 import { createNetworkRule } from '../../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../../common/mocks/mock-filtering-log';
 
@@ -40,9 +47,6 @@ vi.mock('../../../../../../src/lib/mv2/background/utils/browser-detector', (): {
         isFirefox: (): boolean => detectorState.isFirefox,
     },
 }));
-
-type TestCookieStore = { id: string; tabIds: number[] };
-type TestTab = { incognito: boolean };
 
 /**
  * Stub for `browser.cookies.*` capturing the details of every jar call,
@@ -61,14 +65,10 @@ const cookiesStub = {
  */
 const tabsGetStub = vi.fn(async (): Promise<TestTab> => ({ incognito: false }));
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(polyfillBrowser as any).cookies = cookiesStub;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(polyfillBrowser as any).tabs = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...(polyfillBrowser as any).tabs,
-    get: tabsGetStub,
-};
+stubBrowserCookies(cookiesStub);
+stubBrowserTabsGet(tabsGetStub);
+
+afterAll(restoreBrowserStubs);
 
 describe('CookieFiltering cookie store scope (AG-55093)', () => {
     let cookieFiltering: CookieFiltering;
