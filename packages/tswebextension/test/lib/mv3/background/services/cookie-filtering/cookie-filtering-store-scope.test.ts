@@ -14,7 +14,6 @@ import {
     RequestType,
 } from '@adguard/tsurlfilter';
 
-import { clearCookieStoreScopeCache } from '../../../../../../src/lib/common/cookie-filtering/cookie-store-scope';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 import {
     type RequestContext,
@@ -97,7 +96,6 @@ describe('CookieFiltering cookie store scope, MV3 (AG-55093)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        clearCookieStoreScopeCache();
         detectorState.isFirefox = true;
         tabsGetStub.mockResolvedValue({ incognito: false });
         getTabIncognitoStateMock.mockReset().mockReturnValue(false);

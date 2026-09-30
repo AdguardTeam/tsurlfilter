@@ -21,7 +21,6 @@ import {
     requestContextStorage,
     tabsApi,
 } from '../../../../../../src/lib';
-import { clearCookieStoreScopeCache } from '../../../../../../src/lib/common/cookie-filtering/cookie-store-scope';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 import { CookieFiltering } from '../../../../../../src/lib/mv2/background/services/cookie-filtering/cookie-filtering';
 import {
@@ -81,7 +80,6 @@ describe('CookieFiltering cookie store scope (AG-55093)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        clearCookieStoreScopeCache();
         detectorState.isFirefox = true;
 
         tabsGetStub.mockResolvedValue({ incognito: false });

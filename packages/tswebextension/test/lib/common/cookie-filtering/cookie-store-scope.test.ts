@@ -9,7 +9,6 @@ import {
 import polyfillBrowser from 'webextension-polyfill';
 
 import {
-    clearCookieStoreScopeCache,
     isExtensionContextIncognito,
     resolveCookieStoreScope,
 } from '../../../../src/lib/common/cookie-filtering/cookie-store-scope';
@@ -29,8 +28,6 @@ describe('resolveCookieStoreScope', () => {
     let isTabIncognito: ReturnType<typeof vi.fn<(tabId: number) => boolean | undefined>>;
 
     beforeEach(() => {
-        clearCookieStoreScopeCache();
-
         getAllCookieStores = vi.fn(async (): Promise<TestCookieStore[]> => []);
         stubBrowserCookies({ getAllCookieStores });
 
@@ -203,40 +200,6 @@ describe('resolveCookieStoreScope', () => {
             );
 
             expect(scope).toBeNull();
-            // Initial lookup plus one refresh of the possibly stale cache.
-            expect(getAllCookieStores).toHaveBeenCalledTimes(2);
-        });
-
-        it('refreshes a stale store list when the tab is not in it', async () => {
-            isTabIncognito.mockReturnValue(true);
-            getAllCookieStores
-                .mockResolvedValueOnce([{ id: '0', tabIds: [1] }])
-                .mockResolvedValueOnce([
-                    { id: '0', tabIds: [1] },
-                    { id: '1', tabIds: [3] },
-                ]);
-
-            const scope = await resolveCookieStoreScope(
-                { tabId: 3 },
-                false,
-                isTabIncognito,
-                false,
-            );
-
-            expect(scope).toEqual({ storeId: '1' });
-            expect(getAllCookieStores).toHaveBeenCalledTimes(2);
-        });
-
-        it('reuses the cached store list for subsequent lookups', async () => {
-            isTabIncognito.mockReturnValue(true);
-            getAllCookieStores.mockResolvedValue([
-                { id: '0', tabIds: [1] },
-                { id: '1', tabIds: [3, 4] },
-            ]);
-
-            await resolveCookieStoreScope({ tabId: 3 }, false, isTabIncognito, false);
-            await resolveCookieStoreScope({ tabId: 4 }, false, isTabIncognito, false);
-
             expect(getAllCookieStores).toHaveBeenCalledTimes(1);
         });
 

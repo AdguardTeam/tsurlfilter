@@ -76,51 +76,13 @@ export const isExtensionContextIncognito = (): boolean => {
 };
 
 /**
- * Cached cookie store list for Chromium spanning mode.
- *
- * The in-flight promise is cached so concurrent lookups share a single
- * `getAllCookieStores()` call. A cached list is only trusted when it contains
- * the requested tab id: tab ids are unique within a browser session and a tab
- * cannot migrate between cookie stores, so a cache hit is always
- * authoritative. A miss forces a single refresh, which covers incognito
- * windows opened or closed since the list was cached.
- */
-let cookieStoresCache: Promise<Cookies.CookieStore[]> | null = null;
-
-/**
- * Clears the cached cookie store list. Primarily intended for tests.
- */
-export const clearCookieStoreScopeCache = (): void => {
-    cookieStoresCache = null;
-};
-
-/**
- * Returns the browser's cookie stores, using the cached promise when
- * available.
- *
- * @returns Promise with the list of cookie stores.
- */
-const getCookieStores = (): Promise<Cookies.CookieStore[]> => {
-    if (cookieStoresCache === null) {
-        cookieStoresCache = browser.cookies.getAllCookieStores().catch((e) => {
-            // Do not cache a failed lookup: the next call should retry.
-            cookieStoresCache = null;
-
-            throw e;
-        });
-    }
-
-    return cookieStoresCache;
-};
-
-/**
  * Returns the browser's cookie stores, logging and swallowing lookup errors.
  *
  * @returns List of cookie stores, or `null` when the lookup failed.
  */
 const getCookieStoresSafe = async (): Promise<Cookies.CookieStore[] | null> => {
     try {
-        return await getCookieStores();
+        return await browser.cookies.getAllCookieStores();
     } catch (e) {
         logger.error('[tsweb.cookie-store-scope]: cannot get cookie stores: ', e);
 
@@ -137,37 +99,21 @@ const getCookieStoresSafe = async (): Promise<Cookies.CookieStore[] | null> => {
  * determined.
  */
 const findCookieStoreIdForTab = async (tabId: number): Promise<string | null> => {
-    const findStore = (stores: Cookies.CookieStore[]): Cookies.CookieStore | undefined => {
-        return stores.find((store) => store.tabIds.includes(tabId));
-    };
-
-    let stores = await getCookieStoresSafe();
+    const stores = await getCookieStoresSafe();
 
     if (stores === null) {
         return null;
     }
 
-    let store = findStore(stores);
-
-    if (!store) {
-        // The cached store list may be stale (an incognito window has been
-        // opened or closed since it was cached), refresh it once before
-        // giving up.
-        cookieStoresCache = null;
-        stores = await getCookieStoresSafe();
-
-        if (stores === null) {
-            return null;
-        }
-
-        store = findStore(stores);
-    }
+    const store = stores.find((cookieStore) => cookieStore.tabIds.includes(tabId));
 
     if (!store) {
         logger.debug('[tsweb.cookie-store-scope]: no cookie store found for tab: ', tabId);
+
+        return null;
     }
 
-    return store?.id ?? null;
+    return store.id;
 };
 
 /**
