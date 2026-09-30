@@ -213,6 +213,131 @@ describe('FilterConverter', () => {
             expect(regexp.test(url)).toBe(true);
         });
 
+        it.each([
+            ['search^', 'https://example.test/?q=search&x=1&cvid=tracking'],
+            ['bing.com^', 'https://example.test/?q=bing.com&x=1&cvid=tracking'],
+        ])('retains an unanchored %s pattern match inside the query', async (pattern, requestUrl) => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter([`${pattern}$removeparam=cvid`]),
+            ]);
+            expect(errors).toEqual([]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const regexp = createUrlMatcher(declarativeRule.condition);
+            const url = new URL(requestUrl);
+
+            expect(new RegExp(SimpleRegex.patternToRegexp(pattern)).test(url.href)).toBe(true);
+            expect(url.searchParams.has('cvid')).toBe(true);
+            expect(regexp.test(url.href)).toBe(true);
+            url.searchParams.delete('cvid');
+            expect(regexp.test(url.href)).toBe(false);
+        });
+
+        it.each([
+            'https://example.test/?q=search?cvid=tracking',
+            'https://example.test/?q=search?cvid=tracking&control=keep',
+            'https://example.test/?q=search?cvid=tracking#fragment',
+        ])('does not treat a nested question mark as the query boundary for %s', async (requestUrl) => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter(['search^$removeparam=cvid']),
+            ]);
+            expect(errors).toEqual([]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const regexp = createUrlMatcher(declarativeRule.condition);
+            const url = new URL(requestUrl);
+
+            expect(url.searchParams.has('cvid')).toBe(false);
+            expect(regexp.test(url.href)).toBe(false);
+        });
+
+        it('keeps a no-op higher-priority rule from masking a real parameter removal', async () => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter([
+                    'search^$removeparam=cvid,important',
+                    '||other.example^$removeparam=form',
+                ]),
+            ]);
+            expect(errors).toEqual([]);
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(2);
+            const url = new URL('https://other.example/?return=search?cvid=tracking&form=drop');
+            expect(url.searchParams.has('cvid')).toBe(false);
+            expect(url.searchParams.has('form')).toBe(true);
+
+            const matchingRules = declarativeRules.filter((rule) => (
+                createUrlMatcher(rule.condition).test(url.href)
+            ));
+            expect(matchingRules).toHaveLength(1);
+            expect(matchingRules[0].action.redirect?.transform?.queryTransform?.removeParams).toEqual(['form']);
+        });
+
+        it.each([
+            'https://user:pass@bing.com/search?q=hello&cvid=tracking',
+            'https://user:pass@bing.com/search?cvid=tracking&q=hello',
+            'https://user:pass@bing.com/search?cvid=tracking',
+            'https://user@bing.com/search?q=hello&cvid=tracking',
+            'https://:pass@bing.com/search?q=hello&cvid=tracking',
+            'https://user:pass@www.bing.com/search?q=hello&cvid=tracking',
+        ])('retains domain-anchor matches for a request with credentials: %s', async (requestUrl) => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter(['||bing.com/search^$removeparam=cvid']),
+            ]);
+            expect(errors).toEqual([]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const regexp = createUrlMatcher(declarativeRule.condition);
+            const url = new URL(requestUrl);
+
+            expect(url.hostname === 'bing.com' || url.hostname.endsWith('.bing.com')).toBe(true);
+            expect(url.searchParams.has('cvid')).toBe(true);
+            expect(regexp.test(url.href)).toBe(true);
+            url.searchParams.delete('cvid');
+            expect(regexp.test(url.href)).toBe(false);
+        });
+
+        it.each([
+            'https://bing.com@other.example/search?q=hello&cvid=tracking',
+            'https://user:pass@bing.com.evil.example/search?q=hello&cvid=tracking',
+            'https://user:pass@bing.com/other?q=hello&cvid=tracking',
+            'https://user:pass@bing.com/search?q=hello',
+        ])('preserves domain and path scope with credentials for %s', async (requestUrl) => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter(['||bing.com/search^$removeparam=cvid']),
+            ]);
+            expect(errors).toEqual([]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const url = new URL(requestUrl);
+
+            expect(createUrlMatcher(declarativeRule.condition).test(url.href)).toBe(false);
+        });
+
+        it.each([
+            ['https://user:pass@bing.com/search?cvid=tracking', true],
+            ['https://user:pass@bing.com/search?q=hello&cvid=tracking', true],
+            ['https://bing.com@other.example/search?cvid=tracking', false],
+            ['https://bing.com:pass@other.example/search?cvid=tracking', false],
+            ['file://bing.com/search?cvid=tracking', true],
+            ['https://user:pass@bing.com/search?q=hello#?cvid=tracking', false],
+        ])('keeps a domain-only source pattern tied to the actual host for %s', async (requestUrl, matches) => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter(['||bing.com^$removeparam=cvid']),
+            ]);
+            expect(errors).toEqual([]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const url = new URL(requestUrl);
+
+            expect(createUrlMatcher(declarativeRule.condition).test(url.href)).toBe(matches);
+        });
+
+        it('retains an at-sign as a separator within the request path', async () => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter(['||bing.com/search^$removeparam=cvid']),
+            ]);
+            expect(errors).toEqual([]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const url = new URL('https://bing.com/search@sub?cvid=tracking');
+
+            expect(createUrlMatcher(declarativeRule.condition).test(url.href)).toBe(true);
+        });
+
         it('escapes punctuation in named parameters', async () => {
             const [{ ruleset, errors }] = await converter.convert([
                 createFilter(['||bing.com/search^$removeparam=cvid.foo']),

@@ -3928,11 +3928,13 @@ per hop until all matching parameters are removed. Rules with different
 parameter names are no longer merged into a single DNR rule — this is by
 design, as merging would prevent multi-hop chaining across priority levels.
 <br/>
-A literal URL pattern ending in `^` uses a regexFilter so that the final
-separator can also delimit the first query parameter. These rules count
+An anchored literal URL pattern starting with `|` or `||` and ending in `^`
+uses a regexFilter so that the final separator can also delimit the first
+query parameter. These rules count
 toward Chrome's regex rule quota and are subject to its regex size limit.
-Patterns containing wildcards, query or fragment markers, or additional
-separators retain the existing urlFilter conversion.
+Unanchored patterns and patterns containing wildcards, query or fragment
+markers, or additional separators retain the existing urlFilter conversion.
+Domain anchors with an empty host pattern also retain urlFilter matching.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -4226,7 +4228,7 @@ A trailing separator matches a named parameter in any query position.
       }
     },
     "condition": {
-      "regexFilter": "^(http|https|ws|wss)://([a-z0-9-_.]+\\.)?bing\\.com\\/search(?:[^ a-zA-Z0-9.%_?#-][^?#]*)?\\?(?:[^#]*&)?cvid=",
+      "regexFilter": "^[a-z][a-z0-9+.-]*://(?:[^[:^ascii:]/?#@]*@)?(?:[^[:^ascii:]/?#@]*\\.)?bing\\.com\\/search(?:[^[:^ascii:] a-zA-Z0-9.%_?#-][^[:^ascii:]?#]*)?\\?(?:[^[:^ascii:]#]*&)?cvid=",
       "resourceTypes": [
         "main_frame",
         "sub_frame"

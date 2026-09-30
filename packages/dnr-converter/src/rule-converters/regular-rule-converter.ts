@@ -93,7 +93,13 @@
 /* eslint-enable jsdoc/no-multi-asterisks */
 /* eslint-enable max-len */
 import { RuleGenerator } from '@adguard/agtree/generator';
-import { ADBLOCK_URL_SEPARATOR, ADBLOCK_URL_SEPARATOR_REGEX, RegExpUtils } from '@adguard/agtree/utils';
+import {
+    ADBLOCK_URL_SEPARATOR,
+    ADBLOCK_URL_SEPARATOR_REGEX,
+    ADBLOCK_URL_START,
+    ADBLOCK_URL_START_REGEX,
+    RegExpUtils,
+} from '@adguard/agtree/utils';
 import { getRedirectFilename } from '@adguard/scriptlets/redirects';
 
 import {
@@ -647,19 +653,36 @@ export class RegularRuleConverter {
             if (paramToken !== null) {
                 if (condition.urlFilter) {
                     const prefix = condition.urlFilter.slice(0, -ADBLOCK_URL_SEPARATOR.length);
+                    const hasDomainAnchor = prefix.startsWith(ADBLOCK_URL_START);
+                    const authority = hasDomainAnchor ? prefix.slice(ADBLOCK_URL_START.length).split('/')[0] : '';
                     if (
                         condition.urlFilter.endsWith(ADBLOCK_URL_SEPARATOR)
+                        && prefix.startsWith('|')
                         && !/[*?#^]/.test(prefix)
+                        && (!hasDomainAnchor || (authority.length > 0 && !authority.includes('@')))
                     ) {
                         // Share the trailing separator with the query delimiter when the parameter is first.
-                        // Require a query boundary so paths, fragments and values cannot cause a no-op redirect.
+                        // Anchoring keeps this delimiter at the actual query boundary.
+                        // Unanchored patterns can match inside the query and retain native URL-filter matching.
                         const patternRegexp = RegExpUtils.patternToRegexp(condition.urlFilter);
-                        const prefixRegexp = patternRegexp.slice(0, -ADBLOCK_URL_SEPARATOR_REGEX.length);
+                        let prefixRegexp = patternRegexp.slice(0, -ADBLOCK_URL_SEPARATOR_REGEX.length);
+                        if (hasDomainAnchor) {
+                            // Domain anchors start at the parsed host, after any credentials, on any URL scheme.
+                            prefixRegexp = prefixRegexp.replace(
+                                ADBLOCK_URL_START_REGEX,
+                                '^[a-z][a-z0-9+.-]*://(?:[^[:^ascii:]/?#@]*@)?(?:[^[:^ascii:]/?#@]*\\.)?',
+                            );
+                        }
                         const paramRegexp = RegExpUtils.patternToRegexp(paramToken);
                         const paramNameRegexp = paramRegexp.slice(ADBLOCK_URL_SEPARATOR_REGEX.length);
-                        const pathSeparator = '[^ a-zA-Z0-9.%_?#-]';
-                        condition.regexFilter = `${prefixRegexp}(?:${pathSeparator}[^?#]*)?`
-                            + `\\?(?:[^#]*&)?${paramNameRegexp}`;
+                        // DNR matches ASCII-serialized URLs. Bound classes to ASCII to keep RE2 compilation small.
+                        const pathSeparator = '[^[:^ascii:] a-zA-Z0-9.%_?#-]';
+                        const pathTail = hasDomainAnchor && !prefix.includes('/')
+                            // A separator in the authority must not turn a username into a host match.
+                            ? '(?:[^[:^ascii:] a-zA-Z0-9.%_/?#@-][^[:^ascii:]/?#@]*)?(?:/[^[:^ascii:]?#]*)?'
+                            : `(?:${pathSeparator}[^[:^ascii:]?#]*)?`;
+                        condition.regexFilter = `${prefixRegexp}${pathTail}`
+                            + `\\?(?:[^[:^ascii:]#]*&)?${paramNameRegexp}`;
                         delete condition.urlFilter;
                     } else {
                         condition.urlFilter += `*${paramToken}`;
