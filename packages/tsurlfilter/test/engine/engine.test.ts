@@ -1083,6 +1083,27 @@ describe('$badfilter modifier', () => {
         result = engine.matchRequest(request);
         expect(result.basicRule).not.toBeNull();
     });
+
+    it('does not negate a rule with a different value-bearing modifier value', () => {
+        const rules = [
+            '||example.org^$removeparam=foo',
+            '||example.org^$removeparam=bar,badfilter',
+        ];
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: rules.join('\n'),
+                },
+            ],
+        });
+
+        const request = new Request('https://example.org', 'https://example.org', RequestType.Document);
+        const result = engine.matchRequest(request);
+
+        expect(result.getRemoveParamRules()).toHaveLength(1);
+        expect(result.getRemoveParamRules()[0].getAdvancedModifierValue()).toBe('foo');
+    });
 });
 
 describe('$genericblock modifier', () => {

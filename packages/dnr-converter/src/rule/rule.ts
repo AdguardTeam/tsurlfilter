@@ -22,7 +22,7 @@ import { getErrorMessage } from '../utils/error';
 import { fastHash, fastHash31, hasSpaces } from '../utils/string';
 
 import { OPTION_NAMES } from './option-names';
-import { RuleBadfilter } from './rule-badfilter';
+import { RuleBadfilter, VALUE_BEARING_MODIFIERS } from './rule-badfilter';
 import { RulePriority } from './rule-priority';
 import { type ConversionMeta, type HttpHeaderMatcher } from './rule-types';
 
@@ -352,8 +352,23 @@ export class Rule {
      * `$removeparam`: a value-less `$removeparam` is stored as `''`, because
      * it carries a meaning of its own ("remove all query parameters") that
      * must be distinguishable from "no value".
+     *
+     * This is the parsed value used by the converters. For `$badfilter`
+     * identity see {@link rawValueModifiers}.
      */
     readonly advancedModifierValue: string | null = null;
+
+    /**
+     * Values of value-bearing modifiers exactly as written in the rule text.
+     *
+     * A `$badfilter` rule disables a rule only when the rule text matches, so
+     * these raw values are compared instead of the parsed (normalized) state —
+     * see {@link RuleBadfilter.negates}. They are collected before conversion to
+     * AG syntax, because conversion rewrites names and values (for example
+     * `$redirect=noop.js` becomes `$redirect=noopjs`). `$domain` and `$denyallow`
+     * are not included: their values are compared separately.
+     */
+    readonly rawValueModifiers: Map<string, string>;
 
     /**
      * Parsed data for the `$header` modifier.
@@ -384,17 +399,25 @@ export class Rule {
     readonly priority: number;
 
     /**
-     * Creates a new {@link Rule} from filter list metadata and an already-converted
-     * network rule AST node.
+     * Creates a new {@link Rule} from filter list metadata, an already-converted
+     * network rule AST node and the values of value-bearing modifiers as written.
      *
      * @param filterListId Filter list ID.
      * @param index Rule index within the filter list.
      * @param node Network rule AST node (must already be in AG syntax).
+     * @param rawValueModifiers Values of value-bearing modifiers as written in the
+     *   original rule text, collected before conversion to AG syntax.
      *
      * @throws `SyntaxError` when the pattern contains spaces, the rule is too
      *   general, or any modifier is invalid.
      */
-    private constructor(filterListId: number, index: number, node: NetworkRuleNode) {
+    private constructor(
+        filterListId: number,
+        index: number,
+        node: NetworkRuleNode,
+        rawValueModifiers: Map<string, string>,
+    ) {
+        this.rawValueModifiers = rawValueModifiers;
         const pattern = node.pattern.value;
         if (pattern && hasSpaces(pattern)) {
             throw new SyntaxError('Rule has spaces, seems to be a host rule');
@@ -1022,8 +1045,10 @@ export class Rule {
         text: string,
     ): Rule[] {
         let rulesConvertedToAGSyntax: AnyRule[];
+        let rawValueModifiers: Map<string, string>;
         try {
             const node = RuleParser.parse(text);
+            rawValueModifiers = Rule.collectRawValueModifiers(node);
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
                 rulesConvertedToAGSyntax = conversionResult.result;
@@ -1049,7 +1074,7 @@ export class Rule {
             }
 
             try {
-                rules.push(new Rule(filterId, ruleIndex, ruleNode));
+                rules.push(new Rule(filterId, ruleIndex, ruleNode, rawValueModifiers));
             } catch (e: unknown) {
                 throw new Error(
                     // eslint-disable-next-line max-len
@@ -1081,7 +1106,9 @@ export class Rule {
         node: AnyRule,
     ): Rule[] {
         let rulesConvertedToAG: AnyRule[];
+        let rawValueModifiers: Map<string, string>;
         try {
+            rawValueModifiers = Rule.collectRawValueModifiers(node);
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
                 rulesConvertedToAG = conversionResult.result;
@@ -1107,7 +1134,7 @@ export class Rule {
             }
 
             try {
-                rules.push(new Rule(filterListId, index, ruleNode));
+                rules.push(new Rule(filterListId, index, ruleNode, rawValueModifiers));
             } catch (e: unknown) {
                 let msg = `"${getErrorMessage(e)}" in the rule: `;
 
@@ -1123,6 +1150,40 @@ export class Rule {
         }
 
         return rules;
+    }
+
+    /**
+     * Collects values of value-bearing modifiers exactly as written in the
+     * original rule text.
+     *
+     * Must be called with the node **before** conversion to AG syntax: the
+     * conversion rewrites modifier names and values (for example
+     * `$redirect=noop.js` becomes `$redirect=noopjs`, and `$empty` becomes
+     * `$redirect=nooptext`), while `$badfilter` requires the text as written.
+     *
+     * @param node Rule AST node, possibly of a non-network category.
+     *
+     * @returns Map of modifier name to the value as written.
+     */
+    private static collectRawValueModifiers(node: AnyRule): Map<string, string> {
+        const rawValueModifiers = new Map<string, string>();
+
+        if (
+            node.category !== RuleCategory.Network
+            || node.type !== NetworkRuleType.NetworkRule
+        ) {
+            return rawValueModifiers;
+        }
+
+        for (const modifier of node.modifiers?.children ?? []) {
+            const name = modifier.name.value;
+
+            if (VALUE_BEARING_MODIFIERS.has(name)) {
+                rawValueModifiers.set(name, modifier.value?.value ?? '');
+            }
+        }
+
+        return rawValueModifiers;
     }
 }
 

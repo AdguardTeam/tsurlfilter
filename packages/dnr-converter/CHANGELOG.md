@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `$badfilter` incorrectly negated rules with different values of value-bearing
+  modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
+  `||example.com^$removeparam=bar`. Values of `$header`, `$method` and `$to` are
+  compared as written — spellings that are equivalent after parsing
+  (e.g. `Set-Cookie` and `set-cookie`) do not negate each other.
+  `$redirect-rule` is no longer treated as `$redirect`.
+- `$badfilter` rules that also carried a convertible modifier (e.g.
+  `||example.com^$csp=script-src 'none',badfilter`) were converted into
+  declarative rules instead of disabling the rule they refer to.
+
 ### Security
 
 ## [1.1.2] - 2026-08-25

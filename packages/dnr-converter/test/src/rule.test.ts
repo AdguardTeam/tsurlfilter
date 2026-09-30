@@ -196,6 +196,93 @@ describe('Rule', () => {
             expect(badfilterRule.negatesBadfilter(targetRule)).toBe(false);
         });
 
+        it('negatesBadfilter compares the value of the advanced modifier', () => {
+            const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$removeparam=foo,badfilter');
+            const [sameValue] = Rule.createFromText(1, 0, '||example.com^$removeparam=foo');
+            const [otherValue] = Rule.createFromText(1, 0, '||example.com^$removeparam=bar');
+            const [noValue] = Rule.createFromText(1, 0, '||example.com^$removeparam');
+
+            expect(badfilterRule.negatesBadfilter(sameValue)).toBe(true);
+            expect(badfilterRule.negatesBadfilter(otherValue)).toBe(false);
+            expect(badfilterRule.negatesBadfilter(noValue)).toBe(false);
+        });
+
+        it('negatesBadfilter compares the value of the $csp modifier', () => {
+            const [badfilterRule] = Rule.createFromText(1, 0, "||example.com^$csp=script-src 'self',badfilter");
+            const [sameValue] = Rule.createFromText(1, 0, "||example.com^$csp=script-src 'self'");
+            const [otherValue] = Rule.createFromText(1, 0, "||example.com^$csp=script-src 'none'");
+
+            expect(badfilterRule.negatesBadfilter(sameValue)).toBe(true);
+            expect(badfilterRule.negatesBadfilter(otherValue)).toBe(false);
+        });
+
+        it('negatesBadfilter distinguishes $redirect from $redirect-rule', () => {
+            const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$redirect-rule=nooptext,badfilter');
+            const [redirectRule] = Rule.createFromText(1, 0, '||example.com^$redirect=nooptext');
+            const [redirectRuleModifier] = Rule.createFromText(1, 0, '||example.com^$redirect-rule=nooptext');
+
+            expect(badfilterRule.negatesBadfilter(redirectRule)).toBe(false);
+            expect(badfilterRule.negatesBadfilter(redirectRuleModifier)).toBe(true);
+        });
+
+        it('negatesBadfilter compares $header values', () => {
+            const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$header=set-cookie:/a/,badfilter');
+            const [sameValue] = Rule.createFromText(1, 0, '||example.com^$header=set-cookie:/a/');
+            const [otherValue] = Rule.createFromText(1, 0, '||example.com^$header=set-cookie:/b/');
+            const [otherHeader] = Rule.createFromText(1, 0, '||example.com^$header=referer');
+
+            expect(badfilterRule.negatesBadfilter(sameValue)).toBe(true);
+            expect(badfilterRule.negatesBadfilter(otherValue)).toBe(false);
+            expect(badfilterRule.negatesBadfilter(otherHeader)).toBe(false);
+        });
+
+        it('negatesBadfilter compares $method values', () => {
+            const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$method=GET,badfilter');
+            const [sameValue] = Rule.createFromText(1, 0, '||example.com^$method=GET');
+            const [otherValue] = Rule.createFromText(1, 0, '||example.com^$method=POST');
+
+            expect(badfilterRule.negatesBadfilter(sameValue)).toBe(true);
+            expect(badfilterRule.negatesBadfilter(otherValue)).toBe(false);
+        });
+
+        it('negatesBadfilter compares $to values', () => {
+            const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$to=a.com,badfilter');
+            const [sameValue] = Rule.createFromText(1, 0, '||example.com^$to=a.com');
+            const [otherValue] = Rule.createFromText(1, 0, '||example.com^$to=b.com');
+
+            expect(badfilterRule.negatesBadfilter(sameValue)).toBe(true);
+            expect(badfilterRule.negatesBadfilter(otherValue)).toBe(false);
+        });
+
+        it('negatesBadfilter compares $permissions values', () => {
+            const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$permissions=fullscreen=(),badfilter');
+            const [sameValue] = Rule.createFromText(1, 0, '||example.com^$permissions=fullscreen=()');
+            const [otherValue] = Rule.createFromText(1, 0, '||example.com^$permissions=document-domain=()');
+
+            expect(badfilterRule.negatesBadfilter(sameValue)).toBe(true);
+            expect(badfilterRule.negatesBadfilter(otherValue)).toBe(false);
+        });
+
+        it('negatesBadfilter compares values as written, without normalizing them', () => {
+            const cases: [string, string][] = [
+                ['||example.com^$removeheader=Set-Cookie', '||example.com^$removeheader=set-cookie,badfilter'],
+                ['||example.com^$to=Example.com', '||example.com^$to=example.com,badfilter'],
+                ['||example.com^$method=GET', '||example.com^$method=get,badfilter'],
+                ['||example.com^$method=GET|POST', '||example.com^$method=POST|GET,badfilter'],
+                ['||example.com^$to=a.com|b.com', '||example.com^$to=b.com|a.com,badfilter'],
+                [
+                    '||example.com^$permissions=fullscreen=()\\,document-domain=()',
+                    '||example.com^$permissions=fullscreen=()|document-domain=(),badfilter',
+                ],
+            ];
+
+            for (const [targetText, badfilterText] of cases) {
+                const [badfilterRule] = Rule.createFromText(1, 0, badfilterText);
+                const [targetRule] = Rule.createFromText(1, 0, targetText);
+                expect(badfilterRule.negatesBadfilter(targetRule)).toBe(false);
+            }
+        });
+
         it('domain properties return null or empty for plain rule', () => {
             const rules = Rule.createFromText(1, 0, '||example.com^');
             const rule = rules[0];

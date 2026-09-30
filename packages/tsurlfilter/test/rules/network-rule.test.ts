@@ -748,6 +748,83 @@ describe('NetworkRule constructor', () => {
         );
     });
 
+    it('compares values of value-bearing modifiers when matching badfilter rules', () => {
+        // Advanced modifier values.
+        assertBadfilterNegates('*$removeparam=foo', '*$removeparam=foo,badfilter', true);
+        assertBadfilterNegates('*$removeparam=bar', '*$removeparam=foo,badfilter', false);
+        assertBadfilterNegates('*$removeparam', '*$removeparam,badfilter', true);
+        assertBadfilterNegates('*$removeparam', '*$removeparam=foo,badfilter', false);
+        assertBadfilterNegates(
+            "*$csp=script-src 'none'",
+            "*$csp=script-src 'none',badfilter",
+            true,
+        );
+        assertBadfilterNegates(
+            "*$csp=script-src 'none'",
+            "*$csp=script-src 'self',badfilter",
+            false,
+        );
+        assertBadfilterNegates('*$replace=/a/b/', '*$replace=/a/b/,badfilter', true);
+        assertBadfilterNegates('*$replace=/a/b/', '*$replace=/c/d/,badfilter', false);
+        assertBadfilterNegates('*$removeheader=set-cookie', '*$removeheader=set-cookie,badfilter', true);
+        assertBadfilterNegates('*$removeheader=set-cookie', '*$removeheader=referer,badfilter', false);
+        assertBadfilterNegates('*$redirect=nooptext', '*$redirect=nooptext,badfilter', true);
+        assertBadfilterNegates('*$redirect=nooptext', '*$redirect=noopjs,badfilter', false);
+        // $redirect and $redirect-rule share one option flag, so they are compared explicitly.
+        assertBadfilterNegates('*$redirect=nooptext', '*$redirect-rule=nooptext,badfilter', false);
+
+        // $header
+        assertBadfilterNegates('*$header=set-cookie', '*$header=set-cookie,badfilter', true);
+        assertBadfilterNegates('*$header=set-cookie', '*$header=referer,badfilter', false);
+        assertBadfilterNegates('*$header=set-cookie:/a/', '*$header=set-cookie:/a/,badfilter', true);
+        assertBadfilterNegates('*$header=set-cookie:/a/', '*$header=set-cookie:/b/,badfilter', false);
+
+        // $method
+        assertBadfilterNegates('*$method=GET', '*$method=GET,badfilter', true);
+        assertBadfilterNegates('*$method=GET', '*$method=POST,badfilter', false);
+        assertBadfilterNegates('*$method=GET|POST', '*$method=GET,badfilter', false);
+
+        // $to
+        assertBadfilterNegates('*$to=a.com', '*$to=a.com,badfilter', true);
+        assertBadfilterNegates('*$to=a.com', '*$to=b.com,badfilter', false);
+
+        // $stealth is allowed in allowlist rules only.
+        assertBadfilterNegates('@@*$stealth=referrer', '@@*$stealth=referrer,badfilter', true);
+        assertBadfilterNegates('@@*$stealth=referrer', '@@*$stealth=donottrack,badfilter', false);
+
+        // $app
+        assertBadfilterNegates('*$app=org.example.app', '*$app=org.example.app,badfilter', true);
+        assertBadfilterNegates('*$app=org.example.app', '*$app=org.example.other,badfilter', false);
+        // $app sets no option flag, so the value map is the only thing that
+        // distinguishes these rules.
+        assertBadfilterNegates('*$app=org.example.app', '*$badfilter', false);
+
+        // $permissions (also closes AG-36226 / AdguardBrowserExtension#2961).
+        assertBadfilterNegates('*$permissions=fullscreen=()', '*$permissions=fullscreen=(),badfilter', true);
+        assertBadfilterNegates('*$permissions=document-domain=()', '*$permissions=fullscreen=(),badfilter', false);
+
+        // $header regexp and restricted $method/$to values.
+        assertBadfilterNegates('*$header=x:/foo/', '*$header=x:/foo/,badfilter', true);
+        assertBadfilterNegates('*$header=x:/foo/', '*$header=x:foo,badfilter', false);
+        assertBadfilterNegates('*$method=~HEAD', '*$method=~HEAD,badfilter', true);
+        assertBadfilterNegates('*$method=~HEAD', '*$method=~GET,badfilter', false);
+        assertBadfilterNegates('*$to=~a.com', '*$to=~a.com,badfilter', true);
+        assertBadfilterNegates('*$to=~a.com', '*$to=~b.com,badfilter', false);
+
+        // Values are compared as written, so spellings that are equivalent after
+        // parsing must not negate each other.
+        assertBadfilterNegates('*$removeheader=Set-Cookie', '*$removeheader=set-cookie,badfilter', false);
+        assertBadfilterNegates('*$to=Example.com', '*$to=example.com,badfilter', false);
+        assertBadfilterNegates('*$method=GET', '*$method=get,badfilter', false);
+        assertBadfilterNegates('*$method=GET|POST', '*$method=POST|GET,badfilter', false);
+        assertBadfilterNegates('*$to=a.com|b.com', '*$to=b.com|a.com,badfilter', false);
+        assertBadfilterNegates(
+            '*$permissions=fullscreen=()\\,document-domain=()',
+            '*$permissions=fullscreen=()|document-domain=(),badfilter',
+            false,
+        );
+    });
+
     it('works if noop modifier works properly', () => {
         let rule = createNetworkRule('||example.com$_', -1);
         expect(rule).toBeTruthy();

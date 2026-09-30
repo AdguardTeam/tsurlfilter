@@ -42,6 +42,20 @@ describe('RulesGrouper', () => {
             expect(group).toBe(RulesGroup.BadFilter);
         });
 
+        it('should return BadFilter group for a $badfilter rule that also has a convertible modifier', () => {
+            const cspBadfilterRule = getMockedRule([OPTION_NAMES.CSP, OPTION_NAMES.BADFILTER]);
+            // @ts-expect-error Accessing private method for testing purposes
+            expect(RulesGrouper.getRuleGroup(cspBadfilterRule)).toBe(RulesGroup.BadFilter);
+
+            const removeHeaderBadfilterRule = getMockedRule([OPTION_NAMES.REMOVEHEADER, OPTION_NAMES.BADFILTER]);
+            // @ts-expect-error Accessing private method for testing purposes
+            expect(RulesGrouper.getRuleGroup(removeHeaderBadfilterRule)).toBe(RulesGroup.BadFilter);
+
+            const urlTransformBadfilterRule = getMockedRule([OPTION_NAMES.URLTRANSFORM, OPTION_NAMES.BADFILTER]);
+            // @ts-expect-error Accessing private method for testing purposes
+            expect(RulesGrouper.getRuleGroup(urlTransformBadfilterRule)).toBe(RulesGroup.BadFilter);
+        });
+
         it('should return Regular group for rules with no special options', () => {
             const rule = getMockedRule(['']);
             // @ts-expect-error Accessing private method for testing purposes

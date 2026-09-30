@@ -34,6 +34,7 @@ import {
     NETWORK_RULE_OPTIONS,
     NOT_MARK,
     OPTIONS_DELIMITER,
+    VALUE_BEARING_OPTIONS,
 } from './network-rule-options';
 import { type NetworkRuleOption as NetworkRuleOptionType, OptionFlags } from './option-flags';
 import { Pattern } from './pattern';
@@ -467,6 +468,13 @@ export class NetworkRule implements IRule {
      * Rule To modifier.
      */
     private toModifier: IValueListModifier<string> | null = null;
+
+    /**
+     * Values of value-bearing modifiers exactly as written in the rule text.
+     * A `$badfilter` rule requires the rule text to match, so these raw values
+     * are compared instead of the parsed (normalized) modifier state.
+     */
+    private readonly rawValueModifiers = new Map<string, string>();
 
     /**
      * Rule Stealth modifier.
@@ -1397,6 +1405,10 @@ export class NetworkRule implements IRule {
                 value = option.value.value;
             }
 
+            if (VALUE_BEARING_OPTIONS.has(option.name.value)) {
+                this.rawValueModifiers.set(option.name.value, value);
+            }
+
             this.loadOption(option.name.value, value, option.exception);
         }
 
@@ -1516,6 +1528,10 @@ export class NetworkRule implements IRule {
             return false;
         }
 
+        if (!this.hasSameValueModifiers(specifiedRule)) {
+            return false;
+        }
+
         if (!OptionFlags.equals(this.disabledOptions, specifiedRule.disabledOptions)) {
             return false;
         }
@@ -1536,6 +1552,36 @@ export class NetworkRule implements IRule {
 
         if (!stringArraysEquals(this.getDenyAllowDomains(), specifiedRule.getDenyAllowDomains())) {
             return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks whether this rule and the given rule have the same values of the
+     * value-bearing modifiers, exactly as written in the rule text.
+     *
+     * Raw values are used on purpose: a `$badfilter` rule disables a rule only
+     * when the rule text matches, so values that differ as written must not
+     * negate each other even if they are equivalent after parsing (for example
+     * `$removeheader=Set-Cookie` and `$removeheader=set-cookie`).
+     *
+     * `$redirect` and `$redirect-rule` share one option flag, but they are
+     * distinct modifier names, so the map distinguishes them as well.
+     *
+     * @param specifiedRule Rule to compare with.
+     *
+     * @returns True if all value-bearing modifiers are equal.
+     */
+    private hasSameValueModifiers(specifiedRule: NetworkRule): boolean {
+        if (this.rawValueModifiers.size !== specifiedRule.rawValueModifiers.size) {
+            return false;
+        }
+
+        for (const [name, value] of this.rawValueModifiers) {
+            if (specifiedRule.rawValueModifiers.get(name) !== value) {
+                return false;
+            }
         }
 
         return true;

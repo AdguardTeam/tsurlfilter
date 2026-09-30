@@ -108,6 +108,72 @@ describe('FilterConverter', () => {
             });
         });
 
+        it('keeps a rule whose value-bearing modifier value differs from the $badfilter value', async () => {
+            const filter = createFilter([
+                '||example.org^$removeparam=foo',
+                '||example.org^$removeparam=bar,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action).toEqual({
+                type: 'redirect',
+                redirect: {
+                    transform: {
+                        queryTransform: {
+                            removeParams: ['foo'],
+                        },
+                    },
+                },
+            });
+        });
+
+        it('removes a rule whose value-bearing modifier value matches the $badfilter value', async () => {
+            const filter = createFilter([
+                '||example.org^$removeparam=foo',
+                '||example.org^$removeparam=foo,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(errors).toHaveLength(0);
+            expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('does not convert a $badfilter rule that also carries a convertible modifier', async () => {
+            const filter = createFilter([
+                "||example.org^$csp=script-src 'self'",
+                "||example.org^$csp=script-src 'none',badfilter",
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            // Only the target rule is converted; the $badfilter rule must not
+            // become a rule that appends its own directive.
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action).toEqual({
+                type: 'modifyHeaders',
+                responseHeaders: [{
+                    header: 'Content-Security-Policy',
+                    operation: 'append',
+                    value: "script-src 'self'",
+                }],
+            });
+        });
+
+        it('negates a $csp rule whose value matches the $badfilter value', async () => {
+            const filter = createFilter([
+                "||example.org^$csp=script-src 'self'",
+                "||example.org^$csp=script-src 'self',badfilter",
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(errors).toHaveLength(0);
+            expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
         it('reports a conversion error (not a block) for an undecodable $removeparam value', async () => {
             const filter = createFilter(['||example.org^$removeparam=%zz']);
             const [{ ruleset, errors }] = await converter.convert([filter]);

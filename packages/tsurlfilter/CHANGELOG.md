@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `$badfilter` incorrectly negated rules with different values of value-bearing
+  modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
+  `||example.com^$removeparam=bar`. Values of `$header`, `$method`, `$to`,
+  `$stealth` and `$app` are compared as well, as written — spellings that are
+  equivalent after parsing (e.g. `Set-Cookie` and `set-cookie`) do not negate
+  each other. `$redirect-rule` is no longer treated as `$redirect`.
 - Domain-scoped cosmetic and JavaScript rules not matching hosts with labels
   ending in an underscore.
 

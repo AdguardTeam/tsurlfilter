@@ -58,6 +58,35 @@ export const NETWORK_RULE_OPTIONS = {
 
 export const OPTIONS_DELIMITER = '$';
 
+/**
+ * Modifiers whose written value must match for a `$badfilter` rule to negate
+ * another rule. Values are compared as written, because the rule text must match.
+ * `$domain` and `$denyallow` are compared separately, with domain normalization.
+ */
+export const VALUE_BEARING_OPTIONS: ReadonlySet<string> = new Set([
+    NETWORK_RULE_OPTIONS.CSP,
+    NETWORK_RULE_OPTIONS.REPLACE,
+    NETWORK_RULE_OPTIONS.URLTRANSFORM,
+    NETWORK_RULE_OPTIONS.COOKIE,
+    NETWORK_RULE_OPTIONS.REDIRECT,
+    NETWORK_RULE_OPTIONS.REDIRECTRULE,
+    NETWORK_RULE_OPTIONS.REMOVEPARAM,
+    NETWORK_RULE_OPTIONS.REMOVEHEADER,
+    NETWORK_RULE_OPTIONS.PERMISSIONS,
+    NETWORK_RULE_OPTIONS.CLIENT,
+    NETWORK_RULE_OPTIONS.DNSREWRITE,
+    NETWORK_RULE_OPTIONS.DNSTYPE,
+    NETWORK_RULE_OPTIONS.CTAG,
+    NETWORK_RULE_OPTIONS.HEADER,
+    NETWORK_RULE_OPTIONS.METHOD,
+    NETWORK_RULE_OPTIONS.TO,
+    NETWORK_RULE_OPTIONS.STEALTH,
+    NETWORK_RULE_OPTIONS.APP,
+    NETWORK_RULE_OPTIONS.JSONPRUNE,
+    NETWORK_RULE_OPTIONS.HLS,
+    NETWORK_RULE_OPTIONS.REFERRERPOLICY,
+]);
+
 export const MASK_ALLOWLIST = '@@';
 
 export const NOT_MARK = '~';

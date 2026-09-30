@@ -7,6 +7,7 @@ import {
 } from '../../../src/errors/converter-options-errors';
 import { type IFilter } from '../../../src/filter/types';
 import { FilterConverter } from '../../../src/filter-converter/filter-converter';
+import { Rule } from '../../../src/rule/rule';
 
 /**
  * Creates a test IFilter from an array of rule strings.
@@ -176,6 +177,34 @@ describe('FilterConverter (withSourceMap: true)', () => {
             const declarativeRules = await ruleset.getDeclarativeRules();
             expect(declarativeRules).toHaveLength(2);
             expect(ruleset.getId()).toBe(FilterConverter.COMBINED_RULESET_ID);
+        });
+    });
+
+    describe('convert (with explicit $badfilter rules)', () => {
+        it('keeps a rule whose value-bearing modifier value differs from the $badfilter rule', async () => {
+            const filter = createFilter(['||example.com^$removeparam=bar']);
+            const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$removeparam=foo,badfilter');
+
+            const [{ ruleset }] = await converter.convert(
+                [filter],
+                { withSourceMap: true, badFilterRules: [badfilterRule] },
+            );
+
+            const declarativeRules = await ruleset.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(1);
+        });
+
+        it('negates a rule with the same value-bearing modifier value', async () => {
+            const filter = createFilter(['||example.com^$removeparam=foo']);
+            const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$removeparam=foo,badfilter');
+
+            const [{ ruleset }] = await converter.convert(
+                [filter],
+                { withSourceMap: true, badFilterRules: [badfilterRule] },
+            );
+
+            const declarativeRules = await ruleset.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(0);
         });
     });
 

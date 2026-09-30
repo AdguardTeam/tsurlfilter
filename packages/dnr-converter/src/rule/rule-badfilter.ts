@@ -9,9 +9,42 @@ import { OPTION_NAMES } from './option-names';
 import { stringArraysEqual, stringArraysHaveIntersection } from './string-utils';
 
 /**
+ * Modifiers whose written value must match for a `$badfilter` rule to negate
+ * another rule. Values are compared as written, because the rule text must match.
+ * `$domain` and `$denyallow` are compared separately, with domain normalization.
+ *
+ * Keep in sync with `VALUE_BEARING_OPTIONS` in `@adguard/tsurlfilter` (duplicated:
+ * tsurlfilter is a devDependency here). `$xmlprune` is listed only here.
+ */
+export const VALUE_BEARING_MODIFIERS: ReadonlySet<string> = new Set([
+    OPTION_NAMES.CSP,
+    OPTION_NAMES.REPLACE,
+    OPTION_NAMES.URLTRANSFORM,
+    OPTION_NAMES.COOKIE,
+    OPTION_NAMES.REDIRECT,
+    OPTION_NAMES.REDIRECTRULE,
+    OPTION_NAMES.REMOVEPARAM,
+    OPTION_NAMES.REMOVEHEADER,
+    OPTION_NAMES.PERMISSIONS,
+    OPTION_NAMES.CLIENT,
+    OPTION_NAMES.DNSREWRITE,
+    OPTION_NAMES.DNSTYPE,
+    OPTION_NAMES.CTAG,
+    OPTION_NAMES.HEADER,
+    OPTION_NAMES.METHOD,
+    OPTION_NAMES.TO,
+    OPTION_NAMES.STEALTH,
+    OPTION_NAMES.APP,
+    OPTION_NAMES.JSONPRUNE,
+    OPTION_NAMES.XMLPRUNE,
+    OPTION_NAMES.HLS,
+    OPTION_NAMES.REFERRERPOLICY,
+]);
+
+/**
  * Minimal structural interface required by {@link RuleBadfilter.negates}.
- * Any object that has these fields (including {@link ParsedNetworkRule}) can be
- * passed without creating a circular module dependency.
+ * Any object that has these fields (including {@link Rule}) can be passed
+ * without creating a circular module dependency.
  */
 interface BadfilterTarget {
     readonly enabledModifiers: ReadonlySet<string>;
@@ -23,6 +56,7 @@ interface BadfilterTarget {
     readonly restrictedDomains: string[] | null;
     readonly permittedDomains: string[] | null;
     readonly denyAllowDomains: string[] | null;
+    readonly rawValueModifiers: ReadonlyMap<string, string>;
 }
 
 /**
@@ -47,6 +81,7 @@ export class RuleBadfilter {
      * - the same allowlist flag,
      * - the same pattern,
      * - the same enabled modifiers (excluding `$badfilter` itself),
+     * - the same written values of the value-bearing modifiers,
      * - the same disabled modifiers,
      * - the same permitted/restricted resource types,
      * - the same restricted domains,
@@ -87,6 +122,16 @@ export class RuleBadfilter {
         const sameModifiers = [...badfilterEnabled].every((m) => targetRule.enabledModifiers.has(m));
         if (!sameSize || !sameModifiers) {
             return false;
+        }
+
+        if (badfilterRule.rawValueModifiers.size !== targetRule.rawValueModifiers.size) {
+            return false;
+        }
+
+        for (const [name, value] of badfilterRule.rawValueModifiers) {
+            if (targetRule.rawValueModifiers.get(name) !== value) {
+                return false;
+            }
         }
 
         // Compare disabled modifiers.

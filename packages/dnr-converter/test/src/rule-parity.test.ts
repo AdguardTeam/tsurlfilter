@@ -324,6 +324,69 @@ describe('$badfilter detection and negation parity', () => {
         expect(dnrBf.negatesBadfilter(dnrOther)).toBe(false);
         expect(tsBf.negatesBadfilter(tsOther)).toBe(false);
     });
+
+    it.each([
+        // Advanced modifier values.
+        ['||example.com^$removeparam=foo', '||example.com^$removeparam=foo,badfilter', true],
+        ['||example.com^$removeparam=bar', '||example.com^$removeparam=foo,badfilter', false],
+        ['||example.com^$removeparam', '||example.com^$removeparam,badfilter', true],
+        ['||example.com^$removeparam', '||example.com^$removeparam=foo,badfilter', false],
+        ["||example.com^$csp=script-src 'self'", "||example.com^$csp=script-src 'self',badfilter", true],
+        ["||example.com^$csp=script-src 'none'", "||example.com^$csp=script-src 'self',badfilter", false],
+        ['||example.com^$redirect=nooptext', '||example.com^$redirect=noopjs,badfilter', false],
+        // $redirect and $redirect-rule share one option flag but are different modifiers.
+        ['||example.com^$redirect=nooptext', '||example.com^$redirect-rule=nooptext,badfilter', false],
+        ['||example.com^$redirect-rule=nooptext', '||example.com^$redirect-rule=nooptext,badfilter', true],
+        // $header, $method and $to values.
+        ['||example.com^$header=set-cookie:/a/', '||example.com^$header=set-cookie:/a/,badfilter', true],
+        ['||example.com^$header=set-cookie:/a/', '||example.com^$header=set-cookie:/b/,badfilter', false],
+        ['||example.com^$header=set-cookie', '||example.com^$header=referer,badfilter', false],
+        ['||example.com^$method=GET', '||example.com^$method=GET,badfilter', true],
+        ['||example.com^$method=GET', '||example.com^$method=POST,badfilter', false],
+        ['||example.com^$to=a.com', '||example.com^$to=a.com,badfilter', true],
+        ['||example.com^$to=a.com', '||example.com^$to=b.com,badfilter', false],
+        // Values are compared as written: spellings that are equivalent after
+        // parsing must not negate each other in either engine.
+        ['||example.com^$removeheader=Set-Cookie', '||example.com^$removeheader=set-cookie,badfilter', false],
+        ['||example.com^$to=Example.com', '||example.com^$to=example.com,badfilter', false],
+        ['||example.com^$method=GET', '||example.com^$method=get,badfilter', false],
+        ['||example.com^$method=GET|POST', '||example.com^$method=POST|GET,badfilter', false],
+        ['||example.com^$to=a.com|b.com', '||example.com^$to=b.com|a.com,badfilter', false],
+        [
+            '||example.com^$permissions=fullscreen=()\\,document-domain=()',
+            '||example.com^$permissions=fullscreen=()|document-domain=(),badfilter',
+            false,
+        ],
+        // $app values are compared in MV2 and MV3 alike.
+        ['||example.com^$app=a|b', '||example.com^$app=b|a,badfilter', false],
+        ['||example.com^$app=a|b', '||example.com^$app=a|b,badfilter', true],
+        // $permissions values (AG-36226 / AdguardBrowserExtension#2961).
+        ['||example.com^$permissions=fullscreen=()', '||example.com^$permissions=fullscreen=(),badfilter', true],
+        [
+            '||example.com^$permissions=document-domain=()',
+            '||example.com^$permissions=fullscreen=(),badfilter',
+            false,
+        ],
+        // $header regexp and restricted $method/$to values.
+        ['||example.com^$header=x:/foo/', '||example.com^$header=x:/foo/,badfilter', true],
+        ['||example.com^$header=x:/foo/', '||example.com^$header=x:foo,badfilter', false],
+        ['||example.com^$method=~HEAD', '||example.com^$method=~GET,badfilter', false],
+        ['||example.com^$to=~a.com', '||example.com^$to=~b.com,badfilter', false],
+        // Values are taken from the rule text, before conversion to AG syntax,
+        // so resource aliases and priority suffixes are compared as written.
+        ['||example.com^$redirect=noop.js', '||example.com^$redirect=noopjs,badfilter', false],
+        ['||example.com^$redirect=noop.js:99', '||example.com^$redirect=noop.js,badfilter', false],
+        ['||example.com^$empty', '||example.com^$redirect=nooptext,badfilter', false],
+        ['||example.com^$redirect=noopjs', '||example.com^$redirect=noopjs,badfilter', true],
+    ])('MV2 and MV3 agree on negation for target %s vs badfilter %s', (targetText, badfilterText, expected) => {
+        const [dnrBadfilter] = Rule.createFromText(1, 0, badfilterText);
+        const [dnrTarget] = Rule.createFromText(1, 0, targetText);
+        const tsBadfilter = new NetworkRule(badfilterText, 1);
+        const tsTarget = new NetworkRule(targetText, 1);
+
+        expect(dnrBadfilter.negatesBadfilter(dnrTarget)).toBe(expected);
+        expect(tsBadfilter.negatesBadfilter(tsTarget)).toBe(expected);
+    });
 });
 
 // ---------------------------------------------------------------------------
