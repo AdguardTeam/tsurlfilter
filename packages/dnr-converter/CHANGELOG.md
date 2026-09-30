@@ -19,7 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Named `$removeparam` rules with a literal URL pattern ending in `^` missed
   the first query parameter in MV3. They now match parameters in every query
-  position while preserving the URL scope and redirect chaining.
+  position while preserving the URL scope and redirect chaining
+  [AdguardBrowserExtension#3615].
+
+[AdguardBrowserExtension#3615]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3615
 
 ### Security
 
