@@ -27,7 +27,7 @@ describe('load', () => {
     const dest = 'dest';
     const src = 'src';
     const to = 'to';
-    const filtersRelativePath = '../filters/chromium-mv3';
+    const browser = BrowserFilters.ChromiumMv3;
 
     const mockResolve = vi.mocked(path.resolve);
     const mockCopy = vi.mocked(copy);
@@ -51,7 +51,7 @@ describe('load', () => {
         expect(mockResolve).toHaveBeenCalledTimes(2);
         expect(cwdSpy).toHaveBeenCalledTimes(1);
         expect(mockResolve).toHaveBeenCalledWith('cwd', dest);
-        expect(mockResolve).toHaveBeenCalledWith(expect.any(String), filtersRelativePath);
+        expect(mockResolve).toHaveBeenCalledWith(expect.any(String), browser);
         expect(mockCopy).toHaveBeenCalledTimes(1);
         expect(mockCopy).toHaveBeenCalledWith(src, to, {});
     });
@@ -68,7 +68,7 @@ describe('load', () => {
         expect(mockResolve).toHaveBeenCalledWith('cwd', dest);
         expect(mockResolve).toHaveBeenCalledWith(
             expect.any(String),
-            '../filters/edge-mv3',
+            BrowserFilters.EdgeMv3,
         );
         expect(mockCopy).toHaveBeenCalledTimes(1);
         expect(mockCopy).toHaveBeenCalledWith(src, to, {});
@@ -82,7 +82,7 @@ describe('load', () => {
         expect(mockResolve).toHaveBeenCalledTimes(2);
         expect(cwdSpy).toHaveBeenCalledTimes(1);
         expect(mockResolve).toHaveBeenCalledWith('cwd', dest);
-        expect(mockResolve).toHaveBeenCalledWith(expect.any(String), filtersRelativePath);
+        expect(mockResolve).toHaveBeenCalledWith(expect.any(String), browser);
         expect(mockCopy).toHaveBeenCalledTimes(1);
         expect(mockCopy).toHaveBeenCalledWith(src, to, {
             filter: expect.any(Function),
@@ -116,7 +116,7 @@ describe('load', () => {
         expect(mockResolve).toHaveBeenCalledTimes(2);
         expect(cwdSpy).toHaveBeenCalledTimes(1);
         expect(mockResolve).toHaveBeenCalledWith('cwd', dest);
-        expect(mockResolve).toHaveBeenCalledWith(expect.any(String), filtersRelativePath);
+        expect(mockResolve).toHaveBeenCalledWith(expect.any(String), browser);
         expect(mockCopy).toHaveBeenCalledTimes(1);
         expect(mockCopy).toHaveBeenCalledWith(src, to, {});
     });

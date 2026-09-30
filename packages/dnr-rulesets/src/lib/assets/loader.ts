@@ -9,7 +9,12 @@ import { startDownload } from '../../../common/filters-downloader';
 import { LocalScriptRulesJs } from '../../common/local-script-rules-js';
 import { LocalScriptRulesJson } from '../../common/local-script-rules-json';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+/**
+ * Packaged assets are beside the CJS CLI and one level above the ESM library.
+ */
+const filtersDir = typeof __dirname === 'string'
+    ? path.join(__dirname, 'filters')
+    : fileURLToPath(new URL('../filters', import.meta.url));
 
 // Re-export constants
 export const LOCAL_SCRIPT_RULES_JS_FILENAME = LocalScriptRulesJs.FILENAME;
@@ -73,7 +78,7 @@ export class AssetsLoader {
             return;
         }
 
-        const src = path.resolve(__dirname, `../filters/${browser}`);
+        const src = path.resolve(filtersDir, browser);
 
         console.log(`Copying rulesets and local script rules from ${src} to ${to}`);
 
@@ -110,7 +115,7 @@ export class AssetsLoader {
         }
 
         const to = path.resolve(process.cwd(), dest);
-        const src = path.resolve(__dirname, `../filters/${browser}`, LOCAL_SCRIPT_RULES_JS_FILENAME);
+        const src = path.resolve(filtersDir, browser, LOCAL_SCRIPT_RULES_JS_FILENAME);
 
         console.log(`Copying local script rules JS from ${src} to ${to}`);
 
@@ -134,7 +139,7 @@ export class AssetsLoader {
         }
 
         const to = path.resolve(process.cwd(), dest);
-        const src = path.resolve(__dirname, `../filters/${browser}`, LOCAL_SCRIPT_RULES_JSON_FILENAME);
+        const src = path.resolve(filtersDir, browser, LOCAL_SCRIPT_RULES_JSON_FILENAME);
 
         console.log(`Copying local script rules JSON from ${src} to ${to}`);
 
