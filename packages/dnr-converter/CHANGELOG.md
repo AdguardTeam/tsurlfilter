@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Named `$removeparam` rules with a literal URL pattern ending in `^` missed
+  the first query parameter in MV3. They now match parameters in every query
+  position while preserving the URL scope and redirect chaining.
+
 ### Security
 
 ## [1.1.2] - 2026-08-25

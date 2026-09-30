@@ -93,6 +93,7 @@
 /* eslint-enable jsdoc/no-multi-asterisks */
 /* eslint-enable max-len */
 import { RuleGenerator } from '@adguard/agtree/generator';
+import { ADBLOCK_URL_SEPARATOR, ADBLOCK_URL_SEPARATOR_REGEX, RegExpUtils } from '@adguard/agtree/utils';
 import { getRedirectFilename } from '@adguard/scriptlets/redirects';
 
 import {
@@ -637,16 +638,32 @@ export class RegularRuleConverter {
             }
         }
 
-        // For $removeparam rules with a specific named parameter, append
-        // a param-aware token to urlFilter so that the rule only matches
-        // when the target parameter is present in the URL query string.
+        // For $removeparam rules with a specific named parameter, add
+        // a parameter-aware URL condition that stops matching after removal.
         // This enables Chrome DNR to chain multiple redirect hops,
         // stripping one parameter per hop until all are removed.
         if (rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
             const paramToken = RegularRuleConverter.getRemoveParamToken(rule);
             if (paramToken !== null) {
                 if (condition.urlFilter) {
-                    condition.urlFilter += `*${paramToken}`;
+                    const prefix = condition.urlFilter.slice(0, -ADBLOCK_URL_SEPARATOR.length);
+                    if (
+                        condition.urlFilter.endsWith(ADBLOCK_URL_SEPARATOR)
+                        && !/[*?#^]/.test(prefix)
+                    ) {
+                        // Share the trailing separator with the query delimiter when the parameter is first.
+                        // Require a query boundary so paths, fragments and values cannot cause a no-op redirect.
+                        const patternRegexp = RegExpUtils.patternToRegexp(condition.urlFilter);
+                        const prefixRegexp = patternRegexp.slice(0, -ADBLOCK_URL_SEPARATOR_REGEX.length);
+                        const paramRegexp = RegExpUtils.patternToRegexp(paramToken);
+                        const paramNameRegexp = paramRegexp.slice(ADBLOCK_URL_SEPARATOR_REGEX.length);
+                        const pathSeparator = '[^ a-zA-Z0-9.%_?#-]';
+                        condition.regexFilter = `${prefixRegexp}(?:${pathSeparator}[^?#]*)?`
+                            + `\\?(?:[^#]*&)?${paramNameRegexp}`;
+                        delete condition.urlFilter;
+                    } else {
+                        condition.urlFilter += `*${paramToken}`;
+                    }
                 } else if (!condition.regexFilter) {
                     condition.urlFilter = paramToken;
                 }

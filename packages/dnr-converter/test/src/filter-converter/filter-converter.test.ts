@@ -1,10 +1,16 @@
 import {
+    afterEach,
+    beforeEach,
     describe,
     expect,
     it,
     vi,
 } from 'vitest';
 
+import { RE2 } from '@adguard/re2-wasm';
+import { SimpleRegex } from '@adguard/tsurlfilter';
+
+import { type RuleCondition } from '../../../src/declarative-rule/rule-condition';
 import { UnsupportedModifierError } from '../../../src/errors/conversion-errors';
 import {
     EmptyOrNegativeNumberOfRulesError,
@@ -16,6 +22,7 @@ import { Filter } from '../../../src/filter/filter';
 import { type IFilter } from '../../../src/filter/types';
 import { FilterConverter } from '../../../src/filter-converter/filter-converter';
 import { re2Validator } from '../../../src/re2-regexp/re2-validator';
+import { regexValidatorNode } from '../../../src/re2-regexp/regex-validator-node';
 
 /**
  * Creates a test IFilter from an array of rule strings.
@@ -36,8 +43,31 @@ const createFilter = (rules: string[], filterId = 0): IFilter => {
     };
 };
 
+/**
+ * Creates a matcher for the URL pattern of a converted DNR condition.
+ *
+ * @param condition Converted DNR condition.
+ *
+ * @returns Matcher using RE2 for regex filters and the shared basic-pattern syntax for URL filters.
+ */
+const createUrlMatcher = (condition: RuleCondition): RegExp | RE2 => {
+    const { urlFilter, regexFilter, isUrlFilterCaseSensitive } = condition;
+    const flags = isUrlFilterCaseSensitive ? '' : 'i';
+    return regexFilter
+        ? new RE2(regexFilter, `${flags}u`)
+        : new RegExp(SimpleRegex.patternToRegexp(urlFilter!), flags);
+};
+
 describe('FilterConverter', () => {
     const converter = new FilterConverter();
+
+    beforeEach(() => {
+        vi.spyOn(re2Validator, 'isRegexSupported').mockImplementation(regexValidatorNode);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
 
     describe('convert (single filter)', () => {
         it('converts network rules to declarative rules', async () => {
@@ -106,6 +136,136 @@ describe('FilterConverter', () => {
                     },
                 },
             });
+        });
+
+        it.each([
+            ['first', '?cvid=tracking&q=adguard', '?q=adguard'],
+            ['middle', '?q=adguard&cvid=tracking&form=QBRE', '?q=adguard&form=QBRE'],
+            ['last', '?q=adguard&cvid=tracking', '?q=adguard'],
+            ['only', '?cvid=tracking', ''],
+        ])('removes a named parameter in the %s query position', async (_, query, expectedQuery) => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter(['||bing.com/search^$removeparam=cvid']),
+            ]);
+            expect(errors).toEqual([]);
+
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const regexp = createUrlMatcher(declarativeRule.condition);
+            const url = new URL(`https://bing.com/search${query}`);
+
+            expect(regexp.test(url.href)).toBe(true);
+            const removeParams = declarativeRule.action.redirect?.transform?.queryTransform?.removeParams;
+            expect(removeParams).toEqual(['cvid']);
+            removeParams!.forEach((param) => url.searchParams.delete(param));
+            expect(url.href).toBe(`https://bing.com/search${expectedQuery}`);
+            expect(regexp.test(url.href)).toBe(false);
+        });
+
+        it.each([
+            'https://bing.com/search?q=adguard',
+            'https://bing.com/search?other_cvid=tracking',
+            'https://bing.com/search?cvid_extra=tracking',
+            'https://bing.com/search/cvid=tracking?control=keep',
+            'https://bing.com/search?control=keep#cvid=tracking',
+            'https://bing.com/search#?cvid=tracking',
+            'https://bing.com/search?q=?cvid=tracking',
+            'https://bing.com:8443/search?cvid=tracking',
+            'https://bing.com/searchother?cvid=tracking',
+            'https://bing.com/other?cvid=tracking',
+            'https://other.example/search?cvid=tracking',
+        ])('keeps named parameter removal scoped for %s', async (url) => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter(['||bing.com/search^$removeparam=cvid']),
+            ]);
+            expect(errors).toEqual([]);
+
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const regexp = createUrlMatcher(declarativeRule.condition);
+
+            expect(regexp.test(url)).toBe(false);
+        });
+
+        it.each([
+            '||bing.com^$removeparam=cvid',
+            '|https://bing.com/search^$removeparam=cvid',
+            '||bing.com/search^$removeparam=%63vid',
+        ])('matches the first parameter for %s', async (rule) => {
+            const [{ ruleset, errors }] = await converter.convert([createFilter([rule])]);
+            expect(errors).toEqual([]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const regexp = createUrlMatcher(declarativeRule.condition);
+
+            expect(regexp.test('https://bing.com/search?cvid=tracking&q=adguard')).toBe(true);
+            expect(regexp.test('https://bing.com/search?q=adguard')).toBe(false);
+        });
+
+        it.each([
+            'https://www.bing.com/search?cvid=tracking',
+            'https://bing.com/search/subpage?cvid=tracking',
+        ])('retains the original scope for %s', async (url) => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter(['||bing.com/search^$removeparam=cvid']),
+            ]);
+            expect(errors).toEqual([]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const regexp = createUrlMatcher(declarativeRule.condition);
+
+            expect(regexp.test(url)).toBe(true);
+        });
+
+        it('escapes punctuation in named parameters', async () => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter(['||bing.com/search^$removeparam=cvid.foo']),
+            ]);
+            expect(errors).toEqual([]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const regexp = createUrlMatcher(declarativeRule.condition);
+
+            expect(regexp.test('https://bing.com/search?cvid.foo=tracking')).toBe(true);
+            expect(regexp.test('https://bing.com/search?cvidXfoo=tracking')).toBe(false);
+        });
+
+        it.each([
+            '||bing.com/search$removeparam=cvid',
+            '$removeparam=cvid,domain=bing.com',
+            '||bing.com/search^$removeparam',
+            '||bing.com/search^$removeparam=cvid|form',
+            '||bing.com/search*^$removeparam=cvid',
+            '||bing.com/search?q=adguard^$removeparam=cvid',
+            '||bing.com/search#fragment^$removeparam=cvid',
+            '||bing.com/search^path^$removeparam=cvid',
+        ])('keeps unaffected %s rules within the non-regex rule quota', async (rule) => {
+            const [{ ruleset, errors }] = await converter.convert([createFilter([rule])]);
+            expect(errors).toEqual([]);
+            expect(ruleset.getDeclarativeRules()).toHaveLength(1);
+            expect(ruleset.getRegexpRulesCount()).toBe(0);
+        });
+
+        it('chains named parameter redirects without repeating a completed removal', async () => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter([
+                    '||bing.com/search^$removeparam=cvid',
+                    '||bing.com/search^$removeparam=form',
+                ]),
+            ]);
+            expect(errors).toEqual([]);
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(2);
+            const url = new URL('https://bing.com/search?cvid=tracking&q=adguard&form=QBRE');
+
+            for (let hop = 0; hop < 2; hop += 1) {
+                const matchingRules = declarativeRules.filter((rule) => (
+                    createUrlMatcher(rule.condition).test(url.href)
+                ));
+                expect(matchingRules).toHaveLength(2 - hop);
+                const [matchingRule] = matchingRules;
+                const removeParams = matchingRule.action.redirect?.transform?.queryTransform?.removeParams;
+                expect(removeParams).toHaveLength(1);
+                removeParams!.forEach((param) => url.searchParams.delete(param));
+            }
+
+            expect(url.href).toBe('https://bing.com/search?q=adguard');
+            expect(declarativeRules.some((rule) => createUrlMatcher(rule.condition).test(url.href))).toBe(false);
         });
 
         it('reports a conversion error (not a block) for an undecodable $removeparam value', async () => {

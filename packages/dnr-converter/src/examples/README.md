@@ -3922,11 +3922,17 @@ Allowlist rules are not supported
 <br/>
 Regexps, negation and allow-rules are not supported
 <br/>
-Each rule generates a param-aware urlFilter condition (e.g., ^utm_source=)
+Named parameter rules generate a param-aware URL condition (e.g., ^utm_source=)
 so that Chrome DNR can chain multiple redirect hops, stripping one parameter
 per hop until all matching parameters are removed. Rules with different
 parameter names are no longer merged into a single DNR rule — this is by
 design, as merging would prevent multi-hop chaining across priority levels.
+<br/>
+A literal URL pattern ending in `^` uses a regexFilter so that the final
+separator can also delimit the first query parameter. These rules count
+toward Chrome's regex rule quota and are subject to its regex size limit.
+Patterns containing wildcards, query or fragment markers, or additional
+separators retain the existing urlFilter conversion.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -4191,6 +4197,42 @@ $xmlhttprequest,removeparam=p1case2
       ]
     },
     "priority": 101
+  }
+]
+```
+example 11
+A trailing separator matches a named parameter in any query position.
+
+```adblock
+||bing.com/search^$removeparam=cvid
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+  {
+    "id": 558428575,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "transform": {
+          "queryTransform": {
+            "removeParams": [
+              "cvid"
+            ]
+          }
+        }
+      }
+    },
+    "condition": {
+      "regexFilter": "^(http|https|ws|wss)://([a-z0-9-_.]+\\.)?bing\\.com\\/search(?:[^ a-zA-Z0-9.%_?#-][^?#]*)?\\?(?:[^#]*&)?cvid=",
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame"
+      ]
+    },
+    "priority": 1
   }
 ]
 ```
