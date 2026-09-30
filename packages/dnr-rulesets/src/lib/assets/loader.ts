@@ -10,11 +10,12 @@ import { LocalScriptRulesJs } from '../../common/local-script-rules-js';
 import { LocalScriptRulesJson } from '../../common/local-script-rules-json';
 
 /**
- * Packaged assets are beside the CJS CLI and one level above the ESM library.
+ * Rollup supplies the filters path for each output; source imports use the ESM layout.
  */
-const filtersDir = typeof __dirname === 'string'
-    ? path.join(__dirname, 'filters')
-    : fileURLToPath(new URL('../filters', import.meta.url));
+const filtersDir = fileURLToPath(new URL(
+    (import.meta as ImportMeta & { filtersRelativePath?: string }).filtersRelativePath ?? '../filters',
+    import.meta.url,
+));
 
 // Re-export constants
 export const LOCAL_SCRIPT_RULES_JS_FILENAME = LocalScriptRulesJs.FILENAME;

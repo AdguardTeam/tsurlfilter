@@ -6,12 +6,13 @@ import path from 'node:path';
 import { before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { AssetsLoader } from '@adguard/dnr-rulesets';
+import { AssetsLoader, BrowserFilters } from '@adguard/dnr-rulesets';
 
 const libraryUrl = import.meta.resolve('@adguard/dnr-rulesets');
 const filtersPath = fileURLToPath(new URL('../filters/', libraryUrl));
 const cliPath = fileURLToPath(new URL('../cli.cjs', libraryUrl));
-const browsers = ['chromium-mv3', 'edge-mv3', 'opera-mv3'];
+const packagePath = fileURLToPath(new URL('../../', libraryUrl));
+const browsers = Object.values(BrowserFilters);
 
 /**
  * Create distinct packaged assets for each browser without downloading filters.
@@ -83,7 +84,7 @@ for (const browser of browsers) {
     test(`CLI load copies ${browser} assets from the installed package`, async (context) => {
         const cwd = await createWorkingDirectory(context);
         const args = [cliPath, 'load', 'output'];
-        if (browser !== 'chromium-mv3') {
+        if (browser !== BrowserFilters.ChromiumMv3) {
             args.push('--browser', browser);
         }
         const result = spawnSync(process.execPath, args, { cwd, encoding: 'utf8' });
@@ -100,6 +101,31 @@ for (const browser of browsers) {
     });
 }
 
+for (const unrelatedAssets of [false, true]) {
+    test(`CommonJS eval imports packaged assets with unrelated cwd assets: ${unrelatedAssets}`, async (context) => {
+        const cwd = await createWorkingDirectory(context);
+        const nodeModulesPath = path.join(cwd, 'node_modules', '@adguard');
+        await fs.mkdir(nodeModulesPath, { recursive: true });
+        await fs.symlink(packagePath, path.join(nodeModulesPath, 'dnr-rulesets'));
+
+        if (unrelatedAssets) {
+            const unrelatedPath = path.join(cwd, 'filters', BrowserFilters.ChromiumMv3);
+            await fs.mkdir(unrelatedPath, { recursive: true });
+            await fs.writeFile(path.join(unrelatedPath, 'unrelated.txt'), 'Unrelated working directory assets');
+        }
+
+        const script = `
+            import('@adguard/dnr-rulesets')
+                .then(({ AssetsLoader }) => new AssetsLoader().load('output'))
+                .catch((error) => { console.error(error); process.exitCode = 1; });
+        `;
+        const result = spawnSync(process.execPath, ['-e', script], { cwd, encoding: 'utf8' });
+        assert.equal(result.error, undefined);
+        assert.equal(result.status, 0, result.stderr);
+        assert.deepEqual(await readAssets(path.join(cwd, 'output')), assetsFor(BrowserFilters.ChromiumMv3));
+    });
+}
+
 test('CLI load --only-declarative-rulesets excludes auxiliary assets', async (context) => {
     const cwd = await createWorkingDirectory(context);
     const result = spawnSync(process.execPath, [cliPath, 'load', 'output', '--only-declarative-rulesets'], {
@@ -110,7 +136,7 @@ test('CLI load --only-declarative-rulesets excludes auxiliary assets', async (co
     assert.equal(result.status, 0, result.stderr);
     const filename = 'declarative/ruleset_1/ruleset_1.json';
     assert.deepEqual(await readAssets(path.join(cwd, 'output')), {
-        [filename]: assetsFor('chromium-mv3')[filename],
+        [filename]: assetsFor(BrowserFilters.ChromiumMv3)[filename],
     });
 });
 
@@ -121,7 +147,7 @@ test('ESM AssetsLoader copies individual local script rule files', async (contex
     const jsonPath = path.join(cwd, 'local_script_rules.json');
     await loader.copyLocalScriptRulesJs(jsPath);
     await loader.copyLocalScriptRulesJson(jsonPath);
-    const assets = assetsFor('chromium-mv3');
+    const assets = assetsFor(BrowserFilters.ChromiumMv3);
     assert.equal(await fs.readFile(jsPath, 'utf8'), assets['local_script_rules.js']);
     assert.equal(await fs.readFile(jsonPath, 'utf8'), assets['local_script_rules.json']);
 });
@@ -141,7 +167,7 @@ test('CLI load reports a copy failure with a nonzero exit status', async (contex
 
 test('CLI load reports missing packaged assets with a nonzero exit status', async (context) => {
     const cwd = await createWorkingDirectory(context);
-    const browserPath = path.join(filtersPath, 'chromium-mv3');
+    const browserPath = path.join(filtersPath, BrowserFilters.ChromiumMv3);
     const backupPath = `${browserPath}-backup`;
     await fs.rename(browserPath, backupPath);
     try {
