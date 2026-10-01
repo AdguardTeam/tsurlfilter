@@ -17,11 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed cosmetic rules with multiple domains in the `$domain` modifier not
+  applying on permitted domains [AdguardBrowserExtension#3605].
+- Fixed duplicate cosmetic rule matches for overlapping domain restrictions
+  [AdguardBrowserExtension#3605].
 - Domain-scoped cosmetic and JavaScript rules not matching hosts with labels
   ending in an underscore.
 
 [Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.3...HEAD
 [#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
+[AdguardBrowserExtension#3605]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3605
 
 ## [6.0.3] - 2026-08-25
 
