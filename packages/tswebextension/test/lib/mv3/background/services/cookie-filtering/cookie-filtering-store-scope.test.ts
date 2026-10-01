@@ -14,6 +14,7 @@ import {
     RequestType,
 } from '@adguard/tsurlfilter';
 
+import { defaultFilteringLog, FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 import {
     type RequestContext,
@@ -330,6 +331,30 @@ describe('CookieFiltering cookie store scope, MV3 (AG-55093)', () => {
         expect(cookiesStub.getAll).not.toHaveBeenCalled();
         expect(cookiesStub.set).not.toHaveBeenCalled();
         expect(cookiesStub.remove).not.toHaveBeenCalled();
+    });
+
+    it('records allowlist cookie events when the store scope is unresolved', async () => {
+        const allowlistRule = createNetworkRule('@@||example.org^$cookie=c_user', 1);
+        detectorState.isFirefox = false;
+
+        getTabIncognitoStateMock.mockImplementation((tabId) => tabId === 5);
+        // Only the regular store is reported (e.g. the incognito store is gone).
+        cookiesStub.getAllCookieStores.mockResolvedValue([{ id: '0', tabIds: [1] }]);
+
+        await runRequestCase(
+            [allowlistRule],
+            'c_user=test_value',
+            { tabId: 5 },
+        );
+
+        expect(cookiesStub.remove).not.toHaveBeenCalled();
+        expect(defaultFilteringLog.publishEvent).toHaveBeenCalledWith(expect.objectContaining({
+            type: FilteringEventType.Cookie,
+            data: expect.objectContaining({
+                cookieName: 'c_user',
+                isAllowlist: true,
+            }),
+        }));
     });
 
     it('does not resolve the store scope when no cookie rules matched', async () => {

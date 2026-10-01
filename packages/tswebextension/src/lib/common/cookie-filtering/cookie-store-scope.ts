@@ -162,8 +162,11 @@ const resolveTabIncognitoState = async (
  *
  * Residual limitations, all deliberately conservative:
  * - Chromium spanning mode: requests not tied to a tab (e.g. service worker
- *   requests) have no private-browsing signal, so they skip the jar while an
- *   incognito store exists and use the default store otherwise;
+ *   requests) have no private-browsing signal, and `getAllCookieStores()`
+ *   reports the incognito store only while an incognito tab is open, so they
+ *   skip the jar only while an incognito tab is open; an incognito service
+ *   worker request in flight right after the last incognito tab closes can
+ *   still use the default store;
  * - Chromium spanning mode: if the tab state cannot be determined even by the
  *   browser (`tabs.get` fails), or the store list cannot be retrieved, the
  *   cookie jar is left untouched — a private request must not fall back to
@@ -220,9 +223,11 @@ export const resolveCookieStoreScope = async (
 
     if (tabId === undefined || tabId === BACKGROUND_TAB_ID) {
         // A request not tied to a tab (e.g. a service worker fetch) carries no
-        // private-browsing signal. When an incognito store exists it may
-        // originate from a private context, so fail closed; when only the
-        // regular store exists, the request cannot be private.
+        // private-browsing signal. `getAllCookieStores()` reports the
+        // incognito store only while an incognito tab is open, so when the
+        // list holds only the regular store no incognito tab is open; a
+        // private request that outlives the last incognito tab can still use
+        // the default store (see the residual limitations above).
         const stores = await getCookieStoresSafe();
 
         if (stores === null || stores.some((store) => store.id !== ORIGINAL_PROFILE_STORE_ID)) {

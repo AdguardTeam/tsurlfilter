@@ -393,8 +393,9 @@ export class CookieFiltering {
         );
 
         if (scope === null) {
-            logger.debug('[tsweb.CookieFiltering.applyRules]: cookie store scope is unresolved, skipping jar operations: ', requestUrl, tabId);
-            return;
+            // The jar gate is in BrowserCookieApi; keep applying the rules so
+            // allowlist events still reach the filtering log.
+            logger.debug('[tsweb.CookieFiltering.applyRules]: cookie store scope is unresolved, jar operations will be skipped: ', requestUrl, tabId);
         }
 
         const promises = cookiesSnapshot.map(async (cookie) => {
