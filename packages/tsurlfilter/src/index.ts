@@ -34,7 +34,13 @@ export { fetchExtensionResourceText } from './utils/resource-fetch';
 export { RuleSyntaxUtils } from './utils/rule-syntax-utils';
 export { HTTPMethod } from './modifiers/method-modifier';
 export { StealthOptionName, STEALTH_MODE_FILTER_ID } from './modifiers/stealth-modifier';
-export { NETWORK_RULE_OPTIONS, OPTIONS_DELIMITER } from './rules/network-rule-options';
+export {
+    NETWORK_RULE_OPTIONS,
+    OPTIONS_DELIMITER,
+    SOURCE_SYNTAX_ALIASES,
+    VALUE_BEARING_OPTIONS,
+    type WrittenModifier,
+} from './rules/network-rule-options';
 export { StringRuleList } from './filterlist/string-rule-list';
 export { createAllowlistRuleNode } from './rules/allowlist';
 export {

@@ -9,7 +9,13 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { NetworkRule, NetworkRuleOption, RequestType } from '@adguard/tsurlfilter';
+import {
+    Engine,
+    NetworkRule,
+    NetworkRuleOption,
+    Request,
+    RequestType,
+} from '@adguard/tsurlfilter';
 
 import { ResourceType } from '../../src/declarative-rule/rule-condition';
 import { OPTION_NAMES } from '../../src/rule/option-names';
@@ -333,6 +339,22 @@ describe('$badfilter detection and negation parity', () => {
         ['||example.com^$removeparam', '||example.com^$removeparam=foo,badfilter', false],
         ["||example.com^$csp=script-src 'self'", "||example.com^$csp=script-src 'self',badfilter", true],
         ["||example.com^$csp=script-src 'none'", "||example.com^$csp=script-src 'self',badfilter", false],
+        // Repeated modifiers are kept as separate entries, in the written order.
+        [
+            "||example.com^$csp=script-src 'self'",
+            "||example.com^$csp=script-src 'self',csp=img-src 'none',badfilter",
+            false,
+        ],
+        [
+            "||example.com^$csp=script-src 'self',csp=img-src 'none'",
+            "||example.com^$csp=script-src 'self',csp=img-src 'none',badfilter",
+            true,
+        ],
+        [
+            "||example.com^$csp=img-src 'none',csp=script-src 'self'",
+            "||example.com^$csp=script-src 'self',csp=img-src 'none',badfilter",
+            false,
+        ],
         ['||example.com^$redirect=nooptext', '||example.com^$redirect=noopjs,badfilter', false],
         // $redirect and $redirect-rule share one option flag but are different modifiers.
         ['||example.com^$redirect=nooptext', '||example.com^$redirect-rule=nooptext,badfilter', false],
@@ -387,6 +409,99 @@ describe('$badfilter detection and negation parity', () => {
         expect(dnrBadfilter.negatesBadfilter(dnrTarget)).toBe(expected);
         expect(tsBadfilter.negatesBadfilter(tsTarget)).toBe(expected);
     });
+});
+
+// ---------------------------------------------------------------------------
+// $badfilter through the MV2 engine
+// ---------------------------------------------------------------------------
+
+/**
+ * Matches a request against rules through the MV2 engine.
+ *
+ * @param rules Rule texts.
+ *
+ * @returns `true` when any rule was applied to the request.
+ */
+const matchesThroughEngine = (rules: string[]): boolean => {
+    const engine = Engine.createSync({
+        filters: [{ id: 1, content: rules.join('\n') }],
+    });
+    const result = engine.matchRequest(
+        new Request('https://example.com/', null, RequestType.Document),
+    );
+
+    const ruleLists = [
+        result.cspRules,
+        result.cookieRules,
+        result.replaceRules,
+        result.urlTransformRules,
+        result.redirectRules,
+        result.removeParamRules,
+        result.removeHeaderRules,
+        result.permissionsRules,
+        result.headerRules,
+        result.stealthRules,
+    ];
+
+    return result.basicRule !== null
+        || result.documentRule !== null
+        || ruleLists.some((list) => list !== null && list.length > 0);
+};
+
+/**
+ * Engine-level `$badfilter` cases: target rule text, badfilter rule text, and
+ * whether the badfilter rule is expected to negate the target.
+ */
+const ENGINE_BADFILTER_CASES: [target: string, badfilter: string, negated: boolean][] = [
+    // Source-syntax aliases are compared by the name as written.
+    ['||example.com^$queryprune=foo', '||example.com^$queryprune=foo,badfilter', true],
+    ['||example.com^$queryprune=bar', '||example.com^$queryprune=foo,badfilter', false],
+    ['||example.com^$queryprune=foo', '||example.com^$removeparam=foo,badfilter', false],
+    [
+        '||example.com^$rewrite=abp-resource:blank-js',
+        '||example.com^$rewrite=abp-resource:blank-js,badfilter',
+        true,
+    ],
+    ['||example.com^$rewrite=abp-resource:blank-js', '||example.com^$redirect=noopjs,badfilter', false],
+    // Values that conversion rewrites must not negate a differently written rule.
+    ['||example.com^$redirect=noop.js', '||example.com^$redirect=noopjs,badfilter', false],
+    ['||example.com^$empty', '||example.com^$redirect=nooptext,badfilter', false],
+    // Repeated modifiers are not collapsed and are order-sensitive.
+    [
+        "||example.com^$csp=script-src 'self'",
+        "||example.com^$csp=script-src 'self',csp=img-src 'none',badfilter",
+        false,
+    ],
+    [
+        "||example.com^$csp=script-src 'self',csp=img-src 'none'",
+        "||example.com^$csp=script-src 'self',csp=img-src 'none',badfilter",
+        true,
+    ],
+    [
+        "||example.com^$csp=img-src 'none',csp=script-src 'self'",
+        "||example.com^$csp=script-src 'self',csp=img-src 'none',badfilter",
+        false,
+    ],
+    // Unconverted rules keep negating as before.
+    ['||example.com^$removeparam=foo', '||example.com^$removeparam=foo,badfilter', true],
+    ['||example.com^$removeparam=bar', '||example.com^$removeparam=foo,badfilter', false],
+    ['||example.com^$redirect=noopjs', '||example.com^$redirect=noopjs,badfilter', true],
+];
+
+describe('badfilter negation through the MV2 engine', () => {
+    // `new NetworkRule(text)` used above bypasses the `FilterList` conversion,
+    // so that table exercises a path the product never takes: in the engine the
+    // rule text has already been converted to AG syntax. These cases go through
+    // the engine, and a `$badfilter` rule must negate exactly the same rules.
+    it.each(ENGINE_BADFILTER_CASES)(
+        'negates=%s for target %s vs badfilter %s',
+        (targetText, badfilterText, negated) => {
+            // The target rule must apply on its own, otherwise the check below
+            // would pass for the wrong reason.
+            expect(matchesThroughEngine([targetText])).toBe(true);
+            expect(matchesThroughEngine([targetText, badfilterText])).toBe(!negated);
+        },
+    );
 });
 
 // ---------------------------------------------------------------------------

@@ -300,6 +300,48 @@ describe('Ruleset', () => {
         expect(d2.find((d) => d.id === dRuleId)).toStrictEqual(d1[1]);
     });
 
+    it('keeps the written text of a $badfilter rule across serialization', async () => {
+        // `$queryprune` is rewritten to `$removeparam` before the rule reaches
+        // the ruleset, so the serialized text must not be the converted one:
+        // otherwise the restored rule is compared by a different modifier name
+        // and stops negating the rule it was written to disable.
+        const content = [
+            '||example.com^$queryprune=foo',
+            '||example.com^$queryprune=foo,badfilter',
+        ];
+        const filterId = 99;
+        const badFilterRuleIndex = content[0].length + 1;
+
+        const originalFilter = createFilter(content, filterId);
+        const ruleset = await createRuleset(content, filterId);
+
+        const compactOutput = await ruleset.serializeCompact([], true);
+        const parsedRuleset = JSON.parse(compactOutput) as DeclarativeRule[];
+        const metadataRule = parsedRuleset[0] as unknown as {
+            metadata: { metadata: unknown; lazyMetadata: unknown };
+        };
+        const { metadata, lazyMetadata } = metadataRule.metadata;
+
+        const {
+            data: { badFilterRulesRaw },
+        } = await RulesetWithSourceMap.deserialize(
+            ruleset.getId(),
+            JSON.stringify(metadata),
+            async () => JSON.stringify(lazyMetadata),
+            async () => JSON.stringify(parsedRuleset.slice(1)),
+            [originalFilter],
+        );
+
+        expect(badFilterRulesRaw).toStrictEqual([content[1]]);
+
+        const [badFilterRule] = badFilterRulesRaw.flatMap(
+            (rawString) => Rule.createFromText(filterId, badFilterRuleIndex, rawString),
+        );
+        const [targetRule] = Rule.createFromText(filterId, 0, content[0]);
+
+        expect(badFilterRule.negatesBadfilter(targetRule)).toBe(true);
+    });
+
     it('unloads content correctly', async () => {
         const content = [
             '||example.com^$document',

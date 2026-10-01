@@ -32,9 +32,11 @@ import { hasSpaces, stringArraysEquals, stringArraysHaveIntersection } from '../
 import {
     MASK_ALLOWLIST,
     NETWORK_RULE_OPTIONS,
+    NO_WRITTEN_MODIFIERS,
     NOT_MARK,
     OPTIONS_DELIMITER,
     VALUE_BEARING_OPTIONS,
+    type WrittenModifier,
 } from './network-rule-options';
 import { type NetworkRuleOption as NetworkRuleOptionType, OptionFlags } from './option-flags';
 import { Pattern } from './pattern';
@@ -470,16 +472,31 @@ export class NetworkRule implements IRule {
     private toModifier: IValueListModifier<string> | null = null;
 
     /**
-     * Values of value-bearing modifiers exactly as written in the rule text.
-     * A `$badfilter` rule requires the rule text to match, so these raw values
-     * are compared instead of the parsed (normalized) modifier state.
-     */
-    private readonly rawValueModifiers = new Map<string, string>();
-
-    /**
      * Rule Stealth modifier.
      */
     private stealthModifier: StealthModifier | null = null;
+
+    /**
+     * Value-bearing modifiers exactly as written in the original rule text, in
+     * order.
+     *
+     * A `$badfilter` rule requires the rule text to match, so these written
+     * entries are compared instead of the parsed (normalized) modifier state.
+     * Filled in the constructor when the rule was not converted: the parsed node
+     * is the original one then, so nothing has to be parsed twice.
+     */
+    private writtenModifiersCache: readonly WrittenModifier[] | null = null;
+
+    /**
+     * Rule text as written in the filter list, kept only when the rule was
+     * converted to another syntax.
+     *
+     * Conversion rewrites modifier names and values (for example
+     * `$queryprune=foo` becomes `$removeparam=foo`), so the written form has to
+     * be kept to collect {@link writtenModifiers} on demand. Indexed rules do
+     * not keep their text in memory, so this is set only when it is needed.
+     */
+    private readonly originalRuleText: string | null;
 
     /**
      * Rule priority, which is needed when the engine has to choose between
@@ -1347,6 +1364,8 @@ export class NetworkRule implements IRule {
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
      * the rule does not have source index.
      * @param node Optional pre-parsed network rule node to avoid re-parsing.
+     * @param originalRuleText Rule text as written in the filter list. Pass it only when the rule was
+     * converted to another syntax — otherwise the converted text is already the original one.
      *
      * @throws Error if it fails to parse the rule or if the rule is not a network rule.
      */
@@ -1355,6 +1374,7 @@ export class NetworkRule implements IRule {
         filterListId: number = FILTER_LIST_ID_NONE,
         ruleIndex: number = RULE_INDEX_NONE,
         node?: NetworkRuleNode,
+        originalRuleText?: string,
     ) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
@@ -1369,6 +1389,14 @@ export class NetworkRule implements IRule {
         // Use provided node or parse the rule text
         const parsedNode = node ?? NetworkRuleParser.parse(ruleText, NetworkRule.PARSER_OPTIONS);
         this.allowlist = parsedNode.exception;
+
+        // `$badfilter` compares the rule as written, so the text as written is
+        // used when the rule was converted to another syntax.
+        this.originalRuleText = originalRuleText ?? null;
+
+        if (this.originalRuleText === null) {
+            this.writtenModifiersCache = NetworkRule.collectWrittenModifiers(parsedNode);
+        }
 
         const pattern = parsedNode.pattern.value;
         if (pattern && hasSpaces(pattern)) {
@@ -1403,10 +1431,6 @@ export class NetworkRule implements IRule {
 
             if (option.value && option.value.value) {
                 value = option.value.value;
-            }
-
-            if (VALUE_BEARING_OPTIONS.has(option.name.value)) {
-                this.rawValueModifiers.set(option.name.value, value);
             }
 
             this.loadOption(option.name.value, value, option.exception);
@@ -1558,33 +1582,84 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * Checks whether this rule and the given rule have the same values of the
-     * value-bearing modifiers, exactly as written in the rule text.
+     * Checks whether this rule and the given rule have the same value-bearing
+     * modifiers, exactly as written in the rule text.
      *
-     * Raw values are used on purpose: a `$badfilter` rule disables a rule only
-     * when the rule text matches, so values that differ as written must not
-     * negate each other even if they are equivalent after parsing (for example
-     * `$removeheader=Set-Cookie` and `$removeheader=set-cookie`).
+     * Written entries are used on purpose: a `$badfilter` rule disables a rule
+     * only when the rule text matches, so modifiers that differ as written must
+     * not negate each other even if they are equivalent after parsing (for
+     * example `$removeheader=Set-Cookie` and `$removeheader=set-cookie`, or
+     * `$queryprune` and `$removeparam`).
      *
      * `$redirect` and `$redirect-rule` share one option flag, but they are
-     * distinct modifier names, so the map distinguishes them as well.
+     * distinct modifier names, so the list distinguishes them as well.
      *
      * @param specifiedRule Rule to compare with.
      *
      * @returns True if all value-bearing modifiers are equal.
      */
     private hasSameValueModifiers(specifiedRule: NetworkRule): boolean {
-        if (this.rawValueModifiers.size !== specifiedRule.rawValueModifiers.size) {
-            return false;
-        }
+        const own = this.writtenModifiers;
+        const other = specifiedRule.writtenModifiers;
 
-        for (const [name, value] of this.rawValueModifiers) {
-            if (specifiedRule.rawValueModifiers.get(name) !== value) {
-                return false;
+        return own.length === other.length
+            && own.every(([name, value], index) => (
+                other[index][0] === name && other[index][1] === value
+            ));
+    }
+
+    /**
+     * Returns value-bearing modifiers as written in the original rule text.
+     *
+     * The original text is parsed on demand: only a `$badfilter` comparison
+     * needs the written form, and re-parsing every converted rule up front would
+     * put that work on the rule construction path.
+     *
+     * @returns Written value-bearing modifiers, in the order of the rule text.
+     */
+    private get writtenModifiers(): readonly WrittenModifier[] {
+        const text = this.originalRuleText;
+
+        if (this.writtenModifiersCache === null && text !== null) {
+            try {
+                const node = NetworkRuleParser.parse(text, NetworkRule.PARSER_OPTIONS);
+
+                this.writtenModifiersCache = NetworkRule.collectWrittenModifiers(node);
+            } catch {
+                // The text was already parsed once by the filter list, so this
+                // is not expected. Treat the rule as having no written
+                // value-bearing modifiers instead of failing the comparison.
+                this.writtenModifiersCache = NO_WRITTEN_MODIFIERS;
             }
         }
 
-        return true;
+        return this.writtenModifiersCache ?? NO_WRITTEN_MODIFIERS;
+    }
+
+    /**
+     * Collects value-bearing modifiers exactly as written in the given node.
+     *
+     * Conversion to AG syntax rewrites modifier names and values (for example
+     * `$queryprune=foo` becomes `$removeparam=foo`), while `$badfilter` requires
+     * the text as written, so the node must be parsed from the written text.
+     *
+     * @param node Network rule AST node parsed from the written rule text.
+     *
+     * @returns Written value-bearing modifiers, in the order of the rule text.
+     */
+    private static collectWrittenModifiers(node: NetworkRuleNode): readonly WrittenModifier[] {
+        let writtenModifiers: WrittenModifier[] | null = null;
+
+        for (const option of node.modifiers?.children ?? []) {
+            const name = option.name.value;
+
+            if (VALUE_BEARING_OPTIONS.has(name)) {
+                writtenModifiers ??= [];
+                writtenModifiers.push([name, option.value?.value ?? EMPTY_STRING]);
+            }
+        }
+
+        return writtenModifiers ?? NO_WRITTEN_MODIFIERS;
     }
 
     /**

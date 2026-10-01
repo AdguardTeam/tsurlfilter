@@ -72,3 +72,19 @@ export const OPTION_NAMES = Object.freeze({
  */
 export type OptionName =
     (typeof OPTION_NAMES)[keyof typeof OPTION_NAMES];
+
+/**
+ * Source-syntax spellings of value-bearing modifiers.
+ *
+ * These are not canonical AdGuard names: the converter resolves them to
+ * {@link OPTION_NAMES} equivalents (`$queryprune` to `$removeparam`,
+ * `$rewrite` to `$redirect`) so that filter lists written for uBlock Origin
+ * and AdBlock Plus can be read.
+ *
+ * They still have to be recognized by name: `$badfilter` compares the rule
+ * text as written, and the collection happens before that resolution.
+ */
+export const SOURCE_SYNTAX_ALIASES = Object.freeze({
+    QUERYPRUNE: 'queryprune',
+    REWRITE: 'rewrite',
+} as const);

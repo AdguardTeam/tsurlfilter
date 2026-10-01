@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { NETWORK_RULE_OPTIONS } from '@adguard/tsurlfilter';
+import { NETWORK_RULE_OPTIONS, VALUE_BEARING_OPTIONS } from '@adguard/tsurlfilter';
 
-import { OPTION_NAMES } from '../../src/rule/option-names';
+import { OPTION_NAMES, SOURCE_SYNTAX_ALIASES } from '../../src/rule/option-names';
 import { VALUE_BEARING_MODIFIERS } from '../../src/rule/rule-badfilter';
 
 /**
  * Modifiers that carry no value: their presence is compared via option flags.
  */
-const VALUE_LESS_MODIFIERS = new Set<string>([
+const VALUE_LESS_OPTIONS = new Set<string>([
     OPTION_NAMES.THIRD_PARTY,
     OPTION_NAMES.FIRST_PARTY,
     OPTION_NAMES.MATCH_CASE,
@@ -47,7 +47,7 @@ const VALUE_LESS_MODIFIERS = new Set<string>([
 /**
  * Modifiers whose value is compared separately, with domain-specific normalization.
  */
-const SEPARATELY_COMPARED_MODIFIERS = new Set<string>([
+const SEPARATELY_COMPARED_OPTIONS = new Set<string>([
     OPTION_NAMES.DOMAIN,
     OPTION_NAMES.DENYALLOW,
 ]);
@@ -57,8 +57,8 @@ const SEPARATELY_COMPARED_MODIFIERS = new Set<string>([
  */
 const BUCKETS: ReadonlySet<string>[] = [
     VALUE_BEARING_MODIFIERS,
-    VALUE_LESS_MODIFIERS,
-    SEPARATELY_COMPARED_MODIFIERS,
+    VALUE_LESS_OPTIONS,
+    SEPARATELY_COMPARED_OPTIONS,
 ];
 
 describe('modifier classification for $badfilter comparison', () => {
@@ -73,7 +73,12 @@ describe('modifier classification for $badfilter comparison', () => {
     });
 
     it('contains no names unknown to OPTION_NAMES', () => {
-        const known = new Set<string>(Object.values(OPTION_NAMES));
+        const known = new Set<string>([
+            ...Object.values(OPTION_NAMES),
+            // Source-syntax aliases are not AG syntax names, but they are still
+            // written in the rule text, so `$badfilter` has to classify them.
+            ...Object.values(SOURCE_SYNTAX_ALIASES),
+        ]);
         const unknown = BUCKETS
             .flatMap((bucket) => [...bucket])
             .filter((name) => !known.has(name));
@@ -92,5 +97,20 @@ describe('cross-package modifier coverage', () => {
             .filter((name) => !known.has(name));
 
         expect(missing).toEqual([]);
+    });
+
+    // Both engines decide `$badfilter` negation by the same rule: a modifier
+    // classified as value-bearing on one engine only would make them disagree
+    // on whether a `$badfilter` rule disables another rule.
+    it('classifies the same modifiers as value-bearing as the MV2 engine', () => {
+        // `$xmlprune` is supported by MV3 only, so it is the expected difference.
+        const missingInMv3 = [...VALUE_BEARING_OPTIONS]
+            .filter((name) => !VALUE_BEARING_MODIFIERS.has(name));
+        const mv3Only = [...VALUE_BEARING_MODIFIERS]
+            .filter((name) => !VALUE_BEARING_OPTIONS.has(name))
+            .filter((name) => name !== OPTION_NAMES.XMLPRUNE);
+
+        expect(missingInMv3).toEqual([]);
+        expect(mv3Only).toEqual([]);
     });
 });

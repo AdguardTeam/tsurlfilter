@@ -181,6 +181,10 @@ export class RuleStorage {
                 ruleId,
                 !ignoreHost,
                 !ignoreHtmlFilteringBodies,
+                // `$badfilter` compares rules by the text as written, so the
+                // original is needed when the rule was converted to another
+                // syntax. Returns `null` for rules that were not converted.
+                this.retrieveOriginalRuleText(listId, ruleId) ?? undefined,
             );
         } catch (e) {
             logger.debug(`[tsurl.RuleStorage.retrieveRule]: error: "${getErrorMessage(e)}" in the rule: "${ruleText}"`);

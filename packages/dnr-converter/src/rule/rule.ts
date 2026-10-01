@@ -22,7 +22,7 @@ import { getErrorMessage } from '../utils/error';
 import { fastHash, fastHash31, hasSpaces } from '../utils/string';
 
 import { OPTION_NAMES } from './option-names';
-import { RuleBadfilter, VALUE_BEARING_MODIFIERS } from './rule-badfilter';
+import { RuleBadfilter, VALUE_BEARING_MODIFIERS, type WrittenModifier } from './rule-badfilter';
 import { RulePriority } from './rule-priority';
 import { type ConversionMeta, type HttpHeaderMatcher } from './rule-types';
 
@@ -240,6 +240,12 @@ export const REMOVEHEADER_COMPATIBLE_MODIFIERS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Shared empty result for rules without value-bearing modifiers: a modifier
+ * list must not be allocated for every rule of a filter list.
+ */
+const NO_WRITTEN_MODIFIERS: readonly WrittenModifier[] = Object.freeze([]);
+
+/**
  * Parsed and normalized network filtering rule.
  *
  * Instances are created exclusively via the static factory methods
@@ -354,21 +360,34 @@ export class Rule {
      * must be distinguishable from "no value".
      *
      * This is the parsed value used by the converters. For `$badfilter`
-     * identity see {@link rawValueModifiers}.
+     * identity see {@link writtenModifiers}.
      */
     readonly advancedModifierValue: string | null = null;
 
     /**
-     * Values of value-bearing modifiers exactly as written in the rule text.
+     * Value-bearing modifiers exactly as written in the rule text, in order.
      *
      * A `$badfilter` rule disables a rule only when the rule text matches, so
-     * these raw values are compared instead of the parsed (normalized) state —
+     * these entries are compared instead of the parsed (normalized) state —
      * see {@link RuleBadfilter.negates}. They are collected before conversion to
      * AG syntax, because conversion rewrites names and values (for example
      * `$redirect=noop.js` becomes `$redirect=noopjs`). `$domain` and `$denyallow`
      * are not included: their values are compared separately.
+     *
+     * The order and the multiplicity of the written rule are preserved: a
+     * repeated modifier (`$csp=a,csp=b`) is not collapsed.
      */
-    readonly rawValueModifiers: Map<string, string>;
+    readonly writtenModifiers: readonly WrittenModifier[];
+
+    /**
+     * Rule text exactly as written in the filter list, before conversion to AG
+     * syntax.
+     *
+     * Serialization must keep it: rebuilding a rule from its converted text
+     * would silently change the written spelling of modifiers, and with it the
+     * `$badfilter` identity — see {@link writtenModifiers}.
+     */
+    readonly originalText: string;
 
     /**
      * Parsed data for the `$header` modifier.
@@ -405,8 +424,9 @@ export class Rule {
      * @param filterListId Filter list ID.
      * @param index Rule index within the filter list.
      * @param node Network rule AST node (must already be in AG syntax).
-     * @param rawValueModifiers Values of value-bearing modifiers as written in the
+     * @param writtenModifiers Value-bearing modifiers as written in the
      *   original rule text, collected before conversion to AG syntax.
+     * @param originalText Rule text as written in the filter list.
      *
      * @throws `SyntaxError` when the pattern contains spaces, the rule is too
      *   general, or any modifier is invalid.
@@ -415,9 +435,11 @@ export class Rule {
         filterListId: number,
         index: number,
         node: NetworkRuleNode,
-        rawValueModifiers: Map<string, string>,
+        writtenModifiers: readonly WrittenModifier[],
+        originalText: string,
     ) {
-        this.rawValueModifiers = rawValueModifiers;
+        this.writtenModifiers = writtenModifiers;
+        this.originalText = originalText;
         const pattern = node.pattern.value;
         if (pattern && hasSpaces(pattern)) {
             throw new SyntaxError('Rule has spaces, seems to be a host rule');
@@ -1045,10 +1067,10 @@ export class Rule {
         text: string,
     ): Rule[] {
         let rulesConvertedToAGSyntax: AnyRule[];
-        let rawValueModifiers: Map<string, string>;
+        let writtenModifiers: readonly WrittenModifier[];
         try {
             const node = RuleParser.parse(text);
-            rawValueModifiers = Rule.collectRawValueModifiers(node);
+            writtenModifiers = Rule.collectWrittenModifiers(node);
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
                 rulesConvertedToAGSyntax = conversionResult.result;
@@ -1066,15 +1088,12 @@ export class Rule {
         for (let i = 0; i < rulesConvertedToAGSyntax.length; i += 1) {
             const ruleNode = rulesConvertedToAGSyntax[i];
 
-            if (
-                ruleNode.category !== RuleCategory.Network
-                || ruleNode.type !== NetworkRuleType.NetworkRule
-            ) {
+            if (!Rule.isNetworkRuleNode(ruleNode)) {
                 continue;
             }
 
             try {
-                rules.push(new Rule(filterId, ruleIndex, ruleNode, rawValueModifiers));
+                rules.push(new Rule(filterId, ruleIndex, ruleNode, writtenModifiers, text));
             } catch (e: unknown) {
                 throw new Error(
                     // eslint-disable-next-line max-len
@@ -1106,9 +1125,10 @@ export class Rule {
         node: AnyRule,
     ): Rule[] {
         let rulesConvertedToAG: AnyRule[];
-        let rawValueModifiers: Map<string, string>;
+        let writtenModifiers: readonly WrittenModifier[];
+        const originalText = Rule.getWrittenText(node);
         try {
-            rawValueModifiers = Rule.collectRawValueModifiers(node);
+            writtenModifiers = Rule.collectWrittenModifiers(node);
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
                 rulesConvertedToAG = conversionResult.result;
@@ -1126,15 +1146,12 @@ export class Rule {
         for (let i = 0; i < rulesConvertedToAG.length; i += 1) {
             const ruleNode = rulesConvertedToAG[i];
 
-            if (
-                ruleNode.category !== RuleCategory.Network
-                || ruleNode.type !== NetworkRuleType.NetworkRule
-            ) {
+            if (!Rule.isNetworkRuleNode(ruleNode)) {
                 continue;
             }
 
             try {
-                rules.push(new Rule(filterListId, index, ruleNode, rawValueModifiers));
+                rules.push(new Rule(filterListId, index, ruleNode, writtenModifiers, originalText));
             } catch (e: unknown) {
                 let msg = `"${getErrorMessage(e)}" in the rule: `;
 
@@ -1153,8 +1170,46 @@ export class Rule {
     }
 
     /**
-     * Collects values of value-bearing modifiers exactly as written in the
-     * original rule text.
+     * Checks whether the given node is a network rule node.
+     *
+     * @param node Rule AST node.
+     *
+     * @returns `true` if the node is a network rule node.
+     */
+    private static isNetworkRuleNode(node: AnyRule): node is NetworkRuleNode {
+        return node.category === RuleCategory.Network
+            && node.type === NetworkRuleType.NetworkRule;
+    }
+
+    /**
+     * Returns the text of a rule node as written in the filter list.
+     *
+     * The parser records the raw text in `node.raws.text` when the location info
+     * option is enabled, which the scanner always does. Nodes built by hand may
+     * lack it, so the text is regenerated as a fallback.
+     *
+     * @param node Rule AST node, must not be converted to AG syntax yet.
+     *
+     * @returns Rule text as written, or an empty string when it cannot be
+     *   reconstructed.
+     */
+    private static getWrittenText(node: AnyRule): string {
+        if (typeof node.raws?.text === 'string') {
+            return node.raws.text;
+        }
+
+        try {
+            return RuleGenerator.generate(node);
+        } catch {
+            // A node that cannot be generated has no written form: the rule
+            // still works, it just cannot be serialized back to text.
+            return '';
+        }
+    }
+
+    /**
+     * Collects value-bearing modifiers exactly as written in the original rule
+     * text, in order.
      *
      * Must be called with the node **before** conversion to AG syntax: the
      * conversion rewrites modifier names and values (for example
@@ -1163,27 +1218,25 @@ export class Rule {
      *
      * @param node Rule AST node, possibly of a non-network category.
      *
-     * @returns Map of modifier name to the value as written.
+     * @returns Value-bearing modifiers as written, in order.
      */
-    private static collectRawValueModifiers(node: AnyRule): Map<string, string> {
-        const rawValueModifiers = new Map<string, string>();
-
-        if (
-            node.category !== RuleCategory.Network
-            || node.type !== NetworkRuleType.NetworkRule
-        ) {
-            return rawValueModifiers;
+    private static collectWrittenModifiers(node: AnyRule): readonly WrittenModifier[] {
+        if (!Rule.isNetworkRuleNode(node)) {
+            return NO_WRITTEN_MODIFIERS;
         }
+
+        let writtenModifiers: WrittenModifier[] | null = null;
 
         for (const modifier of node.modifiers?.children ?? []) {
             const name = modifier.name.value;
 
             if (VALUE_BEARING_MODIFIERS.has(name)) {
-                rawValueModifiers.set(name, modifier.value?.value ?? '');
+                writtenModifiers ??= [];
+                writtenModifiers.push([name, modifier.value?.value ?? '']);
             }
         }
 
-        return rawValueModifiers;
+        return writtenModifiers ?? NO_WRITTEN_MODIFIERS;
     }
 }
 

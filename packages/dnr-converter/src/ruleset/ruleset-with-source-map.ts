@@ -648,7 +648,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
             // and stored in the `unsafeRules` array (metadata).
             safeRulesCount: this.safeRulesCount,
             rulesetHashMapRaw: this.rulesHashMap.serialize(),
-            badFilterRulesRaw: this.badFilterRules.map((r) => r.getText()),
+            badFilterRulesRaw: this.badFilterRules.map((r) => r.originalText),
             unsafeRules,
         };
     }

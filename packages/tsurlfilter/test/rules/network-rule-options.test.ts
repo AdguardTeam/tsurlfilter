@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { NETWORK_RULE_OPTIONS, VALUE_BEARING_OPTIONS } from '../../src/rules/network-rule-options';
+import {
+    NETWORK_RULE_OPTIONS,
+    SOURCE_SYNTAX_ALIASES,
+    VALUE_BEARING_OPTIONS,
+} from '../../src/rules/network-rule-options';
 
 /**
  * Modifiers that carry no value: their presence is compared via option flags.
  */
-const VALUE_LESS_OPTIONS = new Set<string>([
+const VALUE_LESS_OPTIONS = new Set([
     NETWORK_RULE_OPTIONS.THIRD_PARTY,
     NETWORK_RULE_OPTIONS.FIRST_PARTY,
     NETWORK_RULE_OPTIONS.MATCH_CASE,
@@ -43,7 +47,7 @@ const VALUE_LESS_OPTIONS = new Set<string>([
 /**
  * Modifiers whose value is compared separately, with domain-specific normalization.
  */
-const SEPARATELY_COMPARED_OPTIONS = new Set<string>([
+const SEPARATELY_COMPARED_OPTIONS = new Set([
     NETWORK_RULE_OPTIONS.DOMAIN,
     NETWORK_RULE_OPTIONS.DENYALLOW,
 ]);
@@ -69,7 +73,12 @@ describe('network rule option classification', () => {
     });
 
     it('contains no names unknown to NETWORK_RULE_OPTIONS', () => {
-        const known = new Set<string>(Object.values(NETWORK_RULE_OPTIONS));
+        const known = new Set([
+            ...Object.values(NETWORK_RULE_OPTIONS),
+            // Source-syntax aliases are not AG syntax names, but they are still
+            // written in the rule text, so `$badfilter` has to classify them.
+            ...Object.values(SOURCE_SYNTAX_ALIASES),
+        ]);
         const unknown = BUCKETS
             .flatMap((bucket) => [...bucket])
             .filter((name) => !known.has(name));
