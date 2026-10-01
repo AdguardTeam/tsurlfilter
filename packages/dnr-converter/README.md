@@ -27,6 +27,7 @@ extensions.
     - [`ConverterOptions`](#converteroptions)
     - [Simple flow: `FilterConverter` + `Ruleset`](#simple-flow-filterconverter--ruleset)
     - [Advanced flow: `FilterConverter` with `withSourceMap: true` + `RulesetWithSourceMap`](#advanced-flow-filterconverter-with-withsourcemap-true--rulesetwithsourcemap)
+    - [Compact ruleset file format](#compact-ruleset-file-format)
     - [`MetadataRuleset`](#metadataruleset)
     - [`isSafeRule(rule)`](#issaferulerule)
     - [`DNR_CONVERTER_VERSION`](#dnr_converter_version)
@@ -274,8 +275,11 @@ const rulesToDisable = await converter.computeRulesToDisable(
 | `getRulesById(id)` | `Promise<SourceRuleAndFilterId[]>` | Source rules for a DNR rule |
 | `getBadFilterRules()` | `NetworkRule[]` | `$badfilter` rules in this set |
 | `getRulesHashMap()` | `IRulesHashMap` | Hash map for fast `$badfilter` matching |
-| `serializeCompact(unsafeRules, prettyPrint?)` | `Promise<string>` | Compact JSON serialization |
+| `getMetadataRulesCount()` | `number` | Metadata rules in the ruleset file the rule set was read from (0 if not read from a file) |
+| `serializeCompact(unsafeRules, prettyPrint?)` | `Promise<string>` | Ruleset file in the [compact ruleset file format](#compact-ruleset-file-format) |
 | `unloadContent()` | `void` | Release lazy-loaded content |
+| `RulesetWithSourceMap.fromCompact(id, content, filters)` | `RulesetWithSourceMap` | Build a rule set from `parseCompactRuleset()` output |
+| `RulesetWithSourceMap.fromDeserialized(deserialized, metadataRulesCount)` | `RulesetWithSourceMap` | Build a rule set from `RulesetWithSourceMap.deserialize()` output |
 
 ```ts
 import type { ConversionResult } from '@adguard/dnr-converter';
@@ -290,6 +294,71 @@ Result returned by converter methods:
 | `limitations` | `LimitationError[]` | Warnings about exceeded limits |
 | `declarativeRulesToCancel` | `UpdateStaticRulesOptions[]?` | Static rule IDs to disable (from `computeRulesToDisable`) |
 
+### Compact ruleset file format
+
+`serializeCompact()` and `MetadataRuleset.serialize()` write a JSON array of
+DNR rules. The array starts with one or more **metadata rules**: block rules
+whose `condition.urlFilter` is `dummy.rule.adguard.com` (they never match a
+request) and whose `metadata` value is `{ "chunk": "<fragment>" }`. Joining
+the fragments in array order gives the serialized metadata. Every `metadata`
+value, including JSON escaping and the wrapper, is at most 65,536 UTF-8
+bytes: Edge Add-ons rejects packages with larger values. The ordinary
+declarative rules follow the metadata rules.
+
+A metadata rule is recognized by the marker `urlFilter` together with the
+`metadata` key. A converted rule for the host `dummy.rule.adguard.com`
+without a `metadata` key is an ordinary rule.
+
+Metadata rules are static DNR rules: they count towards the static rule
+quota and get the smallest IDs not used by any other rule of the ruleset.
+Ordinary rule IDs are never changed.
+
+```json
+[
+    { "id": 1, "action": { "type": "block" }, "condition": { "urlFilter": "dummy.rule.adguard.com", "resourceTypes": ["xmlhttprequest"] }, "metadata": { "chunk": "{\"metadata\":{...},\"lazyMetadata\":{...},\"filterCon" } },
+    { "id": 2, "action": { "type": "block" }, "condition": { "urlFilter": "dummy.rule.adguard.com", "resourceTypes": ["xmlhttprequest"] }, "metadata": { "chunk": "tent\":\"||example.com^\"}" } },
+    { "id": 1234567, "action": { "type": "block" }, "condition": { "urlFilter": "||example.com^" } }
+]
+```
+
+Read a filter ruleset file with `parseCompactRuleset()`:
+
+```ts
+import { Filter, parseCompactRuleset, RulesetWithSourceMap } from '@adguard/dnr-converter';
+
+const content = parseCompactRuleset('ruleset_1', JSON.parse(fileText));
+content.metadata;           // SerializedRulesetData
+content.lazyMetadata;       // SerializedRulesetLazyData
+content.filterContent;      // original filter text
+content.declarativeRules;   // ordinary DNR rules, without the metadata rules
+content.metadataRulesCount; // number of metadata rules, for static rule quota accounting
+
+// Build the rule set directly from the parsed content.
+const ruleset = RulesetWithSourceMap.fromCompact('ruleset_1', content, [new Filter(1, content.filterContent)]);
+```
+
+`fromCompact()` validates `metadata` at once and the lazy metadata and
+ordinary rules on first load, with the same schemas as
+`RulesetWithSourceMap.deserialize()`. The rule set keeps the parsed content
+in memory for its whole lifetime; `unloadContent()` does not release it.
+
+When the parts are stored as strings, for example in IndexedDB, load them
+lazily with `deserialize()` and build the rule set with `fromDeserialized()`,
+passing the stored `metadataRulesCount`:
+
+```ts
+const ruleset = RulesetWithSourceMap.fromDeserialized(
+    await RulesetWithSourceMap.deserialize(id, rawData, loadLazyData, loadDeclarativeRules, filters),
+    metadataRulesCount,
+);
+```
+
+The reader takes only the leading run of metadata rules, joins them and
+parses the result once. It throws `InvalidMetadataChunksError` (with a
+`rulesetId` property) when the input is not an array, has no leading
+metadata rule, has a metadata rule without a string `chunk`, or when the
+joined fragments are not valid JSON.
+
 ### `MetadataRuleset`
 
 ```ts
@@ -297,9 +366,10 @@ import { MetadataRuleset, METADATA_RULESET_ID } from '@adguard/dnr-converter';
 ```
 
 A specialized ruleset that stores checksums and additional properties for a
-collection of DNR rule sets. It serializes as a single-element JSON array
-containing a declarative rule with a `metadata` field, acting as a data
-carrier within serialized ruleset files (never matches real requests).
+collection of DNR rule sets. It serializes in the
+[compact ruleset file format](#compact-ruleset-file-format): a JSON array
+that contains only metadata rules carrying `{ checksums, additionalProperties }`
+in `metadata.chunk` fragments.
 
 `METADATA_RULESET_ID` is the constant `0`; the ruleset's string ID is always
 `"ruleset_0"`.
@@ -327,7 +397,7 @@ carrier within serialized ruleset files (never matches real requests).
 | Method | Returns | Description |
 | --- | --- | --- |
 | `serialize(pretty?)` | `string` | JSON string; `pretty=true` for human-readable output |
-| `MetadataRuleset.deserialize(json)` | `MetadataRuleset` | Reconstruct from a serialized string; throws on invalid input |
+| `MetadataRuleset.deserialize(json)` | `MetadataRuleset` | Reconstruct from a serialized string; throws `SyntaxError` on invalid JSON, `InvalidMetadataChunksError` on malformed metadata rules, a validation error on a bad payload |
 
 ```ts
 const meta = new MetadataRuleset();

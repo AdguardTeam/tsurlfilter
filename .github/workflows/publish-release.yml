@@ -32,7 +32,7 @@ on:
           - adguard-api-mv3
           - eslint-plugin-logger-context
       ref:
-        description: 'Ref to publish manually (leave empty for the merge commit / current master)'
+        description: 'Ref to publish manually — pin to the merge commit SHA of the release PR; do not leave empty (the master tip changelog may already describe a newer version)'
         required: false
         type: string
       dry_run:

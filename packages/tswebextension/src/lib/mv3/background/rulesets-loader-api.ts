@@ -6,12 +6,12 @@ import {
     getRulesetId,
     getRulesetPath,
     type IFilter,
+    InvalidMetadataChunksError,
     type IRulesetWithSourceMap,
     METADATA_RULESET_ID,
     MetadataRuleset,
-    Rule,
+    parseCompactRuleset,
     RulesetWithSourceMap,
-    RulesHashMap,
 } from '@adguard/dnr-converter';
 import { fetchExtensionResourceText, FilterList } from '@adguard/tsurlfilter';
 
@@ -25,20 +25,27 @@ import { logger } from '../../common/utils/logger';
  * It supports lazy loading, meaning the rule set contents are loaded only upon request.
  * This class implements a two-layer caching strategy to optimize performance:
  * ## Caching Architecture:
- * 1. **IDB (IndexedDB) Cache**: Temporary storage that is cleared on each service worker restart
- *    - Stores checksums, metadata, lazy metadata, and declarative rules
- *    - Keys format: `<prefix>_<rulesetId>` (e.g., `checksum_123`).
- *    - Cache lifetime is bound to service worker lifecycle for predictable behavior.
+ * 1. **IDB (IndexedDB) Cache**: Persistent storage that survives service worker restarts
+ *    - Stores checksums, metadata, lazy metadata, declarative rules and the
+ *      number of metadata rules of each rule set file
+ *    - Keys format: `<prefix>_<rulesetId>` (e.g., `checksum_ruleset_123`).
+ *    - Nothing clears it; entries are overwritten when the checksum of the
+ *      rule set file changes, e.g. after an extension update.
  *
  * 2. **In-Memory Cache**: Fast access layer for frequently accessed data within a session
  *    - `idbChecksumsCache`: Caches checksums from IDB with composite keys `<rulesetsPath>_<rulesetId>`
  *    - `rulesetsCache`: Caches fully created IRulesetWithSourceMap instances
  *    - `metadataRulesetsCache`: Caches metadata rule sets by path
+ *    - It is empty after every service worker restart.
  *
  * ## Cache Synchronization:
- * The source of truth for data freshness is the checksum extracted from files on disk.
- * When checksums don't match, both cache layers are updated atomically.
- * All cached data is dropped on service worker restart to ensure clean state.
+ * The source of truth for data freshness is the checksum of the rule set file
+ * stored in the metadata rule set (`ruleset_0`).
+ * When the checksum in IDB differs, the rule set file is read again: the
+ * preprocessed filter list is written to {@link FiltersStorage} first, then the
+ * rule set data together with the new checksum in one IDB transaction. If any
+ * step fails, the `rulesets` store keeps the previous checksum (the `filters`
+ * store may already hold the new filter list) and the next start syncs again.
  *
  * The main functionalities include:
  * - Initializing the rule sets loader to prepare it for fetching rule sets.
@@ -49,8 +56,7 @@ import { logger } from '../../common/utils/logger';
  * @example
  * ```typescript
  * const loader = new RulesetsLoaderApi('/path/to/rulesets');
- * await loader.initialize();
- * const ruleset = await loader.createRuleset('123', filters);
+ * const ruleset = await loader.createRuleset('ruleset_123', filters);
  * ```
  */
 export class RulesetsLoaderApi {
@@ -83,6 +89,11 @@ export class RulesetsLoaderApi {
      * Prefix for declarative rules key.
      */
     private static readonly KEY_PREFIX_RULESET_DECLARATIVE_RULES = 'declarativeRules';
+
+    /**
+     * Prefix for the key of the number of metadata rules in the rule set file.
+     */
+    private static readonly KEY_PREFIX_METADATA_RULES_COUNT = 'metadataRulesCount';
 
     /**
      * Cache of metadata rule sets.
@@ -148,7 +159,7 @@ export class RulesetsLoaderApi {
 
     /**
      * Returns key with prefix.
-     * Key format: <prefix>_<rulesetId>, e.g. `metadata_123`.
+     * Key format: <prefix>_<rulesetId>, e.g. `metadata_ruleset_123`.
      *
      * @param keyPrefix Key prefix.
      * @param rulesetId Rule set id.
@@ -157,6 +168,34 @@ export class RulesetsLoaderApi {
      */
     private static getKey(keyPrefix: string, rulesetId: number | string): string {
         return `${keyPrefix}${RulesetsLoaderApi.KEY_COMBINER}${rulesetId}`;
+    }
+
+    /**
+     * Parses a rule set file and rethrows the error of a file whose metadata
+     * cannot be read, e.g. written by `@adguard/dnr-converter` 1.x, with the
+     * rule set id, a hint to update the rule sets and the reason. The reason
+     * is repeated in the message because the logger does not print `cause`.
+     *
+     * @param rulesetId Rule set id.
+     * @param parse Parses the rule set file.
+     *
+     * @returns Result of `parse`.
+     *
+     * @throws Error with {@link InvalidMetadataChunksError} as `cause` if the
+     * metadata of the file cannot be read, or the error of `parse` as is.
+     */
+    private static parseRulesetFile<T>(rulesetId: string, parse: () => T): T {
+        try {
+            return parse();
+        } catch (e) {
+            if (e instanceof InvalidMetadataChunksError) {
+                const hint = `Rule set ${rulesetId} has invalid or unsupported metadata, update the rule sets`;
+
+                throw new Error(`${hint}: ${e.message}`, { cause: e });
+            }
+
+            throw e;
+        }
     }
 
     /**
@@ -234,8 +273,11 @@ export class RulesetsLoaderApi {
                     const rawMetadataRuleset = await fetchExtensionResourceText(
                         browser.runtime.getURL(metadataRulesetPath),
                     );
-                    // eslint-disable-next-line max-len
-                    RulesetsLoaderApi.metadataRulesetsCache[this.rulesetsPath] = MetadataRuleset.deserialize(rawMetadataRuleset);
+                    const metadataRuleset = RulesetsLoaderApi.parseRulesetFile(
+                        getRulesetId(METADATA_RULESET_ID),
+                        () => MetadataRuleset.deserialize(rawMetadataRuleset),
+                    );
+                    RulesetsLoaderApi.metadataRulesetsCache[this.rulesetsPath] = metadataRuleset;
                 }
 
                 this.isInitialized = true;
@@ -311,18 +353,34 @@ export class RulesetsLoaderApi {
                 const rulesetPath = getRulesetPath(rulesetId, this.rulesetsPath);
                 const rawRuleset = await fetchExtensionResourceText(browser.runtime.getURL(rulesetPath));
 
-                const parsedRuleset = JSON.parse(rawRuleset);
-                const { metadata } = parsedRuleset[0];
-
-                const { filterContent } = metadata;
+                const {
+                    metadata,
+                    lazyMetadata,
+                    filterContent,
+                    declarativeRules,
+                    metadataRulesCount,
+                } = RulesetsLoaderApi.parseRulesetFile(
+                    rulesetId,
+                    () => parseCompactRuleset(rulesetId, JSON.parse(rawRuleset)),
+                );
 
                 // TODO: AG-53262 — Measure cold start time after migration
                 // from rawFilterList+conversionData → filterContent.
                 // FilterList.prepare() now runs at runtime (was build-time).
                 // Could add ~100-200ms per 100k+ line filter on first start.
                 const filterList = new FilterList(filterContent);
-                const rawFilterList = filterList.getContent();
-                const conversionData = filterList.getConversionData();
+
+                // The preprocessed filter list is written before the rule set
+                // data and its checksum, so a failure at any step leaves the
+                // previous checksum in the rulesets store and the next start
+                // syncs again.
+                await FiltersStorage.setMultiple({
+                    [rulesetIdNumber]: {
+                        rawFilterList: filterList.getContent(),
+                        conversionData: filterList.getConversionData(),
+                        checksum,
+                    },
+                });
 
                 const db = await RulesetsLoaderApi.getOpenedDb(RulesetsLoaderApi.DB_STORE_NAME);
                 const tx = db.transaction(RulesetsLoaderApi.DB_STORE_NAME, 'readwrite');
@@ -330,34 +388,28 @@ export class RulesetsLoaderApi {
 
                 const puts = [
                     store.put(
-                        checksum,
-                        RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_CHECKSUM, rulesetId),
-                    ),
-                    store.put(
-                        JSON.stringify(metadata.metadata),
+                        JSON.stringify(metadata),
                         RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_RULESET_METADATA, rulesetId),
                     ),
                     store.put(
-                        JSON.stringify(metadata.lazyMetadata),
+                        JSON.stringify(lazyMetadata),
                         RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_RULESET_LAZY_METADATA, rulesetId),
                     ),
                     store.put(
-                        JSON.stringify(parsedRuleset.slice(1)),
+                        JSON.stringify(declarativeRules),
                         RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_RULESET_DECLARATIVE_RULES, rulesetId),
+                    ),
+                    store.put(
+                        metadataRulesCount,
+                        RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_METADATA_RULES_COUNT, rulesetId),
+                    ),
+                    store.put(
+                        checksum,
+                        RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_CHECKSUM, rulesetId),
                     ),
                 ];
 
-                await Promise.all(puts);
-
-                await tx.done;
-
-                await FiltersStorage.setMultiple({
-                    [rulesetIdNumber]: {
-                        rawFilterList,
-                        conversionData,
-                        checksum,
-                    },
-                });
+                await Promise.all([...puts, tx.done]);
 
                 // After updating cache in db we should update it in memory cache
                 RulesetsLoaderApi.idbChecksumsCache.set(cacheKey, checksum);
@@ -389,7 +441,8 @@ export class RulesetsLoaderApi {
      *
      * @returns New {@link IRulesetWithSourceMap}.
      *
-     * @throws If initialization fails or the rule set with the provided ID is not found or invalid.
+     * @throws If initialization fails, the rule set with the provided ID is not
+     * found or invalid, or its number of metadata rules is missing in IDB.
      */
     public async createRuleset(
         rulesetId: string,
@@ -412,9 +465,14 @@ export class RulesetsLoaderApi {
 
         await this.syncRulesetWithIdb(rulesetId);
 
-        const rawData = await RulesetsLoaderApi.getValueFromIdb(
-            RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_RULESET_METADATA, rulesetId),
-        );
+        const [rawData, metadataRulesCount]: [string, number | undefined] = await Promise.all([
+            RulesetsLoaderApi.getValueFromIdb(
+                RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_RULESET_METADATA, rulesetId),
+            ),
+            RulesetsLoaderApi.getValueFromIdb(
+                RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_METADATA_RULES_COUNT, rulesetId),
+            ),
+        ]);
 
         const loadLazyData = async (): Promise<string> => RulesetsLoaderApi.getValueFromIdb(
             RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_RULESET_LAZY_METADATA, rulesetId),
@@ -424,17 +482,7 @@ export class RulesetsLoaderApi {
             RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_RULESET_DECLARATIVE_RULES, rulesetId),
         );
 
-        const {
-            data: {
-                regexpRulesCount,
-                unsafeRulesCount,
-                safeRulesCount,
-                unsafeRules,
-                badFilterRulesRaw,
-                rulesetHashMapRaw,
-            },
-            rulesetContentProvider,
-        } = await RulesetWithSourceMap.deserialize(
+        const deserialized = await RulesetWithSourceMap.deserialize(
             rulesetId,
             rawData,
             loadLazyData,
@@ -442,26 +490,17 @@ export class RulesetsLoaderApi {
             filterList,
         );
 
-        // Build badFilterRules and rulesHashMap eagerly from the already-loaded
-        // metadata. With the new API these are plain fields (not lazy providers).
-        // We don't need filterId / ruleIndex because these Rule instances are
-        // used only for $badfilter matching, not for source attribution.
-        const badFilterRules = badFilterRulesRaw
-            .flatMap((rawString) => Rule.createFromText(0, 0, rawString));
+        // The count is written together with the checksum, so a missing count
+        // means the cache was synced by a version that did not write it, from
+        // a rule set file that has not changed since, i.e. in an old format.
+        if (metadataRulesCount === undefined) {
+            // eslint-disable-next-line max-len
+            const message = `Metadata rules count of rule set ${rulesetId} is missing in IDB, the cache may be built from rule sets with metadata in an old format, update the rule sets`;
 
-        const sources = RulesHashMap.deserializeSources(rulesetHashMapRaw);
-        const rulesHashMap = new RulesHashMap(sources);
+            throw new Error(message);
+        }
 
-        const ruleset = new RulesetWithSourceMap(
-            rulesetId,
-            safeRulesCount,
-            unsafeRulesCount,
-            regexpRulesCount,
-            rulesetContentProvider,
-            badFilterRules,
-            rulesHashMap,
-            unsafeRules,
-        );
+        const ruleset = RulesetWithSourceMap.fromDeserialized(deserialized, metadataRulesCount);
 
         if (filterList.some((f) => f.getId() === rulesetIdNumber)) {
             // We save the rule set in the cache only if its filter is loaded.

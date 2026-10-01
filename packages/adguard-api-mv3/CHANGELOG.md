@@ -19,6 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [3.0.0] - 2026-09-29
+
+### Changed
+
+- Updated [@adguard/tswebextension] to `v6.0.0`.
+- **BREAKING:** Rule sets must be built with `@adguard/dnr-converter` 2.x,
+  e.g. `@adguard/dnr-rulesets` 6.x.
+
+[3.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v3.0.0
+
 ## [2.0.2] - 2026-07-28
 
 ### Changed
