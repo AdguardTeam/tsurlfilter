@@ -3930,8 +3930,10 @@ design, as merging would prevent multi-hop chaining across priority levels.
 <br/>
 An anchored literal URL pattern starting with `|` or `||` and ending in `^`
 uses a regexFilter so that the final separator can also delimit the first
-query parameter. These rules count
-toward Chrome's regex rule quota and are subject to its regex size limit.
+query parameter. These rules count toward Chrome's regex rule quota and are
+subject to its regex size limit. If the generated regexp fails validation,
+the rule retains its previous urlFilter matching, including its limitation
+for the first query parameter.
 Unanchored patterns and patterns containing wildcards, query or fragment
 markers, or additional separators retain the existing urlFilter conversion.
 Domain anchors with an empty host pattern also retain urlFilter matching.

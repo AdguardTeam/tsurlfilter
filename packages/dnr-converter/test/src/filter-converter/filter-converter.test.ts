@@ -11,7 +11,7 @@ import { RE2 } from '@adguard/re2-wasm';
 import { SimpleRegex } from '@adguard/tsurlfilter';
 
 import { type RuleCondition } from '../../../src/declarative-rule/rule-condition';
-import { UnsupportedModifierError } from '../../../src/errors/conversion-errors';
+import { UnsupportedModifierError, UnsupportedRegexpError } from '../../../src/errors/conversion-errors';
 import {
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRulesError,
@@ -159,6 +159,78 @@ describe('FilterConverter', () => {
             removeParams!.forEach((param) => url.searchParams.delete(param));
             expect(url.href).toBe(`https://bing.com/search${expectedQuery}`);
             expect(regexp.test(url.href)).toBe(false);
+        });
+
+        it.each([
+            { name: 'simple default', withSourceMap: false, matchCase: false },
+            { name: 'simple match-case', withSourceMap: false, matchCase: true },
+            { name: 'source-map default', withSourceMap: true, matchCase: false },
+            { name: 'source-map match-case', withSourceMap: true, matchCase: true },
+        ])('preserves long named parameter rules when generated RE2 exceeds its budget ($name)', async ({
+            withSourceMap,
+            matchCase,
+        }) => {
+            const pattern = '||subdomain.example-long-domain.co.uk/path/segment^';
+            const rule = `${pattern}$removeparam=cvid${matchCase ? ',match-case' : ''}`;
+            const filter = createFilter([rule]);
+            const [{ ruleset, errors }] = withSourceMap
+                ? await converter.convert([filter], { withSourceMap: true })
+                : await converter.convert([filter]);
+
+            expect(errors).toEqual([]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(1);
+            expect(ruleset.getRegexpRulesCount()).toBe(0);
+
+            const [declarativeRule] = declarativeRules;
+            const regexp = createUrlMatcher(declarativeRule.condition);
+            const removeParams = declarativeRule.action.redirect?.transform?.queryTransform?.removeParams;
+            expect(removeParams).toEqual(['cvid']);
+            expect(regexp.test('https://subdomain.example-long-domain.co.uk/PATH/SEGMENT?q=keep&cvid=tracking'))
+                .toBe(!matchCase);
+
+            for (const query of ['?q=keep&cvid=tracking&control=keep', '?q=keep&cvid=tracking']) {
+                const url = new URL(`https://subdomain.example-long-domain.co.uk/path/segment${query}`);
+                expect(regexp.test(url.href)).toBe(true);
+                removeParams!.forEach((param) => url.searchParams.delete(param));
+                expect(regexp.test(url.href)).toBe(false);
+            }
+        });
+
+        it('preserves removal rule restrictions after a generated RE2 rejection', async () => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter([
+                    '||subdomain.example-long-domain.co.uk/path/segment^$removeparam=cvid,'
+                    + 'domain=origin.example,to=subdomain.example-long-domain.co.uk,important,xmlhttprequest',
+                ]),
+            ]);
+
+            expect(errors).toEqual([]);
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(1);
+            const [declarativeRule] = declarativeRules;
+            expect(declarativeRule.condition.initiatorDomains).toEqual(['origin.example']);
+            expect(declarativeRule.condition.requestDomains).toEqual(['subdomain.example-long-domain.co.uk']);
+            expect(declarativeRule.condition.resourceTypes).toEqual(['xmlhttprequest']);
+            expect(declarativeRule.priority).toBeGreaterThan(1_000_000);
+            expect(declarativeRule.action.redirect?.transform?.queryTransform?.removeParams).toEqual(['cvid']);
+            const regexp = createUrlMatcher(declarativeRule.condition);
+            expect(regexp.test('https://subdomain.example-long-domain.co.uk/path/segment?q=keep&cvid=tracking'))
+                .toBe(true);
+            expect(regexp.test('https://subdomain.example-long-domain.co.uk/path/segment?q=keep')).toBe(false);
+        });
+
+        it('keeps unsupported source regex rules as conversion errors', async () => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter([
+                    '/(?<=test)example/$removeparam=cvid',
+                    '/(?<=test)example/$script',
+                ]),
+            ]);
+
+            expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+            expect(errors).toHaveLength(2);
+            errors.forEach((error) => expect(error).toBeInstanceOf(UnsupportedRegexpError));
         });
 
         it.each([

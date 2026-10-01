@@ -624,10 +624,11 @@ export class RegularRuleConverter {
      * Retrieves the condition for the provided {@link Rule}.
      *
      * @param rule {@link Rule} to get condition for.
+     * @param useRemoveParamRegex Whether to use a regexp for eligible named parameter removal.
      *
      * @returns A rule condition that describes to which request the declarative rule should be applied.
      */
-    private static getCondition(rule: Rule): RuleCondition {
+    private static getCondition(rule: Rule, useRemoveParamRegex = true): RuleCondition {
         const condition: RuleCondition = {};
 
         // set `urlFilter` or `regexFilter` depending on the pattern type
@@ -656,7 +657,8 @@ export class RegularRuleConverter {
                     const hasDomainAnchor = prefix.startsWith(ADBLOCK_URL_START);
                     const authority = hasDomainAnchor ? prefix.slice(ADBLOCK_URL_START.length).split('/')[0] : '';
                     if (
-                        condition.urlFilter.endsWith(ADBLOCK_URL_SEPARATOR)
+                        useRemoveParamRegex
+                        && condition.urlFilter.endsWith(ADBLOCK_URL_SEPARATOR)
                         && prefix.startsWith('|')
                         && !/[*?#^]/.test(prefix)
                         && (!hasDomainAnchor || (authority.length > 0 && !authority.includes('@')))
@@ -882,7 +884,16 @@ export class RegularRuleConverter {
         declarativeRule.priority = rule.priority;
 
         // Validate created declarative rule and throw error if not valid
-        const conversionErr = await RegularRuleConverter.checkRuleApplication(rule, declarativeRule);
+        let conversionErr = await RegularRuleConverter.checkRuleApplication(rule, declarativeRule);
+        if (
+            conversionErr instanceof UnsupportedRegexpError
+            && !rule.isRegexRule()
+            && rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)
+        ) {
+            // Preserve native URL-filter matching when the generated parameter-aware regexp is unsupported.
+            declarativeRule.condition = RegularRuleConverter.getCondition(rule, false);
+            conversionErr = await RegularRuleConverter.checkRuleApplication(rule, declarativeRule);
+        }
         if (conversionErr) {
             throw conversionErr;
         }
