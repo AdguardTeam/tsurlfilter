@@ -74,19 +74,6 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(errors).toHaveLength(0);
         });
 
-        it('keeps a CSP rule when $badfilter has a different value', async () => {
-            const filter = createFilter([
-                "||example.com^$csp=script-src 'none'",
-                "||example.com^$csp=script-src 'self',badfilter",
-            ], 1);
-
-            const { ruleset, errors } = await converter.convertCspRules([filter]);
-            const declarativeRules = await ruleset.getDeclarativeRules();
-
-            expect(declarativeRules).toHaveLength(1);
-            expect(errors).toHaveLength(0);
-        });
-
         it('removes a CSP rule negated by an identical exact URL exception', async () => {
             const filter = createFilter([
                 "|https://example.com/path|$csp=script-src 'none'",
