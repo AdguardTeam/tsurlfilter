@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for uBlock Origin `:remove-attr()` and `:remove-class()` operators.
+
 ### Changed
 
 - Escaped regular-expression domains in non-basic `[$domain=...]` rules now

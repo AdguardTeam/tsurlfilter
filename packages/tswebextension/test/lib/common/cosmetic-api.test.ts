@@ -403,6 +403,21 @@ describe('CosmeticApiCommon', () => {
             });
         });
 
+        describe('getExtCssRules() with action pseudo-classes', () => {
+            test('uBO action pseudo-classes are passed to extended CSS', () => {
+                const cosmeticResult = new CosmeticResult();
+                cosmeticResult.elementHiding.append(createCosmeticRule('example.com#?#a:remove-attr(href)', 0, 0));
+                cosmeticResult.elementHiding.append(createCosmeticRule('example.com#?#div:remove-class(ads)', 0, 1));
+
+                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, {});
+
+                expect(extCssRules).toEqual([
+                    'a:remove-attr(href) { display: none !important; }',
+                    'div:remove-class(ads) { display: none !important; }',
+                ]);
+            });
+        });
+
         describe('combined getCssText() and getExtCssRules() consistency', () => {
             test('isNativeHasSupported = false: rules are properly split between native and extended', () => {
                 const cosmeticResult = new CosmeticResult();
