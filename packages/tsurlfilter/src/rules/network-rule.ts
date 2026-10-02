@@ -482,8 +482,8 @@ export class NetworkRule implements IRule {
      *
      * A `$badfilter` rule requires the rule text to match, so these written
      * entries are compared instead of the parsed (normalized) modifier state.
-     * Filled in the constructor when the rule was not converted: the parsed node
-     * is the original one then, so nothing has to be parsed twice.
+     * Filled during {@link loadOptions} when the rule was not converted: the
+     * parsed node is the original one then, so nothing has to be parsed twice.
      */
     private writtenModifiersCache: readonly WrittenModifier[] | null = null;
 
@@ -1394,10 +1394,6 @@ export class NetworkRule implements IRule {
         // used when the rule was converted to another syntax.
         this.originalRuleText = originalRuleText ?? null;
 
-        if (this.originalRuleText === null) {
-            this.writtenModifiersCache = NetworkRule.collectWrittenModifiers(parsedNode);
-        }
-
         const pattern = parsedNode.pattern.value;
         if (pattern && hasSpaces(pattern)) {
             throw new SyntaxError('Rule has spaces, seems to be an host rule');
@@ -1426,6 +1422,11 @@ export class NetworkRule implements IRule {
      * @throws An error if there is an unsupported modifier.
      */
     private loadOptions(options: ModifierList): void {
+        // Collect the written value-bearing modifiers in the same pass that loads
+        // the parsed options: `$badfilter` compares the rule as written, and a
+        // separate pass would add avoidable work to the rule construction path.
+        let writtenModifiers: WrittenModifier[] | null = null;
+
         for (const option of options.children) {
             let value = EMPTY_STRING;
 
@@ -1433,7 +1434,18 @@ export class NetworkRule implements IRule {
                 value = option.value.value;
             }
 
-            this.loadOption(option.name.value, value, option.exception);
+            const name = option.name.value;
+
+            if (this.originalRuleText === null && VALUE_BEARING_OPTIONS.has(name)) {
+                writtenModifiers ??= [];
+                writtenModifiers.push([name, value]);
+            }
+
+            this.loadOption(name, value, option.exception);
+        }
+
+        if (this.originalRuleText === null) {
+            this.writtenModifiersCache = writtenModifiers ?? NO_WRITTEN_MODIFIERS;
         }
 
         this.validateOptions();
