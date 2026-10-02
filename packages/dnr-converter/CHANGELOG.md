@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed named `$removeparam` rules with an anchored literal URL pattern ending
+  in `^` failing to remove the first query parameter before MV3 requests.
+  Rules whose generated regexp fails validation retain their previous matching
+  [AdguardBrowserExtension#3615].
+
+[AdguardBrowserExtension#3615]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3615
+
 ### Security
 
 ## [2.0.0] - 2026-09-29
