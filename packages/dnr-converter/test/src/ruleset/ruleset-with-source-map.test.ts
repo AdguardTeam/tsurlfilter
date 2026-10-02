@@ -7,11 +7,13 @@ import {
 } from 'vitest';
 
 import { type DeclarativeRule, RuleActionType } from '../../../src/declarative-rule';
+import { UnavailableRulesetSourceError } from '../../../src/errors/unavailable-sources-errors';
 import { type IFilter } from '../../../src/filter/types';
 import { OPTION_NAMES } from '../../../src/rule/option-names';
 import { Rule } from '../../../src/rule/rule';
 import { RulesConverter } from '../../../src/rule-converters/rules-converter';
 import { RulesScanner, type ScannedFilter } from '../../../src/rules-scanner';
+import { parseCompactRuleset } from '../../../src/ruleset/compact-ruleset';
 import { type HashWithSource, RulesHashMap } from '../../../src/ruleset/rules-hash-map';
 import {
     type RulesetContentProvider,
@@ -19,6 +21,7 @@ import {
     type SerializedRulesetData,
 } from '../../../src/ruleset/ruleset-with-source-map';
 import { SourceMap } from '../../../src/ruleset/source-map';
+import { expectMetadataValuesWithinBound } from '../../mocks/metadata-rule';
 import { createRuleMock } from '../../mocks/rule';
 
 /**
@@ -139,6 +142,40 @@ const createRuleset = async (
     );
 };
 
+/**
+ * Rebuilds a ruleset from compact output through `deserialize()` and the
+ * constructor, as tswebextension does from IndexedDB. It is the reference
+ * that `fromCompact()` is compared against.
+ *
+ * @param compactOutput Output of `serializeCompact()`.
+ * @param filter Source filter of the ruleset.
+ *
+ * @returns Restored ruleset.
+ */
+const restoreFromCompact = async (compactOutput: string, filter: IFilter): Promise<RulesetWithSourceMap> => {
+    const id = 'rulesetId';
+    const { metadata, lazyMetadata, declarativeRules } = parseCompactRuleset(id, JSON.parse(compactOutput));
+
+    const { data, rulesetContentProvider } = await RulesetWithSourceMap.deserialize(
+        id,
+        JSON.stringify(metadata),
+        async () => JSON.stringify(lazyMetadata),
+        async () => JSON.stringify(declarativeRules),
+        [filter],
+    );
+
+    return new RulesetWithSourceMap(
+        id,
+        data.safeRulesCount,
+        data.unsafeRulesCount,
+        data.regexpRulesCount,
+        rulesetContentProvider,
+        data.badFilterRulesRaw.flatMap((raw) => Rule.createFromText(filter.getId(), 0, raw)),
+        new RulesHashMap(RulesHashMap.deserializeSources(data.rulesetHashMapRaw)),
+        data.unsafeRules,
+    );
+};
+
 describe('Ruleset', () => {
     it('returns counters correctly', async () => {
         const content = [
@@ -149,6 +186,8 @@ describe('Ruleset', () => {
         const ruleset = await createRuleset(content);
 
         expect(ruleset.getSafeRulesCount()).toStrictEqual(2);
+        // Not read from a ruleset file, so there are no metadata rules.
+        expect(ruleset.getMetadataRulesCount()).toStrictEqual(0);
     });
 
     it('returns bad filter rules from constructor', () => {
@@ -219,65 +258,17 @@ describe('Ruleset', () => {
 
         const scannedFilters = await createScannedFilters(content, filterId);
         const [scannedFilter] = scannedFilters;
-        const badFilterRuleIndex = scannedFilter.rules[2].index;
 
         const ruleset = await createRuleset(content, filterId);
 
-        // Produce the compact ruleset and extract the metadata envelope that
-        // deserialize() expects, mirroring the production reader in
-        // dnr-rulesets/src/lib/unsafe-rules/ruleset-deserialize.ts.
+        // Produce the compact ruleset and read it back with the public
+        // reader, mirroring the production consumers.
         const compactOutput = await ruleset.serializeCompact([], true);
-        const parsedRuleset = JSON.parse(compactOutput) as DeclarativeRule[];
-        // The first element is the metadata rule whose `metadata` key
-        // carries the `metadata` (SerializedRulesetData) and `lazyMetadata`
-        // (SerializedRulesetLazyData) envelopes.
-        const metadataRule = parsedRuleset[0] as unknown as {
-            metadata: {
-                metadata: unknown;
-                lazyMetadata: unknown;
-            };
-        };
-        const { metadata, lazyMetadata } = metadataRule.metadata;
 
-        const {
-            data: {
-                regexpRulesCount,
-                unsafeRulesCount,
-                safeRulesCount,
-                rulesetHashMapRaw,
-                badFilterRulesRaw,
-                unsafeRules,
-            },
-            rulesetContentProvider,
-        } = await RulesetWithSourceMap.deserialize(
-            ruleset.getId(),
-            JSON.stringify(metadata),
-            async () => JSON.stringify(lazyMetadata),
-            async () => JSON.stringify(parsedRuleset.slice(1)),
-            [originalFilter],
-        );
+        expect(parseCompactRuleset(ruleset.getId(), JSON.parse(compactOutput)).metadataRulesCount)
+            .toBeGreaterThanOrEqual(1);
 
-        const sources = RulesHashMap.deserializeSources(rulesetHashMapRaw);
-        const rulesetHashMap = new RulesHashMap(sources);
-        const badFilterRules = badFilterRulesRaw
-            .flatMap(
-                (rawString) => Rule.createFromText(
-                    filterId,
-                    badFilterRuleIndex,
-                    rawString,
-                ),
-            );
-
-        const deserializedRuleset = new RulesetWithSourceMap(
-            ruleset.getId(),
-            safeRulesCount,
-            unsafeRulesCount,
-            regexpRulesCount,
-            rulesetContentProvider,
-            badFilterRules,
-            rulesetHashMap,
-            unsafeRules,
-        );
+        const deserializedRuleset = await restoreFromCompact(compactOutput, originalFilter);
 
         // check $badfilter rules
         expect(deserializedRuleset.getBadFilterRules()).toHaveLength(ruleset.getBadFilterRules().length);
@@ -316,11 +307,10 @@ describe('Ruleset', () => {
         const ruleset = await createRuleset(content, filterId);
 
         const compactOutput = await ruleset.serializeCompact([], true);
-        const parsedRuleset = JSON.parse(compactOutput) as DeclarativeRule[];
-        const metadataRule = parsedRuleset[0] as unknown as {
-            metadata: { metadata: unknown; lazyMetadata: unknown };
-        };
-        const { metadata, lazyMetadata } = metadataRule.metadata;
+        const { metadata, lazyMetadata, declarativeRules } = parseCompactRuleset(
+            ruleset.getId(),
+            JSON.parse(compactOutput),
+        );
 
         const {
             data: { badFilterRulesRaw },
@@ -328,7 +318,7 @@ describe('Ruleset', () => {
             ruleset.getId(),
             JSON.stringify(metadata),
             async () => JSON.stringify(lazyMetadata),
-            async () => JSON.stringify(parsedRuleset.slice(1)),
+            async () => JSON.stringify(declarativeRules),
             [originalFilter],
         );
 
@@ -583,10 +573,12 @@ describe('Ruleset', () => {
             const ruleset = await createRuleset(content);
             const compactOutput = await ruleset.serializeCompact([], true);
 
-            expect(compactOutput).toBeTruthy();
-            const parsed = JSON.parse(compactOutput) as DeclarativeRule[];
-            // Should contain metadata rule + declarative rules
-            expect(parsed.length).toBeGreaterThan(0);
+            const parsed = parseCompactRuleset(ruleset.getId(), JSON.parse(compactOutput));
+
+            expect(parsed.metadataRulesCount).toBe(1);
+            expect(parsed.filterContent).toBe(content.join('\n'));
+            expect(parsed.declarativeRules).toStrictEqual(await ruleset.getDeclarativeRules());
+            expect(parsed.metadata.safeRulesCount).toBe(ruleset.getSafeRulesCount());
         });
 
         it('serializes compact output with non-empty unsafe rules and excludes them', async () => {
@@ -602,40 +594,291 @@ describe('Ruleset', () => {
 
             const unsafeRulesCount = 2;
             const ruleset = await createRuleset(content, 0, unsafeRulesCount);
-
-            // The unsafe rules are stored on the rule set; pass them back to
-            // `serializeCompact()` the same way the production post-pass does.
             const unsafeRules = await ruleset.getUnsafeRules();
 
-            // 1. Count validation accepts the non-empty array (length ===
-            //    unsafeRulesCount) — a mismatch would throw before producing
-            //    output.
             const compactOutput = await ruleset.serializeCompact(unsafeRules, true);
+            const parsed = parseCompactRuleset(ruleset.getId(), JSON.parse(compactOutput));
 
-            expect(compactOutput).toBeTruthy();
-            // The compact output's first rule is the metadata rule, whose
-            // `metadata` key holds `{ metadata: SerializedRulesetData, ... }`.
-            type ParsedRule = DeclarativeRule & {
-                metadata?: { metadata?: SerializedRulesetData };
-            };
-            const parsed = JSON.parse(compactOutput) as ParsedRule[];
+            expect(parsed.metadata.unsafeRulesCount).toBe(unsafeRulesCount);
+            expect(parsed.metadata.unsafeRules).toHaveLength(unsafeRulesCount);
 
-            // 2. The compact output metadata rule (first rule) contains the
-            //    unsafe-rule entries.
-            const metadataRule = parsed[0];
-            const serializedData = metadataRule.metadata?.metadata;
-            expect(serializedData).toBeDefined();
-            expect(serializedData?.unsafeRulesCount).toBe(unsafeRulesCount);
-            expect(serializedData?.unsafeRules).toHaveLength(unsafeRulesCount);
             const unsafeIds = unsafeRules.map((r) => r.id);
-            const metadataUnsafeIds = serializedData?.unsafeRules?.map((r) => r.id) ?? [];
-            expect(metadataUnsafeIds).toEqual(expect.arrayContaining(unsafeIds));
+            expect(parsed.metadata.unsafeRules.map((r) => r.id)).toEqual(expect.arrayContaining(unsafeIds));
 
-            // 3. The excluded unsafe rules are removed from the serialized
-            //    declarative rules array (every rule after the metadata rule).
-            const outputDeclarativeRules = parsed.slice(1);
             const unsafeIdsSet = new Set(unsafeIds);
-            expect(outputDeclarativeRules.every((r) => !unsafeIdsSet.has(r.id))).toBe(true);
+            expect(parsed.declarativeRules.every((r) => !unsafeIdsSet.has(r.id))).toBe(true);
+        });
+
+        it('splits large metadata into several metadata rules within the bound', async () => {
+            const content = Array.from({ length: 6000 }, (_, i) => `||example${i}.com^`);
+            const ruleset = await createRuleset(content);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+            const ordinaryIds = new Set(declarativeRules.map((r) => r.id));
+
+            for (const pretty of [false, true]) {
+                // eslint-disable-next-line no-await-in-loop
+                const compactOutput = await ruleset.serializeCompact([], pretty);
+                const rules = JSON.parse(compactOutput) as DeclarativeRule[];
+                const parsed = parseCompactRuleset(ruleset.getId(), rules);
+
+                expect(parsed.metadataRulesCount).toBeGreaterThan(1);
+                expectMetadataValuesWithinBound(compactOutput, pretty);
+
+                for (const rule of rules.slice(0, parsed.metadataRulesCount)) {
+                    expect(ordinaryIds.has(rule.id)).toBe(false);
+                }
+
+                const allIds = rules.map((r) => r.id);
+                expect(new Set(allIds).size).toBe(allIds.length);
+                expect(parsed.filterContent).toBe(content.join('\n'));
+                expect(parsed.declarativeRules).toStrictEqual(declarativeRules);
+            }
+        });
+
+        it('gives metadata rules the smallest ids not used by ordinary or unsafe rules', async () => {
+            /**
+             * Builds a block rule with the given id.
+             *
+             * @param id Rule id.
+             *
+             * @returns Declarative rule.
+             */
+            const makeRule = (id: number): DeclarativeRule => {
+                return {
+                    id,
+                    action: { type: RuleActionType.Block },
+                    condition: { urlFilter: `||example${id}.com^` },
+                };
+            };
+            const declarativeRules = [makeRule(1), makeRule(2), makeRule(4)];
+            const unsafeRule: DeclarativeRule = {
+                ...makeRule(1),
+                action: {
+                    type: RuleActionType.Redirect,
+                    redirect: { extensionPath: '/redirect.js' },
+                },
+            };
+            const filter = createFilter(['||example1.com^']);
+            const ruleset = new RulesetWithSourceMap(
+                'rulesetId',
+                2,
+                1,
+                0,
+                {
+                    loadSourceMap: async () => new SourceMap([]),
+                    loadFilterList: async () => [filter],
+                    loadDeclarativeRules: async () => declarativeRules,
+                },
+                [],
+                new RulesHashMap([]),
+                [unsafeRule],
+            );
+
+            const parsed = JSON.parse(await ruleset.serializeCompact([unsafeRule], false)) as DeclarativeRule[];
+
+            // Ordinary ids after excluding the unsafe rule: 2, 4; unsafe: 1.
+            // The single metadata rule takes 3 and ordinary ids are untouched.
+            expect(parsed.map((r) => r.id)).toEqual([3, 2, 4]);
+        });
+
+        it.each([
+            [['dummy.rule.adguard.com', '||example.com^']],
+            [['||example.com^', 'dummy.rule.adguard.com']],
+        ])('keeps an ordinary rule whose urlFilter equals the metadata marker (%j)', async (content) => {
+            const ruleset = await createRuleset(content);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            const parsed = parseCompactRuleset(ruleset.getId(), JSON.parse(await ruleset.serializeCompact([], false)));
+
+            expect(parsed.metadataRulesCount).toBe(1);
+            expect(parsed.declarativeRules).toHaveLength(2);
+            expect(parsed.declarativeRules).toStrictEqual(declarativeRules);
+            expect(parsed.declarativeRules.some((rule) => rule.condition.urlFilter === 'dummy.rule.adguard.com'))
+                .toBe(true);
+        });
+
+        it('is deterministic and does not mutate the ruleset', async () => {
+            const ruleset = await createRuleset(['||example.com^', '||example.org^']);
+            const before = await ruleset.getDeclarativeRules();
+
+            const first = await ruleset.serializeCompact([], true);
+            const second = await ruleset.serializeCompact([], true);
+
+            expect(second).toBe(first);
+            expect(await ruleset.getDeclarativeRules()).toBe(before);
+        });
+
+        it('re-serializes a restored ruleset within the bound and stays stable on repeated post-passes', async () => {
+            const content = [
+                '||example.com^$document',
+                '||test.com^$document',
+                '@@||example.io^',
+            ];
+            const filter = createFilter(content);
+            const ruleset = await createRuleset(content, 0, 2);
+            const unsafeRules = await ruleset.getUnsafeRules();
+            const id = ruleset.getId();
+
+            const first = await ruleset.serializeCompact(unsafeRules, false);
+            const restoredOnce = await restoreFromCompact(first, filter);
+            const second = await restoredOnce.serializeCompact(await restoredOnce.getUnsafeRules(), false);
+            const restoredTwice = await restoreFromCompact(second, filter);
+            const third = await restoredTwice.serializeCompact(await restoredTwice.getUnsafeRules(), false);
+
+            // Same content after the first post-pass (valibot may reorder keys
+            // inside `unsafeRules`, which toEqual ignores) ...
+            expect(parseCompactRuleset(id, JSON.parse(second))).toEqual(parseCompactRuleset(id, JSON.parse(first)));
+            // ... and identical bytes from then on.
+            expect(third).toBe(second);
+            expectMetadataValuesWithinBound(second, false);
+        });
+    });
+
+    describe('fromDeserialized', () => {
+        const content = [
+            '||example.com^$document',
+            '@@||example.io^',
+            '@@||evil.com^$badfilter',
+        ];
+
+        it('builds the same ruleset as calling the constructor by hand', async () => {
+            const filter = createFilter(content);
+            const ruleset = await createRuleset(content);
+            const compactOutput = await ruleset.serializeCompact([], false);
+            const { metadata, lazyMetadata, declarativeRules } = parseCompactRuleset(
+                'rulesetId',
+                JSON.parse(compactOutput),
+            );
+
+            const expected = await restoreFromCompact(compactOutput, filter);
+            const actual = RulesetWithSourceMap.fromDeserialized(await RulesetWithSourceMap.deserialize(
+                'rulesetId',
+                JSON.stringify(metadata),
+                async () => JSON.stringify(lazyMetadata),
+                async () => JSON.stringify(declarativeRules),
+                [filter],
+            ), 3);
+
+            expect(actual.getId()).toBe('rulesetId');
+            expect(actual.getMetadataRulesCount()).toBe(3);
+            expect(actual.getSafeRulesCount()).toBe(expected.getSafeRulesCount());
+            expect(actual.getUnsafeRulesCount()).toBe(expected.getUnsafeRulesCount());
+            expect(actual.getRegexpRulesCount()).toBe(expected.getRegexpRulesCount());
+            expect(await actual.getUnsafeRules()).toStrictEqual(await expected.getUnsafeRules());
+            expect(actual.getBadFilterRules().map((r) => r.getText()))
+                .toEqual(expected.getBadFilterRules().map((r) => r.getText()));
+            expect(actual.getBadFilterRules()).toHaveLength(1);
+            expect(actual.getRulesHashMap().serialize()).toBe(expected.getRulesHashMap().serialize());
+            expect(await actual.getDeclarativeRules()).toStrictEqual(await expected.getDeclarativeRules());
+            expect(await actual.serializeCompact([], false)).toBe(await expected.serializeCompact([], false));
+        });
+    });
+
+    describe('fromCompact', () => {
+        const content = [
+            '||example.com^$document',
+            '||example.net##h2',
+            '@@||example.io^',
+            '@@||evil.com^$badfilter',
+            '||test.com^$redirect=noopjs',
+        ];
+
+        it('builds the same ruleset as the deserialize path', async () => {
+            const filter = createFilter(content);
+            const ruleset = await createRuleset(content, 0, 1);
+            const compactOutput = await ruleset.serializeCompact(await ruleset.getUnsafeRules(), true);
+
+            const expected = await restoreFromCompact(compactOutput, filter);
+            const parsed = parseCompactRuleset('rulesetId', JSON.parse(compactOutput));
+            const actual = RulesetWithSourceMap.fromCompact('rulesetId', parsed, [filter]);
+
+            expect(actual.getId()).toBe('rulesetId');
+            expect(actual.getMetadataRulesCount()).toBe(parsed.metadataRulesCount);
+            expect(actual.getSafeRulesCount()).toBe(expected.getSafeRulesCount());
+            expect(actual.getUnsafeRulesCount()).toBe(expected.getUnsafeRulesCount());
+            expect(actual.getRegexpRulesCount()).toBe(expected.getRegexpRulesCount());
+            expect(await actual.getUnsafeRules()).toStrictEqual(await expected.getUnsafeRules());
+            expect(actual.getBadFilterRules().map((r) => r.getText()))
+                .toEqual(expected.getBadFilterRules().map((r) => r.getText()));
+            expect(actual.getRulesHashMap().serialize()).toBe(expected.getRulesHashMap().serialize());
+
+            const declarativeRules = await actual.getDeclarativeRules();
+            expect(declarativeRules).toStrictEqual(await expected.getDeclarativeRules());
+
+            for (const { id } of declarativeRules) {
+                // eslint-disable-next-line no-await-in-loop
+                expect(await actual.getRulesById(id)).toStrictEqual(await expected.getRulesById(id));
+            }
+
+            // A post-pass over the result writes the same bytes as the
+            // deserialize path, byte for byte.
+            const actualOutput = await actual.serializeCompact(await actual.getUnsafeRules(), true);
+            expect(actualOutput).toBe(await expected.serializeCompact(await expected.getUnsafeRules(), true));
+
+            // Guard against a vacuous pass: the fresh build writes rules in
+            // converter key order, and both paths normalize them to the
+            // schema key order. If fromCompact returned the input objects,
+            // the bytes above would differ.
+            const [freshRule] = parseCompactRuleset('rulesetId', JSON.parse(compactOutput)).declarativeRules;
+            const [writtenRule] = parseCompactRuleset('rulesetId', JSON.parse(actualOutput)).declarativeRules;
+            expect(Object.keys(freshRule)).not.toEqual(Object.keys(writtenRule));
+            expect(Object.keys(writtenRule).slice(0, 3)).toEqual(['action', 'condition', 'id']);
+
+            const [freshUnsafe] = parseCompactRuleset('rulesetId', JSON.parse(compactOutput)).metadata.unsafeRules;
+            const [writtenUnsafe] = await actual.getUnsafeRules();
+            expect(Object.keys(freshUnsafe)).not.toEqual(Object.keys(writtenUnsafe));
+        });
+
+        it('does not serialize the parsed content back to strings', async () => {
+            const filter = createFilter(content);
+            const ruleset = await createRuleset(content);
+            const parsed = parseCompactRuleset('rulesetId', JSON.parse(await ruleset.serializeCompact([], false)));
+            const stringifySpy = vi.spyOn(JSON, 'stringify');
+
+            try {
+                const restored = RulesetWithSourceMap.fromCompact('rulesetId', parsed, [filter]);
+                await restored.getDeclarativeRules();
+
+                const stringified = stringifySpy.mock.calls.map(([value]) => value);
+                expect(stringified).not.toContain(parsed.metadata);
+                expect(stringified).not.toContain(parsed.lazyMetadata);
+                expect(stringified).not.toContain(parsed.declarativeRules);
+            } finally {
+                stringifySpy.mockRestore();
+            }
+        });
+
+        it('throws UnavailableRulesetSourceError on invalid metadata', async () => {
+            const ruleset = await createRuleset(content);
+            const parsed = parseCompactRuleset('rulesetId', JSON.parse(await ruleset.serializeCompact([], false)));
+            const { unsafeRules, ...metadataWithoutUnsafeRules } = parsed.metadata;
+
+            expect(unsafeRules).toEqual([]);
+            expect(() => RulesetWithSourceMap.fromCompact(
+                'rulesetId',
+                { ...parsed, metadata: metadataWithoutUnsafeRules as SerializedRulesetData },
+                [createFilter(content)],
+            )).toThrow(UnavailableRulesetSourceError);
+        });
+
+        it('rejects lazy loads of invalid lazy metadata or declarative rules', async () => {
+            const ruleset = await createRuleset(content);
+            const parsed = parseCompactRuleset('rulesetId', JSON.parse(await ruleset.serializeCompact([], false)));
+            const [firstRule] = parsed.declarativeRules;
+
+            const withBadLazyData = RulesetWithSourceMap.fromCompact(
+                'rulesetId',
+                { ...parsed, lazyMetadata: { sourceMapRaw: 42 } as unknown as typeof parsed.lazyMetadata },
+                [createFilter(content)],
+            );
+            await expect(withBadLazyData.getRulesById(firstRule.id)).rejects.toThrow();
+
+            const withBadRules = RulesetWithSourceMap.fromCompact(
+                'rulesetId',
+                { ...parsed, declarativeRules: [{ ...firstRule, metadata: {} } as DeclarativeRule] },
+                [createFilter(content)],
+            );
+            await expect(withBadRules.getDeclarativeRules()).rejects.toThrow();
         });
     });
 });

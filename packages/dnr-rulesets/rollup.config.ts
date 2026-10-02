@@ -4,6 +4,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
 import swc from '@rollup/plugin-swc';
+import type { Plugin } from 'rollup';
 import copy from 'rollup-plugin-copy';
 import { dts } from 'rollup-plugin-dts';
 import { nodeExternals } from 'rollup-plugin-node-externals';
@@ -17,6 +18,23 @@ const entryPoints = {
     'lib/index': 'src/lib/index.ts',
     'utils/index': 'src/utils/index.ts',
 };
+
+/**
+ * Set the packaged filters path relative to each emitted entry point.
+ *
+ * @param relativePath Path relative to the library or CLI bundle.
+ *
+ * @returns Plugin replacing asset layout metadata with its output-specific path.
+ */
+const filtersDirectory = (relativePath: string): Plugin => ({
+    name: 'filters-directory',
+    resolveImportMeta(property) {
+        if (property === 'filtersRelativePath') {
+            return JSON.stringify(relativePath);
+        }
+        return null;
+    },
+});
 
 // Suppress specific warnings from `terser` package
 // TODO: Remove when terser will update their code
@@ -44,6 +62,7 @@ const mainConfig = {
     }],
     onwarn,
     plugins: [
+        filtersDirectory('../filters'),
         nodeExternals(),
         resolve({ extensions: ['.ts', '.js'] }),
         json(),
@@ -65,6 +84,7 @@ const cliConfig = {
     }],
     onwarn,
     plugins: [
+        filtersDirectory('./filters'),
         resolve({ extensions: ['.ts', '.js'] }),
         json(),
         swc(),

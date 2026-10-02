@@ -19,10 +19,11 @@ trap cleanup EXIT
 
 (cd ../../.. && pnpm pack --out "$curr_path/$adguard_dnr_rulesets")
 
-# unzip to @adguard/dnr-rulesets to node_modules
-adguard_dnr_rulesets_node_modules=$nm_path"/@adguard/dnr-rulesets"
-mkdir -p $adguard_dnr_rulesets_node_modules
-tar -xzf $adguard_dnr_rulesets --strip-components=1 -C $adguard_dnr_rulesets_node_modules
+# Install through a path containing spaces to exercise ESM file URL handling.
+adguard_dnr_rulesets_package_path="$nm_path/package with spaces"
+mkdir -p "$adguard_dnr_rulesets_package_path" "$nm_path/@adguard"
+tar -xzf "$adguard_dnr_rulesets" --strip-components=1 -C "$adguard_dnr_rulesets_package_path"
+ln -s '../package with spaces' "$nm_path/@adguard/dnr-rulesets"
 
 pnpm start
 echo "Test successfully built."

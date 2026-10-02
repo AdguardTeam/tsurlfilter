@@ -53,6 +53,42 @@ There is no version-increment workflow. Start the next release by dispatching
 For a dry-run of the publish pipeline without touching the registry, dispatch
 `publish-release.yml` with `dry_run: true`.
 
+### Re-running a release manually
+
+The Slack notification intentionally carries no re-run command — see this
+section instead.
+
+- **Transient failure before anything was published** (e.g. the npm 429
+  throttle or a registry hiccup): re-dispatch the publish pinned to the release
+  commit. The changelog at `master` tip may already describe a newer version,
+  so always pass the merge commit SHA of the release PR:
+
+  ```bash
+  gh workflow run publish-release.yml \
+    -f package=<package> \
+    -f ref=<merge-commit-sha-of-the-release-pr>
+  ```
+
+- **Partial publish** (the version is already on the registry, but a later leg
+  failed — e.g. tag or mirror): do **not** re-dispatch — the publish would be
+  rejected (409) and the later legs are gated on a successful publish. Re-run
+  the failed jobs of the original run instead, so the tag and GitHub Release
+  complete for the already-published version:
+
+  ```bash
+  gh run rerun <run-id> --failed
+  ```
+
+  If the publish leg itself succeeded but the downstream jobs were *skipped*
+  (rather than failed — e.g. the pre-fix skip propagation in AG-59411):
+  re-running does not help. A run with no failures still offers *Re-run all
+  jobs* (`gh run rerun <run-id>`), which re-runs skipped jobs too, but a
+  re-run replays the original workflow revision and commit SHA — the pre-fix
+  `if` conditions would skip the same jobs again — and re-running the publish
+  leg would hit the 409 anyway. Re-dispatch with the pinned `ref` above only
+  if the version is not yet on the registry, otherwise complete the
+  tag/mirror legs manually.
+
 ## Scheduled automation
 
 - `update-companiesdb.yml` regenerates the tswebextension companies database
@@ -118,7 +154,8 @@ publisher for the workflow that actually invokes `deploy-to-npm.yml`:
   and publish to the internal Artifact Keeper instead. The OIDC trusted
   publisher for `publish-stable-dnr-rulesets.yml` (no `npm` environment
   restriction) can stay registered until npm publishing is re-enabled;
-  while paused, no dnr-rulesets workflow run contacts npm.
+  while paused, no dnr-rulesets workflow run contacts npm. The AK publish
+  runs without a GitHub environment (no approval gate), like the stable line.
 
 ## External setup checklist
 
