@@ -93,6 +93,13 @@
 /* eslint-enable jsdoc/no-multi-asterisks */
 /* eslint-enable max-len */
 import { RuleGenerator } from '@adguard/agtree/generator';
+import {
+    ADBLOCK_URL_SEPARATOR,
+    ADBLOCK_URL_SEPARATOR_REGEX,
+    ADBLOCK_URL_START,
+    ADBLOCK_URL_START_REGEX,
+    RegExpUtils,
+} from '@adguard/agtree/utils';
 import { getRedirectFilename } from '@adguard/scriptlets/redirects';
 
 import {
@@ -617,10 +624,11 @@ export class RegularRuleConverter {
      * Retrieves the condition for the provided {@link Rule}.
      *
      * @param rule {@link Rule} to get condition for.
+     * @param useRemoveParamRegex Whether to use a regexp for eligible named parameter removal.
      *
      * @returns A rule condition that describes to which request the declarative rule should be applied.
      */
-    private static getCondition(rule: Rule): RuleCondition {
+    private static getCondition(rule: Rule, useRemoveParamRegex = true): RuleCondition {
         const condition: RuleCondition = {};
 
         // set `urlFilter` or `regexFilter` depending on the pattern type
@@ -637,16 +645,50 @@ export class RegularRuleConverter {
             }
         }
 
-        // For $removeparam rules with a specific named parameter, append
-        // a param-aware token to urlFilter so that the rule only matches
-        // when the target parameter is present in the URL query string.
+        // For $removeparam rules with a specific named parameter, add
+        // a parameter-aware URL condition that stops matching after removal.
         // This enables Chrome DNR to chain multiple redirect hops,
         // stripping one parameter per hop until all are removed.
         if (rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
             const paramToken = RegularRuleConverter.getRemoveParamToken(rule);
             if (paramToken !== null) {
                 if (condition.urlFilter) {
-                    condition.urlFilter += `*${paramToken}`;
+                    const prefix = condition.urlFilter.slice(0, -ADBLOCK_URL_SEPARATOR.length);
+                    const hasDomainAnchor = prefix.startsWith(ADBLOCK_URL_START);
+                    const authority = hasDomainAnchor ? prefix.slice(ADBLOCK_URL_START.length).split('/')[0] : '';
+                    if (
+                        useRemoveParamRegex
+                        && condition.urlFilter.endsWith(ADBLOCK_URL_SEPARATOR)
+                        && prefix.startsWith('|')
+                        && !/[*?#^]/.test(prefix)
+                        && (!hasDomainAnchor || (authority.length > 0 && !authority.includes('@')))
+                    ) {
+                        // Share the trailing separator with the query delimiter when the parameter is first.
+                        // Anchoring keeps this delimiter at the actual query boundary.
+                        // Unanchored patterns can match inside the query and retain native URL-filter matching.
+                        const patternRegexp = RegExpUtils.patternToRegexp(condition.urlFilter);
+                        let prefixRegexp = patternRegexp.slice(0, -ADBLOCK_URL_SEPARATOR_REGEX.length);
+                        if (hasDomainAnchor) {
+                            // Domain anchors start at the parsed host, after any credentials, on any URL scheme.
+                            prefixRegexp = prefixRegexp.replace(
+                                ADBLOCK_URL_START_REGEX,
+                                '^[a-z][a-z0-9+.-]*://(?:[^[:^ascii:]/?#@]*@)?(?:[^[:^ascii:]/?#@]*\\.)?',
+                            );
+                        }
+                        const paramRegexp = RegExpUtils.patternToRegexp(paramToken);
+                        const paramNameRegexp = paramRegexp.slice(ADBLOCK_URL_SEPARATOR_REGEX.length);
+                        // DNR matches ASCII-serialized URLs. Bound classes to ASCII to keep RE2 compilation small.
+                        const pathSeparator = '[^[:^ascii:] a-zA-Z0-9.%_?#-]';
+                        const pathTail = hasDomainAnchor && !prefix.includes('/')
+                            // A separator in the authority must not turn a username into a host match.
+                            ? '(?:[^[:^ascii:] a-zA-Z0-9.%_/?#@-][^[:^ascii:]/?#@]*)?(?:/[^[:^ascii:]?#]*)?'
+                            : `(?:${pathSeparator}[^[:^ascii:]?#]*)?`;
+                        condition.regexFilter = `${prefixRegexp}${pathTail}`
+                            + `\\?(?:[^[:^ascii:]#]*&)?${paramNameRegexp}`;
+                        delete condition.urlFilter;
+                    } else {
+                        condition.urlFilter += `*${paramToken}`;
+                    }
                 } else if (!condition.regexFilter) {
                     condition.urlFilter = paramToken;
                 }
@@ -842,7 +884,16 @@ export class RegularRuleConverter {
         declarativeRule.priority = rule.priority;
 
         // Validate created declarative rule and throw error if not valid
-        const conversionErr = await RegularRuleConverter.checkRuleApplication(rule, declarativeRule);
+        let conversionErr = await RegularRuleConverter.checkRuleApplication(rule, declarativeRule);
+        if (
+            conversionErr instanceof UnsupportedRegexpError
+            && !rule.isRegexRule()
+            && rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)
+        ) {
+            // Preserve native URL-filter matching when the generated parameter-aware regexp is unsupported.
+            declarativeRule.condition = RegularRuleConverter.getCondition(rule, false);
+            conversionErr = await RegularRuleConverter.checkRuleApplication(rule, declarativeRule);
+        }
         if (conversionErr) {
             throw conversionErr;
         }
