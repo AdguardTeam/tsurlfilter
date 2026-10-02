@@ -30,13 +30,12 @@ import { getBitCount } from '../utils/bit-utils';
 import { hasSpaces, stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
 
 import {
+    EXCLUDED_FROM_WRITTEN_KEY,
     MASK_ALLOWLIST,
     NETWORK_RULE_OPTIONS,
-    NO_WRITTEN_MODIFIERS,
     NOT_MARK,
     OPTIONS_DELIMITER,
-    VALUE_BEARING_OPTIONS,
-    type WrittenModifier,
+    WRITTEN_MODIFIER_SEPARATOR,
 } from './network-rule-options';
 import { type NetworkRuleOption as NetworkRuleOptionType, OptionFlags } from './option-flags';
 import { Pattern } from './pattern';
@@ -477,15 +476,15 @@ export class NetworkRule implements IRule {
     private stealthModifier: StealthModifier | null = null;
 
     /**
-     * Value-bearing modifiers exactly as written in the original rule text, in
+     * Comparison key of the modifiers as written in the original rule text, in
      * order.
      *
-     * A `$badfilter` rule requires the rule text to match, so these written
-     * entries are compared instead of the parsed (normalized) modifier state.
-     * Filled during {@link loadOptions} when the rule was not converted: the
-     * parsed node is the original one then, so nothing has to be parsed twice.
+     * A `$badfilter` rule requires the rule text to match, so this key is compared
+     * instead of the parsed (normalized) modifier state. Filled during
+     * {@link loadOptions} when the rule was not converted: the parsed node is the
+     * original one then, so nothing has to be parsed twice.
      */
-    private writtenModifiersCache: readonly WrittenModifier[] | null = null;
+    private writtenModifiersKeyCache: string | null = null;
 
     /**
      * Rule text as written in the filter list, kept only when the rule was
@@ -493,7 +492,7 @@ export class NetworkRule implements IRule {
      *
      * Conversion rewrites modifier names and values (for example
      * `$queryprune=foo` becomes `$removeparam=foo`), so the written form has to
-     * be kept to collect {@link writtenModifiers} on demand. Indexed rules do
+     * be kept to build {@link writtenModifiersKey} on demand. Indexed rules do
      * not keep their text in memory, so this is set only when it is needed.
      */
     private readonly originalRuleText: string | null;
@@ -1422,10 +1421,10 @@ export class NetworkRule implements IRule {
      * @throws An error if there is an unsupported modifier.
      */
     private loadOptions(options: ModifierList): void {
-        // Collect the written value-bearing modifiers in the same pass that loads
-        // the parsed options: `$badfilter` compares the rule as written, and a
-        // separate pass would add avoidable work to the rule construction path.
-        let writtenModifiers: WrittenModifier[] | null = null;
+        // Build the written-modifiers key in the same pass that loads the parsed
+        // options: `$badfilter` compares the rule as written, and a separate pass
+        // would add avoidable work to the rule construction path.
+        const writtenModifiers: string[] = [];
 
         for (const option of options.children) {
             let value = EMPTY_STRING;
@@ -1436,16 +1435,17 @@ export class NetworkRule implements IRule {
 
             const name = option.name.value;
 
-            if (this.originalRuleText === null && VALUE_BEARING_OPTIONS.has(name)) {
-                writtenModifiers ??= [];
-                writtenModifiers.push([name, value]);
+            if (this.originalRuleText === null && !EXCLUDED_FROM_WRITTEN_KEY.has(name)) {
+                writtenModifiers.push(
+                    NetworkRule.formatWrittenModifier(name, option.value?.value, option.exception),
+                );
             }
 
             this.loadOption(name, value, option.exception);
         }
 
         if (this.originalRuleText === null) {
-            this.writtenModifiersCache = writtenModifiers ?? NO_WRITTEN_MODIFIERS;
+            this.writtenModifiersKeyCache = writtenModifiers.join(WRITTEN_MODIFIER_SEPARATOR);
         }
 
         this.validateOptions();
@@ -1564,7 +1564,7 @@ export class NetworkRule implements IRule {
             return false;
         }
 
-        if (!this.hasSameValueModifiers(specifiedRule)) {
+        if (!this.hasSameWrittenModifiers(specifiedRule)) {
             return false;
         }
 
@@ -1594,84 +1594,106 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * Checks whether this rule and the given rule have the same value-bearing
-     * modifiers, exactly as written in the rule text.
+     * Checks whether this rule and the given rule have the same modifiers,
+     * exactly as written in the rule text.
      *
      * Written entries are used on purpose: a `$badfilter` rule disables a rule
-     * only when the rule text matches, so modifiers that differ as written must
-     * not negate each other even if they are equivalent after parsing (for
-     * example `$removeheader=Set-Cookie` and `$removeheader=set-cookie`, or
-     * `$queryprune` and `$removeparam`).
+     * only when the rule text matches, so rules that differ as written must not
+     * negate each other even if they are equivalent after parsing (for example
+     * `$removeheader=Set-Cookie` and `$removeheader=set-cookie`, or `$queryprune`
+     * and `$removeparam`). The order of the modifiers is part of the rule text as
+     * well, so a reordered rule does not match.
      *
-     * `$redirect` and `$redirect-rule` share one option flag, but they are
-     * distinct modifier names, so the list distinguishes them as well.
+     * `$domain` and `$denyallow` are excluded from the key and compared
+     * separately, with domain normalization.
      *
      * @param specifiedRule Rule to compare with.
      *
-     * @returns True if all value-bearing modifiers are equal.
+     * @returns True if all written modifiers are equal.
      */
-    private hasSameValueModifiers(specifiedRule: NetworkRule): boolean {
-        const own = this.writtenModifiers;
-        const other = specifiedRule.writtenModifiers;
-
-        return own.length === other.length
-            && own.every(([name, value], index) => (
-                other[index][0] === name && other[index][1] === value
-            ));
+    private hasSameWrittenModifiers(specifiedRule: NetworkRule): boolean {
+        return this.writtenModifiersKey === specifiedRule.writtenModifiersKey;
     }
 
     /**
-     * Returns value-bearing modifiers as written in the original rule text.
+     * Returns the comparison key of the modifiers as written in the original rule
+     * text.
      *
-     * The original text is parsed on demand: only a `$badfilter` comparison
-     * needs the written form, and re-parsing every converted rule up front would
-     * put that work on the rule construction path.
+     * The original text is parsed on demand: only a `$badfilter` comparison needs
+     * the written form, and re-parsing every converted rule up front would put
+     * that work on the rule construction path.
      *
-     * @returns Written value-bearing modifiers, in the order of the rule text.
+     * @returns Written modifiers key, or an empty string when there is nothing to
+     *   compare.
      */
-    private get writtenModifiers(): readonly WrittenModifier[] {
+    private get writtenModifiersKey(): string {
         const text = this.originalRuleText;
 
-        if (this.writtenModifiersCache === null && text !== null) {
+        if (this.writtenModifiersKeyCache === null && text !== null) {
             try {
                 const node = NetworkRuleParser.parse(text, NetworkRule.PARSER_OPTIONS);
 
-                this.writtenModifiersCache = NetworkRule.collectWrittenModifiers(node);
+                this.writtenModifiersKeyCache = NetworkRule.buildWrittenModifiersKey(node);
             } catch {
                 // The text was already parsed once by the filter list, so this
-                // is not expected. Treat the rule as having no written
-                // value-bearing modifiers instead of failing the comparison.
-                this.writtenModifiersCache = NO_WRITTEN_MODIFIERS;
+                // is not expected. Treat the rule as having no written modifiers
+                // instead of failing the comparison.
+                this.writtenModifiersKeyCache = '';
             }
         }
 
-        return this.writtenModifiersCache ?? NO_WRITTEN_MODIFIERS;
+        return this.writtenModifiersKeyCache ?? '';
     }
 
     /**
-     * Collects value-bearing modifiers exactly as written in the given node.
+     * Builds the comparison key of the modifiers as written in the given node, in
+     * order.
      *
      * Conversion to AG syntax rewrites modifier names and values (for example
      * `$queryprune=foo` becomes `$removeparam=foo`), while `$badfilter` requires
      * the text as written, so the node must be parsed from the written text.
      *
+     * The whole modifier list takes part, not only the ones carrying a value: the
+     * position of a modifier relative to the others is part of the rule text.
+     *
      * @param node Network rule AST node parsed from the written rule text.
      *
-     * @returns Written value-bearing modifiers, in the order of the rule text.
+     * @returns Comparison key, or an empty string when there is nothing to
+     *   compare.
      */
-    private static collectWrittenModifiers(node: NetworkRuleNode): readonly WrittenModifier[] {
-        let writtenModifiers: WrittenModifier[] | null = null;
+    private static buildWrittenModifiersKey(node: NetworkRuleNode): string {
+        const entries: string[] = [];
 
         for (const option of node.modifiers?.children ?? []) {
             const name = option.name.value;
 
-            if (VALUE_BEARING_OPTIONS.has(name)) {
-                writtenModifiers ??= [];
-                writtenModifiers.push([name, option.value?.value ?? EMPTY_STRING]);
+            if (EXCLUDED_FROM_WRITTEN_KEY.has(name)) {
+                continue;
             }
+
+            entries.push(
+                NetworkRule.formatWrittenModifier(name, option.value?.value, option.exception),
+            );
         }
 
-        return writtenModifiers ?? NO_WRITTEN_MODIFIERS;
+        return entries.join(WRITTEN_MODIFIER_SEPARATOR);
+    }
+
+    /**
+     * Formats a single modifier for the written-modifiers comparison key.
+     *
+     * @param name Modifier name.
+     * @param value Modifier value, or `undefined` when the modifier has none.
+     * @param exception Whether the modifier is negated.
+     *
+     * @returns Key entry.
+     */
+    private static formatWrittenModifier(
+        name: string,
+        value: string | undefined,
+        exception: boolean | undefined,
+    ): string {
+        return `${exception ? NOT_MARK : ''}${name}${value === undefined ? '' : `=${value}`}`;
     }
 
     /**

@@ -5,52 +5,8 @@
  * logic can be reasoned about and tested in isolation.
  */
 
-import { OPTION_NAMES, SOURCE_SYNTAX_ALIASES } from './option-names';
+import { OPTION_NAMES } from './option-names';
 import { stringArraysEqual, stringArraysHaveIntersection } from './string-utils';
-
-/**
- * A single value-bearing modifier exactly as written in the rule text.
- */
-export type WrittenModifier = readonly [name: string, value: string];
-
-/**
- * Modifiers whose written value must match for a `$badfilter` rule to negate
- * another rule. Values are compared as written, because the rule text must match.
- * `$domain` and `$denyallow` are compared separately, with domain normalization.
- *
- * Source-syntax aliases are listed as well: the collection happens before the
- * converter resolves them, so `$queryprune` and `$rewrite` arrive here under
- * their original names.
- *
- * Keep in sync with `VALUE_BEARING_OPTIONS` in `@adguard/tsurlfilter` (duplicated:
- * tsurlfilter is a devDependency here). `$xmlprune` is listed only here.
- */
-export const VALUE_BEARING_MODIFIERS: ReadonlySet<string> = new Set([
-    OPTION_NAMES.CSP,
-    OPTION_NAMES.REPLACE,
-    OPTION_NAMES.URLTRANSFORM,
-    OPTION_NAMES.COOKIE,
-    OPTION_NAMES.REDIRECT,
-    OPTION_NAMES.REDIRECTRULE,
-    OPTION_NAMES.REMOVEPARAM,
-    OPTION_NAMES.REMOVEHEADER,
-    OPTION_NAMES.PERMISSIONS,
-    OPTION_NAMES.CLIENT,
-    OPTION_NAMES.DNSREWRITE,
-    OPTION_NAMES.DNSTYPE,
-    OPTION_NAMES.CTAG,
-    OPTION_NAMES.HEADER,
-    OPTION_NAMES.METHOD,
-    OPTION_NAMES.TO,
-    OPTION_NAMES.STEALTH,
-    OPTION_NAMES.APP,
-    OPTION_NAMES.JSONPRUNE,
-    OPTION_NAMES.XMLPRUNE,
-    OPTION_NAMES.HLS,
-    OPTION_NAMES.REFERRERPOLICY,
-    SOURCE_SYNTAX_ALIASES.QUERYPRUNE,
-    SOURCE_SYNTAX_ALIASES.REWRITE,
-]);
 
 /**
  * Minimal structural interface required by {@link RuleBadfilter.negates}.
@@ -67,26 +23,7 @@ interface BadfilterTarget {
     readonly restrictedDomains: string[] | null;
     readonly permittedDomains: string[] | null;
     readonly denyAllowDomains: string[] | null;
-    readonly writtenModifiers: readonly WrittenModifier[];
-}
-
-/**
- * Checks whether two written-modifier lists are equal. Order and multiplicity
- * are part of the rule text, so the comparison is element-wise.
- *
- * @param left First list.
- * @param right Second list.
- *
- * @returns `true` when both lists hold the same entries in the same order.
- */
-function writtenModifiersEqual(
-    left: readonly WrittenModifier[],
-    right: readonly WrittenModifier[],
-): boolean {
-    return left.length === right.length
-        && left.every(([name, value], index) => (
-            right[index][0] === name && right[index][1] === value
-        ));
+    readonly writtenModifiersKey: string;
 }
 
 /**
@@ -111,8 +48,8 @@ export class RuleBadfilter {
      * - the same allowlist flag,
      * - the same pattern,
      * - the same enabled modifiers (excluding `$badfilter` itself),
-     * - the same value-bearing modifiers, written exactly as in the rule text
-     *   (same entries, same order, repeats preserved),
+     * - the same modifiers, written exactly as in the rule text (same names,
+     *   same values, same order, repeats preserved),
      * - the same disabled modifiers,
      * - the same permitted/restricted resource types,
      * - the same restricted domains,
@@ -155,11 +92,12 @@ export class RuleBadfilter {
             return false;
         }
 
-        // Compare the value-bearing modifiers as written: the modifier sets
-        // above do not cover their values, and the parsed state may be
-        // normalized (for example `$method` is lowercased), while `$badfilter`
-        // requires the rule text to match.
-        if (!writtenModifiersEqual(badfilterRule.writtenModifiers, targetRule.writtenModifiers)) {
+        // Compare the modifiers as written: the modifier sets above do not cover
+        // values or order, and the parsed state is normalized (for example
+        // `$method` is lowercased), while `$badfilter` requires the rule text to
+        // match. `$domain` and `$denyallow` are excluded from the key and
+        // compared separately below.
+        if (badfilterRule.writtenModifiersKey !== targetRule.writtenModifiersKey) {
             return false;
         }
 

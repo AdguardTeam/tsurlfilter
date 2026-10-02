@@ -22,7 +22,7 @@ import { getErrorMessage } from '../utils/error';
 import { fastHash, fastHash31, hasSpaces } from '../utils/string';
 
 import { OPTION_NAMES } from './option-names';
-import { RuleBadfilter, VALUE_BEARING_MODIFIERS, type WrittenModifier } from './rule-badfilter';
+import { RuleBadfilter } from './rule-badfilter';
 import { RulePriority } from './rule-priority';
 import { type ConversionMeta, type HttpHeaderMatcher } from './rule-types';
 
@@ -240,10 +240,21 @@ export const REMOVEHEADER_COMPATIBLE_MODIFIERS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Shared empty result for rules without value-bearing modifiers: a modifier
- * list must not be allocated for every rule of a filter list.
+ * Modifiers left out of the written-modifiers comparison key: `$badfilter` is the
+ * marker of the rule being compared, and `$domain` / `$denyallow` are compared
+ * separately, with domain normalization.
  */
-const NO_WRITTEN_MODIFIERS: readonly WrittenModifier[] = Object.freeze([]);
+const EXCLUDED_FROM_WRITTEN_KEY: ReadonlySet<string> = new Set([
+    OPTION_NAMES.BADFILTER,
+    OPTION_NAMES.DOMAIN,
+    OPTION_NAMES.DENYALLOW,
+]);
+
+/**
+ * Separator of the written-modifiers comparison key. A rule is a single line, so
+ * a modifier name or value cannot contain a line break.
+ */
+const WRITTEN_MODIFIER_SEPARATOR = '\n';
 
 /**
  * Parsed and normalized network filtering rule.
@@ -360,7 +371,7 @@ export class Rule {
      * must be distinguishable from "no value".
      *
      * This is the parsed value used by the converters. For `$badfilter`
-     * identity see {@link writtenModifiers}.
+     * identity see {@link writtenModifiersKey}.
      */
     readonly advancedModifierValue: string | null = null;
 
@@ -377,7 +388,7 @@ export class Rule {
      * The order and the multiplicity of the written rule are preserved: a
      * repeated modifier (`$csp=a,csp=b`) is not collapsed.
      */
-    readonly writtenModifiers: readonly WrittenModifier[];
+    readonly writtenModifiersKey: string;
 
     /**
      * Rule text exactly as written in the filter list, before conversion to AG
@@ -385,7 +396,7 @@ export class Rule {
      *
      * Serialization must keep it: rebuilding a rule from its converted text
      * would silently change the written spelling of modifiers, and with it the
-     * `$badfilter` identity — see {@link writtenModifiers}.
+     * `$badfilter` identity — see {@link writtenModifiersKey}.
      */
     readonly originalText: string;
 
@@ -424,8 +435,8 @@ export class Rule {
      * @param filterListId Filter list ID.
      * @param index Rule index within the filter list.
      * @param node Network rule AST node (must already be in AG syntax).
-     * @param writtenModifiers Value-bearing modifiers as written in the
-     *   original rule text, collected before conversion to AG syntax.
+     * @param writtenModifiersKey Modifiers as written in the original rule
+     *   text, collected before conversion to AG syntax.
      * @param originalText Rule text as written in the filter list.
      *
      * @throws `SyntaxError` when the pattern contains spaces, the rule is too
@@ -435,10 +446,10 @@ export class Rule {
         filterListId: number,
         index: number,
         node: NetworkRuleNode,
-        writtenModifiers: readonly WrittenModifier[],
+        writtenModifiersKey: string,
         originalText: string,
     ) {
-        this.writtenModifiers = writtenModifiers;
+        this.writtenModifiersKey = writtenModifiersKey;
         this.originalText = originalText;
         const pattern = node.pattern.value;
         if (pattern && hasSpaces(pattern)) {
@@ -1067,10 +1078,10 @@ export class Rule {
         text: string,
     ): Rule[] {
         let rulesConvertedToAGSyntax: AnyRule[];
-        let writtenModifiers: readonly WrittenModifier[];
+        let writtenModifiersKey: string;
         try {
             const node = RuleParser.parse(text);
-            writtenModifiers = Rule.collectWrittenModifiers(node);
+            writtenModifiersKey = Rule.buildWrittenModifiersKey(node);
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
                 rulesConvertedToAGSyntax = conversionResult.result;
@@ -1093,7 +1104,7 @@ export class Rule {
             }
 
             try {
-                rules.push(new Rule(filterId, ruleIndex, ruleNode, writtenModifiers, text));
+                rules.push(new Rule(filterId, ruleIndex, ruleNode, writtenModifiersKey, text));
             } catch (e: unknown) {
                 throw new Error(
                     // eslint-disable-next-line max-len
@@ -1125,10 +1136,10 @@ export class Rule {
         node: AnyRule,
     ): Rule[] {
         let rulesConvertedToAG: AnyRule[];
-        let writtenModifiers: readonly WrittenModifier[];
+        let writtenModifiersKey: string;
         const originalText = Rule.getWrittenText(node);
         try {
-            writtenModifiers = Rule.collectWrittenModifiers(node);
+            writtenModifiersKey = Rule.buildWrittenModifiersKey(node);
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
                 rulesConvertedToAG = conversionResult.result;
@@ -1151,7 +1162,7 @@ export class Rule {
             }
 
             try {
-                rules.push(new Rule(filterListId, index, ruleNode, writtenModifiers, originalText));
+                rules.push(new Rule(filterListId, index, ruleNode, writtenModifiersKey, originalText));
             } catch (e: unknown) {
                 let msg = `"${getErrorMessage(e)}" in the rule: `;
 
@@ -1208,35 +1219,44 @@ export class Rule {
     }
 
     /**
-     * Collects value-bearing modifiers exactly as written in the original rule
+     * Builds the comparison key of the modifiers as written in the original rule
      * text, in order.
      *
-     * Must be called with the node **before** conversion to AG syntax: the
+     * `$badfilter` requires the rule text to match, so the key is built from the
+     * node parsed from the written text, before conversion to AG syntax: the
      * conversion rewrites modifier names and values (for example
-     * `$redirect=noop.js` becomes `$redirect=noopjs`, and `$empty` becomes
-     * `$redirect=nooptext`), while `$badfilter` requires the text as written.
+     * `$queryprune=foo` becomes `$removeparam=foo`, and `$empty` becomes
+     * `$redirect=nooptext`).
+     *
+     * The whole modifier list takes part, not only the ones carrying a value: the
+     * position of a modifier relative to the others is part of the rule text.
      *
      * @param node Rule AST node, possibly of a non-network category.
      *
-     * @returns Value-bearing modifiers as written, in order.
+     * @returns Comparison key, or an empty string when there is nothing to
+     *   compare.
      */
-    private static collectWrittenModifiers(node: AnyRule): readonly WrittenModifier[] {
+    private static buildWrittenModifiersKey(node: AnyRule): string {
         if (!Rule.isNetworkRuleNode(node)) {
-            return NO_WRITTEN_MODIFIERS;
+            return '';
         }
 
-        let writtenModifiers: WrittenModifier[] | null = null;
+        const entries: string[] = [];
 
         for (const modifier of node.modifiers?.children ?? []) {
             const name = modifier.name.value;
 
-            if (VALUE_BEARING_MODIFIERS.has(name)) {
-                writtenModifiers ??= [];
-                writtenModifiers.push([name, modifier.value?.value ?? '']);
+            if (EXCLUDED_FROM_WRITTEN_KEY.has(name)) {
+                continue;
             }
+
+            const exception = modifier.exception ? '~' : '';
+            const value = modifier.value === undefined ? '' : `=${modifier.value.value}`;
+
+            entries.push(`${exception}${name}${value}`);
         }
 
-        return writtenModifiers ?? NO_WRITTEN_MODIFIERS;
+        return entries.join(WRITTEN_MODIFIER_SEPARATOR);
     }
 }
 

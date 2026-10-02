@@ -356,6 +356,17 @@ describe('$badfilter detection and negation parity', () => {
             false,
         ],
         ['||example.com^$redirect=nooptext', '||example.com^$redirect=noopjs,badfilter', false],
+        // The whole modifier list is compared as written, so the position of a
+        // modifier relative to the others is part of the match.
+        ['||example.com^$csp=a,third-party', '||example.com^$third-party,csp=a,badfilter', false],
+        ['||example.com^$script,image', '||example.com^$image,script,badfilter', false],
+        ['||example.com^$script,image,csp=a', '||example.com^$csp=a,script,image,badfilter', false],
+        ['||example.com^$script,image', '||example.com^$script,image,badfilter', true],
+        ['||example.com^$~third-party', '||example.com^$third-party,badfilter', false],
+        // `$domain` and `$denyallow` stay out of the written key: a narrower
+        // badfilter still negates a wider rule (AG-57204).
+        ['||example.com^$domain=foo.com|bar.com', '||example.com^$domain=foo.com,badfilter', true],
+        ['||example.com^$domain=foo.com', '||example.com^$domain=bar.com,badfilter', false],
         // $redirect and $redirect-rule share one option flag but are different modifiers.
         ['||example.com^$redirect=nooptext', '||example.com^$redirect-rule=nooptext,badfilter', false],
         ['||example.com^$redirect-rule=nooptext', '||example.com^$redirect-rule=nooptext,badfilter', true],
@@ -486,6 +497,10 @@ const ENGINE_BADFILTER_CASES: [target: string, badfilter: string, negated: boole
     ['||example.com^$removeparam=foo', '||example.com^$removeparam=foo,badfilter', true],
     ['||example.com^$removeparam=bar', '||example.com^$removeparam=foo,badfilter', false],
     ['||example.com^$redirect=noopjs', '||example.com^$redirect=noopjs,badfilter', true],
+    // The whole modifier list is compared as written, so the position of a
+    // modifier relative to the others is part of the match.
+    ['||example.com^$csp=a,important', '||example.com^$important,csp=a,badfilter', false],
+    ['||example.com^$csp=a,important', '||example.com^$csp=a,important,badfilter', true],
 ];
 
 describe('badfilter negation through the MV2 engine', () => {
