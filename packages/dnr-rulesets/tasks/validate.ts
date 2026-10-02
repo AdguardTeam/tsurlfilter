@@ -1,4 +1,4 @@
-import { METADATA_RULESET_ID } from '@adguard/dnr-converter';
+import { METADATA_RULESET_ID, parseCompactRuleset } from '@adguard/dnr-converter';
 import { extractRulesetId, getRulesetId, getRulesetPath } from '@adguard/dnr-converter/cli';
 import fs from 'fs';
 import path from 'path';
@@ -38,6 +38,30 @@ type RulesetIdsAndMetadataKeys = {
 type AllRulesetIdsAndMetadataKeys = Record<BrowserFilters, RulesetIdsAndMetadataKeys>;
 
 /**
+ * Reads the metadata keys of a filter ruleset file.
+ *
+ * @param rulesetId Ruleset id, e.g. `ruleset_1`.
+ * @param rulesetPath Path to the ruleset file.
+ *
+ * @returns Keys of the ruleset metadata.
+ *
+ * @throws Error naming the file if it cannot be read or parsed. Browsers are
+ * validated concurrently, so the path tells which rulesets are broken.
+ */
+const readMetadataKeys = async (rulesetId: string, rulesetPath: string): Promise<string[]> => {
+    try {
+        const rawRulesetContent = await fs.promises.readFile(rulesetPath, { encoding: 'utf-8' });
+
+        // Leading metadata rules are joined and parsed by the converter.
+        const { metadata } = parseCompactRuleset(rulesetId, JSON.parse(rawRulesetContent));
+
+        return Object.keys(metadata);
+    } catch (e: unknown) {
+        throw new Error(`Cannot read metadata keys from ${rulesetPath}`, { cause: e });
+    }
+};
+
+/**
  * Retrieves data needed for rulesets validation — rulesets ids and metadata keys.
  *
  * @param destDir Directory with declarative rulesets.
@@ -46,7 +70,6 @@ type AllRulesetIdsAndMetadataKeys = Record<BrowserFilters, RulesetIdsAndMetadata
  */
 const getValidatorData = async (destDir: string): Promise<RulesetIdsAndMetadataKeys> => {
     const rulesetIds: number[] = [];
-    const rulesetMetadataKeys: string[] = [];
 
     const destDirItems = await fs.promises.readdir(destDir, { withFileTypes: true });
 
@@ -67,23 +90,8 @@ const getValidatorData = async (destDir: string): Promise<RulesetIdsAndMetadataK
         rulesetIds.push(id);
     });
 
-    const rulesetPath = getRulesetPath(getRulesetId(rulesetIds[0]), destDir);
-
-    try {
-        const rawRulesetContent = await fs.promises.readFile(
-            rulesetPath,
-            { encoding: 'utf-8' },
-        );
-
-        const rulesetContent = JSON.parse(rawRulesetContent);
-        const metadataRule = rulesetContent[0];
-        const metadata = metadataRule.metadata;
-        const declarativeMetadata = metadata.metadata;
-
-        rulesetMetadataKeys.push(...Object.keys(declarativeMetadata));
-    } catch (e: unknown) {
-        console.error(`Error parsing metadata file ${rulesetPath} due to ${e}`);
-    }
+    const rulesetId = getRulesetId(rulesetIds[0]);
+    const rulesetMetadataKeys = await readMetadataKeys(rulesetId, getRulesetPath(rulesetId, destDir));
 
     return {
         version: getVersion(),
