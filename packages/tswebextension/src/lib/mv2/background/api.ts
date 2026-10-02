@@ -3,11 +3,14 @@
  * Needed for backward compatibility during internal API updates.
  * Will be removed in the future.
  */
+import { createCanvasProtectionCode } from '../../common/canvas-protection/code';
+import { CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
 import { defaultFilteringLog } from '../../common/filtering-log';
 
 import { Allowlist } from './allowlist';
 import { TsWebExtension } from './app';
 import { appContext } from './app-context';
+import { FirefoxCanvasRegistration } from './canvas-registration';
 import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
 import { DocumentApi } from './document-api';
 import { EngineApi } from './engine-api';
@@ -107,5 +110,6 @@ export function createTsWebExtension(webAccessibleResourcesPath: string): TsWebE
         documentBlockingService,
         defaultFilteringLog,
         extSessionStorage,
+        new CanvasProtectionRegistration(new FirefoxCanvasRegistration(), createCanvasProtectionCode),
     );
 }

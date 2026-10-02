@@ -29,6 +29,35 @@ tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
     exit 1
 }
 
+# Import the packed background entry points in the same mocked environment as
+# the Node package tests. The consumer creates independent VM realms for code
+# generation checks; this setup does not establish native browser behavior.
+if ! node <<'NODE'
+const browser = require('sinon-chrome');
+const { createRequire } = require('node:module');
+const { JSDOM } = createRequire(require.resolve('vitest/package.json'))('jsdom');
+const realm = new JSDOM('', { url: 'https://canvas.test' });
+browser.runtime.id = 'packed-consumer@tests.invalid';
+browser.runtime.getManifest.returns({ version: '1.0.0', manifest_version: 3 });
+browser.runtime.getURL.callsFake((resource) => `chrome-extension://packed-consumer/${resource}`);
+Object.assign(globalThis, {
+    chrome: browser,
+    browser,
+    window: realm.window,
+    self: realm.window,
+    DOMParser: realm.window.DOMParser,
+});
+try {
+    require('./dist/canvas-protection.cjs');
+} finally {
+    realm.window.close();
+}
+NODE
+then
+    rm "$tswebextension"
+    exit 1
+fi
+
 # check css hits counter size
 # The css-hits-counter smoke bundle is currently ~35 KB unminified; the guard
 # previously used BSD-only `stat -f "%z"`, which silently no-oped on GNU/Linux

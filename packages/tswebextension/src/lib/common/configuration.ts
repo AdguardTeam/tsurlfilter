@@ -6,6 +6,8 @@ import { conversionDataValidator } from '@adguard/tsurlfilter';
 
 import packageJson from '../../../package.json';
 
+import { protectionPolicyArtifactValidator } from './canvas-protection/contracts';
+
 /**
  * Re-export needed to print the library version on the extension About page.
  * NOTE: We are directly re-exporting `version` from `package.json` to prevent
@@ -21,6 +23,11 @@ export { EXTENDED_CSS_VERSION };
  * Stealth mode configuration schema.
  */
 export const stealthConfigValidator = zod.object({
+    /**
+     * Enables canvas readout protection when all feature gates allow it.
+     */
+    protectCanvas: zod.boolean().optional(),
+
     /**
      * Should the application set a fixed lifetime from
      * {@link StealthConfig.selfDestructFirstPartyCookiesTime} for first-party
@@ -168,6 +175,11 @@ export type SettingsConfig = zod.infer<typeof settingsConfigValidator>;
  * Generic app configuration schema.
  */
 export const configurationValidator = zod.object({
+    /**
+     * Prepared exact canvas exclusions and browser delivery selectors.
+     */
+    canvasProtectionPolicy: protectionPolicyArtifactValidator.optional(),
+
     /**
      * List of hostnames or domains of sites, which should be excluded
      * from blocking or which should be included in blocking

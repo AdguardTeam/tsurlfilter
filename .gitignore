@@ -42,3 +42,6 @@ experiments/
 
 # Bamboo variable injection files (generated during CI runs)
 bamboo-inject-*.txt
+
+# Standalone canvas engine generated during package builds
+packages/tswebextension/src/lib/common/canvas-protection/generated/

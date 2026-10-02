@@ -85,3 +85,5 @@ export type { LocalScriptFunctionData } from './services/local-script-rules-serv
 export type { RuleInfo } from '../../common/rule-info';
 
 export { TSWEBEXTENSION_VERSION, EXTENDED_CSS_VERSION } from '../../common/configuration';
+
+export * from '../../common/canvas-protection';

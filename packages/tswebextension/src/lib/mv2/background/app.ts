@@ -2,6 +2,14 @@
 import { LogLevel } from '@adguard/logger';
 
 import { type AppInterface, type MessageHandler } from '../../common/app';
+import { createCanvasProtectionCode } from '../../common/canvas-protection/code';
+import {
+    type CanvasFeatureGates,
+    type ProtectionPolicyArtifact,
+    protectionPolicyArtifactValidator,
+    type RegistrationResult,
+} from '../../common/canvas-protection/contracts';
+import { CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
 import { type FilteringLog, type FilteringLogEvent } from '../../common/filtering-log';
 import { type EventChannel } from '../../common/utils/channels';
 import { logger } from '../../common/utils/logger';
@@ -9,6 +17,7 @@ import { logger } from '../../common/utils/logger';
 import { removeParamInjectionService } from './api';
 import { type AppContext } from './app-context';
 import { assistant, Assistant } from './assistant';
+import { FirefoxCanvasRegistration } from './canvas-registration';
 import {
     type ConfigurationMV2,
     type ConfigurationMV2Context,
@@ -107,6 +116,7 @@ export class TsWebExtension implements AppInterface<
      * @param documentBlockingService Service encapsulate processing of $document modifier rules.
      * @param filteringLog Filtering log API.
      * @param extSessionStorage API for storing data described by SessionStorageSchema in the browser.storage.session.
+     * @param canvasProtection Owned canvas registration and current-session code authority.
      */
     constructor(
         private readonly appContext: AppContext,
@@ -119,6 +129,10 @@ export class TsWebExtension implements AppInterface<
         private readonly documentBlockingService: DocumentBlockingService,
         private readonly filteringLog: FilteringLog,
         private readonly extSessionStorage: ExtSessionStorage,
+        private readonly canvasProtection = new CanvasProtectionRegistration(
+            new FirefoxCanvasRegistration(),
+            createCanvasProtectionCode,
+        ),
     ) {
         this.onFilteringLogEvent = this.filteringLog.onLogEvent;
         this.getMessageHandler = this.getMessageHandler.bind(this);
@@ -132,6 +146,7 @@ export class TsWebExtension implements AppInterface<
     public async initStorage(): Promise<void> {
         await this.extSessionStorage.init();
         this.appContext.isStorageInitialized = true;
+        await this.canvasProtection.reconcile();
     }
 
     /**
@@ -140,20 +155,20 @@ export class TsWebExtension implements AppInterface<
      *
      * Also updates webRTC privacy.network settings on demand and flushes browser in-memory request cache.
      *
-     * @param configuration App configuration.
+     * @param config App configuration.
      *
      * @returns Conversion errors from filter list processing.
      *
      * @throws Error if configuration is not valid.
      */
     public async start(
-        configuration: ConfigurationMV2,
+        config: ConfigurationMV2,
     ): Promise<ConfigurationResultMV2> {
         if (!this.appContext.startTimeMs) {
             this.appContext.startTimeMs = Date.now();
         }
 
-        configurationMV2Validator.parse(configuration);
+        const configuration = configurationMV2Validator.parse(config);
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 
@@ -174,8 +189,11 @@ export class TsWebExtension implements AppInterface<
 
         this.isStarted = true;
 
+        const canvasProtection = await this.updateCanvasProtection();
         return {
             conversionErrors: result.conversionErrors,
+            ...(configuration.settings.stealth.protectCanvas !== undefined || configuration.canvasProtectionPolicy
+                || canvasProtection.operations.length > 0 ? { canvasProtection } : {}),
         };
     }
 
@@ -187,6 +205,7 @@ export class TsWebExtension implements AppInterface<
         removeParamInjectionService.stop();
         this.tabsApi.stop();
         this.isStarted = false;
+        await this.updateCanvasProtection(true);
     }
 
     /**
@@ -197,20 +216,20 @@ export class TsWebExtension implements AppInterface<
      *
      * Requires app is started.
      *
-     * @param configuration App configuration.
+     * @param config App configuration.
      *
      * @returns Conversion errors from filter list processing.
      *
      * @throws Error if app is not started or configuration is not valid.
      */
     public async configure(
-        configuration: ConfigurationMV2,
+        config: ConfigurationMV2,
     ): Promise<ConfigurationResultMV2> {
         if (!this.isStarted) {
             throw new Error('App is not started!');
         }
 
-        configurationMV2Validator.parse(configuration);
+        const configuration = configurationMV2Validator.parse(config);
 
         TsWebExtension.updateLogLevel(configuration.logLevel);
 
@@ -223,9 +242,86 @@ export class TsWebExtension implements AppInterface<
         await WebRequestApi.flushMemoryCache();
         await this.stealthApi.updateWebRtcPrivacyPermissions();
 
+        const canvasProtection = await this.updateCanvasProtection();
         return {
             conversionErrors: result.conversionErrors,
+            ...(configuration.settings.stealth.protectCanvas !== undefined || configuration.canvasProtectionPolicy
+                || canvasProtection.operations.length > 0 ? { canvasProtection } : {}),
         };
+    }
+
+    /**
+     * Updates canvas opt-in and waits for the browser registration result.
+     *
+     * @param enabled Whether canvas protection is requested.
+     *
+     * @returns The acknowledged or unresolved registration state.
+     *
+     * @throws When the application has no configuration.
+     */
+    public setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult> {
+        const { configuration } = this;
+        if (!configuration) {
+            throw new Error('Configuration not set');
+        }
+        configuration.settings.stealth.protectCanvas = enabled;
+        return this.updateCanvasProtection();
+    }
+
+    /**
+     * Replaces the consumer's prepared policy at its external input boundary.
+     *
+     * @param policy Prepared canvas exclusions and browser delivery selectors.
+     *
+     * @returns The acknowledged or unresolved registration state.
+     *
+     * @throws When the application has no configuration.
+     */
+    public setCanvasProtectionPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult> {
+        const { configuration } = this;
+        if (!configuration) {
+            throw new Error('Configuration not set');
+        }
+        configuration.canvasProtectionPolicy = protectionPolicyArtifactValidator.parse(policy);
+        return this.updateCanvasProtection();
+    }
+
+    /**
+     * Retries the latest persisted request using the current session root.
+     *
+     * @returns The acknowledged or unresolved registration state.
+     */
+    public reconcileCanvasProtection(): Promise<RegistrationResult> {
+        return this.canvasProtection.reconcile();
+    }
+
+    /**
+     * Reports requested state separately from browser acknowledgment history.
+     *
+     * @returns The most recent registration lifecycle result.
+     */
+    public getCanvasProtectionState(): RegistrationResult {
+        return this.canvasProtection.getState();
+    }
+
+    /**
+     * Submits feature gates and policy without assuming a session or empty policy.
+     *
+     * @param stopped Whether application shutdown overrides the filtering gate.
+     *
+     * @returns The acknowledged or unresolved registration state.
+     */
+    private updateCanvasProtection(stopped = false): Promise<RegistrationResult> {
+        const configuration = this.appContext.isStorageInitialized ? this.appContext.configuration : undefined;
+        const settings = configuration?.settings;
+        const gates: CanvasFeatureGates = {
+            filteringEnabled: !stopped && settings?.filteringEnabled === true,
+            stealthModeEnabled: settings?.stealthModeEnabled === true,
+            protectCanvas: settings?.stealth.protectCanvas === true,
+        };
+        return stopped
+            ? this.canvasProtection.disable(gates, true)
+            : this.canvasProtection.apply({ gates, policy: configuration?.canvasProtectionPolicy });
     }
 
     /**
@@ -338,6 +434,7 @@ export class TsWebExtension implements AppInterface<
 
         await WebRequestApi.flushMemoryCache();
         await this.stealthApi.updateWebRtcPrivacyPermissions();
+        await this.updateCanvasProtection();
     }
 
     /**
@@ -374,6 +471,7 @@ export class TsWebExtension implements AppInterface<
         this.configuration.settings.stealthModeEnabled = isStealthModeEnabled;
 
         await this.stealthApi.updateWebRtcPrivacyPermissions();
+        await this.updateCanvasProtection();
     }
 
     /**
@@ -539,6 +637,7 @@ export class TsWebExtension implements AppInterface<
             verbose,
             logLevel,
             settings,
+            canvasProtectionPolicy,
         } = configuration;
 
         return {
@@ -546,6 +645,7 @@ export class TsWebExtension implements AppInterface<
             verbose,
             logLevel,
             settings,
+            canvasProtectionPolicy,
         };
     }
 

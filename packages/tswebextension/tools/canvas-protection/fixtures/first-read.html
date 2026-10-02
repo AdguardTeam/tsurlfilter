@@ -1,0 +1,29 @@
+<!doctype html>
+<meta charset="utf-8">
+<script>
+(() => {
+    const read = CanvasRenderingContext2D.prototype.getImageData;
+    const canvas = document.createElement('canvas');
+    canvas.width = 2;
+    canvas.height = 2;
+    const context = canvas.getContext('2d');
+    context.fillStyle = 'rgb(16,32,48)';
+    context.fillRect(0, 0, 2, 2);
+    const pixel = Array.from(Reflect.apply(read, context, [0, 0, 1, 1]).data);
+    const at = Date.now();
+    let topAccessible = false;
+    try { topAccessible = !!top.location.href; } catch {}
+    const result = {
+        kind: 'first-read', id: __CASE_ID__, url: location.href,
+        origin: window.origin, referrer: document.referrer,
+        topAccessible, pixel, at, private: null,
+        delivery: window.canvasFixtureDelivery || null,
+    };
+    fetch(__COLLECTOR__, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(result),
+    });
+    window.canvasFixtureRead = () => Array.from(Reflect.apply(read, context, [0, 0, 1, 1]).data);
+})();
+</script>
+<title>Canvas first read fixture</title>
+<body>Canvas first read fixture</body>

@@ -29,6 +29,10 @@ node_modules
 # Git hooks (not needed inside Docker)
 .husky
 
+# Local planning, browser profiles, and test evidence
+.sdd
+**/output-canvas-protection
+
 # Test outputs
 **/coverage
 **/tests-reports

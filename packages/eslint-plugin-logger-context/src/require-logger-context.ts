@@ -6,7 +6,8 @@
 
 import path from 'path';
 
-import { ESLintUtils, TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/utils';
+import { RuleCreator } from '@typescript-eslint/utils/eslint-utils';
 import type { RuleContext } from '@typescript-eslint/utils/ts-eslint';
 
 import { LogMethod } from '@adguard/logger';
@@ -64,7 +65,7 @@ function getFileName(context: RuleContext<MessageIds, Options>): string {
 /**
  * Rule definition for require-logger-context.
  */
-const createRule = ESLintUtils.RuleCreator((ruleName) => (`https://example.com/rules/${ruleName}`));
+const createRule = RuleCreator((ruleName) => (`https://example.com/rules/${ruleName}`));
 
 export const requireLoggerContextRule = createRule<Options, MessageIds>({
     name: 'require-logger-context',
@@ -97,10 +98,10 @@ export const requireLoggerContextRule = createRule<Options, MessageIds>({
         return {
             CallExpression(node: TSESTree.CallExpression): void {
                 if (
-                    node.callee.type !== TSESTree.AST_NODE_TYPES.MemberExpression
-                    || node.callee.object.type !== TSESTree.AST_NODE_TYPES.Identifier
+                    node.callee.type !== 'MemberExpression'
+                    || node.callee.object.type !== 'Identifier'
                     || node.callee.object.name !== loggerVariableName
-                    || node.callee.property.type !== TSESTree.AST_NODE_TYPES.Identifier
+                    || node.callee.property.type !== 'Identifier'
                 ) {
                     return;
                 }

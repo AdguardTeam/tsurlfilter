@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { type ConfigurationMV2, configurationMV2Validator } from '../../../../src/lib';
 import { LF } from '../../../../src/lib/common/constants';
+import { createProtectAllPolicy } from '../../common/canvas-protection/fixtures/prepared-policies';
 
 describe('configuration validator', () => {
     const validConfiguration: ConfigurationMV2 = {
@@ -110,5 +111,26 @@ describe('configuration validator', () => {
             path: [],
             message: "Unrecognized key(s) in object: 'beep'",
         }], null, 2));
+    });
+    it('accepts optional canvas opt-in and prepared policy without changing legacy defaults', () => {
+        const policy = createProtectAllPolicy('firefox-mv2', 'policy-a');
+        const input = {
+            ...validConfiguration,
+            canvasProtectionPolicy: policy,
+            settings: {
+                ...validConfiguration.settings,
+                stealth: { ...validConfiguration.settings.stealth, protectCanvas: true },
+            },
+        };
+        expect(configurationMV2Validator.parse(input)).toEqual(input);
+        expect(configurationMV2Validator.parse(validConfiguration).settings.stealth)
+            .not.toHaveProperty('protectCanvas');
+        expect(() => configurationMV2Validator.parse({
+            ...input, canvasProtectionPolicy: { ...policy, schemaVersion: 2 },
+        }))
+            .toThrow();
+        expect(() => configurationMV2Validator.parse({
+            ...input, settings: { ...input.settings, stealth: { ...input.settings.stealth, protectCanvas: 'true' } },
+        })).toThrow();
     });
 });

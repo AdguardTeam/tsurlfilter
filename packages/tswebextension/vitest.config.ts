@@ -71,12 +71,33 @@ export default defineConfig({
                 test: {
                     name: 'browser',
                     include: ['test/e2e/**/*.spec.ts'],
+                    exclude: ['test/e2e/canvas-protection/**'],
                     browser: {
                         enabled: true,
                         provider: playwright(),
                         headless: true,
                         instances: [
                             { browser: 'chromium' },
+                        ],
+                    },
+                },
+            }),
+            defineProject({
+                test: {
+                    name: 'canvas-native',
+                    include: ['test/e2e/canvas-protection/**/*.spec.ts'],
+                    browser: {
+                        enabled: true,
+                        provider: playwright(),
+                        headless: true,
+                        instances: [
+                            { browser: 'chromium' },
+                            {
+                                browser: 'firefox',
+                                provider: playwright(process.platform === 'linux' ? {
+                                    launchOptions: { firefoxUserPrefs: { 'webgl.force-enabled': true } },
+                                } : undefined),
+                            },
                         ],
                     },
                 },

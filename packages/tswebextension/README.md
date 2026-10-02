@@ -8,6 +8,7 @@ Table of content:
     - [Browser compatibility](#browser-compatibility)
     - [Install](#install)
     - [Usage](#usage)
+    - [Canvas protection](#canvas-protection)
     - [CLI](#cli)
     - [Side effects](#side-effects)
     - [API](#api)
@@ -36,6 +37,7 @@ Table of content:
                 - [conversionData](#conversiondata-2)
             - [verbose (deprecated)](#verbose-deprecated)
             - [logLevel](#loglevel)
+            - [canvasProtectionPolicy](#canvasprotectionpolicy)
             - [settings](#settings)
                 - [allowlistInverted](#allowlistinverted)
                 - [allowlistEnabled](#allowlistenabled)
@@ -57,6 +59,7 @@ Table of content:
                     - [blockChromeClientData](#blockchromeclientdata)
                     - [sendDoNotTrack](#senddonottrack)
                     - [blockWebRTC](#blockwebrtc)
+                    - [protectCanvas](#protectcanvas)
         - [TsWebExtension](#tswebextension-1)
             - [Properties](#properties)
                 - [configuration](#configuration-1)
@@ -66,6 +69,7 @@ Table of content:
                 - [initStorage()](#initstorage)
                 - [start()](#start)
                 - [configure()](#configure)
+                - [Canvas protection methods](#canvas-protection-methods)
                 - [stop()](#stop)
                 - [openAssistant()](#openassistant)
                 - [closeAssistant()](#closeassistant)
@@ -154,6 +158,74 @@ const build = async () => {
 
 If path is not defined, the resources will be loaded to `build/war`
 relative to your current working directory by default
+
+## Canvas protection
+
+Canvas protection is opt-in for Chromium MV3 and Firefox MV2. It changes
+eligible opaque pixels returned by `getImageData()`, `toDataURL()` and
+`toBlob()` without changing drawing or the original bitmap. Omitted
+configuration keeps existing native behavior.
+
+Protection requires `settings.filteringEnabled`, `settings.stealthModeEnabled`
+and `settings.stealth.protectCanvas`, plus an explicit prepared policy.
+For an already configured and started MV3 application with filtering and
+stealth enabled, this empty policy selects supported documents without
+exclusions:
+
+```ts
+import { type TsWebExtension, type ProtectionPolicyArtifact } from '@adguard/tswebextension/mv3';
+
+async function enableCanvasProtection(app: TsWebExtension) {
+    const policy: ProtectionPolicyArtifact = {
+        schemaVersion: 1,
+        revision: 'canvas-empty-v1',
+        browser: 'chromium-mv3',
+        selectors: { matches: ['<all_urls>'], excludeMatches: [] },
+        ownFrameExclusions: [],
+        documentExclusions: [],
+        unavailableConditions: [],
+    };
+    await app.setCanvasProtectionPolicy(policy);
+    return app.setCanvasProtectionEnabled(true);
+}
+```
+
+For Firefox MV2, use the root package import and `browser: 'firefox-mv2'`.
+Inspect the returned `RegistrationResult`: requested settings, successful
+installation, unavailable access and failed operations are distinct. Enabling
+without an artifact is unavailable. No existing rules or allowlist are
+automatically compiled; an actual exception policy must be prepared by the
+consumer according to the [policy contract](docs/canvas-protection-policy-contract.md).
+
+Chromium requires the `userScripts` permission, applicable host permissions,
+user enablement of user scripts and `browser.storage.session`. Firefox requires
+session storage and its live registering background context. Private windows
+also require extension permission. The verified browser versions, API floors
+and frame-local fallback are listed in the
+[capability reference](docs/canvas-protection-capabilities.md).
+
+The shared size domain uses original native HTML canvas attributes after
+argument conversion: each axis ≤32767 and area ≤268435456, inclusively.
+A small crop from an oversized canvas stays native and can expose its native
+fingerprint. Browser allocation/export limits and actual readout-mode gaps
+are separate. Ordinary directly owned 2D and transferred HTML exports are
+protected within coverage. Ordinary non-2D HTML exports remain original-native,
+even for small, fully opaque canvases. Transferred WebGL sources are not part
+of that owner gap: both HTML exports protect one source-coordinate bitmap,
+while demonstrated native layouts/dimensions/clipping can differ. Ordinary
+2D raw/PNG agreement stays exact; direct OffscreenCanvas APIs are not protected.
+
+Three distinct intervals require care: Chromium access restoration can
+reactivate an old snapshot before reconciliation; running-browser registration
+loss can leave documents without hooks until reinstallation; ordinary Firefox
+cold startup can leave restored/new documents native until current registration
+acknowledgment. Each can expose a native fingerprint or stale captured decision,
+has no guaranteed maximum duration, and requires reload/navigation of earlier
+documents after acknowledgment. Existing lifecycle calls or explicit
+`reconcileCanvasProtection()` retry the request; no automatic event or wakeup
+is promised. New supported documents after successful acknowledgment retain
+early protection before their first inline script. See the
+[exact interval boundaries](docs/canvas-protection-capabilities.md#generations-and-registration-intervals).
 
 ## CLI
 
@@ -372,6 +444,15 @@ type: `string | undefined`
 Optional flag that sets logging level, defaults to 'error'.
 Available levels: 'error', 'warn', 'info', 'debug', 'trace'.
 
+#### canvasProtectionPolicy
+
+type: `ProtectionPolicyArtifact | undefined`
+
+Optional prepared canvas delivery selectors and exact exclusion predicates.
+Required when canvas protection is enabled; omission does not compile existing
+filter rules or allowlist. See the
+[artifact reference](docs/canvas-protection-policy-contract.md#prepared-artifact).
+
 #### settings
 
 type: `SettingsConfig`
@@ -516,6 +597,14 @@ type: `boolean`
 
 Blocks the possibility of leaking your IP address through WebRTC, even if you use a proxy server or VPN.
 
+###### protectCanvas
+
+type: `boolean | undefined`
+
+Optional `settings.stealth.protectCanvas`; omitted means disabled. Requires
+filtering, stealth mode and a prepared `canvasProtectionPolicy`. See
+[Canvas protection](#canvas-protection) for scope and prerequisites.
+
 ### TsWebExtension
 
 #### Properties
@@ -541,6 +630,22 @@ type: `boolean`
 Is app started.
 
 #### Methods
+
+##### Canvas protection methods
+
+Available in MV2 and MV3:
+
+- `setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult>`
+- `setCanvasProtectionPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult>`
+- `reconcileCanvasProtection(): Promise<RegistrationResult>`
+- `getCanvasProtectionState(): RegistrationResult`
+
+The setters require an existing application configuration. Results separate
+requested state from the last acknowledged registration. `start()` and
+`configure()` expose an optional `canvasProtection` result. Updates do not
+rotate the seed or rewrite existing documents; reload/navigation applies the
+new captured state. See the
+[result and retry reference](docs/canvas-protection-policy-contract.md#registration-result-and-retry-boundary).
 
 ##### initStorage()
 

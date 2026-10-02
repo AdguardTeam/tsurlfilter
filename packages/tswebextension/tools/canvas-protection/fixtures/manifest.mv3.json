@@ -1,0 +1,10 @@
+{
+    "manifest_version": 3,
+    "name": "Canvas delivery test",
+    "version": "1.0.0",
+    "permissions": ["userScripts", "storage", "tabs", "scripting", "webRequest", "webNavigation", "declarativeNetRequest"],
+    "host_permissions": ["http://127.0.0.1/*", "http://localhost/*", "http://*.localhost/*"],
+    "background": { "service_worker": "background.js" },
+    "declarative_net_request": { "rule_resources": [] },
+    "incognito": "spanning"
+}

@@ -1,0 +1,1064 @@
+import { describe, expect, test } from 'vitest';
+
+import { applyCanvasNoise } from '../../../src/lib/common/canvas-protection/noise';
+
+import { createCanvasFixtures } from './fixtures';
+import { type CanvasRealmPair, withCanvasRealmPair } from './native-reference';
+
+type Realm = Window & typeof globalThis;
+type Invocation = (context: CanvasRenderingContext2D, realm: Realm, log: string[]) => ImageData;
+interface Outcome {
+    readonly didThrow: boolean;
+    readonly result?: ImageData;
+    readonly exception?: unknown;
+    readonly error?: { constructor?: string; name?: string; message?: string };
+}
+
+/**
+ * Records native outcome without replacing its exception or inspecting arguments.
+ *
+ * @param invoke Call against one member of the pair.
+ * @param context Original context.
+ * @param realm Context's realm.
+ * @param log Observable argument-conversion effects.
+ *
+ * @returns Native result or exact exception surface.
+ */
+const observe = (invoke: Invocation, context: CanvasRenderingContext2D, realm: Realm, log: string[]): Outcome => {
+    try {
+        return { didThrow: false, result: invoke(context, realm, log) };
+    } catch (error) {
+        const exception = error as Error;
+        return {
+            didThrow: true,
+            exception: error,
+            error: {
+                constructor: exception?.constructor?.name,
+                name: exception?.name,
+                message: exception?.message,
+            },
+        };
+    }
+};
+
+/**
+ * Compares the native error category of corresponding fresh-realm exceptions.
+ *
+ * @param reference Exception thrown by the reference browser binding.
+ * @param actual Exception thrown by the protected binding.
+ * @param pair Corresponding browser realms.
+ *
+ * @returns Whether the protected exception preserves the reference constructor category.
+ */
+const matchesNativeException = (reference: Error, actual: Error, pair: CanvasRealmPair): boolean => {
+    const constructors = [
+        [pair.native.TypeError, pair.protected.TypeError],
+        [pair.native.RangeError, pair.protected.RangeError],
+        [pair.native.DOMException, pair.protected.DOMException],
+    ] as const;
+    const category = constructors.find(([nativeConstructor]) => reference.constructor === nativeConstructor);
+    return category !== undefined
+        && Object.getPrototypeOf(reference) === category[0].prototype
+        && actual.constructor === category[1]
+        && Object.getPrototypeOf(actual) === category[1].prototype;
+};
+
+/**
+ * Exposes browser-provided metadata, including genuinely unsupported formats.
+ *
+ * @param image Native ImageData.
+ *
+ * @returns Comparable metadata from actual results.
+ */
+const metadata = (image: ImageData): object => {
+    const extended = image as ImageData & { colorSpace?: string; pixelFormat?: string };
+    return {
+        width: image.width,
+        height: image.height,
+        type: image.data.constructor.name,
+        colorSpace: extended.colorSpace,
+        pixelFormat: extended.pixelFormat,
+    };
+};
+
+/**
+ * Computes expected pointwise output from the native browser's original bytes.
+ *
+ * @param pair Captured realms and site seed.
+ * @param image Successful native result.
+ * @param context Original native context after conversions.
+ * @param x Normalized absolute origin.
+ * @param y Normalized absolute origin.
+ *
+ * @returns Expected readout bytes.
+ */
+const expectedPixels = (
+    pair: CanvasRealmPair,
+    image: ImageData,
+    context: CanvasRenderingContext2D,
+    x = 0,
+    y = 0,
+): number[] => {
+    const data = new Uint8ClampedArray(image.data);
+    const intrinsics = context instanceof pair.native.CanvasRenderingContext2D
+        ? pair.nativeIntrinsics : pair.protectedIntrinsics;
+    const canvas = Reflect.apply(intrinsics.contextCanvas, context, []) as HTMLCanvasElement;
+    applyCanvasNoise({
+        data,
+        width: image.width,
+        height: image.height,
+        originX: x,
+        originY: y,
+        canvasWidth: Reflect.apply(intrinsics.canvasWidth, canvas, []),
+        canvasHeight: Reflect.apply(intrinsics.canvasHeight, canvas, []),
+        colorSpace: 'srgb',
+    }, pair.seed);
+    return Array.from(data);
+};
+
+/**
+ * Calls both browser bindings with independently created, equivalent argument objects.
+ *
+ * @param invoke Equivalent operation in each realm.
+ * @param origin Successful normalized coordinates.
+ * @param nativeErrors Whether failures originate from the browser binding rather than a user hook.
+ */
+const compare = async (
+    invoke: Invocation,
+    origin: readonly [number, number] = [0, 0],
+    nativeErrors = true,
+): Promise<void> => {
+    await withCanvasRealmPair(async (pair) => {
+        const fixture = createCanvasFixtures(1)[0];
+        const native = fixture.draw(pair.native);
+        const protectedContext = fixture.draw(pair.protected);
+        const nativeLog: string[] = [];
+        const protectedLog: string[] = [];
+        const reference = observe(invoke, native, pair.native, nativeLog);
+        const actual = observe(invoke, protectedContext, pair.protected, protectedLog);
+        expect(protectedLog).toEqual(nativeLog);
+        expect(actual.didThrow).toBe(reference.didThrow);
+        expect(actual.error).toEqual(reference.error);
+        if (nativeErrors && reference.exception) {
+            expect(matchesNativeException(reference.exception as Error, actual.exception as Error, pair)).toBe(true);
+        }
+        if (reference.result) {
+            expect(metadata(actual.result!)).toEqual(metadata(reference.result));
+            expect(actual.result).toBeInstanceOf(pair.protected.ImageData);
+            expect(Array.from(actual.result!.data)).toEqual(
+                expectedPixels(pair, reference.result, native, origin[0], origin[1]),
+            );
+        }
+    });
+};
+
+/**
+ * Provides observable numeric conversion using original method/getter receivers.
+ *
+ * @param value Conversion result.
+ * @param label Argument label.
+ * @param log Observable effects.
+ * @param effect Optional draw, resize or nested read.
+ *
+ * @returns Object converted by the browser's WebIDL binding.
+ */
+const numeric = (value: unknown, label: string, log: string[], effect?: () => void): object => ({
+    get valueOf() {
+        log.push(`${label}:get valueOf`);
+        const original = this;
+        return function valueOf(this: unknown): unknown {
+            log.push(`${label}:valueOf:${this === original}`);
+            effect?.();
+            return value;
+        };
+    },
+});
+
+/**
+ * Invokes getImageData without TypeScript limiting deliberately invalid runtime input.
+ *
+ * @param context Receiver.
+ * @param args Actual runtime arguments.
+ *
+ * @returns Native result if successful.
+ */
+const read = (context: CanvasRenderingContext2D, args: unknown[]): ImageData => (
+    Reflect.apply(context.getImageData, context, args)
+);
+
+describe('original canvas size coverage', () => {
+    test.each(['x', 'y'])('leaves repeated small crops of oversized original %s native', async (axis) => {
+        await withCanvasRealmPair(async (pair) => {
+            const contexts = [pair.native, pair.protected].map((realm) => {
+                const canvas = realm.document.createElement('canvas');
+                canvas.width = axis === 'x' ? 32768 : 1;
+                canvas.height = axis === 'y' ? 32768 : 1;
+                const context = canvas.getContext('2d')!;
+                context.fillStyle = '#234567';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                return context;
+            });
+            for (const offset of [0, 1, 0, 1]) {
+                const outcomes = [pair.native, pair.protected].map((realm, index) => observe((context) => (
+                    context.getImageData(
+                        axis === 'x' ? offset : 0,
+                        axis === 'y' ? offset : 0,
+                        axis === 'x' ? 256 : 1,
+                        axis === 'y' ? 256 : 1,
+                    )
+                ), contexts[index], realm, []));
+                expect(outcomes[1].didThrow).toBe(outcomes[0].didThrow);
+                expect(outcomes[1].error).toEqual(outcomes[0].error);
+                if (outcomes[0].result) {
+                    expect(metadata(outcomes[1].result!)).toEqual(metadata(outcomes[0].result));
+                    expect(Array.from(outcomes[1].result!.data)).toEqual(Array.from(outcomes[0].result.data));
+                }
+            }
+            expect(pair.nativeCalls).toEqual({ native: 4, protected: 4 });
+        });
+    });
+
+    test.each(['x', 'y'])('protects raw crops at inclusive original %s boundary', async (axis) => {
+        await withCanvasRealmPair(async (pair) => {
+            const contexts = [pair.native, pair.protected].map((realm) => {
+                const canvas = realm.document.createElement('canvas');
+                canvas.width = axis === 'x' ? 32767 : 1;
+                canvas.height = axis === 'y' ? 32767 : 1;
+                const context = canvas.getContext('2d')!;
+                context.fillStyle = '#234567';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                return context;
+            });
+            const results = contexts.map((context) => context.getImageData(
+                0,
+                0,
+                axis === 'x' ? 256 : 1,
+                axis === 'y' ? 256 : 1,
+            ));
+            expect(pair.nativeCalls).toEqual({ native: 1, protected: 1 });
+            expect(Array.from(results[1].data)).toEqual(expectedPixels(pair, results[0], contexts[0]));
+            expect(Array.from(results[1].data)).not.toEqual(Array.from(results[0].data));
+        });
+    });
+
+    test.for(['x', 'y'].flatMap((axis) => ['inside', 'outside'].flatMap((final) => (
+        ['coordinate', 'dimension', 'options'].map((hook) => ({ axis, final, hook }))
+    ))))('uses final native attributes after $hook conversion: $axis $final', async ({ axis, final, hook }) => {
+        await withCanvasRealmPair(async (pair) => {
+            const logs: string[][] = [[], []];
+            const contexts: CanvasRenderingContext2D[] = [];
+            let pageSizeGets = 0;
+            const outcomes = [pair.native, pair.protected].map((realm, index) => {
+                const canvas = realm.document.createElement('canvas');
+                canvas.width = axis === 'x' && final === 'inside' ? 32768 : 1;
+                canvas.height = axis === 'y' && final === 'inside' ? 32768 : 1;
+                const context = canvas.getContext('2d')!;
+                contexts.push(context);
+                const resize = (): void => {
+                    logs[index].push('resize');
+                    const length = final === 'inside' ? 32767 : 32768;
+                    Reflect.apply((index === 0 ? pair.nativeIntrinsics : pair.protectedIntrinsics)[
+                        axis === 'x' ? 'setCanvasWidth' : 'setCanvasHeight'
+                    ], canvas, [length]);
+                    context.fillStyle = '#234567';
+                    context.fillRect(0, 0, axis === 'x' ? length : 1, axis === 'y' ? length : 1);
+                };
+                Object.defineProperties(canvas, {
+                    width: { get: (): number => { pageSizeGets += 1; return 1; } },
+                    height: { get: (): number => { pageSizeGets += 1; return 1; } },
+                });
+                const args: unknown[] = [0, 0, axis === 'x' ? 256 : 1, axis === 'y' ? 256 : 1];
+                if (hook === 'coordinate' || hook === 'dimension') {
+                    const argument = hook === 'coordinate' ? 0 : 2;
+                    args[argument] = numeric(args[argument], hook, logs[index], resize);
+                } else {
+                    args.push({ get colorSpace(): string { resize(); return 'srgb'; } });
+                }
+                return observe((receiver) => read(receiver, args), context, realm, logs[index]);
+            });
+            expect(pair.nativeCalls).toEqual({ native: 1, protected: 1 });
+            expect(pageSizeGets).toBe(0);
+            expect(logs[1]).toEqual(logs[0]);
+            const resizeCount = logs[0].filter((entry) => entry === 'resize').length;
+            if (hook === 'options') {
+                expect(resizeCount).toBeLessThanOrEqual(1);
+            } else {
+                expect(resizeCount).toBe(1);
+            }
+            expect(outcomes[1].didThrow).toBe(outcomes[0].didThrow);
+            expect(outcomes[1].error).toEqual(outcomes[0].error);
+            if (outcomes[0].result) {
+                expect(metadata(outcomes[1].result!)).toEqual(metadata(outcomes[0].result));
+                const nativeWidth = Reflect.apply(pair.nativeIntrinsics.canvasWidth, contexts[0].canvas, []);
+                const nativeHeight = Reflect.apply(pair.nativeIntrinsics.canvasHeight, contexts[0].canvas, []);
+                const inside = nativeWidth <= 32767 && nativeHeight <= 32767;
+                const expected = inside ? expectedPixels(pair, outcomes[0].result, contexts[0])
+                    : Array.from(outcomes[0].result.data);
+                expect(Array.from(outcomes[1].result!.data)).toEqual(expected);
+            }
+        });
+    });
+});
+
+describe('preserves native receiver errors and conversion order', () => {
+    test('rejects a wrong-realm native error with identical name and message', async () => withCanvasRealmPair(
+        async (pair) => {
+            const fixture = createCanvasFixtures(1)[0];
+            const context = fixture.draw(pair.native);
+            const invoke: Invocation = (_context, realm) => Reflect.apply(
+                realm.CanvasRenderingContext2D.prototype.getImageData,
+                undefined,
+                [0, 0, 1, 1],
+            );
+            const outcome = observe(invoke, context, pair.native, []);
+            const actual = new pair.native.TypeError((outcome.exception as Error).message);
+            expect(matchesNativeException(outcome.exception as Error, actual, pair)).toBe(false);
+        },
+    ));
+
+    test.each(['undefined', 'null', 'object', 'canvas', 'proxy'])(
+        '%s receiver validates before conversion',
+        async (kind) => compare((context, realm, log) => {
+            const receivers: Record<string, unknown> = {
+                undefined,
+                null: null,
+                object: {},
+                canvas: context.canvas,
+                proxy: new Proxy(context, {}),
+            };
+            return Reflect.apply(
+                realm.CanvasRenderingContext2D.prototype.getImageData,
+                receivers[kind],
+                [numeric(0, 'sx', log), 0, 1, 1],
+            );
+        }),
+    );
+
+    test.each([0, 1, 2, 3])(
+        'missing arguments %i reject before conversions',
+        async (count) => compare((context, _realm, log) => read(
+            context,
+            Array.from({ length: count }, () => numeric(0, 'arg', log)),
+        )),
+    );
+
+    test.each(['call', 'apply', 'detached'])(
+        '%s uses native receiver and ignores extra arguments',
+        async (mode) => compare((context, _realm, log) => {
+            const method = context.getImageData;
+            const args = [0, 0, 32, 24, undefined, numeric(1, 'extra', log)];
+            if (mode === 'call') {
+                return method.call(context, ...args as [number, number, number, number]);
+            }
+            if (mode === 'apply') {
+                return method.apply(context, args as [number, number, number, number]);
+            }
+            context.canvas.remove();
+            return Reflect.apply(method, context, args);
+        }),
+    );
+
+    test.each(['symbol', 'bigint', 'boxed-symbol', 'boxed-bigint'])(
+        '%s keeps native conversion errors',
+        async (kind) => compare((context, realm) => {
+            const values: Record<string, unknown> = {
+                symbol: realm.Symbol('coordinate'),
+                bigint: 1n,
+                'boxed-symbol': realm.Object(realm.Symbol('coordinate')),
+                'boxed-bigint': realm.Object(1n),
+            };
+            return read(context, [values[kind], 0, 1, 1]);
+        }),
+    );
+
+    test('left-to-right conversion getters and original this run once', async () => compare((context, _realm, log) => (
+        read(context, [numeric(0, 'sx', log), numeric(0, 'sy', log), numeric(32, 'sw', log), numeric(24, 'sh', log)])
+    )));
+
+    test('Symbol.toPrimitive receives number hint and original object', async () => compare((context, _realm, log) => {
+        const value = {
+            get [Symbol.toPrimitive]() {
+                log.push('get primitive');
+                const original = this;
+                return function convert(this: unknown, hint: string): number {
+                    log.push(`primitive:${hint}:${this === original}`);
+                    return 0;
+                };
+            },
+        };
+        return read(context, [value, 0, 32, 24]);
+    }));
+
+    test('ordinary conversion fallback preserves getter order', async () => compare((context, _realm, log) => {
+        const value = {
+            get valueOf() { log.push('get valueOf'); return (): object => { log.push('valueOf'); return {}; }; },
+            get toString() { log.push('get toString'); return (): string => { log.push('toString'); return '0'; }; },
+        };
+        return read(context, [value, 0, 32, 24]);
+    }));
+
+    test('nonprimitive ordinary conversions retain native exception text', async () => compare(
+        (context, _realm, log) => {
+            const value = {
+                get valueOf() { log.push('get valueOf'); return (): object => { log.push('valueOf'); return {}; }; },
+                get toString() {
+                    log.push('get toString');
+                    return (): object => { log.push('toString'); return {}; };
+                },
+            };
+            return read(context, [value, 0, 32, 24]);
+        },
+    ));
+
+    test('nonprimitive exotic conversion retains native exception text', async () => compare((context, _realm, log) => {
+        const value = {
+            get [Symbol.toPrimitive]() {
+                log.push('get primitive');
+                return (hint: string): object => { log.push(`primitive:${hint}`); return {}; };
+            },
+        };
+        return read(context, [value, 0, 32, 24]);
+    }));
+
+    test.each(['valueOf', 'primitive'])(
+        'frozen %s method keeps original receiver and single conversion',
+        async (kind) => compare((context, _realm, log) => {
+            const value: object = kind === 'valueOf' ? {
+                valueOf(this: unknown): number { log.push(`valueOf:${this === value}`); return 0; },
+            } : {
+                [Symbol.toPrimitive](this: unknown, hint: string): number {
+                    log.push(`primitive:${hint}:${this === value}`); return 0;
+                },
+            };
+            return read(context, [Object.freeze(value), 0, 32, 24]);
+        }),
+    );
+
+    test('thrown user conversion aborts later conversions and preserves cross-realm identity', async () => (
+        withCanvasRealmPair(async (pair) => {
+            const fixture = createCanvasFixtures(1)[0];
+            const thrown = new RangeError('conversion');
+            const outcomes = [pair.native, pair.protected].map((realm) => {
+                const log: string[] = [];
+                const outcome = observe((context) => read(context, [
+                    numeric(0, 'sx', log, () => { throw thrown; }), numeric(0, 'sy', log), 32, 24,
+                ]), fixture.draw(realm), realm, log);
+                expect(outcome.exception).toBe(thrown);
+                return { log, outcome };
+            });
+            expect(outcomes[1].log).toEqual(outcomes[0].log);
+            expect(outcomes[0].log).toEqual(['sx:get valueOf', 'sx:valueOf:true']);
+            expect(outcomes[1].outcome.error).toEqual(outcomes[0].outcome.error);
+        })
+    ));
+
+    test('drawing and resizing during conversion determine native snapshot', async () => compare(
+        (context, _realm, log) => (
+            read(context, [numeric(0, 'sx', log, () => {
+                context.canvas.width = 20;
+                context.canvas.height = 16;
+                context.fillStyle = '#204060';
+                context.fillRect(0, 0, 20, 16);
+            }), 0, 32, 24])
+        ),
+    ));
+});
+
+describe('normalizes coordinates once and leaves padding native', () => {
+    test.each([
+        [0, 0, 32, 24], [-4, -3, 40, 30], [5, 7, -8, -10],
+        [5.9, 7.9, -8.9, -10.9], [-0.9, -0.9, 10.9, 12.9], [1.9, 2.9, 8.9, 7.9],
+        [2147483647, 0, 1, 1], [-2147483648, 0, 1, 1], [2147483648, 0, 1, 1],
+        [-2147483649, 0, 1, 1], [NaN, 0, 1, 1], [Infinity, 0, 1, 1], [-Infinity, 0, 1, 1],
+        [0, 0, NaN, 1], [0, 0, 2147483648, 1], [0, 0, 0, 1], [0, 0, 1, 0],
+        [0, 0, 0.9, 1], [0, 0, 1, -0.9],
+    ])('matches native rectangle %j', async (sx, sy, sw, sh) => {
+        const x = Math.trunc(sx) + Math.min(0, Math.trunc(sw));
+        const y = Math.trunc(sy) + Math.min(0, Math.trunc(sh));
+        await compare((context, _realm, log) => read(context, [numeric(sx, 'sx', log), numeric(sy, 'sy', log),
+            numeric(sw, 'sw', log), numeric(sh, 'sh', log)]), [x, y]);
+    });
+
+    test('overlapping crop output agrees at absolute coordinates', async () => withCanvasRealmPair(async (pair) => {
+        const fixture = createCanvasFixtures(1)[0];
+        const native = fixture.draw(pair.native);
+        const context = fixture.draw(pair.protected);
+        const whole = context.getImageData(0, 0, fixture.width, fixture.height);
+        const crop = context.getImageData(5, 7, 12, 8);
+        expect(Array.from(crop.data)).toEqual(expectedPixels(pair, native.getImageData(5, 7, 12, 8), native, 5, 7));
+        for (let y = 0; y < crop.height; y += 1) {
+            for (let x = 0; x < crop.width; x += 1) {
+                const offset = ((y + 7) * whole.width + x + 5) * 4;
+                expect(Array.from(crop.data.slice((y * crop.width + x) * 4, (y * crop.width + x + 1) * 4)))
+                    .toEqual(Array.from(whole.data.slice(offset, offset + 4)));
+            }
+        }
+        const original = native.getImageData(0, 0, fixture.width, fixture.height);
+        expect(Array.from(whole.data)).not.toEqual(Array.from(original.data));
+    }));
+});
+
+describe('keeps unsupported pixel formats and color spaces native', () => {
+    test.each([
+        undefined, {}, { colorSpace: 'srgb' }, { colorSpace: 'display-p3' },
+        { pixelFormat: 'rgba-float16' }, { colorSpace: 'display-p3', pixelFormat: 'rgba-float16' },
+        { colorSpace: 'invalid' }, { pixelFormat: 'invalid' },
+    ])('uses actual browser result for settings %j', async (settings) => withCanvasRealmPair(async (pair) => {
+        const fixture = createCanvasFixtures(1)[0];
+        const native = fixture.draw(pair.native);
+        const protectedContext = fixture.draw(pair.protected);
+        const invoke: Invocation = (context) => read(context, [0, 0, 32, 24, settings]);
+        const reference = observe(invoke, native, pair.native, []);
+        const actual = observe(invoke, protectedContext, pair.protected, []);
+        expect(actual.didThrow).toBe(reference.didThrow);
+        expect(actual.error).toEqual(reference.error);
+        if (reference.exception) {
+            expect(matchesNativeException(reference.exception as Error, actual.exception as Error, pair)).toBe(true);
+        }
+        if (reference.result) {
+            expect(metadata(actual.result!)).toEqual(metadata(reference.result));
+            const supported = reference.result.data instanceof pair.native.Uint8ClampedArray
+                && (reference.result.colorSpace === undefined || reference.result.colorSpace === 'srgb');
+            expect(Array.from(actual.result!.data)).toEqual(supported
+                ? expectedPixels(pair, reference.result, native) : Array.from(reference.result.data));
+        }
+    }));
+
+    test.each(['colorSpace', 'pixelFormat'])(
+        'settings %s getter retains native count, order and errors',
+        async (property) => compare((context, realm, log) => {
+            const thrown = new realm.SyntaxError('settings');
+            const settings = {
+                get colorSpace(): string {
+                    log.push('colorSpace');
+                    if (property === 'colorSpace') { throw thrown; }
+                    return 'srgb';
+                },
+                get pixelFormat(): string {
+                    log.push('pixelFormat');
+                    if (property === 'pixelFormat') { throw thrown; }
+                    return 'rgba-unorm8';
+                },
+            };
+            try {
+                return read(context, [0, 0, 32, 24, settings]);
+            } catch (error) {
+                expect(error).toBe(thrown);
+                throw error;
+            }
+        }, [0, 0], false),
+    );
+
+    test('settings conversion side effects precede the snapshot without extra reads', async () => compare(
+        (context, _realm, log) => read(context, [0, 0, 32, 24, {
+            get colorSpace(): string {
+                log.push('colorSpace');
+                context.fillStyle = '#456789';
+                context.resetTransform();
+                context.globalAlpha = 1;
+                context.fillRect(0, 0, 32, 24);
+                return 'srgb';
+            },
+            get pixelFormat(): string { log.push('pixelFormat'); return 'rgba-unorm8'; },
+        }]),
+    ));
+
+    test.each(['display-p3', 'float16'])(
+        'context %s preserves actual native readout mode',
+        async (mode) => withCanvasRealmPair(async (pair) => {
+            const contexts = [pair.native, pair.protected].map((realm) => {
+                const canvas = realm.document.createElement('canvas');
+                canvas.width = 32;
+                canvas.height = 24;
+                const options = mode === 'display-p3' ? { colorSpace: 'display-p3' } : { colorType: 'float16' };
+                const context = canvas.getContext('2d', options as CanvasRenderingContext2DSettings)!;
+                context.fillStyle = '#123456';
+                context.fillRect(0, 0, 32, 24);
+                return context;
+            });
+            const reference = contexts[0].getImageData(0, 0, 32, 24);
+            const actual = contexts[1].getImageData(0, 0, 32, 24);
+            expect(metadata(actual)).toEqual(metadata(reference));
+            const supported = reference.data instanceof pair.native.Uint8ClampedArray
+                && (reference.colorSpace === undefined || reference.colorSpace === 'srgb');
+            expect(Array.from(actual.data)).toEqual(supported
+                ? expectedPixels(pair, reference, contexts[0]) : Array.from(reference.data));
+        }),
+    );
+
+    test.for(['display-p3', 'float16'].flatMap((storage) => [
+        undefined,
+        { colorSpace: 'srgb', pixelFormat: 'rgba-unorm8' },
+        { colorSpace: 'display-p3', pixelFormat: 'rgba-unorm8' },
+        { colorSpace: 'srgb', pixelFormat: 'rgba-float16' },
+    ].map((settings) => ({ storage, settings }))))(
+        'classifies actual returned mode from $storage storage with $settings',
+        async ({ storage, settings }, { annotate }) => withCanvasRealmPair(async (pair) => {
+            const contexts = [pair.native, pair.protected].map((realm) => {
+                const canvas = realm.document.createElement('canvas');
+                canvas.width = 32;
+                canvas.height = 24;
+                const options = storage === 'display-p3' ? { colorSpace: 'display-p3' } : { colorType: 'float16' };
+                const context = canvas.getContext('2d', options as CanvasRenderingContext2DSettings)!;
+                context.fillStyle = '#234567';
+                context.fillRect(0, 0, 32, 24);
+                return context;
+            });
+            const originals = contexts.map((context, index) => Array.from(Reflect.apply(
+                index === 0 ? pair.nativeIntrinsics.getImageData : pair.protectedIntrinsics.getImageData,
+                context,
+                [0, 0, 32, 24, settings],
+            ).data));
+            const attributes = contexts.map((context) => context.getContextAttributes());
+            const modes: object[] = [];
+            for (const [x, y, width, height] of [[0, 0, 32, 24], [3, 4, 12, 13], [0, 0, 32, 24]]) {
+                const results = contexts.map((context) => read(context, [x, y, width, height, settings]));
+                expect(metadata(results[1])).toEqual(metadata(results[0]));
+                const supported = results[0].data instanceof pair.native.Uint8ClampedArray
+                    && (results[0].colorSpace === undefined || results[0].colorSpace === 'srgb');
+                const expected = supported ? expectedPixels(pair, results[0], contexts[0], x, y)
+                    : Array.from(results[0].data);
+                modes.push({ result: metadata(results[0]), supported });
+                expect(Array.from(results[1].data)).toEqual(expected);
+                if (supported) {
+                    expect(Array.from(results[1].data)).not.toEqual(Array.from(results[0].data));
+                }
+            }
+            await annotate(JSON.stringify({
+                storage, settings, attributes, modes,
+            }), 'actual-raw-readout-mode');
+            expect(pair.nativeCalls).toEqual({ native: 3, protected: 3 });
+            contexts.forEach((context, index) => {
+                expect(context.getContextAttributes()).toEqual(attributes[index]);
+                expect(context.canvas.getContext('2d')).toBe(context);
+                expect(Array.from(Reflect.apply(
+                    index === 0
+                        ? pair.nativeIntrinsics.getImageData : pair.protectedIntrinsics.getImageData,
+                    context,
+                    [0, 0, 32, 24, settings],
+                ).data)).toEqual(originals[index]);
+            });
+        }),
+    );
+});
+
+describe('does not mutate canvas or double-noise reentrant reads', () => {
+    test.each([0, 1, 2, 3, 4, 5])(
+        'keeps fixture %i bitmap, dimensions, context and drawing state',
+        async (index) => withCanvasRealmPair(async (pair) => {
+            const fixture = createCanvasFixtures(6)[index];
+            const native = fixture.draw(pair.native);
+            const context = fixture.draw(pair.protected);
+            const result = context.getImageData(0, 0, fixture.width, fixture.height);
+            const original = Reflect.apply(
+                pair.protectedIntrinsics.getImageData,
+                context,
+                [0, 0, fixture.width, fixture.height],
+            ) as ImageData;
+            const reference = native.getImageData(0, 0, fixture.width, fixture.height);
+            expect(Array.from(original.data)).toEqual(Array.from(reference.data));
+            expect(Array.from(result.data)).toEqual(expectedPixels(pair, original, context));
+            expect(context.canvas.width).toBe(fixture.width);
+            expect(context.canvas.height).toBe(fixture.height);
+            expect(context.canvas.getContext('2d')).toBe(context);
+            expect(context.fillStyle).toBe(fixture.state.fillStyle);
+            expect(context.globalAlpha).toBe(fixture.state.globalAlpha);
+            expect(context.lineWidth).toBe(fixture.state.lineWidth);
+            expect(Array.from(context.getTransform().toFloat64Array()))
+                .toEqual(Array.from(native.getTransform().toFloat64Array()));
+            context.stroke();
+            native.stroke();
+            expect(Array.from(Reflect.apply(
+                pair.protectedIntrinsics.getImageData,
+                context,
+                [0, 0, fixture.width, fixture.height],
+            ).data)).toEqual(
+                Array.from(native.getImageData(0, 0, fixture.width, fixture.height).data),
+            );
+        }),
+    );
+
+    test('nested conversion read and outer read each apply noise once', async () => compare((context, _realm, log) => {
+        const inner: number[][] = [];
+        const result = read(context, [numeric(0, 'sx', log, () => {
+            inner.push(Array.from(context.getImageData(0, 0, 32, 24).data));
+        }), 0, 32, 24]);
+        expect(inner[0]).toEqual(Array.from(result.data));
+        return result;
+    }));
+
+    test('captured accessors avoid page-owned canvas and dimension getters', async () => compare(
+        (context, _realm, log) => {
+            const { canvas } = context;
+            Object.defineProperty(context, 'canvas', {
+                get: (): never => { log.push('canvas'); throw new Error('canvas'); },
+            });
+            Object.defineProperty(canvas, 'width', {
+                get: (): never => { log.push('width'); throw new Error('width'); },
+            });
+            Object.defineProperty(canvas, 'height', {
+                get: (): never => { log.push('height'); throw new Error('height'); },
+            });
+            return read(context, [0, 0, 32, 24]);
+        },
+    ));
+});
+
+type RejectedBrand = 'Number' | 'String' | 'Boolean' | 'Date' | 'Array' | 'Object';
+type DiagnosticEffect = 'none' | 'toSource' | 'ownKeys' | 'descriptor' | 'array-index';
+interface RejectedInputCase {
+    readonly brand: RejectedBrand;
+    readonly conversion: 'ordinary' | 'exotic';
+    readonly proxy: boolean;
+    readonly position: 'sx' | 'sw';
+    readonly diagnostic: DiagnosticEffect;
+}
+interface RejectedInput {
+    readonly value: object;
+    readonly conversionLog: string[];
+    readonly diagnosticLog: string[];
+    readonly formatterThrown: URIError;
+}
+
+/**
+ * Creates a frozen object with observable actual conversions and Firefox formatting effects.
+ *
+ * @param configuration Argument brand, conversion path and formatter effect.
+ * @param realm Original object and exception realm.
+ * @param context Original canvas affected only by its own formatter callbacks.
+ *
+ * @returns Original argument and separate conversion/diagnostic records.
+ */
+const rejectedInput = (
+    configuration: RejectedInputCase,
+    realm: Realm,
+    context: CanvasRenderingContext2D,
+): RejectedInput => {
+    const conversionLog: string[] = [];
+    const diagnosticLog: string[] = [];
+    const formatterThrown = new realm.URIError('original-formatter');
+    let original: object;
+    let formatting = false;
+    const targets: Record<RejectedBrand, () => object> = {
+        Number: (): object => realm.Object(1.8),
+        String: (): object => realm.Object('coordinate'),
+        Boolean: (): object => realm.Object(true),
+        Date: (): object => new realm.Date(0),
+        Array: (): object => new realm.Array(1, 2),
+        Object: () => ({}),
+    };
+    const target = targets[configuration.brand]();
+    const drawResize = (tag: string, resize: boolean): void => {
+        diagnosticLog.push(tag);
+        if (resize) {
+            context.canvas.width = 2;
+            context.canvas.height = 1;
+        }
+        context.fillStyle = '#c81428';
+        context.resetTransform();
+        context.globalAlpha = 1;
+        context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+    };
+    if (configuration.conversion === 'ordinary') {
+        realm.Object.defineProperties(target, {
+            [realm.Symbol.toPrimitive]: { value: undefined, enumerable: true },
+            valueOf: {
+                value: function valueOf(this: unknown): object {
+                    conversionLog.push(`valueOf:${this === original}`);
+                    return {};
+                },
+                enumerable: true,
+            },
+            toString: {
+                value: function toString(this: unknown): object {
+                    conversionLog.push(`toString:${this === original}`);
+                    return {};
+                },
+                enumerable: true,
+            },
+        });
+    } else {
+        realm.Object.defineProperty(target, realm.Symbol.toPrimitive, {
+            value: function toPrimitive(this: unknown, hint: string): object {
+                conversionLog.push(`primitive:${hint}:${this === original}`);
+                return {};
+            },
+            enumerable: true,
+        });
+    }
+    if (configuration.diagnostic === 'toSource') {
+        realm.Object.defineProperty(target, 'toSource', {
+            get: function toSourceGetter(this: unknown): () => string {
+                formatting = true;
+                diagnosticLog.push(`toSource:get:${this === original}`);
+                drawResize('toSource:draw-resize', true);
+                return function toSource(this: unknown): string {
+                    diagnosticLog.push(`toSource:call:${this === original}`);
+                    return 'diagnostic-source';
+                };
+            },
+            enumerable: true,
+        });
+    }
+    if (configuration.diagnostic === 'array-index') {
+        realm.Object.defineProperty(target, '0', {
+            get: function indexGetter(this: unknown): never {
+                formatting = true;
+                diagnosticLog.push(`array-index:get:${this === original}`);
+                drawResize('array-index:draw-resize', true);
+                throw formatterThrown;
+            },
+            enumerable: true,
+            configurable: true,
+        });
+    }
+    realm.Object.freeze(target);
+    original = configuration.proxy ? new realm.Proxy(target, {
+        get: (object, key, receiver): unknown => {
+            const keyName = key === realm.Symbol.toPrimitive ? 'primitive' : String(key);
+            if (key === 'toSource') {
+                formatting = true;
+            }
+            (formatting ? diagnosticLog : conversionLog).push(`proxy:get:${keyName}`);
+            return realm.Reflect.get(object, key, receiver);
+        },
+        ownKeys: (object): (string | symbol)[] => {
+            formatting = true;
+            diagnosticLog.push('proxy:ownKeys');
+            if (configuration.diagnostic === 'ownKeys') {
+                drawResize('ownKeys:draw-resize', true);
+            }
+            return realm.Reflect.ownKeys(object);
+        },
+        getOwnPropertyDescriptor: (object, key): PropertyDescriptor | undefined => {
+            formatting = true;
+            diagnosticLog.push(`proxy:descriptor:${key === realm.Symbol.toPrimitive ? 'primitive' : String(key)}`);
+            if (configuration.diagnostic === 'descriptor') {
+                drawResize('descriptor:draw', false);
+                throw formatterThrown;
+            }
+            return realm.Reflect.getOwnPropertyDescriptor(object, key);
+        },
+        getPrototypeOf: (object): object | null => {
+            formatting = true;
+            diagnosticLog.push('proxy:prototype');
+            return realm.Reflect.getPrototypeOf(object);
+        },
+    }) : target;
+    return {
+        value: original, conversionLog, diagnosticLog, formatterThrown,
+    };
+};
+
+const rejectedCases: RejectedInputCase[] = [];
+for (const brand of ['Number', 'String', 'Boolean', 'Date', 'Array'] as const) {
+    for (const conversion of ['ordinary', 'exotic'] as const) {
+        for (const proxy of [false, true]) {
+            for (const position of ['sx', 'sw'] as const) {
+                rejectedCases.push({
+                    brand, conversion, proxy, position, diagnostic: 'none',
+                });
+            }
+        }
+    }
+}
+for (const position of ['sx', 'sw'] as const) {
+    rejectedCases.push(
+        {
+            brand: 'Object', conversion: 'ordinary', proxy: false, position, diagnostic: 'toSource',
+        },
+        {
+            brand: 'Array', conversion: 'exotic', proxy: true, position, diagnostic: 'ownKeys',
+        },
+        {
+            brand: 'Array', conversion: 'exotic', proxy: true, position, diagnostic: 'descriptor',
+        },
+        {
+            brand: 'Array', conversion: 'exotic', proxy: false, position, diagnostic: 'array-index',
+        },
+    );
+}
+
+describe('preserves conversion rejection and records Firefox formatter limitations', () => {
+    test.for(rejectedCases)('$brand $conversion proxy=$proxy $position formatter=$diagnostic', async (configuration, {
+        annotate,
+    }) => withCanvasRealmPair(async (pair) => {
+        const fixture = createCanvasFixtures(1)[0];
+        const contexts = [fixture.draw(pair.native), fixture.draw(pair.protected)];
+        const realms = [pair.native, pair.protected];
+        const inputs = contexts.map((context, index) => rejectedInput(configuration, realms[index], context));
+        const laterLogs: string[][] = [];
+        const outcomes = contexts.map((context, index) => {
+            const later: string[] = [];
+            laterLogs.push(later);
+            const args = [numeric(0, 'sx', later), numeric(0, 'sy', later), numeric(1, 'sw', later),
+                numeric(1, 'sh', later), {
+                    get colorSpace(): string { later.push('options:colorSpace'); return 'srgb'; },
+                    get pixelFormat(): string { later.push('options:pixelFormat'); return 'rgba-unorm8'; },
+                }];
+            args[configuration.position === 'sx' ? 0 : 2] = inputs[index].value;
+            return observe((receiver) => read(receiver, args), context, realms[index], []);
+        });
+        expect(pair.nativeCalls).toEqual({ native: 1, protected: 1 });
+        expect(outcomes[0].didThrow).toBe(true);
+        expect(outcomes[1].didThrow).toBe(true);
+        expect(outcomes[1].result).toBeUndefined();
+        expect(inputs[1].conversionLog).toEqual(inputs[0].conversionLog);
+        expect(laterLogs[1]).toEqual(laterLogs[0]);
+        expect(laterLogs[0]).toEqual(configuration.position === 'sx' ? []
+            : ['sx:get valueOf', 'sx:valueOf:true', 'sy:get valueOf', 'sy:valueOf:true']);
+        const firefox = pair.native.navigator.userAgent.includes('Firefox/');
+        const permittedArrayDiagnostic = firefox && configuration.diagnostic === 'array-index';
+        const bitmaps = contexts.map((context, index) => ({
+            width: context.canvas.width,
+            height: context.canvas.height,
+            pixels: Array.from(Reflect.apply(
+                index === 0 ? pair.nativeIntrinsics.getImageData
+                    : pair.protectedIntrinsics.getImageData,
+                context,
+                [0, 0, context.canvas.width, context.canvas.height],
+            ).data),
+        }));
+        if (permittedArrayDiagnostic) {
+            expect(inputs[0].diagnosticLog).toEqual(['array-index:get:true', 'array-index:draw-resize']);
+            expect(inputs[1].diagnosticLog).toEqual([]);
+            expect(outcomes[0].exception).toBe(inputs[0].formatterThrown);
+            expect(outcomes[1].exception).toBeInstanceOf(pair.protected.TypeError);
+            expect(Object.getPrototypeOf(outcomes[1].exception)).toBe(pair.protected.TypeError.prototype);
+            expect(bitmaps[0]).toEqual({ width: 2, height: 1, pixels: [200, 20, 40, 255, 200, 20, 40, 255] });
+            expect(bitmaps[1].width).toBe(fixture.width);
+            expect(bitmaps[1].height).toBe(fixture.height);
+            const reference = fixture.draw(pair.native);
+            const originalPixels = reference.getImageData(0, 0, fixture.width, fixture.height);
+            expect(bitmaps[1].pixels).toEqual(Array.from(originalPixels.data));
+        } else {
+            expect(inputs[1].diagnosticLog).toEqual(inputs[0].diagnosticLog);
+            expect(bitmaps[1]).toEqual(bitmaps[0]);
+            if (outcomes[0].exception === inputs[0].formatterThrown) {
+                expect(outcomes[1].exception).toBe(inputs[1].formatterThrown);
+            } else {
+                expect(matchesNativeException(outcomes[0].exception as Error, outcomes[1].exception as Error, pair))
+                    .toBe(true);
+            }
+            expect(outcomes[1].error?.name).toBe(outcomes[0].error?.name);
+            if (!firefox || configuration.proxy || configuration.diagnostic !== 'none') {
+                expect(outcomes[1].error?.message).toBe(outcomes[0].error?.message);
+            }
+        }
+        if (firefox && (!configuration.proxy || permittedArrayDiagnostic)) {
+            const summaries = bitmaps.map(({ width, height, pixels }) => ({
+                width,
+                height,
+                pixels: pixels.slice(0, 8),
+            }));
+            await annotate(JSON.stringify({
+                permittedRejectedObjectDiagnostics: true,
+                reference: {
+                    error: outcomes[0].error,
+                    effects: inputs[0].diagnosticLog,
+                    bitmap: summaries[0],
+                },
+                protected: {
+                    error: outcomes[1].error,
+                    effects: inputs[1].diagnosticLog,
+                    bitmap: summaries[1],
+                },
+            }), 'firefox-rejected-object-diagnostic');
+        }
+    }));
+
+    test.each(['undefined', 'null', 'symbol', 'bigint', 'string', 'object', 'foreign-error'])(
+        'preserves conversion-thrown %s identity before later arguments',
+        async (kind) => withCanvasRealmPair(async (pair) => {
+            const thrownValues: Record<string, unknown> = {
+                undefined,
+                null: null,
+                symbol: Symbol('original'),
+                bigint: 42n,
+                string: 'original',
+                object: Object.freeze({ original: true }),
+                'foreign-error': new pair.native.URIError('original'),
+            };
+            const thrown = thrownValues[kind];
+            const fixture = createCanvasFixtures(1)[0];
+            const logs: string[][] = [];
+            [pair.native, pair.protected].forEach((realm) => {
+                const log: string[] = [];
+                logs.push(log);
+                const context = fixture.draw(realm);
+                const outcome = observe((receiver) => read(receiver, [numeric(0, 'sx', log, () => { throw thrown; }),
+                    numeric(0, 'sy', log), 32, 24]), context, realm, log);
+                expect(outcome.didThrow).toBe(true);
+                expect(outcome.exception).toBe(thrown);
+                expect(outcome.result).toBeUndefined();
+            });
+            expect(logs[1]).toEqual(logs[0]);
+            expect(logs[0]).toEqual(['sx:get valueOf', 'sx:valueOf:true']);
+            expect(pair.nativeCalls).toEqual({ native: 1, protected: 1 });
+        }),
+    );
+});
+
+describe('protects successful frozen conversions and keeps primitive validation exact', () => {
+    const successes = (['Number', 'String', 'Boolean', 'Date', 'Array'] as const)
+        .flatMap((brand) => [false, true].map((proxy) => ({ brand, proxy })));
+    test.for(successes)('$brand proxy=$proxy converts once and remains protected', async (configuration) => (
+        withCanvasRealmPair(async (pair) => {
+            const fixture = createCanvasFixtures(1)[0];
+            const logs: string[][] = [];
+            const contexts = [fixture.draw(pair.native), fixture.draw(pair.protected)];
+            const results = [pair.native, pair.protected].map((realm, index) => {
+                const log: string[] = [];
+                logs.push(log);
+                const targets = {
+                    Number: (): object => realm.Object(1.8),
+                    String: (): object => realm.Object('coordinate'),
+                    Boolean: (): object => realm.Object(true),
+                    Date: (): object => new realm.Date(0),
+                    Array: (): object => new realm.Array(1, 2),
+                };
+                const target = targets[configuration.brand]();
+                let original: object;
+                realm.Object.defineProperties(target, {
+                    [realm.Symbol.toPrimitive]: { value: undefined },
+                    valueOf: {
+                        value: function valueOf(this: unknown): number {
+                            log.push(`valueOf:${this === original}`);
+                            return 0;
+                        },
+                    },
+                    toString: { value: (): never => { throw new Error('unexpected fallback'); } },
+                });
+                realm.Object.freeze(target);
+                original = configuration.proxy ? new realm.Proxy(target, {
+                    get: (object, key, receiver): unknown => {
+                        log.push(`get:${key === realm.Symbol.toPrimitive ? 'primitive' : String(key)}`);
+                        return realm.Reflect.get(object, key, receiver);
+                    },
+                }) : target;
+                return read(contexts[index], [original, 0, 32, 24]);
+            });
+            expect(pair.nativeCalls).toEqual({ native: 1, protected: 1 });
+            expect(logs[1]).toEqual(logs[0]);
+            expect(logs[0]).toEqual(configuration.proxy ? ['get:primitive', 'get:valueOf', 'valueOf:true']
+                : ['valueOf:true']);
+            expect(metadata(results[1])).toEqual(metadata(results[0]));
+            expect(Array.from(results[1].data)).toEqual(expectedPixels(pair, results[0], contexts[0]));
+            expect(Array.from(results[1].data)).not.toEqual(Array.from(results[0].data));
+        })
+    ));
+
+    test.each(['nan', 'infinity', 'invalid-string', 'symbol', 'bigint'])(
+        'successful object-to-primitive %s followed by validation preserves the exact error',
+        async (kind) => compare((context, realm, log) => {
+            const values: Record<string, unknown> = {
+                nan: NaN,
+                infinity: Infinity,
+                'invalid-string': 'invalid',
+                symbol: realm.Symbol('coordinate'),
+                bigint: 1n,
+            };
+            return read(context, [numeric(values[kind], 'sx', log), numeric(0, 'sy', log), 32, 24]);
+        }),
+    );
+});

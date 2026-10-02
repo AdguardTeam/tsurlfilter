@@ -12,6 +12,14 @@ import { LogLevel } from '@adguard/logger';
 import { FilterList } from '@adguard/tsurlfilter';
 
 import { type AppInterface, type MessageHandler } from '../../common/app';
+import { createCanvasProtectionCode } from '../../common/canvas-protection/code';
+import {
+    type CanvasFeatureGates,
+    type ProtectionPolicyArtifact,
+    protectionPolicyArtifactValidator,
+    type RegistrationResult,
+} from '../../common/canvas-protection/contracts';
+import { CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
 import { ALLOWLIST_FILTER_ID, BLOCKING_TRUSTED_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
@@ -22,6 +30,7 @@ import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 import { AllowlistApi, allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
 import { assistant, Assistant } from './assistant';
+import { ChromiumCanvasRegistration } from './canvas-registration';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
@@ -45,6 +54,7 @@ type ConfigurationResult = {
     staticFilters: IRulesetWithSourceMap[];
     dynamicRules?: ConversionResult;
     stealthResult?: StealthConfigurationResult;
+    canvasProtection?: RegistrationResult;
 };
 
 type FiltersUpdateInfo = {
@@ -109,9 +119,15 @@ export class TsWebExtension implements AppInterface<
     isStarted = false;
 
     /**
-     * Stores the initialize promise to prevent multiple initialize calls when
-     * a large number of messages are received when the service worker
-     * starts or wakes up.
+     * Owns browser registration acknowledgment and current-session code generation.
+     */
+    private readonly canvasProtection = new CanvasProtectionRegistration(
+        new ChromiumCanvasRegistration(),
+        createCanvasProtectionCode,
+    );
+
+    /**
+     * Stores initialization so concurrent service worker calls share startup.
      */
     private startPromise: Promise<ConfigurationResult> | undefined;
 
@@ -317,6 +333,7 @@ export class TsWebExtension implements AppInterface<
 
         appContext.isAppStarted = false;
         this.isStarted = false;
+        await this.updateCanvasProtection(true);
     }
 
     /**
@@ -502,6 +519,11 @@ export class TsWebExtension implements AppInterface<
         }
 
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
+        const canvasProtection = await this.updateCanvasProtection();
+        if (configuration.settings.stealth.protectCanvas !== undefined || configuration.canvasProtectionPolicy
+            || canvasProtection.operations.length > 0) {
+            res.canvasProtection = canvasProtection;
+        }
 
         // Update previously opened tabs with new rules - find for each tab
         // new main frame rule.
@@ -515,6 +537,80 @@ export class TsWebExtension implements AppInterface<
         logger.trace('[tsweb.TsWebExtension.configure]: end');
 
         return res;
+    }
+
+    /**
+     * Updates canvas opt-in and waits for the browser registration result.
+     *
+     * @param enabled Whether canvas protection is requested.
+     *
+     * @returns The acknowledged or unresolved registration state.
+     *
+     * @throws When the application has no configuration.
+     */
+    public setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult> {
+        const { configuration } = this;
+        if (!configuration) {
+            throw new Error('Configuration not set');
+        }
+        configuration.settings.stealth.protectCanvas = enabled;
+        return this.updateCanvasProtection();
+    }
+
+    /**
+     * Replaces the consumer's prepared policy at its external input boundary.
+     *
+     * @param policy Prepared canvas exclusions and browser delivery selectors.
+     *
+     * @returns The acknowledged or unresolved registration state.
+     *
+     * @throws When the application has no configuration.
+     */
+    public setCanvasProtectionPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult> {
+        const { configuration } = this;
+        if (!configuration) {
+            throw new Error('Configuration not set');
+        }
+        configuration.canvasProtectionPolicy = protectionPolicyArtifactValidator.parse(policy);
+        return this.updateCanvasProtection();
+    }
+
+    /**
+     * Retries the latest persisted request using the current session root.
+     *
+     * @returns The acknowledged or unresolved registration state.
+     */
+    public reconcileCanvasProtection(): Promise<RegistrationResult> {
+        return this.canvasProtection.reconcile();
+    }
+
+    /**
+     * Reports requested state separately from browser acknowledgment history.
+     *
+     * @returns The most recent registration lifecycle result.
+     */
+    public getCanvasProtectionState(): RegistrationResult {
+        return this.canvasProtection.getState();
+    }
+
+    /**
+     * Submits feature gates and policy without assuming a session or empty policy.
+     *
+     * @param stopped Whether application shutdown overrides the filtering gate.
+     *
+     * @returns The acknowledged or unresolved registration state.
+     */
+    private updateCanvasProtection(stopped = false): Promise<RegistrationResult> {
+        const { configuration } = this;
+        const settings = configuration?.settings;
+        const gates: CanvasFeatureGates = {
+            filteringEnabled: !stopped && settings?.filteringEnabled === true,
+            stealthModeEnabled: settings?.stealthModeEnabled === true,
+            protectCanvas: settings?.stealth.protectCanvas === true,
+        };
+        return stopped
+            ? this.canvasProtection.disable(gates, true)
+            : this.canvasProtection.apply({ gates, policy: configuration?.canvasProtectionPolicy });
     }
 
     /**
@@ -704,6 +800,7 @@ export class TsWebExtension implements AppInterface<
             filtersPath,
             rulesetsPath,
             declarativeLogEnabled,
+            canvasProtectionPolicy,
         } = configuration;
 
         return {
@@ -714,6 +811,7 @@ export class TsWebExtension implements AppInterface<
             declarativeLogEnabled,
             verbose,
             settings,
+            canvasProtectionPolicy,
         };
     }
 
@@ -800,6 +898,7 @@ export class TsWebExtension implements AppInterface<
     public async initStorage(): Promise<void> {
         await extSessionStorage.init();
         appContext.isStorageInitialized = true;
+        await this.canvasProtection.reconcile();
     }
 
     /**
