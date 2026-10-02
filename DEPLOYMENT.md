@@ -96,28 +96,50 @@ section instead.
    Octopass `protected-push` (the commit avoids `[skip ci]` so `mirror.yml`
    still syncs the update to the public repo). Failures are reported to Slack.
 - `publish-stable-dnr-rulesets.yml` builds and publishes `@adguard/dnr-rulesets`
-   twice daily (00:17/12:17 UTC) from the `stable/dnr-rulesets-5.0` branch.
-   Only the 5.0 line is published (as `latest`); the older stable lines are no
-   longer published. Versions use `<major>.<minor>.<UTC timestamp>` and are
-   injected only for that build. The exact version is checked for idempotency
-   before publishing (`scripts/ci/check-npm-version.sh`), and a failed publish
-   gets one retry after a backoff (outlasts npm's throttle window). The same
-   tarball is also published to the internal Artifact Keeper npm registry
-   (shared `deploy-to-ak-npm.yml`, tag `latest`) independently of the npm
-   publish, so the browser-extension auto-build can install rulesets from AK
-   when npm throttles. Failures are reported to Slack.
+   twice daily (00:17/12:17 UTC) from the `stable/dnr-rulesets-5.0` and
+   `stable/dnr-rulesets-6.0` branches; the older stable lines are no longer
+   published. The two lines carry incompatible ruleset formats: 6.0 is built
+   with `@adguard/dnr-converter` 2.x (metadata split into `metadata.chunk`
+   rules), 5.0 with 1.x, and neither reader loads the other format. Each line
+   therefore has its own dist-tag:
+
+   | Line | Branch | Dist-tag |
+   | --- | --- | --- |
+   | 5.0 | `stable/dnr-rulesets-5.0` | `latest` |
+   | 6.0 | `stable/dnr-rulesets-6.0` | `stable-6.0` |
+
+   `latest` stays on 5.0 until consumers read the 6.0 format; to move it,
+   change `LATEST_LINE` in the workflow. Versions use
+   `<major>.<minor>.<UTC timestamp>` and are injected only for that build.
+   Each line runs `_publish-stable-dnr-rulesets-line.yml` and publishes its
+   tarball to the internal Artifact Keeper npm registry (shared
+   `deploy-to-ak-npm.yml`), where the browser-extension auto-build installs
+   rulesets from. The npm leg (idempotency check with
+   `scripts/ci/check-npm-version.sh`, publish, one retry after a backoff) is
+   disabled while npm throttles the package (AG-58867). A manual dispatch with
+   `line` set publishes one line; an empty `line` publishes all of them.
+   Failures are reported to Slack.
   - **Prerequisite — the branch must be on the current CI** (root
-    `Dockerfile` with a `dnr-rulesets-auto-build-output` target +
-    `scripts/inject-package-versions.mjs` in the branch tip). The workflow
-    checks branch readiness and skips the round if the branch has not been
-    migrated yet, so the runs neither fail nor spam Slack during the
-    backport window (see the workflow's `resolve-lines` job).
-  - **Branch protection required**: with `environment: ''` this pipeline
-    publishes to npm straight from the tip of the `stable/dnr-rulesets-5.0`
-    branch, so push access to that branch is effectively npm publish access
-    (bypassing the `npm` environment review that gates normal releases).
-    Provision branch protection for `stable/dnr-rulesets-*` in terraform-github
-    (teams with push rights are the only gate on the unattended path).
+    `Dockerfile` with a `dnr-rulesets-auto-build-output` target,
+    `scripts/inject-package-versions.mjs`, `.github/actions/docker-build`
+    and the `scripts/ci` helpers in the branch tip). The `resolve-lines`
+    job skips a scheduled line whose branch is not ready, so the runs
+    neither fail nor spam Slack during a backport window; a manual
+    dispatch of such a line fails.
+  - **Adding a line**: create `stable/dnr-rulesets-<line>` from the
+    release commit of that version, add the line to `ALL_LINES` in the
+    workflow and to this list and `AGENTS.md`
+    (`scripts/ci/check-package-lists.mjs` fails on a mismatch).
+  - **Branch protection required**: the pipeline runs without a GitHub
+    environment and publishes straight from the tip of each stable
+    branch, so push access to `stable/dnr-rulesets-*` is effectively
+    publish access (bypassing the `npm` environment review that gates
+    normal releases). These branches are covered only by the
+    organization-wide rulesets (no force push, committer email, no bare
+    issue references); the terraform-github repository rulesets
+    (`strict-master`, `require-ci-before-merge`) protect only `master` and
+    `release/**`. Provision a ruleset for `stable/dnr-rulesets-*` in
+    terraform-github to restrict pushes and deletion.
 
 ## Publishing order
 

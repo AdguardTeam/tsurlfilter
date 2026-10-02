@@ -139,22 +139,24 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   leg is ungated, like the stable line) → tag after publish → mirror → GitHub
   Release → Slack, with a failure-notify Slack job).
 - `publish-stable-dnr-rulesets.yml` — twice-daily scheduled build/publish of
-  `@adguard/dnr-rulesets` from the `stable/dnr-rulesets-5.0` branch. Only the
-  5.0 line is published (under `latest`); the older stable lines are no longer
-  published. The branch must be on the current CI (root `Dockerfile` +
-  `scripts/inject-package-versions.mjs`); a `resolve-lines` job checks branch
-  readiness and skips gracefully if not yet migrated, the job checks the
-  branch out, stamps a `<line>.<timestamp>` stable version, builds its own
-  `dnr-rulesets-auto-build-output` Docker target, and publishes it. The exact
-  version is checked for idempotency before publishing
-  (`scripts/ci/check-npm-version.sh`), and a failed publish gets one retry
-  after a backoff (outlasts npm's throttle window). The line publishes under
-  the `latest` npm dist-tag (no older line exists to pull it backwards) with
-  no environment restriction. Each round also publishes the same tarball to
-  the internal Artifact Keeper npm registry (shared `deploy-to-ak-npm.yml`,
-  tag `latest`), independently of the npm publish, so the browser-extension
-  auto-build can install rulesets from AK when npm throttles. A failure-notify
-  job alerts Slack when any leg fails.
+  `@adguard/dnr-rulesets` from the `stable/dnr-rulesets-5.0` and
+  `stable/dnr-rulesets-6.0` branches; older stable lines are no longer
+  published. The lines carry incompatible ruleset formats (6.0 is built with
+  `@adguard/dnr-converter` 2.x, 5.0 with 1.x), so each has its own dist-tag:
+  5.0 publishes under `latest` until consumers migrate (`LATEST_LINE` in the
+  workflow), 6.0 under `stable-6.0`. A `resolve-lines` job holds the line list
+  (`ALL_LINES`, asserted by `scripts/ci/check-package-lists.mjs` against this
+  file and `DEPLOYMENT.md`) and skips a line whose branch is not on the current
+  CI (root `Dockerfile` with `dnr-rulesets-auto-build-output`,
+  `scripts/inject-package-versions.mjs`, `.github/actions/docker-build`,
+  `scripts/ci` helpers); a manual dispatch with `line` publishes one line.
+  Each line runs `_publish-stable-dnr-rulesets-line.yml`: checks the branch
+  out, stamps a `<line>.<timestamp>` version, builds the Docker target, and
+  publishes the tarball to the internal Artifact Keeper npm registry (shared
+  `deploy-to-ak-npm.yml`), where the browser-extension auto-build installs
+  rulesets from. The npm leg (version check, publish, one retry after a
+  backoff) is disabled while npm throttles the package (AG-58867). A
+  failure-notify job alerts Slack when any leg fails.
 - `mirror.yml` — syncs master to the public `AdguardTeam/tsurlfilter` mirror.
 - `update-companiesdb.yml` — refreshes the tswebextension companies database
   every Tuesday and pushes meaningful changes with Octopass. The push avoids
