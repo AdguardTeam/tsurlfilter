@@ -109,7 +109,8 @@ section instead.
    | 6.0 | `stable/dnr-rulesets-6.0` | `stable-6.0` |
 
    `latest` stays on 5.0 until consumers read the 6.0 format; to move it,
-   change `LATEST_LINE` in the workflow. Versions use
+   change `LATEST_LINE` in the workflow, this table and `AGENTS.md`
+   (`scripts/ci/check-package-lists.mjs` fails on a mismatch). Versions use
    `<major>.<minor>.<UTC timestamp>` and are injected only for that build.
    Each line runs `_publish-stable-dnr-rulesets-line.yml` and publishes its
    tarball to the internal Artifact Keeper npm registry (shared

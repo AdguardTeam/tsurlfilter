@@ -64,6 +64,8 @@ jobs:
           ALL_LINES="5.0 6.0"
           # The line that owns `latest`. Move it to 6.0 once consumers read
           # the 6.0 format; every other line publishes under stable-<line>.
+          # The drift guard asserts it is in ALL_LINES and matches the
+          # `latest` line in DEPLOYMENT.md and AGENTS.md.
           LATEST_LINE="5.0"
 
           if [ -n "$REQUESTED_LINE" ]; then
