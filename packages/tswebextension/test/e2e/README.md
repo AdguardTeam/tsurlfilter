@@ -43,9 +43,7 @@ That guide covers the dependency-inclusive build, API/private permissions,
 report preservation, native controls and original-attribute bounds. A native
 wrapper test or delivery-only test does not prove the loaded consumer path.
 
-The [capability reference](../../docs/canvas-protection-capabilities.md)
-separates ordinary non-2D native exports, size/mode gaps and transferred native
-representation from missing hooks. Keep the three lifecycle intervals distinct:
+Keep the three lifecycle intervals distinct:
 Chromium access restoration before reconciliation, running-browser registration
 loss before reinstallation, and ordinary Firefox cold startup before current
 registration acknowledgment. Each may expose native output without a bounded

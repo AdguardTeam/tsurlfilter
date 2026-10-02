@@ -58,9 +58,7 @@
         "tswebextension": "dist/cli.js"
     },
     "files": [
-        "dist",
-        "docs/canvas-protection-capabilities.md",
-        "docs/canvas-protection-policy-contract.md"
+        "dist"
     ],
     "author": "Adguard Software Ltd.",
     "repository": {

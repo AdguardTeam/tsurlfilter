@@ -195,14 +195,12 @@ Inspect the returned `RegistrationResult`: requested settings, successful
 installation, unavailable access and failed operations are distinct. Enabling
 without an artifact is unavailable. No existing rules or allowlist are
 automatically compiled; an actual exception policy must be prepared by the
-consumer according to the [policy contract](docs/canvas-protection-policy-contract.md).
+consumer.
 
 Chromium requires the `userScripts` permission, applicable host permissions,
 user enablement of user scripts and `browser.storage.session`. Firefox requires
 session storage and its live registering background context. Private windows
-also require extension permission. The verified browser versions, API floors
-and frame-local fallback are listed in the
-[capability reference](docs/canvas-protection-capabilities.md).
+also require extension permission.
 
 The shared size domain uses original native HTML canvas attributes after
 argument conversion: each axis ≤32767 and area ≤268435456, inclusively.
@@ -224,8 +222,7 @@ has no guaranteed maximum duration, and requires reload/navigation of earlier
 documents after acknowledgment. Existing lifecycle calls or explicit
 `reconcileCanvasProtection()` retry the request; no automatic event or wakeup
 is promised. New supported documents after successful acknowledgment retain
-early protection before their first inline script. See the
-[exact interval boundaries](docs/canvas-protection-capabilities.md#generations-and-registration-intervals).
+early protection before their first inline script.
 
 ## CLI
 
@@ -450,8 +447,7 @@ type: `ProtectionPolicyArtifact | undefined`
 
 Optional prepared canvas delivery selectors and exact exclusion predicates.
 Required when canvas protection is enabled; omission does not compile existing
-filter rules or allowlist. See the
-[artifact reference](docs/canvas-protection-policy-contract.md#prepared-artifact).
+filter rules or allowlist.
 
 #### settings
 
@@ -644,8 +640,7 @@ The setters require an existing application configuration. Results separate
 requested state from the last acknowledged registration. `start()` and
 `configure()` expose an optional `canvasProtection` result. Updates do not
 rotate the seed or rewrite existing documents; reload/navigation applies the
-new captured state. See the
-[result and retry reference](docs/canvas-protection-policy-contract.md#registration-result-and-retry-boundary).
+new captured state.
 
 ##### initStorage()
 

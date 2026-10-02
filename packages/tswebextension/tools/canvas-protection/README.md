@@ -1,9 +1,7 @@
 # Verify canvas protection in browsers
 
 Use this guide to compare native behavior with the actual built package in
-loaded test extensions. See the
-[capability reference](../../docs/canvas-protection-capabilities.md) for the
-supported contract and limitations.
+loaded test extensions.
 
 ## Prepare the test environment
 
