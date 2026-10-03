@@ -23,7 +23,10 @@ const serialize = (value: unknown): string => JSON.stringify(value).replace(/</g
  */
 export function createCanvasProtectionCode(snapshot: CanvasBootstrapSnapshot): string {
     const tokens = deriveInstallationTokens(snapshot.session);
+    // Chromium names a user script by its extension URL in stack traces, so the script is renamed.
+    // Firefox already reports registered code as anonymous.
+    const name = snapshot.policy.browser === 'chromium-mv3' ? '\n//# sourceURL=<anonymous>' : '';
     return `(()=>{
 ${CANVAS_ENGINE_SOURCE}
-canvasEngine.bootstrapCanvasProtection(${serialize(snapshot)},${serialize(tokens)});})();`;
+canvasEngine.bootstrapCanvasProtection(${serialize(snapshot)},${serialize(tokens)});})();${name}`;
 }

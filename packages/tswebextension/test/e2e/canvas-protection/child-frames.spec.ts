@@ -172,6 +172,22 @@ describe('canvas protection of same-origin child frames', () => {
         });
     });
 
+    test('leaves a frame alone when the page changed it beyond protection', async () => {
+        await withRealm(async (realm) => {
+            install(realm);
+            const errors: string[] = [];
+            realm.addEventListener('error', (event) => errors.push(event.message));
+            const index = realm.length;
+            const frame = addFrame(realm);
+            const child = realm[index] as Realm;
+            Reflect.deleteProperty(child, 'OffscreenCanvasRenderingContext2D');
+            await new Promise<void>((resolve) => { setTimeout(resolve, 0); });
+            expect(frame.contentWindow).toBe(child);
+            expect(frame.contentDocument).toBe(child.document);
+            expect(errors).toEqual([]);
+        });
+    });
+
     test('shares draw marks and native representations across its frames', async () => {
         await withRealm((realm) => {
             const natives = [realm.CanvasRenderingContext2D.prototype.getImageData, realm.Function.prototype.toString];

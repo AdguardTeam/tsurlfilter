@@ -280,9 +280,20 @@ reload/navigation after reconciliation.
 The engine defines nothing on the global object. It replaces existing
 prototype methods and accessors with wrappers that keep the native name,
 length and source text, and it recognizes its own wrappers by private tokens.
-Protection remains detectable: readouts of drawn-on canvases carry noise, and
-an object argument that fails to convert to a number or string throws a
-`TypeError` without the browser's message prefix.
+A wrapper rejects a prototype chain that leads back to it with the browser's
+own error, and reads of `arguments` and `caller` behave as on a native
+function. In Chromium an error raised under a wrapper carries the native
+frames and the caller's, without the engine's own.
+
+Protection remains detectable. Readouts of drawn-on canvases carry noise. An
+object argument that fails to convert to a number or string throws a
+`TypeError` without the browser's message prefix. Page code that runs inside
+a wrapped call, such as an argument's `valueOf()`, sees the engine's frames
+on the stack. They are anonymous in stack text, but in Chromium the call
+sites given to `Error.prepareStackTrace` name the extension URL. Firefox
+keeps the engine's frames in error stacks, and there
+`Reflect.setPrototypeOf()` throws for a cyclic chain instead of returning
+`false`.
 
 Readouts of unmarked canvases run at native speed. Protected readouts cost
 extra time proportional to the readout area: one keyed hash per row and a

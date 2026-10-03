@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { server } from 'vitest/browser';
 
 import { createCanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
 import { type CanvasBootstrapSnapshot } from '../../../src/lib/common/canvas-protection/contracts';
@@ -607,6 +608,131 @@ describe('generated canvas bootstrap and native masking', () => {
             expect(conversions).toBe(3);
             await new Promise((resolve) => { setTimeout(resolve, 20); });
             expect(callbacks).toBe(0);
+        });
+    });
+
+    /**
+     * Lists functions the engine replaces, as they currently are in the realm.
+     *
+     * @param realm Document's global object.
+     *
+     * @returns Readouts, a rendering method, a frame accessor and the serializer.
+     */
+    const replaced = (realm: Realm): Function[] => [
+        realm.HTMLCanvasElement.prototype.toDataURL,
+        realm.CanvasRenderingContext2D.prototype.getImageData,
+        realm.CanvasRenderingContext2D.prototype.fillText,
+        realm.OffscreenCanvas.prototype.convertToBlob,
+        Object.getOwnPropertyDescriptor(realm.HTMLIFrameElement.prototype, 'contentWindow')!.get!,
+        realm.Function.prototype.toString,
+    ];
+
+    const outcome = (realm: Realm, run: () => unknown): string => {
+        try {
+            return `returned ${String(run())}`;
+        } catch (error) {
+            const { name, message } = error as Error;
+            return `threw ${name}: ${message} (${error instanceof realm.TypeError ? 'realm' : 'foreign'} TypeError)`;
+        }
+    };
+
+    test('rejects a prototype chain that leads back to a wrapper as a native function does', async () => {
+        await withRealm((realm) => {
+            const cycles = (method: Function): Record<string, string> => {
+                const original = Object.getPrototypeOf(method);
+                try {
+                    const { create } = realm.Object;
+                    return {
+                        // The page's own builtins make the calls, as they do in a real document.
+                        direct: outcome(realm, () => realm.Object.setPrototypeOf(method, create(method)) === method),
+                        nested: outcome(realm, () => (
+                            realm.Object.setPrototypeOf(method, create(create(method))) === method
+                        )),
+                        // eslint-disable-next-line no-proto -- The legacy setter is one of the native entry points.
+                        legacy: outcome(realm, () => { (method as any).__proto__ = create(method); return 1; }),
+                        // Firefox stacks do not name the native caller, so the wrapper cannot tell this call apart.
+                        reflect: server.browser === 'firefox' ? 'not compared'
+                            : outcome(realm, () => realm.Reflect.setPrototypeOf(method, create(method))),
+                        unchanged: String(Object.getPrototypeOf(method) === original),
+                        readable: outcome(realm, () => typeof method.toString),
+                        detached: outcome(realm, () => {
+                            Object.setPrototypeOf(method, null);
+                            return Object.getPrototypeOf(method);
+                        }),
+                    };
+                } finally {
+                    Object.setPrototypeOf(method, original);
+                }
+            };
+            const natives = replaced(realm);
+            const references = natives.map(cycles);
+            expect(references[0].direct).toContain('threw TypeError');
+            realm.eval(createCanvasProtectionCode(snapshot()));
+            replaced(realm).forEach((wrapper, index) => {
+                expect(wrapper).not.toBe(natives[index]);
+                expect(cycles(wrapper)).toEqual(references[index]);
+            });
+        });
+    });
+
+    test('reads arguments and caller of a wrapper as of a native function', async () => {
+        await withRealm((realm) => {
+            const restricted = (method: Function): string[] => [
+                outcome(realm, () => (method as any).arguments),
+                outcome(realm, () => (method as any).caller),
+                outcome(realm, () => (method.toString as any).arguments),
+                outcome(realm, () => (method.toString as any).caller),
+            ];
+            const natives = replaced(realm);
+            const references = natives.map(restricted);
+            realm.eval(createCanvasProtectionCode(snapshot()));
+            const wrappers = replaced(realm);
+            wrappers.forEach((wrapper, index) => expect(restricted(wrapper)).toEqual(references[index]));
+            // An accessor defined by a page receives the wrapper, never the native function behind it.
+            Object.defineProperty(realm.Function.prototype, 'arguments', {
+                configurable: true, get(): unknown { return this; },
+            });
+            Object.defineProperty(wrappers[1], 'caller', { configurable: true, value: 5 });
+            wrappers.forEach((wrapper) => expect((wrapper as any).arguments).toBe(wrapper));
+            expect((wrappers[1] as any).caller).toBe(5);
+        });
+    });
+
+    test.runIf(server.browser === 'chromium')('leaves no engine frames in errors raised under a wrapper', async () => {
+        await withRealm((realm) => {
+            const frames = (run: () => unknown): string[] => {
+                try {
+                    run();
+                } catch (error) {
+                    // Everything below the first frames belongs to this test and differs by call site.
+                    return (error as Error).stack!.split('\n').slice(0, 2).map((line) => line.replace(/\(.*\)$/, ''));
+                }
+                throw new Error('Expected an error');
+            };
+            const probes = (method: Function): string[][] => [
+                frames(() => Reflect.apply(method, {}, [])),
+                frames(() => Object.create(method).toString()),
+                frames(() => Object.create(Object.create(method)).toString()),
+                frames(() => Object.create(new realm.Proxy(method, {})).toString()),
+                frames(() => Object.setPrototypeOf(method, Object.create(method))),
+            ];
+            const engineFrame = /<anonymous>:\d+:\d+/;
+            const complete = (method: Function): string => {
+                try {
+                    Reflect.apply(method, {}, []);
+                } catch (error) {
+                    return (error as Error).stack!;
+                }
+                throw new Error('Expected an error');
+            };
+            const natives = replaced(realm).slice(0, 3);
+            const references = natives.map(probes);
+            realm.eval(createCanvasProtectionCode(snapshot()));
+            replaced(realm).slice(0, 3).forEach((wrapper, index) => {
+                expect(probes(wrapper)).toEqual(references[index]);
+                expect(complete(wrapper)).not.toMatch(engineFrame);
+                expect(complete(wrapper).split('\n')).toHaveLength(complete(natives[index]).split('\n').length);
+            });
         });
     });
 });

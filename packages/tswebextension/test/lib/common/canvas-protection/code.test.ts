@@ -48,6 +48,17 @@ describe('generated canvas delivery code', () => {
         });
         expect(untouched).toBe(true);
     });
+    it('renames the script in Chromium stack traces only', () => {
+        const state = {
+            session: { root: '0123456789abcdef0123456789abcdef', generation: 'generation' },
+            gates: { filteringEnabled: true, stealthModeEnabled: true, protectCanvas: true },
+        };
+        expect(createCanvasProtectionCode({ ...state, policy: createProtectAllPolicy('chromium-mv3', 'current') }))
+            .toMatch(/\n\/\/# sourceURL=<anonymous>$/);
+        expect(createCanvasProtectionCode({ ...state, policy: createProtectAllPolicy('firefox-mv2', 'current') }))
+            .not.toContain('sourceURL');
+    });
+
     it.each([false, true])('keeps disabled or excluded readouts native across duplicate delivery (%s)', (enabled) => {
         const policy = createProtectAllPolicy('chromium-mv3', '";globalThis.injected=true;//</script>\u2028\u2029');
         const exclusions = [{

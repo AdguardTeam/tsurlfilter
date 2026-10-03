@@ -18,6 +18,7 @@ export const canvasIntrinsics = Object.freeze({
     max: Math.max,
     parseInt: Number.parseInt,
     slice: String.prototype.slice,
+    indexOf: String.prototype.indexOf,
     encode: TextEncoder.prototype.encode,
     typedLength: Object.getOwnPropertyDescriptor(typedArrayPrototype, 'length')!.get!,
     typedBuffer: Object.getOwnPropertyDescriptor(typedArrayPrototype, 'buffer')!.get!,
@@ -29,6 +30,14 @@ export const canvasIntrinsics = Object.freeze({
     weakHas: WeakSet.prototype.has,
     weakAdd: WeakSet.prototype.add,
     setPrototypeOf: Object.setPrototypeOf,
+    get: Reflect.get,
+    getPrototypeOf: Reflect.getPrototypeOf,
+    reflectSetPrototypeOf: Reflect.setPrototypeOf,
+    create: Object.create,
+    // V8 only: captures the stack below a given function.
+    captureStackTrace: (
+        Error as { captureStackTrace?: (target: object, boundary: Function) => void }
+    ).captureStackTrace,
     getOwnPropertyDescriptor: Object.getOwnPropertyDescriptor,
     getOwnPropertyNames: Object.getOwnPropertyNames,
     defineProperty: Object.defineProperty,

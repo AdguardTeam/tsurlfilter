@@ -1,4 +1,4 @@
-import { canvasIntrinsics as intrinsics } from './intrinsics';
+import { canvasIntrinsics as intrinsics, withoutPrototype } from './intrinsics';
 import { createNativeMasking } from './masking';
 import { type InstallationTokens } from './noise';
 import {
@@ -97,10 +97,18 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
     const add = (set: WeakSet<object>, value: unknown): void => {
         intrinsics.apply(intrinsics.weakAdd, set, [value]);
     };
-    const hook = (owner: object, name: string, key: 'get' | 'value', apply: ApplyHandler): void => {
+    // Child realms are protected after page code ran, so nothing here may reach a
+    // page-defined member through Object.prototype or call a replaceable method.
+    const describe = (owner: object, name: string): PropertyDescriptor | undefined => {
         const descriptor = intrinsics.getOwnPropertyDescriptor(owner, name);
+        return descriptor === undefined ? undefined : withoutPrototype(descriptor);
+    };
+    const hook = (owner: object, name: string, key: 'get' | 'value', apply: ApplyHandler): void => {
+        const descriptor = describe(owner, name);
         if (descriptor !== undefined && typeof descriptor[key] === 'function') {
-            intrinsics.defineProperty(owner, name, { ...descriptor, [key]: masking.wrap(descriptor[key], apply) });
+            intrinsics.defineProperty(owner, name, withoutPrototype({
+                ...descriptor, [key]: masking.wrap(descriptor[key], apply),
+            }));
         }
     };
 
@@ -135,7 +143,9 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
             const { document } = realm;
             if (!has(observedDocuments, document)) {
                 add(observedDocuments, document);
-                intrinsics.apply(observe, new Observer(scan), [document, { childList: true, subtree: true }]);
+                intrinsics.apply(observe, new Observer(scan), [
+                    document, withoutPrototype({ childList: true, subtree: true }),
+                ]);
             }
             scan();
         };
@@ -183,8 +193,9 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
         ));
 
         for (let index = 0; index < FRAME_MEMBERS.length; index += 1) {
-            const [owner, name, key] = FRAME_MEMBERS[index];
-            hook(global[owner as 'HTMLIFrameElement'].prototype, name, key, (target, receiver, args) => {
+            const member = FRAME_MEMBERS[index];
+            const name = member[1];
+            hook(global[member[0] as 'HTMLIFrameElement'].prototype, name, member[2], (target, receiver, args) => {
                 const result = native.apply(target, receiver, args);
                 const child = result === null || name === 'contentWindow'
                     ? result : intrinsics.apply(defaultView, result, []);
@@ -195,10 +206,11 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
                 return result;
             });
         }
-        const serializer = intrinsics.getOwnPropertyDescriptor(global.Function.prototype, 'toString')!;
-        intrinsics.defineProperty(global.Function.prototype, 'toString', {
+        masking.learnErrors(global.Error);
+        const serializer = describe(global.Function.prototype, 'toString')!;
+        intrinsics.defineProperty(global.Function.prototype, 'toString', withoutPrototype({
             ...serializer, value: masking.serializer(serializer.value),
-        });
+        }));
         add(protectedRealms, context2d);
         watch();
     };
@@ -220,7 +232,12 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
             add(foreignRealms, key);
             return;
         }
-        protect(child, false);
+        try {
+            protect(child, false);
+        } catch {
+            // The page reached this frame first and changed it. Its own calls must not fail because of the engine.
+            add(foreignRealms, key);
+        }
     };
 
     return { protect: (realm) => protect(realm, true) };
