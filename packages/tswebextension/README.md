@@ -161,28 +161,17 @@ relative to your current working directory by default
 
 ## Canvas protection
 
-Canvas protection is opt-in for Chromium MV3 and Firefox MV2. It changes
-eligible opaque pixels returned by `getImageData()`, `toDataURL()`,
-`toBlob()` and `OffscreenCanvas.convertToBlob()` without changing drawing or
-the original bitmap. HTML canvases and the OffscreenCanvas objects used in a
-document are treated alike. Omitted configuration keeps existing native
-behavior.
+Opt-in protection against canvas fingerprinting for Chromium MV3 and Firefox
+MV2. It adds noise to the pixels a page reads through `getImageData()`,
+`toDataURL()`, `toBlob()` and `OffscreenCanvas.convertToBlob()`. Drawing and
+the canvas bitmap stay untouched. The noise is stable for a site within one
+browser session and differs between sites and sessions. A frame uses the site
+of its top-level document.
 
-Only canvases that received rendering are protected. A canvas is marked by
-any 2D context method that can put device-dependent pixels on it: fills,
-strokes, text, `drawImage()` from any source except a video element, and
-any method unknown to the engine. A bitmap renderer marks its canvas when it
-receives an `ImageBitmap`. Rendering on a transferred OffscreenCanvas in the
-document also marks the HTML canvas it came from. State, transform,
-path-building and query methods, `clearRect()` and `putImageData()` do not
-mark. The mark is permanent. A canvas filled only from video frames or
-`putImageData()` keeps native readouts.
-
-Protection requires `settings.filteringEnabled`, `settings.stealthModeEnabled`
-and `settings.stealth.protectCanvas`, plus an explicit prepared policy.
-For an already configured and started MV3 application with filtering and
-stealth enabled, this empty policy selects supported documents without
-exclusions:
+Protection needs `settings.filteringEnabled`, `settings.stealthModeEnabled`,
+`settings.stealth.protectCanvas` and a prepared
+[`canvasProtectionPolicy`](#canvasprotectionpolicy). This policy protects
+every document, without exclusions:
 
 ```ts
 import { type TsWebExtension, type ProtectionPolicyArtifact } from '@adguard/tswebextension/mv3';
@@ -203,104 +192,49 @@ async function enableCanvasProtection(app: TsWebExtension) {
 ```
 
 For Firefox MV2, use the root package import and `browser: 'firefox-mv2'`.
-Inspect the returned `RegistrationResult`: requested settings, successful
-installation, unavailable access and failed operations are distinct. Enabling
-without an artifact is unavailable. No existing rules or allowlist are
-automatically compiled; an actual exception policy must be prepared by the
-consumer.
+The returned `RegistrationResult` tells whether the script is installed and,
+if not, why. Filter rules and the allowlist are not compiled into the policy
+automatically.
 
-Chromium requires the `userScripts` permission, applicable host permissions,
-user enablement of user scripts and `browser.storage.session`. Firefox requires
-session storage and its live registering background context. Private windows
-also require extension permission.
+Requirements:
 
-The shared size domain uses original native HTML canvas attributes after
-argument conversion: each axis ≤32767 and area ≤268435456, inclusively.
-A small crop from an oversized canvas stays native and can expose its native
-fingerprint. Browser allocation/export limits and actual readout-mode gaps
-are separate. Exports of marked canvases are protected within coverage, and
-their PNG pixels agree with `getImageData()`. WebGL and WebGPU canvases are
-never marked and keep native exports.
+- Chromium: the `userScripts` permission, host permissions, user scripts
+  allowed by the user and `browser.storage.session`.
+- Firefox 128 or later and `browser.storage.session`.
+- Private windows: the extension must be allowed to run there.
 
-Three distinct intervals require care: Chromium access restoration can
-reactivate an old snapshot before reconciliation; running-browser registration
-loss can leave documents without hooks until reinstallation; ordinary Firefox
-cold startup can leave restored/new documents native until current registration
-acknowledgment. Each can expose a native fingerprint or stale captured decision,
-has no guaranteed maximum duration, and requires reload/navigation of earlier
-documents after acknowledgment. Existing lifecycle calls or explicit
-`reconcileCanvasProtection()` retry the request; no automatic event or wakeup
-is promised. New supported documents after successful acknowledgment retain
-early protection before their first inline script.
+Only canvases that received rendering are noised: any 2D context call that
+can put device-dependent pixels on a canvas marks it for good. A canvas
+filled only from video frames or `putImageData()` is read natively.
 
+### Limits
 
-### Known bypasses and threat model
-
-Protection covers actual uint8 sRGB readouts and fully opaque pixels only.
-`display-p3` and float16 readouts, transparent or semitransparent pixels and
-direct WebGL reads retain native fingerprints. So does an OffscreenCanvas
-used in a worker, including one transferred there: the engine runs only in
-documents. A marked canvas can still be copied natively through `VideoFrame`,
-a WebGL texture or `captureStream()`.
-Big-endian platforms keep all readouts native.
-Scripts can also recover much of the original image by drawing the same
-content at several offsets and comparing the sparse changes. This protection
-does not prevent an adversarial page from obtaining every canvas fingerprint.
-
-Same-origin `about:blank`, `about:srcdoc` and `blob:` frames never receive
-the engine by themselves. They take the protection and the seed of the
-document that contains them. The engine protects such a frame when the page
-reads `contentWindow` or `contentDocument`, and otherwise right after the
-script that inserted the frame finishes. A script that inserts a frame and
-reads it through `window[index]` within the same synchronous run still gets
-native methods. `data:` frames, sandboxed frames without `allow-same-origin`
-and popup windows are not reached and stay native.
-
-A protected document and the frames that inherit from it share one set of
-draw marks. A same-origin frame with a regular URL runs its own engine
-instance: a canvas drawn with a method borrowed from such a frame stays
-unmarked and native. So does a canvas filled from a video that plays
-`captureStream()` of another canvas. Rendering made before the engine loads
-is not tracked.
-
-Delivered child documents use their own full hostname for site seeding;
-embedded trackers can correlate that noise across top-level sites during one
-session. Top-document exclusions do not propagate to child frames. Predicates
-requiring an authenticated top URL or request source remain unavailable there;
-available local predicates still apply. No page-provided parent marker is
-trusted to supply this context.
-
-Chromium persists registered `userScripts`, including their captured seed.
-After a full browser restart, documents can receive the previous session's
-snapshot until current-session reconciliation is acknowledged. This adds a
-startup interval that can correlate outputs across runs and leaves the old
-seed in the browser profile's persisted registration. Earlier documents need
-reload/navigation after reconciliation.
-
-The engine defines nothing on the global object. It replaces existing
-prototype methods and accessors with wrappers that keep the native name,
-length and source text, and it recognizes its own wrappers by private tokens.
-A wrapper rejects a prototype chain that leads back to it with the browser's
-own error, and reads of `arguments` and `caller` behave as on a native
-function. In Chromium an error raised under a wrapper carries the native
-frames and the caller's, without the engine's own.
-
-Protection remains detectable. Readouts of drawn-on canvases carry noise. An
-object argument that fails to convert to a number or string throws a
-`TypeError` without the browser's message prefix. Page code that runs inside
-a wrapped call, such as an argument's `valueOf()`, sees the engine's frames
-on the stack. They are anonymous in stack text, but in Chromium the call
-sites given to `Error.prepareStackTrace` name the extension URL. Firefox
-keeps the engine's frames in error stacks, and there
-`Reflect.setPrototypeOf()` throws for a cyclic chain instead of returning
-`false`.
-
-Readouts of unmarked canvases run at native speed. Protected readouts cost
-extra time proportional to the readout area: one keyed hash per row and a
-32-bit mixer per opaque pixel. `toDataURL()` and `toBlob()` also copy the
-canvas before encoding. Rendering calls on a 2D context pass through a
-tracking hook, and a document-wide `MutationObserver` watches for inserted
-frames. There is no per-frame latency guarantee.
+- Only fully opaque 8-bit sRGB pixels change, on canvases up to 32767 px per
+  side and 268435456 px in area.
+- WebGL and WebGPU readouts, an OffscreenCanvas in a worker and copies made
+  through `VideoFrame`, a WebGL texture or `captureStream()` stay native.
+  Big-endian platforms get no noise.
+- Same-origin `about:blank`, `about:srcdoc` and `blob:` frames are protected
+  by the document that contains them. A frame read through `window[index]`
+  in the same synchronous run as its insertion, `data:` frames, sandboxed
+  frames without `allow-same-origin` and popups stay native.
+- A cross-origin frame learns its top-level and parent documents from
+  `location.ancestorOrigins`, which gives origins only: path-specific
+  conditions on those documents do not match there. Firefox before 148 has
+  no such list, so there the frame uses its own hostname and inherits no
+  document exclusions.
+- A document loaded before the script is registered stays native until
+  reload. Chromium keeps registered user scripts across restarts, so
+  documents loaded before the first reconciliation get the previous
+  session's seed.
+- The protection is detectable and a determined page can defeat it. The
+  noise shows when the same content is read at several offsets, and page
+  code that runs inside a wrapped call sees the engine's stack frames. The
+  engine defines nothing on the global object, and its wrappers keep the
+  native name, length and source text.
+- A protected readout costs time proportional to its area: a few
+  milliseconds for 1280×720. `toDataURL()` and `toBlob()` also copy the
+  canvas before encoding.
 
 ## CLI
 
@@ -523,9 +457,17 @@ Available levels: 'error', 'warn', 'info', 'debug', 'trace'.
 
 type: `ProtectionPolicyArtifact | undefined`
 
-Optional prepared canvas delivery selectors and exact exclusion predicates.
-Required when canvas protection is enabled; omission does not compile existing
-filter rules or allowlist.
+Prepared delivery selectors and exclusions for
+[canvas protection](#canvas-protection). Required when it is enabled.
+
+- `selectors`: match patterns of the registered script.
+- `ownFrameExclusions`: rules for a document itself. A condition reads the
+  document's URL (`frame-url`), its top-level document (`top-url`) or its
+  parent (`source-url`).
+- `documentExclusions`: rules for a top-level document. Its frames inherit
+  the result.
+
+A condition whose URL is unknown excludes nothing.
 
 #### settings
 
@@ -714,13 +656,12 @@ Available in MV2 and MV3:
 - `reconcileCanvasProtection(): Promise<RegistrationResult>`
 - `getCanvasProtectionState(): RegistrationResult`
 
-The setters require an existing application configuration. Results separate
-requested state from the last acknowledged registration. `start()` and
-`configure()` expose an optional `canvasProtection` result. Updates do not
-rotate the seed or rewrite existing documents; reload/navigation applies the
-new captured state. Configuration remains authoritative: a later `configure()`
-replaces setter changes with its `settings.stealth.protectCanvas` and
-`canvasProtectionPolicy` values. Omitting them disables protection again.
+The setters need an application configuration. Every method returns the
+registration state: `installed`, `disabled`, `unavailable` with a
+`requiredUserAction`, or `failed`. `start()` and `configure()` return it as
+`canvasProtection`. A later `configure()` replaces setter changes with its
+own `settings.stealth.protectCanvas` and `canvasProtectionPolicy`; omitting
+them disables protection. Changes apply to documents loaded afterwards.
 
 ##### initStorage()
 
