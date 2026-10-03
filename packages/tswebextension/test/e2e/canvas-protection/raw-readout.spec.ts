@@ -470,6 +470,9 @@ describe('normalizes coordinates once and leaves padding native', () => {
         [5.9, 7.9, -8.9, -10.9], [-0.9, -0.9, 10.9, 12.9], [1.9, 2.9, 8.9, 7.9],
         [2147483647, 0, 1, 1], [-2147483648, 0, 1, 1], [2147483648, 0, 1, 1],
         [-2147483649, 0, 1, 1], [NaN, 0, 1, 1], [Infinity, 0, 1, 1], [-Infinity, 0, 1, 1],
+        [NaN, Infinity, 32, 24], [Infinity, -Infinity, 32, 24],
+        [4294967296, 4294967296, 32, 24], [4294967301, 4294967303, 16, 12],
+        [-4294967296, -4294967296, 32, 24], [0, 0, 4294967328, 4294967320],
         [0, 0, NaN, 1], [0, 0, 2147483648, 1], [0, 0, 0, 1], [0, 0, 1, 0],
         [0, 0, 0.9, 1], [0, 0, 1, -0.9],
     ])('matches native rectangle %j', async (sx, sy, sw, sh) => {
@@ -478,6 +481,17 @@ describe('normalizes coordinates once and leaves padding native', () => {
         await compare((context, _realm, log) => read(context, [numeric(sx, 'sx', log), numeric(sy, 'sy', log),
             numeric(sw, 'sw', log), numeric(sh, 'sh', log)]), [x, y]);
     });
+
+    test('rejects non-finite and out-of-range coordinates before returning pixels', async () => (
+        withCanvasRealmPair(async (pair) => {
+            const native = createCanvasFixtures(1)[0].draw(pair.native);
+            const protectedContext = createCanvasFixtures(1)[0].draw(pair.protected);
+            for (const value of [NaN, Infinity, -Infinity, 4294967296, 4294967301]) {
+                expect(() => read(native, [value, 0, 32, 24])).toThrow(pair.native.TypeError);
+                expect(() => read(protectedContext, [value, 0, 32, 24])).toThrow(pair.protected.TypeError);
+            }
+        })
+    ));
 
     test('overlapping crop output agrees at absolute coordinates', async () => withCanvasRealmPair(async (pair) => {
         const fixture = createCanvasFixtures(1)[0];

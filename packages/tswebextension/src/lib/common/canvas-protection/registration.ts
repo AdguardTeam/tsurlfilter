@@ -2,6 +2,7 @@
 import browser from 'webextension-polyfill';
 
 import { BrowserStorage } from '../storage/core';
+import { logger } from '../utils/logger';
 
 import {
     type Available,
@@ -14,7 +15,6 @@ import {
 import { getProtectionSession } from './session';
 
 const REQUEST_KEY = 'tswebextension.canvasProtectionRequested';
-const SNAPSHOT_KEY = 'tswebextension.canvasProtectionRequestedSnapshot';
 const REGISTRATION_KEY = 'tswebextension.canvasProtectionRegistration';
 const DISABLED_GATES: CanvasFeatureGates = {
     filteringEnabled: false, stealthModeEnabled: false, protectCanvas: false,
@@ -73,6 +73,13 @@ interface InstalledSummary {
 }
 
 /**
+ * Session-only acknowledgment of exact generated code, without another root copy.
+ */
+interface SavedRegistration extends InstalledSummary {
+    readonly codeHash: string;
+}
+
+/**
  * Indicates that no acknowledged active installation is known.
  *
  * @returns An unavailable installed summary.
@@ -92,6 +99,18 @@ const captureRequest = (
     configuration: CanvasProtectionRequestedConfiguration,
 ): CanvasProtectionRequestedConfiguration => (
     JSON.parse(JSON.stringify(configuration)) as CanvasProtectionRequestedConfiguration
+);
+
+/**
+ * Checks whether the profile retains a request or an acknowledged registration.
+ *
+ * @param previous Seed-free request read from available local storage.
+ *
+ * @returns Whether removal or reconciliation needs browser operations.
+ */
+const hasHistory = async (previous?: CanvasProtectionRequestedConfiguration): Promise<boolean> => (
+    previous !== undefined || (browser.storage.session !== undefined
+        && await new BrowserStorage<InstalledSummary>(browser.storage.session).get(REGISTRATION_KEY) !== undefined)
 );
 
 /**
@@ -132,25 +151,6 @@ export class CanvasProtectionRegistration {
     ) {}
 
     /**
-     * Applies requested gates and policy using the current stored session root.
-     * Caller snapshots remain accepted without treating their session as authority.
-     *
-     * @param snapshot Trusted requested snapshot.
-     *
-     * @returns The acknowledgment or concrete unresolved request result.
-     */
-    public apply(snapshot: CanvasBootstrapSnapshot): Promise<RegistrationResult>;
-
-    /**
-     * Persists a seed-free request before resolving current session availability.
-     *
-     * @param configuration Requested gates and optional prepared policy.
-     *
-     * @returns The acknowledgment or concrete unresolved request result.
-     */
-    public apply(configuration: CanvasProtectionRequestedConfiguration): Promise<RegistrationResult>;
-
-    /**
      * Captures an owned request before asynchronous persistence and browser work.
      *
      * @param configuration Trusted requested gates and optional prepared policy.
@@ -160,17 +160,14 @@ export class CanvasProtectionRegistration {
     public apply(configuration: CanvasProtectionRequestedConfiguration): Promise<RegistrationResult> {
         const requested = captureRequest({ gates: configuration.gates, policy: configuration.policy });
         return this.enqueue(async (version) => {
-            const storage = new BrowserStorage<CanvasProtectionRequestedConfiguration>(browser.storage.local);
-            const previous = await storage.get(REQUEST_KEY);
-            if (previous === undefined && requested.policy === undefined && !requested.gates.protectCanvas
-                && (!browser.storage.session || await new BrowserStorage<InstalledSummary>(browser.storage.session)
-                    .get(REGISTRATION_KEY) === undefined)) {
-                return this.publish({
-                    requested: { gates: requested.gates, revision: null },
-                    installed: noInstallation(),
-                    operations: [],
-                    status: 'disabled',
-                }, version);
+            const storage = browser.storage.local
+                ? new BrowserStorage<CanvasProtectionRequestedConfiguration>(browser.storage.local) : undefined;
+            const previous = await storage?.get(REQUEST_KEY);
+            if (requested.policy === undefined && !requested.gates.protectCanvas && !await hasHistory(previous)) {
+                return this.publishDisabled(requested.gates, version);
+            }
+            if (!storage) {
+                return this.publishStorageUnavailable(requested, version);
             }
             await storage.set(REQUEST_KEY, requested);
             return this.installRequested(requested, version);
@@ -181,26 +178,22 @@ export class CanvasProtectionRegistration {
      * Persists disabled gates before attempting to remove future delivery.
      *
      * @param gates The consumer's current feature gates.
-     * @param onlyIfRequested Skip removal when no request or acknowledgment exists.
      *
      * @returns Acknowledged removal or an unresolved request with prior history.
      */
-    public disable(gates: CanvasFeatureGates, onlyIfRequested = false): Promise<RegistrationResult> {
+    public disable(gates: CanvasFeatureGates): Promise<RegistrationResult> {
         const requestedGates = { ...gates };
         return this.enqueue(async (version) => {
-            const storage = new BrowserStorage<CanvasProtectionRequestedConfiguration>(browser.storage.local);
-            const previous = await storage.get(REQUEST_KEY);
-            if (onlyIfRequested && previous === undefined
-                && (!browser.storage.session || await new BrowserStorage<InstalledSummary>(browser.storage.session)
-                    .get(REGISTRATION_KEY) === undefined)) {
-                return this.publish({
-                    requested: { gates: requestedGates, revision: null },
-                    installed: noInstallation(),
-                    operations: [],
-                    status: 'disabled',
-                }, version);
+            const storage = browser.storage.local
+                ? new BrowserStorage<CanvasProtectionRequestedConfiguration>(browser.storage.local) : undefined;
+            const previous = await storage?.get(REQUEST_KEY);
+            if (!await hasHistory(previous)) {
+                return this.publishDisabled(requestedGates, version);
             }
             const requested = captureRequest({ gates: requestedGates, policy: previous?.policy });
+            if (!storage) {
+                return this.publishStorageUnavailable(requested, version);
+            }
             await storage.set(REQUEST_KEY, requested);
             return this.installRequested(requested, version);
         }, { gates: requestedGates, revision: this.state.requested.revision });
@@ -213,20 +206,53 @@ export class CanvasProtectionRegistration {
      */
     public reconcile(): Promise<RegistrationResult> {
         return this.enqueue(async (version) => {
-            const storage = new BrowserStorage<CanvasProtectionRequestedConfiguration>(browser.storage.local);
-            const requested = await storage.get(REQUEST_KEY);
-            if (requested === undefined
-                && (!browser.storage.session || await new BrowserStorage<InstalledSummary>(browser.storage.session)
-                    .get(REGISTRATION_KEY) === undefined)) {
-                return this.publish({
-                    requested: { gates: DISABLED_GATES, revision: null },
-                    installed: noInstallation(),
-                    operations: [],
-                    status: 'disabled',
-                }, version);
+            const storage = browser.storage.local
+                ? new BrowserStorage<CanvasProtectionRequestedConfiguration>(browser.storage.local) : undefined;
+            const requested = await storage?.get(REQUEST_KEY);
+            if (!await hasHistory(requested)) {
+                return this.publishDisabled(DISABLED_GATES, version);
+            }
+            if (!storage) {
+                return this.publishStorageUnavailable(requested ?? { gates: DISABLED_GATES }, version);
             }
             return this.installRequested(requested ?? { gates: DISABLED_GATES }, version);
         });
+    }
+
+    /**
+     * Publishes the inactive result when no canvas request or installation exists.
+     *
+     * @param gates Current consumer gates.
+     * @param version Serialized request version.
+     *
+     * @returns The disabled result without browser operations.
+     */
+    private publishDisabled(gates: CanvasFeatureGates, version: number): RegistrationResult {
+        return this.publish({
+            requested: { gates, revision: null }, installed: noInstallation(), operations: [], status: 'disabled',
+        }, version);
+    }
+
+    /**
+     * Reports the missing persistence dependency only when canvas work is requested.
+     *
+     * @param requested Current seed-free request.
+     * @param version Serialized request version.
+     *
+     * @returns An actionable unavailable result.
+     */
+    private publishStorageUnavailable(
+        requested: CanvasProtectionRequestedConfiguration,
+        version: number,
+    ): RegistrationResult {
+        return this.publish({
+            requested: { gates: requested.gates, revision: requested.policy?.revision ?? null },
+            installed: this.state.installed,
+            operations: [],
+            status: 'unavailable',
+            reason: 'Extension storage.local is unavailable',
+            requiredUserAction: 'Use a browser with extension storage.local support',
+        }, version);
     }
 
     /**
@@ -270,10 +296,15 @@ export class CanvasProtectionRegistration {
      *
      * @param result The operation's own requested and acknowledged state.
      * @param version The request that produced this result.
+     * @param completed Whether the operation has ended rather than reporting pending state.
      *
      * @returns This operation's result, independently of newer queued requests.
      */
-    private publish(result: RegistrationResult, version: number): RegistrationResult {
+    private publish(result: RegistrationResult, version: number, completed = true): RegistrationResult {
+        if (completed && (result.status === 'failed' || result.status === 'unavailable')
+            && (result.requested.gates.protectCanvas || result.installed.status === 'available')) {
+            logger.warn(`[tsweb.CanvasProtectionRegistration.publish]: ${result.reason}`);
+        }
         this.state = version === this.requestVersion
             ? result : { ...this.state, installed: result.installed };
         return result;
@@ -292,10 +323,11 @@ export class CanvasProtectionRegistration {
         version: number,
     ): Promise<RegistrationResult> {
         const sessionStorage = browser.storage.session
-            ? new BrowserStorage<InstalledSummary>(browser.storage.session) : undefined;
+            ? new BrowserStorage<SavedRegistration>(browser.storage.session) : undefined;
         const saved = await sessionStorage?.get(REGISTRATION_KEY);
         let installed: Available<InstalledSummary> = saved === undefined
-            ? noInstallation() : { status: 'available', value: saved };
+            ? noInstallation()
+            : { status: 'available', value: { revision: saved.revision, generation: saved.generation } };
         const state = {
             requested: { gates: requested.gates, revision: requested.policy?.revision ?? null },
             installed,
@@ -307,7 +339,7 @@ export class CanvasProtectionRegistration {
             reason: 'Canvas registration request is pending browser acknowledgment',
             requiredUserAction: 'Retry canvas protection reconciliation',
         };
-        this.publish(result, version);
+        this.publish(result, version, false);
         const availability = await this.adapter.checkAvailability();
         const check: RegistrationOperationOutcome = availability.status === 'available'
             ? { operation: 'check', status: 'succeeded' }
@@ -327,11 +359,10 @@ export class CanvasProtectionRegistration {
             await sessionStorage?.remove(REGISTRATION_KEY);
         }
         result = { ...result, installed, operations: [check] };
-        this.publish(result, version);
+        this.publish(result, version, false);
         const active = requested.gates.filteringEnabled
             && requested.gates.stealthModeEnabled && requested.gates.protectCanvas;
         if (!active && !availability.value) {
-            await sessionStorage?.remove(SNAPSHOT_KEY);
             return this.publish({
                 requested: result.requested,
                 installed: result.installed,
@@ -350,6 +381,7 @@ export class CanvasProtectionRegistration {
         }
         let bootstrap: CanvasBootstrapSnapshot | undefined;
         let code: string | undefined;
+        let codeHash: string | undefined;
         if (active) {
             const session = await getProtectionSession();
             if (session.status === 'unavailable') {
@@ -362,8 +394,13 @@ export class CanvasProtectionRegistration {
                 return this.publish(result, version);
             }
             bootstrap = { session: session.value, gates: requested.gates, policy: requested.policy! };
-            await new BrowserStorage<CanvasBootstrapSnapshot>(browser.storage.session).set(SNAPSHOT_KEY, bootstrap);
             code = this.createCode(bootstrap);
+            const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code));
+            codeHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+            if (availability.value && saved?.codeHash === codeHash
+                && saved.generation === bootstrap.session.generation && saved.revision === bootstrap.policy.revision) {
+                return this.publish({ ...result, status: 'installed' }, version);
+            }
         }
         let operations: readonly RegistrationOperationOutcome[];
         try {
@@ -383,11 +420,10 @@ export class CanvasProtectionRegistration {
         }
         if (bootstrap) {
             const summary = { revision: bootstrap.policy.revision, generation: bootstrap.session.generation };
-            await sessionStorage!.set(REGISTRATION_KEY, summary);
+            await sessionStorage!.set(REGISTRATION_KEY, { ...summary, codeHash: codeHash! });
             installed = { status: 'available', value: summary };
         } else {
             await sessionStorage?.remove(REGISTRATION_KEY);
-            await sessionStorage?.remove(SNAPSHOT_KEY);
             installed = noInstallation();
         }
         result = {

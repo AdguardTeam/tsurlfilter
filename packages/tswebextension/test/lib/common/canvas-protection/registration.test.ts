@@ -1,3 +1,5 @@
+import { webcrypto } from 'node:crypto';
+
 import {
     beforeEach,
     describe,
@@ -16,7 +18,7 @@ import {
     type CanvasRegistrationAdapter,
     CanvasRegistrationOperationError,
 } from '../../../../src/lib/common/canvas-protection/registration';
-import { getProtectionSession, resetProtectionSession } from '../../../../src/lib/common/canvas-protection/session';
+import { getProtectionSession } from '../../../../src/lib/common/canvas-protection/session';
 import { ChromiumCanvasRegistration } from '../../../../src/lib/mv3/background/canvas-registration';
 
 import { createProtectAllPolicy } from './fixtures/prepared-policies';
@@ -88,15 +90,17 @@ describe('Canvas protection registration', () => {
     let manager: CanvasProtectionRegistration;
 
     beforeEach(async () => {
+        vi.stubGlobal('crypto', webcrypto);
         vi.clearAllMocks();
         fixture.local.values.clear();
         fixture.session.values.clear();
         fixture.sync.values.clear();
         fixture.browser.storage.session = fixture.session;
+        Reflect.set(fixture.browser.storage, 'local', fixture.local);
         chrome.storage.session = {
             setAccessLevel: vi.fn().mockResolvedValue(undefined),
         } as unknown as typeof chrome.storage.session;
-        await resetProtectionSession();
+        fixture.session.values.clear();
         adapter = {
             checkAvailability: vi.fn().mockResolvedValue({ status: 'available', value: false }),
             install: vi.fn().mockResolvedValue(succeeded),
@@ -104,6 +108,41 @@ describe('Canvas protection registration', () => {
         };
         createCode = vi.fn((value: CanvasBootstrapSnapshot) => JSON.stringify(value));
         manager = new CanvasProtectionRegistration(adapter, createCode);
+    });
+
+    it('does not require local storage when canvas protection was never requested', async () => {
+        Reflect.deleteProperty(fixture.browser.storage, 'local');
+        expect((await manager.reconcile()).status).toBe('disabled');
+        expect((await manager.apply({ gates: disabled })).status).toBe('disabled');
+        expect((await manager.disable(disabled)).status).toBe('disabled');
+        expect(adapter.checkAvailability).not.toHaveBeenCalled();
+        expect((await manager.apply({
+            gates: enabled, policy: createProtectAllPolicy('chromium-mv3', 'storage-unavailable'),
+        })))
+            .toMatchObject({ status: 'unavailable', reason: expect.stringContaining('storage.local') });
+        expect(adapter.install).not.toHaveBeenCalled();
+    });
+
+    it('skips repeated browser writes only for the same acknowledged code and generation', async () => {
+        const request = await snapshot();
+        await manager.apply(request);
+        vi.mocked(adapter.checkAvailability).mockResolvedValue({ status: 'available', value: true });
+        expect((await manager.apply(request)).status).toBe('installed');
+        const restarted = new CanvasProtectionRegistration(adapter, createCode);
+        expect((await restarted.reconcile()).status).toBe('installed');
+        expect(adapter.install).toHaveBeenCalledOnce();
+        const changed = {
+            ...request,
+            policy: {
+                ...request.policy,
+                selectors: { matches: ['https://changed.example/*'], excludeMatches: [] },
+            },
+        };
+        await restarted.apply(changed);
+        expect(adapter.install).toHaveBeenCalledTimes(2);
+        fixture.session.values.clear();
+        await restarted.reconcile();
+        expect(adapter.install).toHaveBeenCalledTimes(3);
     });
 
     it('persists the seed-free request before checking API availability', async () => {
@@ -128,7 +167,7 @@ describe('Canvas protection registration', () => {
         vi.mocked(adapter.install).mockImplementationOnce(async (code, policy) => {
             expect(code).toBe(createCode.mock.results[0].value);
             expect(policy).toEqual(value.policy);
-            expect(JSON.parse(fixture.session.values.get(SNAPSHOT_KEY)!)).toEqual(value);
+            expect(createCode).toHaveBeenLastCalledWith(value);
             expect(manager.getState().status).not.toBe('installed');
             expect(fixture.session.values.has(REGISTRATION_KEY)).toBe(false);
             await blocked;
@@ -144,7 +183,7 @@ describe('Canvas protection registration', () => {
             installed: { status: 'available', value: { revision: 'policy-a', generation: value.session.generation } },
             operations: [{ operation: 'check', status: 'succeeded' }, ...succeeded],
         });
-        expect(JSON.parse(fixture.session.values.get(REGISTRATION_KEY)!)).toEqual({
+        expect(JSON.parse(fixture.session.values.get(REGISTRATION_KEY)!)).toMatchObject({
             revision: value.policy.revision, generation: value.session.generation,
         });
     });
@@ -333,14 +372,14 @@ describe('Canvas protection registration', () => {
         expect(original.session).not.toEqual(current.session);
     });
 
-    it('keeps secret snapshots in session storage and rehydrates seed-free requests after reset', async () => {
+    it('keeps roots in session storage and rehydrates seed-free requests after native reset', async () => {
         const original = await snapshot();
         await manager.apply(original);
         const requested = JSON.parse(fixture.local.values.get(REQUEST_KEY)!);
         expect(requested).toEqual({ gates: enabled, policy: original.policy });
         expect(fixture.local.values.size).toBe(1);
         expect(fixture.sync.values.size).toBe(0);
-        await resetProtectionSession();
+        fixture.session.values.clear();
         expect(fixture.session.values.size).toBe(0);
         expect(JSON.parse(fixture.local.values.get(REQUEST_KEY)!)).toEqual(requested);
         const restarted = new CanvasProtectionRegistration(adapter, createCode);
@@ -351,7 +390,7 @@ describe('Canvas protection registration', () => {
         expect(rehydrated.gates).toEqual(enabled);
         expect(rehydrated.policy).toEqual(original.policy);
         expect(vi.mocked(adapter.install).mock.calls.at(-1)![0]).toBe(createCode.mock.results.at(-1)!.value);
-        expect(JSON.parse(fixture.session.values.get(SNAPSHOT_KEY)!)).toEqual(rehydrated);
+        expect(createCode).toHaveBeenLastCalledWith(rehydrated);
         expect(fixture.local.values.size).toBe(1);
         expect(fixture.sync.set).not.toHaveBeenCalled();
     });
@@ -359,7 +398,7 @@ describe('Canvas protection registration', () => {
     it('uses the current stored root when apply receives a stale caller snapshot after reset', async () => {
         const original = await snapshot();
         await manager.apply(original);
-        await resetProtectionSession();
+        fixture.session.values.clear();
         const current = await getProtectionSession();
         await manager.apply(original);
         expect(createCode.mock.calls.at(-1)![0].session).toEqual(
@@ -429,12 +468,12 @@ describe('Canvas protection registration', () => {
             unregister,
         } as unknown as typeof chrome.userScripts;
         const actual = new CanvasProtectionRegistration(new ChromiumCanvasRegistration(), createCode);
+        fixture.session.values.set(REGISTRATION_KEY, JSON.stringify({ revision: 'previous', generation: 'previous' }));
         const removed = await actual.disable(disabled);
         expect(removed.status).toBe('disabled');
         expect(removed.reason).toBeUndefined();
         expect(removed.requiredUserAction).toBeUndefined();
         expect(unregister).toHaveBeenCalledOnce();
-        fixture.session.values.set(SNAPSHOT_KEY, JSON.stringify({ secret: 'obsolete snapshot' }));
         fixture.session.values.set(REGISTRATION_KEY, JSON.stringify({ revision: 'obsolete', generation: 'obsolete' }));
         const repeated = await actual.disable(disabled);
         expect(repeated).toMatchObject({ status: 'disabled', installed: { status: 'unavailable' } });
@@ -489,7 +528,7 @@ describe('Canvas protection registration', () => {
     });
 
     it('skips requested-only disable when no request or acknowledgment exists', async () => {
-        expect((await manager.disable(disabled, true)).status).toBe('disabled');
+        expect((await manager.disable(disabled)).status).toBe('disabled');
         expect(adapter.checkAvailability).not.toHaveBeenCalled();
         expect(adapter.remove).not.toHaveBeenCalled();
         expect(fixture.local.values.has(REQUEST_KEY)).toBe(false);
@@ -499,7 +538,7 @@ describe('Canvas protection registration', () => {
         await manager.apply(await snapshot());
         fixture.local.values.delete(REQUEST_KEY);
         vi.mocked(adapter.checkAvailability).mockResolvedValue({ status: 'available', value: true });
-        expect((await manager.disable(disabled, true)).status).toBe('disabled');
+        expect((await manager.disable(disabled)).status).toBe('disabled');
         expect(adapter.remove).toHaveBeenCalledOnce();
         expect(JSON.parse(fixture.local.values.get(REQUEST_KEY)!)).toEqual({ gates: disabled });
         expect(fixture.session.values.has(REGISTRATION_KEY)).toBe(false);

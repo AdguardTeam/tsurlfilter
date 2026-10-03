@@ -29,8 +29,7 @@ pnpm --filter @adguard/tswebextension test:e2e
 
 ## Verify canvas protection
 
-Obtain permission for browser work in the current task, then use dedicated
-headless profiles only. The `canvas-native` project compares native behavior
+Use dedicated headless test profiles. The `canvas-native` project compares native behavior
 and wrappers without a consumer extension:
 
 ```sh

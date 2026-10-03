@@ -1,7 +1,10 @@
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig, defineProject, type UserWorkspaceConfig } from 'vitest/config';
 
+import { buildCanvasEngineSource } from './tasks/build-canvas-engine';
 import { ManifestVersionEnv } from './tasks/constants';
+
+await buildCanvasEngineSource();
 
 /**
  * Creates a test configuration for a specific manifest version.

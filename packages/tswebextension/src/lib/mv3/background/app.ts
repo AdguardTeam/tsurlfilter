@@ -13,12 +13,8 @@ import { FilterList } from '@adguard/tsurlfilter';
 
 import { type AppInterface, type MessageHandler } from '../../common/app';
 import { createCanvasProtectionCode } from '../../common/canvas-protection/code';
-import {
-    type CanvasFeatureGates,
-    type ProtectionPolicyArtifact,
-    protectionPolicyArtifactValidator,
-    type RegistrationResult,
-} from '../../common/canvas-protection/contracts';
+import { type ProtectionPolicyArtifact, type RegistrationResult } from '../../common/canvas-protection/contracts';
+import { CanvasProtectionController } from '../../common/canvas-protection/controller';
 import { CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
 import { ALLOWLIST_FILTER_ID, BLOCKING_TRUSTED_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog } from '../../common/filtering-log';
@@ -121,13 +117,15 @@ export class TsWebExtension implements AppInterface<
     /**
      * Owns browser registration acknowledgment and current-session code generation.
      */
-    private readonly canvasProtection = new CanvasProtectionRegistration(
-        new ChromiumCanvasRegistration(),
-        createCanvasProtectionCode,
+    private readonly canvasProtection = new CanvasProtectionController(
+        new CanvasProtectionRegistration(new ChromiumCanvasRegistration(), createCanvasProtectionCode),
+        () => this.configuration,
     );
 
     /**
-     * Stores initialization so concurrent service worker calls share startup.
+     * Stores the initialize promise to prevent multiple initialize calls when
+     * a large number of messages are received when the service worker
+     * starts or wakes up.
      */
     private startPromise: Promise<ConfigurationResult> | undefined;
 
@@ -166,6 +164,7 @@ export class TsWebExtension implements AppInterface<
         }
 
         try {
+            this.canvasProtection.resume();
             const res = await this.configure(config);
 
             // Start listening for request events.
@@ -333,7 +332,7 @@ export class TsWebExtension implements AppInterface<
 
         appContext.isAppStarted = false;
         this.isStarted = false;
-        await this.updateCanvasProtection(true);
+        await this.canvasProtection.stop();
     }
 
     /**
@@ -519,11 +518,8 @@ export class TsWebExtension implements AppInterface<
         }
 
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
-        const canvasProtection = await this.updateCanvasProtection();
-        if (configuration.settings.stealth.protectCanvas !== undefined || configuration.canvasProtectionPolicy
-            || canvasProtection.operations.length > 0) {
-            res.canvasProtection = canvasProtection;
-        }
+        const canvasProtection = await this.canvasProtection.apply();
+        Object.assign(res, this.canvasProtection.resultField(canvasProtection));
 
         // Update previously opened tabs with new rules - find for each tab
         // new main frame rule.
@@ -549,12 +545,7 @@ export class TsWebExtension implements AppInterface<
      * @throws When the application has no configuration.
      */
     public setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult> {
-        const { configuration } = this;
-        if (!configuration) {
-            throw new Error('Configuration not set');
-        }
-        configuration.settings.stealth.protectCanvas = enabled;
-        return this.updateCanvasProtection();
+        return this.canvasProtection.setEnabled(enabled);
     }
 
     /**
@@ -567,12 +558,7 @@ export class TsWebExtension implements AppInterface<
      * @throws When the application has no configuration.
      */
     public setCanvasProtectionPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult> {
-        const { configuration } = this;
-        if (!configuration) {
-            throw new Error('Configuration not set');
-        }
-        configuration.canvasProtectionPolicy = protectionPolicyArtifactValidator.parse(policy);
-        return this.updateCanvasProtection();
+        return this.canvasProtection.setPolicy(policy);
     }
 
     /**
@@ -591,26 +577,6 @@ export class TsWebExtension implements AppInterface<
      */
     public getCanvasProtectionState(): RegistrationResult {
         return this.canvasProtection.getState();
-    }
-
-    /**
-     * Submits feature gates and policy without assuming a session or empty policy.
-     *
-     * @param stopped Whether application shutdown overrides the filtering gate.
-     *
-     * @returns The acknowledged or unresolved registration state.
-     */
-    private updateCanvasProtection(stopped = false): Promise<RegistrationResult> {
-        const { configuration } = this;
-        const settings = configuration?.settings;
-        const gates: CanvasFeatureGates = {
-            filteringEnabled: !stopped && settings?.filteringEnabled === true,
-            stealthModeEnabled: settings?.stealthModeEnabled === true,
-            protectCanvas: settings?.stealth.protectCanvas === true,
-        };
-        return stopped
-            ? this.canvasProtection.disable(gates, true)
-            : this.canvasProtection.apply({ gates, policy: configuration?.canvasProtectionPolicy });
     }
 
     /**

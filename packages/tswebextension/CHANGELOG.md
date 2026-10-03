@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added opt-in canvas readout protection within documented size and mode bounds
-  for ordinary 2D canvases and transferred HTML exports; ordinary non-2D HTML
-  exports retain native fingerprints [AdguardBrowserExtension#3475].
+- Added opt-in canvas protection with `stealth.protectCanvas`, prepared
+  `canvasProtectionPolicy` and methods to update or reconcile protection
+  [AdguardBrowserExtension#3475].
+
+[AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475
 
 ### Changed
 
@@ -1937,5 +1939,3 @@ its setting [AdguardBrowserExtension#2584].
 [@adguard/assistant]: https://github.com/AdguardTeam/AdguardAssistant/blob/master/CHANGELOG.md
 [@adguard/extended-css]: https://github.com/AdguardTeam/ExtendedCss/blob/master/CHANGELOG.md
 [@adguard/scriptlets]: https://github.com/AdguardTeam/Scriptlets/blob/master/CHANGELOG.md
-
-[AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475

@@ -56,22 +56,6 @@ export interface PreparedPolicyRule {
 }
 
 /**
- * A seed-free policy whose native selectors deliver candidates for exact predicates.
- */
-export interface ProtectionPolicyArtifact {
-    readonly schemaVersion: 1;
-    readonly revision: string;
-    readonly browser: 'chromium-mv3' | 'firefox-mv2';
-    readonly selectors: {
-        readonly matches: readonly string[];
-        readonly excludeMatches: readonly string[];
-    };
-    readonly ownFrameExclusions: readonly PreparedPolicyRule[];
-    readonly documentExclusions: readonly PreparedPolicyRule[];
-    readonly unavailableConditions: readonly string[];
-}
-
-/**
  * Trusted captured top state; each unavailable field retains its own provenance.
  */
 export interface InheritedTopContext {
@@ -195,22 +179,27 @@ const preparedConditionValidator: zod.ZodType<PreparedCondition> = zod.lazy(() =
 ]));
 
 const preparedPolicyRuleValidator = zod.object({
-    requestTypes: zod.enum(['document', 'subdocument']).array(),
+    requestTypes: zod.enum(['document', 'subdocument']).array().readonly(),
     condition: preparedConditionValidator,
 }).strict();
 
 /**
  * Validates genuinely external prepared JSON once before it enters trusted code.
  */
-export const protectionPolicyArtifactValidator: zod.ZodType<ProtectionPolicyArtifact> = zod.object({
+export const protectionPolicyArtifactValidator = zod.object({
     schemaVersion: zod.literal(1),
     revision: zod.string().min(1),
     browser: zod.enum(['chromium-mv3', 'firefox-mv2']),
     selectors: zod.object({
-        matches: zod.string().min(1).array(),
-        excludeMatches: zod.string().min(1).array(),
-    }).strict(),
-    ownFrameExclusions: preparedPolicyRuleValidator.array(),
-    documentExclusions: preparedPolicyRuleValidator.array(),
-    unavailableConditions: zod.string().min(1).array(),
-}).strict();
+        matches: zod.string().min(1).array().readonly(),
+        excludeMatches: zod.string().min(1).array().readonly(),
+    }).strict().readonly(),
+    ownFrameExclusions: preparedPolicyRuleValidator.array().readonly(),
+    documentExclusions: preparedPolicyRuleValidator.array().readonly(),
+    unavailableConditions: zod.string().min(1).array().readonly(),
+}).strict().readonly();
+
+/**
+ * A seed-free policy inferred from the external-input validator.
+ */
+export type ProtectionPolicyArtifact = zod.infer<typeof protectionPolicyArtifactValidator>;

@@ -76,8 +76,8 @@
     "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tswebextension#readme",
     "scripts": {
         "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
-        "lint:code": "eslint --cache .",
-        "lint:types": "tsc",
+        "lint:code": "pnpm build:canvas && eslint --cache .",
+        "lint:types": "pnpm build:canvas && tsc",
         "lint:md": "markdownlint .",
         "prebuild": "rimraf dist",
         "build": "pnpm prebuild && pnpm build:types && rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc",
@@ -98,7 +98,8 @@
         "precommit": "lint-staged",
         "prepublishOnly": "pnpm build",
         "tgz": "pnpm pack --out tswebextension.tgz",
-        "build:canvas": "tsx tasks/build-canvas-engine.ts"
+        "build:canvas": "tsx tasks/build-canvas-engine.ts",
+        "test:canvas:extension": "tsx tools/canvas-protection/run-extension-tests.ts"
     },
     "lint-staged": {
         "{src,test}/**/*.ts": [
@@ -174,5 +175,15 @@
         "tsx": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:"
+    },
+    "nx": {
+        "targets": {
+            "build": {
+                "outputs": [
+                    "{projectRoot}/dist",
+                    "{projectRoot}/src/lib/common/canvas-protection/generated"
+                ]
+            }
+        }
     }
 }

@@ -26,8 +26,6 @@ const fixture = vi.hoisted(() => {
 vi.mock('webextension-polyfill', () => ({ default: fixture.browser }));
 
 const SESSION_KEY = 'tswebextension.canvasProtectionSession';
-const SNAPSHOT_KEY = 'tswebextension.canvasProtectionRequestedSnapshot';
-const REGISTRATION_KEY = 'tswebextension.canvasProtectionRegistration';
 
 describe('Protection session', () => {
     beforeEach(() => {
@@ -98,39 +96,12 @@ describe('Protection session', () => {
         expect(fixture.values.has(SESSION_KEY)).toBe(true);
     });
 
-    it('serializes reset with initialization and removes only the secret session keys', async () => {
-        const { getProtectionSession, resetProtectionSession } = await import(
-            '../../../../src/lib/common/canvas-protection/session'
-        );
-        fixture.values.set(SNAPSHOT_KEY, JSON.stringify({ secret: 'old snapshot' }));
-        fixture.values.set(REGISTRATION_KEY, JSON.stringify({ generation: 'old generation' }));
-        fixture.values.set('unrelated-session-key', JSON.stringify('preserved'));
-        let finishRead!: () => void;
-        const readBlocked = new Promise<void>((resolve) => { finishRead = resolve; });
-        fixture.session.get.mockImplementationOnce(async () => {
-            await readBlocked;
-            return {};
-        });
-        const first = getProtectionSession();
-        const reset = resetProtectionSession();
-        const second = getProtectionSession();
-        finishRead();
-        const initial = await first;
-        await reset;
-        const current = await second;
-        expect(current).not.toEqual(initial);
-        expect(fixture.values.has(SNAPSHOT_KEY)).toBe(false);
-        expect(fixture.values.has(REGISTRATION_KEY)).toBe(false);
-        expect(JSON.parse(fixture.values.get('unrelated-session-key')!)).toBe('preserved');
-        expect(fixture.session.set).toHaveBeenCalledTimes(2);
-    });
-
-    it('propagates a failed explicit reset rather than reusing old data as a new session', async () => {
-        const { getProtectionSession, resetProtectionSession } = await import(
-            '../../../../src/lib/common/canvas-protection/session'
-        );
-        await getProtectionSession();
-        fixture.session.remove.mockRejectedValueOnce(new Error('reset rejected'));
-        await expect(resetProtectionSession()).rejects.toThrow('reset rejected');
+    it('creates a new root and generation after the browser clears session storage', async () => {
+        const { getProtectionSession } = await import('../../../../src/lib/common/canvas-protection/session');
+        const previous = await getProtectionSession();
+        fixture.values.clear();
+        const current = await getProtectionSession();
+        expect(current.status).toBe('available');
+        expect(current).not.toEqual(previous);
     });
 });

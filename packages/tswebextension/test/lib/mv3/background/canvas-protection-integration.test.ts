@@ -1,3 +1,5 @@
+import { webcrypto } from 'node:crypto';
+
 import {
     beforeEach,
     describe,
@@ -34,7 +36,6 @@ vi.mock('../../../../src/lib/mv3/background/services/remove-param-injection-serv
 vi.mock('../../../../src/lib/mv3/background/services/document-blocking-service');
 
 const REQUEST_KEY = 'tswebextension.canvasProtectionRequested';
-const SNAPSHOT_KEY = 'tswebextension.canvasProtectionRequestedSnapshot';
 
 describe('Chromium canvas protection consumer integration', () => {
     let app: TsWebExtension;
@@ -43,6 +44,7 @@ describe('Chromium canvas protection consumer integration', () => {
     let scripts: chrome.userScripts.RegisteredUserScript[];
 
     beforeEach(async () => {
+        vi.stubGlobal('crypto', webcrypto);
         vi.clearAllMocks();
         await browser.storage.local.clear();
         values = {};
@@ -128,7 +130,7 @@ describe('Chromium canvas protection consumer integration', () => {
         };
         const initial = await app.configure(enabled);
         expect(initial.canvasProtection?.status).toBe('installed');
-        const captured = values[SNAPSHOT_KEY];
+        const captured = structuredClone(scripts[0]);
         const first = app.getCanvasProtectionState();
         const disabled = { ...enabled, settings: { ...enabled.settings, filteringEnabled: false } };
         expect((await app.configure(disabled)).canvasProtection?.status).toBe('disabled');
@@ -146,8 +148,23 @@ describe('Chromium canvas protection consumer integration', () => {
                 },
             },
         });
-        expect(captured).toMatchObject({ policy: { revision: 'policy-a' } });
+        expect(captured.js?.[0].code).not.toBe(scripts[0].js?.[0].code);
         await app.stop();
+        expect(app.getCanvasProtectionState().status).toBe('disabled');
+    });
+
+    it('keeps registration disabled when settings and policy are changed after stop', async () => {
+        await app.configure(config);
+        await app.setCanvasProtectionPolicy(createProtectAllPolicy('chromium-mv3', 'before-stop'));
+        await app.setCanvasProtectionEnabled(true);
+        await app.stop();
+        vi.mocked(chrome.userScripts.register).mockClear();
+        vi.mocked(chrome.userScripts.update).mockClear();
+        await app.setCanvasProtectionEnabled(true);
+        await app.setCanvasProtectionPolicy(createProtectAllPolicy('chromium-mv3', 'after-stop'));
+        await app.reconcileCanvasProtection();
+        expect(chrome.userScripts.register).not.toHaveBeenCalled();
+        expect(chrome.userScripts.update).not.toHaveBeenCalled();
         expect(app.getCanvasProtectionState().status).toBe('disabled');
     });
 

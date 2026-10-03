@@ -1,3 +1,5 @@
+import { webcrypto } from 'node:crypto';
+
 import {
     afterEach,
     beforeEach,
@@ -52,6 +54,7 @@ describe('TsWebExtension', () => {
     let config: ConfigurationMV2;
 
     beforeEach(async () => {
+        vi.stubGlobal('crypto', webcrypto);
         instance = createTsWebExtension('test');
         config = getConfigurationMv2Fixture();
         vi.mocked(configurationMV2Validator.parse).mockImplementation((value) => value as ConfigurationMV2);
@@ -250,6 +253,8 @@ describe('TsWebExtension', () => {
         let unregister: ReturnType<typeof vi.fn>;
 
         beforeEach(async () => {
+            vi.stubGlobal('VideoFrame', vi.fn());
+            vi.stubGlobal('VideoColorSpace', vi.fn());
             await browser.storage.local.clear();
             values = {};
             Object.defineProperty(browser.storage, 'session', {
@@ -296,7 +301,7 @@ describe('TsWebExtension', () => {
             await instance.setCanvasProtectionPolicy(createProtectAllPolicy('firefox-mv2', 'policy-a'));
             const initial = await instance.setCanvasProtectionEnabled(true);
             expect(initial.status).toBe('installed');
-            const captured = values['tswebextension.canvasProtectionRequestedSnapshot'];
+            const captured = vi.mocked(browser.contentScripts.register).mock.calls.at(-1)![0];
             await instance.setFilteringEnabled(false);
             expect(instance.getCanvasProtectionState().status).toBe('disabled');
             await instance.setFilteringEnabled(true);
@@ -317,7 +322,7 @@ describe('TsWebExtension', () => {
                     },
                 },
             });
-            expect(captured).toMatchObject({ policy: { revision: 'policy-a' } });
+            expect(captured.js).not.toEqual(vi.mocked(browser.contentScripts.register).mock.calls.at(-1)![0].js);
             await instance.stop();
             expect(instance.getCanvasProtectionState().status).toBe('disabled');
         });
@@ -406,6 +411,21 @@ describe('TsWebExtension', () => {
             vi.mocked(configurationMV2Validator.parse).mockReturnValueOnce(parsed);
             await instance.start(config);
             expect(instance.configuration.settings.debugScriptlets).toBe(true);
+        });
+        it('does not restart canvas registration through setters after stop', async () => {
+            await instance.initStorage();
+            await instance.start(config);
+            await instance.setCanvasProtectionPolicy(createProtectAllPolicy('firefox-mv2', 'before-stop'));
+            await instance.setCanvasProtectionEnabled(true);
+            await instance.stop();
+            vi.mocked(browser.contentScripts.register).mockClear();
+            await instance.setFilteringEnabled(true);
+            await instance.setStealthModeEnabled(true);
+            await instance.setCanvasProtectionEnabled(true);
+            await instance.setCanvasProtectionPolicy(createProtectAllPolicy('firefox-mv2', 'after-stop'));
+            await instance.reconcileCanvasProtection();
+            expect(browser.contentScripts.register).not.toHaveBeenCalled();
+            expect(instance.getCanvasProtectionState().status).toBe('disabled');
         });
     });
 });

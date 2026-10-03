@@ -5,9 +5,8 @@ loaded test extensions.
 
 ## Prepare the test environment
 
-1. Obtain explicit permission for browser work in the current task before
-   launching browser-backed checks. Use only dedicated headless test profiles;
-   do not attach personal profiles, tabs or unrelated browser processes.
+1. Use dedicated headless test profiles. Do not attach personal profiles or
+   unrelated browser processes.
 2. Use the repository's Node.js 22+ and pnpm 10.33.4 environment. Build from the
    repository root, including dependencies:
 
@@ -61,12 +60,12 @@ command. Preserve original failures and unmodified assertions.
 From the package directory, select one browser and one suite per command:
 
 ```sh
-pnpm exec tsx tools/canvas-protection/run-extension-tests.ts --browser chromium --suite engine
-pnpm exec tsx tools/canvas-protection/run-extension-tests.ts --browser firefox --suite engine
-pnpm exec tsx tools/canvas-protection/run-extension-tests.ts --browser chromium --suite lifecycle
-pnpm exec tsx tools/canvas-protection/run-extension-tests.ts --browser firefox --suite lifecycle
-pnpm exec tsx tools/canvas-protection/run-extension-tests.ts --browser chromium --suite benchmark
-pnpm exec tsx tools/canvas-protection/run-extension-tests.ts --browser firefox --suite benchmark
+pnpm test:canvas:extension --browser chromium --suite engine
+pnpm test:canvas:extension --browser firefox --suite engine
+pnpm test:canvas:extension --browser chromium --suite lifecycle
+pnpm test:canvas:extension --browser firefox --suite lifecycle
+pnpm test:canvas:extension --browser chromium --suite benchmark
+pnpm test:canvas:extension --browser firefox --suite benchmark
 ```
 
 For delivery-only diagnostics, select `--suite delivery`. Delivery probes do

@@ -158,13 +158,20 @@ const executeConsumerCommand = async (command: FixtureCommand): Promise<CommandR
     } else if (command.operation === 'consumer-state') {
         value = consumer.getCanvasProtectionState();
     } else if (command.operation === 'consumer-oracle') {
-        const data = await chrome.storage.session.get(
-            'tswebextension.canvasProtectionRequestedSnapshot',
-        );
-        const snapshot = data['tswebextension.canvasProtectionRequestedSnapshot'] as {
-            session: { root: string; generation: string };
-            policy: { revision: string };
+        const data = await chrome.storage.session.get('tswebextension.canvasProtectionSession');
+        const requested = await chrome.storage.local.get('tswebextension.canvasProtectionRequested');
+        const snapshot = {
+            session: data['tswebextension.canvasProtectionSession'] as { root: string; generation: string },
+            policy: (requested['tswebextension.canvasProtectionRequested'] as {
+                policy: ProtectionPolicyArtifact;
+            }).policy,
         };
+        const state = consumer.getCanvasProtectionState();
+        if (state.status !== 'installed' || state.installed.status !== 'available'
+            || state.installed.value.generation !== snapshot.session.generation
+            || state.installed.value.revision !== snapshot.policy.revision) {
+            throw new Error('The privileged oracle requires the current acknowledged registration');
+        }
         value = {
             generation: snapshot.session.generation,
             revision: snapshot.policy.revision,
@@ -179,22 +186,18 @@ const executeConsumerCommand = async (command: FixtureCommand): Promise<CommandR
     } else if (command.operation === 'consumer-session') {
         const data = await chrome.storage.session.get([
             'tswebextension.canvasProtectionSession',
-            'tswebextension.canvasProtectionRequestedSnapshot',
             'tswebextension.canvasProtectionRegistration',
         ]);
         const current = data['tswebextension.canvasProtectionSession'] as
             | { generation: string }
             | undefined;
-        const snapshot = data['tswebextension.canvasProtectionRequestedSnapshot'] as
-            | {
-                session: { generation: string };
-                policy: { revision: string };
-            }
+        const acknowledged = data['tswebextension.canvasProtectionRegistration'] as
+            | { generation: string; revision: string }
             | undefined;
         value = {
             generation: current?.generation ?? null,
-            snapshotGeneration: snapshot?.session.generation ?? null,
-            snapshotRevision: snapshot?.policy.revision ?? null,
+            snapshotGeneration: acknowledged?.generation ?? null,
+            snapshotRevision: acknowledged?.revision ?? null,
             state: consumer.getCanvasProtectionState(),
             acknowledged: data['tswebextension.canvasProtectionRegistration'],
             fixtureProbeRegistration: await registration.checkAvailability(),

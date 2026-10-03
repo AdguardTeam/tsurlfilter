@@ -65,13 +65,6 @@ export interface NativeArgumentObservation {
 }
 
 /**
- * Private serialization receiver containing the call-time bitmap.
- */
-export interface CanvasExportSnapshot {
-    readonly canvas: HTMLCanvasElement;
-}
-
-/**
  * Captures canvas bindings and accessors without creating any canvas context.
  *
  * @param realm Protected document's global object.
@@ -334,17 +327,17 @@ const writeOpaquePixels = (
 export function prepareCanvasExport(
     receiver: HTMLCanvasElement,
     observation: NativeArgumentObservation,
-): CanvasExportSnapshot {
+): HTMLCanvasElement {
     const { native, seed, canvas } = observation.exportContext!;
     let width = native.apply(native.canvasWidth, receiver, []);
     let height = native.apply(native.canvasHeight, receiver, []);
     if (!isCanvasSizeProtected(width, height)) {
-        return { canvas: receiver };
+        return receiver;
     }
     native.apply(native.setCanvasWidth, canvas, [width]);
     native.apply(native.setCanvasHeight, canvas, [height]);
     if (width === 0 || height === 0) {
-        return { canvas: receiver };
+        return receiver;
     }
     const context = native.apply(native.getContext, canvas, ['2d']) as CanvasRenderingContext2D;
     native.apply(native.drawImage, context, [receiver, 0, 0]);
@@ -359,7 +352,7 @@ export function prepareCanvasExport(
             throw error;
         }
         if (name === 'SecurityError') {
-            return { canvas: receiver };
+            return receiver;
         }
         throw error;
     }
@@ -373,7 +366,7 @@ export function prepareCanvasExport(
         }
     }
     if (!opaque) {
-        return { canvas: receiver };
+        return receiver;
     }
     const frame = new native.VideoFrame(receiver, withoutPrototype({ timestamp: 0 }));
     let exportCanvas = canvas;
@@ -383,12 +376,12 @@ export function prepareCanvasExport(
         const color = native.apply(native.frameColorSpace, frame, []) as VideoColorSpace;
         if (native.apply(native.colorPrimaries, color, []) === 'smpte432'
             || native.apply(native.frameFormat, frame, []) === null) {
-            return { canvas: receiver };
+            return receiver;
         }
         let transferred = false;
         try {
             if (native.apply(native.getContext, receiver, ['2d']) === null) {
-                return { canvas: receiver };
+                return receiver;
             }
         } catch (error) {
             let name: string;
@@ -440,7 +433,7 @@ export function prepareCanvasExport(
         colorSpace: 'srgb',
     }, seed);
     writeOpaquePixels(image, exportContext, write, native);
-    return { canvas: exportCanvas };
+    return exportCanvas;
 }
 
 /**
@@ -659,7 +652,7 @@ const exportCanvas = (
         const observation: NativeArgumentObservation = withoutPrototype({
             coordinates: withoutPrototype<number[]>([]), exportContext: withoutPrototype({ native, seed, canvas }),
         });
-        exportReceiver = prepareCanvasExport(receiver, observation).canvas;
+        exportReceiver = prepareCanvasExport(receiver, observation);
     }
     return native.apply(target, exportReceiver, observedArgs);
 };

@@ -199,7 +199,8 @@ consumer.
 
 Chromium requires the `userScripts` permission, applicable host permissions,
 user enablement of user scripts and `browser.storage.session`. Firefox requires
-session storage and its live registering background context. Private windows
+session storage, `VideoFrame`, `VideoColorSpace` and its live registering
+background context. Private windows
 also require extension permission.
 
 The shared size domain uses original native HTML canvas attributes after
@@ -223,6 +224,44 @@ documents after acknowledgment. Existing lifecycle calls or explicit
 `reconcileCanvasProtection()` retry the request; no automatic event or wakeup
 is promised. New supported documents after successful acknowledgment retain
 early protection before their first inline script.
+
+
+### Known bypasses and threat model
+
+Protection covers actual uint8 sRGB readouts and fully opaque pixels only.
+`display-p3` and float16 readouts, transparent or semitransparent pixels, direct
+OffscreenCanvas methods and direct WebGL reads retain native fingerprints.
+Scripts can also recover much of the original image by drawing the same
+content at several offsets and comparing the sparse changes. This protection
+does not prevent an adversarial page from obtaining every canvas fingerprint.
+
+Same-origin `about:blank`, `srcdoc` and `blob:` frames can expose unwrapped
+native methods. A page can borrow a method from a newly created child realm
+and use it on a protected canvas. Native registration flags do not close the
+synchronous fresh-iframe case.
+
+Delivered child documents use their own full hostname for site seeding;
+embedded trackers can correlate that noise across top-level sites during one
+session. Top-document exclusions do not propagate to child frames. Predicates
+requiring an authenticated top URL or request source remain unavailable there;
+available local predicates still apply. No page-provided parent marker is
+trusted to supply this context.
+
+Chromium persists registered `userScripts`, including their captured seed.
+After a full browser restart, documents can receive the previous session's
+snapshot until current-session reconciliation is acknowledged. This adds a
+startup interval that can correlate outputs across runs and leaves the old
+seed in the browser profile's persisted registration. Earlier documents need
+reload/navigation after reconciliation.
+
+The immutable `window.__adguardCanvasInstallation` and
+`Symbol.for('adguard.canvas.installation')` records are discoverable. They
+expose the installation outcome and callable references, without root or site
+seeds. Native-code masking does not hide the extension's presence or an
+excluded outcome.
+
+Canvas readouts can be substantially slower, particularly for large images;
+this implementation does not provide a per-frame latency guarantee.
 
 ## CLI
 
@@ -640,7 +679,9 @@ The setters require an existing application configuration. Results separate
 requested state from the last acknowledged registration. `start()` and
 `configure()` expose an optional `canvasProtection` result. Updates do not
 rotate the seed or rewrite existing documents; reload/navigation applies the
-new captured state.
+new captured state. Configuration remains authoritative: a later `configure()`
+replaces setter changes with its `settings.stealth.protectCanvas` and
+`canvasProtectionPolicy` values. Omitting them disables protection again.
 
 ##### initStorage()
 

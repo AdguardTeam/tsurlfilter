@@ -5,8 +5,6 @@ import { BrowserStorage } from '../storage/core';
 import { type Available, type ProtectionSession } from './contracts';
 
 const SESSION_KEY = 'tswebextension.canvasProtectionSession';
-const SNAPSHOT_KEY = 'tswebextension.canvasProtectionRequestedSnapshot';
-const REGISTRATION_KEY = 'tswebextension.canvasProtectionRegistration';
 
 let queue: Promise<void> = Promise.resolve();
 let initialization: Promise<Available<ProtectionSession>> | undefined;
@@ -22,7 +20,7 @@ const randomHex = (): string => Array.from(
 ).join('');
 
 /**
- * Reads or initializes the trusted session value without a persistent fallback.
+ * Reads or initializes the trusted root in extension session storage.
  *
  * @returns The shared current session or its unavailable storage dependency.
  */
@@ -43,7 +41,7 @@ const initialize = async (): Promise<Available<ProtectionSession>> => {
 };
 
 /**
- * Shares concurrent initialization and serializes it with explicit session resets.
+ * Shares concurrent initialization while allowing native session-storage resets.
  *
  * @returns The current browser-profile session, or unavailable storage.
  */
@@ -61,22 +59,4 @@ export const getProtectionSession = (): Promise<Available<ProtectionSession>> =>
     };
     request.then(clear, clear);
     return request;
-};
-
-/**
- * Clears secret session state for lifecycle events that begin a new generation.
- * Seed-free requested configuration in local storage remains available for retry.
- *
- * @returns Completion after earlier initialization and removal of secret keys.
- */
-export const resetProtectionSession = (): Promise<void> => {
-    initialization = undefined;
-    const reset = queue.then(async () => {
-        if (browser.storage.session) {
-            const storage = new BrowserStorage<ProtectionSession>(browser.storage.session);
-            await storage.removeMultiple([SESSION_KEY, SNAPSHOT_KEY, REGISTRATION_KEY]);
-        }
-    });
-    queue = reset.then(() => undefined, () => undefined);
-    return reset;
 };

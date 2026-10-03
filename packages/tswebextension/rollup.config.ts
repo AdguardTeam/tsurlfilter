@@ -1,3 +1,8 @@
+import { execFile } from 'node:child_process';
+import { readdir } from 'node:fs/promises';
+import path from 'node:path';
+import { promisify } from 'node:util';
+
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
@@ -78,6 +83,22 @@ const tswebextensionConfig: RollupOptions = {
         moduleSideEffects: false,
     },
     plugins: [
+        {
+            name: 'canvas-engine-source',
+            /**
+             * Refreshes the standalone engine and watches its source directory.
+             *
+             * @returns Completion of engine generation and watch registration.
+             */
+            async buildStart(): Promise<void> {
+                await promisify(execFile)('pnpm', ['build:canvas']);
+                const directory = path.resolve('src/lib/common/canvas-protection');
+                const files = await readdir(directory);
+                files.filter((file) => file.endsWith('.ts')).forEach((file) => {
+                    this.addWatchFile(path.join(directory, file));
+                });
+            },
+        },
         ...commonPlugins,
     ],
 };

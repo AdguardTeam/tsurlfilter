@@ -20,6 +20,7 @@ tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
     # try
     # bundle with rollup
     pnpm build &&
+    pnpm exec eslint . &&
     echo "Test successfully built."
 } || {
     # catch
