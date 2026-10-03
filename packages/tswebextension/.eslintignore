@@ -1,5 +1,4 @@
 trackers-min.ts
 test/smoke
-output-canvas-protection
 test/builders
 src/lib/common/canvas-protection/generated

@@ -29,22 +29,12 @@ pnpm --filter @adguard/tswebextension test:e2e
 
 ## Verify canvas protection
 
-Use dedicated headless test profiles. The `canvas-native` project compares native behavior
-and wrappers without a consumer extension:
+The `canvas-native` project compares native behavior with the installed
+wrappers in headless Chromium and Firefox, without a consumer extension:
 
 ```sh
 pnpm --filter @adguard/tswebextension exec vitest run --project canvas-native
 ```
 
-For the actual built MV2/MV3 engine, lifecycle and benchmark suites, follow
-[Verify canvas protection in browsers](../../tools/canvas-protection/README.md).
-That guide covers the dependency-inclusive build, API/private permissions,
-report preservation, native controls and original-attribute bounds. A native
-wrapper test or delivery-only test does not prove the loaded consumer path.
-
-Keep the three lifecycle intervals distinct:
-Chromium access restoration before reconciliation, running-browser registration
-loss before reinstallation, and ordinary Firefox cold startup before current
-registration acknowledgment. Each may expose native output without a bounded
-recovery delay; earlier native captures require reload/navigation. Fresh
-supported postack documents still require protection before first inline code.
+It does not load an extension, so registration, early delivery and
+private-window behavior need a manual check on a built extension.

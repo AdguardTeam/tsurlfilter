@@ -98,8 +98,7 @@
         "precommit": "lint-staged",
         "prepublishOnly": "pnpm build",
         "tgz": "pnpm pack --out tswebextension.tgz",
-        "build:canvas": "tsx tasks/build-canvas-engine.ts",
-        "test:canvas:extension": "tsx tools/canvas-protection/run-extension-tests.ts"
+        "build:canvas": "tsx tasks/build-canvas-engine.ts"
     },
     "lint-staged": {
         "{src,test}/**/*.ts": [
