@@ -1,10 +1,11 @@
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig, defineProject, type UserWorkspaceConfig } from 'vitest/config';
 
-import { buildCanvasEngineSource } from './tasks/build-canvas-engine';
+import { canvasEngineSource } from './tasks/canvas-engine-plugin';
 import { ManifestVersionEnv } from './tasks/constants';
 
-await buildCanvasEngineSource();
+// Inline projects do not inherit root plugins, so each one that imports the library gets its own.
+const plugins = [canvasEngineSource()];
 
 /**
  * Creates a test configuration for a specific manifest version.
@@ -16,6 +17,7 @@ await buildCanvasEngineSource();
 const createProjectForManifestVersion = (
     manifestVersion: ManifestVersionEnv,
 ): UserWorkspaceConfig => defineProject({
+    plugins,
     test: {
         name: `mv${manifestVersion}`,
         env: {
@@ -50,6 +52,7 @@ export default defineConfig({
         environmentOptions: {},
         projects: [
             defineProject({
+                plugins,
                 test: {
                     name: 'common',
                     setupFiles: [
@@ -86,6 +89,7 @@ export default defineConfig({
                 },
             }),
             defineProject({
+                plugins,
                 test: {
                     name: 'canvas-native',
                     include: ['test/e2e/canvas-protection/**/*.spec.ts'],

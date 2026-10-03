@@ -20,6 +20,8 @@
         // With this tsconfig, we don't need to emit any files,
         // we just want to check the types
         "noEmit": true,
+        // rollup.config.ts names its local import with the extension.
+        "allowImportingTsExtensions": true,
         "baseUrl": ".",
         "paths": {
             "*": ["src/*"]

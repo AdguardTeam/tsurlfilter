@@ -76,12 +76,12 @@
     "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tswebextension#readme",
     "scripts": {
         "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
-        "lint:code": "pnpm build:canvas && eslint --cache .",
-        "lint:types": "pnpm build:canvas && tsc",
+        "lint:code": "eslint --cache .",
+        "lint:types": "tsc",
         "lint:md": "markdownlint .",
         "prebuild": "rimraf dist",
         "build": "pnpm prebuild && pnpm build:types && rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc",
-        "build:types": "pnpm build:canvas && tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types && tsx tasks/transform-dts.ts",
+        "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types && tsx tasks/transform-dts.ts",
         "update:companiesdb": "tsx tasks/update-companiesdb.ts",
         "start": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc -w",
         "test": "vitest run",
@@ -97,8 +97,7 @@
         "report-coverage": "cat ./coverage/lcov.info | coveralls",
         "precommit": "lint-staged",
         "prepublishOnly": "pnpm build",
-        "tgz": "pnpm pack --out tswebextension.tgz",
-        "build:canvas": "tsx tasks/build-canvas-engine.ts"
+        "tgz": "pnpm pack --out tswebextension.tgz"
     },
     "lint-staged": {
         "{src,test}/**/*.ts": [
@@ -174,15 +173,5 @@
         "tsx": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:"
-    },
-    "nx": {
-        "targets": {
-            "build": {
-                "outputs": [
-                    "{projectRoot}/dist",
-                    "{projectRoot}/src/lib/common/canvas-protection/generated"
-                ]
-            }
-        }
     }
 }

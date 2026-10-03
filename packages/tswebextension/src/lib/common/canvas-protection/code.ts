@@ -1,5 +1,6 @@
+import engineSource from 'virtual:canvas-engine';
+
 import { type CanvasBootstrapSnapshot } from './contracts';
-import { CANVAS_ENGINE_SOURCE } from './generated/engine-source';
 import { deriveInstallationTokens } from './noise';
 
 /**
@@ -27,6 +28,6 @@ export function createCanvasProtectionCode(snapshot: CanvasBootstrapSnapshot): s
     // Firefox already reports registered code as anonymous.
     const name = snapshot.policy.browser === 'chromium-mv3' ? '\n//# sourceURL=<anonymous>' : '';
     return `(()=>{
-${CANVAS_ENGINE_SOURCE}
+${engineSource}
 canvasEngine.bootstrapCanvasProtection(${serialize(snapshot)},${serialize(tokens)});})();${name}`;
 }
