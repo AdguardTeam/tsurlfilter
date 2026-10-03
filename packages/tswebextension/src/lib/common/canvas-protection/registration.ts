@@ -393,7 +393,7 @@ export class CanvasProtectionRegistration {
                 };
                 return this.publish(result, version);
             }
-            bootstrap = { session: session.value, gates: requested.gates, policy: requested.policy! };
+            bootstrap = { session: session.value, policy: requested.policy! };
             code = this.createCode(bootstrap);
             const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code));
             codeHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');

@@ -1,22 +1,50 @@
 import { type CanvasBootstrapSnapshot, type DocumentPolicyInput } from './contracts';
 import { deriveSiteSeed, type InstallationTokens } from './noise';
-import { resolveDocumentProtection } from './policy';
+import { resolveProtectedSite } from './policy';
 import { createRealmProtection, sendInstallationToken } from './realm';
 
 /**
- * Reads only the document's own native URL and frame relationship.
- * No page marker authenticates inherited policy or request-source semantics.
+ * Reads the URL of an ancestor document from sources page code cannot forge.
+ *
+ * @param ancestor Ancestor window.
+ * @param origin The origin the browser lists for that ancestor, if it lists any.
+ *
+ * @returns The complete URL of a same-origin ancestor, the origin of a cross-origin one,
+ * or `undefined` when the browser reveals neither.
+ */
+const readAncestorUrl = (ancestor: Window, origin: string | undefined): string | undefined => {
+    try {
+        return ancestor.location.href;
+    } catch {
+        // A cross-origin ancestor hides its location.
+    }
+    // An opaque or hidden origin is listed as "null".
+    return origin === undefined || origin === 'null' ? undefined : `${origin}/`;
+};
+
+/**
+ * Reads the document's own URL and what the browser reveals about its top and
+ * parent documents. No page-provided marker is trusted for that context.
  *
  * @param realm Delivered document's global object.
  *
- * @returns Exact own-document input with explicit unavailable inheritance.
+ * @returns Synchronous input of the document's protection decision.
  */
 export function readDocumentPolicyInput(realm: Window): DocumentPolicyInput {
+    const url = realm.location.href;
+    if (realm === realm.top) {
+        return {
+            url, requestType: 'document', topUrl: url, sourceUrl: url,
+        };
+    }
+    // Firefox lists ancestor origins since version 148.
+    const origins = realm.location.ancestorOrigins as DOMStringList | undefined;
+    const topUrl = readAncestorUrl(realm.top!, origins?.[origins.length - 1]);
     return {
-        url: realm.location.href,
-        requestType: realm === realm.top ? 'document' : 'subdocument',
-        inheritedTop: { status: 'unavailable', reason: 'trusted-top-context-unavailable' },
-        sourceUrl: { status: 'unavailable', reason: 'request-source-unavailable' },
+        url,
+        requestType: 'subdocument',
+        topUrl,
+        sourceUrl: realm.parent === realm.top ? topUrl : readAncestorUrl(realm.parent, origins?.[0]),
     };
 }
 
@@ -30,8 +58,8 @@ export function readDocumentPolicyInput(realm: Window): DocumentPolicyInput {
  * @param tokens Private strings shared by the engine instances of this browser run.
  */
 export function bootstrapCanvasProtection(snapshot: CanvasBootstrapSnapshot, tokens: InstallationTokens): void {
-    const context = resolveDocumentProtection(snapshot, readDocumentPolicyInput(window));
-    if (!context.enabled || context.site.status !== 'available') {
+    const site = resolveProtectedSite(snapshot.policy, readDocumentPolicyInput(window));
+    if (site === undefined) {
         return;
     }
     // The engine can be delivered twice, and the parent document protects a frame
@@ -39,5 +67,5 @@ export function bootstrapCanvasProtection(snapshot: CanvasBootstrapSnapshot, tok
     if (sendInstallationToken(window, tokens.adopt, tokens.reply)) {
         return;
     }
-    createRealmProtection(window, deriveSiteSeed(snapshot.session, context.site.value.key), tokens).protect(window);
+    createRealmProtection(window, deriveSiteSeed(snapshot.session, site), tokens).protect(window);
 }

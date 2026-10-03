@@ -16,15 +16,6 @@ export type Available<T> =
     | { readonly status: 'unavailable'; readonly reason: string };
 
 /**
- * A complete hostname key with the document URL and context used to resolve it.
- */
-export interface SiteIdentity {
-    readonly key: string;
-    readonly mode: 'top-derived' | 'frame-local';
-    readonly sourceUrl: string;
-}
-
-/**
  * All three independent activation gates must be enabled for protection.
  */
 export interface CanvasFeatureGates {
@@ -56,46 +47,15 @@ export interface PreparedPolicyRule {
 }
 
 /**
- * Trusted captured top state; each unavailable field retains its own provenance.
- */
-export interface InheritedTopContext {
-    readonly documentExcluded: Available<boolean>;
-    readonly allowlistExcluded: Available<boolean>;
-    readonly site: Available<SiteIdentity>;
-    readonly policyRevision: Available<string>;
-    readonly capturedGeneration: Available<string>;
-}
-
-/**
- * Synchronous input from a delivered document, without inferred referrer semantics.
+ * Synchronous facts about a delivered document. The browser reveals the complete
+ * URL of a same-origin top or parent document and only the origin of a
+ * cross-origin one; a URL it does not reveal at all is `undefined`.
  */
 export interface DocumentPolicyInput {
     readonly url: string;
     readonly requestType: 'document' | 'subdocument';
-    readonly inheritedTop: Available<InheritedTopContext>;
-    readonly sourceUrl: Available<string>;
-}
-
-/**
- * An immutable decision whose enablement is independent of context completeness.
- */
-export interface DocumentProtectionContext {
-    readonly outcome: 'enabled' | 'disabled' | 'excluded' | 'unsupported';
-    readonly enabled: boolean;
-    readonly excluded: boolean;
-    readonly gates: CanvasFeatureGates;
-    readonly policyRevision: string;
-    readonly capturedGeneration: string;
-    readonly site: Available<SiteIdentity>;
-    readonly provenance: {
-        readonly requestType: DocumentPolicyInput['requestType'];
-        readonly frameUrl: string;
-        readonly sourceUrl: Available<string>;
-        readonly inheritedTop: Available<InheritedTopContext>;
-        readonly ownFrameExclusion: Available<boolean>;
-        readonly documentExclusion: Available<boolean>;
-    };
-    readonly unavailableConditions: readonly string[];
+    readonly topUrl: string | undefined;
+    readonly sourceUrl: string | undefined;
 }
 
 /**
@@ -132,10 +92,10 @@ export type RegistrationResult = {
 
 /**
  * Trusted generated bootstrap state, captured before page code can read canvas.
+ * Code is only delivered while every feature gate is enabled, so it carries none.
  */
 export interface CanvasBootstrapSnapshot {
     readonly session: ProtectionSession;
-    readonly gates: CanvasFeatureGates;
     readonly policy: ProtectionPolicyArtifact;
 }
 
@@ -179,9 +139,15 @@ const preparedConditionValidator: zod.ZodType<PreparedCondition> = zod.lazy(() =
 ]));
 
 const preparedPolicyRuleValidator = zod.object({
-    requestTypes: zod.enum(['document', 'subdocument']).array().readonly(),
+    requestTypes: zod.enum(['document', 'subdocument']).array().min(1).readonly(),
     condition: preparedConditionValidator,
 }).strict();
+
+// A document exclusion is evaluated for the top-level document only, also on behalf of its frames.
+const documentExclusionValidator = preparedPolicyRuleValidator.refine(
+    (rule) => rule.requestTypes.includes('document'),
+    { message: 'A document exclusion must apply to documents', path: ['requestTypes'] },
+);
 
 /**
  * Validates genuinely external prepared JSON once before it enters trusted code.
@@ -195,7 +161,7 @@ export const protectionPolicyArtifactValidator = zod.object({
         excludeMatches: zod.string().min(1).array().readonly(),
     }).strict().readonly(),
     ownFrameExclusions: preparedPolicyRuleValidator.array().readonly(),
-    documentExclusions: preparedPolicyRuleValidator.array().readonly(),
+    documentExclusions: documentExclusionValidator.array().readonly(),
     unavailableConditions: zod.string().min(1).array().readonly(),
 }).strict().readonly();
 

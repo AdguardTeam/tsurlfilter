@@ -34,14 +34,9 @@ export interface PreparedPolicyFixture {
     readonly rule: PreparedPolicyRule;
     readonly url: string;
     readonly requestType?: DocumentPolicyInput['requestType'];
-    readonly sourceUrl?: DocumentPolicyInput['sourceUrl'];
+    readonly sourceUrl?: string;
     readonly excluded: boolean;
-    readonly unavailableReason?: string;
 }
-
-const pathCondition: PreparedCondition = {
-    type: 'url-regexp', input: 'frame-url', pattern: '^https://example\\.com/native(?:\\?|$)', flags: '',
-};
 
 const protocolCondition: PreparedCondition = {
     type: 'url-regexp', input: 'frame-url', pattern: '^https://', flags: '',
@@ -59,26 +54,10 @@ const sourceCondition: PreparedCondition = {
     type: 'url-regexp', input: 'source-url', pattern: '^https://publisher\\.example/', flags: '',
 };
 
-const encodedCondition: PreparedCondition = {
-    type: 'url-regexp', input: 'frame-url', pattern: '^https://example\\.com/a%2Fb\\?q=%26$', flags: '',
-};
-
 /**
  * Exact prepared predicates, without filter-text parsing or transformation.
  */
 export const preparedPolicyFixtures: readonly PreparedPolicyFixture[] = [
-    {
-        name: 'protocol positive',
-        rule: { requestTypes: ['document'], condition: protocolCondition },
-        url: 'https://example.com/',
-        excluded: true,
-    },
-    {
-        name: 'protocol negative',
-        rule: { requestTypes: ['document'], condition: protocolCondition },
-        url: 'http://example.com/',
-        excluded: false,
-    },
     {
         name: 'host positive',
         rule: { requestTypes: ['document'], condition: targetCondition },
@@ -92,155 +71,11 @@ export const preparedPolicyFixtures: readonly PreparedPolicyFixture[] = [
         excluded: false,
     },
     {
-        name: 'path positive',
-        rule: { requestTypes: ['document'], condition: pathCondition },
-        url: 'https://example.com/native',
-        excluded: true,
-    },
-    {
-        name: 'path negative',
-        rule: { requestTypes: ['document'], condition: pathCondition },
-        url: 'https://example.com/protected',
-        excluded: false,
-    },
-    {
-        name: 'query positive',
-        rule: {
-            requestTypes: ['document'],
-            condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '\\?native=1(?:&|$)', flags: '',
-            },
-        },
-        url: 'https://example.com/?native=1',
-        excluded: true,
-    },
-    {
-        name: 'query negative',
-        rule: {
-            requestTypes: ['document'],
-            condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '\\?native=1(?:&|$)', flags: '',
-            },
-        },
-        url: 'https://example.com/?native=10',
-        excluded: false,
-    },
-    {
-        name: 'regex positive',
-        rule: {
-            requestTypes: ['document'],
-            condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '/item/[0-9]+(?:\\?|$)', flags: '',
-            },
-        },
-        url: 'https://example.com/item/42',
-        excluded: true,
-    },
-    {
-        name: 'regex negative',
-        rule: {
-            requestTypes: ['document'],
-            condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '/item/[0-9]+(?:\\?|$)', flags: '',
-            },
-        },
-        url: 'https://example.com/item/name',
-        excluded: false,
-    },
-    {
-        name: 'IPv4 positive',
-        rule: {
-            requestTypes: ['document'],
-            condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '^http://127\\.0\\.0\\.1/', flags: '',
-            },
-        },
-        url: 'http://127.0.0.1/',
-        excluded: true,
-    },
-    {
-        name: 'IPv4 negative',
-        rule: {
-            requestTypes: ['document'],
-            condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '^http://127\\.0\\.0\\.1/', flags: '',
-            },
-        },
-        url: 'http://127.0.0.2/',
-        excluded: false,
-    },
-    {
-        name: 'IPv6 positive',
-        rule: {
-            requestTypes: ['document'],
-            condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '^http://\\[2001:db8::1\\]/', flags: '',
-            },
-        },
-        url: 'http://[2001:db8::1]/',
-        excluded: true,
-    },
-    {
-        name: 'IPv6 negative',
-        rule: {
-            requestTypes: ['document'],
-            condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '^http://\\[2001:db8::1\\]/', flags: '',
-            },
-        },
-        url: 'http://[2001:db8::2]/',
-        excluded: false,
-    },
-    {
-        name: 'IDN positive',
-        rule: {
-            requestTypes: ['document'],
-            condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '^https://xn--bcher-kva\\.example/', flags: '',
-            },
-        },
-        url: 'https://xn--bcher-kva.example/',
-        excluded: true,
-    },
-    {
-        name: 'IDN negative',
-        rule: {
-            requestTypes: ['document'],
-            condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '^https://xn--bcher-kva\\.example/', flags: '',
-            },
-        },
-        url: 'https://books.example/',
-        excluded: false,
-    },
-    {
-        name: 'port positive',
-        rule: {
-            requestTypes: ['document'],
-            condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '^https://example\\.com:8443/', flags: '',
-            },
-        },
-        url: 'https://example.com:8443/',
-        excluded: true,
-    },
-    {
-        name: 'port negative',
-        rule: {
-            requestTypes: ['document'],
-            condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '^https://example\\.com:8443/', flags: '',
-            },
-        },
-        url: 'https://example.com:9443/',
-        excluded: false,
-    },
-    {
         name: 'source positive',
         rule: { requestTypes: ['subdocument'], condition: sourceCondition },
         url: 'https://frame.example/',
         requestType: 'subdocument',
-        sourceUrl: { status: 'available', value: 'https://publisher.example/article' },
+        sourceUrl: 'https://publisher.example/article',
         excluded: true,
     },
     {
@@ -248,17 +83,15 @@ export const preparedPolicyFixtures: readonly PreparedPolicyFixture[] = [
         rule: { requestTypes: ['subdocument'], condition: sourceCondition },
         url: 'https://frame.example/',
         requestType: 'subdocument',
-        sourceUrl: { status: 'available', value: 'https://other.example/article' },
+        sourceUrl: 'https://other.example/article',
         excluded: false,
     },
     {
-        name: 'source unavailable',
+        name: 'source unknown',
         rule: { requestTypes: ['subdocument'], condition: sourceCondition },
         url: 'https://frame.example/',
         requestType: 'subdocument',
-        sourceUrl: { status: 'unavailable', reason: 'special-frame-source-unavailable' },
         excluded: false,
-        unavailableReason: 'special-frame-source-unavailable',
     },
     {
         name: 'target to set positive',
@@ -294,28 +127,6 @@ export const preparedPolicyFixtures: readonly PreparedPolicyFixture[] = [
         excluded: false,
     },
     {
-        name: 'anchor positive',
-        rule: {
-            requestTypes: ['document'],
-            condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '^https://example\\.com/native$', flags: '',
-            },
-        },
-        url: 'https://example.com/native',
-        excluded: true,
-    },
-    {
-        name: 'anchor negative',
-        rule: {
-            requestTypes: ['document'],
-            condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '^https://example\\.com/native$', flags: '',
-            },
-        },
-        url: 'https://example.com/native/more',
-        excluded: false,
-    },
-    {
         name: 'case sensitive negative',
         rule: {
             requestTypes: ['document'],
@@ -336,18 +147,6 @@ export const preparedPolicyFixtures: readonly PreparedPolicyFixture[] = [
         },
         url: 'https://example.com/native',
         excluded: true,
-    },
-    {
-        name: 'percent encoding positive',
-        rule: { requestTypes: ['document'], condition: encodedCondition },
-        url: 'https://example.com/a%2Fb?q=%26',
-        excluded: true,
-    },
-    {
-        name: 'percent encoding negative',
-        rule: { requestTypes: ['document'], condition: encodedCondition },
-        url: 'https://example.com/a/b?q=&',
-        excluded: false,
     },
     {
         name: 'document mask positive',

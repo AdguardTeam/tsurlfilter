@@ -43,15 +43,23 @@ describe('generated canvas delivery code', () => {
         const policy = createProtectAllPolicy('chromium-mv3', text);
         const untouched = execute({
             session: { root: '0123456789abcdef0123456789abcdef', generation: text },
-            gates: { filteringEnabled: false, stealthModeEnabled: true, protectCanvas: true },
-            policy: { ...policy, unavailableConditions: [text] },
+            policy: {
+                ...policy,
+                unavailableConditions: [text],
+                // The delivery must stay inert here: jsdom has no canvas bindings to wrap.
+                ownFrameExclusions: [{
+                    requestTypes: ['subdocument'],
+                    condition: {
+                        type: 'url-regexp', input: 'frame-url', pattern: '.', flags: '',
+                    },
+                }],
+            },
         });
         expect(untouched).toBe(true);
     });
     it('renames the script in Chromium stack traces only', () => {
         const state = {
             session: { root: '0123456789abcdef0123456789abcdef', generation: 'generation' },
-            gates: { filteringEnabled: true, stealthModeEnabled: true, protectCanvas: true },
         };
         expect(createCanvasProtectionCode({ ...state, policy: createProtectAllPolicy('chromium-mv3', 'current') }))
             .toMatch(/\n\/\/# sourceURL=<anonymous>$/);
@@ -59,7 +67,7 @@ describe('generated canvas delivery code', () => {
             .not.toContain('sourceURL');
     });
 
-    it.each([false, true])('keeps disabled or excluded readouts native across duplicate delivery (%s)', (enabled) => {
+    it('keeps excluded readouts native across duplicate delivery', () => {
         const policy = createProtectAllPolicy('chromium-mv3', '";globalThis.injected=true;//</script>\u2028\u2029');
         const exclusions = [{
             requestTypes: ['document'],
@@ -69,7 +77,6 @@ describe('generated canvas delivery code', () => {
         }] satisfies typeof policy.ownFrameExclusions;
         const code = createCanvasProtectionCode({
             session: { root: '11111111111111111111111111111111', generation: '22222222222222222222222222222222' },
-            gates: { filteringEnabled: true, stealthModeEnabled: true, protectCanvas: enabled },
             policy: { ...policy, ownFrameExclusions: exclusions },
         });
         const result = runInNewContext(`

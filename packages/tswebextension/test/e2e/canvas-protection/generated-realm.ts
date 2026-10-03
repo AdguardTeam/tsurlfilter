@@ -12,11 +12,10 @@ export type Realm = Window & typeof globalThis;
 /**
  * Creates trusted current delivery state.
  *
- * @returns A fully enabled candidate policy.
+ * @returns A policy without exclusions.
  */
 export const snapshot = (): CanvasBootstrapSnapshot => ({
     session: { root: '0123456789abcdef0123456789abcdef', generation: 'abcdef0123456789abcdef0123456789' },
-    gates: { filteringEnabled: true, stealthModeEnabled: true, protectCanvas: true },
     policy: {
         schemaVersion: 1,
         revision: 'current',

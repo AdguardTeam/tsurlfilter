@@ -69,14 +69,17 @@ const disabled: CanvasFeatureGates = { ...enabled, protectCanvas: false };
 const succeeded: readonly RegistrationOperationOutcome[] = [{ operation: 'register', status: 'succeeded' }];
 
 /**
- * Builds a snapshot using the current profile root and a prepared test policy.
+ * Builds a request with the current profile root and a prepared test policy.
  *
  * @param revision Requested policy revision.
  * @param gates Requested feature gates.
  *
- * @returns A trusted caller snapshot.
+ * @returns The request and the snapshot fields expected in generated code.
  */
-const snapshot = async (revision = 'policy-a', gates = enabled): Promise<CanvasBootstrapSnapshot> => {
+const snapshot = async (
+    revision = 'policy-a',
+    gates = enabled,
+): Promise<CanvasBootstrapSnapshot & { gates: CanvasFeatureGates }> => {
     const session = await getProtectionSession();
     if (session.status !== 'available') {
         throw new Error(session.reason);
@@ -167,7 +170,7 @@ describe('Canvas protection registration', () => {
         vi.mocked(adapter.install).mockImplementationOnce(async (code, policy) => {
             expect(code).toBe(createCode.mock.results[0].value);
             expect(policy).toEqual(value.policy);
-            expect(createCode).toHaveBeenLastCalledWith(value);
+            expect(createCode).toHaveBeenLastCalledWith({ session: value.session, policy: value.policy });
             expect(manager.getState().status).not.toBe('installed');
             expect(fixture.session.values.has(REGISTRATION_KEY)).toBe(false);
             await blocked;
@@ -291,7 +294,7 @@ describe('Canvas protection registration', () => {
         await manager.apply(original);
         vi.mocked(adapter.checkAvailability).mockResolvedValue({ status: 'unavailable', reason: 'access revoked' });
         const candidate = await snapshot('policy-excluded');
-        const replacement: CanvasBootstrapSnapshot = {
+        const replacement = {
             ...candidate,
             policy: {
                 ...candidate.policy,
@@ -320,7 +323,8 @@ describe('Canvas protection registration', () => {
                 },
             },
         });
-        expect(createCode.mock.calls.at(-1)?.[0]).toEqual(replacement);
+        expect(createCode.mock.calls.at(-1)?.[0])
+            .toEqual({ session: replacement.session, policy: replacement.policy });
     });
 
     it('invalidates historical installation after lifecycle registration loss', async () => {
@@ -387,7 +391,6 @@ describe('Canvas protection registration', () => {
         expect(result.status).toBe('installed');
         const rehydrated = createCode.mock.calls.at(-1)![0];
         expect(rehydrated.session).not.toEqual(original.session);
-        expect(rehydrated.gates).toEqual(enabled);
         expect(rehydrated.policy).toEqual(original.policy);
         expect(vi.mocked(adapter.install).mock.calls.at(-1)![0]).toBe(createCode.mock.results.at(-1)!.value);
         expect(createCode).toHaveBeenLastCalledWith(rehydrated);
