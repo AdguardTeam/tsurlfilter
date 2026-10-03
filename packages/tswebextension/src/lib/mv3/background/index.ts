@@ -86,4 +86,11 @@ export type { RuleInfo } from '../../common/rule-info';
 
 export { TSWEBEXTENSION_VERSION, EXTENDED_CSS_VERSION } from '../../common/configuration';
 
-export * from '../../common/canvas-protection';
+export {
+    type PreparedCondition,
+    type PreparedPolicyRule,
+    type ProtectionPolicyArtifact,
+    type RegistrationOperationOutcome,
+    type RegistrationResult,
+    protectionPolicyArtifactValidator,
+} from '../../common/canvas-protection/contracts';

@@ -518,8 +518,7 @@ export class TsWebExtension implements AppInterface<
         }
 
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
-        const canvasProtection = await this.canvasProtection.apply();
-        Object.assign(res, this.canvasProtection.resultField(canvasProtection));
+        res.canvasProtection = await this.canvasProtection.apply();
 
         // Update previously opened tabs with new rules - find for each tab
         // new main frame rule.

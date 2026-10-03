@@ -187,10 +187,9 @@ export class TsWebExtension implements AppInterface<
         this.isStarted = true;
         this.canvasProtection.resume();
 
-        const canvasProtection = await this.canvasProtection.apply();
         return {
             conversionErrors: result.conversionErrors,
-            ...this.canvasProtection.resultField(canvasProtection),
+            canvasProtection: await this.canvasProtection.apply(),
         };
     }
 
@@ -239,10 +238,9 @@ export class TsWebExtension implements AppInterface<
         await WebRequestApi.flushMemoryCache();
         await this.stealthApi.updateWebRtcPrivacyPermissions();
 
-        const canvasProtection = await this.canvasProtection.apply();
         return {
             conversionErrors: result.conversionErrors,
-            ...this.canvasProtection.resultField(canvasProtection),
+            canvasProtection: await this.canvasProtection.apply(),
         };
     }
 

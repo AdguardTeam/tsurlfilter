@@ -112,19 +112,6 @@ export class CanvasProtectionController {
     }
 
     /**
-     * Includes canvas results only for configured or attempted canvas operations.
-     *
-     * @param result The just-completed registration operation.
-     *
-     * @returns An optional field preserving legacy result shapes.
-     */
-    public resultField(result: RegistrationResult): { canvasProtection?: RegistrationResult } {
-        const configuration = this.configuration();
-        return configuration?.settings.stealth.protectCanvas !== undefined || configuration?.canvasProtectionPolicy
-            || result.operations.length > 0 ? { canvasProtection: result } : {};
-    }
-
-    /**
      * Requires application configuration before changing its settings.
      *
      * @returns The current configuration.

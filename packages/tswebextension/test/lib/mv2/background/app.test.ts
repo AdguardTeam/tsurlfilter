@@ -89,7 +89,7 @@ describe('TsWebExtension', () => {
             const result = await instance.start(config);
 
             expect(instance.isStarted).toBe(true);
-            expect(result).toEqual({ conversionErrors: mockErrors });
+            expect(result.conversionErrors).toEqual(mockErrors);
         });
 
         it('should be updated correctly and return conversion errors', async () => {
@@ -101,7 +101,7 @@ describe('TsWebExtension', () => {
             const result = await instance.configure(config);
 
             expect(instance.configuration.settings.filteringEnabled).toBe(false);
-            expect(result).toEqual({ conversionErrors: mockErrors });
+            expect(result.conversionErrors).toEqual(mockErrors);
         });
 
         it('Should be stopped correctly', async () => {

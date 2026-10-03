@@ -257,6 +257,13 @@ You MUST follow the following rules for EVERY task that you perform:
    **Rationale**: keeps function contracts greppable and consistent with our
    usual JSDoc style across both packages and tooling scripts.
 
+7. **Prefer named exports over `export *`.** List the re-exported names
+   explicitly (`export { a, type B } from './module'`), barrel files included.
+   Use `export *` only where a named list is impractical.
+
+   **Rationale**: the public surface of a module stays visible in one place,
+   and a new symbol never becomes public by accident.
+
 ### III. Testing Discipline
 
 1. **Vitest** is the test runner for all packages. Each package has its own
