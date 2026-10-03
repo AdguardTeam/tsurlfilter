@@ -1,5 +1,3 @@
-import { server } from 'vitest/browser';
-
 import {
     type CanvasNatives,
     captureCanvasNatives,
@@ -7,6 +5,7 @@ import {
     createToBlobWrapper,
     createToDataURLWrapper,
 } from '../../../src/lib/common/canvas-protection/readout';
+import { type CanvasTaint } from '../../../src/lib/common/canvas-protection/taint';
 
 /**
  * Same-browser, isolated native and protected documents with captured intrinsics.
@@ -17,6 +16,7 @@ export interface CanvasRealmPair {
     readonly nativeIntrinsics: CanvasNatives;
     readonly protectedIntrinsics: CanvasNatives;
     readonly seed: Uint8Array;
+    readonly taint: CanvasTaint;
     readonly nativeCalls: { native: number; protected: number };
     readonly nativeBlobCallbacks: { native: unknown[]; protected: unknown[] };
     readonly nativeExports: {
@@ -28,6 +28,8 @@ export interface CanvasRealmPair {
 /**
  * Runs a differential assertion in fresh realms, removing both documents on failure.
  * Direct fixture installation tests canvas semantics independently of extension delivery.
+ * Every canvas with a 2D context counts as drawn on, so readout semantics are tested apart
+ * from draw tracking.
  *
  * @param test Differential assertion using the isolated pair.
  */
@@ -41,9 +43,8 @@ export async function withCanvasRealmPair(test: (pair: CanvasRealmPair) => Promi
         const native = frames[0].contentWindow as Window & typeof globalThis;
         const protectedRealm = frames[1].contentWindow as Window & typeof globalThis;
         const nativeCalls = { native: 0, protected: 0 };
-        const exportPlatform = server.browser === 'firefox' ? 'firefox' as const : 'chromium' as const;
-        const nativeIntrinsics = { ...captureCanvasNatives(native), exportPlatform };
-        const protectedIntrinsics = { ...captureCanvasNatives(protectedRealm), exportPlatform };
+        const nativeIntrinsics = captureCanvasNatives(native);
+        const protectedIntrinsics = captureCanvasNatives(protectedRealm);
         const nativeBlobCallbacks: CanvasRealmPair['nativeBlobCallbacks'] = { native: [], protected: [] };
         const nativeExports = {
             native: { toDataURL: 0, toBlob: 0 },
@@ -68,13 +69,27 @@ export async function withCanvasRealmPair(test: (pair: CanvasRealmPair) => Promi
             value: countedNative,
         });
         const seed = new Uint8Array(Array.from({ length: 16 }, (_, index) => index));
+        const drawn = new WeakSet<object>();
+        const taint: CanvasTaint = { has: (canvas) => drawn.has(canvas) };
+        Object.defineProperty(protectedRealm.HTMLCanvasElement.prototype, 'getContext', {
+            ...Object.getOwnPropertyDescriptor(protectedRealm.HTMLCanvasElement.prototype, 'getContext'),
+            value: new protectedRealm.Proxy(protectedIntrinsics.getContext, {
+                apply: (target, receiver, args): unknown => {
+                    const context = protectedRealm.Reflect.apply(target, receiver, args);
+                    if (context instanceof protectedRealm.CanvasRenderingContext2D) {
+                        drawn.add(receiver);
+                    }
+                    return context;
+                },
+            }),
+        });
         const descriptor = Object.getOwnPropertyDescriptor(
             protectedRealm.CanvasRenderingContext2D.prototype,
             'getImageData',
         )!;
         Object.defineProperty(protectedRealm.CanvasRenderingContext2D.prototype, 'getImageData', {
             ...descriptor,
-            value: createGetImageDataWrapper({ ...protectedIntrinsics, getImageData: countedProtected }, seed),
+            value: createGetImageDataWrapper({ ...protectedIntrinsics, getImageData: countedProtected }, seed, taint),
         });
         [native, protectedRealm].forEach((realm, index) => {
             const intrinsics = index === 0 ? nativeIntrinsics : protectedIntrinsics;
@@ -94,11 +109,11 @@ export async function withCanvasRealmPair(test: (pair: CanvasRealmPair) => Promi
             });
             Object.defineProperty(realm.HTMLCanvasElement.prototype, 'toDataURL', {
                 ...Object.getOwnPropertyDescriptor(realm.HTMLCanvasElement.prototype, 'toDataURL'),
-                value: index === 0 ? toDataURL : createToDataURLWrapper({ ...intrinsics, toDataURL }, seed),
+                value: index === 0 ? toDataURL : createToDataURLWrapper({ ...intrinsics, toDataURL }, seed, taint),
             });
             Object.defineProperty(realm.HTMLCanvasElement.prototype, 'toBlob', {
                 ...Object.getOwnPropertyDescriptor(realm.HTMLCanvasElement.prototype, 'toBlob'),
-                value: index === 0 ? toBlob : createToBlobWrapper({ ...intrinsics, toBlob }, seed),
+                value: index === 0 ? toBlob : createToBlobWrapper({ ...intrinsics, toBlob }, seed, taint),
             });
         });
         await test({
@@ -107,6 +122,7 @@ export async function withCanvasRealmPair(test: (pair: CanvasRealmPair) => Promi
             nativeIntrinsics,
             protectedIntrinsics,
             seed,
+            taint,
             nativeCalls,
             nativeExports,
             nativeBlobCallbacks,

@@ -14,8 +14,6 @@ describe('Firefox canvas registration', () => {
     let adapter: FirefoxCanvasRegistration;
 
     beforeEach(() => {
-        vi.stubGlobal('VideoFrame', vi.fn());
-        vi.stubGlobal('VideoColorSpace', vi.fn());
         Object.defineProperty(browser, 'contentScripts', { configurable: true, value: { register: vi.fn() } });
         adapter = new FirefoxCanvasRegistration();
     });
@@ -24,13 +22,6 @@ describe('Firefox canvas registration', () => {
         expect(await adapter.checkAvailability()).toEqual({ status: 'available', value: false });
         Object.defineProperty(browser, 'contentScripts', { configurable: true, value: undefined });
         expect(await adapter.checkAvailability()).toMatchObject({ status: 'unavailable' });
-    });
-
-    it('reports unavailable when the required page export bindings are missing', async () => {
-        vi.stubGlobal('VideoFrame', undefined);
-        expect(await adapter.checkAvailability()).toMatchObject({
-            status: 'unavailable', reason: expect.stringContaining('VideoFrame'),
-        });
     });
 
     it('creates a replacement before retiring the previous handle', async () => {

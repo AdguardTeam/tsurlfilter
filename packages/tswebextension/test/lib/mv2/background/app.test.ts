@@ -253,8 +253,6 @@ describe('TsWebExtension', () => {
         let unregister: ReturnType<typeof vi.fn>;
 
         beforeEach(async () => {
-            vi.stubGlobal('VideoFrame', vi.fn());
-            vi.stubGlobal('VideoColorSpace', vi.fn());
             await browser.storage.local.clear();
             values = {};
             Object.defineProperty(browser.storage, 'session', {

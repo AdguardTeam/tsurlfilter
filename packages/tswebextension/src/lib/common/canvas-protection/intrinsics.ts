@@ -10,8 +10,10 @@ export const canvasIntrinsics = Object.freeze({
     TextEncoder,
     Proxy,
     WeakMap,
+    WeakSet,
     apply: Reflect.apply,
     floor: Math.floor,
+    imul: Math.imul,
     min: Math.min,
     max: Math.max,
     parseInt: Number.parseInt,
@@ -24,7 +26,12 @@ export const canvasIntrinsics = Object.freeze({
     setUint32: DataView.prototype.setUint32,
     weakGet: WeakMap.prototype.get,
     weakSet: WeakMap.prototype.set,
+    weakHas: WeakSet.prototype.has,
+    weakAdd: WeakSet.prototype.add,
     setPrototypeOf: Object.setPrototypeOf,
+    getOwnPropertyDescriptor: Object.getOwnPropertyDescriptor,
+    getOwnPropertyNames: Object.getOwnPropertyNames,
+    defineProperty: Object.defineProperty,
     objectPrototype: Object.prototype,
 });
 

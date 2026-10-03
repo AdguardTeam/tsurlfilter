@@ -10,10 +10,14 @@ export interface PixelNoise {
 }
 
 const UINT32_RANGE = 0x100000000;
-const SELECTION_DOMAIN = 1;
-const CHANNEL_DOMAIN = 2;
-const DIRECTION_DOMAIN = 3;
+const ROW_DOMAIN = 4;
 const SITE_SEED_DOMAINS = [16, 17];
+const INSTALLATION_DOMAINS = [32, 33, 34];
+const HEX_DIGITS = '0123456789abcdef';
+const { imul } = intrinsics;
+const LITTLE_ENDIAN = new intrinsics.Uint8Array(
+    intrinsics.apply(intrinsics.typedBuffer, new intrinsics.Uint32Array([1]), []),
+)[0] === 1;
 
 /**
  * Reads a little-endian uint32 word without assuming byte-buffer alignment.
@@ -154,6 +158,58 @@ export function sipHash24(key: Uint8Array, input: Uint8Array): Uint8Array {
 }
 
 /**
+ * Decodes the captured browser-run root.
+ *
+ * @param session Trusted captured root in hex.
+ *
+ * @returns The 16-byte root key.
+ */
+const parseRoot = (session: ProtectionSession): Uint8Array => {
+    const root = new intrinsics.Uint8Array(16);
+    for (let index = 0; index < 16; index += 1) {
+        const hex = intrinsics.apply(intrinsics.slice, session.root, [index * 2, index * 2 + 2]);
+        root[index] = intrinsics.parseInt(hex, 16);
+    }
+    return root;
+};
+
+/**
+ * Private strings by which engine instances of one browser run recognize each other's wrappers.
+ */
+export interface InstallationTokens {
+    readonly probe: string;
+    readonly adopt: string;
+    readonly reply: string;
+}
+
+/**
+ * Derives the installation tokens from the root alone, so every document of the
+ * browser run agrees on them whatever its site or policy.
+ *
+ * @param session Trusted captured root in hex.
+ *
+ * @returns Three unrelated strings a page cannot derive.
+ */
+export function deriveInstallationTokens(session: ProtectionSession): InstallationTokens {
+    const root = parseRoot(session);
+    const input = new intrinsics.Uint8Array(1);
+    const token = (domain: number): string => {
+        input[0] = domain;
+        const digest = sipHash24(root, input);
+        let text = '';
+        for (let index = 0; index < 8; index += 1) {
+            text += HEX_DIGITS[digest[index] >>> 4] + HEX_DIGITS[digest[index] & 15];
+        }
+        return text;
+    };
+    return {
+        probe: token(INSTALLATION_DOMAINS[0]),
+        adopt: token(INSTALLATION_DOMAINS[1]),
+        reply: token(INSTALLATION_DOMAINS[2]),
+    };
+}
+
+/**
  * Derives a site key with independent halves from the captured browser-run root.
  * Length prefixes prevent ambiguous concatenation of UTF-8 generation/site values.
  *
@@ -163,11 +219,7 @@ export function sipHash24(key: Uint8Array, input: Uint8Array): Uint8Array {
  * @returns The 16-byte key shared by every readout in this site and generation.
  */
 export function deriveSiteSeed(session: ProtectionSession, siteKey: string): Uint8Array {
-    const root = new intrinsics.Uint8Array(16);
-    for (let index = 0; index < 16; index += 1) {
-        const hex = intrinsics.apply(intrinsics.slice, session.root, [index * 2, index * 2 + 2]);
-        root[index] = intrinsics.parseInt(hex, 16);
-    }
+    const root = parseRoot(session);
     const encoder = new intrinsics.TextEncoder();
     const generation = intrinsics.apply(intrinsics.encode, encoder, [session.generation]) as Uint8Array;
     const site = intrinsics.apply(intrinsics.encode, encoder, [siteKey]) as Uint8Array;
@@ -188,159 +240,60 @@ export function deriveSiteSeed(session: ProtectionSession, siteKey: string): Uin
 }
 
 /**
- * Computes the low SipHash word for the fixed sixteen-byte pixel message.
- * Scalar words avoid typed-array compression-state traffic in the pixel loop.
+ * Derives the two mixer key words of one absolute bitmap row from the site key.
+ * One keyed SipHash per row keeps rows independent and the site key unrecoverable.
  *
- * @param key0 First little-endian key word.
- * @param key1 Second little-endian key word.
- * @param key2 Third little-endian key word.
- * @param key3 Fourth little-endian key word.
- * @param input Fixed-format pixel bytes.
- *
- * @returns The exact low word of the standard keyed digest.
+ * @param seed Captured site key.
+ * @param y Absolute bitmap Y coordinate.
+ * @param input Private five-byte row message buffer.
+ * @param rowKey Private two-word output.
  */
-const hashPixel = (key0: number, key1: number, key2: number, key3: number, input: Uint8Array): number => {
-    let v0Low = (key0 ^ 0x70736575) >>> 0;
-    let v0High = (key1 ^ 0x736f6d65) >>> 0;
-    let v1Low = (key2 ^ 0x6e646f6d) >>> 0;
-    let v1High = (key3 ^ 0x646f7261) >>> 0;
-    let v2Low = (key0 ^ 0x6e657261) >>> 0;
-    let v2High = (key1 ^ 0x6c796765) >>> 0;
-    let v3Low = (key2 ^ 0x79746573) >>> 0;
-    let v3High = (key3 ^ 0x74656462) >>> 0;
-    let messageLow = 0;
-    let messageHigh = 0;
-    for (let round = 0; round < 10; round += 1) {
-        if (round < 6 && round % 2 === 0) {
-            messageLow = round === 4 ? 0 : readWord(input, round * 4);
-            messageHigh = round === 4 ? 0x10000000 : readWord(input, round * 4 + 4);
-            v3Low ^= messageLow;
-            v3High ^= messageHigh;
-        }
-        let sum = (v0Low >>> 0) + (v1Low >>> 0);
-        v0High = (v0High + v1High + (sum >= UINT32_RANGE ? 1 : 0)) >>> 0;
-        v0Low = sum >>> 0;
-        let low = v1Low;
-        v1Low = (low << 13) | (v1High >>> 19);
-        v1High = (v1High << 13) | (low >>> 19);
-        v1Low ^= v0Low;
-        v1High ^= v0High;
-        low = v0Low;
-        v0Low = v0High;
-        v0High = low;
-
-        sum = (v2Low >>> 0) + (v3Low >>> 0);
-        v2High = (v2High + v3High + (sum >= UINT32_RANGE ? 1 : 0)) >>> 0;
-        v2Low = sum >>> 0;
-        low = v3Low;
-        v3Low = (low << 16) | (v3High >>> 16);
-        v3High = (v3High << 16) | (low >>> 16);
-        v3Low ^= v2Low;
-        v3High ^= v2High;
-
-        sum = (v0Low >>> 0) + (v3Low >>> 0);
-        v0High = (v0High + v3High + (sum >= UINT32_RANGE ? 1 : 0)) >>> 0;
-        v0Low = sum >>> 0;
-        low = v3Low;
-        v3Low = (low << 21) | (v3High >>> 11);
-        v3High = (v3High << 21) | (low >>> 11);
-        v3Low ^= v0Low;
-        v3High ^= v0High;
-
-        sum = (v2Low >>> 0) + (v1Low >>> 0);
-        v2High = (v2High + v1High + (sum >= UINT32_RANGE ? 1 : 0)) >>> 0;
-        v2Low = sum >>> 0;
-        low = v1Low;
-        v1Low = (low << 17) | (v1High >>> 15);
-        v1High = (v1High << 17) | (low >>> 15);
-        v1Low ^= v2Low;
-        v1High ^= v2High;
-        low = v2Low;
-        v2Low = v2High;
-        v2High = low;
-        if (round < 6 && round % 2 === 1) {
-            v0Low ^= messageLow;
-            v0High ^= messageHigh;
-            if (round === 5) {
-                v2Low ^= 255;
-            }
-        }
-    }
-    return (v0Low ^ v1Low ^ v2Low ^ v3Low) >>> 0;
+const deriveRowKey = (seed: Uint8Array, y: number, input: Uint8Array, rowKey: Uint32Array): void => {
+    input[0] = ROW_DOMAIN;
+    input[1] = y;
+    input[2] = y >>> 8;
+    input[3] = y >>> 16;
+    input[4] = y >>> 24;
+    const state = sipHashState(seed, input);
+    rowKey[0] = state[0] ^ state[2] ^ state[4] ^ state[6];
+    rowKey[1] = state[1] ^ state[3] ^ state[5] ^ state[7];
 };
 
 /**
- * Reuses private per-readout buffers without sharing state across nested readouts.
- * The byte format and every SipHash domain remain identical to scalar sampling.
+ * Selects the sparse adjustment for one opaque pixel from its row key, X and original RGB.
+ * A 32-bit multiply-xorshift mixer replaces a per-pixel keyed hash: the row key is
+ * already a keyed digest, and the pixel only needs well-distributed selection bits.
  *
- * @param seed Captured site key.
+ * @param key0 First row key word.
+ * @param key1 Second row key word.
+ * @param x Absolute bitmap X coordinate.
+ * @param rgb Original red, green and blue values as `red | green << 8 | blue << 16`.
  *
  * @returns A packed channel/direction code, or zero for an unselected pixel.
  */
-const createPixelSampler = (seed: Uint8Array): (
-x: number, y: number, red: number, green: number, blue: number,
-) => number => {
-    const input = new intrinsics.Uint8Array(16);
-    const key0 = readWord(seed, 0);
-    const key1 = readWord(seed, 4);
-    const key2 = readWord(seed, 8);
-    const key3 = readWord(seed, 12);
-    const draw = (domain: number): number => {
-        input[0] = domain;
-        return hashPixel(key0, key1, key2, key3, input);
-    };
-    return (x, y, red, green, blue): number => {
-        input[1] = x;
-        input[2] = x >>> 8;
-        input[3] = x >>> 16;
-        input[4] = x >>> 24;
-        input[5] = y;
-        input[6] = y >>> 8;
-        input[7] = y >>> 16;
-        input[8] = y >>> 24;
-        input[9] = red;
-        input[10] = green;
-        input[11] = blue;
-        input[12] = 0;
-        input[13] = 0;
-        input[14] = 0;
-        input[15] = 0;
-        if ((draw(SELECTION_DOMAIN) & 15) !== 0) {
-            return 0;
-        }
-        let word = draw(CHANNEL_DOMAIN);
-        let counter = 0;
-        while (word === 0xffffffff) {
-            counter += 1;
-            input[12] = counter;
-            input[13] = counter >>> 8;
-            input[14] = counter >>> 16;
-            input[15] = counter >>> 24;
-            word = draw(CHANNEL_DOMAIN);
-        }
-        const channel = word % 3;
-        let value = red;
-        if (channel === 1) {
-            value = green;
-        } else if (channel === 2) {
-            value = blue;
-        }
-        if (value === 0) {
-            return channel + 1;
-        }
-        if (value === 255) {
-            return channel + 4;
-        }
-        input[12] = 0;
-        input[13] = 0;
-        input[14] = 0;
-        input[15] = 0;
-        return channel + ((draw(DIRECTION_DOMAIN) & 1) === 0 ? 4 : 1);
-    };
+const selectPixelNoise = (key0: number, key1: number, x: number, rgb: number): number => {
+    let hash = imul(rgb ^ key0, 0x9e3779b1) ^ imul(x ^ key1, 0x85ebca6b);
+    hash ^= hash >>> 16;
+    hash = imul(hash, 0x21f0aaad);
+    hash ^= hash >>> 15;
+    hash = imul(hash, 0x735a2d97);
+    hash ^= hash >>> 15;
+    if ((hash & 15) !== 0) {
+        return 0;
+    }
+    const channel = (((hash >>> 4) & 0xffff) * 3) >>> 16;
+    const value = (rgb >>> (channel * 8)) & 255;
+    if (value === 0) {
+        return channel + 1;
+    }
+    if (value === 255) {
+        return channel + 4;
+    }
+    return channel + (hash >>> 31 === 0 ? 4 : 1);
 };
 
 /**
- * Selects the same sparse pointwise adjustment as the reusable readout sampler.
+ * Selects the same sparse pointwise adjustment as the readout loop.
  *
  * @param seed Captured site key.
  * @param x Absolute in-bounds bitmap X coordinate.
@@ -355,41 +308,49 @@ export function sampleCanvasPixel(
     y: number,
     rgb: readonly [number, number, number],
 ): PixelNoise | undefined {
-    const code = createPixelSampler(seed)(x, y, rgb[0], rgb[1], rgb[2]);
+    const rowKey = new intrinsics.Uint32Array(2);
+    deriveRowKey(seed, y, new intrinsics.Uint8Array(5), rowKey);
+    const code = selectPixelNoise(rowKey[0], rowKey[1], x, rgb[0] | (rgb[1] << 8) | (rgb[2] << 16));
     return code === 0 ? undefined : { channel: ((code - 1) % 3) as PixelNoise['channel'], delta: code <= 3 ? 1 : -1 };
 }
 
 /**
  * Adjusts an owned uint8 sRGB readout without touching padding or nonopaque pixels.
  * Each sample uses absolute coordinates and the original RGB of that pixel.
+ * Pixels are read as little-endian words, so big-endian platforms keep native readouts.
  *
  * @param readout Independent returned or scratch bytes and original canvas bounds.
  * @param seed The captured site key shared with other readout APIs.
  */
 export function applyCanvasNoise(readout: CanvasReadout, seed: Uint8Array): void {
-    if (readout.colorSpace !== 'srgb') {
+    if (readout.colorSpace !== 'srgb' || !LITTLE_ENDIAN) {
         return;
     }
-    const sample = createPixelSampler(seed);
+    // ImageData owns its buffer from offset zero, one word per RGBA pixel.
+    const pixels = new intrinsics.Uint32Array(
+        intrinsics.apply(intrinsics.typedBuffer, readout.data, []),
+        0,
+        readout.width * readout.height,
+    );
+    const input = new intrinsics.Uint8Array(5);
+    const rowKey = new intrinsics.Uint32Array(2);
     const startX = intrinsics.max(0, -readout.originX);
     const startY = intrinsics.max(0, -readout.originY);
     const endX = intrinsics.min(readout.width, readout.canvasWidth - readout.originX);
     const endY = intrinsics.min(readout.height, readout.canvasHeight - readout.originY);
     for (let y = startY; y < endY; y += 1) {
-        for (let x = startX; x < endX; x += 1) {
-            const offset = (y * readout.width + x) * 4;
-            if (readout.data[offset + 3] !== 255) {
+        deriveRowKey(seed, readout.originY + y, input, rowKey);
+        const key0 = rowKey[0];
+        const key1 = rowKey[1];
+        let index = y * readout.width + startX;
+        for (let x = startX; x < endX; x += 1, index += 1) {
+            const pixel = pixels[index];
+            if (pixel >>> 24 !== 255) {
                 continue;
             }
-            const code = sample(
-                readout.originX + x,
-                readout.originY + y,
-                readout.data[offset],
-                readout.data[offset + 1],
-                readout.data[offset + 2],
-            );
+            const code = selectPixelNoise(key0, key1, readout.originX + x, pixel & 0xffffff);
             if (code !== 0) {
-                readout.data[offset + ((code - 1) % 3)] += code <= 3 ? 1 : -1;
+                pixels[index] = pixel + (code <= 3 ? 1 : -1) * (1 << (((code - 1) % 3) * 8));
             }
         }
     }

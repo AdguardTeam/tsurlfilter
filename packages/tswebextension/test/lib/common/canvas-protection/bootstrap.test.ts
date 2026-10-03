@@ -10,6 +10,7 @@ import {
     readDocumentPolicyInput,
 } from '../../../../src/lib/common/canvas-protection/bootstrap';
 import { type CanvasBootstrapSnapshot } from '../../../../src/lib/common/canvas-protection/contracts';
+import { deriveInstallationTokens } from '../../../../src/lib/common/canvas-protection/noise';
 
 import { createProtectAllPolicy } from './fixtures/prepared-policies';
 
@@ -55,20 +56,18 @@ describe('document canvas bootstrap', () => {
         }
     });
 
-    it('keeps disabled decisions after enabled duplicate snapshots', () => {
+    it('leaves a disabled document and its global object untouched', () => {
         vi.stubGlobal('CanvasRenderingContext2D', { prototype: { getImageData: (): void => {} } });
         const before = HTMLCanvasElement.prototype.toDataURL;
         const { toString } = Function.prototype;
+        const globals = Reflect.ownKeys(window);
         const disabled = snapshot();
-        bootstrapCanvasProtection({ ...disabled, gates: { ...disabled.gates, protectCanvas: false } });
-        bootstrapCanvasProtection(snapshot());
+        bootstrapCanvasProtection(
+            { ...disabled, gates: { ...disabled.gates, protectCanvas: false } },
+            deriveInstallationTokens(disabled.session),
+        );
         expect(HTMLCanvasElement.prototype.toDataURL).toBe(before);
         expect(Function.prototype.toString).toBe(toString);
-        const descriptor = Object.getOwnPropertyDescriptor(window, Symbol.for('adguard.canvas.installation'))!;
-        expect(descriptor).toMatchObject({ writable: false, enumerable: false, configurable: false });
-        expect(descriptor.value.outcome).toBe('disabled');
-        expect(Object.keys(descriptor.value).sort()).toEqual(['methods', 'outcome']);
-        expect(Object.isFrozen(descriptor.value)).toBe(true);
-        expect(Object.isFrozen(descriptor.value.methods)).toBe(true);
+        expect(Reflect.ownKeys(window)).toEqual(globals);
     });
 });

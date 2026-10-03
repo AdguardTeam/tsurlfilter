@@ -162,9 +162,21 @@ relative to your current working directory by default
 ## Canvas protection
 
 Canvas protection is opt-in for Chromium MV3 and Firefox MV2. It changes
-eligible opaque pixels returned by `getImageData()`, `toDataURL()` and
-`toBlob()` without changing drawing or the original bitmap. Omitted
-configuration keeps existing native behavior.
+eligible opaque pixels returned by `getImageData()`, `toDataURL()`,
+`toBlob()` and `OffscreenCanvas.convertToBlob()` without changing drawing or
+the original bitmap. HTML canvases and the OffscreenCanvas objects used in a
+document are treated alike. Omitted configuration keeps existing native
+behavior.
+
+Only canvases that received rendering are protected. A canvas is marked by
+any 2D context method that can put device-dependent pixels on it: fills,
+strokes, text, `drawImage()` from any source except a video element, and
+any method unknown to the engine. A bitmap renderer marks its canvas when it
+receives an `ImageBitmap`. Rendering on a transferred OffscreenCanvas in the
+document also marks the HTML canvas it came from. State, transform,
+path-building and query methods, `clearRect()` and `putImageData()` do not
+mark. The mark is permanent. A canvas filled only from video frames or
+`putImageData()` keeps native readouts.
 
 Protection requires `settings.filteringEnabled`, `settings.stealthModeEnabled`
 and `settings.stealth.protectCanvas`, plus an explicit prepared policy.
@@ -199,20 +211,16 @@ consumer.
 
 Chromium requires the `userScripts` permission, applicable host permissions,
 user enablement of user scripts and `browser.storage.session`. Firefox requires
-session storage, `VideoFrame`, `VideoColorSpace` and its live registering
-background context. Private windows
+session storage and its live registering background context. Private windows
 also require extension permission.
 
 The shared size domain uses original native HTML canvas attributes after
 argument conversion: each axis ≤32767 and area ≤268435456, inclusively.
 A small crop from an oversized canvas stays native and can expose its native
 fingerprint. Browser allocation/export limits and actual readout-mode gaps
-are separate. Ordinary directly owned 2D and transferred HTML exports are
-protected within coverage. Ordinary non-2D HTML exports remain original-native,
-even for small, fully opaque canvases. Transferred WebGL sources are not part
-of that owner gap: both HTML exports protect one source-coordinate bitmap,
-while demonstrated native layouts/dimensions/clipping can differ. Ordinary
-2D raw/PNG agreement stays exact; direct OffscreenCanvas APIs are not protected.
+are separate. Exports of marked canvases are protected within coverage, and
+their PNG pixels agree with `getImageData()`. WebGL and WebGPU canvases are
+never marked and keep native exports.
 
 Three distinct intervals require care: Chromium access restoration can
 reactivate an old snapshot before reconciliation; running-browser registration
@@ -229,16 +237,31 @@ early protection before their first inline script.
 ### Known bypasses and threat model
 
 Protection covers actual uint8 sRGB readouts and fully opaque pixels only.
-`display-p3` and float16 readouts, transparent or semitransparent pixels, direct
-OffscreenCanvas methods and direct WebGL reads retain native fingerprints.
+`display-p3` and float16 readouts, transparent or semitransparent pixels and
+direct WebGL reads retain native fingerprints. So does an OffscreenCanvas
+used in a worker, including one transferred there: the engine runs only in
+documents. A marked canvas can still be copied natively through `VideoFrame`,
+a WebGL texture or `captureStream()`.
+Big-endian platforms keep all readouts native.
 Scripts can also recover much of the original image by drawing the same
 content at several offsets and comparing the sparse changes. This protection
 does not prevent an adversarial page from obtaining every canvas fingerprint.
 
-Same-origin `about:blank`, `srcdoc` and `blob:` frames can expose unwrapped
-native methods. A page can borrow a method from a newly created child realm
-and use it on a protected canvas. Native registration flags do not close the
-synchronous fresh-iframe case.
+Same-origin `about:blank`, `about:srcdoc` and `blob:` frames never receive
+the engine by themselves. They take the protection and the seed of the
+document that contains them. The engine protects such a frame when the page
+reads `contentWindow` or `contentDocument`, and otherwise right after the
+script that inserted the frame finishes. A script that inserts a frame and
+reads it through `window[index]` within the same synchronous run still gets
+native methods. `data:` frames, sandboxed frames without `allow-same-origin`
+and popup windows are not reached and stay native.
+
+A protected document and the frames that inherit from it share one set of
+draw marks. A same-origin frame with a regular URL runs its own engine
+instance: a canvas drawn with a method borrowed from such a frame stays
+unmarked and native. So does a canvas filled from a video that plays
+`captureStream()` of another canvas. Rendering made before the engine loads
+is not tracked.
 
 Delivered child documents use their own full hostname for site seeding;
 embedded trackers can correlate that noise across top-level sites during one
@@ -254,14 +277,19 @@ startup interval that can correlate outputs across runs and leaves the old
 seed in the browser profile's persisted registration. Earlier documents need
 reload/navigation after reconciliation.
 
-The immutable `window.__adguardCanvasInstallation` and
-`Symbol.for('adguard.canvas.installation')` records are discoverable. They
-expose the installation outcome and callable references, without root or site
-seeds. Native-code masking does not hide the extension's presence or an
-excluded outcome.
+The engine defines nothing on the global object. It replaces existing
+prototype methods and accessors with wrappers that keep the native name,
+length and source text, and it recognizes its own wrappers by private tokens.
+Protection remains detectable: readouts of drawn-on canvases carry noise, and
+an object argument that fails to convert to a number or string throws a
+`TypeError` without the browser's message prefix.
 
-Canvas readouts can be substantially slower, particularly for large images;
-this implementation does not provide a per-frame latency guarantee.
+Readouts of unmarked canvases run at native speed. Protected readouts cost
+extra time proportional to the readout area: one keyed hash per row and a
+32-bit mixer per opaque pixel. `toDataURL()` and `toBlob()` also copy the
+canvas before encoding. Rendering calls on a 2D context pass through a
+tracking hook, and a document-wide `MutationObserver` watches for inserted
+frames. There is no per-frame latency guarantee.
 
 ## CLI
 

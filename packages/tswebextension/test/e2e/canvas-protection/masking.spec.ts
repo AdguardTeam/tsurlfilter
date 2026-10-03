@@ -1,64 +1,11 @@
 import { describe, expect, test } from 'vitest';
-import { server } from 'vitest/browser';
 
 import { createCanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
 import { type CanvasBootstrapSnapshot } from '../../../src/lib/common/canvas-protection/contracts';
 import { deriveSiteSeed } from '../../../src/lib/common/canvas-protection/noise';
 
+import { type Realm, snapshot, withRealm } from './generated-realm';
 import { referenceSourceNoise } from './noise-reference';
-
-type Realm = Window & typeof globalThis;
-
-/**
- * Creates trusted current delivery state.
- *
- * @returns A fully enabled candidate policy.
- */
-const snapshot = (): CanvasBootstrapSnapshot => ({
-    session: { root: '0123456789abcdef0123456789abcdef', generation: 'abcdef0123456789abcdef0123456789' },
-    gates: { filteringEnabled: true, stealthModeEnabled: true, protectCanvas: true },
-    policy: {
-        schemaVersion: 1,
-        revision: 'current',
-        browser: server.browser === 'firefox' ? 'firefox-mv2' : 'chromium-mv3',
-        selectors: { matches: ['<all_urls>'], excludeMatches: [] },
-        ownFrameExclusions: [],
-        documentExclusions: [],
-        unavailableConditions: [],
-    },
-});
-
-/**
- * Runs a fresh generated bundle in an HTTP document with no extension APIs.
- *
- * @param body Assertions against a genuinely separate realm.
- * @param url Actual native URL of the fresh document.
- */
-const withRealm = async (
-    body: (realm: Realm) => Promise<void> | void,
-    url = new URL('./empty.html', import.meta.url).href,
-): Promise<void> => {
-    const frame = document.createElement('iframe');
-    frame.width = '64';
-    frame.height = '64';
-    frame.src = url;
-    let watchdog: ReturnType<typeof setTimeout>;
-    const loaded = new Promise<void>((resolve, reject) => {
-        watchdog = setTimeout(() => {
-            reject(new Error(`Iframe load missing: ${frame.contentWindow?.location.href} `
-                + `readyState=${frame.contentDocument?.readyState}`));
-        }, 3000);
-        frame.onload = (): void => { clearTimeout(watchdog); resolve(); };
-    });
-    document.body.appendChild(frame);
-    try {
-        await loaded;
-        await body(frame.contentWindow as Realm);
-    } finally {
-        clearTimeout(watchdog!);
-        frame.remove();
-    }
-};
 
 /**
  * Draws an ordinary opaque bitmap and captures its original readout.
@@ -78,6 +25,16 @@ const draw = (realm: Realm): { context: CanvasRenderingContext2D; original: Imag
 };
 
 /**
+ * Repeats the fixture fill once the engine is loaded: rendering made earlier is not tracked.
+ *
+ * @param fixture Canvas drawn before installation.
+ * @param fixture.context Its 2D context, still holding the fixture fill style.
+ */
+const repaint = ({ context }: { context: CanvasRenderingContext2D }): void => {
+    context.fillRect(0, 0, 32, 16);
+};
+
+/**
  * Computes an independent expected bitmap for the actual complete host.
  *
  * @param realm Delivered document.
@@ -90,46 +47,58 @@ const expected = (realm: Realm, original: ImageData, state: CanvasBootstrapSnaps
     Array.from(referenceSourceNoise(original, deriveSiteSeed(state.session, realm.location.hostname)))
 );
 
+/**
+ * Lists the own keys of a global object. Firefox orders them by first use, so they are sorted.
+ *
+ * @param realm Document's global object.
+ *
+ * @returns Sorted own string and symbol keys.
+ */
+const globalKeys = (realm: Realm): string[] => Reflect.ownKeys(realm).map(String).sort();
+
 describe('generated canvas bootstrap and native masking', () => {
-    test.each(['disabled', 'excluded', 'unsupported'] as const)(
-        'keeps %s decisions after enabled duplicate snapshots',
-        async (outcome) => {
-            await withRealm((realm) => {
-                const state = snapshot();
-                const before = realm.HTMLCanvasElement.prototype.toDataURL;
-                const { toString } = realm.Function.prototype;
-                if (outcome === 'disabled') {
-                    realm.eval(createCanvasProtectionCode({
-                        ...state, gates: { ...state.gates, protectCanvas: false },
-                    }));
-                } else if (outcome === 'excluded') {
-                    realm.eval(createCanvasProtectionCode({
-                        ...state,
-                        policy: {
-                            ...state.policy,
-                            ownFrameExclusions: [{
-                                requestTypes: ['document', 'subdocument'],
-                                condition: {
-                                    type: 'url-regexp', input: 'frame-url', pattern: 'empty\\.html', flags: '',
-                                },
-                            }],
-                        },
-                    }));
-                } else {
-                    realm.eval(createCanvasProtectionCode(state));
-                }
+    test.each(['disabled', 'excluded', 'unsupported'] as const)('leaves a %s document untouched', async (outcome) => {
+        await withRealm((realm) => {
+            const state = snapshot();
+            const globals = globalKeys(realm);
+            const methods = (): Function[] => [
+                realm.HTMLCanvasElement.prototype.toDataURL,
+                realm.HTMLCanvasElement.prototype.toBlob,
+                realm.CanvasRenderingContext2D.prototype.getImageData,
+                realm.CanvasRenderingContext2D.prototype.fillText,
+                Object.getOwnPropertyDescriptor(realm.HTMLIFrameElement.prototype, 'contentWindow')!.get!,
+                realm.Function.prototype.toString,
+            ];
+            const before = methods();
+            if (outcome === 'disabled') {
+                realm.eval(createCanvasProtectionCode({
+                    ...state, gates: { ...state.gates, protectCanvas: false },
+                }));
+            } else if (outcome === 'excluded') {
+                realm.eval(createCanvasProtectionCode({
+                    ...state,
+                    policy: {
+                        ...state.policy,
+                        ownFrameExclusions: [{
+                            requestTypes: ['document', 'subdocument'],
+                            condition: {
+                                type: 'url-regexp', input: 'frame-url', pattern: 'empty\\.html', flags: '',
+                            },
+                        }],
+                    },
+                }));
+            } else {
                 realm.eval(createCanvasProtectionCode(state));
-                const record = Reflect.get(realm, Symbol.for('adguard.canvas.installation'));
-                expect(record.outcome).toBe(outcome);
-                expect(realm.HTMLCanvasElement.prototype.toDataURL).toBe(before);
-                expect(realm.Function.prototype.toString).toBe(toString);
-            }, outcome === 'unsupported' ? 'about:blank' : undefined);
-        },
-    );
+            }
+            methods().forEach((method, index) => expect(method).toBe(before[index]));
+            expect(globalKeys(realm)).toEqual(globals);
+        }, outcome === 'unsupported' ? 'about:blank' : undefined);
+    });
 
     test('preserves callable surface and both native stringification paths', async () => {
         await withRealm((realm) => {
             const state = snapshot();
+            const globals = globalKeys(realm);
             const originals = [realm.HTMLCanvasElement.prototype.toDataURL,
                 realm.HTMLCanvasElement.prototype.toBlob, realm.CanvasRenderingContext2D.prototype.getImageData];
             const descriptors = ['toDataURL', 'toBlob'].map((name) => (
@@ -139,6 +108,7 @@ describe('generated canvas bootstrap and native masking', () => {
             const representations = originals.map((method) => Reflect.apply(originalToString, method, []));
             const fixture = draw(realm);
             realm.eval(createCanvasProtectionCode(state));
+            repaint(fixture);
             const wrappers = [realm.HTMLCanvasElement.prototype.toDataURL,
                 realm.HTMLCanvasElement.prototype.toBlob, realm.CanvasRenderingContext2D.prototype.getImageData];
             wrappers.forEach((method, index) => {
@@ -160,25 +130,28 @@ describe('generated canvas bootstrap and native masking', () => {
             expect(Array.from(fixture.context.getImageData(0, 0, 32, 16).data)).toEqual(
                 expected(realm, fixture.original, state),
             );
-            expect(Reflect.ownKeys(Reflect.get(realm, Symbol.for('adguard.canvas.installation')))).toEqual(
-                ['outcome', 'methods'],
-            );
+            expect(globalKeys(realm)).toEqual(globals);
         });
     });
 
-    test('keeps installed protection after excluded duplicate snapshots', async () => {
+    test('serves a repeated delivery with the existing wrappers', async () => {
         await withRealm((realm) => {
             const state = snapshot();
             const fixture = draw(realm);
             realm.eval(createCanvasProtectionCode(state));
-            const wrapper = realm.CanvasRenderingContext2D.prototype.getImageData;
+            repaint(fixture);
+            const methods = (): Function[] => [
+                realm.CanvasRenderingContext2D.prototype.getImageData,
+                realm.CanvasRenderingContext2D.prototype.fillText,
+                realm.HTMLCanvasElement.prototype.toDataURL,
+                realm.Function.prototype.toString,
+            ];
+            const wrappers = methods();
             const bytes = Array.from(fixture.context.getImageData(0, 0, 32, 16).data);
-            realm.eval(createCanvasProtectionCode({
-                ...state,
-                gates: { ...state.gates, protectCanvas: false },
-                session: { root: 'ffffffffffffffffffffffffffffffff', generation: 'changed' },
-            }));
-            expect(realm.CanvasRenderingContext2D.prototype.getImageData).toBe(wrapper);
+            expect(bytes).toEqual(expected(realm, fixture.original, state));
+            realm.eval(createCanvasProtectionCode(state));
+            realm.eval(createCanvasProtectionCode({ ...state, gates: { ...state.gates, protectCanvas: false } }));
+            methods().forEach((method, index) => expect(method).toBe(wrappers[index]));
             expect(Array.from(fixture.context.getImageData(0, 0, 32, 16).data)).toEqual(bytes);
         });
     });
@@ -187,49 +160,13 @@ describe('generated canvas bootstrap and native masking', () => {
         await withRealm(async (realm) => {
             const state = snapshot();
             const fixture = draw(realm);
-            const transferred = realm.document.createElement('canvas');
-            transferred.width = 32;
-            transferred.height = 16;
-            realm.document.body.appendChild(transferred);
-            const offscreen = transferred.transferControlToOffscreen();
-            const offscreenContext = offscreen.getContext('2d')!;
-            offscreenContext.fillStyle = 'rgb(71,123,189)';
-            offscreenContext.fillRect(0, 0, 32, 8);
-            offscreenContext.fillStyle = 'rgba(71,123,189,0.5)';
-            offscreenContext.fillRect(0, 8, 32, 8);
-            expect(realm.document.visibilityState).toBe('visible');
-            const readiness = realm.document.createElement('canvas');
-            readiness.width = 32;
-            readiness.height = 16;
-            const readinessContext = readiness.getContext('2d')!;
-            let previous: number[] | undefined;
-            let ready = false;
-            for (let attempt = 0; attempt < 8; attempt += 1) {
-                // eslint-disable-next-line no-await-in-loop -- Verify successive committed native bitmap snapshots.
-                await new Promise<void>((resolve) => realm.requestAnimationFrame(() => (
-                    realm.requestAnimationFrame(() => resolve())
-                )));
-                readinessContext.clearRect(0, 0, 32, 16);
-                readinessContext.drawImage(transferred, 0, 0);
-                const pixels = Array.from(readinessContext.getImageData(0, 0, 32, 16).data);
-                const prior = previous;
-                const committed = pixels.every((value, offset) => (
-                    offset % 4 !== 3 || value === (offset < 32 * 8 * 4 ? 255 : 128)
-                ));
-                if (committed && prior && pixels.every((value, offset) => value === prior[offset])) {
-                    ready = true;
-                    break;
-                }
-                previous = pixels;
-            }
-            expect(ready).toBe(true);
-            const sourceBefore = Array.from(offscreenContext.getImageData(0, 0, 32, 16).data);
-            const nativeTransferred = transferred.toDataURL();
-            const originalOffscreenRead = realm.OffscreenCanvasRenderingContext2D.prototype.getImageData;
             const originalRead = realm.CanvasRenderingContext2D.prototype.getImageData;
             const originalExport = realm.HTMLCanvasElement.prototype.toDataURL;
             const wanted = expected(realm, fixture.original, state);
             realm.eval(createCanvasProtectionCode(state));
+            repaint(fixture);
+            const untracked = realm.document.createElement('canvas').getContext('2d')!;
+            const video = realm.document.createElement('video');
             const leaks: string[] = [];
             const NativeProxy = realm.Proxy;
             const replace = (owner: object, key: PropertyKey, label: string): void => {
@@ -246,7 +183,7 @@ describe('generated canvas bootstrap and native masking', () => {
                 }));
             };
             [realm.Uint8Array, realm.Uint32Array, realm.DataView, realm.TextEncoder,
-                realm.Proxy, realm.WeakMap, realm.VideoFrame].forEach((constructor) => (
+                realm.Proxy, realm.WeakMap, realm.WeakSet].forEach((constructor) => (
                 replace(realm, constructor.name, constructor.name)
             ));
             const typed = Object.getPrototypeOf(realm.Uint8Array.prototype);
@@ -273,11 +210,6 @@ describe('generated canvas bootstrap and native masking', () => {
                     configurable: true, get: (): string => { leaks.push('ImageData-colorSpace'); return 'srgb'; },
                 });
             }
-            ['format', 'colorSpace', 'displayWidth', 'displayHeight'].forEach((key) => (
-                replaceGetter(realm.VideoFrame.prototype, key, `frame-${key}`)
-            ));
-            replace(realm.VideoFrame.prototype, 'close', 'frame-close');
-            replaceGetter(realm.VideoColorSpace.prototype, 'primaries', 'frame-primaries');
             replace(realm.DataView.prototype, 'setUint32', 'DataView-write');
             const arrayDescriptors = [Symbol.iterator, 'map', 'find', 'push'].map((key) => ({
                 key, descriptor: Object.getOwnPropertyDescriptor(realm.Array.prototype, key)!,
@@ -286,13 +218,9 @@ describe('generated canvas bootstrap and native masking', () => {
             ['map', 'find', 'push'].forEach((key) => replace(realm.Array.prototype, key, `array-${key}`));
             ['floor', 'min', 'max', 'trunc'].forEach((key) => replace(realm.Math, key, `Math-${key}`));
             ['get', 'set'].forEach((key) => replace(realm.WeakMap.prototype, key, `WeakMap-${key}`));
+            ['has', 'add'].forEach((key) => replace(realm.WeakSet.prototype, key, `WeakSet-${key}`));
             replace(realm.Reflect, 'apply', 'Reflect-apply');
             replace(realm.CanvasRenderingContext2D.prototype, 'putImageData', 'pixels-write');
-            ['drawImage', 'getImageData', 'putImageData'].forEach((key) => (
-                replace(realm.OffscreenCanvasRenderingContext2D.prototype, key, `offscreen-${key}`)
-            ));
-            replace(realm.OffscreenCanvas.prototype, 'getContext', 'offscreen-context');
-            replace(realm.HTMLCanvasElement.prototype, 'transferControlToOffscreen', 'private-transfer');
             replace(realm.HTMLCanvasElement.prototype, 'getContext', 'owner-query');
             const imageData = Object.getOwnPropertyDescriptor(realm.ImageData.prototype, 'data')!;
             Object.defineProperty(realm.ImageData.prototype, 'data', {
@@ -309,17 +237,17 @@ describe('generated canvas bootstrap and native masking', () => {
                 configurable: true,
                 value: (): never => { leaks.push('inherited-proxy-trap'); throw new Error('trap'); },
             });
+            untracked.drawImage(video, 0, 0);
+            untracked.fillRect(0, 0, 1, 1);
             const image = fixture.context.getImageData(0, 0, 32, 16);
             const actual = Array.from(Reflect.apply(imageData.get!, image, []) as Uint8ClampedArray);
             expect(actual).toEqual(wanted);
-            fixture.context.canvas.toDataURL();
-            const protectedTransferred = transferred.toDataURL();
-            const blobPromise = new Promise<Blob>((resolve) => transferred.toBlob((blob) => resolve(blob!)));
+            const protectedURL = fixture.context.canvas.toDataURL();
+            const blobPromise = new Promise<Blob>((resolve) => (
+                fixture.context.canvas.toBlob((blob) => resolve(blob!))
+            ));
             fixture.context.getImageData.toString();
             realm.Function.prototype.toString.call(fixture.context.canvas.toDataURL);
-            realm.eval(createCanvasProtectionCode({
-                ...state, gates: { ...state.gates, protectCanvas: false },
-            }));
             const nativeImage = Reflect.apply(originalRead, fixture.context, [0, 0, 32, 16]);
             expect(Array.from(Reflect.apply(imageData.get!, nativeImage, []) as Uint8ClampedArray)).toEqual(
                 Array.from(Reflect.apply(imageData.get!, fixture.original, []) as Uint8ClampedArray),
@@ -343,13 +271,8 @@ describe('generated canvas bootstrap and native masking', () => {
                 bitmap.close();
                 return context.getImageData(0, 0, canvas.width, canvas.height);
             };
-            const baseline = await decode(nativeTransferred);
-            const transferredExpected = expected(realm, baseline, state);
-            expect(Array.from((await decode(protectedTransferred)).data)).toEqual(transferredExpected);
-            expect(Array.from((await decode(protectedBlob)).data)).toEqual(transferredExpected);
-            expect(Array.from(Reflect.apply(originalOffscreenRead, offscreenContext, [0, 0, 32, 16]).data)).toEqual(
-                sourceBefore,
-            );
+            expect(Array.from((await decode(protectedURL)).data)).toEqual(wanted);
+            expect(Array.from((await decode(protectedBlob)).data)).toEqual(wanted);
         });
     });
 
@@ -397,6 +320,7 @@ describe('generated canvas bootstrap and native masking', () => {
                 },
             });
             realm.eval(createCanvasProtectionCode(state));
+            repaint(fixture);
             let conversions = 0;
             let privateCalls = 0;
             const originalUint32 = realm.Uint32Array;
@@ -455,126 +379,19 @@ describe('generated canvas bootstrap and native masking', () => {
         });
     });
 
-    test.each(['disabled', 'excluded', 'unsupported', 'installed'] as const)(
-        'retains sealed %s installation after registry and global replacements',
-        async (outcome) => {
-            await withRealm((realm) => {
-                const state = snapshot();
-                const fixture = draw(realm);
-                let initial = state;
-                if (outcome === 'disabled') {
-                    initial = { ...state, gates: { ...state.gates, protectCanvas: false } };
-                } else if (outcome === 'excluded') {
-                    initial = {
-                        ...state,
-                        policy: {
-                            ...state.policy,
-                            ownFrameExclusions: [{
-                                requestTypes: ['document', 'subdocument'] as ('document' | 'subdocument')[],
-                                condition: {
-                                    type: 'url-regexp' as const,
-                                    input: 'frame-url' as const,
-                                    pattern: 'empty\\.html',
-                                    flags: '',
-                                },
-                            }],
-                        },
-                    };
-                }
-                realm.eval(createCanvasProtectionCode(initial));
-                const key = realm.Symbol.for('adguard.canvas.installation');
-                const record = Reflect.get(realm, key);
-                const before = [realm.HTMLCanvasElement.prototype.toDataURL,
-                    realm.HTMLCanvasElement.prototype.toBlob, realm.CanvasRenderingContext2D.prototype.getImageData,
-                    realm.Function.prototype.toString];
-                const expectedPixels = outcome === 'installed'
-                    ? expected(realm, fixture.original, state) : Array.from(fixture.original.data);
-                const NativeProxy = realm.Proxy;
-                const originalSymbol = realm.Symbol;
-                let callbacks = 0;
-                realm.Symbol.for = (name: string): symbol => { callbacks += 1; return originalSymbol(name); };
-                const constructors = [
-                    'Object', 'TextEncoder', 'Uint8Array', 'Uint32Array', 'WeakMap', 'Proxy',
-                ] as const;
-                constructors.forEach((name) => {
-                    const original = realm[name];
-                    Reflect.set(realm, name, new NativeProxy(original, {
-                        get: (target, property, receiver): unknown => {
-                            callbacks += 1;
-                            return Reflect.get(target, property, receiver);
-                        },
-                        construct: (target, args, newTarget): object => {
-                            callbacks += 1;
-                            return Reflect.construct(target, args, newTarget);
-                        },
-                    }));
-                });
-                const parse = realm.Number.parseInt;
-                realm.Number.parseInt = (...args: Parameters<typeof Number.parseInt>): number => {
-                    callbacks += 1;
-                    return Reflect.apply(parse, undefined, args);
-                };
-                Reflect.set(realm, 'globalThis', new NativeProxy({}, {
-                    get: (): undefined => { callbacks += 1; return undefined; },
-                }));
-                const next = {
-                    ...state,
-                    session: {
-                        root: 'fedcba9876543210fedcba9876543210', generation: 'different-generation',
-                    },
-                };
-                realm.eval(createCanvasProtectionCode(next));
-                expect(callbacks).toBe(0);
-                expect([realm.HTMLCanvasElement.prototype.toDataURL,
-                    realm.HTMLCanvasElement.prototype.toBlob, realm.CanvasRenderingContext2D.prototype.getImageData,
-                    realm.Function.prototype.toString]).toEqual(before);
-                expect(Reflect.get(realm, key)).toBe(record);
-                expect(record.outcome).toBe(outcome);
-                expect(Array.from(fixture.context.getImageData(0, 0, 32, 16).data)).toEqual(expectedPixels);
-                const alias = Object.getOwnPropertyDescriptor(realm, '__adguardCanvasInstallation')!;
-                expect(alias).toEqual({
-                    value: record, enumerable: false, writable: false, configurable: false,
-                });
-                expect(Object.getOwnPropertyDescriptor(realm, key)).toEqual(alias);
-                expect(Reflect.ownKeys(record)).toEqual(['outcome', 'methods']);
-                expect(Object.isFrozen(record)).toBe(true);
-                expect(Object.isFrozen(record.methods)).toBe(true);
-            }, outcome === 'unsupported' ? 'about:blank' : undefined);
-        },
-    );
-
-    test('captures child policy independently of forged and replayed parent records', async () => {
-        let replay: unknown;
+    test('ignores installation markers defined by a page', async () => {
         await withRealm((realm) => {
             const state = snapshot();
-            realm.eval(createCanvasProtectionCode({ ...state, gates: { ...state.gates, protectCanvas: false } }));
-            replay = Reflect.get(realm, realm.Symbol.for('adguard.canvas.installation'));
+            const fixture = draw(realm);
+            const forged = Object.freeze({ outcome: 'installed', methods: Object.freeze({}) });
+            Object.defineProperty(realm, '__adguardCanvasInstallation', { value: forged });
+            Object.defineProperty(realm, realm.Symbol.for('adguard.canvas.installation'), { value: forged });
+            realm.eval(createCanvasProtectionCode(state));
+            repaint(fixture);
+            expect(Array.from(fixture.context.getImageData(0, 0, 32, 16).data)).toEqual(
+                expected(realm, fixture.original, state),
+            );
         });
-        let callbacks = 0;
-        Object.defineProperty(window, '__adguardCanvasInstallation', { configurable: true, value: replay });
-        Object.defineProperty(window, 'adguardCanvasContext', {
-            configurable: true,
-            get: (): never => { callbacks += 1; throw new Error('parent marker must remain unread'); },
-        });
-        try {
-            await withRealm((realm) => {
-                const state = snapshot();
-                const fixture = draw(realm);
-                realm.eval(createCanvasProtectionCode(state));
-                const own = Reflect.get(realm, realm.Symbol.for('adguard.canvas.installation'));
-                expect(own).not.toBe(replay);
-                expect(own.outcome).toBe('installed');
-                expect(Array.from(fixture.context.getImageData(0, 0, 32, 16).data)).toEqual(
-                    expected(realm, fixture.original, state),
-                );
-                expect(callbacks).toBe(0);
-                expect(Reflect.set(realm, '__adguardCanvasInstallation', replay)).toBe(false);
-                expect(Reflect.get(realm, '__adguardCanvasInstallation')).toBe(own);
-            });
-        } finally {
-            Reflect.deleteProperty(window, '__adguardCanvasInstallation');
-            Reflect.deleteProperty(window, 'adguardCanvasContext');
-        }
     });
 
     test('keeps optional private state away from inherited accessors', async () => {
@@ -582,6 +399,7 @@ describe('generated canvas bootstrap and native masking', () => {
             const state = snapshot();
             const fixture = draw(realm);
             realm.eval(createCanvasProtectionCode(state));
+            repaint(fixture);
             const stored = new WeakMap<object, Map<string, unknown>>();
             const calls: string[] = [];
             ['readout', 'originX', 'originY', 'canvasWidth', 'canvasHeight', 'exportContext',
@@ -629,6 +447,7 @@ describe('generated canvas bootstrap and native masking', () => {
             const nativeBlob = realm.HTMLCanvasElement.prototype.toBlob;
             const nativeRead = realm.CanvasRenderingContext2D.prototype.getImageData;
             realm.eval(createCanvasProtectionCode(state));
+            repaint(fixture);
             const calls: string[] = [];
             let inheritedDeliveries = 0;
             let inheritedConversions = 0;
@@ -704,6 +523,90 @@ describe('generated canvas bootstrap and native masking', () => {
             bitmap.close();
             expect(Array.from(context.getImageData(0, 0, 32, 16).data)).toEqual(pixels);
             expect(inheritedDeliveries).toBe(0);
+        });
+    });
+
+    test('converts object coordinates once and in order, and noises the converted rectangle', async () => {
+        await withRealm((realm) => {
+            const state = snapshot();
+            const fixture = draw(realm);
+            realm.eval(createCanvasProtectionCode(state));
+            repaint(fixture);
+            const log: string[] = [];
+            const coordinate = (name: string, value: number): object => ({
+                valueOf: (): number => { log.push(name); return value; },
+            });
+            const crop = fixture.context.getImageData(
+                coordinate('sx', 8.9) as unknown as number,
+                coordinate('sy', 4) as unknown as number,
+                coordinate('sw', 16) as unknown as number,
+                coordinate('sh', 8) as unknown as number,
+            );
+            expect(log).toEqual(['sx', 'sy', 'sw', 'sh']);
+            const full = expected(realm, fixture.original, state);
+            const wanted: number[] = [];
+            for (let y = 4; y < 12; y += 1) {
+                wanted.push(...full.slice((y * 32 + 8) * 4, (y * 32 + 24) * 4));
+            }
+            expect(Array.from(crop.data)).toEqual(wanted);
+        });
+    });
+
+    test('leaves primitive argument errors to the browser and stops at a rejected coordinate', async () => {
+        await withRealm((realm) => {
+            const natives = {
+                getImageData: realm.CanvasRenderingContext2D.prototype.getImageData,
+                toDataURL: realm.HTMLCanvasElement.prototype.toDataURL,
+                toBlob: realm.HTMLCanvasElement.prototype.toBlob,
+            };
+            const fixture = draw(realm);
+            realm.eval(createCanvasProtectionCode(snapshot()));
+            repaint(fixture);
+            const { context } = fixture;
+            const failure = (method: Function, receiver: object, args: unknown[]): Error => {
+                try {
+                    Reflect.apply(method, receiver, args);
+                } catch (error) {
+                    expect(error).toBeInstanceOf(realm.TypeError);
+                    return error as Error;
+                }
+                throw new Error('Expected a rejected argument');
+            };
+            let later = 0;
+            const counted = { valueOf: (): number => { later += 1; return 1; } };
+            [[Symbol('x'), 0, 1, 1], [0, 1n, 1, 1], [NaN, counted, 1, 1], [0, 2 ** 31, counted, 1]].forEach((args) => {
+                expect(failure(context.getImageData, context, args).message).toBe(
+                    failure(natives.getImageData, context, args).message,
+                );
+            });
+            expect(later).toBe(0);
+            expect(failure(context.canvas.toDataURL, context.canvas, [Symbol('type')]).message).toBe(
+                failure(natives.toDataURL, context.canvas, [Symbol('type')]).message,
+            );
+            const callback = (): void => { throw new Error('Unexpected callback'); };
+            expect(failure(context.canvas.toBlob, context.canvas, [callback, Symbol('type')]).message).toBe(
+                failure(natives.toBlob, context.canvas, [callback, Symbol('type')]).message,
+            );
+        });
+    });
+
+    test('throws a realm TypeError when an object argument converts to no number or string', async () => {
+        await withRealm(async (realm) => {
+            const fixture = draw(realm);
+            realm.eval(createCanvasProtectionCode(snapshot()));
+            repaint(fixture);
+            const { context } = fixture;
+            let conversions = 0;
+            let callbacks = 0;
+            const toSymbol = { [Symbol.toPrimitive]: (): symbol => { conversions += 1; return Symbol('x'); } };
+            const toObject = { toString: (): object => { conversions += 1; return {}; }, valueOf: undefined };
+            expect(() => context.getImageData(toSymbol as unknown as number, 0, 1, 1)).toThrow(realm.TypeError);
+            expect(() => context.canvas.toDataURL(toSymbol as unknown as string)).toThrow(realm.TypeError);
+            expect(() => context.canvas.toBlob(() => { callbacks += 1; }, toObject as unknown as string))
+                .toThrow(realm.TypeError);
+            expect(conversions).toBe(3);
+            await new Promise((resolve) => { setTimeout(resolve, 20); });
+            expect(callbacks).toBe(0);
         });
     });
 });

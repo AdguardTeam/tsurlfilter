@@ -13,9 +13,9 @@ import { createProtectAllPolicy } from './fixtures/prepared-policies';
  *
  * @param snapshot Trusted serialized bootstrap state.
  *
- * @returns The immutable installation outcome.
+ * @returns Whether the delivery left the document's global keys and readout unchanged.
  */
-const execute = (snapshot: CanvasBootstrapSnapshot): unknown => {
+const execute = (snapshot: CanvasBootstrapSnapshot): boolean => {
     const frame = document.createElement('iframe');
     document.body.appendChild(frame);
     try {
@@ -26,9 +26,12 @@ const execute = (snapshot: CanvasBootstrapSnapshot): unknown => {
                 prototype: { getImageData: (): void => {} },
             },
         });
+        const globals = Reflect.ownKeys(realm);
+        const { getImageData } = realm.CanvasRenderingContext2D.prototype;
         realm.eval(createCanvasProtectionCode(snapshot));
         expect(Reflect.get(realm, 'injected')).toBeUndefined();
-        return Reflect.get(realm, Symbol.for('adguard.canvas.installation'));
+        return realm.CanvasRenderingContext2D.prototype.getImageData === getImageData
+            && Reflect.ownKeys(realm).every((key, index) => key === globals[index]);
     } finally {
         frame.remove();
     }
@@ -38,12 +41,12 @@ describe('generated canvas delivery code', () => {
     it('executes generated bundle with serialized hostile strings', () => {
         const text = '"\');globalThis.injected=true;//</script>\u2028\u2029';
         const policy = createProtectAllPolicy('chromium-mv3', text);
-        const outcome = execute({
+        const untouched = execute({
             session: { root: '0123456789abcdef0123456789abcdef', generation: text },
             gates: { filteringEnabled: false, stealthModeEnabled: true, protectCanvas: true },
             policy: { ...policy, unavailableConditions: [text] },
         });
-        expect(outcome).toMatchObject({ outcome: 'disabled' });
+        expect(untouched).toBe(true);
     });
     it.each([false, true])('keeps disabled or excluded readouts native across duplicate delivery (%s)', (enabled) => {
         const policy = createProtectAllPolicy('chromium-mv3', '";globalThis.injected=true;//</script>\u2028\u2029');

@@ -1,17 +1,29 @@
 import { type CanvasBootstrapSnapshot } from './contracts';
 import { CANVAS_ENGINE_SOURCE } from './generated/engine-source';
+import { deriveInstallationTokens } from './noise';
+
+/**
+ * Serializes trusted state as a script-safe JavaScript literal.
+ *
+ * @param value Trusted JSON-compatible state.
+ *
+ * @returns Literal that cannot close a script element or break a line.
+ */
+const serialize = (value: unknown): string => JSON.stringify(value).replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 
 /**
  * Generates a private standalone engine with safely serialized trusted state.
+ * The installation tokens are derived here, so a document that only reuses
+ * existing wrappers never handles the root in the page.
  *
  * @param snapshot Browser-acknowledged seed and prepared policy.
  *
  * @returns Code ready for a synchronous page-world registration.
  */
 export function createCanvasProtectionCode(snapshot: CanvasBootstrapSnapshot): string {
-    const serialized = JSON.stringify(snapshot).replace(/</g, '\\u003c')
-        .replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
-    return `(()=>{if(this.__adguardCanvasInstallation)return;
+    const tokens = deriveInstallationTokens(snapshot.session);
+    return `(()=>{
 ${CANVAS_ENGINE_SOURCE}
-canvasEngine.bootstrapCanvasProtection(${serialized});})();`;
+canvasEngine.bootstrapCanvasProtection(${serialize(snapshot)},${serialize(tokens)});})();`;
 }

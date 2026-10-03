@@ -66,6 +66,18 @@ export const referenceSipHash = (key: Uint8Array, bytes: Uint8Array): bigint => 
 };
 
 /**
+ * Multiplies two words modulo 2^32 with BigInt, independently of `Math.imul`.
+ *
+ * @param left First word.
+ * @param right Second word.
+ *
+ * @returns Unsigned 32-bit product.
+ */
+const multiply32 = (left: number, right: number): number => (
+    Number((BigInt(left >>> 0) * BigInt(right >>> 0)) & 0xffffffffn)
+);
+
+/**
  * Constructs the expected sparse source bitmap without a protected canvas readout.
  *
  * @param source Original source pixels at the native snapshot boundary.
@@ -75,42 +87,38 @@ export const referenceSipHash = (key: Uint8Array, bytes: Uint8Array): bigint => 
  */
 export const referenceSourceNoise = (source: ImageData, seed: Uint8Array): Uint8ClampedArray => {
     const output = new Uint8ClampedArray(source.data);
-    const message = new Uint8Array(16);
+    const message = new Uint8Array(5);
     const view = new DataView(message.buffer);
-    const draw = (domain: number): number => {
-        message[0] = domain;
-        return Number(referenceSipHash(seed, message) & 0xffffffffn);
-    };
+    message[0] = 4;
     for (let y = 0; y < source.height; y += 1) {
+        view.setUint32(1, y, true);
+        const digest = referenceSipHash(seed, message);
+        const key0 = Number(digest & 0xffffffffn);
+        const key1 = Number(digest >> 32n);
         for (let x = 0; x < source.width; x += 1) {
             const offset = (y * source.width + x) * 4;
             if (source.data[offset + 3] !== 255) {
                 continue;
             }
-            view.setUint32(1, x, true);
-            view.setUint32(5, y, true);
-            message.set(source.data.subarray(offset, offset + 3), 9);
-            view.setUint32(12, 0, true);
-            if ((draw(1) & 15) !== 0) {
+            const rgb = source.data[offset] + source.data[offset + 1] * 0x100 + source.data[offset + 2] * 0x10000;
+            let hash = (multiply32(rgb ^ key0, 0x9e3779b1) ^ multiply32(x ^ key1, 0x85ebca6b)) >>> 0;
+            hash = (hash ^ (hash >>> 16)) >>> 0;
+            hash = multiply32(hash, 0x21f0aaad);
+            hash = (hash ^ (hash >>> 15)) >>> 0;
+            hash = multiply32(hash, 0x735a2d97);
+            hash = (hash ^ (hash >>> 15)) >>> 0;
+            if (hash % 16 !== 0) {
                 continue;
             }
-            let channelWord = draw(2);
-            let counter = 0;
-            while (channelWord === 0xffffffff) {
-                counter += 1;
-                view.setUint32(12, counter, true);
-                channelWord = draw(2);
-            }
-            const channel = channelWord % 3;
+            const channel = Math.floor(((Math.floor(hash / 16) % 0x10000) * 3) / 0x10000);
             const value = source.data[offset + channel];
-            view.setUint32(12, 0, true);
             let direction: number;
             if (value === 0) {
                 direction = 1;
             } else if (value === 255) {
                 direction = -1;
             } else {
-                direction = (draw(3) & 1) === 0 ? -1 : 1;
+                direction = hash < 0x80000000 ? -1 : 1;
             }
             output[offset + channel] += direction;
         }

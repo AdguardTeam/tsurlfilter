@@ -29,12 +29,6 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
         if (typeof browser.contentScripts?.register !== 'function') {
             return { status: 'unavailable', reason: 'Firefox contentScripts.register is unavailable' };
         }
-        if (typeof VideoFrame !== 'function' || typeof VideoColorSpace !== 'function') {
-            return {
-                status: 'unavailable',
-                reason: 'Firefox VideoFrame and VideoColorSpace are required for canvas exports',
-            };
-        }
         return { status: 'available', value: this.registrations.size > 0 };
     }
 

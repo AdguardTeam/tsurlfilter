@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { type CanvasReadout, type ProtectionSession } from '../../../../src/lib/common/canvas-protection/contracts';
 import {
     applyCanvasNoise,
+    deriveInstallationTokens,
     deriveSiteSeed,
     sampleCanvasPixel,
     sipHash24,
@@ -275,6 +276,15 @@ describe('canvas protection noise', () => {
             }
         }
         expect(unchangedTinyImages).toBeGreaterThan(0);
+    });
+
+    it('derives installation tokens from the root alone', () => {
+        const tokens = deriveInstallationTokens(session);
+        expect(new Set(Object.values(tokens)).size).toBe(3);
+        Object.values(tokens).forEach((token) => expect(token).toMatch(/^[0-9a-f]{16}$/));
+        expect(deriveInstallationTokens({ ...session, generation: 'another generation' })).toEqual(tokens);
+        const other = deriveInstallationTokens({ ...session, root: 'f0e0d0c0b0a090807060504030201000' });
+        Object.values(other).forEach((token) => expect(Object.values(tokens)).not.toContain(token));
     });
 
     it('changes representative hashes across one hundred site generation contexts', () => {
