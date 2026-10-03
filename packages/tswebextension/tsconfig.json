@@ -14,7 +14,6 @@
     ],
     "exclude": [
         "test/smoke",
-        "test/builders",
     ],
     "compilerOptions": {
         // With this tsconfig, we don't need to emit any files,

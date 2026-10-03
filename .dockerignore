@@ -29,9 +29,6 @@ node_modules
 # Git hooks (not needed inside Docker)
 .husky
 
-# Local planning
-.sdd
-
 # Test outputs
 **/coverage
 **/tests-reports
