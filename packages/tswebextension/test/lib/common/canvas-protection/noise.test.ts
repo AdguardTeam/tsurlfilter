@@ -278,6 +278,21 @@ describe('canvas protection noise', () => {
         expect(unchangedTinyImages).toBeGreaterThan(0);
     });
 
+    it('keeps the cost of a 1280×720 readout within budget', () => {
+        const seed = deriveSiteSeed(session, 'budget.example');
+        const bitmap = createBitmap(1, 1280, 720);
+        let best = Infinity;
+        for (let run = 0; run < 5; run += 1) {
+            const readout = createReadout(bitmap, 1280, 720);
+            const start = performance.now();
+            applyCanvasNoise(readout, seed);
+            best = Math.min(best, performance.now() - start);
+        }
+        // One keyed hash per row and a mixer per pixel take a few milliseconds.
+        // A keyed hash per pixel takes over 200 ms, which makes per-frame readouts unusable.
+        expect(best).toBeLessThan(50);
+    });
+
     it('derives installation tokens from the root alone', () => {
         const tokens = deriveInstallationTokens(session);
         expect(new Set(Object.values(tokens)).size).toBe(3);
