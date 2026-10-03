@@ -20,7 +20,7 @@ const rotate = (value: bigint, bits: bigint): bigint => (
  *
  * @returns Unsigned 64-bit digest.
  */
-export const referenceSipHash = (key: Uint8Array, bytes: Uint8Array): bigint => {
+const referenceSipHash = (key: Uint8Array, bytes: Uint8Array): bigint => {
     const keyView = new DataView(key.buffer, key.byteOffset, key.byteLength);
     const key0 = keyView.getBigUint64(0, true);
     const key1 = keyView.getBigUint64(8, true);
