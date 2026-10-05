@@ -24,7 +24,7 @@ on:
         type: string
         required: true
       ref:
-        description: 'Ref to publish (merge commit SHA). Leave empty for the triggering commit.'
+        description: 'Ref to publish (merge commit SHA). Pin to the release PR merge commit; an empty ref checks out the current master tip.'
         type: string
         default: ''
       team:
@@ -91,7 +91,20 @@ jobs:
 
   tag:
     needs: [parse, build, publish, publish-ak]
-    if: ${{ !inputs.dry_run }}
+    # One of the publish legs is always skipped (the one not selected by
+    # publish_target). Unless `if` contains one of the status-check functions
+    # (success/failure/always/cancelled), GitHub applies the default
+    # success() check, which is false whenever a needed job was skipped —
+    # hence the plain `!inputs.dry_run` gate silently skipped tag/mirror/notify
+    # on the first AK release (beta.1 got no tag, no mirror, no GitHub
+    # Release, no Slack message). `!cancelled()` (the docs' recommended
+    # alternative to always()) is the load-bearing term — dropping it
+    # reinstates the default check and the skip. Requiring a successful
+    # publish leg — not merely a non-failed one; same as
+    # publish-stable-dnr-rulesets.yml — also keeps the tag away from runs
+    # whose publish legs were both skipped (e.g. a failed build): such a tag
+    # would block a re-release of the version (git-tag uses force: false).
+    if: ${{ !cancelled() && !inputs.dry_run && (needs.publish.result == 'success' || needs.publish-ak.result == 'success') }}
     uses: AdGuardSoftwareLimited/actions/.github/workflows/git-tag.yml@master
     with:
       team: ${{ inputs.team }}
@@ -236,9 +249,9 @@ jobs:
   # Publish to the internal Artifact Keeper npm registry instead of npm
   # (publish_target: ak). Currently used for dnr-rulesets while npm throttles
   # the shared GitHub egress IP (HTTP 429, AG-58865) — the same arrangement as
-  # the stable line in publish-stable-dnr-rulesets.yml. The skipped npm
-  # `publish` job above counts as success for `needs`, so the tag/mirror/
-  # release legs proceed on the AK publish.
+  # the stable line in publish-stable-dnr-rulesets.yml. No environment: the AK
+  # publish is intentionally ungated (no approval), like the stable line —
+  # only the npm path has the approval gate.
   publish-ak:
     name: Publish to Artifact Keeper
     needs: [parse, build]
@@ -262,7 +275,14 @@ jobs:
 
   mirror-and-release:
     needs: [parse, tag, publish, publish-ak]
-    if: ${{ !inputs.dry_run }}
+    # Same skip-propagation fix as `tag` — see the full explanation there.
+    # `!cancelled()` must stay: without a status-check function the default
+    # success() check skips this job over the always-skipped publish leg. The
+    # tag must also have succeeded — a failed tag (e.g. the tag already
+    # exists) must not be mirrored or given a GitHub Release, and a version
+    # whose publish legs were both skipped (e.g. a failed build) must not be
+    # released either.
+    if: ${{ !cancelled() && !inputs.dry_run && needs.tag.result == 'success' && (needs.publish.result == 'success' || needs.publish-ak.result == 'success') }}
     uses: AdGuardSoftwareLimited/actions/.github/workflows/mirror-and-release.yml@master
     with:
       team: ${{ inputs.team }}
@@ -282,17 +302,46 @@ jobs:
   notify:
     name: Notify
     needs: [parse, mirror-and-release]
-    if: ${{ needs.mirror-and-release.result == 'success' }}
+    # Same skip-propagation fix as `tag` and `mirror-and-release` — see the
+    # full explanation there. `!cancelled()` must stay: without a status-check
+    # function the default success() check skips this job whenever any needed
+    # job upstream was skipped, and one publish leg is always skipped (the one
+    # not selected by publish_target) — so without it `notify` never runs on a
+    # successful release.
+    if: ${{ !cancelled() && needs.mirror-and-release.result == 'success' }}
     runs-on: team-${{ inputs.team }}
     timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - name: Send Slack notification
+      - name: Send Slack notification (npm)
+        if: ${{ inputs.publish_target == 'npm' }}
         uses: AdGuardSoftwareLimited/actions/actions/slack@master
         with:
           channel: ${{ inputs.slack_channel }}
-          message: ":white_check_mark: *${{ inputs.npm_package_name }}* *v${{ needs.parse.outputs.version }}* ${{ inputs.publish_target == 'npm' && 'published to npm' || 'published to Artifact Keeper' }} — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>"
+          message: ':white_check_mark: *${{ inputs.npm_package_name }}* *v${{ needs.parse.outputs.version }}* published to npm — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
+          color: good
+
+      # Artifact Keeper publishes are consumed from the internal AK registry
+      # (the browser-extension auto-build pulls from there when npm throttles),
+      # so the success message carries the install instructions. The registry
+      # redirect is project-scoped (`--location=project`) with an explicit
+      # cleanup step: a global `@adguard:registry` in ~/.npmrc would redirect
+      # every other @adguard install to the internal host, which is
+      # unreachable off the VPN.
+      - name: Send Slack notification (Artifact Keeper)
+        if: ${{ inputs.publish_target == 'ak' }}
+        uses: AdGuardSoftwareLimited/actions/actions/slack@master
+        with:
+          channel: ${{ inputs.slack_channel }}
+          message: |-
+            :white_check_mark: *${{ inputs.npm_package_name }}* *v${{ needs.parse.outputs.version }}*
+            published to Artifact Keeper (dist-tag: `${{ needs.parse.outputs.dist-tag }}`) — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>
+
+            To use it, install from the internal AK registry (VPN only). Scope the registry to the project — a global `@adguard:registry` would break every other @adguard install off the VPN:
+            `npm config set @adguard:registry ${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal --location=project`
+            `pnpm add ${{ inputs.npm_package_name }}@${{ needs.parse.outputs.version }}`
+            Cleanup when done: `npm config delete @adguard:registry --location=project`
           color: good
 
   notify-failure:
