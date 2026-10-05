@@ -1,3 +1,7 @@
+import {
+    type CanvasRegistrationRecord,
+    type ProtectionSession,
+} from '../../../../../src/lib/common/canvas-protection/contracts';
 import { type AppContext } from '../../../../../src/lib/mv2/background/app-context';
 import { type ConfigurationMV2Context } from '../../../../../src/lib/mv2/background/configuration';
 
@@ -14,4 +18,8 @@ export class MockAppContext implements AppContext {
     startTimeMs: number | undefined = undefined;
 
     cosmeticsInjectedOnStartup: boolean = false;
+
+    canvasProtectionSession: ProtectionSession | undefined = undefined;
+
+    canvasProtectionRegistration: CanvasRegistrationRecord | undefined = undefined;
 }

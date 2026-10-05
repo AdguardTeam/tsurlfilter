@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { server } from 'vitest/browser';
 
-import { createCanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
+import { CanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
 import { type CanvasBootstrapSnapshot } from '../../../src/lib/common/canvas-protection/contracts';
 import { deriveSiteSeed } from '../../../src/lib/common/canvas-protection/noise';
 
@@ -71,7 +71,7 @@ describe('generated canvas bootstrap and native masking', () => {
                 realm.Function.prototype.toString,
             ];
             const before = methods();
-            realm.eval(createCanvasProtectionCode({
+            realm.eval(CanvasProtectionCode.create({
                 ...state,
                 policy: {
                     ...state.policy,
@@ -100,7 +100,7 @@ describe('generated canvas bootstrap and native masking', () => {
             const originalToString = realm.Function.prototype.toString;
             const representations = originals.map((method) => Reflect.apply(originalToString, method, []));
             const fixture = draw(realm);
-            realm.eval(createCanvasProtectionCode(state));
+            realm.eval(CanvasProtectionCode.create(state));
             repaint(fixture);
             const wrappers = [realm.HTMLCanvasElement.prototype.toDataURL,
                 realm.HTMLCanvasElement.prototype.toBlob, realm.CanvasRenderingContext2D.prototype.getImageData];
@@ -131,7 +131,7 @@ describe('generated canvas bootstrap and native masking', () => {
         await withRealm((realm) => {
             const state = snapshot();
             const fixture = draw(realm);
-            realm.eval(createCanvasProtectionCode(state));
+            realm.eval(CanvasProtectionCode.create(state));
             repaint(fixture);
             const methods = (): Function[] => [
                 realm.CanvasRenderingContext2D.prototype.getImageData,
@@ -142,7 +142,7 @@ describe('generated canvas bootstrap and native masking', () => {
             const wrappers = methods();
             const bytes = Array.from(fixture.context.getImageData(0, 0, 32, 16).data);
             expect(bytes).toEqual(expected(realm, fixture.original, state));
-            realm.eval(createCanvasProtectionCode(state));
+            realm.eval(CanvasProtectionCode.create(state));
             methods().forEach((method, index) => expect(method).toBe(wrappers[index]));
             expect(Array.from(fixture.context.getImageData(0, 0, 32, 16).data)).toEqual(bytes);
         });
@@ -155,7 +155,7 @@ describe('generated canvas bootstrap and native masking', () => {
             const originalRead = realm.CanvasRenderingContext2D.prototype.getImageData;
             const originalExport = realm.HTMLCanvasElement.prototype.toDataURL;
             const wanted = expected(realm, fixture.original, state);
-            realm.eval(createCanvasProtectionCode(state));
+            realm.eval(CanvasProtectionCode.create(state));
             repaint(fixture);
             const untracked = realm.document.createElement('canvas').getContext('2d')!;
             const video = realm.document.createElement('video');
@@ -287,7 +287,7 @@ describe('generated canvas bootstrap and native masking', () => {
                 const original = canvas.toDataURL();
                 let creationErrors = 0;
                 canvas.addEventListener('webglcontextcreationerror', () => { creationErrors += 1; });
-                realm.eval(createCanvasProtectionCode(snapshot()));
+                realm.eval(CanvasProtectionCode.create(snapshot()));
                 expect(canvas.toDataURL()).toBe(original);
                 const blob = await new Promise<Blob>((resolve) => canvas.toBlob((value) => resolve(value!)));
                 expect(await blob.arrayBuffer()).toEqual(await (await (await fetch(original)).blob()).arrayBuffer());
@@ -300,7 +300,7 @@ describe('generated canvas bootstrap and native masking', () => {
         await withRealm((realm) => {
             const state = snapshot();
             const fixture = draw(realm);
-            realm.eval(createCanvasProtectionCode(state));
+            realm.eval(CanvasProtectionCode.create(state));
             repaint(fixture);
             const stored = new WeakMap<object, Map<string, unknown>>();
             const calls: string[] = [];
@@ -348,7 +348,7 @@ describe('generated canvas bootstrap and native masking', () => {
             const nativeURL = realm.HTMLCanvasElement.prototype.toDataURL;
             const nativeBlob = realm.HTMLCanvasElement.prototype.toBlob;
             const nativeRead = realm.CanvasRenderingContext2D.prototype.getImageData;
-            realm.eval(createCanvasProtectionCode(state));
+            realm.eval(CanvasProtectionCode.create(state));
             repaint(fixture);
             const calls: string[] = [];
             let inheritedDeliveries = 0;
@@ -432,7 +432,7 @@ describe('generated canvas bootstrap and native masking', () => {
         await withRealm((realm) => {
             const state = snapshot();
             const fixture = draw(realm);
-            realm.eval(createCanvasProtectionCode(state));
+            realm.eval(CanvasProtectionCode.create(state));
             repaint(fixture);
             const log: string[] = [];
             const coordinate = (name: string, value: number): object => ({
@@ -462,7 +462,7 @@ describe('generated canvas bootstrap and native masking', () => {
                 toBlob: realm.HTMLCanvasElement.prototype.toBlob,
             };
             const fixture = draw(realm);
-            realm.eval(createCanvasProtectionCode(snapshot()));
+            realm.eval(CanvasProtectionCode.create(snapshot()));
             repaint(fixture);
             const { context } = fixture;
             const failure = (method: Function, receiver: object, args: unknown[]): Error => {
@@ -495,7 +495,7 @@ describe('generated canvas bootstrap and native masking', () => {
     test('throws a realm TypeError when an object argument converts to no number or string', async () => {
         await withRealm(async (realm) => {
             const fixture = draw(realm);
-            realm.eval(createCanvasProtectionCode(snapshot()));
+            realm.eval(CanvasProtectionCode.create(snapshot()));
             repaint(fixture);
             const { context } = fixture;
             let conversions = 0;
@@ -568,7 +568,7 @@ describe('generated canvas bootstrap and native masking', () => {
             const natives = replaced(realm);
             const references = natives.map(cycles);
             expect(references[0].direct).toContain('threw TypeError');
-            realm.eval(createCanvasProtectionCode(snapshot()));
+            realm.eval(CanvasProtectionCode.create(snapshot()));
             replaced(realm).forEach((wrapper, index) => {
                 expect(wrapper).not.toBe(natives[index]);
                 expect(cycles(wrapper)).toEqual(references[index]);
@@ -586,7 +586,7 @@ describe('generated canvas bootstrap and native masking', () => {
             ];
             const natives = replaced(realm);
             const references = natives.map(restricted);
-            realm.eval(createCanvasProtectionCode(snapshot()));
+            realm.eval(CanvasProtectionCode.create(snapshot()));
             const wrappers = replaced(realm);
             wrappers.forEach((wrapper, index) => expect(restricted(wrapper)).toEqual(references[index]));
             // An accessor defined by a page receives the wrapper, never the native function behind it.
@@ -628,7 +628,7 @@ describe('generated canvas bootstrap and native masking', () => {
             };
             const natives = replaced(realm).slice(0, 3);
             const references = natives.map(probes);
-            realm.eval(createCanvasProtectionCode(snapshot()));
+            realm.eval(CanvasProtectionCode.create(snapshot()));
             replaced(realm).slice(0, 3).forEach((wrapper, index) => {
                 expect(probes(wrapper)).toEqual(references[index]);
                 expect(complete(wrapper)).not.toMatch(engineFrame);

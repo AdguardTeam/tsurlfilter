@@ -17,15 +17,13 @@ type Configuration = NonNullable<ReturnType<ConstructorParameters<typeof CanvasP
 const enabled = { filteringEnabled: true, stealthModeEnabled: true, protectCanvas: true };
 
 describe('canvas protection controller', () => {
-    let registration: { [Method in 'apply' | 'disable' | 'reconcile' | 'getState']: ReturnType<typeof vi.fn> };
+    let registration: { [Method in 'apply' | 'getState']: ReturnType<typeof vi.fn> };
     let configuration: Configuration | undefined;
     let controller: CanvasProtectionController;
     let policy: ProtectionPolicyArtifact;
 
     beforeEach(() => {
-        registration = {
-            apply: vi.fn(), disable: vi.fn(), reconcile: vi.fn(), getState: vi.fn(),
-        };
+        registration = { apply: vi.fn(), getState: vi.fn() };
         policy = createProtectAllPolicy('chromium-mv3', 'policy-a');
         configuration = {
             settings: { filteringEnabled: true, stealthModeEnabled: true, stealth: { protectCanvas: true } },
@@ -72,23 +70,19 @@ describe('canvas protection controller', () => {
         const stopped = { gates: { ...enabled, filteringEnabled: false }, policy };
         expect(registration.apply).toHaveBeenLastCalledWith(stopped);
         await controller.setEnabled(true);
-        await controller.reconcile();
-        expect(registration.apply).toHaveBeenCalledTimes(3);
+        expect(registration.apply).toHaveBeenCalledTimes(2);
         expect(registration.apply).toHaveBeenLastCalledWith(stopped);
-        expect(registration.reconcile).not.toHaveBeenCalled();
         controller.resume();
-        await controller.reconcile();
-        expect(registration.reconcile).toHaveBeenCalledOnce();
         await controller.apply();
         expect(registration.apply).toHaveBeenLastCalledWith({ gates: enabled, policy });
     });
 
-    it('disables the stored request when stopped without configuration', async () => {
+    it('requests removal when stopped without configuration', async () => {
         configuration = undefined;
         await controller.stop();
-        expect(registration.apply).not.toHaveBeenCalled();
-        expect(registration.disable).toHaveBeenCalledWith({
-            filteringEnabled: false, stealthModeEnabled: false, protectCanvas: false,
+        expect(registration.apply).toHaveBeenCalledWith({
+            gates: { filteringEnabled: false, stealthModeEnabled: false, protectCanvas: false },
+            policy: undefined,
         });
     });
 });

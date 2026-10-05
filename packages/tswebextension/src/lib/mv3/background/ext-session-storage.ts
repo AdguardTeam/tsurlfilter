@@ -1,5 +1,6 @@
 import browser from 'webextension-polyfill';
 
+import { type CanvasRegistrationRecord, type ProtectionSession } from '../../common/canvas-protection/contracts';
 import { createExtensionStorageDecorator, ExtensionStorage } from '../../common/storage';
 import { BrowserStorage, MemoryStorage } from '../../common/storage/core';
 
@@ -10,6 +11,8 @@ export const enum SessionStorageKey {
     Configuration = 'configuration',
     StartTimeMs = 'startTimeMs',
     CosmeticsInjectedOnStartup = 'cosmeticsInjectedOnStartup',
+    CanvasProtectionSession = 'canvasProtectionSession',
+    CanvasProtectionRegistration = 'canvasProtectionRegistration',
 }
 
 export type SessionStorageSchema = {
@@ -17,6 +20,8 @@ export type SessionStorageSchema = {
     [SessionStorageKey.Configuration]: ConfigurationMV3Context | undefined;
     [SessionStorageKey.StartTimeMs]: number | undefined;
     [SessionStorageKey.CosmeticsInjectedOnStartup]: boolean;
+    [SessionStorageKey.CanvasProtectionSession]: ProtectionSession | undefined;
+    [SessionStorageKey.CanvasProtectionRegistration]: CanvasRegistrationRecord | undefined;
 };
 
 /**
@@ -30,6 +35,8 @@ export class ExtSessionStorage extends ExtensionStorage<SessionStorageSchema> {
         configuration: undefined,
         startTimeMs: undefined,
         cosmeticsInjectedOnStartup: false,
+        canvasProtectionSession: undefined,
+        canvasProtectionRegistration: undefined,
     };
 
     /**

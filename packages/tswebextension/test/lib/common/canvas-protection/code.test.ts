@@ -3,7 +3,7 @@ import { runInNewContext } from 'node:vm';
 
 import { describe, expect, it } from 'vitest';
 
-import { createCanvasProtectionCode } from '../../../../src/lib/common/canvas-protection/code';
+import { CanvasProtectionCode } from '../../../../src/lib/common/canvas-protection/code';
 import { type CanvasBootstrapSnapshot } from '../../../../src/lib/common/canvas-protection/contracts';
 
 import { createProtectAllPolicy } from './fixtures/prepared-policies';
@@ -28,7 +28,7 @@ const execute = (snapshot: CanvasBootstrapSnapshot): boolean => {
         });
         const globals = Reflect.ownKeys(realm);
         const { getImageData } = realm.CanvasRenderingContext2D.prototype;
-        realm.eval(createCanvasProtectionCode(snapshot));
+        realm.eval(CanvasProtectionCode.create(snapshot));
         expect(Reflect.get(realm, 'injected')).toBeUndefined();
         return realm.CanvasRenderingContext2D.prototype.getImageData === getImageData
             && Reflect.ownKeys(realm).every((key, index) => key === globals[index]);
@@ -61,9 +61,9 @@ describe('generated canvas delivery code', () => {
         const state = {
             session: { root: '0123456789abcdef0123456789abcdef', generation: 'generation' },
         };
-        expect(createCanvasProtectionCode({ ...state, policy: createProtectAllPolicy('chromium-mv3', 'current') }))
+        expect(CanvasProtectionCode.create({ ...state, policy: createProtectAllPolicy('chromium-mv3', 'current') }))
             .toMatch(/\n\/\/# sourceURL=<anonymous>$/);
-        expect(createCanvasProtectionCode({ ...state, policy: createProtectAllPolicy('firefox-mv2', 'current') }))
+        expect(CanvasProtectionCode.create({ ...state, policy: createProtectAllPolicy('firefox-mv2', 'current') }))
             .not.toContain('sourceURL');
     });
 
@@ -75,7 +75,7 @@ describe('generated canvas delivery code', () => {
                 type: 'url-regexp', input: 'frame-url', pattern: '^https://canvas\\.test/', flags: '',
             },
         }] satisfies typeof policy.ownFrameExclusions;
-        const code = createCanvasProtectionCode({
+        const code = CanvasProtectionCode.create({
             session: { root: '11111111111111111111111111111111', generation: '22222222222222222222222222222222' },
             policy: { ...policy, ownFrameExclusions: exclusions },
         });

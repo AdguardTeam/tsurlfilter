@@ -1,7 +1,7 @@
 import { expect } from 'vitest';
 import { server } from 'vitest/browser';
 
-import { createCanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
+import { CanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
 import { type CanvasBootstrapSnapshot } from '../../../src/lib/common/canvas-protection/contracts';
 import { deriveSiteSeed } from '../../../src/lib/common/canvas-protection/noise';
 
@@ -86,7 +86,7 @@ export const install = (realm: Realm): Installed => {
         toDataURL: realm.HTMLCanvasElement.prototype.toDataURL,
         toBlob: realm.HTMLCanvasElement.prototype.toBlob,
     };
-    realm.eval(createCanvasProtectionCode(state));
+    realm.eval(CanvasProtectionCode.create(state));
     return { ...natives, seed: deriveSiteSeed(state.session, realm.location.hostname) };
 };
 

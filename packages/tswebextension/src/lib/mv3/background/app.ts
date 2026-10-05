@@ -12,7 +12,7 @@ import { LogLevel } from '@adguard/logger';
 import { FilterList } from '@adguard/tsurlfilter';
 
 import { type AppInterface, type MessageHandler } from '../../common/app';
-import { createCanvasProtectionCode } from '../../common/canvas-protection/code';
+import { CanvasProtectionCode } from '../../common/canvas-protection/code';
 import { type ProtectionPolicyArtifact, type RegistrationResult } from '../../common/canvas-protection/contracts';
 import { CanvasProtectionController } from '../../common/canvas-protection/controller';
 import { CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
@@ -118,7 +118,7 @@ export class TsWebExtension implements AppInterface<
      * Owns browser registration acknowledgment and current-session code generation.
      */
     private readonly canvasProtection = new CanvasProtectionController(
-        new CanvasProtectionRegistration(new ChromiumCanvasRegistration(), createCanvasProtectionCode),
+        new CanvasProtectionRegistration(new ChromiumCanvasRegistration(), CanvasProtectionCode.create, appContext),
         () => this.configuration,
     );
 
@@ -561,15 +561,6 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * Retries the latest persisted request using the current session root.
-     *
-     * @returns The acknowledged or unresolved registration state.
-     */
-    public reconcileCanvasProtection(): Promise<RegistrationResult> {
-        return this.canvasProtection.reconcile();
-    }
-
-    /**
      * Reports requested state separately from browser acknowledgment history.
      *
      * @returns The most recent registration lifecycle result.
@@ -863,7 +854,6 @@ export class TsWebExtension implements AppInterface<
     public async initStorage(): Promise<void> {
         await extSessionStorage.init();
         appContext.isStorageInitialized = true;
-        await this.canvasProtection.reconcile();
     }
 
     /**

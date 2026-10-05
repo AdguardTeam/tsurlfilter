@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { server } from 'vitest/browser';
 
-import { createCanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
+import { CanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
 
 import {
     HEIGHT,
@@ -258,7 +258,7 @@ describe('canvas protection of same-origin child frames', () => {
             expect(child.CanvasRenderingContext2D.prototype.getImageData).toBe(wrapper);
             // No engine decided for this document yet: it may be excluded, so its readouts stay native.
             expect(readoutKind(paint(child), installed)).toBe('native');
-            child.eval(createCanvasProtectionCode({
+            child.eval(CanvasProtectionCode.create({
                 ...state,
                 policy: {
                     ...state.policy,
@@ -271,7 +271,7 @@ describe('canvas protection of same-origin child frames', () => {
                 },
             }));
             expect(readoutKind(paint(child), installed)).toBe('native');
-            child.eval(createCanvasProtectionCode(state));
+            child.eval(CanvasProtectionCode.create(state));
             expect(child.CanvasRenderingContext2D.prototype.getImageData).toBe(wrapper);
             expect(readoutKind(paint(child), installed)).toBe('noised');
             expect(readoutKind(paint(addFrame(child).contentWindow as Realm), installed)).toBe('noised');
@@ -287,7 +287,7 @@ describe('canvas protection of same-origin child frames', () => {
             await withRealm(async (realm) => {
                 const installed = install(realm);
                 const sibling = own.contentWindow as Realm;
-                sibling.eval(createCanvasProtectionCode(snapshot()));
+                sibling.eval(CanvasProtectionCode.create(snapshot()));
                 const wrapper = sibling.CanvasRenderingContext2D.prototype.getImageData;
                 const reach = Object.getOwnPropertyDescriptor(realm.HTMLIFrameElement.prototype, 'contentWindow')!.get!;
                 expect(Reflect.apply(reach, own, [])).toBe(sibling);

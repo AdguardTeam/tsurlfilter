@@ -9,6 +9,24 @@ export interface ProtectionSession {
 }
 
 /**
+ * The registration the browser last acknowledged. Holds no root seed.
+ */
+export interface CanvasRegistrationRecord {
+    readonly revision: string;
+    readonly generation: string;
+    readonly codeHash: string;
+}
+
+/**
+ * Canvas protection state that lives as long as the browser session.
+ * The application context implements it on top of the extension session storage.
+ */
+export interface CanvasProtectionStore {
+    canvasProtectionSession: ProtectionSession | undefined;
+    canvasProtectionRegistration: CanvasRegistrationRecord | undefined;
+}
+
+/**
  * An exact synchronous value or the concrete reason it cannot be established.
  */
 export type Available<T> =

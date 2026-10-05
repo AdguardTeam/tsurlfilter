@@ -143,7 +143,6 @@ export class TsWebExtension implements AppInterface<
     public async initStorage(): Promise<void> {
         await this.extSessionStorage.init();
         this.appContext.isStorageInitialized = true;
-        await this.canvasProtection.reconcile();
     }
 
     /**
@@ -268,15 +267,6 @@ export class TsWebExtension implements AppInterface<
      */
     public setCanvasProtectionPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult> {
         return this.canvasProtection.setPolicy(policy);
-    }
-
-    /**
-     * Retries the latest persisted request using the current session root.
-     *
-     * @returns The acknowledged or unresolved registration state.
-     */
-    public reconcileCanvasProtection(): Promise<RegistrationResult> {
-        return this.canvasProtection.reconcile();
     }
 
     /**

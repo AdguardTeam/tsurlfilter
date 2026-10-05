@@ -65,8 +65,7 @@ export class CanvasProtectionController {
             stealthModeEnabled: settings?.stealthModeEnabled === true,
             protectCanvas: settings?.stealth.protectCanvas === true,
         };
-        return this.stopped && !configuration ? this.registration.disable(gates)
-            : this.registration.apply({ gates, policy: configuration?.canvasProtectionPolicy });
+        return this.registration.apply({ gates, policy: configuration?.canvasProtectionPolicy });
     }
 
     /**
@@ -91,15 +90,6 @@ export class CanvasProtectionController {
     public setPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult> {
         this.requireConfiguration().canvasProtectionPolicy = protectionPolicyArtifactValidator.parse(policy);
         return this.apply();
-    }
-
-    /**
-     * Retries the persisted request while honoring an explicit application stop.
-     *
-     * @returns The current acknowledged or unresolved result.
-     */
-    public reconcile(): Promise<RegistrationResult> {
-        return this.stopped ? this.apply() : this.registration.reconcile();
     }
 
     /**

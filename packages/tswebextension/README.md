@@ -198,9 +198,9 @@ automatically.
 
 Requirements:
 
-- Chromium: the `userScripts` permission, host permissions, user scripts
-  allowed by the user and `browser.storage.session`.
-- Firefox 128 or later and `browser.storage.session`.
+- Chromium: the `userScripts` permission, host permissions and user scripts
+  allowed by the user.
+- Firefox 128 or later.
 - Private windows: the extension must be allowed to run there.
 
 Only canvases that received rendering are noised: any 2D context call that
@@ -225,8 +225,8 @@ filled only from video frames or `putImageData()` is read natively.
   document exclusions.
 - A document loaded before the script is registered stays native until
   reload. Chromium keeps registered user scripts across restarts, so
-  documents loaded before the first reconciliation get the previous
-  session's seed.
+  documents loaded before `start()` completes get the previous session's
+  seed.
 - The protection is detectable and a determined page can defeat it. The
   noise shows when the same content is read at several offsets, and page
   code that runs inside a wrapped call sees the engine's stack frames. The
@@ -653,7 +653,6 @@ Available in MV2 and MV3:
 
 - `setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult>`
 - `setCanvasProtectionPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult>`
-- `reconcileCanvasProtection(): Promise<RegistrationResult>`
 - `getCanvasProtectionState(): RegistrationResult`
 
 The setters need an application configuration. Every method returns the
