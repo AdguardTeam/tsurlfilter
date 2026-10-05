@@ -1,0 +1,287 @@
+import {
+    afterAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
+import polyfillBrowser from 'webextension-polyfill';
+
+import {
+    isExtensionContextIncognito,
+    resolveCookieStoreScope,
+} from '../../../../src/lib/common/cookie-filtering/cookie-store-scope';
+import {
+    restoreBrowserStubs,
+    stubBrowserCookies,
+    stubBrowserTabsGet,
+    type TestCookieStore,
+    type TestTab,
+} from '../../../helpers/browser-stubs';
+
+vi.mock('../../../../src/lib/common/utils/logger');
+
+describe('resolveCookieStoreScope', () => {
+    let getAllCookieStores: ReturnType<typeof vi.fn<() => Promise<TestCookieStore[]>>>;
+    let getTab: ReturnType<typeof vi.fn<(tabId: number) => Promise<TestTab>>>;
+    let isTabIncognito: ReturnType<typeof vi.fn<(tabId: number) => boolean | undefined>>;
+
+    beforeEach(() => {
+        getAllCookieStores = vi.fn(async (): Promise<TestCookieStore[]> => []);
+        stubBrowserCookies({ getAllCookieStores });
+
+        getTab = vi.fn(async (): Promise<TestTab> => ({ incognito: false }));
+        stubBrowserTabsGet(getTab);
+
+        isTabIncognito = vi.fn(() => false);
+    });
+
+    afterAll(restoreBrowserStubs);
+
+    describe('Firefox', () => {
+        it('returns the reported cookie store id', async () => {
+            const scope = await resolveCookieStoreScope(
+                { cookieStoreId: 'firefox-container-3' },
+                true,
+                isTabIncognito,
+                false,
+            );
+
+            expect(scope).toEqual({ storeId: 'firefox-container-3' });
+        });
+
+        it('returns the default store scope when no store info is present', async () => {
+            const scope = await resolveCookieStoreScope({}, true, isTabIncognito, false);
+
+            expect(scope).toEqual({});
+        });
+
+        it('returns null for a private request without cookie store id', async () => {
+            const scope = await resolveCookieStoreScope(
+                { incognito: true },
+                true,
+                isTabIncognito,
+                false,
+            );
+
+            expect(scope).toBeNull();
+        });
+
+        it('never consults the tab incognito state', async () => {
+            await resolveCookieStoreScope(
+                { cookieStoreId: 'firefox-default', tabId: 1 },
+                true,
+                isTabIncognito,
+                true,
+            );
+
+            expect(isTabIncognito).not.toHaveBeenCalled();
+            expect(getAllCookieStores).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Chromium split mode', () => {
+        it('returns the default store scope, the context store is already incognito', async () => {
+            const scope = await resolveCookieStoreScope(
+                { tabId: 1 },
+                false,
+                isTabIncognito,
+                true,
+            );
+
+            expect(scope).toEqual({});
+            expect(isTabIncognito).not.toHaveBeenCalled();
+            expect(getAllCookieStores).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Chromium spanning mode', () => {
+        it('skips the jar for tabless requests while an incognito store exists', async () => {
+            getAllCookieStores.mockResolvedValue([
+                { id: '0', tabIds: [1] },
+                { id: '1', tabIds: [2] },
+            ]);
+
+            const scope = await resolveCookieStoreScope(
+                { tabId: -1 },
+                false,
+                isTabIncognito,
+                false,
+            );
+
+            expect(scope).toBeNull();
+            expect(isTabIncognito).not.toHaveBeenCalled();
+            expect(getTab).not.toHaveBeenCalled();
+        });
+
+        it('skips the jar for tabless requests when only the incognito store exists', async () => {
+            getAllCookieStores.mockResolvedValue([{ id: '1', tabIds: [2] }]);
+
+            const scope = await resolveCookieStoreScope({}, false, isTabIncognito, false);
+
+            expect(scope).toBeNull();
+            expect(isTabIncognito).not.toHaveBeenCalled();
+            expect(getTab).not.toHaveBeenCalled();
+        });
+
+        it('uses the default store for tabless requests when no incognito store exists', async () => {
+            getAllCookieStores.mockResolvedValue([{ id: '0', tabIds: [1] }]);
+
+            const scope = await resolveCookieStoreScope(
+                { tabId: -1 },
+                false,
+                isTabIncognito,
+                false,
+            );
+
+            expect(scope).toEqual({});
+            expect(isTabIncognito).not.toHaveBeenCalled();
+            expect(getTab).not.toHaveBeenCalled();
+        });
+
+        it('skips the jar for tabless requests when the store list cannot be retrieved', async () => {
+            getAllCookieStores.mockRejectedValue(new Error('cannot get cookie stores'));
+
+            const scope = await resolveCookieStoreScope(
+                { tabId: -1 },
+                false,
+                isTabIncognito,
+                false,
+            );
+
+            expect(scope).toBeNull();
+            expect(isTabIncognito).not.toHaveBeenCalled();
+            expect(getTab).not.toHaveBeenCalled();
+        });
+
+        it('returns the default store scope for regular tabs', async () => {
+            isTabIncognito.mockReturnValue(false);
+
+            const scope = await resolveCookieStoreScope(
+                { tabId: 1 },
+                false,
+                isTabIncognito,
+                false,
+            );
+
+            expect(scope).toEqual({});
+            expect(getAllCookieStores).not.toHaveBeenCalled();
+            expect(getTab).not.toHaveBeenCalled();
+        });
+
+        it('resolves the incognito cookie store from the originating tab', async () => {
+            isTabIncognito.mockReturnValue(true);
+            getAllCookieStores.mockResolvedValue([
+                { id: '0', tabIds: [1, 2] },
+                { id: '1', tabIds: [3] },
+            ]);
+
+            const scope = await resolveCookieStoreScope(
+                { tabId: 3 },
+                false,
+                isTabIncognito,
+                false,
+            );
+
+            expect(scope).toEqual({ storeId: '1' });
+            expect(getTab).not.toHaveBeenCalled();
+        });
+
+        it('returns null for a private tab whose store cannot be resolved', async () => {
+            isTabIncognito.mockReturnValue(true);
+            getAllCookieStores.mockResolvedValue([{ id: '0', tabIds: [1, 2] }]);
+
+            const scope = await resolveCookieStoreScope(
+                { tabId: 3 },
+                false,
+                isTabIncognito,
+                false,
+            );
+
+            expect(scope).toBeNull();
+            expect(getAllCookieStores).toHaveBeenCalledTimes(1);
+        });
+
+        it('asks the browser for the tab state when it is unknown and resolves the private store', async () => {
+            isTabIncognito.mockReturnValue(undefined);
+            getTab.mockResolvedValue({ incognito: true });
+            getAllCookieStores.mockResolvedValue([
+                { id: '0', tabIds: [1] },
+                { id: '1', tabIds: [3] },
+            ]);
+
+            const scope = await resolveCookieStoreScope(
+                { tabId: 3 },
+                false,
+                isTabIncognito,
+                false,
+            );
+
+            expect(getTab).toHaveBeenCalledWith(3);
+            expect(scope).toEqual({ storeId: '1' });
+        });
+
+        it('returns the default store scope when the browser reports a regular unknown tab', async () => {
+            isTabIncognito.mockReturnValue(undefined);
+            getTab.mockResolvedValue({ incognito: false });
+
+            const scope = await resolveCookieStoreScope(
+                { tabId: 3 },
+                false,
+                isTabIncognito,
+                false,
+            );
+
+            expect(getTab).toHaveBeenCalledWith(3);
+            expect(scope).toEqual({});
+            expect(getAllCookieStores).not.toHaveBeenCalled();
+        });
+
+        it('skips the jar when the browser cannot report the tab state', async () => {
+            isTabIncognito.mockReturnValue(undefined);
+            getTab.mockRejectedValue(new Error('No tab with id: 3'));
+
+            const scope = await resolveCookieStoreScope(
+                { tabId: 3 },
+                false,
+                isTabIncognito,
+                false,
+            );
+
+            expect(getTab).toHaveBeenCalledWith(3);
+            expect(scope).toBeNull();
+            expect(getAllCookieStores).not.toHaveBeenCalled();
+        });
+
+        it('skips the jar when the cookie store list cannot be retrieved', async () => {
+            isTabIncognito.mockReturnValue(true);
+            getAllCookieStores.mockRejectedValue(new Error('cannot get cookie stores'));
+
+            const scope = await resolveCookieStoreScope(
+                { tabId: 3 },
+                false,
+                isTabIncognito,
+                false,
+            );
+
+            expect(scope).toBeNull();
+        });
+    });
+});
+
+describe('isExtensionContextIncognito', () => {
+    it('reflects the polyfill inIncognitoContext flag', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const browser = polyfillBrowser as any;
+
+        browser.extension = { inIncognitoContext: true };
+        expect(isExtensionContextIncognito()).toBe(true);
+
+        browser.extension = { inIncognitoContext: false };
+        expect(isExtensionContextIncognito()).toBe(false);
+
+        browser.extension = undefined;
+        expect(isExtensionContextIncognito()).toBe(false);
+    });
+});

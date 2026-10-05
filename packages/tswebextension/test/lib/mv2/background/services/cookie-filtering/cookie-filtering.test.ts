@@ -1,5 +1,6 @@
 import browser from 'sinon-chrome';
 import {
+    afterAll,
     beforeEach,
     describe,
     expect,
@@ -26,6 +27,7 @@ import { BrowserCookieApi } from '../../../../../../src/lib/common/cookie-filter
 import { FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 import { CookieFiltering } from '../../../../../../src/lib/mv2/background/services/cookie-filtering/cookie-filtering';
+import { restoreBrowserStubs, stubBrowserTabsGet } from '../../../../../helpers/browser-stubs';
 import { createNetworkRule } from '../../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../../common/mocks/mock-filtering-log';
 import { getNetworkRuleFields } from '../../helpers/rule-fields';
@@ -49,6 +51,8 @@ const createTestHeaders = (headers: SimulatedHeader[]): SimulatedHeader[] => [
     ...headers,
 ];
 
+afterAll(restoreBrowserStubs);
+
 describe('Cookie filtering', () => {
     let cookieFiltering: CookieFiltering;
     let mockFilteringLog: MockFilteringLog;
@@ -59,6 +63,10 @@ describe('Cookie filtering', () => {
     beforeEach(() => {
         mockFilteringLog = new MockFilteringLog();
         cookieFiltering = new CookieFiltering(mockFilteringLog, engineApi, tabsApi);
+
+        // The store scope resolver asks the browser for the tab state when the
+        // tab context is unknown; default to a regular tab.
+        stubBrowserTabsGet(vi.fn(async () => ({ incognito: false })));
 
         requestId = '1';
 
@@ -97,6 +105,12 @@ describe('Cookie filtering', () => {
         cookieFiltering.onBeforeSendHeaders(context);
 
         cookieFiltering.onHeadersReceived(context);
+
+        // Wait for the fire-and-forget `applyRules` promise chain to settle,
+        // since it is async and is not awaited by the handlers.
+        await new Promise((resolve) => {
+            setTimeout(resolve, 0);
+        });
 
         requestContextStorage.delete(requestId);
     };
