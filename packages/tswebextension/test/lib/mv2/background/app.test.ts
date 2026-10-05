@@ -18,6 +18,11 @@ import {
     messagesApi,
     TsWebExtension,
 } from '../../../../src/lib';
+import {
+    CanvasAvailabilityStatus,
+    CanvasPolicyBrowser,
+    CanvasRegistrationStatus,
+} from '../../../../src/lib/common/canvas-protection/constants';
 import { type Message } from '../../../../src/lib/common/message';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { assistant, Assistant } from '../../../../src/lib/mv2/background/assistant';
@@ -268,7 +273,7 @@ describe('TsWebExtension', () => {
             await instance.stop();
             expect(browser.contentScripts.register).not.toHaveBeenCalled();
             expect(unregister).not.toHaveBeenCalled();
-            expect(instance.getCanvasProtectionState().status).toBe('disabled');
+            expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
         });
 
         it('requires prepared policy rather than assuming empty exceptions', async () => {
@@ -276,7 +281,7 @@ describe('TsWebExtension', () => {
             await instance.start(config);
             const result = await instance.setCanvasProtectionEnabled(true);
             expect(result).toMatchObject({
-                status: 'unavailable',
+                status: CanvasRegistrationStatus.Unavailable,
                 requiredUserAction: expect.stringContaining('prepared canvas protection policy'),
             });
             expect(browser.contentScripts.register).not.toHaveBeenCalled();
@@ -285,72 +290,86 @@ describe('TsWebExtension', () => {
         it('applies every gate and prepared replacement to new documents', async () => {
             await instance.initStorage();
             await instance.start(config);
-            await instance.setCanvasProtectionPolicy(createProtectAllPolicy('firefox-mv2', 'policy-a'));
+            await instance.setCanvasProtectionPolicy(
+                createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a'),
+            );
             const initial = await instance.setCanvasProtectionEnabled(true);
-            expect(initial.status).toBe('installed');
+            expect(initial.status).toBe(CanvasRegistrationStatus.Installed);
             const captured = vi.mocked(browser.contentScripts.register).mock.calls.at(-1)![0];
             await instance.setFilteringEnabled(false);
-            expect(instance.getCanvasProtectionState().status).toBe('disabled');
+            expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
             await instance.setFilteringEnabled(true);
             await instance.setStealthModeEnabled(false);
-            expect(instance.getCanvasProtectionState().status).toBe('disabled');
+            expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
             await instance.setStealthModeEnabled(true);
             const replacement = await instance.setCanvasProtectionPolicy(
-                createProtectAllPolicy('firefox-mv2', 'policy-b'),
+                createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-b'),
             );
             expect(replacement).toMatchObject({
-                status: 'installed',
+                status: CanvasRegistrationStatus.Installed,
                 installed: {
-                    status: 'available',
+                    status: CanvasAvailabilityStatus.Available,
                     value: {
                         revision: 'policy-b',
-                        generation: initial.installed.status === 'available'
+                        generation: initial.installed.status === CanvasAvailabilityStatus.Available
                             ? initial.installed.value.generation : undefined,
                     },
                 },
             });
             expect(captured.js).not.toEqual(vi.mocked(browser.contentScripts.register).mock.calls.at(-1)![0].js);
             await instance.stop();
-            expect(instance.getCanvasProtectionState().status).toBe('disabled');
+            expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
         });
 
         it('reports failed removal and retries it on the next request', async () => {
             await instance.initStorage();
             await instance.start(config);
-            await instance.setCanvasProtectionPolicy(createProtectAllPolicy('firefox-mv2', 'policy-a'));
+            await instance.setCanvasProtectionPolicy(
+                createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a'),
+            );
             const initial = await instance.setCanvasProtectionEnabled(true);
             unregister.mockRejectedValueOnce(new Error('removal rejected'));
             expect(await instance.setCanvasProtectionEnabled(false)).toMatchObject({
-                status: 'failed', installed: initial.installed,
+                status: CanvasRegistrationStatus.Failed, installed: initial.installed,
             });
-            expect(instance.getCanvasProtectionState().status).toBe('failed');
-            expect(await instance.setCanvasProtectionEnabled(false)).toMatchObject({ status: 'disabled' });
+            expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Failed);
+            expect(
+                await instance.setCanvasProtectionEnabled(false),
+            ).toMatchObject({ status: CanvasRegistrationStatus.Disabled });
         });
 
         it('reports missing registration access and removes the script once access returns', async () => {
             await instance.initStorage();
             await instance.start(config);
-            await instance.setCanvasProtectionPolicy(createProtectAllPolicy('firefox-mv2', 'policy-a'));
+            await instance.setCanvasProtectionPolicy(
+                createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a'),
+            );
             const initial = await instance.setCanvasProtectionEnabled(true);
             const { register } = browser.contentScripts;
             Object.defineProperty(browser, 'contentScripts', { configurable: true, value: undefined });
             const pending = await instance.setCanvasProtectionEnabled(false);
             expect(pending).toMatchObject({
-                status: 'unavailable', installed: initial.installed, requiredUserAction: expect.any(String),
+                status: CanvasRegistrationStatus.Unavailable,
+                installed: initial.installed,
+                requiredUserAction: expect.any(String),
             });
             Object.defineProperty(browser, 'contentScripts', { configurable: true, value: { register } });
-            expect((await instance.setCanvasProtectionEnabled(false)).status).toBe('disabled');
+            expect((await instance.setCanvasProtectionEnabled(false)).status).toBe(CanvasRegistrationStatus.Disabled);
             expect(unregister).toHaveBeenCalledOnce();
         });
 
         it('rejects a policy for a different browser and keeps the previous acknowledgment', async () => {
             await instance.initStorage();
             await instance.start(config);
-            await instance.setCanvasProtectionPolicy(createProtectAllPolicy('firefox-mv2', 'policy-a'));
+            await instance.setCanvasProtectionPolicy(
+                createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a'),
+            );
             const initial = await instance.setCanvasProtectionEnabled(true);
             vi.mocked(browser.contentScripts.register).mockClear();
-            const result = await instance.setCanvasProtectionPolicy(createProtectAllPolicy('chromium-mv3', 'wrong'));
-            expect(result).toMatchObject({ status: 'failed', installed: initial.installed });
+            const result = await instance.setCanvasProtectionPolicy(
+                createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'wrong'),
+            );
+            expect(result).toMatchObject({ status: CanvasRegistrationStatus.Failed, installed: initial.installed });
             expect(browser.contentScripts.register).not.toHaveBeenCalled();
             expect(unregister).not.toHaveBeenCalled();
         });
@@ -358,7 +377,7 @@ describe('TsWebExtension', () => {
         it('installs again after a restart that lost the registration', async () => {
             await instance.initStorage();
             await instance.start(config);
-            const policy = createProtectAllPolicy('firefox-mv2', 'policy-a');
+            const policy = createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a');
             await instance.setCanvasProtectionPolicy(policy);
             const initial = await instance.setCanvasProtectionEnabled(true);
             const restarted = createTsWebExtension('test');
@@ -370,10 +389,13 @@ describe('TsWebExtension', () => {
                 settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
             };
             expect(await restarted.start(enabled)).toMatchObject({
-                canvasProtection: { status: 'failed', installed: { status: 'unavailable' } },
+                canvasProtection: {
+                    status: CanvasRegistrationStatus.Failed,
+                    installed: { status: CanvasAvailabilityStatus.Unavailable },
+                },
             });
             expect(await restarted.setCanvasProtectionEnabled(true)).toMatchObject({
-                status: 'installed', installed: initial.installed,
+                status: CanvasRegistrationStatus.Installed, installed: initial.installed,
             });
         });
 
@@ -386,16 +408,20 @@ describe('TsWebExtension', () => {
         it('does not restart canvas registration through setters after stop', async () => {
             await instance.initStorage();
             await instance.start(config);
-            await instance.setCanvasProtectionPolicy(createProtectAllPolicy('firefox-mv2', 'before-stop'));
+            await instance.setCanvasProtectionPolicy(
+                createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'before-stop'),
+            );
             await instance.setCanvasProtectionEnabled(true);
             await instance.stop();
             vi.mocked(browser.contentScripts.register).mockClear();
             await instance.setFilteringEnabled(true);
             await instance.setStealthModeEnabled(true);
             await instance.setCanvasProtectionEnabled(true);
-            await instance.setCanvasProtectionPolicy(createProtectAllPolicy('firefox-mv2', 'after-stop'));
+            await instance.setCanvasProtectionPolicy(
+                createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'after-stop'),
+            );
             expect(browser.contentScripts.register).not.toHaveBeenCalled();
-            expect(instance.getCanvasProtectionState().status).toBe('disabled');
+            expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
         });
     });
 });

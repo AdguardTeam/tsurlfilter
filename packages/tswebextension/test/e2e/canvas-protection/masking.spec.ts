@@ -2,6 +2,11 @@ import { describe, expect, test } from 'vitest';
 import { server } from 'vitest/browser';
 
 import { CanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
+import {
+    CanvasConditionInput,
+    CanvasConditionType,
+    CanvasPolicyRequestType,
+} from '../../../src/lib/common/canvas-protection/constants';
 import { type CanvasBootstrapSnapshot } from '../../../src/lib/common/canvas-protection/contracts';
 import { deriveSiteSeed } from '../../../src/lib/common/canvas-protection/noise';
 
@@ -76,9 +81,12 @@ describe('generated canvas bootstrap and native masking', () => {
                 policy: {
                     ...state.policy,
                     ownFrameExclusions: [{
-                        requestTypes: ['document', 'subdocument'],
+                        requestTypes: [CanvasPolicyRequestType.Document, CanvasPolicyRequestType.Subdocument],
                         condition: {
-                            type: 'url-regexp', input: 'frame-url', pattern: 'empty\\.html', flags: '',
+                            type: CanvasConditionType.UrlRegexp,
+                            input: CanvasConditionInput.FrameUrl,
+                            pattern: 'empty\\.html',
+                            flags: '',
                         },
                     }],
                 },

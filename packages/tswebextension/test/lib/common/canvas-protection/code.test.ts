@@ -4,6 +4,12 @@ import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
 import { CanvasProtectionCode } from '../../../../src/lib/common/canvas-protection/code';
+import {
+    CanvasConditionInput,
+    CanvasConditionType,
+    CanvasPolicyBrowser,
+    CanvasPolicyRequestType,
+} from '../../../../src/lib/common/canvas-protection/constants';
 import { type CanvasBootstrapSnapshot } from '../../../../src/lib/common/canvas-protection/contracts';
 
 import { createProtectAllPolicy } from './fixtures/prepared-policies';
@@ -40,7 +46,7 @@ const execute = (snapshot: CanvasBootstrapSnapshot): boolean => {
 describe('generated canvas delivery code', () => {
     it('executes generated bundle with serialized hostile strings', () => {
         const text = '"\');globalThis.injected=true;//</script>\u2028\u2029';
-        const policy = createProtectAllPolicy('chromium-mv3', text);
+        const policy = createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, text);
         const untouched = execute({
             session: { root: '0123456789abcdef0123456789abcdef', generation: text },
             policy: {
@@ -48,9 +54,12 @@ describe('generated canvas delivery code', () => {
                 unavailableConditions: [text],
                 // The delivery must stay inert here: jsdom has no canvas bindings to wrap.
                 ownFrameExclusions: [{
-                    requestTypes: ['subdocument'],
+                    requestTypes: [CanvasPolicyRequestType.Subdocument],
                     condition: {
-                        type: 'url-regexp', input: 'frame-url', pattern: '.', flags: '',
+                        type: CanvasConditionType.UrlRegexp,
+                        input: CanvasConditionInput.FrameUrl,
+                        pattern: '.',
+                        flags: '',
                     },
                 }],
             },
@@ -61,18 +70,34 @@ describe('generated canvas delivery code', () => {
         const state = {
             session: { root: '0123456789abcdef0123456789abcdef', generation: 'generation' },
         };
-        expect(CanvasProtectionCode.create({ ...state, policy: createProtectAllPolicy('chromium-mv3', 'current') }))
+        expect(
+            CanvasProtectionCode.create({
+                ...state,
+                policy: createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'current'),
+            }),
+        )
             .toMatch(/\n\/\/# sourceURL=<anonymous>$/);
-        expect(CanvasProtectionCode.create({ ...state, policy: createProtectAllPolicy('firefox-mv2', 'current') }))
+        expect(
+            CanvasProtectionCode.create({
+                ...state,
+                policy: createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'current'),
+            }),
+        )
             .not.toContain('sourceURL');
     });
 
     it('keeps excluded readouts native across duplicate delivery', () => {
-        const policy = createProtectAllPolicy('chromium-mv3', '";globalThis.injected=true;//</script>\u2028\u2029');
+        const policy = createProtectAllPolicy(
+            CanvasPolicyBrowser.ChromiumMv3,
+            '";globalThis.injected=true;//</script>\u2028\u2029',
+        );
         const exclusions = [{
-            requestTypes: ['document'],
+            requestTypes: [CanvasPolicyRequestType.Document],
             condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '^https://canvas\\.test/', flags: '',
+                type: CanvasConditionType.UrlRegexp,
+                input: CanvasConditionInput.FrameUrl,
+                pattern: '^https://canvas\\.test/',
+                flags: '',
             },
         }] satisfies typeof policy.ownFrameExclusions;
         const code = CanvasProtectionCode.create({

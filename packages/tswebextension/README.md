@@ -174,13 +174,17 @@ Protection needs `settings.filteringEnabled`, `settings.stealthModeEnabled`,
 every document, without exclusions:
 
 ```ts
-import { type TsWebExtension, type ProtectionPolicyArtifact } from '@adguard/tswebextension/mv3';
+import {
+    CanvasPolicyBrowser,
+    type ProtectionPolicyArtifact,
+    type TsWebExtension,
+} from '@adguard/tswebextension/mv3';
 
 async function enableCanvasProtection(app: TsWebExtension) {
     const policy: ProtectionPolicyArtifact = {
         schemaVersion: 1,
         revision: 'canvas-empty-v1',
-        browser: 'chromium-mv3',
+        browser: CanvasPolicyBrowser.ChromiumMv3,
         selectors: { matches: ['<all_urls>'], excludeMatches: [] },
         ownFrameExclusions: [],
         documentExclusions: [],
@@ -191,7 +195,8 @@ async function enableCanvasProtection(app: TsWebExtension) {
 }
 ```
 
-For Firefox MV2, use the root package import and `browser: 'firefox-mv2'`.
+For Firefox MV2, use the root package import and
+`CanvasPolicyBrowser.FirefoxMv2`.
 The returned `RegistrationResult` tells whether the script is installed and,
 if not, why. Filter rules and the allowlist are not compiled into the policy
 automatically.
@@ -462,8 +467,8 @@ Prepared delivery selectors and exclusions for
 
 - `selectors`: match patterns of the registered script.
 - `ownFrameExclusions`: rules for a document itself. A condition reads the
-  document's URL (`frame-url`), its top-level document (`top-url`) or its
-  parent (`source-url`).
+  document's URL (`CanvasConditionInput.FrameUrl`), its top-level document
+  (`TopUrl`) or its parent (`SourceUrl`).
 - `documentExclusions`: rules for a top-level document. Its frames inherit
   the result.
 
@@ -656,11 +661,12 @@ Available in MV2 and MV3:
 - `getCanvasProtectionState(): RegistrationResult`
 
 The setters need an application configuration. Every method returns the
-registration state: `installed`, `disabled`, `unavailable` with a
-`requiredUserAction`, or `failed`. `start()` and `configure()` return it as
-`canvasProtection`. A later `configure()` replaces setter changes with its
-own `settings.stealth.protectCanvas` and `canvasProtectionPolicy`; omitting
-them disables protection. Changes apply to documents loaded afterwards.
+registration state, `CanvasRegistrationStatus`: `Installed`, `Disabled`,
+`Unavailable` with a `requiredUserAction`, or `Failed`. `start()` and
+`configure()` return it as `canvasProtection`. A later `configure()`
+replaces setter changes with its own `settings.stealth.protectCanvas` and
+`canvasProtectionPolicy`; omitting them disables protection. Changes apply
+to documents loaded afterwards.
 
 ##### initStorage()
 

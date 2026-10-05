@@ -2,6 +2,12 @@
 import { logger } from '../utils/logger';
 
 import {
+    CanvasAvailabilityStatus,
+    CanvasOperationStatus,
+    CanvasRegistrationOperation,
+    CanvasRegistrationStatus,
+} from './constants';
+import {
     type Available,
     type CanvasBootstrapSnapshot,
     type CanvasFeatureGates,
@@ -81,7 +87,7 @@ export class CanvasProtectionRegistration {
         },
         installed: CanvasProtectionRegistration.summarize(undefined),
         operations: [],
-        status: 'unavailable',
+        status: CanvasRegistrationStatus.Unavailable,
         reason: 'Canvas protection has not been configured',
         requiredUserAction: 'Supply canvas protection configuration',
     };
@@ -118,14 +124,15 @@ export class CanvasProtectionRegistration {
             ...this.state,
             requested: { gates: requested.gates, revision: requested.policy?.revision ?? null },
             operations: [],
-            status: 'unavailable',
+            status: CanvasRegistrationStatus.Unavailable,
             reason: 'Canvas registration request is pending browser acknowledgment',
             requiredUserAction: 'Wait for the pending operation or apply the configuration again',
         };
         const request = this.queue.then(async () => {
             const result = await this.reconcile(requested);
-            if ((result.status === 'failed' || result.status === 'unavailable')
-                && (requested.gates.protectCanvas || result.installed.status === 'available')) {
+            if ((result.status === CanvasRegistrationStatus.Failed
+                || result.status === CanvasRegistrationStatus.Unavailable)
+                && (requested.gates.protectCanvas || result.installed.status === CanvasAvailabilityStatus.Available)) {
                 logger.warn(`[tsweb.CanvasProtectionRegistration.apply]: ${result.reason}`);
             }
             // A newer request stays pending, but learns what the browser acknowledged meanwhile.
@@ -163,19 +170,26 @@ export class CanvasProtectionRegistration {
         };
 
         const availability = await this.adapter.checkAvailability();
-        if (availability.status === 'unavailable') {
+        if (availability.status === CanvasAvailabilityStatus.Unavailable) {
             if (!active && !record) {
-                return { ...result, operations: [], status: 'disabled' };
+                return { ...result, operations: [], status: CanvasRegistrationStatus.Disabled };
             }
             return {
                 ...result,
-                operations: [{ operation: 'check', status: 'failed', reason: availability.reason }],
-                status: 'unavailable',
+                operations: [{
+                    operation: CanvasRegistrationOperation.Check,
+                    status: CanvasOperationStatus.Failed,
+                    reason: availability.reason,
+                }],
+                status: CanvasRegistrationStatus.Unavailable,
                 reason: availability.reason,
                 requiredUserAction: availability.reason,
             };
         }
-        const check: RegistrationOperationOutcome = { operation: 'check', status: 'succeeded' };
+        const check: RegistrationOperationOutcome = {
+            operation: CanvasRegistrationOperation.Check,
+            status: CanvasOperationStatus.Succeeded,
+        };
         if (!availability.value && record) {
             // The browser dropped the registration, e.g. on an extension update.
             record = undefined;
@@ -183,13 +197,13 @@ export class CanvasProtectionRegistration {
             result.installed = CanvasProtectionRegistration.summarize(undefined);
         }
         if (!active && !availability.value) {
-            return { ...result, operations: [check], status: 'disabled' };
+            return { ...result, operations: [check], status: CanvasRegistrationStatus.Disabled };
         }
         if (active && !policy) {
             return {
                 ...result,
                 operations: [check],
-                status: 'unavailable',
+                status: CanvasRegistrationStatus.Unavailable,
                 reason: 'A prepared canvas protection policy is required',
                 requiredUserAction: 'Supply a prepared canvas protection policy',
             };
@@ -207,7 +221,7 @@ export class CanvasProtectionRegistration {
                 codeHash: await CanvasProtectionRegistration.hash(code),
             };
             if (record?.codeHash === next.codeHash) {
-                return { ...result, operations: [check], status: 'installed' };
+                return { ...result, operations: [check], status: CanvasRegistrationStatus.Installed };
             }
         }
 
@@ -222,7 +236,7 @@ export class CanvasProtectionRegistration {
             return {
                 ...result,
                 operations: [check, ...error.operations],
-                status: 'failed',
+                status: CanvasRegistrationStatus.Failed,
                 reason: error.message,
             };
         }
@@ -231,7 +245,7 @@ export class CanvasProtectionRegistration {
             ...result,
             installed: CanvasProtectionRegistration.summarize(next),
             operations: [check, ...operations],
-            status: next ? 'installed' : 'disabled',
+            status: next ? CanvasRegistrationStatus.Installed : CanvasRegistrationStatus.Disabled,
         };
     }
 
@@ -244,8 +258,11 @@ export class CanvasProtectionRegistration {
      */
     private static summarize(record: CanvasRegistrationRecord | undefined): RegistrationResult['installed'] {
         return record
-            ? { status: 'available', value: { revision: record.revision, generation: record.generation } }
-            : { status: 'unavailable', reason: 'No acknowledged active canvas registration' };
+            ? {
+                status: CanvasAvailabilityStatus.Available,
+                value: { revision: record.revision, generation: record.generation },
+            }
+            : { status: CanvasAvailabilityStatus.Unavailable, reason: 'No acknowledged active canvas registration' };
     }
 
     /**

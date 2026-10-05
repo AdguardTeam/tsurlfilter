@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { type ConfigurationMV2, configurationMV2Validator } from '../../../../src/lib';
+import { CanvasPolicyBrowser } from '../../../../src/lib/common/canvas-protection/constants';
 import { LF } from '../../../../src/lib/common/constants';
 import { createProtectAllPolicy } from '../../common/canvas-protection/fixtures/prepared-policies';
 
@@ -113,7 +114,7 @@ describe('configuration validator', () => {
         }], null, 2));
     });
     it('accepts optional canvas opt-in and prepared policy without changing legacy defaults', () => {
-        const policy = createProtectAllPolicy('firefox-mv2', 'policy-a');
+        const policy = createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a');
         const input = {
             ...validConfiguration,
             canvasProtectionPolicy: policy,

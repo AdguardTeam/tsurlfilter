@@ -6,6 +6,7 @@ import {
     vi,
 } from 'vitest';
 
+import { CanvasPolicyBrowser } from '../../../../src/lib/common/canvas-protection/constants';
 import { type ProtectionPolicyArtifact } from '../../../../src/lib/common/canvas-protection/contracts';
 import { CanvasProtectionController } from '../../../../src/lib/common/canvas-protection/controller';
 import { type CanvasProtectionRegistration } from '../../../../src/lib/common/canvas-protection/registration';
@@ -24,7 +25,7 @@ describe('canvas protection controller', () => {
 
     beforeEach(() => {
         registration = { apply: vi.fn(), getState: vi.fn() };
-        policy = createProtectAllPolicy('chromium-mv3', 'policy-a');
+        policy = createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'policy-a');
         configuration = {
             settings: { filteringEnabled: true, stealthModeEnabled: true, stealth: { protectCanvas: true } },
             canvasProtectionPolicy: policy,
@@ -51,7 +52,7 @@ describe('canvas protection controller', () => {
         await controller.setEnabled(false);
         expect(configuration!.settings.stealth.protectCanvas).toBe(false);
         expect(registration.apply).toHaveBeenLastCalledWith({ gates: { ...enabled, protectCanvas: false }, policy });
-        const replacement = createProtectAllPolicy('chromium-mv3', 'policy-b');
+        const replacement = createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'policy-b');
         await controller.setPolicy(replacement);
         expect(configuration!.canvasProtectionPolicy).toEqual(replacement);
     });

@@ -1,3 +1,6 @@
+// Part of the engine injected into pages: plain functions instead of a static class keep it small,
+// see engine-entry.ts.
+import { CanvasPolicyRequestType } from './constants';
 import { type CanvasBootstrapSnapshot, type DocumentPolicyInput } from './contracts';
 import { deriveSiteSeed, type InstallationTokens } from './noise';
 import { resolveProtectedSite } from './policy';
@@ -34,7 +37,7 @@ export function readDocumentPolicyInput(realm: Window): DocumentPolicyInput {
     const url = realm.location.href;
     if (realm === realm.top) {
         return {
-            url, requestType: 'document', topUrl: url, sourceUrl: url,
+            url, requestType: CanvasPolicyRequestType.Document, topUrl: url, sourceUrl: url,
         };
     }
     // Firefox lists ancestor origins since version 148.
@@ -42,7 +45,7 @@ export function readDocumentPolicyInput(realm: Window): DocumentPolicyInput {
     const topUrl = readAncestorUrl(realm.top!, origins?.[origins.length - 1]);
     return {
         url,
-        requestType: 'subdocument',
+        requestType: CanvasPolicyRequestType.Subdocument,
         topUrl,
         sourceUrl: realm.parent === realm.top ? topUrl : readAncestorUrl(realm.parent, origins?.[0]),
     };

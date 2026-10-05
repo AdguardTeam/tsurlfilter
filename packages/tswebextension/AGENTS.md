@@ -146,6 +146,14 @@ You MUST follow the following rules for EVERY task that you perform:
 2. **TypeScript strict mode** is enabled. Code MUST compile cleanly under
    `pnpm lint:types`.
 
+3. **Keep background state in the existing storage helpers.** Session state
+   goes through `extSessionStorage`: a `SessionStorageKey` and a
+   `sessionDecorator` accessor on `AppContext`. Do not call
+   `browser.storage.*` directly with your own keys.
+
+   **Rationale**: one place owns the keys, the initialization order and the
+   fallback for browsers without `storage.session`.
+
 ### III. Testing Discipline
 
 1. **Multi-project Vitest config.** Tests are organized into three Vitest

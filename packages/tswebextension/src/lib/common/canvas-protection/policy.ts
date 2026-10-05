@@ -1,5 +1,8 @@
+// Part of the engine injected into pages: plain functions instead of a static class keep it small,
+// see engine-entry.ts.
 import { getDomain } from '../utils/url';
 
+import { CanvasConditionInput, CanvasConditionType, CanvasPolicyRequestType } from './constants';
 import {
     type DocumentPolicyInput,
     type PreparedCondition,
@@ -15,7 +18,7 @@ type Verdict = boolean | undefined;
 /**
  * URLs a predicate can read, by its input selector.
  */
-type PredicateUrls = Record<Extract<PreparedCondition, { type: 'url-regexp' }>['input'], string | undefined>;
+type PredicateUrls = Record<CanvasConditionInput, string | undefined>;
 
 /**
  * Resolves the hostname that keys a site's noise with the extension's existing site-key rules.
@@ -68,16 +71,19 @@ const combine = (verdicts: readonly Verdict[], decisive: boolean): Verdict => {
  */
 const evaluate = (condition: PreparedCondition, urls: PredicateUrls): Verdict => {
     switch (condition.type) {
-        case 'unavailable':
+        case CanvasConditionType.Unavailable:
             return undefined;
-        case 'url-regexp': {
+        case CanvasConditionType.UrlRegexp: {
             const url = urls[condition.input];
             return url === undefined ? undefined : new RegExp(condition.pattern, condition.flags).test(url);
         }
-        case 'and':
-        case 'or':
-            return combine(condition.operands.map((operand) => evaluate(operand, urls)), condition.type === 'or');
-        case 'not': {
+        case CanvasConditionType.And:
+        case CanvasConditionType.Or:
+            return combine(
+                condition.operands.map((operand) => evaluate(operand, urls)),
+                condition.type === CanvasConditionType.Or,
+            );
+        case CanvasConditionType.Not: {
             const verdict = evaluate(condition.operand, urls);
             return verdict === undefined ? undefined : !verdict;
         }
@@ -121,10 +127,18 @@ export const resolveProtectedSite = (
 ): string | undefined => {
     const { url, topUrl, sourceUrl } = input;
     // A top document is its own top and source.
-    const own: PredicateUrls = { 'frame-url': url, 'top-url': topUrl, 'source-url': sourceUrl };
-    const top: PredicateUrls = { 'frame-url': topUrl, 'top-url': topUrl, 'source-url': topUrl };
+    const own: PredicateUrls = {
+        [CanvasConditionInput.FrameUrl]: url,
+        [CanvasConditionInput.TopUrl]: topUrl,
+        [CanvasConditionInput.SourceUrl]: sourceUrl,
+    };
+    const top: PredicateUrls = {
+        [CanvasConditionInput.FrameUrl]: topUrl,
+        [CanvasConditionInput.TopUrl]: topUrl,
+        [CanvasConditionInput.SourceUrl]: topUrl,
+    };
     if (isExcluded(policy.ownFrameExclusions, input.requestType, own)
-        || isExcluded(policy.documentExclusions, 'document', top)) {
+        || isExcluded(policy.documentExclusions, CanvasPolicyRequestType.Document, top)) {
         return undefined;
     }
     return (topUrl === undefined ? undefined : resolveSiteKey(topUrl)) ?? resolveSiteKey(url);

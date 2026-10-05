@@ -1,4 +1,9 @@
 import {
+    CanvasConditionInput,
+    CanvasConditionType,
+    CanvasPolicyRequestType,
+} from '../../../../../src/lib/common/canvas-protection/constants';
+import {
     type DocumentPolicyInput,
     type PreparedCondition,
     type PreparedPolicyRule,
@@ -39,19 +44,28 @@ export interface PreparedPolicyFixture {
 }
 
 const protocolCondition: PreparedCondition = {
-    type: 'url-regexp', input: 'frame-url', pattern: '^https://', flags: '',
+    type: CanvasConditionType.UrlRegexp, input: CanvasConditionInput.FrameUrl, pattern: '^https://', flags: '',
 };
 
 const targetCondition: PreparedCondition = {
-    type: 'url-regexp', input: 'frame-url', pattern: '^https://(?:a|b)\\.example\\.com/', flags: '',
+    type: CanvasConditionType.UrlRegexp,
+    input: CanvasConditionInput.FrameUrl,
+    pattern: '^https://(?:a|b)\\.example\\.com/',
+    flags: '',
 };
 
 const denyCondition: PreparedCondition = {
-    type: 'url-regexp', input: 'frame-url', pattern: '^https://b\\.example\\.com/', flags: '',
+    type: CanvasConditionType.UrlRegexp,
+    input: CanvasConditionInput.FrameUrl,
+    pattern: '^https://b\\.example\\.com/',
+    flags: '',
 };
 
 const sourceCondition: PreparedCondition = {
-    type: 'url-regexp', input: 'source-url', pattern: '^https://publisher\\.example/', flags: '',
+    type: CanvasConditionType.UrlRegexp,
+    input: CanvasConditionInput.SourceUrl,
+    pattern: '^https://publisher\\.example/',
+    flags: '',
 };
 
 /**
@@ -60,45 +74,46 @@ const sourceCondition: PreparedCondition = {
 export const preparedPolicyFixtures: readonly PreparedPolicyFixture[] = [
     {
         name: 'host positive',
-        rule: { requestTypes: ['document'], condition: targetCondition },
+        rule: { requestTypes: [CanvasPolicyRequestType.Document], condition: targetCondition },
         url: 'https://a.example.com/',
         excluded: true,
     },
     {
         name: 'host negative',
-        rule: { requestTypes: ['document'], condition: targetCondition },
+        rule: { requestTypes: [CanvasPolicyRequestType.Document], condition: targetCondition },
         url: 'https://c.example.com/',
         excluded: false,
     },
     {
         name: 'source positive',
-        rule: { requestTypes: ['subdocument'], condition: sourceCondition },
+        rule: { requestTypes: [CanvasPolicyRequestType.Subdocument], condition: sourceCondition },
         url: 'https://frame.example/',
-        requestType: 'subdocument',
+        requestType: CanvasPolicyRequestType.Subdocument,
         sourceUrl: 'https://publisher.example/article',
         excluded: true,
     },
     {
         name: 'source negative',
-        rule: { requestTypes: ['subdocument'], condition: sourceCondition },
+        rule: { requestTypes: [CanvasPolicyRequestType.Subdocument], condition: sourceCondition },
         url: 'https://frame.example/',
-        requestType: 'subdocument',
+        requestType: CanvasPolicyRequestType.Subdocument,
         sourceUrl: 'https://other.example/article',
         excluded: false,
     },
     {
         name: 'source unknown',
-        rule: { requestTypes: ['subdocument'], condition: sourceCondition },
+        rule: { requestTypes: [CanvasPolicyRequestType.Subdocument], condition: sourceCondition },
         url: 'https://frame.example/',
-        requestType: 'subdocument',
+        requestType: CanvasPolicyRequestType.Subdocument,
         excluded: false,
     },
     {
         name: 'target to set positive',
         rule: {
-            requestTypes: ['document'],
+            requestTypes: [CanvasPolicyRequestType.Document],
             condition: {
-                type: 'and', operands: [targetCondition, { type: 'not', operand: denyCondition }],
+                type: CanvasConditionType.And,
+                operands: [targetCondition, { type: CanvasConditionType.Not, operand: denyCondition }],
             },
         },
         url: 'https://a.example.com/',
@@ -107,9 +122,10 @@ export const preparedPolicyFixtures: readonly PreparedPolicyFixture[] = [
     {
         name: 'target denyallow set negative',
         rule: {
-            requestTypes: ['document'],
+            requestTypes: [CanvasPolicyRequestType.Document],
             condition: {
-                type: 'and', operands: [targetCondition, { type: 'not', operand: denyCondition }],
+                type: CanvasConditionType.And,
+                operands: [targetCondition, { type: CanvasConditionType.Not, operand: denyCondition }],
             },
         },
         url: 'https://b.example.com/',
@@ -118,9 +134,10 @@ export const preparedPolicyFixtures: readonly PreparedPolicyFixture[] = [
     {
         name: 'target outside to set negative',
         rule: {
-            requestTypes: ['document'],
+            requestTypes: [CanvasPolicyRequestType.Document],
             condition: {
-                type: 'and', operands: [targetCondition, { type: 'not', operand: denyCondition }],
+                type: CanvasConditionType.And,
+                operands: [targetCondition, { type: CanvasConditionType.Not, operand: denyCondition }],
             },
         },
         url: 'https://c.example.com/',
@@ -129,9 +146,12 @@ export const preparedPolicyFixtures: readonly PreparedPolicyFixture[] = [
     {
         name: 'case sensitive negative',
         rule: {
-            requestTypes: ['document'],
+            requestTypes: [CanvasPolicyRequestType.Document],
             condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '/Native$', flags: '',
+                type: CanvasConditionType.UrlRegexp,
+                input: CanvasConditionInput.FrameUrl,
+                pattern: '/Native$',
+                flags: '',
             },
         },
         url: 'https://example.com/native',
@@ -140,9 +160,12 @@ export const preparedPolicyFixtures: readonly PreparedPolicyFixture[] = [
     {
         name: 'case insensitive positive',
         rule: {
-            requestTypes: ['document'],
+            requestTypes: [CanvasPolicyRequestType.Document],
             condition: {
-                type: 'url-regexp', input: 'frame-url', pattern: '/Native$', flags: 'i',
+                type: CanvasConditionType.UrlRegexp,
+                input: CanvasConditionInput.FrameUrl,
+                pattern: '/Native$',
+                flags: 'i',
             },
         },
         url: 'https://example.com/native',
@@ -150,30 +173,30 @@ export const preparedPolicyFixtures: readonly PreparedPolicyFixture[] = [
     },
     {
         name: 'document mask positive',
-        rule: { requestTypes: ['document'], condition: protocolCondition },
+        rule: { requestTypes: [CanvasPolicyRequestType.Document], condition: protocolCondition },
         url: 'https://example.com/',
-        requestType: 'document',
+        requestType: CanvasPolicyRequestType.Document,
         excluded: true,
     },
     {
         name: 'document mask child negative',
-        rule: { requestTypes: ['document'], condition: protocolCondition },
+        rule: { requestTypes: [CanvasPolicyRequestType.Document], condition: protocolCondition },
         url: 'https://example.com/',
-        requestType: 'subdocument',
+        requestType: CanvasPolicyRequestType.Subdocument,
         excluded: false,
     },
     {
         name: 'subdocument mask positive',
-        rule: { requestTypes: ['subdocument'], condition: protocolCondition },
+        rule: { requestTypes: [CanvasPolicyRequestType.Subdocument], condition: protocolCondition },
         url: 'https://example.com/',
-        requestType: 'subdocument',
+        requestType: CanvasPolicyRequestType.Subdocument,
         excluded: true,
     },
     {
         name: 'subdocument mask top negative',
-        rule: { requestTypes: ['subdocument'], condition: protocolCondition },
+        rule: { requestTypes: [CanvasPolicyRequestType.Subdocument], condition: protocolCondition },
         url: 'https://example.com/',
-        requestType: 'document',
+        requestType: CanvasPolicyRequestType.Document,
         excluded: false,
     },
 ];

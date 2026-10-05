@@ -1,5 +1,16 @@
 import { z as zod } from 'zod';
 
+import {
+    type CanvasAvailabilityStatus,
+    CanvasConditionInput,
+    CanvasConditionType,
+    type CanvasOperationStatus,
+    CanvasPolicyBrowser,
+    CanvasPolicyRequestType,
+    type CanvasRegistrationOperation,
+    type CanvasRegistrationStatus,
+} from './constants';
+
 /**
  * A browser-run root and independent generation, each encoded as 16 bytes of hex.
  */
@@ -30,8 +41,8 @@ export interface CanvasProtectionStore {
  * An exact synchronous value or the concrete reason it cannot be established.
  */
 export type Available<T> =
-    | { readonly status: 'available'; readonly value: T }
-    | { readonly status: 'unavailable'; readonly reason: string };
+    | { readonly status: CanvasAvailabilityStatus.Available; readonly value: T }
+    | { readonly status: CanvasAvailabilityStatus.Unavailable; readonly reason: string };
 
 /**
  * All three independent activation gates must be enabled for protection.
@@ -47,20 +58,23 @@ export interface CanvasFeatureGates {
  */
 export type PreparedCondition =
     | {
-        readonly type: 'url-regexp';
-        readonly input: 'frame-url' | 'top-url' | 'source-url';
+        readonly type: CanvasConditionType.UrlRegexp;
+        readonly input: CanvasConditionInput;
         readonly pattern: string;
         readonly flags: '' | 'i';
     }
-    | { readonly type: 'and' | 'or'; readonly operands: readonly PreparedCondition[] }
-    | { readonly type: 'not'; readonly operand: PreparedCondition }
-    | { readonly type: 'unavailable'; readonly reason: string };
+    | {
+        readonly type: CanvasConditionType.And | CanvasConditionType.Or;
+        readonly operands: readonly PreparedCondition[];
+    }
+    | { readonly type: CanvasConditionType.Not; readonly operand: PreparedCondition }
+    | { readonly type: CanvasConditionType.Unavailable; readonly reason: string };
 
 /**
  * A prepared exclusion with explicit top-document or child-frame applicability.
  */
 export interface PreparedPolicyRule {
-    readonly requestTypes: readonly ('document' | 'subdocument')[];
+    readonly requestTypes: readonly CanvasPolicyRequestType[];
     readonly condition: PreparedCondition;
 }
 
@@ -71,7 +85,7 @@ export interface PreparedPolicyRule {
  */
 export interface DocumentPolicyInput {
     readonly url: string;
-    readonly requestType: 'document' | 'subdocument';
+    readonly requestType: CanvasPolicyRequestType;
     readonly topUrl: string | undefined;
     readonly sourceUrl: string | undefined;
 }
@@ -80,8 +94,8 @@ export interface DocumentPolicyInput {
  * Browser operation evidence, including incomplete replacements or removals.
  */
 export interface RegistrationOperationOutcome {
-    readonly operation: 'check' | 'register' | 'update' | 'unregister';
-    readonly status: 'succeeded' | 'failed';
+    readonly operation: CanvasRegistrationOperation;
+    readonly status: CanvasOperationStatus;
     readonly reason?: string;
 }
 
@@ -100,12 +114,20 @@ export type RegistrationResult = {
     readonly operations: readonly RegistrationOperationOutcome[];
 } & (
     | {
-        readonly status: 'disabled' | 'installed';
+        readonly status: CanvasRegistrationStatus.Disabled | CanvasRegistrationStatus.Installed;
         readonly reason?: string;
         readonly requiredUserAction?: string;
     }
-    | { readonly status: 'unavailable'; readonly reason: string; readonly requiredUserAction: string }
-    | { readonly status: 'failed'; readonly reason: string; readonly requiredUserAction?: string }
+    | {
+        readonly status: CanvasRegistrationStatus.Unavailable;
+        readonly reason: string;
+        readonly requiredUserAction: string;
+    }
+    | {
+        readonly status: CanvasRegistrationStatus.Failed;
+        readonly reason: string;
+        readonly requiredUserAction?: string;
+    }
 );
 
 /**
@@ -132,8 +154,8 @@ export interface CanvasReadout {
 }
 
 const regexpConditionValidator = zod.object({
-    type: zod.literal('url-regexp'),
-    input: zod.enum(['frame-url', 'top-url', 'source-url']),
+    type: zod.literal(CanvasConditionType.UrlRegexp),
+    input: zod.nativeEnum(CanvasConditionInput),
     pattern: zod.string(),
     flags: zod.enum(['', 'i']),
 }).strict().superRefine((condition, context) => {
@@ -151,19 +173,22 @@ const regexpConditionValidator = zod.object({
 
 const preparedConditionValidator: zod.ZodType<PreparedCondition> = zod.lazy(() => zod.union([
     regexpConditionValidator,
-    zod.object({ type: zod.enum(['and', 'or']), operands: preparedConditionValidator.array() }).strict(),
-    zod.object({ type: zod.literal('not'), operand: preparedConditionValidator }).strict(),
-    zod.object({ type: zod.literal('unavailable'), reason: zod.string().min(1) }).strict(),
+    zod.object({
+        type: zod.enum([CanvasConditionType.And, CanvasConditionType.Or]),
+        operands: preparedConditionValidator.array(),
+    }).strict(),
+    zod.object({ type: zod.literal(CanvasConditionType.Not), operand: preparedConditionValidator }).strict(),
+    zod.object({ type: zod.literal(CanvasConditionType.Unavailable), reason: zod.string().min(1) }).strict(),
 ]));
 
 const preparedPolicyRuleValidator = zod.object({
-    requestTypes: zod.enum(['document', 'subdocument']).array().min(1).readonly(),
+    requestTypes: zod.nativeEnum(CanvasPolicyRequestType).array().min(1).readonly(),
     condition: preparedConditionValidator,
 }).strict();
 
 // A document exclusion is evaluated for the top-level document only, also on behalf of its frames.
 const documentExclusionValidator = preparedPolicyRuleValidator.refine(
-    (rule) => rule.requestTypes.includes('document'),
+    (rule) => rule.requestTypes.includes(CanvasPolicyRequestType.Document),
     { message: 'A document exclusion must apply to documents', path: ['requestTypes'] },
 );
 
@@ -173,7 +198,7 @@ const documentExclusionValidator = preparedPolicyRuleValidator.refine(
 export const protectionPolicyArtifactValidator = zod.object({
     schemaVersion: zod.literal(1),
     revision: zod.string().min(1),
-    browser: zod.enum(['chromium-mv3', 'firefox-mv2']),
+    browser: zod.nativeEnum(CanvasPolicyBrowser),
     selectors: zod.object({
         matches: zod.string().min(1).array().readonly(),
         excludeMatches: zod.string().min(1).array().readonly(),

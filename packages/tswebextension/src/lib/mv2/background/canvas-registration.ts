@@ -2,6 +2,12 @@
 import browser from 'webextension-polyfill';
 
 import {
+    CanvasAvailabilityStatus,
+    CanvasOperationStatus,
+    CanvasPolicyBrowser,
+    CanvasRegistrationOperation,
+} from '../../common/canvas-protection/constants';
+import {
     type Available,
     type ProtectionPolicyArtifact,
     type RegistrationOperationOutcome,
@@ -27,9 +33,12 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
      */
     public async checkAvailability(): Promise<Available<boolean>> {
         if (typeof browser.contentScripts?.register !== 'function') {
-            return { status: 'unavailable', reason: 'Firefox contentScripts.register is unavailable' };
+            return {
+                status: CanvasAvailabilityStatus.Unavailable,
+                reason: 'Firefox contentScripts.register is unavailable',
+            };
         }
-        return { status: 'available', value: this.registrations.size > 0 };
+        return { status: CanvasAvailabilityStatus.Available, value: this.registrations.size > 0 };
     }
 
     /**
@@ -46,7 +55,7 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
         code: string,
         policy: ProtectionPolicyArtifact,
     ): Promise<readonly RegistrationOperationOutcome[]> {
-        if (policy.browser !== 'firefox-mv2') {
+        if (policy.browser !== CanvasPolicyBrowser.FirefoxMv2) {
             throw new CanvasRegistrationOperationError('Firefox canvas policy browser mismatch', []);
         }
         const previous = [...this.registrations];
@@ -62,21 +71,35 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
                     ? { excludeMatches: [...policy.selectors.excludeMatches] } : {}),
             });
             this.registrations.add(registration);
-            operations.push({ operation: 'register', status: 'succeeded' });
+            operations.push({
+                operation: CanvasRegistrationOperation.Register,
+                status: CanvasOperationStatus.Succeeded,
+            });
         } catch (error) {
-            operations.push({ operation: 'register', status: 'failed', reason: String(error) });
+            operations.push({
+                operation: CanvasRegistrationOperation.Register,
+                status: CanvasOperationStatus.Failed,
+                reason: String(error),
+            });
             throw new CanvasRegistrationOperationError('Firefox canvas registration failed', operations);
         }
         for (const old of previous) {
             try {
                 await old.unregister();
                 this.registrations.delete(old);
-                operations.push({ operation: 'unregister', status: 'succeeded' });
+                operations.push({
+                    operation: CanvasRegistrationOperation.Unregister,
+                    status: CanvasOperationStatus.Succeeded,
+                });
             } catch (error) {
-                operations.push({ operation: 'unregister', status: 'failed', reason: String(error) });
+                operations.push({
+                    operation: CanvasRegistrationOperation.Unregister,
+                    status: CanvasOperationStatus.Failed,
+                    reason: String(error),
+                });
             }
         }
-        if (operations.some((operation) => operation.status === 'failed')) {
+        if (operations.some((operation) => operation.status === CanvasOperationStatus.Failed)) {
             throw new CanvasRegistrationOperationError('Firefox canvas replacement partially failed', operations);
         }
         return operations;
@@ -95,12 +118,19 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
             try {
                 await registration.unregister();
                 this.registrations.delete(registration);
-                operations.push({ operation: 'unregister', status: 'succeeded' });
+                operations.push({
+                    operation: CanvasRegistrationOperation.Unregister,
+                    status: CanvasOperationStatus.Succeeded,
+                });
             } catch (error) {
-                operations.push({ operation: 'unregister', status: 'failed', reason: String(error) });
+                operations.push({
+                    operation: CanvasRegistrationOperation.Unregister,
+                    status: CanvasOperationStatus.Failed,
+                    reason: String(error),
+                });
             }
         }
-        if (operations.some((operation) => operation.status === 'failed')) {
+        if (operations.some((operation) => operation.status === CanvasOperationStatus.Failed)) {
             throw new CanvasRegistrationOperationError('Firefox canvas removal partially failed', operations);
         }
         return operations;

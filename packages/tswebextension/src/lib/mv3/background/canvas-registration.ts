@@ -1,5 +1,11 @@
 /* eslint-disable class-methods-use-this -- Browser adapters implement a common instance dependency contract. */
 import {
+    CanvasAvailabilityStatus,
+    CanvasOperationStatus,
+    CanvasPolicyBrowser,
+    CanvasRegistrationOperation,
+} from '../../common/canvas-protection/constants';
+import {
     type Available,
     type ProtectionPolicyArtifact,
     type RegistrationOperationOutcome,
@@ -23,10 +29,10 @@ export class ChromiumCanvasRegistration implements CanvasRegistrationAdapter {
     public async checkAvailability(): Promise<Available<boolean>> {
         try {
             const scripts = await chrome.userScripts.getScripts({ ids: [CANVAS_REGISTRATION_ID] });
-            return { status: 'available', value: scripts.length > 0 };
+            return { status: CanvasAvailabilityStatus.Available, value: scripts.length > 0 };
         } catch (error) {
             return {
-                status: 'unavailable',
+                status: CanvasAvailabilityStatus.Unavailable,
                 reason: `Chromium userScripts access unavailable: ${String(error)}. `
                 + 'Enable Allow User Scripts for this extension (Developer mode before Chrome 138).',
             };
@@ -47,16 +53,20 @@ export class ChromiumCanvasRegistration implements CanvasRegistrationAdapter {
         code: string,
         policy: ProtectionPolicyArtifact,
     ): Promise<readonly RegistrationOperationOutcome[]> {
-        if (policy.browser !== 'chromium-mv3') {
+        if (policy.browser !== CanvasPolicyBrowser.ChromiumMv3) {
             throw new CanvasRegistrationOperationError('Chromium canvas policy browser mismatch', []);
         }
         const operations: RegistrationOperationOutcome[] = [];
         let existing: chrome.userScripts.RegisteredUserScript[];
         try {
             existing = await chrome.userScripts.getScripts({ ids: [CANVAS_REGISTRATION_ID] });
-            operations.push({ operation: 'check', status: 'succeeded' });
+            operations.push({ operation: CanvasRegistrationOperation.Check, status: CanvasOperationStatus.Succeeded });
         } catch (error) {
-            operations.push({ operation: 'check', status: 'failed', reason: String(error) });
+            operations.push({
+                operation: CanvasRegistrationOperation.Check,
+                status: CanvasOperationStatus.Failed,
+                reason: String(error),
+            });
             throw new CanvasRegistrationOperationError('Chromium canvas registration check failed', operations);
         }
         const script: chrome.userScripts.RegisteredUserScript = {
@@ -68,16 +78,18 @@ export class ChromiumCanvasRegistration implements CanvasRegistrationAdapter {
             matches: [...policy.selectors.matches],
             excludeMatches: [...policy.selectors.excludeMatches],
         };
-        const operation = existing.length > 0 ? 'update' : 'register';
+        const operation = existing.length > 0
+            ? CanvasRegistrationOperation.Update
+            : CanvasRegistrationOperation.Register;
         try {
-            if (operation === 'update') {
+            if (operation === CanvasRegistrationOperation.Update) {
                 await chrome.userScripts.update([script]);
             } else {
                 await chrome.userScripts.register([script]);
             }
-            operations.push({ operation, status: 'succeeded' });
+            operations.push({ operation, status: CanvasOperationStatus.Succeeded });
         } catch (error) {
-            operations.push({ operation, status: 'failed', reason: String(error) });
+            operations.push({ operation, status: CanvasOperationStatus.Failed, reason: String(error) });
             throw new CanvasRegistrationOperationError(`Chromium canvas ${operation} failed`, operations);
         }
         return operations;
@@ -93,10 +105,14 @@ export class ChromiumCanvasRegistration implements CanvasRegistrationAdapter {
     public async remove(): Promise<readonly RegistrationOperationOutcome[]> {
         try {
             await chrome.userScripts.unregister({ ids: [CANVAS_REGISTRATION_ID] });
-            return [{ operation: 'unregister', status: 'succeeded' }];
+            return [{ operation: CanvasRegistrationOperation.Unregister, status: CanvasOperationStatus.Succeeded }];
         } catch (error) {
             throw new CanvasRegistrationOperationError('Chromium canvas removal failed', [
-                { operation: 'unregister', status: 'failed', reason: String(error) },
+                {
+                    operation: CanvasRegistrationOperation.Unregister,
+                    status: CanvasOperationStatus.Failed,
+                    reason: String(error),
+                },
             ]);
         }
     }

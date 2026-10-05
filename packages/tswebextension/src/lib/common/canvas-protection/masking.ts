@@ -1,3 +1,5 @@
+// Part of the engine injected into pages: plain functions instead of a static class keep it small,
+// see engine-entry.ts.
 import { canvasIntrinsics as intrinsics, withoutPrototype } from './intrinsics';
 
 type ApplyHandler<T extends Function> = NonNullable<ProxyHandler<T>['apply']>;

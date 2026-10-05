@@ -31,3 +31,13 @@ export {
     type RegistrationResult,
     protectionPolicyArtifactValidator,
 } from '../../common/canvas-protection/contracts';
+export {
+    CanvasAvailabilityStatus,
+    CanvasConditionInput,
+    CanvasConditionType,
+    CanvasOperationStatus,
+    CanvasPolicyBrowser,
+    CanvasPolicyRequestType,
+    CanvasRegistrationOperation,
+    CanvasRegistrationStatus,
+} from '../../common/canvas-protection/constants';

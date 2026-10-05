@@ -1,3 +1,5 @@
+// Part of the engine injected into pages: plain functions instead of a static class keep it small,
+// see engine-entry.ts.
 /**
  * JavaScript operations captured privately when the standalone realm engine loads.
  * Later page replacements never receive hash state, seeds or private pixel buffers.

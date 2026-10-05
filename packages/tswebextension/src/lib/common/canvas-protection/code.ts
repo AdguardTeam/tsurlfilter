@@ -1,5 +1,6 @@
 import engineSource from 'virtual:canvas-engine';
 
+import { CanvasPolicyBrowser } from './constants';
 import { type CanvasBootstrapSnapshot } from './contracts';
 import { deriveInstallationTokens } from './noise';
 
@@ -20,7 +21,7 @@ export class CanvasProtectionCode {
         const tokens = deriveInstallationTokens(snapshot.session);
         // Chromium names a user script by its extension URL in stack traces, so the script is renamed.
         // Firefox already reports registered code as anonymous.
-        const name = snapshot.policy.browser === 'chromium-mv3' ? '\n//# sourceURL=<anonymous>' : '';
+        const name = snapshot.policy.browser === CanvasPolicyBrowser.ChromiumMv3 ? '\n//# sourceURL=<anonymous>' : '';
         const args = `${CanvasProtectionCode.serialize(snapshot)},${CanvasProtectionCode.serialize(tokens)}`;
         return `(()=>{
 ${engineSource}

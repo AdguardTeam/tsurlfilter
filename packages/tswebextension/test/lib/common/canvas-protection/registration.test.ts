@@ -10,6 +10,13 @@ import {
 } from 'vitest';
 
 import {
+    CanvasAvailabilityStatus,
+    CanvasOperationStatus,
+    CanvasPolicyBrowser,
+    CanvasRegistrationOperation,
+    CanvasRegistrationStatus,
+} from '../../../../src/lib/common/canvas-protection/constants';
+import {
     type CanvasBootstrapSnapshot,
     type CanvasFeatureGates,
     type CanvasProtectionStore,
@@ -25,9 +32,18 @@ import { createProtectAllPolicy } from './fixtures/prepared-policies';
 
 const enabled: CanvasFeatureGates = { filteringEnabled: true, stealthModeEnabled: true, protectCanvas: true };
 const disabled: CanvasFeatureGates = { ...enabled, protectCanvas: false };
-const check: RegistrationOperationOutcome = { operation: 'check', status: 'succeeded' };
-const registered: RegistrationOperationOutcome = { operation: 'register', status: 'succeeded' };
-const unregistered: RegistrationOperationOutcome = { operation: 'unregister', status: 'succeeded' };
+const check: RegistrationOperationOutcome = {
+    operation: CanvasRegistrationOperation.Check,
+    status: CanvasOperationStatus.Succeeded,
+};
+const registered: RegistrationOperationOutcome = {
+    operation: CanvasRegistrationOperation.Register,
+    status: CanvasOperationStatus.Succeeded,
+};
+const unregistered: RegistrationOperationOutcome = {
+    operation: CanvasRegistrationOperation.Unregister,
+    status: CanvasOperationStatus.Succeeded,
+};
 
 /**
  * Builds an enabled request with a prepared test policy.
@@ -37,7 +53,7 @@ const unregistered: RegistrationOperationOutcome = { operation: 'unregister', st
  * @returns Request for the registration.
  */
 const request = (revision = 'policy-a'): Parameters<CanvasProtectionRegistration['apply']>[0] => ({
-    gates: enabled, policy: createProtectAllPolicy('chromium-mv3', revision),
+    gates: enabled, policy: createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, revision),
 });
 
 describe('Canvas protection registration', () => {
@@ -58,7 +74,7 @@ describe('Canvas protection registration', () => {
         vi.stubGlobal('crypto', webcrypto);
         present = false;
         adapter = {
-            checkAvailability: vi.fn(async () => ({ status: 'available', value: present })),
+            checkAvailability: vi.fn(async () => ({ status: CanvasAvailabilityStatus.Available, value: present })),
             install: vi.fn(async () => {
                 present = true;
                 return [registered];
@@ -74,13 +90,13 @@ describe('Canvas protection registration', () => {
     });
 
     it('stays disabled without browser writes when protection is off', async () => {
-        expect(registration.getState().status).toBe('unavailable');
+        expect(registration.getState().status).toBe(CanvasRegistrationStatus.Unavailable);
         const result = await registration.apply({ gates: disabled });
         expect(result).toEqual({
             requested: { gates: disabled, revision: null },
-            installed: { status: 'unavailable', reason: expect.any(String) },
+            installed: { status: CanvasAvailabilityStatus.Unavailable, reason: expect.any(String) },
             operations: [check],
-            status: 'disabled',
+            status: CanvasRegistrationStatus.Disabled,
         });
         expect(registration.getState()).toBe(result);
         expect(adapter.install).not.toHaveBeenCalled();
@@ -89,8 +105,14 @@ describe('Canvas protection registration', () => {
     });
 
     it('stays disabled when the browser API is missing and protection is off', async () => {
-        adapter.checkAvailability.mockResolvedValue({ status: 'unavailable', reason: 'no access' });
-        expect(await registration.apply({ gates: disabled })).toMatchObject({ status: 'disabled', operations: [] });
+        adapter.checkAvailability.mockResolvedValue({
+            status: CanvasAvailabilityStatus.Unavailable,
+            reason: 'no access',
+        });
+        expect(await registration.apply({ gates: disabled })).toMatchObject({
+            status: CanvasRegistrationStatus.Disabled,
+            operations: [],
+        });
     });
 
     it('installs code with a new session and records the acknowledgment', async () => {
@@ -101,9 +123,12 @@ describe('Canvas protection registration', () => {
         expect(adapter.install).toHaveBeenCalledWith(createCode.mock.results[0].value, requested.policy);
         expect(result).toEqual({
             requested: { gates: enabled, revision: 'policy-a' },
-            installed: { status: 'available', value: { revision: 'policy-a', generation: session.generation } },
+            installed: {
+                status: CanvasAvailabilityStatus.Available,
+                value: { revision: 'policy-a', generation: session.generation },
+            },
             operations: [check, registered],
-            status: 'installed',
+            status: CanvasRegistrationStatus.Installed,
         });
         expect(store.canvasProtectionRegistration).toEqual({
             revision: 'policy-a', generation: session.generation, codeHash: expect.stringMatching(/^[0-9a-f]{64}$/),
@@ -143,7 +168,9 @@ describe('Canvas protection registration', () => {
         await registration.apply(requested);
         const result = await registration.apply({ ...requested, gates: { ...enabled, stealthModeEnabled: false } });
         expect(result).toMatchObject({
-            status: 'disabled', installed: { status: 'unavailable' }, operations: [check, unregistered],
+            status: CanvasRegistrationStatus.Disabled,
+            installed: { status: CanvasAvailabilityStatus.Unavailable },
+            operations: [check, unregistered],
         });
         expect(store.canvasProtectionRegistration).toBeUndefined();
     });
@@ -155,20 +182,28 @@ describe('Canvas protection registration', () => {
 
     it('requires a prepared policy', async () => {
         expect(await registration.apply({ gates: enabled })).toMatchObject({
-            status: 'unavailable', requiredUserAction: 'Supply a prepared canvas protection policy',
+            status: CanvasRegistrationStatus.Unavailable,
+            requiredUserAction: 'Supply a prepared canvas protection policy',
         });
         expect(adapter.install).not.toHaveBeenCalled();
     });
 
     it('reports a missing browser API and keeps the acknowledgment', async () => {
         const initial = await registration.apply(request());
-        adapter.checkAvailability.mockResolvedValue({ status: 'unavailable', reason: 'no access' });
+        adapter.checkAvailability.mockResolvedValue({
+            status: CanvasAvailabilityStatus.Unavailable,
+            reason: 'no access',
+        });
         const expected = {
-            status: 'unavailable',
+            status: CanvasRegistrationStatus.Unavailable,
             reason: 'no access',
             requiredUserAction: 'no access',
             installed: initial.installed,
-            operations: [{ operation: 'check', status: 'failed', reason: 'no access' }],
+            operations: [{
+                operation: CanvasRegistrationOperation.Check,
+                status: CanvasOperationStatus.Failed,
+                reason: 'no access',
+            }],
         };
         expect(await registration.apply(request('policy-b'))).toMatchObject(expected);
         expect(await registration.apply({ gates: disabled })).toMatchObject(expected);
@@ -178,19 +213,23 @@ describe('Canvas protection registration', () => {
 
     it('reports a failed operation with its partial evidence and allows a retry', async () => {
         const initial = await registration.apply(request());
-        const failure: RegistrationOperationOutcome = { operation: 'unregister', status: 'failed', reason: 'rejected' };
+        const failure: RegistrationOperationOutcome = {
+            operation: CanvasRegistrationOperation.Unregister,
+            status: CanvasOperationStatus.Failed,
+            reason: 'rejected',
+        };
         adapter.install.mockRejectedValueOnce(new CanvasRegistrationOperationError('retirement rejected', [
             registered, failure,
         ]));
         expect(await registration.apply(request('policy-b'))).toMatchObject({
-            status: 'failed',
+            status: CanvasRegistrationStatus.Failed,
             reason: 'retirement rejected',
             installed: initial.installed,
             operations: [check, registered, failure],
         });
         adapter.install.mockRejectedValueOnce(new Error('unexpected'));
         await expect(registration.apply(request('policy-b'))).rejects.toThrow('unexpected');
-        expect((await registration.apply(request('policy-b'))).status).toBe('installed');
+        expect((await registration.apply(request('policy-b'))).status).toBe(CanvasRegistrationStatus.Installed);
     });
 
     it('runs overlapping requests in order and keeps the latest one pending', async () => {
@@ -205,22 +244,30 @@ describe('Canvas protection registration', () => {
         const latest = registration.apply(request('policy-latest'));
         const removal = registration.apply({ gates: disabled });
         await vi.waitFor(() => expect(adapter.install).toHaveBeenCalledOnce());
-        expect(registration.getState()).toMatchObject({ status: 'unavailable', requested: { gates: disabled } });
-        acknowledge();
-        expect((await first).status).toBe('installed');
         expect(registration.getState()).toMatchObject({
-            status: 'unavailable', requested: { gates: disabled }, installed: { value: { revision: 'policy-first' } },
+            status: CanvasRegistrationStatus.Unavailable,
+            requested: { gates: disabled },
+        });
+        acknowledge();
+        expect((await first).status).toBe(CanvasRegistrationStatus.Installed);
+        expect(registration.getState()).toMatchObject({
+            status: CanvasRegistrationStatus.Unavailable,
+            requested: { gates: disabled },
+            installed: { value: { revision: 'policy-first' } },
         });
         expect((await latest).installed).toMatchObject({ value: { revision: 'policy-latest' } });
         const removed = await removal;
-        expect(removed.status).toBe('disabled');
+        expect(removed.status).toBe(CanvasRegistrationStatus.Disabled);
         expect(registration.getState()).toBe(removed);
     });
 
     it('owns a copy of the request', async () => {
-        const requested = { gates: { ...enabled }, policy: createProtectAllPolicy('chromium-mv3', 'policy-a') };
+        const requested = {
+            gates: { ...enabled },
+            policy: createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'policy-a'),
+        };
         const pending = registration.apply(requested);
         requested.gates.protectCanvas = false;
-        expect((await pending).status).toBe('installed');
+        expect((await pending).status).toBe(CanvasRegistrationStatus.Installed);
     });
 });

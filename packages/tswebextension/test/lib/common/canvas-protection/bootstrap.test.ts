@@ -9,6 +9,12 @@ import {
     bootstrapCanvasProtection,
     readDocumentPolicyInput,
 } from '../../../../src/lib/common/canvas-protection/bootstrap';
+import {
+    CanvasConditionInput,
+    CanvasConditionType,
+    CanvasPolicyBrowser,
+    CanvasPolicyRequestType,
+} from '../../../../src/lib/common/canvas-protection/constants';
 import { type CanvasBootstrapSnapshot } from '../../../../src/lib/common/canvas-protection/contracts';
 import { deriveInstallationTokens } from '../../../../src/lib/common/canvas-protection/noise';
 
@@ -21,7 +27,9 @@ import { createProtectAllPolicy } from './fixtures/prepared-policies';
  *
  * @returns A current snapshot.
  */
-const snapshot = (policy = createProtectAllPolicy('chromium-mv3', 'current')): CanvasBootstrapSnapshot => ({
+const snapshot = (
+    policy = createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'current'),
+): CanvasBootstrapSnapshot => ({
     session: { root: '0123456789abcdef0123456789abcdef', generation: 'abcdef0123456789abcdef0123456789' },
     policy,
 });
@@ -59,7 +67,7 @@ describe('document canvas bootstrap', () => {
     it('describes a top document as its own top and source', () => {
         expect(readDocumentPolicyInput(window)).toEqual({
             url: window.location.href,
-            requestType: 'document',
+            requestType: CanvasPolicyRequestType.Document,
             topUrl: window.location.href,
             sourceUrl: window.location.href,
         });
@@ -72,7 +80,7 @@ describe('document canvas bootstrap', () => {
             ['https://site.example', 'https://site.example'],
         ))).toEqual({
             url: 'https://site.example/frame',
-            requestType: 'subdocument',
+            requestType: CanvasPolicyRequestType.Subdocument,
             topUrl: 'https://site.example/top',
             sourceUrl: 'https://site.example/parent',
         });
@@ -89,7 +97,7 @@ describe('document canvas bootstrap', () => {
     });
 
     it('leaves a cross-origin ancestor unknown when the browser lists no origin for it', () => {
-        const unknown = { requestType: 'subdocument', topUrl: undefined, sourceUrl: undefined };
+        const unknown = { requestType: CanvasPolicyRequestType.Subdocument, topUrl: undefined, sourceUrl: undefined };
         // Firefox before 148 has no list; an opaque or hidden origin is listed as "null".
         expect(readDocumentPolicyInput(frameWindow('https://tracker.example/pixel', [null]))).toMatchObject(unknown);
         expect(readDocumentPolicyInput(frameWindow('https://tracker.example/pixel', [null], ['null'])))
@@ -103,7 +111,7 @@ describe('document canvas bootstrap', () => {
             get: (): never => { calls += 1; throw new Error('page marker must remain unread'); },
         });
         try {
-            expect(readDocumentPolicyInput(window).requestType).toBe('document');
+            expect(readDocumentPolicyInput(window).requestType).toBe(CanvasPolicyRequestType.Document);
             expect(calls).toBe(0);
         } finally {
             Reflect.deleteProperty(window, 'adguardCanvasContext');
@@ -116,11 +124,11 @@ describe('document canvas bootstrap', () => {
         const { toString } = Function.prototype;
         const globals = Reflect.ownKeys(window);
         const excluded = snapshot({
-            ...createProtectAllPolicy('chromium-mv3', 'current'),
+            ...createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'current'),
             ownFrameExclusions: [{
-                requestTypes: ['document'],
+                requestTypes: [CanvasPolicyRequestType.Document],
                 condition: {
-                    type: 'url-regexp', input: 'frame-url', pattern: '.', flags: '',
+                    type: CanvasConditionType.UrlRegexp, input: CanvasConditionInput.FrameUrl, pattern: '.', flags: '',
                 },
             }],
         });

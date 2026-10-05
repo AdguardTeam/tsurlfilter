@@ -2,6 +2,11 @@ import { describe, expect, test } from 'vitest';
 import { server } from 'vitest/browser';
 
 import { CanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
+import {
+    CanvasConditionInput,
+    CanvasConditionType,
+    CanvasPolicyRequestType,
+} from '../../../src/lib/common/canvas-protection/constants';
 
 import {
     HEIGHT,
@@ -263,9 +268,12 @@ describe('canvas protection of same-origin child frames', () => {
                 policy: {
                     ...state.policy,
                     ownFrameExclusions: [{
-                        requestTypes: ['subdocument'],
+                        requestTypes: [CanvasPolicyRequestType.Subdocument],
                         condition: {
-                            type: 'url-regexp', input: 'frame-url', pattern: 'empty\\.html\\?child', flags: '',
+                            type: CanvasConditionType.UrlRegexp,
+                            input: CanvasConditionInput.FrameUrl,
+                            pattern: 'empty\\.html\\?child',
+                            flags: '',
                         },
                     }],
                 },
