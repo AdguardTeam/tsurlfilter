@@ -12,7 +12,7 @@ import { LogLevel } from '@adguard/logger';
 import { FilterList } from '@adguard/tsurlfilter';
 
 import { type AppInterface, type MessageHandler } from '../../common/app';
-import { ALLOWLIST_FILTER_ID, BLOCKING_TRUSTED_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { ALLOWLIST_FILTER_ID, BLOCKING_TRUSTED_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRulesetsError } from '../errors/failed-enable-rulesets-error';
@@ -403,14 +403,7 @@ export class TsWebExtension implements AppInterface<
             // Combine all allowlist rules into one network rule.
             const combinedAllowlistRules = allowlistApi.combineAllowListRulesForDNR();
 
-            const userRulesFilter = new Filter(
-                USER_FILTER_ID,
-                async () => new FilterList(
-                    configuration.userrules.content,
-                    USER_FILTER_ID,
-                    configuration.userrules.conversionData,
-                ).getContent(),
-            );
+            const userRulesFilter = FiltersApi.createUserRulesFilter(configuration.userrules);
 
             const allowlistFilter = new Filter(
                 ALLOWLIST_FILTER_ID,
