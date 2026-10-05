@@ -74,24 +74,6 @@ interface ApplyCosmeticRulesParams {
  */
 export class CosmeticApi extends CosmeticApiCommon {
     /**
-     * Exact hostnames mapped to the hashes of rules covered by preregistered
-     * content scripts; dynamic injection of covered rules is skipped to
-     * avoid double execution. Hostname semantics match the content-script
-     * match patterns exactly: a `www.` alias does not cover the apex.
-     */
-    private static preregisteredScriptRules: ReadonlyMap<string, ReadonlySet<string>> = new Map();
-
-    /**
-     * Sets the rules covered by preregistered content scripts, per hostname.
-     *
-     * @param rules Hostname to covered rule hashes map, where each hash is
-     * computed by {@link computeRuleHashCached} (memoized `computeRuleHash`).
-     */
-    public static setPreregisteredScriptRules(rules: ReadonlyMap<string, ReadonlySet<string>>): void {
-        CosmeticApi.preregisteredScriptRules = rules;
-    }
-
-    /**
      * Resolves the hostname whose preregistered coverage applies to a frame.
      * Opaque frames (`about:blank`, srcdoc) have no own host: their coverage
      * comes from the nearest HTTP(S) ancestor, mirroring the
@@ -152,7 +134,7 @@ export class CosmeticApi extends CosmeticApiCommon {
     ): ReadonlySet<string> | undefined {
         const coveredRules = preExistingDocument
             ? appContext.preregisteredScriptRulesAtBoot
-            : CosmeticApi.preregisteredScriptRules;
+            : appContext.preregisteredScriptRules;
 
         if (!coveredRules || coveredRules.size === 0) {
             return undefined;

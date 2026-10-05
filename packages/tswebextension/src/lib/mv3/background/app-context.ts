@@ -41,6 +41,17 @@ export class AppContext {
     accessor cosmeticsInjectedOnStartup!: boolean;
 
     /**
+     * Per-hostname hashes of rules covered by the currently active
+     * preregistered content-script registrations, recovered from their `js`
+     * file lists. Published by `PreregisteredScriptsService` on every
+     * sync/clear; dynamic injection of covered rules is skipped to avoid
+     * double execution. Hostname semantics match the content-script match
+     * patterns exactly: a `www.` alias does not cover the apex. Plain
+     * (non-persisted) field.
+     */
+    public preregisteredScriptRules?: Map<string, Set<string>>;
+
+    /**
      * Per-hostname hashes of rules covered by preregistered content-script
      * registrations that existed when the service worker started (before
      * the first sync of this SW lifetime), recovered from the persisted

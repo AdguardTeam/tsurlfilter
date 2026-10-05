@@ -10,7 +10,6 @@ import { CosmeticOption, CosmeticRule } from '@adguard/tsurlfilter';
 
 import { appContext } from '../../../../../src/lib/mv3/background/app-context';
 import { ContentScriptManager } from '../../../../../src/lib/mv3/background/content-script-manager';
-import { CosmeticApi } from '../../../../../src/lib/mv3/background/cosmetic-api';
 import { DocumentApi } from '../../../../../src/lib/mv3/background/document-api';
 import { engineApi } from '../../../../../src/lib/mv3/background/engine-api';
 import {
@@ -58,12 +57,6 @@ vi.mock('../../../../../src/lib/mv3/background/content-script-manager', () => ({
         clear: vi.fn().mockImplementation(async () => {
             registryState.descriptors = [];
         }),
-    },
-}));
-
-vi.mock('../../../../../src/lib/mv3/background/cosmetic-api', () => ({
-    CosmeticApi: {
-        setPreregisteredScriptRules: vi.fn(),
     },
 }));
 
@@ -242,9 +235,7 @@ describe('PreregisteredScriptsService', () => {
         vi.clearAllMocks();
         vi.unstubAllGlobals();
         appContext.preregisteredScriptRulesAtBoot = undefined;
-        // Start each test before the first sync of a service-worker lifetime.
-        // @ts-expect-error - test-only reset of the private per-worker state
-        PreregisteredScriptsService.lastCoveredRules = null;
+        appContext.preregisteredScriptRules = undefined;
         registryState.descriptors = [];
     });
 
@@ -813,6 +804,31 @@ describe('PreregisteredScriptsService', () => {
             expect(result).toEqual(new Map());
         });
 
+        it('does not resurrect stale or boot coverage when a later sync fails after a read failure', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            await setupRulesWithManifest({ 'youtube.com': [rule] });
+            appContext.preregisteredScriptRulesAtBoot = new Map([
+                ['youtube.com', new Set(['0123456789abcdef'])],
+            ]);
+
+            // First sync succeeds and publishes its coverage.
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            // Second sync replaces the registrations, but reading them back
+            // fails: empty coverage is published.
+            vi.mocked(ContentScriptManager.getRegistered).mockRejectedValueOnce(new Error('read failed'));
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            // Third sync fails: neither the pre-mutation coverage nor the
+            // boot snapshot describes the active registrations anymore, so
+            // neither may be republished.
+            vi.mocked(ContentScriptManager.syncDetailed).mockRejectedValueOnce(new Error('invalid namespace'));
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(result).toEqual(new Map());
+            expect(appContext.preregisteredScriptRules).toEqual(new Map());
+        });
+
         it('covers no domains (without throwing) when the engine fails', async () => {
             setupManifest([]);
             vi.mocked(engineApi.matchCosmetic).mockImplementation(() => {
@@ -886,7 +902,7 @@ describe('PreregisteredScriptsService', () => {
                 new Map([['youtube.com', new Set([hash])]]),
             );
 
-            expect(CosmeticApi.setPreregisteredScriptRules).toHaveBeenLastCalledWith(
+            expect(appContext.preregisteredScriptRules).toEqual(
                 new Map([['youtube.com', new Set([hash])]]),
             );
         });
@@ -901,7 +917,7 @@ describe('PreregisteredScriptsService', () => {
             // stick for the whole service-worker lifetime and misreport
             // still-active persisted registrations as uncovered.
             expect(appContext.preregisteredScriptRulesAtBoot).toBeUndefined();
-            expect(CosmeticApi.setPreregisteredScriptRules).toHaveBeenCalled();
+            expect(appContext.preregisteredScriptRules).toEqual(new Map());
 
             vi.mocked(ContentScriptManager.getRegistered).mockResolvedValue([
                 { id: 'youtube.com', js: [`${SCRIPTS_PATH}/${getRuleFilename('0123456789abcdef')}`] },
@@ -931,13 +947,13 @@ describe('PreregisteredScriptsService', () => {
             expect(appContext.preregisteredScriptRulesAtBoot).toEqual(
                 new Map([['youtube.com', new Set(['0123456789abcdef'])]]),
             );
-            expect(CosmeticApi.setPreregisteredScriptRules).toHaveBeenCalledWith(new Map());
+            expect(appContext.preregisteredScriptRules).toEqual(new Map());
         });
 
-        it('invalidates lastCoveredRules after a successful clear', async () => {
-            // A later sync failure must not publish the stale coverage from
-            // the first sync (it would suppress dynamic injection for rules
-            // with no active registration).
+        it('does not resurrect stale coverage after a successful clear', async () => {
+            // A later sync failure must not republish the coverage from the
+            // first sync (it would suppress dynamic injection for rules with
+            // no active registration).
             const rule = mockScriptletRule('set-cookie', []);
             await setupRulesWithManifest({ 'youtube.com': [rule] });
 
@@ -946,10 +962,11 @@ describe('PreregisteredScriptsService', () => {
 
             // Configure without preregistration: the namespace is cleared.
             await PreregisteredScriptsService.init(true, undefined);
+            expect(appContext.preregisteredScriptRules).toEqual(new Map());
 
-            // A later sync fails: without the invalidation it would publish
-            // the stale coverage from the first sync and suppress dynamic
-            // injection for rules with no active registration.
+            // A later sync fails: republishing the pre-clear coverage would
+            // suppress dynamic injection for rules with no active
+            // registration.
             vi.mocked(ContentScriptManager.syncDetailed).mockRejectedValueOnce(new Error('invalid namespace'));
 
             const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
@@ -979,7 +996,7 @@ describe('PreregisteredScriptsService', () => {
 
             // init() must wait for the queued sync before clearing, so the
             // sync cannot re-register after the clear and publish coverage
-            // after the empty map.
+            // for registrations the clear just removed.
             expect(order).toEqual(['sync', 'clear']);
 
             // Restore the default clear implementation for subsequent tests.
@@ -988,12 +1005,59 @@ describe('PreregisteredScriptsService', () => {
             });
         });
 
+        it('chains a sync enqueued during a clear after the clear', async () => {
+            await setupRulesWithManifest({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
+
+            const order: string[] = [];
+            let releaseClear = (): void => {};
+            const clearGate = new Promise<void>((resolve) => {
+                releaseClear = resolve;
+            });
+            let markClearStarted = (): void => {};
+            const clearStarted = new Promise<void>((resolve) => {
+                markClearStarted = resolve;
+            });
+
+            vi.mocked(ContentScriptManager.clear).mockImplementationOnce(async () => {
+                order.push('clear:start');
+                markClearStarted();
+                await clearGate;
+                order.push('clear:end');
+                registryState.descriptors = [];
+            });
+            vi.mocked(ContentScriptManager.syncDetailed).mockImplementationOnce(async () => {
+                order.push('sync');
+                return { errors: [], failedScriptIds: [] };
+            });
+
+            const initPromise = PreregisteredScriptsService.init(true, undefined);
+            await clearStarted;
+
+            // A concurrent configure() enqueues a sync while the clear is
+            // still in flight.
+            const syncPromise = PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            await new Promise((resolve) => {
+                setTimeout(resolve, 0);
+            });
+
+            // The sync must wait for the clear: running alongside it would
+            // let it re-register and publish coverage for registrations the
+            // clear just removed.
+            expect(order).toEqual(['clear:start']);
+
+            releaseClear();
+            await initPromise;
+            await syncPromise;
+
+            expect(order).toEqual(['clear:start', 'clear:end', 'sync']);
+        });
+
         it('still reports an empty map when clearing fails and no registrations exist', async () => {
             vi.mocked(ContentScriptManager.clear).mockRejectedValueOnce(new Error('cannot clear'));
 
             await PreregisteredScriptsService.init(true, undefined);
 
-            expect(CosmeticApi.setPreregisteredScriptRules).toHaveBeenCalledWith(new Map());
+            expect(appContext.preregisteredScriptRules).toEqual(new Map());
         });
 
         it('reports the boot snapshot when clearing fails with persisted registrations still active', async () => {
@@ -1007,7 +1071,7 @@ describe('PreregisteredScriptsService', () => {
             // The registrations could not be cleared and keep running at
             // document_start — reporting them as covered avoids double
             // execution in pre-existing tabs.
-            expect(CosmeticApi.setPreregisteredScriptRules).toHaveBeenCalledWith(
+            expect(appContext.preregisteredScriptRules).toEqual(
                 new Map([['youtube.com', new Set(['0123456789abcdef'])]]),
             );
         });
@@ -1025,7 +1089,7 @@ describe('PreregisteredScriptsService', () => {
             await PreregisteredScriptsService.stop();
 
             expect(ContentScriptManager.clear).toHaveBeenCalledWith('preregistered');
-            expect(CosmeticApi.setPreregisteredScriptRules).toHaveBeenCalledWith(new Map());
+            expect(appContext.preregisteredScriptRules).toEqual(new Map());
             expect(appContext.preregisteredScriptRulesAtBoot).toBeUndefined();
         });
 

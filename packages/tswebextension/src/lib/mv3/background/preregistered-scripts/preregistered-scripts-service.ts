@@ -2,7 +2,6 @@ import { logger } from '../../../common/utils/logger';
 import { appContext } from '../app-context';
 import { type PreregisteredScriptsConfig } from '../configuration';
 import { type ContentScriptDescriptor, ContentScriptManager } from '../content-script-manager';
-import { CosmeticApi } from '../cosmetic-api';
 import { engineApi } from '../engine-api';
 
 import {
@@ -80,28 +79,19 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  */
 export class PreregisteredScriptsService {
     /**
-     * Serializes concurrent {@link PreregisteredScriptsService.sync} calls:
-     * engine updates can trigger re-configuration while a previous sync is
-     * still in flight, and overlapping syncs would race on the shared
-     * content-script namespace.
+     * Serializes registration mutations — {@link PreregisteredScriptsService.sync}
+     * and {@link PreregisteredScriptsService.clear} — so overlapping calls
+     * cannot race on the shared content-script namespace.
      */
     private static syncQueue: Promise<unknown> = Promise.resolve();
 
     /**
-     * Covered rules of the last completed sync in this service-worker
-     * lifetime. Only used as the fallback when a sync AND the post-sync
-     * read of the active registrations both fail. `null` until the first
-     * successful read.
-     */
-    private static lastCoveredRules: Map<string, Set<string>> | null = null;
-
-    /**
      * Initializes the feature for the current configuration: snapshots the
      * persisted registrations once per service-worker lifetime (used to
-     * decide dynamic injection for pre-existing tabs), syncs them — or
+     * decide dynamic injection for pre-existing tabs), then syncs them — or
      * clears all when the feature is not configured, since persisted
-     * registrations would otherwise survive forever — and reports the
-     * covered rules to {@link CosmeticApi}.
+     * registrations would otherwise survive forever. Both operations
+     * publish the resulting coverage into {@link appContext}.
      *
      * @param preregistrationEnabled Whether preregistration should be active
      * (the caller composes it from `filteringEnabled && !debugScriptlets`).
@@ -123,59 +113,91 @@ export class PreregisteredScriptsService {
             await snapshotBootRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE);
         }
 
-        let coveredRules = new Map<string, Set<string>>();
-
         if (preregisteredScripts) {
-            coveredRules = await PreregisteredScriptsService.sync(
+            await PreregisteredScriptsService.sync(
                 preregistrationEnabled,
                 preregisteredScripts.domains,
                 preregisteredScripts.path,
             );
-        } else {
-            // A sync enqueued by an earlier configure() can still be in
-            // flight; wait for it so it cannot re-register right after the
-            // clear and publish its coverage after we publish the empty map.
-            await PreregisteredScriptsService.syncQueue.catch(() => undefined);
 
-            try {
-                await ContentScriptManager.clear(PREREGISTERED_SCRIPTS_NAMESPACE);
-                // A successful clear invalidates the last-known coverage: a
-                // later failed sync would otherwise publish stale covered
-                // hashes and suppress dynamic injection for rules with no
-                // active registration.
-                PreregisteredScriptsService.lastCoveredRules = null;
-            } catch (e) {
-                logger.error('[tsweb.PreregisteredScriptsService.init]: Failed to clear preregistered scripts', e);
-                coveredRules = PreregisteredScriptsService.lastCoveredRules
-                    ?? appContext.preregisteredScriptRulesAtBoot
-                    ?? coveredRules;
-            }
+            return;
         }
 
-        CosmeticApi.setPreregisteredScriptRules(coveredRules);
+        try {
+            await PreregisteredScriptsService.clear();
+            // A successful clear invalidates the published coverage: a later
+            // failed sync would otherwise republish stale covered hashes and
+            // suppress dynamic injection for rules with no active
+            // registration.
+            appContext.preregisteredScriptRules = new Map();
+        } catch (e) {
+            logger.error('[tsweb.PreregisteredScriptsService.init]: Failed to clear preregistered scripts', e);
+            appContext.preregisteredScriptRules = PreregisteredScriptsService.getFallbackCoverage();
+        }
     }
 
     /**
-     * Tears down preregistration: waits for any in-flight sync to settle,
-     * then clears the persisted registrations and resets coverage and the
-     * boot snapshot, so the dynamic path fully takes over after the app
-     * stops. Without the clear, `persistAcrossSessions` registrations would
-     * keep firing at `document_start` and survive browser sessions.
+     * Tears down preregistration: clears the persisted registrations through
+     * the queue (so an in-flight sync settles first), then resets the
+     * published coverage and the boot snapshot, so the dynamic path fully
+     * takes over after the app stops. Without the clear,
+     * `persistAcrossSessions` registrations would keep firing at
+     * `document_start` and survive browser sessions.
      */
     public static async stop(): Promise<void> {
-        // Wait for a queued sync so it cannot re-register right after the
-        // clear (a sync enqueued earlier would otherwise race the teardown).
-        await PreregisteredScriptsService.syncQueue.catch(() => undefined);
-
         try {
-            await ContentScriptManager.clear(PREREGISTERED_SCRIPTS_NAMESPACE);
+            await PreregisteredScriptsService.clear();
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.stop]: Failed to clear preregistered scripts', e);
         }
 
-        PreregisteredScriptsService.lastCoveredRules = null;
+        appContext.preregisteredScriptRules = new Map();
         appContext.preregisteredScriptRulesAtBoot = undefined;
-        CosmeticApi.setPreregisteredScriptRules(new Map());
+    }
+
+    /**
+     * Runs a registration mutation through {@link PreregisteredScriptsService.syncQueue},
+     * so it cannot overlap with a queued sync or clear.
+     *
+     * @param operation Operation to run.
+     *
+     * @returns Promise resolving with the operation's result; rejects when
+     * the operation fails.
+     */
+    private static enqueue<T>(operation: () => Promise<T>): Promise<T> {
+        const result = PreregisteredScriptsService.syncQueue.then(operation);
+        PreregisteredScriptsService.syncQueue = result.catch(() => undefined);
+
+        return result;
+    }
+
+    /**
+     * Clears all persisted registrations of the namespace through the queue,
+     * so a sync enqueued by a concurrent `configure()` cannot land between
+     * the queue wait and the clear, nor run alongside it and re-register
+     * what the clear just removed.
+     *
+     * @returns Promise resolving when the registrations are cleared;
+     * rejects when clearing fails.
+     */
+    private static clear(): Promise<void> {
+        return PreregisteredScriptsService.enqueue(
+            () => ContentScriptManager.clear(PREREGISTERED_SCRIPTS_NAMESPACE),
+        );
+    }
+
+    /**
+     * Returns the best-known coverage to publish when the active
+     * registrations cannot be observed: the last published coverage (the
+     * registrations it described are still active), or the boot snapshot
+     * before the first sync, or an empty map.
+     *
+     * @returns Hostname to covered rule hashes map.
+     */
+    private static getFallbackCoverage(): Map<string, Set<string>> {
+        return appContext.preregisteredScriptRules
+            ?? appContext.preregisteredScriptRulesAtBoot
+            ?? new Map();
     }
 
     /**
@@ -196,34 +218,31 @@ export class PreregisteredScriptsService {
      * with an active preregistered registration after the sync. Rules
      * cancelled by runtime `$path` exceptions, missing from the manifest, or
      * whose registration failed are absent — they stay on the dynamic
-     * injection path. On sync failure the coverage of the last completed
-     * sync is returned (the boot snapshot before the first sync completes):
-     * a failed sync leaves the previous registrations active, and this is
-     * the set that describes them. On a failed post-sync read the
-     * registrations were already replaced, so empty coverage is returned to
-     * avoid suppressing dynamic injection for rules with no active
-     * registration.
+     * injection path. The returned coverage is also published into
+     * {@link appContext}. On sync failure the last published coverage is
+     * republished (a failed sync leaves the previous registrations active,
+     * and this is the set that describes them). On a failed post-sync read
+     * the registrations were already replaced, so empty coverage is
+     * published to avoid suppressing dynamic injection for rules with no
+     * active registration.
      */
     public static async sync(
         preregistrationEnabled: boolean,
         domains: string[],
         scriptsPath: string,
     ): Promise<Map<string, Set<string>>> {
-        const result = PreregisteredScriptsService.syncQueue.then(() => {
+        return PreregisteredScriptsService.enqueue(() => {
             return PreregisteredScriptsService.doSync(
                 preregistrationEnabled,
                 domains,
                 scriptsPath,
             );
         });
-
-        PreregisteredScriptsService.syncQueue = result.catch(() => undefined);
-
-        return result;
     }
 
     /**
-     * Performs the actual sync; see {@link PreregisteredScriptsService.sync}.
+     * Performs the actual sync and publishes its coverage; see
+     * {@link PreregisteredScriptsService.sync}.
      *
      * @param preregistrationEnabled Whether preregistration should be active.
      * @param domains Configured preregistered domains.
@@ -240,7 +259,7 @@ export class PreregisteredScriptsService {
         const hostnames = expandHostnames(domains);
 
         // Sync attempt. A failure here leaves the previous registrations
-        // active, so the last-known (or boot) coverage still describes them.
+        // active, so the last published coverage still describes them.
         try {
             let scripts: ContentScriptDescriptor[] = [];
 
@@ -258,29 +277,35 @@ export class PreregisteredScriptsService {
             await ContentScriptManager.syncDetailed(PREREGISTERED_SCRIPTS_NAMESPACE, scripts);
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.doSync]: Sync failed, keeping dynamic injection', e);
-            return PreregisteredScriptsService.lastCoveredRules
-                ?? appContext.preregisteredScriptRulesAtBoot
-                ?? new Map();
+
+            const fallback = PreregisteredScriptsService.getFallbackCoverage();
+            appContext.preregisteredScriptRules = fallback;
+
+            return fallback;
         }
 
         // Report exactly what is registered, not what the sync attempted:
         // failed updates leave the previous registration active, and the
         // boot snapshot only describes pre-existing documents.
         // A read failure is different from a sync failure — the
-        // registrations were already replaced, so the last-known/boot
+        // registrations were already replaced, so the last published
         // coverage no longer matches what is active. Fail safe to empty
         // coverage: dynamic injection then re-runs everything, which is
         // harmless, instead of suppressing rules that have no registration.
         try {
             const coveredRules = await readActiveRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE);
-            PreregisteredScriptsService.lastCoveredRules = coveredRules;
+            appContext.preregisteredScriptRules = coveredRules;
 
             logger.info(`[tsweb.PreregisteredScriptsService.doSync]: Synced preregistered scripts: ${coveredRules.size}/${hostnames.length} hostnames covered`);
 
             return coveredRules;
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.doSync]: Failed to read active registrations, reporting empty coverage', e);
-            return new Map();
+
+            const empty = new Map<string, Set<string>>();
+            appContext.preregisteredScriptRules = empty;
+
+            return empty;
         }
     }
 

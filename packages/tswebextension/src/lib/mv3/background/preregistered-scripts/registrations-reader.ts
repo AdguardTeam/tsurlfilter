@@ -45,27 +45,19 @@ export const readActiveRegistrations = async (namespace: string): Promise<Map<st
 /**
  * Recovers, per hostname, the hashes of rules covered by registrations
  * persisted from previous service-worker lifetimes — the rules proven to
- * have executed at `document_start` in pre-existing tabs.
+ * have executed at `document_start` in pre-existing tabs — and publishes
+ * the snapshot into the app context.
  *
  * A failed snapshot is NOT persisted into the app context, so the next
  * configure retries it instead of sticking with an empty map for the rest
  * of the service-worker lifetime.
  *
  * @param namespace Namespace of the preregistered scripts.
- *
- * @returns Hostname to covered rule hashes map, or `null` on failure.
  */
-export const snapshotBootRegistrations = async (
-    namespace: string,
-): Promise<Map<string, Set<string>> | null> => {
+export const snapshotBootRegistrations = async (namespace: string): Promise<void> => {
     try {
-        const snapshot = await readActiveRegistrations(namespace);
-        if (snapshot !== null) {
-            appContext.preregisteredScriptRulesAtBoot = snapshot;
-        }
-        return snapshot;
+        appContext.preregisteredScriptRulesAtBoot = await readActiveRegistrations(namespace);
     } catch (e) {
         logger.error('[tsweb.registrations-reader]: Failed to snapshot preregistered scripts', e);
-        return null;
     }
 };

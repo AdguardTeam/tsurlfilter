@@ -128,7 +128,7 @@ const runCosmeticApply = async (
     frameId = 0,
     preExistingDocument = false,
 ): Promise<{ applyLocal: MockInstance; applyRemote: MockInstance }> => {
-    CosmeticApi.setPreregisteredScriptRules(new Map(coveredEntries));
+    appContext.preregisteredScriptRules = new Map(coveredEntries);
 
     const frameMock = vi.mocked(tabsApi.getFrameContext);
     if (typeof frame === 'function') {
@@ -155,15 +155,16 @@ const runCosmeticApply = async (
 describe('CosmeticApi — preregistered script rules', () => {
     beforeEach(() => {
         // Reset to an empty map before every test.
-        CosmeticApi.setPreregisteredScriptRules(new Map());
+        appContext.preregisteredScriptRules = new Map();
     });
 
     afterEach(() => {
         vi.clearAllMocks();
         delete (appContext as { preregisteredScriptRulesAtBoot?: unknown }).preregisteredScriptRulesAtBoot;
+        delete (appContext as { preregisteredScriptRules?: unknown }).preregisteredScriptRules;
     });
 
-    describe('setPreregisteredScriptRules / applyCosmeticRules', () => {
+    describe('preregistered coverage / applyCosmeticRules', () => {
         it('skips local rules for an exact preregistered domain match', async () => {
             const { applyLocal } = await runCosmeticApply(
                 [['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
@@ -277,9 +278,7 @@ describe('CosmeticApi — preregistered script rules', () => {
 
         it('preExistingDocument skips local rules fully covered by the boot registrations', async () => {
             const hash = await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT));
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['youtube.com', new Set([hash])]]),
-            );
+            appContext.preregisteredScriptRules = new Map([['youtube.com', new Set([hash])]]);
             appContext.preregisteredScriptRulesAtBoot = new Map([['youtube.com', new Set([hash])]]);
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(
                 makeFrameContext('https://youtube.com/') as any,
@@ -300,9 +299,7 @@ describe('CosmeticApi — preregistered script rules', () => {
         it('preExistingDocument still injects rules added to the registration after the page loaded', async () => {
             const bootHash = await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT));
             const addedHash = await hashRule(makeRawRule(OTHER_JS_RULE_CONTENT));
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['youtube.com', new Set([bootHash, addedHash])]]),
-            );
+            appContext.preregisteredScriptRules = new Map([['youtube.com', new Set([bootHash, addedHash])]]);
             // The boot snapshot only proves the first rule executed.
             appContext.preregisteredScriptRulesAtBoot = new Map([['youtube.com', new Set([bootHash])]]);
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(
@@ -328,9 +325,9 @@ describe('CosmeticApi — preregistered script rules', () => {
         });
 
         it('preExistingDocument injects everything when the host had no boot registration', async () => {
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]]),
-            );
+            appContext.preregisteredScriptRules = new Map([
+                ['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])],
+            ]);
             appContext.preregisteredScriptRulesAtBoot = new Map();
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(
                 makeFrameContext('https://youtube.com/') as any,
@@ -349,12 +346,12 @@ describe('CosmeticApi — preregistered script rules', () => {
         });
 
         it('replaces the entire rules map on subsequent calls', async () => {
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]]),
-            );
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['example.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]]),
-            );
+            appContext.preregisteredScriptRules = new Map([
+                ['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])],
+            ]);
+            appContext.preregisteredScriptRules = new Map([
+                ['example.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])],
+            ]);
 
             // youtube.com should now be un-preregistered
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(
@@ -371,9 +368,7 @@ describe('CosmeticApi — preregistered script rules', () => {
         it('injects only the rules missing from the covered set', async () => {
             const coveredRule = makeRawRule(LOCAL_JS_RULE_CONTENT);
             const uncoveredRule = makeRawRule(OTHER_JS_RULE_CONTENT);
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['youtube.com', new Set([await hashRule(coveredRule)])]]),
-            );
+            appContext.preregisteredScriptRules = new Map([['youtube.com', new Set([await hashRule(coveredRule)])]]);
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(
                 makeFrameContext(
                     'https://youtube.com/',
@@ -394,9 +389,9 @@ describe('CosmeticApi — preregistered script rules', () => {
         });
 
         it('injects all rules as-is when the covered set holds none of them', async () => {
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['youtube.com', new Set([await hashRule(makeRawRule(OTHER_JS_RULE_CONTENT))])]]),
-            );
+            appContext.preregisteredScriptRules = new Map([
+                ['youtube.com', new Set([await hashRule(makeRawRule(OTHER_JS_RULE_CONTENT))])],
+            ]);
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(
                 makeFrameContext('https://youtube.com/') as any,
             );
