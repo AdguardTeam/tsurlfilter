@@ -689,4 +689,31 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
             });
         });
     });
+
+    describe('wildcard platforms', () => {
+        test('supported modifier is valid with a product-level wildcard', () => {
+            const ctx = validateModifier('third-party', Platform.AdgAny);
+            expect(ctx.valid).toBe(true);
+        });
+
+        test('supported modifier is valid with the any-product wildcard', () => {
+            const ctx = validateModifier('third-party', Platform.Any);
+            expect(ctx.valid).toBe(true);
+        });
+
+        test('unknown modifier is invalid with a wildcard', () => {
+            const ctx = validateModifier('no-such-modifier', Platform.AdgAny);
+            expect(ctx.valid).toBe(false);
+        });
+
+        test('redirect value is validated against a wildcard platform', () => {
+            const ctx = validateModifier('redirect=noop.js', Platform.AdgAny);
+            expect(ctx.valid).toBe(true);
+        });
+
+        test('unknown redirect value fails with a wildcard platform', () => {
+            const ctx = validateModifier('redirect=no-such-resource', Platform.AdgAny);
+            expect(ctx.valid).toBe(false);
+        });
+    });
 });

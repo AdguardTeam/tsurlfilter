@@ -81,8 +81,12 @@ function findOpenBrace(
             // An unterminated string (no closing quote before the end) is a
             // real-world typo: treat the opening quote as a delimiter so a
             // brace after it is still found (e.g.
-            // `:contains(blockId: 'R-A)) { ... }`).
-            if (ti + strLen >= endTi && types[ti + strLen - 1] !== TokenType.LineBreak) {
+            // `:contains(blockId: 'R-A)) { ... }`). A string that is properly
+            // closed by the last token of the scanned range also ends at
+            // `endTi`, so additionally require the last token not to be the
+            // matching quote (and not to be a bad-string line break).
+            const lastTt = types[ti + strLen - 1];
+            if (ti + strLen >= endTi && lastTt !== types[ti] && lastTt !== TokenType.LineBreak) {
                 ti += 1;
                 // eslint-disable-next-line no-continue
                 continue;
@@ -140,12 +144,6 @@ function findCloseBrace(
         // Skip CSS strings — same as findOpenBrace.
         const strLen = cssStringLength(types, ti, endTi);
         if (strLen > 0) {
-            // Unterminated string typo: treat the opening quote as a delimiter.
-            if (ti + strLen >= endTi && types[ti + strLen - 1] !== TokenType.LineBreak) {
-                ti += 1;
-                // eslint-disable-next-line no-continue
-                continue;
-            }
             ti += strLen;
             // eslint-disable-next-line no-continue
             continue;

@@ -233,6 +233,28 @@ describe('RuleParser — CSS injection dispatch', () => {
 
             expect(getSepKind()).toBe(CR_SEP_KIND_ADG_CSS_INJECTION);
         });
+
+        test('brace inside a closed trailing string → ABP snippet', () => {
+            // The `{` belongs to a closed string at the end of the body, so
+            // there is no declaration block and the rule is an ABP snippet.
+            const source = '#$#snippet0 \'{"a":1}\'';
+            parseRule(source, true);
+
+            expect(getSepKind()).toBe(CR_SEP_KIND_ABP_SNIPPET);
+        });
+
+        test('open brace inside a closed string → ABP snippet', () => {
+            const source = "#$#log 'a{b'";
+            parseRule(source, true);
+
+            expect(getSepKind()).toBe(CR_SEP_KIND_ABP_SNIPPET);
+        });
+
+        test('close brace inside a closed string does not commit CSS injection', () => {
+            // The `}` is inside a string, so the declaration block never closes
+            // and the rule must not become a working `remove: true` rule.
+            expect(() => parseRule("#$#.banner { remove: true; content: '}'")).toThrow();
+        });
     });
 
     describe('## ABP CSS injection gating (parseAbpSpecificRules)', () => {

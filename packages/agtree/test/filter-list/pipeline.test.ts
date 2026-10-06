@@ -103,6 +103,28 @@ describe('FilterListPipeline', () => {
         expect(ast.children[1]!.type).toBe(NodeType.InvalidRule);
     });
 
+    test('tolerates an unterminated quote in a CSS injection selector', () => {
+        // AGLint-like options: `tolerant: true`, `isLocIncluded: true`, and
+        // `parseCssSelectorList` left at its default (`false`), so the selector
+        // list stays raw. The real-world unterminated-quote typo must not turn
+        // the rule into an `InvalidRule`.
+        const source = "example.com#$#main > div:has(> div > div > script:contains(blockId: 'R-A)) "
+            + '{ position: absolute !important; top: -9999px !important; }';
+        const errors: unknown[] = [];
+
+        const ast = pipeline.parse(source, {
+            tolerant: true,
+            isLocIncluded: true,
+            onParseError: (error) => {
+                errors.push(error);
+            },
+        });
+
+        expect(errors).toHaveLength(0);
+        expect(ast.children).toHaveLength(1);
+        expect(ast.children[0]!.type).toBe(CosmeticRuleType.CssInjectionRule);
+    });
+
     test('ignoreNetwork produces RawRule for network rules', () => {
         const source = '||example.com^\n! comment';
         const ast = pipeline.parse(source, { ignoreNetwork: true });

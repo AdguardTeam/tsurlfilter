@@ -92,7 +92,8 @@ class ModifiersCompatibilityTable extends CompatibilityTableBase<ModifierDataSch
             ? this.nameTransformer(modifier.name.value)
             : modifier.name.value;
 
-        const specificBlockerData = this.get(normalizedName, platform);
+        // Get platform-specific data (wildcard platforms are supported by `query`)
+        const specificBlockerData = this.query(normalizedName, platform);
 
         if (!specificBlockerData) {
             ctx.addErrorFromNode(

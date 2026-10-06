@@ -137,6 +137,32 @@ describe('AdgCssInjectionParser', () => {
             expect(sl(source, d, 0, CSS_INJ_DL_SOURCE_START, CSS_INJ_DL_SOURCE_END))
                 .toBe('position: absolute !important; top: -9999px !important;');
         });
+
+        test('string closed by the last token is not treated as unterminated', () => {
+            // A closed string whose closing quote is the last token of the
+            // scanned range also ends at `endTi`, but a brace inside it must
+            // not be treated as a declaration block.
+            expect(parse('snippet0 \'{"a":1}\'', 0, false)).toBe(false);
+            expect(parse("log 'a{b'", 0, false)).toBe(false);
+        });
+
+        test('close brace inside a closed string does not close the declaration block', () => {
+            // The `}` inside the string must not terminate the declaration
+            // block, so the rule stays invalid instead of becoming `remove: true`.
+            expect(() => parse(".banner { remove: true; content: '}'"))
+                .toThrow(/closing brace/i);
+        });
+
+        test('close brace after a closed string is still found', () => {
+            const source = ".banner { remove: true; content: '}' }";
+            expect(parse(source)).toBe(true);
+
+            expect(ctx.data[CSS_INJ_FLAGS] & CSS_INJ_FLAG_REMOVE).toBe(CSS_INJ_FLAG_REMOVE);
+        });
+
+        test('unterminated string in the declaration list does not hide the close brace', () => {
+            expect(() => parse('.x { content: "abc }')).toThrow(/closing brace/i);
+        });
     });
 
     describe('@media-wrapped rules', () => {

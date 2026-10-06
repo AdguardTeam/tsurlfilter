@@ -116,16 +116,18 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
-- Redirect resource validation no longer throws for wildcard platforms:
-  `RedirectsCompatibilityTable.validate()` and the internal
+- Compatibility table validation no longer throws for wildcard platforms:
+  `RedirectsCompatibilityTable.validate()`,
+  `ModifiersCompatibilityTable.validate()`, and the internal
   `RedirectResourceTable.validate()` now use wildcard-aware `query()` instead
-  of `get()`, so `$redirect`/`$redirect-rule` values can be validated against
-  generic platforms such as `[Platform.AdgAny]` or `[Platform.Any]`.
-- `!###...` decorative separator comments (commonly used in AdGuard filter
-  lists) are again classified as plain comments instead of preprocessor
-  directives with unknown names.
-- Network rule modifier separator detection no longer splits on a `$` that is
-  escaped (`\$`) or followed by `/` (a regex end anchor), so modifier values
+  of `get()`, so `$redirect`/`$redirect-rule` values and modifier names can be
+  validated against generic platforms such as `[Platform.AdgAny]` or
+  `[Platform.Any]`.
+- Comments starting with `!##` (e.g. `!###...` decorative separators, commonly
+  used in AdGuard filter lists) are again classified as plain comments instead
+  of preprocessor directives with unknown names.
+- Network rule modifier separator detection no longer splits on a `$` preceded
+  by a backslash or followed by `/` (a regex end anchor), so modifier values
   like `/^\\$ja=/` parse correctly.
 - AdGuard CSS injection bodies tolerate real-world typos: a trailing colon in
   the declaration list (`display: none !important:`) is excluded from the
