@@ -64,12 +64,15 @@ const OTHER_JS_RULE_CONTENT = 'console.log("other-rule")';
  * Builds a mock JS injection rule carrying the given body.
  *
  * @param content JS rule body as returned by `CosmeticRule.getContent()`.
+ * @param pathModifier Optional mock `$path` modifier (only `pattern` is read).
+ * @param pathModifier.pattern Raw `$path` pattern text.
  *
  * @returns Mock rule.
  */
-const makeRawRule = (content: string): object => ({
+const makeRawRule = (content: string, pathModifier?: { pattern: string }): object => ({
     isScriptlet: false,
     getContent: (): string => content,
+    pathModifier,
 });
 
 /**
@@ -257,6 +260,35 @@ describe('CosmeticApi — preregistered script rules', () => {
             );
 
             expect(applyLocal).not.toHaveBeenCalled();
+        });
+
+        it('keeps $path-qualified rules on the dynamic path in an opaque frame', async () => {
+            // The per-rule `$path` guard cannot evaluate the ancestor's URL
+            // from an about:blank/srcdoc frame, so the preregistered file
+            // never runs such rules there; the dynamic path (which copied
+            // the ancestor's result) must still deliver them.
+            const pathRule = makeRawRule(LOCAL_JS_RULE_CONTENT, { pattern: '/tv' });
+            const childFrame = {
+                ...makeFrameContext('about:blank', [pathRule]),
+                frameId: 1,
+                parentFrameId: 0,
+            };
+            const parentFrame = {
+                ...makeFrameContext('https://youtube.com/tv', [pathRule]),
+                frameId: 0,
+                parentFrameId: -1,
+            };
+
+            const { applyLocal } = await runCosmeticApply(
+                [['youtube.com', new Set([await hashRule(pathRule)])]],
+                (frameId: number) => (frameId === 1 ? childFrame : parentFrame),
+                1,
+            );
+
+            expect(applyLocal).toHaveBeenCalledTimes(1);
+            const localRules = applyLocal.mock.calls[0][2] as { rawRules: object[] };
+            expect(localRules.rawRules).toHaveLength(1);
+            expect(localRules.rawRules[0]).toBe(pathRule);
         });
 
         it('always applies remote rules regardless of preregistered domain match', async () => {

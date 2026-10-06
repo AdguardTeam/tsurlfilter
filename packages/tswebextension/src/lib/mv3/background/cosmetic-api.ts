@@ -158,9 +158,18 @@ export class CosmeticApi extends CosmeticApiCommon {
      * injection later) — accepted: rule execution order is not a contract
      * anywhere on the dynamic path.
      *
+     * In a non-HTTP frame (`about:blank`, srcdoc, blob:) `$path`-qualified
+     * rules always stay on the dynamic path: the frame receives them by
+     * copying the nearest HTTP ancestor's result (where the `$path`
+     * condition was evaluated against the ancestor's URL), while the
+     * per-rule guard in the preregistered file cannot evaluate that URL from
+     * the frame and never executes them there. Treating them as covered
+     * would lose the rule on both paths.
+     *
      * @param rawRules Candidate rules to filter.
      * @param coveredRules Hashes of rules proven to have executed already.
-     * @param frameUrl Frame URL, used for logging.
+     * @param frameUrl Frame URL, used for logging and to detect non-HTTP
+     * frames.
      *
      * @returns Rules not covered by preregistered content scripts.
      */
@@ -169,7 +178,16 @@ export class CosmeticApi extends CosmeticApiCommon {
         coveredRules: ReadonlySet<string>,
         frameUrl: string,
     ): Promise<CosmeticRule[]> {
+        const isHttpFrame = isHttpRequest(frameUrl);
+
         const results = await Promise.all(rawRules.map(async (rule) => {
+            // The preregistered per-rule guard only sees the frame's own
+            // `location`, so in a non-HTTP frame it never executes
+            // `$path`-qualified rules — there is no double execution to avoid.
+            if (!isHttpFrame && rule.pathModifier) {
+                return rule;
+            }
+
             try {
                 return coveredRules.has(await computeRuleHashCached(rule)) ? null : rule;
             } catch (e) {
