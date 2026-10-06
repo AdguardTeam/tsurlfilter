@@ -222,9 +222,11 @@ filled only from video frames or `putImageData()` is read natively.
   through `VideoFrame`, a WebGL texture or `captureStream()` stay native.
   Big-endian platforms get no noise.
 - Same-origin `about:blank`, `about:srcdoc` and `blob:` frames are protected
-  by the document that contains them. Such a frame stays native when it is
-  read through `window[index]`, `window.name` or `document.name` in the same
-  synchronous run as its insertion. A frame in a shadow root created from
+  by the document that contains them, a frame without a URL as soon as it is
+  inserted. A frame with a URL shows an empty `about:blank` document until its
+  own one loads; read through `window[index]`, `window.name` or
+  `document.name` in the same synchronous run as its insertion, that document
+  stays native. A frame in a shadow root created from
   markup is protected once the page touches its window or inserts another
   frame. `data:` frames, sandboxed frames without `allow-same-origin` and
   `about:blank` or `blob:` popups stay native. A popup or a sandboxed frame

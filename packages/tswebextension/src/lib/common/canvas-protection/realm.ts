@@ -108,6 +108,8 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
     const { matches, querySelectorAll } = ownRealm.Element.prototype;
     const nodeCount = intrinsics.getOwnPropertyDescriptor(ownRealm.NodeList.prototype, 'length')!.get!;
     const { item } = ownRealm.NodeList.prototype;
+    const eventTarget = intrinsics.getOwnPropertyDescriptor(ownRealm.Event.prototype, 'target')!.get!;
+    const { addEventListener } = ownRealm.EventTarget.prototype;
     const frameWindows: Function[] = [];
     for (let index = 0; index < FRAME_MEMBERS.length; index += 1) {
         const [owner, name] = FRAME_MEMBERS[index];
@@ -211,12 +213,33 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
                 root, withoutPrototype({ childList: true, subtree: true }),
             ]);
         };
+        // A frame without a URL loads synchronously while it is inserted. Protecting it in that
+        // load event reaches it before the inserting script can read it through `window[index]`.
+        const onLoad = (event: Event): void => {
+            if (!isActive()) {
+                return;
+            }
+            const target = intrinsics.apply(eventTarget, event, []);
+            try {
+                if (intrinsics.apply(nodeType, target, []) === 1
+                    && intrinsics.apply(matches, target, [FRAME_SELECTOR])) {
+                    protectFrameElement(target);
+                }
+            } catch {
+                // The target is not a node.
+            }
+        };
+        // A load event does not reach the window, so the document and each shadow root listen.
+        const listen = (target: EventTarget): void => {
+            intrinsics.apply(addEventListener, target, ['load', onLoad, true]);
+        };
         // Frames inserted by markup load their content later; the observer reaches them first.
         const watch = (): void => {
             const { document } = realm;
             if (!has(observedDocuments, document)) {
                 add(observedDocuments, document);
                 observeTree(document, scan);
+                listen(document);
             }
             scan();
         };
@@ -282,6 +305,7 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
             const root = native.apply(target, receiver, args) as ShadowRoot;
             if (isActive()) {
                 observeTree(root, scanAdded);
+                listen(root);
             }
             return root;
         });

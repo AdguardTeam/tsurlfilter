@@ -183,6 +183,18 @@ describe('canvas protection of same-origin child frames', () => {
         });
     });
 
+    test.each([
+        ['without a URL', (): void => {}],
+        ['with about:blank', (frame: HTMLIFrameElement): void => { frame.src = 'about:blank'; }],
+    ] as const)('protects a frame %s found by index in the inserting script', async (_name, setup) => {
+        await withRealm((realm) => {
+            const installed = install(realm);
+            const index = realm.length;
+            addFrame(realm, setup);
+            expect(readoutKind(paint(realm[index] as Realm), installed)).toBe('noised');
+        });
+    });
+
     test('protects a frame found by index once the inserting script has finished', async () => {
         await withRealm(async (realm) => {
             const installed = install(realm);
