@@ -96,10 +96,14 @@ export class CspRulesResolver {
     /**
      * Checks whether an exception applies to the blocking rule's CSP value.
      *
+     * An exception without a value applies to any value; a valued exception
+     * applies only when it has a strictly higher priority than the blocking
+     * rule and both values are equal.
+     *
      * @param exceptionRule CSP exception rule.
      * @param blockingRule Blocking CSP rule.
      *
-     * @returns `true` if the exception has no value or both values are equal.
+     * @returns `true` if the exception applies to the blocking rule's value.
      */
     private static hasApplicableValue(exceptionRule: Rule, blockingRule: Rule): boolean {
         const exceptionValue = exceptionRule.advancedModifierValue;
@@ -191,6 +195,52 @@ export class CspRulesResolver {
     }
 
     /**
+     * Normalizes a domain written in a rule pattern.
+     *
+     * The host in a URL is always lowercased, so a `$match-case` rule with an
+     * uppercase domain can never match a request: such a domain is kept as
+     * written instead of being normalized into a matching one.
+     *
+     * @param rule Rule the domain belongs to.
+     * @param domain Domain as written in the pattern.
+     *
+     * @returns Domain to compare, or `null` if it is not a valid domain.
+     */
+    private static normalizeDomain(rule: Rule, domain: string): string | null {
+        const asciiDomain = prepareASCII(domain);
+
+        // Validation expects the canonical lowercased form.
+        if (!DomainUtils.isValidDomainOrHostname(asciiDomain.toLowerCase())) {
+            return null;
+        }
+
+        return rule.isModifierEnabled(OPTION_NAMES.MATCH_CASE)
+            ? asciiDomain
+            : asciiDomain.toLowerCase();
+    }
+
+    /**
+     * Checks whether an exception can match a request host.
+     *
+     * The host in a URL is always lowercased, so a `$match-case` exception
+     * whose pattern domain is written with uppercase letters can never match.
+     *
+     * @param exceptionRule CSP exception rule.
+     *
+     * @returns `true` if the exception can match a request host.
+     */
+    private static canMatchRequestHost(exceptionRule: Rule): boolean {
+        if (!exceptionRule.isModifierEnabled(OPTION_NAMES.MATCH_CASE)) {
+            return true;
+        }
+
+        const domain = CspRulesResolver.getDomain(exceptionRule)
+            ?? CspRulesResolver.getAnchoredDomain(exceptionRule);
+
+        return domain === null || domain === domain.toLowerCase();
+    }
+
+    /**
      * Extracts a domain from a clean domain-anchored pattern.
      *
      * @param rule Rule to inspect.
@@ -203,8 +253,7 @@ export class CspRulesResolver {
             return null;
         }
 
-        const domain = prepareASCII(match[1]).toLowerCase();
-        return DomainUtils.isValidDomainOrHostname(domain) ? domain : null;
+        return CspRulesResolver.normalizeDomain(rule, match[1]);
     }
 
     /**
@@ -220,8 +269,7 @@ export class CspRulesResolver {
             return null;
         }
 
-        const domain = prepareASCII(match[1]).toLowerCase();
-        return DomainUtils.isValidDomainOrHostname(domain) ? domain : null;
+        return CspRulesResolver.normalizeDomain(rule, match[1]);
     }
 
     /**
@@ -332,9 +380,10 @@ export class CspRulesResolver {
      * Checks whether an exception covers a blocking rule entirely.
      *
      * A pattern-less exception applies to every URL, so it covers any blocking
-     * rule whose non-URL conditions it is not narrower than. This handles
-     * global blockers narrowed by `$denyallow`/`$domain` that a pattern-less
-     * exception fully covers.
+     * rule whose non-URL conditions it is not narrower than. A `*`-only
+     * pattern matches every URL as well and is treated the same way. This
+     * handles global blockers narrowed by `$denyallow`/`$domain` that a
+     * pattern-less exception fully covers.
      *
      * @param exceptionRule CSP exception rule.
      * @param blockingRule Blocking CSP rule.
@@ -342,7 +391,7 @@ export class CspRulesResolver {
      * @returns `true` if the exception covers the whole blocking rule.
      */
     private static coversWholeRule(exceptionRule: Rule, blockingRule: Rule): boolean {
-        return !exceptionRule.pattern
+        return (!exceptionRule.pattern || exceptionRule.pattern === '*')
             && CspRulesResolver.coversNonUrlConditions(exceptionRule, blockingRule);
     }
 
@@ -406,6 +455,11 @@ export class CspRulesResolver {
             return null;
         }
 
+        // A domain that can never match a request must not be excluded from a blocker.
+        if (!CspRulesResolver.canMatchRequestHost(exceptionRule)) {
+            return null;
+        }
+
         const blockingDomain = CspRulesResolver.getAnchoredDomain(blockingRule);
         const isDisjoint = blockingDomain !== null
             && !CspRulesResolver.isDomainCovered(exceptionDomain, blockingDomain)
@@ -440,6 +494,7 @@ export class CspRulesResolver {
             safe: !hasApplicableValue
                 || cancels
                 || excludedDomain !== null
+                || !CspRulesResolver.canMatchRequestHost(exceptionRule)
                 || CspRulesResolver.areDomainsDisjoint(exceptionRule, blockingRule)
                 || CspRulesResolver.areInitiatorDomainsDisjoint(exceptionRule, blockingRule),
         };

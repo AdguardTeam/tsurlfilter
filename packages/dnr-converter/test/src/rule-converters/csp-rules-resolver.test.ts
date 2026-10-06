@@ -421,4 +421,69 @@ describe('CspRulesResolver.resolve', () => {
             unsupportedExceptions: [rules[1]],
         });
     });
+
+    it('lets a `*`-only exception cancel a URL-scoped blocker', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none'",
+            '@@*$csp',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('keeps a blocker when a `*`-only exception has a different value', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none'",
+            "@@*$csp=img-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('keeps a case-sensitive blocker when a $match-case exception cannot match the host', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',match-case",
+            '@@||EXAMPLE.COM^$csp,match-case',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('cancels a case-sensitive blocker with a matching $match-case exception', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',match-case",
+            '@@||example.com^$csp,match-case',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('does not exclude a domain a $match-case exception cannot match', () => {
+        const rules = createRules(
+            "$csp=script-src 'none',match-case",
+            '@@||EXAMPLE.COM^$csp,match-case',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
 });

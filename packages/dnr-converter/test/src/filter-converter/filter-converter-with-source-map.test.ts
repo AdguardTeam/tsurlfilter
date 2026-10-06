@@ -87,6 +87,19 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(errors).toHaveLength(0);
         });
 
+        it('keeps a case-sensitive CSP rule when the $match-case exception cannot match', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',match-case",
+                '@@||EXAMPLE.COM^$csp,match-case',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(errors).toHaveLength(0);
+        });
+
         it('converts a Unicode domain anchor to a valid punycode URL filter', async () => {
             const filter = createFilter([
                 "||b\u00fccher.localtest.me^$csp=script-src 'none'",
