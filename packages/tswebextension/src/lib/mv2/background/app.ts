@@ -164,24 +164,31 @@ export class TsWebExtension implements AppInterface<
             this.appContext.startTimeMs = Date.now();
         }
 
-        const configuration = configurationMV2Validator.parse(config);
+        let result: Awaited<ReturnType<EngineApi['startEngine']>>;
+        try {
+            const configuration = configurationMV2Validator.parse(config);
 
-        this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
+            this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 
-        TsWebExtension.updateLogLevel(configuration.logLevel);
+            TsWebExtension.updateLogLevel(configuration.logLevel);
 
-        RequestEvents.init();
-        await this.redirectsService.start();
-        this.documentBlockingService.configure(configuration);
-        const result = await this.engineApi.startEngine(configuration);
-        await this.tabCosmeticInjector.processOpenTabs();
-        await this.tabsApi.start();
-        WebRequestApi.start();
-        removeParamInjectionService.start();
-        Assistant.setAssistantUrl(configuration.settings.assistantUrl);
+            RequestEvents.init();
+            await this.redirectsService.start();
+            this.documentBlockingService.configure(configuration);
+            result = await this.engineApi.startEngine(configuration);
+            await this.tabCosmeticInjector.processOpenTabs();
+            await this.tabsApi.start();
+            WebRequestApi.start();
+            removeParamInjectionService.start();
+            Assistant.setAssistantUrl(configuration.settings.assistantUrl);
 
-        await WebRequestApi.flushMemoryCache();
-        await this.stealthApi.updateWebRtcPrivacyPermissions();
+            await WebRequestApi.flushMemoryCache();
+            await this.stealthApi.updateWebRtcPrivacyPermissions();
+        } catch (e) {
+            // The app did not start, so later setters must not register the script.
+            await this.canvasProtection.stop();
+            throw e;
+        }
 
         this.isStarted = true;
         this.canvasProtection.resume();

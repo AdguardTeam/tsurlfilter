@@ -401,6 +401,20 @@ describe('TsWebExtension', () => {
             await instance.start(config);
             expect(instance.configuration.settings.debugScriptlets).toBe(true);
         });
+        it('keeps canvas registration off after a failed start', async () => {
+            await instance.initStorage();
+            vi.mocked(engineApi.startEngine).mockRejectedValueOnce(new Error('engine failed'));
+            const enabled: ConfigurationMV2 = {
+                ...config,
+                canvasProtectionPolicy: createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a'),
+                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
+            };
+            await expect(instance.start(enabled)).rejects.toThrow('engine failed');
+            await instance.setCanvasProtectionEnabled(true);
+            expect(browser.contentScripts.register).not.toHaveBeenCalled();
+            expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
+        });
+
         it('does not restart canvas registration through setters after stop', async () => {
             await enable('before-stop');
             await instance.stop();
