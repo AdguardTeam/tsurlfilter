@@ -20,8 +20,9 @@ content scripts and a CLI for build-time tasks.
   wrapper), `superjson`, `bowser`, `tldts`
 - **Build Toolchain**: Rollup (with `@rollup/plugin-swc`), `rollup-plugin-dts`
   (type bundling), `tsc` + custom `transform-dts.ts`
-- **Testing**: Vitest (multi-project config: `mv2`, `mv3`, `common`), with
-  `@vitest/coverage-v8`, `fake-indexeddb`, `sinon-chrome`
+- **Testing**: Vitest (multi-project config: `mv2`, `mv3`, `common`,
+  `browser`, `canvas-native`), with `@vitest/coverage-v8`, `fake-indexeddb`,
+  `sinon-chrome` and `@vitest/browser-playwright`
 - **Linting**: ESLint (airbnb-typescript base), `eslint-plugin-jsdoc`,
   `@vitest/eslint-plugin`
 - **Output Format**: ESM bundles + content scripts, type declarations
@@ -66,7 +67,8 @@ packages/tswebextension/
   (`@adguard/tsurlfilter`, `@adguard/agtree`, etc.). If you get stale-artifact
   type errors, rebuild from the repo root:
   `npx lerna run build --scope=@adguard/tswebextension --include-dependencies`
-- `pnpm test` — run all tests via Vitest (mv2 + mv3 + common projects)
+- `pnpm test` — run all tests via Vitest (mv2, mv3, common, browser and
+  canvas-native projects)
 - `pnpm test:mv2` — run MV2 tests only
 - `pnpm test:mv3` — run MV3 tests only
 - `pnpm test:common` — run common tests only
@@ -156,9 +158,11 @@ You MUST follow the following rules for EVERY task that you perform:
 
 ### III. Testing Discipline
 
-1. **Multi-project Vitest config.** Tests are organized into three Vitest
-   projects (`mv2`, `mv3`, `common`) in `vitest.config.ts`. Each project
-   targets the corresponding source and test directories.
+1. **Multi-project Vitest config.** Tests are organized into five Vitest
+   projects in `vitest.config.ts`: `mv2`, `mv3` and `common` run in jsdom
+   against the corresponding source and test directories; `browser` runs the
+   e2e specs in headless Chromium; `canvas-native` runs the canvas protection
+   specs in headless Chromium and Firefox.
 
    **Rationale**: Prevents MV2-specific mocks from interfering with MV3 tests
    and vice versa.

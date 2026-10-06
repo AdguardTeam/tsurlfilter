@@ -66,10 +66,10 @@ Table of content:
                 - [onFilteringLogEvent](#onfilteringlogevent)
                 - [isStarted](#isstarted)
             - [Methods](#methods)
+                - [Canvas protection methods](#canvas-protection-methods)
                 - [initStorage()](#initstorage)
                 - [start()](#start)
                 - [configure()](#configure)
-                - [Canvas protection methods](#canvas-protection-methods)
                 - [stop()](#stop)
                 - [openAssistant()](#openassistant)
                 - [closeAssistant()](#closeassistant)
@@ -163,8 +163,9 @@ relative to your current working directory by default
 
 Opt-in protection against canvas fingerprinting for Chromium MV3 and Firefox
 MV2. It adds noise to the pixels a page reads through `getImageData()`,
-`toDataURL()`, `toBlob()` and `OffscreenCanvas.convertToBlob()`. Drawing and
-the canvas bitmap stay untouched. The noise is stable for a site within one
+`toDataURL()` and `toBlob()` of an HTML canvas and `getImageData()` and
+`convertToBlob()` of an OffscreenCanvas. Drawing and the canvas bitmap stay
+untouched. The noise is stable for a site within one
 browser session and differs between sites and sessions. A frame uses the site
 of its top-level document.
 
@@ -188,7 +189,6 @@ async function enableCanvasProtection(app: TsWebExtension) {
         selectors: { matches: ['<all_urls>'], excludeMatches: [] },
         ownFrameExclusions: [],
         documentExclusions: [],
-        unavailableConditions: [],
     };
     await app.setCanvasProtectionPolicy(policy);
     return app.setCanvasProtectionEnabled(true);
@@ -214,24 +214,32 @@ filled only from video frames or `putImageData()` is read natively.
 
 ### Limits
 
-- Only fully opaque 8-bit sRGB pixels change, on canvases up to 32767 px per
-  side and 268435456 px in area.
+- Only fully opaque pixels change, on canvases up to 32767 px per side and
+  268435456 px in area. The noise is chosen on 8-bit sRGB values. A readout
+  in another color space or pixel format shows it at the same pixels, by one
+  level of its own format.
 - WebGL and WebGPU readouts, an OffscreenCanvas in a worker and copies made
   through `VideoFrame`, a WebGL texture or `captureStream()` stay native.
   Big-endian platforms get no noise.
 - Same-origin `about:blank`, `about:srcdoc` and `blob:` frames are protected
-  by the document that contains them. A frame read through `window[index]`
-  in the same synchronous run as its insertion, `data:` frames, sandboxed
-  frames without `allow-same-origin` and popups stay native.
+  by the document that contains them. Such a frame stays native when it is
+  read through `window[index]`, `window.name` or `document.name` in the same
+  synchronous run as its insertion. A frame in a shadow root created from
+  markup is protected once the page touches its window or inserts another
+  frame. `data:` frames, sandboxed frames without `allow-same-origin` and
+  `about:blank` or `blob:` popups stay native. A popup or a sandboxed frame
+  that loads a matching URL gets the script like any other document.
 - A cross-origin frame learns its top-level and parent documents from
   `location.ancestorOrigins`, which gives origins only: path-specific
   conditions on those documents do not match there. Firefox before 148 has
-  no such list, so there the frame uses its own hostname and inherits no
-  document exclusions.
+  no such list, and Firefox 148 lists `"null"` when the embedder sets
+  `referrerpolicy="no-referrer"` or `"same-origin"` on the frame. The frame
+  then uses its own hostname, so it gets the same noise on every site, and
+  inherits no document exclusions.
 - A document loaded before the script is registered stays native until
-  reload. Chromium keeps registered user scripts across restarts, so
-  documents loaded before `start()` completes get the previous session's
-  seed.
+  reload. Chromium keeps registered user scripts across restarts:
+  `initStorage()` removes the previous session's script, and documents loaded
+  before that get the previous session's seed.
 - The protection is detectable and a determined page can defeat it. The
   noise shows when the same content is read at several offsets, and page
   code that runs inside a wrapped call sees the engine's stack frames. The
@@ -660,7 +668,8 @@ Available in MV2 and MV3:
 - `setCanvasProtectionPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult>`
 - `getCanvasProtectionState(): RegistrationResult`
 
-The setters need an application configuration. Every method returns the
+The setters reject when there is no application configuration or the policy
+is invalid. Every method returns the
 registration state, `CanvasRegistrationStatus`: `Installed`, `Disabled`,
 `Unavailable` with a `requiredUserAction`, or `Failed`. `start()` and
 `configure()` return it as `canvasProtection`. A later `configure()`
