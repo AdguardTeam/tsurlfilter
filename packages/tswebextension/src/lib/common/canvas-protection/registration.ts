@@ -113,11 +113,8 @@ export class CanvasProtectionRegistration {
      * @returns The acknowledgment or concrete unresolved request result.
      */
     public apply(configuration: CanvasProtectionRequestedConfiguration): Promise<RegistrationResult> {
-        // Setters mutate the application configuration later, so the queued request owns a copy.
-        const requested = JSON.parse(JSON.stringify({
-            gates: configuration.gates,
-            policy: configuration.policy,
-        })) as CanvasProtectionRequestedConfiguration;
+        // Setters replace the application's gates and policy later, so the queued request owns a copy.
+        const requested = { gates: { ...configuration.gates }, policy: configuration.policy };
         this.requestVersion += 1;
         const version = this.requestVersion;
         this.state = {
@@ -130,9 +127,9 @@ export class CanvasProtectionRegistration {
         };
         const request = this.queue.then(async () => {
             const result = await this.reconcile(requested);
-            if ((result.status === CanvasRegistrationStatus.Failed
-                || result.status === CanvasRegistrationStatus.Unavailable)
-                && (requested.gates.protectCanvas || result.installed.status === CanvasAvailabilityStatus.Available)) {
+            if (result.status === CanvasRegistrationStatus.Failed
+                || (result.status === CanvasRegistrationStatus.Unavailable && (requested.gates.protectCanvas
+                    || result.installed.status === CanvasAvailabilityStatus.Available))) {
                 logger.warn(`[tsweb.CanvasProtectionRegistration.apply]: ${result.reason}`);
             }
             // A newer request stays pending, but learns what the browser acknowledged meanwhile.

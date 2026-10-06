@@ -1,4 +1,5 @@
 import {
+    CanvasConditionFlags,
     CanvasConditionInput,
     CanvasConditionType,
     CanvasPolicyRequestType,
@@ -28,7 +29,6 @@ export const createProtectAllPolicy = (
     selectors: { matches: ['<all_urls>'], excludeMatches: [] },
     ownFrameExclusions: [],
     documentExclusions: [],
-    unavailableConditions: [],
 });
 
 /**
@@ -44,28 +44,28 @@ export interface PreparedPolicyFixture {
 }
 
 const protocolCondition: PreparedCondition = {
-    type: CanvasConditionType.UrlRegexp, input: CanvasConditionInput.FrameUrl, pattern: '^https://', flags: '',
+    type: CanvasConditionType.UrlRegexp, input: CanvasConditionInput.FrameUrl, pattern: '^https://', flags: CanvasConditionFlags.None,
 };
 
 const targetCondition: PreparedCondition = {
     type: CanvasConditionType.UrlRegexp,
     input: CanvasConditionInput.FrameUrl,
     pattern: '^https://(?:a|b)\\.example\\.com/',
-    flags: '',
+    flags: CanvasConditionFlags.None,
 };
 
 const denyCondition: PreparedCondition = {
     type: CanvasConditionType.UrlRegexp,
     input: CanvasConditionInput.FrameUrl,
     pattern: '^https://b\\.example\\.com/',
-    flags: '',
+    flags: CanvasConditionFlags.None,
 };
 
 const sourceCondition: PreparedCondition = {
     type: CanvasConditionType.UrlRegexp,
     input: CanvasConditionInput.SourceUrl,
     pattern: '^https://publisher\\.example/',
-    flags: '',
+    flags: CanvasConditionFlags.None,
 };
 
 /**
@@ -151,7 +151,7 @@ export const preparedPolicyFixtures: readonly PreparedPolicyFixture[] = [
                 type: CanvasConditionType.UrlRegexp,
                 input: CanvasConditionInput.FrameUrl,
                 pattern: '/Native$',
-                flags: '',
+                flags: CanvasConditionFlags.None,
             },
         },
         url: 'https://example.com/native',
@@ -165,7 +165,7 @@ export const preparedPolicyFixtures: readonly PreparedPolicyFixture[] = [
                 type: CanvasConditionType.UrlRegexp,
                 input: CanvasConditionInput.FrameUrl,
                 pattern: '/Native$',
-                flags: 'i',
+                flags: CanvasConditionFlags.IgnoreCase,
             },
         },
         url: 'https://example.com/native',

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    CanvasConditionFlags,
     CanvasConditionInput,
     CanvasConditionType,
     CanvasPolicyBrowser,
@@ -67,7 +68,7 @@ const matches = (
     input: Extract<PreparedCondition, { type: CanvasConditionType.UrlRegexp }>['input'],
     pattern: string,
 ): PreparedCondition => ({
-    type: CanvasConditionType.UrlRegexp, input, pattern, flags: '',
+    type: CanvasConditionType.UrlRegexp, input, pattern, flags: CanvasConditionFlags.None,
 });
 
 describe('canvas protection policy', () => {
@@ -226,7 +227,7 @@ describe('canvas protection policy', () => {
                         type: CanvasConditionType.UrlRegexp,
                         input: CanvasConditionInput.FrameUrl,
                         pattern: '[',
-                        flags: '',
+                        flags: CanvasConditionFlags.None,
                     },
                 }],
             },
@@ -247,7 +248,10 @@ describe('canvas protection policy', () => {
                 ownFrameExclusions: [{
                     requestTypes: [CanvasPolicyRequestType.Document],
                     condition: {
-                        type: CanvasConditionType.UrlRegexp, input: 'referrer', pattern: '.', flags: '',
+                        type: CanvasConditionType.UrlRegexp,
+                        input: 'referrer',
+                        pattern: '.',
+                        flags: CanvasConditionFlags.None,
                     },
                 }],
             },

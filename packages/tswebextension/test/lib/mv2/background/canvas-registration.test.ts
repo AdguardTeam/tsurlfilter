@@ -21,6 +21,10 @@ describe('Firefox canvas registration', () => {
 
     beforeEach(() => {
         Object.defineProperty(browser, 'contentScripts', { configurable: true, value: { register: vi.fn() } });
+        Object.defineProperty(browser.runtime, 'getBrowserInfo', {
+            configurable: true,
+            value: vi.fn().mockResolvedValue({ version: '128.0' }),
+        });
         adapter = new FirefoxCanvasRegistration();
     });
 
@@ -28,6 +32,16 @@ describe('Firefox canvas registration', () => {
         expect(await adapter.checkAvailability()).toEqual({ status: CanvasAvailabilityStatus.Available, value: false });
         Object.defineProperty(browser, 'contentScripts', { configurable: true, value: undefined });
         expect(await adapter.checkAvailability()).toMatchObject({ status: CanvasAvailabilityStatus.Unavailable });
+    });
+
+    it('reports Firefox without page-world content scripts as unavailable', async () => {
+        vi.mocked(browser.runtime.getBrowserInfo).mockResolvedValueOnce({
+            name: 'Firefox', vendor: 'Mozilla', version: '127.0', buildID: '',
+        });
+        expect(await adapter.checkAvailability()).toEqual({
+            status: CanvasAvailabilityStatus.Unavailable,
+            reason: 'Firefox 128 or later is required, the browser is 127.0',
+        });
     });
 
     it('creates a replacement before retiring the previous handle', async () => {

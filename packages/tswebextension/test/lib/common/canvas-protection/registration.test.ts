@@ -27,6 +27,7 @@ import {
     type CanvasRegistrationAdapter,
     CanvasRegistrationOperationError,
 } from '../../../../src/lib/common/canvas-protection/registration';
+import { logger } from '../../../../src/lib/common/utils/logger';
 
 import { createProtectAllPolicy } from './fixtures/prepared-policies';
 
@@ -178,6 +179,17 @@ describe('Canvas protection registration', () => {
     it('removes a script left by a previous browser session', async () => {
         present = true;
         expect((await registration.apply({ gates: disabled })).operations).toEqual([check, unregistered]);
+    });
+
+    it('logs a failed removal of a script left by a previous browser session', async () => {
+        const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+        present = true;
+        adapter.remove.mockRejectedValueOnce(new CanvasRegistrationOperationError('removal rejected', []));
+        expect(await registration.apply({ gates: disabled })).toMatchObject({
+            status: CanvasRegistrationStatus.Failed, installed: { status: CanvasAvailabilityStatus.Unavailable },
+        });
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('removal rejected'));
+        warn.mockRestore();
     });
 
     it('requires a prepared policy', async () => {

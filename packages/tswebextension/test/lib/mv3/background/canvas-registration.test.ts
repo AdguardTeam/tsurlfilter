@@ -48,7 +48,6 @@ describe('Chromium canvas registration', () => {
     it('registers only its own early MAIN-world script and returns actual operations', async () => {
         const policy = createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'policy-a');
         expect(await adapter.install('generated code', policy)).toEqual([
-            { operation: CanvasRegistrationOperation.Check, status: CanvasOperationStatus.Succeeded },
             { operation: CanvasRegistrationOperation.Register, status: CanvasOperationStatus.Succeeded },
         ]);
         expect(chrome.userScripts.register).toHaveBeenCalledWith([{
@@ -68,13 +67,11 @@ describe('Chromium canvas registration', () => {
         getScripts.mockResolvedValue([{ id: ID, js: [{ code: 'existing code' }] }]);
         const policy = createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'policy-a');
         expect(await adapter.install('new code', policy)).toEqual([
-            { operation: CanvasRegistrationOperation.Check, status: CanvasOperationStatus.Succeeded },
             { operation: CanvasRegistrationOperation.Update, status: CanvasOperationStatus.Succeeded },
         ]);
         vi.mocked(chrome.userScripts.update).mockRejectedValueOnce(new Error('update rejected'));
         await expect(adapter.install('failed code', policy)).rejects.toMatchObject({
             operations: [
-                { operation: CanvasRegistrationOperation.Check, status: CanvasOperationStatus.Succeeded },
                 {
                     operation: CanvasRegistrationOperation.Update,
                     status: CanvasOperationStatus.Failed,

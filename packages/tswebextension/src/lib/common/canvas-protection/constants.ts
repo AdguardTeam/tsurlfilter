@@ -77,6 +77,14 @@ export enum CanvasConditionType {
 }
 
 /**
+ * Flags of a prepared `url-regexp` condition.
+ */
+export enum CanvasConditionFlags {
+    None = '',
+    IgnoreCase = 'i',
+}
+
+/**
  * URL a prepared `url-regexp` condition is tested against.
  */
 export enum CanvasConditionInput {

@@ -58,11 +58,11 @@ describe('canvas protection controller', () => {
     });
 
     it('rejects an invalid policy and a setter call without configuration', async () => {
-        expect(() => controller.setPolicy({ ...policy, schemaVersion: 2 } as unknown as ProtectionPolicyArtifact))
-            .toThrow();
+        await expect(controller.setPolicy({ ...policy, schemaVersion: 2 } as unknown as ProtectionPolicyArtifact))
+            .rejects.toThrow();
         expect(configuration!.canvasProtectionPolicy).toBe(policy);
         configuration = undefined;
-        expect(() => controller.setEnabled(true)).toThrow('Configuration not set!');
+        await expect(controller.setEnabled(true)).rejects.toThrow('Configuration not set!');
         expect(registration.apply).not.toHaveBeenCalled();
     });
 

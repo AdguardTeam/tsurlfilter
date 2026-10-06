@@ -2,6 +2,7 @@ import { z as zod } from 'zod';
 
 import {
     type CanvasAvailabilityStatus,
+    CanvasConditionFlags,
     CanvasConditionInput,
     CanvasConditionType,
     type CanvasOperationStatus,
@@ -61,7 +62,7 @@ export type PreparedCondition =
         readonly type: CanvasConditionType.UrlRegexp;
         readonly input: CanvasConditionInput;
         readonly pattern: string;
-        readonly flags: '' | 'i';
+        readonly flags: CanvasConditionFlags;
     }
     | {
         readonly type: CanvasConditionType.And | CanvasConditionType.Or;
@@ -157,7 +158,7 @@ const regexpConditionValidator = zod.object({
     type: zod.literal(CanvasConditionType.UrlRegexp),
     input: zod.nativeEnum(CanvasConditionInput),
     pattern: zod.string(),
-    flags: zod.enum(['', 'i']),
+    flags: zod.nativeEnum(CanvasConditionFlags),
 }).strict().superRefine((condition, context) => {
     try {
         // Validate syntax once at the external boundary; downstream predicates are trusted.
@@ -205,7 +206,6 @@ export const protectionPolicyArtifactValidator = zod.object({
     }).strict().readonly(),
     ownFrameExclusions: preparedPolicyRuleValidator.array().readonly(),
     documentExclusions: documentExclusionValidator.array().readonly(),
-    unavailableConditions: zod.string().min(1).array().readonly(),
 }).strict().readonly();
 
 /**

@@ -22,12 +22,19 @@ import {
  */
 export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
     /**
+     * The first Firefox version that runs dynamically registered content scripts in the page world.
+     */
+    private static readonly MIN_VERSION = 128;
+
+    /**
      * Handles remain owned after partial replacement so cleanup can retry them.
      */
     private readonly registrations = new Set<browser.ContentScripts.RegisteredContentScript>();
 
     /**
      * Checks that the selected dynamic registration dependency is present.
+     * Firefox before 128 ignores `world: 'MAIN'` and would run the engine in the
+     * content script sandbox, where it does not reach page code.
      *
      * @returns Live owned registration presence or the missing dependency.
      */
@@ -36,6 +43,14 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
             return {
                 status: CanvasAvailabilityStatus.Unavailable,
                 reason: 'Firefox contentScripts.register is unavailable',
+            };
+        }
+        const { version } = await browser.runtime.getBrowserInfo();
+        if (Number.parseInt(version, 10) < FirefoxCanvasRegistration.MIN_VERSION) {
+            return {
+                status: CanvasAvailabilityStatus.Unavailable,
+                reason: `Firefox ${FirefoxCanvasRegistration.MIN_VERSION} or later is required, `
+                    + `the browser is ${version}`,
             };
         }
         return { status: CanvasAvailabilityStatus.Available, value: this.registrations.size > 0 };
@@ -83,22 +98,7 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
             });
             throw new CanvasRegistrationOperationError('Firefox canvas registration failed', operations);
         }
-        for (const old of previous) {
-            try {
-                await old.unregister();
-                this.registrations.delete(old);
-                operations.push({
-                    operation: CanvasRegistrationOperation.Unregister,
-                    status: CanvasOperationStatus.Succeeded,
-                });
-            } catch (error) {
-                operations.push({
-                    operation: CanvasRegistrationOperation.Unregister,
-                    status: CanvasOperationStatus.Failed,
-                    reason: String(error),
-                });
-            }
-        }
+        await this.retire(previous, operations);
         if (operations.some((operation) => operation.status === CanvasOperationStatus.Failed)) {
             throw new CanvasRegistrationOperationError('Firefox canvas replacement partially failed', operations);
         }
@@ -114,10 +114,27 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
      */
     public async remove(): Promise<readonly RegistrationOperationOutcome[]> {
         const operations: RegistrationOperationOutcome[] = [];
-        for (const registration of this.registrations) {
+        await this.retire([...this.registrations], operations);
+        if (operations.some((operation) => operation.status === CanvasOperationStatus.Failed)) {
+            throw new CanvasRegistrationOperationError('Firefox canvas removal partially failed', operations);
+        }
+        return operations;
+    }
+
+    /**
+     * Unregisters handles in order. A handle that fails stays owned, so a later call retries it.
+     *
+     * @param handles Handles to retire.
+     * @param operations Outcomes, appended in execution order.
+     */
+    private async retire(
+        handles: readonly browser.ContentScripts.RegisteredContentScript[],
+        operations: RegistrationOperationOutcome[],
+    ): Promise<void> {
+        for (const handle of handles) {
             try {
-                await registration.unregister();
-                this.registrations.delete(registration);
+                await handle.unregister();
+                this.registrations.delete(handle);
                 operations.push({
                     operation: CanvasRegistrationOperation.Unregister,
                     status: CanvasOperationStatus.Succeeded,
@@ -130,9 +147,5 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
                 });
             }
         }
-        if (operations.some((operation) => operation.status === CanvasOperationStatus.Failed)) {
-            throw new CanvasRegistrationOperationError('Firefox canvas removal partially failed', operations);
-        }
-        return operations;
     }
 }

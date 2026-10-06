@@ -59,8 +59,8 @@ export class ChromiumCanvasRegistration implements CanvasRegistrationAdapter {
         const operations: RegistrationOperationOutcome[] = [];
         let existing: chrome.userScripts.RegisteredUserScript[];
         try {
+            // Only decides between register and update, so a successful check is not reported.
             existing = await chrome.userScripts.getScripts({ ids: [CANVAS_REGISTRATION_ID] });
-            operations.push({ operation: CanvasRegistrationOperation.Check, status: CanvasOperationStatus.Succeeded });
         } catch (error) {
             operations.push({
                 operation: CanvasRegistrationOperation.Check,

@@ -74,8 +74,10 @@ export class CanvasProtectionController {
      * @param enabled Requested protection setting.
      *
      * @returns The browser registration result.
+     *
+     * @throws When application configuration has not been supplied.
      */
-    public setEnabled(enabled: boolean): Promise<RegistrationResult> {
+    public async setEnabled(enabled: boolean): Promise<RegistrationResult> {
         this.requireConfiguration().settings.stealth.protectCanvas = enabled;
         return this.apply();
     }
@@ -86,8 +88,10 @@ export class CanvasProtectionController {
      * @param policy Prepared selectors and exact exclusions.
      *
      * @returns The browser registration result.
+     *
+     * @throws When the policy is invalid or application configuration has not been supplied.
      */
-    public setPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult> {
+    public async setPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult> {
         this.requireConfiguration().canvasProtectionPolicy = protectionPolicyArtifactValidator.parse(policy);
         return this.apply();
     }

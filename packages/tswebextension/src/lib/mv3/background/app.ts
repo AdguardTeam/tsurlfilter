@@ -119,7 +119,7 @@ export class TsWebExtension implements AppInterface<
      */
     private readonly canvasProtection = new CanvasProtectionController(
         new CanvasProtectionRegistration(new ChromiumCanvasRegistration(), CanvasProtectionCode.create, appContext),
-        () => this.configuration,
+        () => (appContext.isStorageInitialized ? this.configuration : undefined),
     );
 
     /**
@@ -202,6 +202,9 @@ export class TsWebExtension implements AppInterface<
             this.startPromise = undefined;
 
             logger.error('[tsweb.TsWebExtension.innerStart]: failed: ', e);
+
+            // The app did not start, so later setters must not register the script.
+            await this.canvasProtection.stop();
 
             throw new Error('Cannot be started: ', { cause: e as Error });
         }
@@ -348,6 +351,7 @@ export class TsWebExtension implements AppInterface<
      * - list of errors for static filters, if any of them has been thrown
      * - converted dynamic rule set with rule set, errors and limitations.
      * Details: {@link ConversionResult}.
+     * - canvas protection registration state.
      *
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
@@ -850,10 +854,12 @@ export class TsWebExtension implements AppInterface<
      * This method called as soon as possible and allows access
      * to the actual context before the app is started.
      */
-    // eslint-disable-next-line class-methods-use-this
     public async initStorage(): Promise<void> {
         await extSessionStorage.init();
         appContext.isStorageInitialized = true;
+        // Chromium keeps the registered script across browser restarts, with the previous session's seed.
+        // The session storage is empty then, so this removes it until start() registers a new one.
+        await this.canvasProtection.apply();
     }
 
     /**

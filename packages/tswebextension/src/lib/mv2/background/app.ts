@@ -153,7 +153,7 @@ export class TsWebExtension implements AppInterface<
      *
      * @param config App configuration.
      *
-     * @returns Conversion errors from filter list processing.
+     * @returns Conversion errors from filter list processing and the canvas protection registration state.
      *
      * @throws Error if configuration is not valid.
      */
@@ -213,7 +213,7 @@ export class TsWebExtension implements AppInterface<
      *
      * @param config App configuration.
      *
-     * @returns Conversion errors from filter list processing.
+     * @returns Conversion errors from filter list processing and the canvas protection registration state.
      *
      * @throws Error if app is not started or configuration is not valid.
      */
