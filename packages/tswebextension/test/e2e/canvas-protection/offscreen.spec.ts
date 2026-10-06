@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
 
 import {
+    decodeExport,
     HEIGHT,
+    illegalInvocation,
     install,
     type Installed,
     type Realm,
@@ -62,24 +64,7 @@ const noised = (realm: Realm, installed: Installed): number[] => (
     Array.from(referenceSourceNoise(createImage(realm), installed.seed))
 );
 
-/**
- * Decodes an export in the unprotected test document.
- *
- * @param input Data URL or encoded image.
- *
- * @returns Decoded RGBA bytes.
- */
-const decode = async (input: string | Blob): Promise<number[]> => {
-    const blob = typeof input === 'string' ? await (await fetch(input)).blob() : input;
-    const bitmap = await createImageBitmap(blob);
-    const canvas = document.createElement('canvas');
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    const context = canvas.getContext('2d')!;
-    context.drawImage(bitmap, 0, 0);
-    bitmap.close();
-    return Array.from(context.getImageData(0, 0, canvas.width, canvas.height).data);
-};
+const decode = async (input: string | Blob): Promise<number[]> => Array.from((await decodeExport(input)).data);
 
 const bytes = async (blob: Blob): Promise<number[]> => Array.from(new Uint8Array(await blob.arrayBuffer()));
 
@@ -202,15 +187,6 @@ describe('canvas protection of OffscreenCanvas in a document', () => {
             ];
             const natives = members();
             const nativeToString = realm.Function.prototype.toString;
-            const outcome = async (method: Function): Promise<string> => {
-                try {
-                    await Reflect.apply(method, {}, []);
-                } catch (error) {
-                    expect(error).toBeInstanceOf(realm.TypeError);
-                    return (error as Error).message;
-                }
-                throw new Error('Expected an illegal invocation');
-            };
             install(realm);
             const hooked = members();
             for (const [index, method] of hooked.entries()) {
@@ -219,7 +195,7 @@ describe('canvas protection of OffscreenCanvas in a document', () => {
                 expect(method.length).toBe(natives[index].length);
                 expect(method.toString()).toBe(Reflect.apply(nativeToString, natives[index], []));
                 // eslint-disable-next-line no-await-in-loop -- Compared one method at a time.
-                expect(await outcome(method)).toBe(await outcome(natives[index]));
+                expect(await illegalInvocation(realm, method)).toBe(await illegalInvocation(realm, natives[index]));
             }
             expect(realm.OffscreenCanvasRenderingContext2D.prototype.lineTo.toString()).toContain('[native code]');
         });

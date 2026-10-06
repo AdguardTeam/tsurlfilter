@@ -2,7 +2,6 @@ import engineSource from 'virtual:canvas-engine';
 
 import { CanvasPolicyBrowser } from './constants';
 import { type CanvasBootstrapSnapshot } from './contracts';
-import { deriveInstallationTokens } from './noise';
 
 /**
  * Generator of the script delivered to pages.
@@ -10,22 +9,18 @@ import { deriveInstallationTokens } from './noise';
 export class CanvasProtectionCode {
     /**
      * Generates a private standalone engine with safely serialized trusted state.
-     * The installation tokens are derived here, so a document that only reuses
-     * existing wrappers never handles the root in the page.
      *
      * @param snapshot Browser-acknowledged seed and prepared policy.
      *
      * @returns Code ready for a synchronous page-world registration.
      */
     public static create(snapshot: CanvasBootstrapSnapshot): string {
-        const tokens = deriveInstallationTokens(snapshot.session);
         // Chromium names a user script by its extension URL in stack traces, so the script is renamed.
         // Firefox already reports registered code as anonymous.
         const name = snapshot.policy.browser === CanvasPolicyBrowser.ChromiumMv3 ? '\n//# sourceURL=<anonymous>' : '';
-        const args = `${CanvasProtectionCode.serialize(snapshot)},${CanvasProtectionCode.serialize(tokens)}`;
         return `(()=>{
 ${engineSource}
-canvasEngine.bootstrapCanvasProtection(${args});})();${name}`;
+canvasEngine.bootstrapCanvasProtection(${CanvasProtectionCode.serialize(snapshot)});})();${name}`;
     }
 
     /**

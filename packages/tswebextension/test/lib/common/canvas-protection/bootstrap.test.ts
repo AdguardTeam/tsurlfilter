@@ -10,13 +10,13 @@ import {
     readDocumentPolicyInput,
 } from '../../../../src/lib/common/canvas-protection/bootstrap';
 import {
+    CanvasConditionFlags,
     CanvasConditionInput,
     CanvasConditionType,
     CanvasPolicyBrowser,
     CanvasPolicyRequestType,
 } from '../../../../src/lib/common/canvas-protection/constants';
 import { type CanvasBootstrapSnapshot } from '../../../../src/lib/common/canvas-protection/contracts';
-import { deriveInstallationTokens } from '../../../../src/lib/common/canvas-protection/noise';
 
 import { createProtectAllPolicy } from './fixtures/prepared-policies';
 
@@ -128,11 +128,14 @@ describe('document canvas bootstrap', () => {
             ownFrameExclusions: [{
                 requestTypes: [CanvasPolicyRequestType.Document],
                 condition: {
-                    type: CanvasConditionType.UrlRegexp, input: CanvasConditionInput.FrameUrl, pattern: '.', flags: '',
+                    type: CanvasConditionType.UrlRegexp,
+                    input: CanvasConditionInput.FrameUrl,
+                    pattern: '.',
+                    flags: CanvasConditionFlags.None,
                 },
             }],
         });
-        bootstrapCanvasProtection(excluded, deriveInstallationTokens(excluded.session));
+        bootstrapCanvasProtection(excluded);
         expect(HTMLCanvasElement.prototype.toDataURL).toBe(before);
         expect(Function.prototype.toString).toBe(toString);
         expect(Reflect.ownKeys(window)).toEqual(globals);

@@ -3,10 +3,10 @@
 import { describe, expect, test } from 'vitest';
 
 import { createCanvasFixtures } from './fixtures';
+import { decodeExport, type Realm } from './generated-realm';
 import { type CanvasRealmPair, withCanvasRealmPair } from './native-reference';
 import { referenceSourceNoise } from './noise-reference';
 
-type Realm = Window & typeof globalThis;
 type ExportMethod = 'toDataURL' | 'toBlob';
 const methods: readonly ExportMethod[] = ['toDataURL', 'toBlob'];
 
@@ -65,32 +65,19 @@ const exportBytes = async (result: string | Blob | null): Promise<number[]> => {
 };
 
 /**
- * Decodes a browser PNG without passing through protected raw readout hooks.
+ * Decodes an export without passing through protected raw readout hooks.
  *
- * @param result Native export result.
+ * @param input Export result.
  * @param realm Document owning the decoder.
- * @param native Captured document bindings.
+ * @param native Captured bindings of that document.
  *
- * @returns The native decoded bitmap.
+ * @returns The decoded bitmap.
  */
-const decode = async (
-    result: string | Blob | null,
+const decode = (
+    input: string | Blob | null,
     realm: Realm,
     native: CanvasRealmPair['nativeIntrinsics'],
-): Promise<ImageData> => {
-    const blob = typeof result === 'string' ? await (await fetch(result)).blob() : result!;
-    const bitmap = await realm.createImageBitmap(blob);
-    try {
-        const canvas = realm.document.createElement('canvas');
-        canvas.width = bitmap.width;
-        canvas.height = bitmap.height;
-        const context = canvas.getContext('2d')!;
-        context.drawImage(bitmap, 0, 0);
-        return Reflect.apply(native.getImageData, context, [0, 0, bitmap.width, bitmap.height]);
-    } finally {
-        bitmap.close();
-    }
-};
+): Promise<ImageData> => decodeExport(input, realm, native.getImageData);
 
 /**
  * Compares bytes without constructing a large assertion diff for a matching corpus.
@@ -520,13 +507,13 @@ describe('canvas export readouts', () => {
         });
     });
 
-    test.each(methods)('keeps genuine unsupported color and pixel modes native for %s', async (method) => {
+    test.each(methods)('noises other color spaces and pixel formats like raw readouts for %s', async (method) => {
         await withCanvasRealmPair(async (pair) => {
             for (const options of [{ colorSpace: 'display-p3' }, { colorType: 'float16' },
                 { colorSpace: 'display-p3', colorType: 'float16' }]) {
-                const results: ImageData[] = [];
+                const decoded: ImageData[] = [];
+                const views: ImageData[] = [];
                 const attributes: (CanvasRenderingContext2DSettings & { colorType?: string })[] = [];
-                const raws: ImageData[] = [];
                 for (const [index, realm] of [pair.native, pair.protected].entries()) {
                     const canvas = realm.document.createElement('canvas');
                     canvas.width = 32;
@@ -535,28 +522,38 @@ describe('canvas export readouts', () => {
                     context.fillStyle = 'color(srgb 0.27 0.53 0.79)';
                     context.fillRect(0, 0, 32, 24);
                     attributes.push(context.getContextAttributes());
-                    raws.push(context.getImageData(0, 0, 32, 24));
-                    results.push(await decode(
-                        await encode(canvas, method),
-                        realm,
-                        index === 0 ? pair.nativeIntrinsics : pair.protectedIntrinsics,
-                    ));
+                    // The 8-bit sRGB readout chooses the noise for every format.
+                    views.push(context.getImageData(0, 0, 32, 24, { colorSpace: 'srgb' }));
+                    const intrinsics = index === 0 ? pair.nativeIntrinsics : pair.protectedIntrinsics;
+                    decoded.push(await decode(await encode(canvas, method), realm, intrinsics));
                     expect(canvas.getContext('2d')).toBe(context);
                 }
                 expect(attributes[1]).toEqual(attributes[0]);
-                const unsupported = attributes[0].colorSpace !== 'srgb'
-                    || (attributes[0].colorType !== undefined && attributes[0].colorType !== 'unorm8');
-                expectPixels(results[1].data, unsupported ? results[0].data : raws[1].data);
-                if (unsupported) {
-                    const rawSupported = raws[0].data instanceof pair.native.Uint8ClampedArray
-                        && (raws[0].colorSpace === undefined || raws[0].colorSpace === 'srgb');
-                    expect(raws[1].colorSpace).toBe(raws[0].colorSpace);
-                    if (rawSupported) {
-                        expect(Array.from(raws[1].data)).not.toEqual(Array.from(raws[0].data));
-                    } else {
-                        expectPixels(raws[1].data, raws[0].data);
+                const srgb8 = attributes[0].colorSpace === 'srgb'
+                    && (attributes[0].colorType === undefined || attributes[0].colorType === 'unorm8');
+                if (srgb8) {
+                    // A browser without these modes ignores them.
+                    expectPixels(decoded[1].data, views[1].data);
+                    continue;
+                }
+                // A converted color space spreads a change in one channel over the others,
+                // so changes are compared per pixel.
+                const noisedPixels = new Set<number>();
+                views[1].data.forEach((value, index) => {
+                    if (value !== views[0].data[index]) {
+                        noisedPixels.add(index >> 2);
+                    }
+                });
+                let changed = 0;
+                for (let index = 0; index < decoded[0].data.length; index += 1) {
+                    const delta = decoded[1].data[index] - decoded[0].data[index];
+                    if (delta !== 0) {
+                        changed += 1;
+                        expect(noisedPixels.has(index >> 2)).toBe(true);
+                        expect(Math.abs(delta)).toBeLessThanOrEqual(2);
                     }
                 }
+                expect(changed).toBeGreaterThan(0);
             }
         });
     });

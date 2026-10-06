@@ -3,6 +3,7 @@ import { server } from 'vitest/browser';
 
 import { CanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
 import {
+    CanvasConditionFlags,
     CanvasConditionInput,
     CanvasConditionType,
     CanvasPolicyRequestType,
@@ -10,7 +11,12 @@ import {
 import { type CanvasBootstrapSnapshot } from '../../../src/lib/common/canvas-protection/contracts';
 import { deriveSiteSeed } from '../../../src/lib/common/canvas-protection/noise';
 
-import { type Realm, snapshot, withRealm } from './generated-realm';
+import {
+    decodeExport,
+    type Realm,
+    snapshot,
+    withRealm,
+} from './generated-realm';
 import { referenceSourceNoise } from './noise-reference';
 
 /**
@@ -86,7 +92,7 @@ describe('generated canvas bootstrap and native masking', () => {
                             type: CanvasConditionType.UrlRegexp,
                             input: CanvasConditionInput.FrameUrl,
                             pattern: 'empty\\.html',
-                            flags: '',
+                            flags: CanvasConditionFlags.None,
                         },
                     }],
                 },
@@ -260,19 +266,8 @@ describe('generated canvas bootstrap and native masking', () => {
             ));
             const protectedBlob = await blobPromise;
             expect(leaks).toEqual([]);
-            const decode = async (input: string | Blob): Promise<ImageData> => {
-                const blob = typeof input === 'string' ? await (await fetch(input)).blob() : input;
-                const bitmap = await createImageBitmap(blob);
-                const canvas = document.createElement('canvas');
-                canvas.width = bitmap.width;
-                canvas.height = bitmap.height;
-                const context = canvas.getContext('2d')!;
-                context.drawImage(bitmap, 0, 0);
-                bitmap.close();
-                return context.getImageData(0, 0, canvas.width, canvas.height);
-            };
-            expect(Array.from((await decode(protectedURL)).data)).toEqual(wanted);
-            expect(Array.from((await decode(protectedBlob)).data)).toEqual(wanted);
+            expect(Array.from((await decodeExport(protectedURL)).data)).toEqual(wanted);
+            expect(Array.from((await decodeExport(protectedBlob)).data)).toEqual(wanted);
         });
     });
 

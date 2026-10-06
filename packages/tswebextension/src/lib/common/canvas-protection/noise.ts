@@ -3,14 +3,6 @@
 import { type CanvasReadout, type ProtectionSession } from './contracts';
 import { canvasIntrinsics as intrinsics } from './intrinsics';
 
-/**
- * Exactly one selected RGB channel and its bounded one-level adjustment.
- */
-export interface PixelNoise {
-    readonly channel: 0 | 1 | 2;
-    readonly delta: -1 | 1;
-}
-
 const UINT32_RANGE = 0x100000000;
 const ROW_DOMAIN = 4;
 const SITE_SEED_DOMAINS = [16, 17];
@@ -176,7 +168,7 @@ const parseRoot = (session: ProtectionSession): Uint8Array => {
 };
 
 /**
- * Private strings by which engine instances of one browser run recognize each other's wrappers.
+ * Private strings by which engine instances of one site recognize each other's wrappers.
  */
 export interface InstallationTokens {
     readonly probe: string;
@@ -185,19 +177,18 @@ export interface InstallationTokens {
 }
 
 /**
- * Derives the installation tokens from the root alone, so every document of the
- * browser run agrees on them whatever its site or policy.
+ * Derives the installation tokens from the site seed. Every document of a site
+ * agrees on them, and a page that learns them learns nothing about other sites.
  *
- * @param session Trusted captured root in hex.
+ * @param seed The site key.
  *
  * @returns Three unrelated strings a page cannot derive.
  */
-export function deriveInstallationTokens(session: ProtectionSession): InstallationTokens {
-    const root = parseRoot(session);
+export function deriveInstallationTokens(seed: Uint8Array): InstallationTokens {
     const input = new intrinsics.Uint8Array(1);
     const token = (domain: number): string => {
         input[0] = domain;
-        const digest = sipHash24(root, input);
+        const digest = sipHash24(seed, input);
         let text = '';
         for (let index = 0; index < 8; index += 1) {
             text += HEX_DIGITS[digest[index] >>> 4] + HEX_DIGITS[digest[index] & 15];
@@ -293,28 +284,6 @@ const selectPixelNoise = (key0: number, key1: number, x: number, rgb: number): n
     }
     return channel + (hash >>> 31 === 0 ? 4 : 1);
 };
-
-/**
- * Selects the same sparse pointwise adjustment as the readout loop.
- *
- * @param seed Captured site key.
- * @param x Absolute in-bounds bitmap X coordinate.
- * @param y Absolute in-bounds bitmap Y coordinate.
- * @param rgb Original uint8 channel values.
- *
- * @returns One bounded adjustment, or undefined for an unselected pixel.
- */
-export function sampleCanvasPixel(
-    seed: Uint8Array,
-    x: number,
-    y: number,
-    rgb: readonly [number, number, number],
-): PixelNoise | undefined {
-    const rowKey = new intrinsics.Uint32Array(2);
-    deriveRowKey(seed, y, new intrinsics.Uint8Array(5), rowKey);
-    const code = selectPixelNoise(rowKey[0], rowKey[1], x, rgb[0] | (rgb[1] << 8) | (rgb[2] << 16));
-    return code === 0 ? undefined : { channel: ((code - 1) % 3) as PixelNoise['channel'], delta: code <= 3 ? 1 : -1 };
-}
 
 /**
  * Adjusts an owned uint8 sRGB readout without touching padding or nonopaque pixels.

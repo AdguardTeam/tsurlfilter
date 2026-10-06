@@ -24,7 +24,6 @@ export const snapshot = (): CanvasBootstrapSnapshot => ({
         selectors: { matches: ['<all_urls>'], excludeMatches: [] },
         ownFrameExclusions: [],
         documentExclusions: [],
-        unavailableConditions: [],
     },
 });
 
@@ -128,4 +127,57 @@ export const readoutKind = (context: CanvasRenderingContext2D, installed: Instal
         return 'native';
     }
     return actual.every((value, index) => value === noised[index]) ? 'noised' : 'other';
+};
+
+/**
+ * Decodes an export with the decoder of a document.
+ *
+ * @param input Data URL or encoded image.
+ * @param realm Document owning the decoder; the unprotected test document by default.
+ * @param read Raw readout used on the decoded bitmap; the document's own by default.
+ *
+ * @returns The decoded bitmap.
+ */
+export const decodeExport = async (
+    input: string | Blob | null,
+    realm = window as Realm,
+    read: Function = realm.CanvasRenderingContext2D.prototype.getImageData,
+): Promise<ImageData> => {
+    const blob = typeof input === 'string' ? await (await fetch(input)).blob() : input!;
+    const bitmap = await realm.createImageBitmap(blob);
+    try {
+        const canvas = realm.document.createElement('canvas');
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        const context = canvas.getContext('2d')!;
+        context.drawImage(bitmap, 0, 0);
+        return Reflect.apply(read, context, [0, 0, bitmap.width, bitmap.height]);
+    } finally {
+        bitmap.close();
+    }
+};
+
+/**
+ * Calls a method on a receiver it rejects.
+ *
+ * @param realm Realm whose `TypeError` is expected.
+ * @param method Method under test.
+ * @param receiver Rejected receiver.
+ * @param args Call arguments.
+ *
+ * @returns The error message.
+ */
+export const illegalInvocation = async (
+    realm: Realm,
+    method: Function,
+    receiver: unknown = {},
+    args: unknown[] = [],
+): Promise<string> => {
+    try {
+        await Reflect.apply(method, receiver, args);
+    } catch (error) {
+        expect(error).toBeInstanceOf(realm.TypeError);
+        return (error as Error).message;
+    }
+    throw new Error('Expected an illegal invocation');
 };

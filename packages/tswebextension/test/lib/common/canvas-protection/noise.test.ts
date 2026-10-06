@@ -7,7 +7,6 @@ import {
     applyCanvasNoise,
     deriveInstallationTokens,
     deriveSiteSeed,
-    sampleCanvasPixel,
     sipHash24,
 } from '../../../../src/lib/common/canvas-protection/noise';
 
@@ -58,6 +57,30 @@ const createBitmap = (fixture: number, width = 32, height = 16): Uint8ClampedArr
         }
     }
     return data;
+};
+
+/**
+ * Reads the noise of one opaque pixel through the readout loop.
+ *
+ * @param seed Site key.
+ * @param x Absolute X coordinate.
+ * @param y Absolute Y coordinate.
+ * @param rgb Original channel values.
+ *
+ * @returns The changed channel and its delta, or undefined for an unselected pixel.
+ */
+const noiseAt = (
+    seed: Uint8Array,
+    x: number,
+    y: number,
+    rgb: readonly [number, number, number],
+): { channel: number; delta: number } | undefined => {
+    const data = new Uint8ClampedArray([...rgb, 255]);
+    applyCanvasNoise({
+        data, width: 1, height: 1, originX: x, originY: y, canvasWidth: x + 1, canvasHeight: y + 1, colorSpace: 'srgb',
+    }, seed);
+    const channel = [0, 1, 2].find((index) => data[index] !== rgb[index]);
+    return channel === undefined ? undefined : { channel, delta: data[channel] - rgb[channel] };
 };
 
 /**
@@ -148,7 +171,7 @@ describe('canvas protection noise', () => {
             const rgb = [value, value, value] as const;
             let selected = 0;
             for (let x = 0; x < 512; x += 1) {
-                const noise = sampleCanvasPixel(seed, x, value, rgb);
+                const noise = noiseAt(seed, x, value, rgb);
                 if (!noise) {
                     continue;
                 }
@@ -246,7 +269,7 @@ describe('canvas protection noise', () => {
         const pixels = 512 * 256;
         for (let y = 0; y < 256; y += 1) {
             for (let x = 0; x < 512; x += 1) {
-                const noise = sampleCanvasPixel(seed, x, y, [126, 127, 128]);
+                const noise = noiseAt(seed, x, y, [126, 127, 128]);
                 if (noise) {
                     selected += 1;
                     channelCounts[noise.channel] += 1;
@@ -293,12 +316,12 @@ describe('canvas protection noise', () => {
         expect(best).toBeLessThan(50);
     });
 
-    it('derives installation tokens from the root alone', () => {
-        const tokens = deriveInstallationTokens(session);
+    it('derives installation tokens per site', () => {
+        const tokens = deriveInstallationTokens(deriveSiteSeed(session, 'example.com'));
         expect(new Set(Object.values(tokens)).size).toBe(3);
         Object.values(tokens).forEach((token) => expect(token).toMatch(/^[0-9a-f]{16}$/));
-        expect(deriveInstallationTokens({ ...session, generation: 'another generation' })).toEqual(tokens);
-        const other = deriveInstallationTokens({ ...session, root: 'f0e0d0c0b0a090807060504030201000' });
+        expect(deriveInstallationTokens(deriveSiteSeed(session, 'example.com'))).toEqual(tokens);
+        const other = deriveInstallationTokens(deriveSiteSeed(session, 'example.org'));
         Object.values(other).forEach((token) => expect(Object.values(tokens)).not.toContain(token));
     });
 

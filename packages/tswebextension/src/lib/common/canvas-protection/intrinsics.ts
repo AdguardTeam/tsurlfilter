@@ -7,6 +7,7 @@
 const typedArrayPrototype = Object.getPrototypeOf(Uint8Array.prototype);
 export const canvasIntrinsics = Object.freeze({
     Uint8Array,
+    Uint8ClampedArray,
     Uint32Array,
     DataView,
     TextEncoder,
@@ -14,7 +15,6 @@ export const canvasIntrinsics = Object.freeze({
     WeakMap,
     WeakSet,
     apply: Reflect.apply,
-    floor: Math.floor,
     imul: Math.imul,
     min: Math.min,
     max: Math.max,
@@ -43,7 +43,6 @@ export const canvasIntrinsics = Object.freeze({
     getOwnPropertyDescriptor: Object.getOwnPropertyDescriptor,
     getOwnPropertyNames: Object.getOwnPropertyNames,
     defineProperty: Object.defineProperty,
-    objectPrototype: Object.prototype,
 });
 
 /**

@@ -5,6 +5,7 @@ import { INERT_CONTEXT_METHODS } from '../../../src/lib/common/canvas-protection
 import {
     createFilled,
     HEIGHT,
+    illegalInvocation,
     install,
     readoutKind,
     type Realm,
@@ -169,7 +170,7 @@ describe('canvas draw tracking', () => {
     });
 
     test('hooks only non-inert methods and keeps their native surface', async () => {
-        await withRealm((realm) => {
+        await withRealm(async (realm) => {
             const context2d = realm.CanvasRenderingContext2D.prototype as unknown as Record<string, Function>;
             const methods = Object.getOwnPropertyNames(context2d).filter((name) => (
                 name !== 'constructor' && typeof Object.getOwnPropertyDescriptor(context2d, name)!.value === 'function'
@@ -179,15 +180,6 @@ describe('canvas draw tracking', () => {
                 [name, Object.getOwnPropertyDescriptor(context2d, name)!]
             )));
             const nativeToString = realm.Function.prototype.toString;
-            const failure = (method: Function): string => {
-                try {
-                    Reflect.apply(method, {}, []);
-                } catch (error) {
-                    expect(error).toBeInstanceOf(realm.TypeError);
-                    return (error as Error).message;
-                }
-                throw new Error('Expected an illegal invocation');
-            };
             install(realm);
             const hooked = methods.filter((name) => context2d[name] !== before.get(name));
             expect(hooked.sort()).toEqual(
@@ -196,16 +188,17 @@ describe('canvas draw tracking', () => {
             expect(hooked).toEqual(expect.arrayContaining([
                 'fillRect', 'strokeRect', 'fill', 'stroke', 'fillText', 'strokeText', 'drawImage',
             ]));
-            hooked.forEach((name) => {
+            for (const name of hooked) {
                 const method = context2d[name];
                 const native = before.get(name)!;
                 expect(method).not.toBe(native);
                 expect(method.name).toBe(name);
                 expect(method.length).toBe(native.length);
                 expect(method.toString()).toBe(Reflect.apply(nativeToString, native, []));
-                expect(failure(method)).toBe(failure(native));
+                // eslint-disable-next-line no-await-in-loop -- Compared one method at a time.
+                expect(await illegalInvocation(realm, method)).toBe(await illegalInvocation(realm, native));
                 expect(() => realm.Reflect.construct(method, [])).toThrow(realm.TypeError);
-            });
+            }
             hooked.forEach((name) => {
                 const descriptor = Object.getOwnPropertyDescriptor(context2d, name)!;
                 expect({ ...descriptor, value: undefined }).toEqual({ ...descriptors.get(name)!, value: undefined });

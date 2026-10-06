@@ -40,7 +40,7 @@ const FRAME_MEMBERS: readonly (readonly [string, string, 'get' | 'value'])[] = [
 
 /**
  * Sends a token to the realm's current `getImageData`, which only a wrapper of
- * this browser run answers. The native method rejects the call.
+ * this site answers. The native method rejects the call.
  *
  * @param realm Document's global object.
  * @param token Private request.
@@ -78,7 +78,7 @@ const isInheritedUrl = (href: string): boolean => (
  *
  * @param own Global object of the engine's own document, before page code runs.
  * @param seed Captured site key.
- * @param tokens Private strings shared by the engine instances of this browser run.
+ * @param tokens Private strings shared by the engine instances of this site.
  *
  * @returns The realm installer.
  */
@@ -95,6 +95,20 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
     const defaultView = intrinsics.getOwnPropertyDescriptor((own as Realm).Document.prototype, 'defaultView')!.get!;
     const Observer = (own as Realm).MutationObserver;
     const { observe } = Observer.prototype;
+    // Frames in shadow trees are not indexed on the window, so they are found by selector.
+    const { querySelectorAll } = (own as Realm).DocumentFragment.prototype;
+    const nodeCount = intrinsics.getOwnPropertyDescriptor((own as Realm).NodeList.prototype, 'length')!.get!;
+    const { item } = (own as Realm).NodeList.prototype;
+    const frameWindows: Function[] = [];
+    for (let index = 0; index < FRAME_MEMBERS.length; index += 1) {
+        const [owner, name] = FRAME_MEMBERS[index];
+        if (name === 'contentWindow') {
+            frameWindows[frameWindows.length] = intrinsics.getOwnPropertyDescriptor(
+                (own as Realm)[owner as 'HTMLIFrameElement'].prototype,
+                name,
+            )!.get!;
+        }
+    }
     const has = (set: WeakSet<object>, value: unknown): boolean => intrinsics.apply(intrinsics.weakHas, set, [value]);
     const add = (set: WeakSet<object>, value: unknown): void => {
         intrinsics.apply(intrinsics.weakAdd, set, [value]);
@@ -140,14 +154,42 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
                 }
             }
         };
+        const scanShadow = (root: ShadowRoot): void => {
+            if (!isActive()) {
+                return;
+            }
+            const frames = intrinsics.apply(querySelectorAll, root, ['iframe,frame,object']);
+            const count = intrinsics.apply(nodeCount, frames, []);
+            for (let index = 0; index < count; index += 1) {
+                const element = intrinsics.apply(item, frames, [index]);
+                for (let kind = 0; kind < frameWindows.length; kind += 1) {
+                    let child: Window | null = null;
+                    try {
+                        child = intrinsics.apply(frameWindows[kind], element, []);
+                    } catch {
+                        // Another frame element kind.
+                        continue;
+                    }
+                    if (child !== null && !has(seenFrames, child)) {
+                        add(seenFrames, child);
+                        // eslint-disable-next-line @typescript-eslint/no-use-before-define -- Mutually recursive.
+                        protectChild(child);
+                    }
+                    break;
+                }
+            }
+        };
+        const observeTree = (root: Node, onChange: () => void): void => {
+            intrinsics.apply(observe, new Observer(onChange), [
+                root, withoutPrototype({ childList: true, subtree: true }),
+            ]);
+        };
         // Frames inserted by markup load their content later; the observer reaches them first.
         const watch = (): void => {
             const { document } = realm;
             if (!has(observedDocuments, document)) {
                 add(observedDocuments, document);
-                intrinsics.apply(observe, new Observer(scan), [
-                    document, withoutPrototype({ childList: true, subtree: true }),
-                ]);
+                observeTree(document, scan);
             }
             scan();
         };
@@ -208,6 +250,14 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
                 return result;
             });
         }
+        // The document's observer does not see into shadow trees, so each new one gets its own.
+        hook(global.Element.prototype, 'attachShadow', 'value', (target, receiver, args) => {
+            const root = native.apply(target, receiver, args) as ShadowRoot;
+            if (isActive()) {
+                observeTree(root, () => scanShadow(root));
+            }
+            return root;
+        });
         masking.learnErrors(global.Error);
         const serializer = describe(global.Function.prototype, 'toString')!;
         intrinsics.defineProperty(global.Function.prototype, 'toString', withoutPrototype({

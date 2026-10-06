@@ -2,7 +2,7 @@
 // see engine-entry.ts.
 import { CanvasPolicyRequestType } from './constants';
 import { type CanvasBootstrapSnapshot, type DocumentPolicyInput } from './contracts';
-import { deriveSiteSeed, type InstallationTokens } from './noise';
+import { deriveInstallationTokens, deriveSiteSeed } from './noise';
 import { resolveProtectedSite } from './policy';
 import { createRealmProtection, sendInstallationToken } from './realm';
 
@@ -58,17 +58,18 @@ export function readDocumentPolicyInput(realm: Window): DocumentPolicyInput {
  * global object; the seed stays reachable only through private wrapper closures.
  *
  * @param snapshot Trusted browser-acknowledged delivery state.
- * @param tokens Private strings shared by the engine instances of this browser run.
  */
-export function bootstrapCanvasProtection(snapshot: CanvasBootstrapSnapshot, tokens: InstallationTokens): void {
+export function bootstrapCanvasProtection(snapshot: CanvasBootstrapSnapshot): void {
     const site = resolveProtectedSite(snapshot.policy, readDocumentPolicyInput(window));
     if (site === undefined) {
         return;
     }
     // The engine can be delivered twice, and the parent document protects a frame
     // while it still shows `about:blank`. Existing wrappers then serve this document.
+    const seed = deriveSiteSeed(snapshot.session, site);
+    const tokens = deriveInstallationTokens(seed);
     if (sendInstallationToken(window, tokens.adopt, tokens.reply)) {
         return;
     }
-    createRealmProtection(window, deriveSiteSeed(snapshot.session, site), tokens).protect(window);
+    createRealmProtection(window, seed, tokens).protect(window);
 }

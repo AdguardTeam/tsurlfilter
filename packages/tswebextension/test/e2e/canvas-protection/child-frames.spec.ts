@@ -3,6 +3,7 @@ import { server } from 'vitest/browser';
 
 import { CanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
 import {
+    CanvasConditionFlags,
     CanvasConditionInput,
     CanvasConditionType,
     CanvasPolicyRequestType,
@@ -10,6 +11,7 @@ import {
 
 import {
     HEIGHT,
+    illegalInvocation,
     install,
     type Installed,
     readoutKind,
@@ -153,6 +155,21 @@ describe('canvas protection of same-origin child frames', () => {
         });
     });
 
+    test.each(['open', 'closed'] as const)('protects a srcdoc frame inserted into a %s shadow root', async (mode) => {
+        await withRealm(async (realm) => {
+            const installed = install(realm);
+            const report = received(realm, `shadow-${mode}`);
+            const host = realm.document.createElement('div');
+            realm.document.body.appendChild(host);
+            const root = host.attachShadow({ mode });
+            const frame = realm.document.createElement('iframe');
+            frame.srcdoc = frameScript(`shadow-${mode}`);
+            // Inserted as markup, so no frame element member is read.
+            root.innerHTML = frame.outerHTML;
+            expect(await report).toEqual(noisedFill(installed));
+        });
+    });
+
     test('protects a document written into an about:blank frame', async () => {
         await withRealm(async (realm) => {
             const installed = install(realm);
@@ -228,23 +245,17 @@ describe('canvas protection of same-origin child frames', () => {
         });
     });
 
-    test('answers only the private tokens of its browser run', async () => {
-        await withRealm((realm) => {
+    test('answers only the private tokens of its site', async () => {
+        await withRealm(async (realm) => {
             const native = realm.CanvasRenderingContext2D.prototype.getImageData;
             install(realm);
             const wrapper = realm.CanvasRenderingContext2D.prototype.getImageData;
-            const failure = (method: Function, args: unknown[]): string => {
-                try {
-                    Reflect.apply(method, undefined, args);
-                } catch (error) {
-                    expect(error).toBeInstanceOf(realm.TypeError);
-                    return (error as Error).message;
-                }
-                throw new Error('Expected an illegal invocation');
-            };
-            [[], ['probe'], ['0123456789abcdef'], ['0123456789abcdef', 1]].forEach((args) => {
-                expect(failure(wrapper, args)).toBe(failure(native, args));
-            });
+            for (const args of [[], ['probe'], ['0123456789abcdef'], ['0123456789abcdef', 1]]) {
+                // eslint-disable-next-line no-await-in-loop -- Compared one call at a time.
+                const expected = await illegalInvocation(realm, native, undefined, args);
+                // eslint-disable-next-line no-await-in-loop -- Compared one call at a time.
+                expect(await illegalInvocation(realm, wrapper, undefined, args)).toBe(expected);
+            }
         });
     });
 
@@ -273,7 +284,7 @@ describe('canvas protection of same-origin child frames', () => {
                             type: CanvasConditionType.UrlRegexp,
                             input: CanvasConditionInput.FrameUrl,
                             pattern: 'empty\\.html\\?child',
-                            flags: '',
+                            flags: CanvasConditionFlags.None,
                         },
                     }],
                 },

@@ -117,6 +117,42 @@ const expectedPixels = (
 };
 
 /**
+ * Computes expected output in another color space or pixel format: the noise of the
+ * 8-bit sRGB readout of the same pixels, one level of the readout's format per change.
+ *
+ * @param pair Captured realms and site seed.
+ * @param image Successful native result in another format.
+ * @param context Original native context.
+ * @param rect Read rectangle.
+ *
+ * @returns Expected readout values.
+ */
+const expectedTransfer = (
+    pair: CanvasRealmPair,
+    image: ImageData,
+    context: CanvasRenderingContext2D,
+    rect: readonly [number, number, number, number],
+): number[] => {
+    const srgb: ImageData = Reflect.apply(
+        pair.nativeIntrinsics.getImageData,
+        context,
+        [...rect, { colorSpace: 'srgb' }],
+    );
+    const noised = expectedPixels(pair, srgb, context, rect[0], rect[1]);
+    const level = image.data instanceof pair.native.Uint8ClampedArray ? 1 : 1 / 255;
+    const top = level === 1 ? 255 : 1;
+    const data = image.data.slice();
+    noised.forEach((value, index) => {
+        const delta = (value - srgb.data[index]) * level;
+        if (delta !== 0) {
+            const next = data[index] + delta;
+            data[index] = next < 0 || next > top ? data[index] - delta : next;
+        }
+    });
+    return Array.from(data);
+};
+
+/**
  * Calls both browser bindings with independently created, equivalent argument objects.
  *
  * @param invoke Equivalent operation in each realm.
@@ -380,7 +416,7 @@ describe('normalizes coordinates once and leaves padding native', () => {
     }));
 });
 
-describe('keeps unsupported pixel formats and color spaces native', () => {
+describe('noises other pixel formats and color spaces at the same pixels', () => {
     test.each([
         undefined, {}, { colorSpace: 'srgb' }, { colorSpace: 'display-p3' },
         { pixelFormat: 'rgba-float16' }, { colorSpace: 'display-p3', pixelFormat: 'rgba-float16' },
@@ -399,10 +435,11 @@ describe('keeps unsupported pixel formats and color spaces native', () => {
         }
         if (reference.result) {
             expect(metadata(actual.result!)).toEqual(metadata(reference.result));
-            const supported = reference.result.data instanceof pair.native.Uint8ClampedArray
+            const srgb8 = reference.result.data instanceof pair.native.Uint8ClampedArray
                 && (reference.result.colorSpace === undefined || reference.result.colorSpace === 'srgb');
-            expect(Array.from(actual.result!.data)).toEqual(supported
-                ? expectedPixels(pair, reference.result, native) : Array.from(reference.result.data));
+            expect(Array.from(actual.result!.data)).toEqual(srgb8
+                ? expectedPixels(pair, reference.result, native)
+                : expectedTransfer(pair, reference.result, native, [0, 0, 32, 24]));
         }
     }));
 
@@ -431,23 +468,24 @@ describe('keeps unsupported pixel formats and color spaces native', () => {
             ).data));
             const attributes = contexts.map((context) => context.getContextAttributes());
             const modes: object[] = [];
+            let privateReads = 0;
             for (const [x, y, width, height] of [[0, 0, 32, 24], [3, 4, 12, 13], [0, 0, 32, 24]]) {
                 const results = contexts.map((context) => read(context, [x, y, width, height, settings]));
                 expect(metadata(results[1])).toEqual(metadata(results[0]));
-                const supported = results[0].data instanceof pair.native.Uint8ClampedArray
+                const srgb8 = results[0].data instanceof pair.native.Uint8ClampedArray
                     && (results[0].colorSpace === undefined || results[0].colorSpace === 'srgb');
-                const expected = supported ? expectedPixels(pair, results[0], contexts[0], x, y)
-                    : Array.from(results[0].data);
-                modes.push({ result: metadata(results[0]), supported });
+                // Another format takes a second, 8-bit sRGB read that chooses the noise.
+                privateReads += srgb8 ? 0 : 1;
+                const expected = srgb8 ? expectedPixels(pair, results[0], contexts[0], x, y)
+                    : expectedTransfer(pair, results[0], contexts[0], [x, y, width, height]);
+                modes.push({ result: metadata(results[0]), srgb8 });
                 expect(Array.from(results[1].data)).toEqual(expected);
-                if (supported) {
-                    expect(Array.from(results[1].data)).not.toEqual(Array.from(results[0].data));
-                }
+                expect(Array.from(results[1].data)).not.toEqual(Array.from(results[0].data));
             }
             await annotate(JSON.stringify({
                 storage, settings, attributes, modes,
             }), 'actual-raw-readout-mode');
-            expect(pair.nativeCalls).toEqual({ native: 3, protected: 3 });
+            expect(pair.nativeCalls).toEqual({ native: 3, protected: 3 + privateReads });
             contexts.forEach((context, index) => {
                 expect(context.getContextAttributes()).toEqual(attributes[index]);
                 expect(context.canvas.getContext('2d')).toBe(context);

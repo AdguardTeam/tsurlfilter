@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CanvasProtectionCode } from '../../../../src/lib/common/canvas-protection/code';
 import {
+    CanvasConditionFlags,
     CanvasConditionInput,
     CanvasConditionType,
     CanvasPolicyBrowser,
@@ -51,7 +52,6 @@ describe('generated canvas delivery code', () => {
             session: { root: '0123456789abcdef0123456789abcdef', generation: text },
             policy: {
                 ...policy,
-                unavailableConditions: [text],
                 // The delivery must stay inert here: jsdom has no canvas bindings to wrap.
                 ownFrameExclusions: [{
                     requestTypes: [CanvasPolicyRequestType.Subdocument],
@@ -59,7 +59,7 @@ describe('generated canvas delivery code', () => {
                         type: CanvasConditionType.UrlRegexp,
                         input: CanvasConditionInput.FrameUrl,
                         pattern: '.',
-                        flags: '',
+                        flags: CanvasConditionFlags.None,
                     },
                 }],
             },
@@ -97,7 +97,7 @@ describe('generated canvas delivery code', () => {
                 type: CanvasConditionType.UrlRegexp,
                 input: CanvasConditionInput.FrameUrl,
                 pattern: '^https://canvas\\.test/',
-                flags: '',
+                flags: CanvasConditionFlags.None,
             },
         }] satisfies typeof policy.ownFrameExclusions;
         const code = CanvasProtectionCode.create({

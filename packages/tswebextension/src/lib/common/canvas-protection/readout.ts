@@ -5,6 +5,55 @@ import { applyCanvasNoise } from './noise';
 import { type CanvasTaint } from './taint';
 
 /**
+ * The largest protected canvas side, the largest canvas side Chromium supports.
+ */
+const MAX_CANVAS_SIDE = 32767;
+
+/**
+ * The largest protected canvas area, the largest canvas area Chromium supports.
+ */
+const MAX_CANVAS_AREA = 268435456;
+
+/**
+ * Pixel data of a readout in any supported format.
+ */
+type PixelData = Uint8ClampedArray | Float32Array;
+
+/**
+ * Tells whether converting a value can run page code. Only objects have
+ * conversion hooks; the binding converts primitives itself.
+ *
+ * @param value Argument or option member.
+ *
+ * @returns Whether the value is an object or a function.
+ */
+const isObjectLike = (value: unknown): boolean => (
+    value !== null && (typeof value === 'object' || typeof value === 'function')
+);
+
+/**
+ * Moves every channel the noise changed in the 8-bit sRGB readout of the same
+ * pixels by one level of the other readout's format. A channel that would leave
+ * the range moves the other way.
+ *
+ * @param data Readout in another color space or pixel format.
+ * @param original The 8-bit sRGB readout before the noise.
+ * @param noised The same readout after the noise.
+ */
+const transferNoise = (data: PixelData, original: Uint8ClampedArray, noised: Uint8ClampedArray): void => {
+    const level = intrinsics.apply(intrinsics.typedTag, data, []) === 'Uint8ClampedArray' ? 1 : 1 / 255;
+    const top = level === 1 ? 255 : 1;
+    const length = intrinsics.apply(intrinsics.typedLength, noised, []) as number;
+    for (let index = 0; index < length; index += 1) {
+        const delta = (noised[index] - original[index]) * level;
+        if (delta !== 0) {
+            const value = data[index] + delta;
+            data[index] = value < 0 || value > top ? data[index] - delta : value;
+        }
+    }
+};
+
+/**
  * Bindings of one canvas kind: an HTML canvas or an OffscreenCanvas, each with its 2D context.
  */
 export interface SurfaceNatives {
@@ -147,7 +196,7 @@ const htmlSurface = (native: CanvasNatives): SurfaceNatives => ({
  * @returns Whether readouts from this original canvas are within size coverage.
  */
 export function isCanvasSizeProtected(width: number, height: number): boolean {
-    return width <= 32767 && height <= 32767 && width * height <= 268435456;
+    return width <= MAX_CANVAS_SIDE && height <= MAX_CANVAS_SIDE && width * height <= MAX_CANVAS_AREA;
 }
 
 /**
@@ -180,12 +229,10 @@ const createReadWrapper = (
             return native.apply(target, receiver, args);
         }
         for (let index = 0; index < 4; index += 1) {
-            const argument = args[index];
-            // Only objects run page code when converted; the binding converts primitives itself.
             // The realm's own `Math.trunc` applies the same number conversion and throws in that realm;
             // the binding truncates a `long` anyway.
-            if (argument !== null && (typeof argument === 'object' || typeof argument === 'function')) {
-                args[index] = native.trunc(argument as number);
+            if (isObjectLike(args[index])) {
+                args[index] = native.trunc(args[index] as number);
             }
             // The binding rejects a value that is not a finite in-range `long` before converting later arguments.
             const value = args[index];
@@ -199,10 +246,11 @@ const createReadWrapper = (
         if (!taint.has(canvas)) {
             return result;
         }
-        const data = native.apply(native.imageData, result, []) as Uint8ClampedArray;
+        const data = native.apply(native.imageData, result, []) as PixelData;
+        const tag = intrinsics.apply(intrinsics.typedTag, data, []);
         const colorSpace = native.apply(native.imageColorSpace, result, []);
-        if (intrinsics.apply(intrinsics.typedTag, data, []) !== 'Uint8ClampedArray'
-            || (colorSpace !== undefined && colorSpace !== 'srgb')) {
+        const isSrgb8 = tag === 'Uint8ClampedArray' && (colorSpace === undefined || colorSpace === 'srgb');
+        if (!isSrgb8 && tag !== 'Uint8ClampedArray' && tag !== 'Float16Array' && tag !== 'Float32Array') {
             return result;
         }
         const canvasWidth = native.apply(surface.canvasWidth, canvas, []);
@@ -210,10 +258,19 @@ const createReadWrapper = (
         if (!isCanvasSizeProtected(canvasWidth, canvasHeight)) {
             return result;
         }
+        // The page can ask for another color space or pixel format. The noise is
+        // then chosen on an 8-bit sRGB readout of the same pixels, so every format
+        // shows it at the same pixels.
+        const view = isSrgb8 ? data as Uint8ClampedArray : native.apply(native.imageData, native.apply(
+            target,
+            receiver,
+            [args[0], args[1], args[2], args[3], withoutPrototype({ colorSpace: 'srgb' })],
+        ), []) as Uint8ClampedArray;
+        const original = isSrgb8 ? view : new intrinsics.Uint8ClampedArray(view);
         const sx = native.trunc(+args[0]);
         const sy = native.trunc(+args[1]);
         applyCanvasNoise({
-            data,
+            data: view,
             width: native.apply(native.imageWidth, result, []),
             height: native.apply(native.imageHeight, result, []),
             originX: sx + intrinsics.min(0, native.trunc(+args[2])),
@@ -222,6 +279,9 @@ const createReadWrapper = (
             canvasHeight,
             colorSpace: 'srgb',
         }, seed);
+        if (!isSrgb8) {
+            transferNoise(data, original, view);
+        }
         return result;
     },
 }));
@@ -266,49 +326,74 @@ export function createOffscreenGetImageDataWrapper(
 }
 
 /**
- * Writes opaque pixels while preserving the copied raster's nonopaque storage.
- * Replaying nonopaque ImageData would quantize native premultiplied values again.
+ * Chooses the writes that put the noised pixels on the private copy. A copy
+ * without transparency takes one write. Otherwise only opaque pixels are written:
+ * replaying nonopaque pixels would quantize their premultiplied values again.
+ * Each row is written as runs of opaque pixels or as its changed pixels alone,
+ * whichever takes fewer calls.
  *
- * @param image Noised pixels whose alpha is unchanged.
- * @param context Private serialization context.
- * @param write Pixel writer of that context's kind.
- * @param native Captured bindings.
+ * @param noised Noised 8-bit sRGB pixels.
+ * @param original The same pixels before the noise.
+ * @param width Pixels per row.
+ * @param height Rows.
+ * @param write Writes the given rectangle of the noised image.
  */
-const writeOpaquePixels = (image: ImageData, context: object, write: Function, native: CanvasNatives): void => {
-    const data = native.apply(native.imageData, image, []) as Uint8ClampedArray;
-    const width = native.apply(native.imageWidth, image, []) as number;
-    const height = native.apply(native.imageHeight, image, []) as number;
-    const length = intrinsics.apply(intrinsics.typedLength, data, []) as number;
+export function writeNoisedPixels(
+    noised: Uint8ClampedArray,
+    original: Uint8ClampedArray,
+    width: number,
+    height: number,
+    write: (x: number, y: number, width: number, height: number) => void,
+): void {
     let fullyOpaque = true;
-    for (let offset = 3; offset < length; offset += 4) {
-        if (data[offset] !== 255) {
+    for (let offset = 3; offset < width * height * 4; offset += 4) {
+        if (noised[offset] !== 255) {
             fullyOpaque = false;
             break;
         }
     }
     if (fullyOpaque) {
-        native.apply(write, context, [image, 0, 0]);
+        write(0, 0, width, height);
         return;
     }
     for (let y = 0; y < height; y += 1) {
+        const row = y * width * 4;
+        let runs = 0;
+        let changed = 0;
+        for (let x = 0; x < width; x += 1) {
+            const offset = row + x * 4;
+            if (noised[offset + 3] === 255 && (x === 0 || noised[offset - 1] !== 255)) {
+                runs += 1;
+            }
+            if (noised[offset] !== original[offset] || noised[offset + 1] !== original[offset + 1]
+                || noised[offset + 2] !== original[offset + 2]) {
+                changed += 1;
+            }
+        }
         let start = -1;
         for (let x = 0; x <= width; x += 1) {
-            if (x < width && data[(y * width + x) * 4 + 3] === 255) {
+            const offset = row + x * 4;
+            if (changed < runs) {
+                if (x < width && (noised[offset] !== original[offset] || noised[offset + 1] !== original[offset + 1]
+                    || noised[offset + 2] !== original[offset + 2])) {
+                    write(x, y, 1, 1);
+                }
+            } else if (x < width && noised[offset + 3] === 255) {
                 if (start === -1) {
                     start = x;
                 }
             } else if (start !== -1) {
-                native.apply(write, context, [image, 0, 0, start, y, x - start, 1]);
+                write(start, y, x - start, 1);
                 start = -1;
             }
         }
     }
-};
+}
 
 /**
- * Copies a drawn-on canvas into a private canvas of the same kind and noises the copy.
- * Canvases outside coverage, without opaque pixels or with non-sRGB or non-8-bit
- * storage keep their original serializer.
+ * Copies a drawn-on canvas into a private canvas of the same kind, color space
+ * and pixel format, and noises the copy. Canvases outside coverage or without
+ * opaque pixels keep their original serializer.
  *
  * @param native Captured browser bindings.
  * @param surface Bindings of the receiver's canvas kind.
@@ -331,6 +416,8 @@ const prepareExport = (native: CanvasNatives, surface: SurfaceNatives, seed: Uin
     } catch {
         // An HTML canvas that transferred its control rejects every context request.
     }
+    let colorSpace: string | undefined;
+    let colorType: string | undefined;
     if (owner !== null && surface.getContextAttributes !== undefined) {
         // Detached from Object.prototype, so a missing member cannot resolve to a page-defined one.
         const attributes = withoutPrototype(native.apply(
@@ -338,17 +425,35 @@ const prepareExport = (native: CanvasNatives, surface: SurfaceNatives, seed: Uin
             owner,
             [],
         ) as CanvasRenderingContext2DSettings & { colorType?: string });
-        if ((attributes.colorSpace !== undefined && attributes.colorSpace !== 'srgb')
-            || (attributes.colorType !== undefined && attributes.colorType !== 'unorm8')) {
-            return receiver;
-        }
+        colorSpace = attributes.colorSpace;
+        colorType = attributes.colorType;
     }
+    const isSrgb8 = (colorSpace === undefined || colorSpace === 'srgb')
+        && (colorType === undefined || colorType === 'unorm8');
     const copy = surface.create(width, height);
-    const context = native.apply(surface.getContext, copy, ['2d']) as object;
-    native.apply(surface.drawImage, context, [receiver, 0, 0]);
+    const context = native.apply(
+        surface.getContext,
+        copy,
+        isSrgb8 ? ['2d'] : ['2d', withoutPrototype({ colorSpace, colorType })],
+    ) as object;
+    // An 8-bit sRGB canvas is copied by drawing. Chromium draws a display-p3 float16
+    // canvas inexactly, so another format is copied as its own pixels instead.
+    const source = isSrgb8 ? context : owner!;
+    if (isSrgb8) {
+        native.apply(surface.drawImage, context, [receiver, 0, 0]);
+    }
     let image: ImageData;
+    let view: Uint8ClampedArray;
     try {
-        image = native.apply(surface.getImageData, context, [0, 0, width, height]) as ImageData;
+        image = native.apply(surface.getImageData, source, isSrgb8 ? [0, 0, width, height] : [
+            0, 0, width, height,
+            withoutPrototype({ colorSpace, pixelFormat: colorType === 'float16' ? 'rgba-float16' : 'rgba-unorm8' }),
+        ]) as ImageData;
+        view = native.apply(native.imageData, isSrgb8 ? image : native.apply(
+            surface.getImageData,
+            source,
+            [0, 0, width, height, withoutPrototype({ colorSpace: 'srgb' })],
+        ), []) as Uint8ClampedArray;
     } catch (error) {
         let name: string;
         try {
@@ -361,11 +466,10 @@ const prepareExport = (native: CanvasNatives, surface: SurfaceNatives, seed: Uin
         }
         throw error;
     }
-    const data = native.apply(native.imageData, image, []) as Uint8ClampedArray;
-    const length = intrinsics.apply(intrinsics.typedLength, data, []) as number;
+    const length = intrinsics.apply(intrinsics.typedLength, view, []) as number;
     let opaque = false;
     for (let index = 3; index < length; index += 4) {
-        if (data[index] === 255) {
+        if (view[index] === 255) {
             opaque = true;
             break;
         }
@@ -373,8 +477,9 @@ const prepareExport = (native: CanvasNatives, surface: SurfaceNatives, seed: Uin
     if (!opaque) {
         return receiver;
     }
+    const original = new intrinsics.Uint8ClampedArray(view);
     applyCanvasNoise({
-        data,
+        data: view,
         width,
         height,
         originX: 0,
@@ -383,7 +488,14 @@ const prepareExport = (native: CanvasNatives, surface: SurfaceNatives, seed: Uin
         canvasHeight: height,
         colorSpace: 'srgb',
     }, seed);
-    writeOpaquePixels(image, context, surface.putImageData, native);
+    if (isSrgb8) {
+        writeNoisedPixels(view, original, width, height, (x, y, w, h) => {
+            native.apply(surface.putImageData, context, [image, 0, 0, x, y, w, h]);
+        });
+    } else {
+        transferNoise(native.apply(native.imageData, image, []) as PixelData, original, view);
+        native.apply(surface.putImageData, context, [image, 0, 0]);
+    }
     return copy;
 };
 
@@ -423,8 +535,7 @@ const exportCanvas = (
     }
     // An omitted argument is not read: its index could resolve to a page-defined inherited accessor.
     const type = args.length > typeIndex ? args[typeIndex] : undefined;
-    // Only objects run page code when converted; the binding converts primitives itself.
-    if (type !== null && (typeof type === 'object' || typeof type === 'function')) {
+    if (isObjectLike(type)) {
         args[typeIndex] = native.String(type);
     }
     const source = taint.has(receiver) ? prepareExport(native, surface, seed, receiver) : receiver;
@@ -491,9 +602,6 @@ export function createConvertToBlobWrapper(
     seed: Uint8Array,
     taint: CanvasTaint,
 ): OffscreenCanvas['convertToBlob'] {
-    const isObject = (value: unknown): boolean => (
-        value !== null && (typeof value === 'object' || typeof value === 'function')
-    );
     return new native.Proxy(native.convertToBlob, withoutPrototype({
         apply: (target, receiver, args): Promise<Blob> => {
             try {
@@ -503,13 +611,13 @@ export function createConvertToBlobWrapper(
             }
             // An omitted argument is not read: its index could resolve to a page-defined inherited accessor.
             const options = args.length > 0 ? args[0] : undefined;
-            if (isObject(options)) {
+            if (isObjectLike(options)) {
                 const { quality } = options as ImageEncodeOptions;
-                const convertedQuality = isObject(quality) ? native.max(quality as number) : quality;
+                const convertedQuality = isObjectLike(quality) ? native.max(quality as number) : quality;
                 const { type } = options as ImageEncodeOptions;
                 args[0] = withoutPrototype({
                     quality: convertedQuality,
-                    type: isObject(type) ? native.String(type) : type,
+                    type: isObjectLike(type) ? native.String(type) : type,
                 });
             }
             const source = taint.has(receiver) ? prepareExport(native, native.offscreen, seed, receiver) : receiver;

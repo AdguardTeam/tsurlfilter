@@ -1,7 +1,5 @@
 // Part of the engine injected into pages: plain functions instead of a static class keep it small,
 // see engine-entry.ts.
-import { getDomain } from '../utils/url';
-
 import { CanvasConditionInput, CanvasConditionType, CanvasPolicyRequestType } from './constants';
 import {
     type DocumentPolicyInput,
@@ -37,11 +35,8 @@ export const resolveSiteKey = (url: string): string | undefined => {
     if (!parsed.hostname) {
         return undefined;
     }
-    // The shared helper's first-colon extraction cannot represent IPv6 or credential authorities.
-    const needsCompleteHost = parsed.hostname.startsWith('[') || !!parsed.username || !!parsed.password;
-    const hostname = needsCompleteHost ? parsed.hostname.replace(/\.$/, '').replace(/^www\./, '')
-        : getDomain(parsed.href);
-    return hostname || undefined;
+    // Same key as the extension's getDomain(), without importing extension code into the page engine.
+    return parsed.hostname.replace(/\.$/, '').replace(/^www\./, '') || undefined;
 };
 
 /**
