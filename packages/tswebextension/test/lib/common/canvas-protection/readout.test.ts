@@ -71,8 +71,8 @@ describe('writes of noised export pixels', () => {
         ))
     )));
 
-    test('writes a fully opaque copy at once', () => {
-        expect(plan(...createPixels(() => 255))).toEqual([[0, 0, WIDTH, HEIGHT]]);
+    test('writes each row of an opaque copy as one run', () => {
+        expect(plan(...createPixels(() => 255))).toEqual(Array.from({ length: HEIGHT }, (_, y) => [0, y, WIDTH, 1]));
     });
 
     test('writes rows of a mostly opaque copy as runs', () => {

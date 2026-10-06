@@ -39,6 +39,11 @@ const FRAME_MEMBERS: readonly (readonly [string, string, 'get' | 'value'])[] = [
 ];
 
 /**
+ * Elements that can hold a frame.
+ */
+const FRAME_SELECTOR = 'iframe,frame,object';
+
+/**
  * Sends a token to the realm's current `getImageData`, which only a wrapper of
  * this site answers. The native method rejects the call.
  *
@@ -95,10 +100,14 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
     const defaultView = intrinsics.getOwnPropertyDescriptor((own as Realm).Document.prototype, 'defaultView')!.get!;
     const Observer = (own as Realm).MutationObserver;
     const { observe } = Observer.prototype;
-    // Frames in shadow trees are not indexed on the window, so they are found by selector.
-    const { querySelectorAll } = (own as Realm).DocumentFragment.prototype;
-    const nodeCount = intrinsics.getOwnPropertyDescriptor((own as Realm).NodeList.prototype, 'length')!.get!;
-    const { item } = (own as Realm).NodeList.prototype;
+    // Frames in shadow trees are not indexed on the window, so they are found among added nodes.
+    const ownRealm = own as Realm;
+    const addedNodes = intrinsics.getOwnPropertyDescriptor(ownRealm.MutationRecord.prototype, 'addedNodes')!.get!;
+    const nodeType = intrinsics.getOwnPropertyDescriptor(ownRealm.Node.prototype, 'nodeType')!.get!;
+    const childCount = intrinsics.getOwnPropertyDescriptor(ownRealm.Element.prototype, 'childElementCount')!.get!;
+    const { matches, querySelectorAll } = ownRealm.Element.prototype;
+    const nodeCount = intrinsics.getOwnPropertyDescriptor(ownRealm.NodeList.prototype, 'length')!.get!;
+    const { item } = ownRealm.NodeList.prototype;
     const frameWindows: Function[] = [];
     for (let index = 0; index < FRAME_MEMBERS.length; index += 1) {
         const [owner, name] = FRAME_MEMBERS[index];
@@ -154,32 +163,50 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
                 }
             }
         };
-        const scanShadow = (root: ShadowRoot): void => {
+        const protectFrameElement = (element: Element): void => {
+            for (let kind = 0; kind < frameWindows.length; kind += 1) {
+                let child: Window | null = null;
+                try {
+                    child = intrinsics.apply(frameWindows[kind], element, []);
+                } catch {
+                    // Another frame element kind.
+                    continue;
+                }
+                if (child !== null && !has(seenFrames, child)) {
+                    add(seenFrames, child);
+                    // eslint-disable-next-line @typescript-eslint/no-use-before-define -- Mutually recursive.
+                    protectChild(child);
+                }
+                return;
+            }
+        };
+        // Only the inserted subtrees are searched, so the cost follows what the page inserted.
+        const scanAdded = (records: MutationRecord[]): void => {
             if (!isActive()) {
                 return;
             }
-            const frames = intrinsics.apply(querySelectorAll, root, ['iframe,frame,object']);
-            const count = intrinsics.apply(nodeCount, frames, []);
-            for (let index = 0; index < count; index += 1) {
-                const element = intrinsics.apply(item, frames, [index]);
-                for (let kind = 0; kind < frameWindows.length; kind += 1) {
-                    let child: Window | null = null;
-                    try {
-                        child = intrinsics.apply(frameWindows[kind], element, []);
-                    } catch {
-                        // Another frame element kind.
+            for (let index = 0; index < records.length; index += 1) {
+                const nodes = intrinsics.apply(addedNodes, records[index], []);
+                const count = intrinsics.apply(nodeCount, nodes, []);
+                for (let position = 0; position < count; position += 1) {
+                    const node = intrinsics.apply(item, nodes, [position]) as Element;
+                    if (intrinsics.apply(nodeType, node, []) !== 1) {
                         continue;
                     }
-                    if (child !== null && !has(seenFrames, child)) {
-                        add(seenFrames, child);
-                        // eslint-disable-next-line @typescript-eslint/no-use-before-define -- Mutually recursive.
-                        protectChild(child);
+                    if (intrinsics.apply(matches, node, [FRAME_SELECTOR])) {
+                        protectFrameElement(node);
                     }
-                    break;
+                    if (intrinsics.apply(childCount, node, []) > 0) {
+                        const frames = intrinsics.apply(querySelectorAll, node, [FRAME_SELECTOR]);
+                        const frameTotal = intrinsics.apply(nodeCount, frames, []);
+                        for (let frame = 0; frame < frameTotal; frame += 1) {
+                            protectFrameElement(intrinsics.apply(item, frames, [frame]) as Element);
+                        }
+                    }
                 }
             }
         };
-        const observeTree = (root: Node, onChange: () => void): void => {
+        const observeTree = (root: Node, onChange: MutationCallback): void => {
             intrinsics.apply(observe, new Observer(onChange), [
                 root, withoutPrototype({ childList: true, subtree: true }),
             ]);
@@ -254,7 +281,7 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
         hook(global.Element.prototype, 'attachShadow', 'value', (target, receiver, args) => {
             const root = native.apply(target, receiver, args) as ShadowRoot;
             if (isActive()) {
-                observeTree(root, () => scanShadow(root));
+                observeTree(root, scanAdded);
             }
             return root;
         });

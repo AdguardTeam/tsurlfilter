@@ -326,11 +326,10 @@ export function createOffscreenGetImageDataWrapper(
 }
 
 /**
- * Chooses the writes that put the noised pixels on the private copy. A copy
- * without transparency takes one write. Otherwise only opaque pixels are written:
- * replaying nonopaque pixels would quantize their premultiplied values again.
- * Each row is written as runs of opaque pixels or as its changed pixels alone,
- * whichever takes fewer calls.
+ * Chooses the writes that put the noised pixels on a private copy with
+ * transparency. Only opaque pixels are written: replaying nonopaque pixels would
+ * quantize their premultiplied values again. Each row is written as runs of
+ * opaque pixels or as its changed pixels alone, whichever takes fewer calls.
  *
  * @param noised Noised 8-bit sRGB pixels.
  * @param original The same pixels before the noise.
@@ -345,17 +344,6 @@ export function writeNoisedPixels(
     height: number,
     write: (x: number, y: number, width: number, height: number) => void,
 ): void {
-    let fullyOpaque = true;
-    for (let offset = 3; offset < width * height * 4; offset += 4) {
-        if (noised[offset] !== 255) {
-            fullyOpaque = false;
-            break;
-        }
-    }
-    if (fullyOpaque) {
-        write(0, 0, width, height);
-        return;
-    }
     for (let y = 0; y < height; y += 1) {
         const row = y * width * 4;
         let runs = 0;
@@ -467,17 +455,18 @@ const prepareExport = (native: CanvasNatives, surface: SurfaceNatives, seed: Uin
         throw error;
     }
     const length = intrinsics.apply(intrinsics.typedLength, view, []) as number;
-    let opaque = false;
+    let opaque = 0;
     for (let index = 3; index < length; index += 4) {
         if (view[index] === 255) {
-            opaque = true;
-            break;
+            opaque += 1;
         }
     }
-    if (!opaque) {
+    if (opaque === 0) {
         return receiver;
     }
-    const original = new intrinsics.Uint8ClampedArray(view);
+    // A fully opaque copy takes one write, so it needs no original to compare with.
+    const whole = isSrgb8 && opaque === width * height;
+    const original = whole ? view : new intrinsics.Uint8ClampedArray(view);
     applyCanvasNoise({
         data: view,
         width,
@@ -488,7 +477,9 @@ const prepareExport = (native: CanvasNatives, surface: SurfaceNatives, seed: Uin
         canvasHeight: height,
         colorSpace: 'srgb',
     }, seed);
-    if (isSrgb8) {
+    if (whole) {
+        native.apply(surface.putImageData, context, [image, 0, 0]);
+    } else if (isSrgb8) {
         writeNoisedPixels(view, original, width, height, (x, y, w, h) => {
             native.apply(surface.putImageData, context, [image, 0, 0, x, y, w, h]);
         });
