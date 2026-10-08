@@ -246,8 +246,10 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
 
         const context2d = global.CanvasRenderingContext2D.prototype;
         const canvas = global.HTMLCanvasElement.prototype;
-        const offscreen2d = global.OffscreenCanvasRenderingContext2D.prototype;
-        const contexts = [context2d, offscreen2d];
+        // A browser without a 2D OffscreenCanvas gives pages nothing to read through it.
+        const { offscreen } = native;
+        const offscreen2d = offscreen === undefined ? undefined : global.OffscreenCanvasRenderingContext2D.prototype;
+        const contexts = offscreen2d === undefined ? [context2d] : [context2d, offscreen2d];
         for (let kind = 0; kind < contexts.length; kind += 1) {
             const names = intrinsics.getOwnPropertyNames(contexts[kind]);
             for (let index = 0; index < names.length; index += 1) {
@@ -277,14 +279,16 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
         hook(canvas, 'toDataURL', 'value', (_target, receiver, args) => native.apply(toDataURL, receiver, args));
         const toBlob = createToBlobWrapper(native, seed, taint);
         hook(canvas, 'toBlob', 'value', (_target, receiver, args) => native.apply(toBlob, receiver, args));
-        const offscreenRead = createOffscreenGetImageDataWrapper(native, seed, taint);
-        hook(offscreen2d, 'getImageData', 'value', (_target, receiver, args) => (
-            native.apply(offscreenRead, receiver, args)
-        ));
-        const convertToBlob = createConvertToBlobWrapper(native, seed, taint);
-        hook(global.OffscreenCanvas.prototype, 'convertToBlob', 'value', (_target, receiver, args) => (
-            native.apply(convertToBlob, receiver, args)
-        ));
+        if (offscreen !== undefined && offscreen2d !== undefined) {
+            const offscreenRead = createOffscreenGetImageDataWrapper(native, offscreen, seed, taint);
+            hook(offscreen2d, 'getImageData', 'value', (_target, receiver, args) => (
+                native.apply(offscreenRead, receiver, args)
+            ));
+            const convertToBlob = createConvertToBlobWrapper(native, offscreen, seed, taint);
+            hook(global.OffscreenCanvas.prototype, 'convertToBlob', 'value', (_target, receiver, args) => (
+                native.apply(convertToBlob, receiver, args)
+            ));
+        }
 
         for (let index = 0; index < FRAME_MEMBERS.length; index += 1) {
             const member = FRAME_MEMBERS[index];

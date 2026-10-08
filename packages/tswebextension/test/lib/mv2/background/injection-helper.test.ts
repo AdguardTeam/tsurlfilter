@@ -7,7 +7,7 @@ import {
 
 import { extSessionStorage } from '../../../../src/lib';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
-import { buildScriptText } from '../../../../src/lib/mv2/background/injection-helper';
+import { buildScriptText, InjectionGuard } from '../../../../src/lib/mv2/background/injection-helper';
 
 const timestamp = Date.now();
 
@@ -66,7 +66,8 @@ describe('Injection Helper', () => {
 
         const expected = expectedScriptTemplate('alert(1);');
 
-        expect(trim(buildScriptText(scriptText, appContext.startTimeMs))).toBe(trim(expected));
+        const script = buildScriptText(scriptText, appContext.startTimeMs, InjectionGuard.Scriptlets);
+        expect(trim(script)).toBe(trim(expected));
     });
 
     it('builds script text with escaped symbols', () => {
@@ -74,6 +75,7 @@ describe('Injection Helper', () => {
 
         const expected = expectedScriptTemplate('alert(\\"hello\\");\\n\\\\u2028\\u2029');
 
-        expect(trim(buildScriptText(scriptText, appContext.startTimeMs))).toBe(trim(expected));
+        const script = buildScriptText(scriptText, appContext.startTimeMs, InjectionGuard.Scriptlets);
+        expect(trim(script)).toBe(trim(expected));
     });
 });

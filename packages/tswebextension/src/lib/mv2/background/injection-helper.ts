@@ -3,6 +3,15 @@ import { nanoid } from '../../common/utils/nanoid';
 import { browserDetectorMV2 } from './utils/browser-detector';
 
 /**
+ * Name of the per-document flag that marks an injected script as executed.
+ * Each kind of injected script needs its own, so that one does not block another.
+ */
+export enum InjectionGuard {
+    Scriptlets = 'scriptExecuted',
+    CanvasProtection = 'canvasProtectionExecuted',
+}
+
+/**
  * Taken from:
  * {@link https://github.com/seanl-adg/InlineResourceLiteral/blob/master/index.js#L136} and
  * {@link https://github.com/joliss/js-string-escape/blob/master/index.js}.
@@ -180,12 +189,17 @@ const buildScriptTextCommon = (scriptText: string, variableName: string): string
  *
  * @param scriptText Script text.
  * @param startTimeMs App start time in milliseconds.
+ * @param guard Flag that keeps the script from running twice in one document.
  *
  * @returns Script to inject.
  *
  * @throws Error if start time is not defined.
  */
-export const buildScriptText = (scriptText: string, startTimeMs: number | undefined): string => {
+export const buildScriptText = (
+    scriptText: string,
+    startTimeMs: number | undefined,
+    guard: InjectionGuard,
+): string => {
     if (!startTimeMs) {
         throw new Error('Start time is not defined');
     }
@@ -196,7 +210,7 @@ export const buildScriptText = (scriptText: string, startTimeMs: number | undefi
      *
      * Issue: @see {@link https://bugs.chromium.org/p/project-zero/issues/detail?id=1225&desc=6}.
      */
-    const variableName = `scriptExecuted${startTimeMs}`;
+    const variableName = `${guard}${startTimeMs}`;
 
     const isFirefox = browserDetectorMV2.isFirefox();
 

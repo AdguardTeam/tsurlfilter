@@ -15,7 +15,7 @@ export interface CanvasTaint {
 export interface DrawTrackingNatives {
     readonly apply: typeof Reflect.apply;
     readonly contextCanvas: Function;
-    readonly offscreen: { readonly contextCanvas: Function };
+    readonly offscreen: { readonly contextCanvas: Function } | undefined;
     readonly bitmapContextCanvas: Function;
     readonly videoWidth: (this: HTMLVideoElement) => number;
 }
@@ -70,7 +70,9 @@ export function createDrawTracking(native: DrawTrackingNatives): DrawTracking {
     const canvases = new intrinsics.WeakSet<object>();
     const placeholders = new intrinsics.WeakMap<object, object>();
     // An HTML 2D context, an OffscreenCanvas 2D context or a bitmap renderer: each getter accepts its own kind.
-    const owners = [native.contextCanvas, native.offscreen.contextCanvas, native.bitmapContextCanvas];
+    const owners = native.offscreen === undefined
+        ? [native.contextCanvas, native.bitmapContextCanvas]
+        : [native.contextCanvas, native.offscreen.contextCanvas, native.bitmapContextCanvas];
     const mark = (context: unknown): void => {
         if (intrinsics.apply(intrinsics.weakHas, contexts, [context])) {
             return;

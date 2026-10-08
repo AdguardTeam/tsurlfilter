@@ -17,6 +17,9 @@ import {
     CanvasRegistrationOperationError,
 } from '../../common/canvas-protection/registration';
 
+import { appContext } from './app-context';
+import { buildScriptText, InjectionGuard } from './injection-helper';
+
 /**
  * Owns Firefox dynamic registration handles for a persistent background lifetime.
  */
@@ -24,7 +27,7 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
     /**
      * The first Firefox version that runs dynamically registered content scripts in the page world.
      */
-    private static readonly MIN_VERSION = 128;
+    private static readonly MAIN_WORLD_VERSION = 128;
 
     /**
      * Handles remain owned after partial replacement so cleanup can retry them.
@@ -33,8 +36,6 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
 
     /**
      * Checks that the selected dynamic registration dependency is present.
-     * Firefox before 128 ignores `world: 'MAIN'` and would run the engine in the
-     * content script sandbox, where it does not reach page code.
      *
      * @returns Live owned registration presence or the missing dependency.
      */
@@ -43,14 +44,6 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
             return {
                 status: CanvasAvailabilityStatus.Unavailable,
                 reason: 'Firefox contentScripts.register is unavailable',
-            };
-        }
-        const { version } = await browser.runtime.getBrowserInfo();
-        if (Number.parseInt(version, 10) < FirefoxCanvasRegistration.MIN_VERSION) {
-            return {
-                status: CanvasAvailabilityStatus.Unavailable,
-                reason: `Firefox ${FirefoxCanvasRegistration.MIN_VERSION} or later is required, `
-                    + `the browser is ${version}`,
             };
         }
         return { status: CanvasAvailabilityStatus.Available, value: this.registrations.size > 0 };
@@ -75,10 +68,19 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
         }
         const previous = [...this.registrations];
         const operations: RegistrationOperationOutcome[] = [];
+        const { version } = await browser.runtime.getBrowserInfo();
+        // Firefox before 128 ignores `world: 'MAIN'` and runs the script in the content script sandbox,
+        // where it does not reach page code. There the script inserts the engine as a page script.
+        const mainWorld = Number.parseInt(version, 10) >= FirefoxCanvasRegistration.MAIN_WORLD_VERSION;
         try {
             const registration = await browser.contentScripts.register({
-                js: [{ code }],
-                world: 'MAIN',
+                ...(mainWorld
+                    ? { js: [{ code }], world: 'MAIN' as const }
+                    : {
+                        js: [{
+                            code: buildScriptText(code, appContext.startTimeMs, InjectionGuard.CanvasProtection),
+                        }],
+                    }),
                 runAt: 'document_start',
                 allFrames: true,
                 matches: [...policy.selectors.matches],

@@ -10,6 +10,7 @@ import { defaultFilteringLog } from '../../common/filtering-log';
 import { Allowlist } from './allowlist';
 import { TsWebExtension } from './app';
 import { appContext } from './app-context';
+import { ChromiumMv2CanvasInjection } from './canvas-injection';
 import { FirefoxCanvasRegistration } from './canvas-registration';
 import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
 import { DocumentApi } from './document-api';
@@ -32,6 +33,7 @@ import { UrlTransformService } from './services/url-transform-service';
 import { StealthApi } from './stealth-api';
 import { TabsApi } from './tabs/tabs-api';
 import { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
+import { browserDetectorMV2 } from './utils/browser-detector';
 
 export const allowlist = new Allowlist();
 
@@ -83,6 +85,8 @@ export const removeParamInjectionService = new RemoveParamInjectionService(
     defaultFilteringLog,
 );
 
+export const canvasInjection = new ChromiumMv2CanvasInjection();
+
 /**
  * Creates new instance of {@link TsWebExtension}.
  *
@@ -110,6 +114,10 @@ export function createTsWebExtension(webAccessibleResourcesPath: string): TsWebE
         documentBlockingService,
         defaultFilteringLog,
         extSessionStorage,
-        new CanvasProtectionRegistration(new FirefoxCanvasRegistration(), CanvasProtectionCode.create, appContext),
+        new CanvasProtectionRegistration(
+            browserDetectorMV2.isFirefox() ? new FirefoxCanvasRegistration() : canvasInjection,
+            CanvasProtectionCode.create,
+            appContext,
+        ),
     );
 }

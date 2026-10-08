@@ -28,6 +28,7 @@ import { type Message } from '../../../../src/lib/common/message';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { assistant, Assistant } from '../../../../src/lib/mv2/background/assistant';
 import { configurationMV2Validator } from '../../../../src/lib/mv2/background/configuration';
+import { browserDetectorMV2 } from '../../../../src/lib/mv2/background/utils/browser-detector';
 import { createProtectAllPolicy } from '../../common/canvas-protection/fixtures/prepared-policies';
 
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
@@ -269,6 +270,8 @@ describe('TsWebExtension', () => {
                 configurable: true,
                 value: vi.fn().mockResolvedValue({ version: '128.0' }),
             });
+            vi.spyOn(browserDetectorMV2, 'isFirefox').mockReturnValue(true);
+            instance = createTsWebExtension('test');
         });
 
         /**

@@ -192,6 +192,7 @@ import { logger } from '../../common/utils/logger';
 import { getDomain, isHttpOrWsRequest } from '../../common/utils/url';
 
 import {
+    canvasInjection,
     contentFiltering,
     cookieFiltering,
     cosmeticFrameProcessor,
@@ -733,12 +734,18 @@ export class WebRequestApi {
             return;
         }
 
-        const { tabId, frameId, requestType } = context;
+        const {
+            tabId,
+            frameId,
+            requestType,
+            requestUrl,
+        } = context;
 
         if (requestType !== RequestType.Document && requestType !== RequestType.SubDocument) {
             return;
         }
 
+        canvasInjection.inject(tabId, frameId, requestUrl);
         CosmeticApi.applyJs(tabId, frameId);
     }
 
@@ -948,6 +955,7 @@ export class WebRequestApi {
             },
         );
 
+        canvasInjection.inject(tabId, frameId, details.url);
         WebRequestApi.injectCosmetic(details);
         removeParamInjectionService.injectRemoveParam(details.tabId, details.frameId, details.url);
     }

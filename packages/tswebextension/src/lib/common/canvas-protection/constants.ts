@@ -50,6 +50,7 @@ export enum CanvasOperationStatus {
  * Browser a prepared policy is built for.
  */
 export enum CanvasPolicyBrowser {
+    ChromiumMv2 = 'chromium-mv2',
     ChromiumMv3 = 'chromium-mv3',
     FirefoxMv2 = 'firefox-mv2',
 }
