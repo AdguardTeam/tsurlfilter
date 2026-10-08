@@ -8,6 +8,7 @@ Table of content:
     - [Browser compatibility](#browser-compatibility)
     - [Install](#install)
     - [Usage](#usage)
+    - [Canvas protection](#canvas-protection)
     - [CLI](#cli)
     - [Side effects](#side-effects)
     - [API](#api)
@@ -36,6 +37,7 @@ Table of content:
                 - [conversionData](#conversiondata-2)
             - [verbose (deprecated)](#verbose-deprecated)
             - [logLevel](#loglevel)
+            - [canvasProtectionPolicy](#canvasprotectionpolicy)
             - [settings](#settings)
                 - [allowlistInverted](#allowlistinverted)
                 - [allowlistEnabled](#allowlistenabled)
@@ -57,12 +59,14 @@ Table of content:
                     - [blockChromeClientData](#blockchromeclientdata)
                     - [sendDoNotTrack](#senddonottrack)
                     - [blockWebRTC](#blockwebrtc)
+                    - [protectCanvas](#protectcanvas)
         - [TsWebExtension](#tswebextension-1)
             - [Properties](#properties)
                 - [configuration](#configuration-1)
                 - [onFilteringLogEvent](#onfilteringlogevent)
                 - [isStarted](#isstarted)
             - [Methods](#methods)
+                - [Canvas protection methods](#canvas-protection-methods)
                 - [initStorage()](#initstorage)
                 - [start()](#start)
                 - [configure()](#configure)
@@ -154,6 +158,98 @@ const build = async () => {
 
 If path is not defined, the resources will be loaded to `build/war`
 relative to your current working directory by default
+
+## Canvas protection
+
+Opt-in protection against canvas fingerprinting for Chromium MV3 and Firefox
+MV2. It adds noise to the pixels a page reads through `getImageData()`,
+`toDataURL()` and `toBlob()` of an HTML canvas and `getImageData()` and
+`convertToBlob()` of an OffscreenCanvas. Drawing and the canvas bitmap stay
+untouched. The noise is stable for a site within one
+browser session and differs between sites and sessions. A frame uses the site
+of its top-level document.
+
+Protection needs `settings.filteringEnabled`, `settings.stealthModeEnabled`,
+`settings.stealth.protectCanvas` and a prepared
+[`canvasProtectionPolicy`](#canvasprotectionpolicy). This policy protects
+every document, without exclusions:
+
+```ts
+import {
+    CanvasPolicyBrowser,
+    type ProtectionPolicyArtifact,
+    type TsWebExtension,
+} from '@adguard/tswebextension/mv3';
+
+async function enableCanvasProtection(app: TsWebExtension) {
+    const policy: ProtectionPolicyArtifact = {
+        schemaVersion: 1,
+        revision: 'canvas-empty-v1',
+        browser: CanvasPolicyBrowser.ChromiumMv3,
+        selectors: { matches: ['<all_urls>'], excludeMatches: [] },
+        ownFrameExclusions: [],
+        documentExclusions: [],
+    };
+    await app.setCanvasProtectionPolicy(policy);
+    return app.setCanvasProtectionEnabled(true);
+}
+```
+
+For Firefox MV2, use the root package import and
+`CanvasPolicyBrowser.FirefoxMv2`.
+The returned `RegistrationResult` tells whether the script is installed and,
+if not, why. Filter rules and the allowlist are not compiled into the policy
+automatically.
+
+Requirements:
+
+- Chromium: the `userScripts` permission, host permissions and user scripts
+  allowed by the user.
+- Firefox 128 or later.
+- Private windows: the extension must be allowed to run there.
+
+Only canvases that received rendering are noised: any 2D context call that
+can put device-dependent pixels on a canvas marks it for good. A canvas
+filled only from video frames or `putImageData()` is read natively.
+
+### Limits
+
+- Only fully opaque pixels change, on canvases up to 32767 px per side and
+  268435456 px in area. The noise is chosen on 8-bit sRGB values. A readout
+  in another color space or pixel format shows it at the same pixels, by one
+  level of its own format.
+- WebGL and WebGPU readouts, an OffscreenCanvas in a worker and copies made
+  through `VideoFrame`, a WebGL texture or `captureStream()` stay native.
+  Big-endian platforms get no noise.
+- Same-origin `about:blank`, `about:srcdoc` and `blob:` frames are protected
+  by the document that contains them, a frame without a URL as soon as it is
+  inserted. A frame with a URL shows an empty `about:blank` document until its
+  own one loads; read through `window[index]`, `window.name` or
+  `document.name` in the same synchronous run as its insertion, that document
+  stays native. A frame in a shadow root created from
+  markup is protected once the page touches its window or inserts another
+  frame. `data:` frames, sandboxed frames without `allow-same-origin` and
+  `about:blank` or `blob:` popups stay native. A popup or a sandboxed frame
+  that loads a matching URL gets the script like any other document.
+- A cross-origin frame learns its top-level and parent documents from
+  `location.ancestorOrigins`, which gives origins only: path-specific
+  conditions on those documents do not match there. Firefox before 148 has
+  no such list, and Firefox 148 lists `"null"` when the embedder sets
+  `referrerpolicy="no-referrer"` or `"same-origin"` on the frame. The frame
+  then uses its own hostname, so it gets the same noise on every site, and
+  inherits no document exclusions.
+- A document loaded before the script is registered stays native until
+  reload. Chromium keeps registered user scripts across restarts:
+  `initStorage()` removes the previous session's script, and documents loaded
+  before that get the previous session's seed.
+- The protection is detectable and a determined page can defeat it. The
+  noise shows when the same content is read at several offsets, and page
+  code that runs inside a wrapped call sees the engine's stack frames. The
+  engine defines nothing on the global object, and its wrappers keep the
+  native name, length and source text.
+- A protected readout costs time proportional to its area: a few
+  milliseconds for 1280×720. `toDataURL()` and `toBlob()` also copy the
+  canvas before encoding.
 
 ## CLI
 
@@ -372,6 +468,22 @@ type: `string | undefined`
 Optional flag that sets logging level, defaults to 'error'.
 Available levels: 'error', 'warn', 'info', 'debug', 'trace'.
 
+#### canvasProtectionPolicy
+
+type: `ProtectionPolicyArtifact | undefined`
+
+Prepared delivery selectors and exclusions for
+[canvas protection](#canvas-protection). Required when it is enabled.
+
+- `selectors`: match patterns of the registered script.
+- `ownFrameExclusions`: rules for a document itself. A condition reads the
+  document's URL (`CanvasConditionInput.FrameUrl`), its top-level document
+  (`TopUrl`) or its parent (`SourceUrl`).
+- `documentExclusions`: rules for a top-level document. Its frames inherit
+  the result.
+
+A condition whose URL is unknown excludes nothing.
+
 #### settings
 
 type: `SettingsConfig`
@@ -516,6 +628,14 @@ type: `boolean`
 
 Blocks the possibility of leaking your IP address through WebRTC, even if you use a proxy server or VPN.
 
+###### protectCanvas
+
+type: `boolean | undefined`
+
+Optional `settings.stealth.protectCanvas`; omitted means disabled. Requires
+filtering, stealth mode and a prepared `canvasProtectionPolicy`. See
+[Canvas protection](#canvas-protection) for scope and prerequisites.
+
 ### TsWebExtension
 
 #### Properties
@@ -541,6 +661,23 @@ type: `boolean`
 Is app started.
 
 #### Methods
+
+##### Canvas protection methods
+
+Available in MV2 and MV3:
+
+- `setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult>`
+- `setCanvasProtectionPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult>`
+- `getCanvasProtectionState(): RegistrationResult`
+
+The setters reject when there is no application configuration or the policy
+is invalid. Every method returns the
+registration state, `CanvasRegistrationStatus`: `Installed`, `Disabled`,
+`Unavailable` with a `requiredUserAction`, or `Failed`. `start()` and
+`configure()` return it as `canvasProtection`. A later `configure()`
+replaces setter changes with its own `settings.stealth.protectCanvas` and
+`canvasProtectionPolicy`; omitting them disables protection. Changes apply
+to documents loaded afterwards.
 
 ##### initStorage()
 

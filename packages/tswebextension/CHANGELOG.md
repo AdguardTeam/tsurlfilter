@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added opt-in canvas protection with `stealth.protectCanvas`, prepared
+  `canvasProtectionPolicy` and methods to update protection
+  [AdguardBrowserExtension#3475].
+
+[AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475
+
 ### Changed
 
 - Updated `@types/webextension-polyfill` to `0.12.6`, which adds Firefox 153+

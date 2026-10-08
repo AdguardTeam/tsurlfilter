@@ -290,8 +290,12 @@ COPY --from=test-dnr-converter /out/ /
 # ============================================================================
 FROM built-tswebextension AS test-tswebextension
 
-# Install Playwright Chromium browser and its system dependencies for e2e tests
-RUN cd packages/tswebextension && npx playwright install --with-deps chromium
+# Install both browsers and system dependencies used by the package test projects.
+RUN cd packages/tswebextension && npx playwright install --with-deps chromium firefox && \
+    apt-get install -y --no-install-recommends libegl1 libegl-mesa0 libgl1-mesa-dri && \
+    rm -rf /var/lib/apt/lists/*
+# Firefox's headless Linux WebGL tests use Mesa's surfaceless EGL backend.
+ENV MOZ_WEBGL_FORCE_EGL=1
 
 ARG TEST_RUN_ID
 

@@ -1,7 +1,11 @@
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig, defineProject, type UserWorkspaceConfig } from 'vitest/config';
 
+import { canvasEngineSource } from './tasks/canvas-engine-plugin';
 import { ManifestVersionEnv } from './tasks/constants';
+
+// Inline projects do not inherit root plugins, so each one that imports the library gets its own.
+const plugins = [canvasEngineSource()];
 
 /**
  * Creates a test configuration for a specific manifest version.
@@ -13,6 +17,7 @@ import { ManifestVersionEnv } from './tasks/constants';
 const createProjectForManifestVersion = (
     manifestVersion: ManifestVersionEnv,
 ): UserWorkspaceConfig => defineProject({
+    plugins,
     test: {
         name: `mv${manifestVersion}`,
         env: {
@@ -47,6 +52,7 @@ export default defineConfig({
         environmentOptions: {},
         projects: [
             defineProject({
+                plugins,
                 test: {
                     name: 'common',
                     setupFiles: [
@@ -71,12 +77,34 @@ export default defineConfig({
                 test: {
                     name: 'browser',
                     include: ['test/e2e/**/*.spec.ts'],
+                    exclude: ['test/e2e/canvas-protection/**'],
                     browser: {
                         enabled: true,
                         provider: playwright(),
                         headless: true,
                         instances: [
                             { browser: 'chromium' },
+                        ],
+                    },
+                },
+            }),
+            defineProject({
+                plugins,
+                test: {
+                    name: 'canvas-native',
+                    include: ['test/e2e/canvas-protection/**/*.spec.ts'],
+                    browser: {
+                        enabled: true,
+                        provider: playwright(),
+                        headless: true,
+                        instances: [
+                            { browser: 'chromium' },
+                            {
+                                browser: 'firefox',
+                                provider: playwright(process.platform === 'linux' ? {
+                                    launchOptions: { firefoxUserPrefs: { 'webgl.force-enabled': true } },
+                                } : undefined),
+                            },
                         ],
                     },
                 },
