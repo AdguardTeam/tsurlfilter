@@ -71,6 +71,7 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
         const { version } = await browser.runtime.getBrowserInfo();
         // Firefox before 128 ignores `world: 'MAIN'` and runs the script in the content script sandbox,
         // where it does not reach page code. There the script inserts the engine as a page script.
+        // TODO: remove when Firefox before 128 is no longer supported.
         const mainWorld = Number.parseInt(version, 10) >= FirefoxCanvasRegistration.MAIN_WORLD_VERSION;
         try {
             const registration = await browser.contentScripts.register({

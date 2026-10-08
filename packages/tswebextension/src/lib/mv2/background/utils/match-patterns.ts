@@ -1,5 +1,8 @@
 /**
  * Evaluates extension match patterns where the browser does not apply them itself.
+ * Used by Chromium MV2 canvas protection only.
+ *
+ * TODO: remove when Chromium MV2 is no longer supported.
  *
  * @see {@link https://developer.chrome.com/docs/extensions/develop/concepts/match-patterns}
  */

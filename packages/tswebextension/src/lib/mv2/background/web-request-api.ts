@@ -745,6 +745,7 @@ export class WebRequestApi {
             return;
         }
 
+        // TODO: remove when Chromium MV2 is no longer supported.
         canvasInjection.inject(tabId, frameId, requestUrl);
         CosmeticApi.applyJs(tabId, frameId);
     }
@@ -955,6 +956,7 @@ export class WebRequestApi {
             },
         );
 
+        // TODO: remove when Chromium MV2 is no longer supported.
         canvasInjection.inject(tabId, frameId, details.url);
         WebRequestApi.injectCosmetic(details);
         removeParamInjectionService.injectRemoveParam(details.tabId, details.frameId, details.url);

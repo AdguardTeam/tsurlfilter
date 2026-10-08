@@ -103,6 +103,7 @@ export interface CanvasNatives {
     /**
      * Absent in browsers without a 2D OffscreenCanvas, such as Firefox before 105:
      * pages there cannot read one either.
+     * TODO: remove when Firefox before 105 is no longer supported.
      */
     readonly offscreen: OffscreenNatives | undefined;
     readonly Proxy: typeof Proxy;
@@ -129,6 +130,7 @@ export function captureCanvasNatives(realm: Window): CanvasNatives {
     const context = global.CanvasRenderingContext2D.prototype;
     const canvas = global.HTMLCanvasElement.prototype;
     const { OffscreenCanvas } = global;
+    // TODO: remove when Firefox before 105 is no longer supported.
     const offscreenContext = global.OffscreenCanvasRenderingContext2D?.prototype;
     return {
         toDataURL: canvas.toDataURL,

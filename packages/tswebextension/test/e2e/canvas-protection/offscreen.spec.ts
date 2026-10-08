@@ -203,6 +203,7 @@ describe('canvas protection of OffscreenCanvas in a document', () => {
         });
     });
 
+    // TODO: remove when Firefox before 105 is no longer supported.
     test('protects HTML canvases in a browser without a 2D OffscreenCanvas', async () => {
         await withRealm((realm) => {
             // Firefox before 105 has neither.

@@ -8,6 +8,8 @@ import { browserDetectorMV2 } from './utils/browser-detector';
  */
 export enum InjectionGuard {
     Scriptlets = 'scriptExecuted',
+    // Used only by Chromium MV2 and Firefox before 128.
+    // TODO: remove when neither is supported.
     CanvasProtection = 'canvasProtectionExecuted',
 }
 

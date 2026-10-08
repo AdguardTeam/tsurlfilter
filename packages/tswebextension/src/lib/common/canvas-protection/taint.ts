@@ -70,6 +70,7 @@ export function createDrawTracking(native: DrawTrackingNatives): DrawTracking {
     const canvases = new intrinsics.WeakSet<object>();
     const placeholders = new intrinsics.WeakMap<object, object>();
     // An HTML 2D context, an OffscreenCanvas 2D context or a bitmap renderer: each getter accepts its own kind.
+    // TODO: remove when Firefox before 105 is no longer supported.
     const owners = native.offscreen === undefined
         ? [native.contextCanvas, native.bitmapContextCanvas]
         : [native.contextCanvas, native.offscreen.contextCanvas, native.bitmapContextCanvas];

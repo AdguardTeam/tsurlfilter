@@ -33,6 +33,8 @@ interface CanvasDelivery {
  * Delivers canvas protection in Chromium MV2, which cannot register page-world scripts.
  * Like scriptlets, the code is injected with `tabs.executeScript` when a document
  * response starts and again when it commits, and inserts itself as a page script.
+ *
+ * TODO: remove when Chromium MV2 is no longer supported.
  */
 export class ChromiumMv2CanvasInjection implements CanvasRegistrationAdapter {
     /**

@@ -42,6 +42,7 @@ describe('Firefox canvas registration', () => {
         expect(await adapter.checkAvailability()).toMatchObject({ status: CanvasAvailabilityStatus.Unavailable });
     });
 
+    // TODO: remove when Firefox before 128 is no longer supported.
     it('registers a page script inserter before Firefox 128', async () => {
         vi.mocked(browser.runtime.getBrowserInfo).mockResolvedValueOnce({
             name: 'Firefox', vendor: 'Mozilla', version: '115.0', buildID: '',

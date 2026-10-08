@@ -247,6 +247,7 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
         const context2d = global.CanvasRenderingContext2D.prototype;
         const canvas = global.HTMLCanvasElement.prototype;
         // A browser without a 2D OffscreenCanvas gives pages nothing to read through it.
+        // TODO: remove when Firefox before 105 is no longer supported.
         const { offscreen } = native;
         const offscreen2d = offscreen === undefined ? undefined : global.OffscreenCanvasRenderingContext2D.prototype;
         const contexts = offscreen2d === undefined ? [context2d] : [context2d, offscreen2d];
@@ -279,6 +280,7 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
         hook(canvas, 'toDataURL', 'value', (_target, receiver, args) => native.apply(toDataURL, receiver, args));
         const toBlob = createToBlobWrapper(native, seed, taint);
         hook(canvas, 'toBlob', 'value', (_target, receiver, args) => native.apply(toBlob, receiver, args));
+        // TODO: remove when Firefox before 105 is no longer supported.
         if (offscreen !== undefined && offscreen2d !== undefined) {
             const offscreenRead = createOffscreenGetImageDataWrapper(native, offscreen, seed, taint);
             hook(offscreen2d, 'getImageData', 'value', (_target, receiver, args) => (

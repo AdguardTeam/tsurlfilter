@@ -85,6 +85,7 @@ export const removeParamInjectionService = new RemoveParamInjectionService(
     defaultFilteringLog,
 );
 
+// TODO: remove when Chromium MV2 is no longer supported.
 export const canvasInjection = new ChromiumMv2CanvasInjection();
 
 /**
@@ -115,6 +116,7 @@ export function createTsWebExtension(webAccessibleResourcesPath: string): TsWebE
         defaultFilteringLog,
         extSessionStorage,
         new CanvasProtectionRegistration(
+            // TODO: remove when Chromium MV2 is no longer supported.
             browserDetectorMV2.isFirefox() ? new FirefoxCanvasRegistration() : canvasInjection,
             CanvasProtectionCode.create,
             appContext,
