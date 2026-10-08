@@ -14,7 +14,7 @@ import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from '../validator/
 
 import { CompatibilityTableBase } from './base';
 import { modifiersCompatibilityTableData } from './modifiers-compatibility-table-data';
-import { type Platform } from './platform';
+import { type Platform, ProductCode } from './platform';
 import { redirectResourceTable } from './redirect-resource-bridge';
 import { type ModifierDataSchema } from './schemas';
 import { type CompatibilityTable } from './types';
@@ -92,7 +92,22 @@ class ModifiersCompatibilityTable extends CompatibilityTableBase<ModifierDataSch
             ? this.nameTransformer(modifier.name.value)
             : modifier.name.value;
 
-        // Get platform-specific data (wildcard platforms are supported by `query`)
+        // A multi-product wildcard (`Platform.Any`) spans several products, so
+        // there is no single product row whose flags apply — `query()` would
+        // return the first product's row (AdGuard). Mirror `ModifierValidator`,
+        // which skips product-specific checks for multi-product platform sets:
+        // only the modifier's existence is checked.
+        if (platform.product === ProductCode.Any) {
+            if (!this.query(normalizedName, platform)) {
+                ctx.addErrorFromNode(
+                    sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, platform.toHumanReadable()),
+                    modifier,
+                );
+            }
+            return;
+        }
+
+        // Get platform-specific data (product-level wildcards are supported by `query`)
         const specificBlockerData = this.query(normalizedName, platform);
 
         if (!specificBlockerData) {
@@ -141,7 +156,13 @@ class ModifiersCompatibilityTable extends CompatibilityTableBase<ModifierDataSch
 
         if (specificBlockerData.assignable) {
             if (!modifier.value) {
-                if (specificBlockerData.valueOptional) {
+                // Some assignable modifiers may omit the value only in
+                // exception rules (e.g. `$csp`, `$urltransform`), while others
+                // (e.g. `$cookie`) may omit it in blocking rules too.
+                if (
+                    specificBlockerData.valueOptional
+                    && (!specificBlockerData.valueOptionalExceptionOnly || isExceptionRule)
+                ) {
                     return;
                 }
                 ctx.addErrorFromNode(

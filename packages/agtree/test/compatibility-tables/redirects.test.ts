@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { Platform, redirectsCompatibilityTable } from '../../src/compatibility-tables';
+import { ValidationContext } from '../../src/compatibility-tables/validators/validation-context';
 
 const baseNoopJsData = {
     name: 'noopjs',
@@ -40,6 +41,37 @@ describe('Redirects Compatibility Table', () => {
         expect(results[0]).toMatchObject(baseNoopJsData);
 
         expect(redirectsCompatibilityTable.queryAll('nonexistent', Platform.AdgExtAny)).toEqual([]);
+    });
+
+    describe('redirectsCompatibilityTable.validate', () => {
+        it('valid redirect passes', () => {
+            const ctx = new ValidationContext();
+            redirectsCompatibilityTable.validate('noopjs', ctx, Platform.AdgExtChrome);
+            expect(ctx.valid).toBe(true);
+        });
+
+        it('unknown redirect fails', () => {
+            const ctx = new ValidationContext();
+            redirectsCompatibilityTable.validate('nonexistent', ctx, Platform.AdgExtChrome);
+            expect(ctx.valid).toBe(false);
+        });
+
+        it('valid redirect passes with a product-level wildcard', () => {
+            const ctx = new ValidationContext();
+            redirectsCompatibilityTable.validate('noopjs', ctx, Platform.AdgAny);
+            expect(ctx.valid).toBe(true);
+        });
+
+        it('valid redirect passes with the any-product wildcard', () => {
+            const ctx = new ValidationContext();
+            redirectsCompatibilityTable.validate('noopjs', ctx, Platform.Any);
+            expect(ctx.valid).toBe(true);
+        });
+
+        it('throws when the platform is omitted', () => {
+            const ctx = new ValidationContext();
+            expect(() => redirectsCompatibilityTable.validate('noopjs', ctx)).toThrow(/platform/i);
+        });
     });
 
     describe('googlesyndication-adsbygoogle redirect', () => {

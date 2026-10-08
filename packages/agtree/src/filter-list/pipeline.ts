@@ -103,22 +103,10 @@ export class FilterListPipeline {
         this.scanner.scan(
             source,
             (kind: RuleKind, ruleStart: number, ruleEnd: number, ctx: ParserContext) => {
-                if (tolerant) {
-                    try {
-                        children.push(FilterListPipeline.buildRuleAst(kind, ruleStart, ruleEnd, ctx, options));
-                    } catch (e: unknown) {
-                        options?.onParseError?.(e, ruleStart, ruleEnd);
-                        children.push(FilterListPipeline.createInvalidRule(
-                            source,
-                            ruleStart,
-                            ruleEnd,
-                            asError(e),
-                            options,
-                        ));
-                    }
-                } else {
-                    children.push(FilterListPipeline.buildRuleAst(kind, ruleStart, ruleEnd, ctx, options));
-                }
+                // Errors thrown here (AST builder errors, capacity overflows)
+                // are routed to the scanner's `onRuleError` callback in tolerant
+                // mode, or propagate out of `parse()` in strict mode.
+                children.push(FilterListPipeline.buildRuleAst(kind, ruleStart, ruleEnd, ctx, options));
             },
             (ruleStart: number, ruleEnd: number) => {
                 children.push(FilterListPipeline.createEmptyRule(ruleStart, ruleEnd, options));

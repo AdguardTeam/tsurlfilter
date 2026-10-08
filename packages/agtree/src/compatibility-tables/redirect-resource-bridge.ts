@@ -1,13 +1,14 @@
 /**
  * @file Redirect resource validation bridge.
  *
- * This module provides a redirect resource validator for {@link ModifiersCompatibilityTable}
- * without importing {@link RedirectsCompatibilityTable} from `redirects.ts`.
- * Importing `redirects.ts` directly would create a circular dependency:
- * `modifiers.ts` → `redirects.ts` → `utils/resource-type-helpers.ts` → `modifiers.ts`.
+ * This module provides the shared redirect validation used by
+ * {@link ModifiersCompatibilityTable} and {@link RedirectsCompatibilityTable}.
+ * It cannot live in `redirects.ts`: importing `redirects.ts` from `modifiers.ts`
+ * would create a circular dependency
+ * (`modifiers.ts` → `redirects.ts` → `utils/resource-type-helpers.ts` → `modifiers.ts`).
  *
- * The validation logic here intentionally mirrors `RedirectsCompatibilityTable.validate()`.
- * If that method is updated, this module should be updated accordingly.
+ * `RedirectsCompatibilityTable.validate()` delegates here, so this is the
+ * single implementation of the validation logic.
  */
 
 import { sprintf } from 'sprintf-js';
@@ -25,18 +26,34 @@ const ABP_RESOURCE_PREFIX = 'abp-resource:';
 const ABP_RESOURCE_PREFIX_LENGTH = ABP_RESOURCE_PREFIX.length;
 
 /**
- * Mirrors `redirectNameNormalizer` from `redirects.ts`.
- * Strips the ABP resource prefix and priority suffix from a redirect name.
+ * Normalizes the redirect name.
+ *
+ * Strips the ABP resource prefix and the `:[integer]` priority suffix.
+ * Shared by {@link RedirectsCompatibilityTable} and the modifier table's
+ * redirect resource validation.
  *
  * @param name Redirect name to normalize.
  *
  * @returns Normalized redirect name.
+ *
+ * @example
+ * redirectNameNormalizer('abp-resource:my-resource') // => 'my-resource'
+ * redirectNameNormalizer('noop.js:99') // => 'noop.js'
  */
-const redirectNameNormalizer = (name: string): string => {
+export const redirectNameNormalizer = (name: string): string => {
+    // Remove ABP resource prefix, if present
     if (name.startsWith(ABP_RESOURCE_PREFIX)) {
         return name.slice(ABP_RESOURCE_PREFIX_LENGTH);
     }
 
+    /**
+     * Remove :[integer] priority suffix from the name, if present.
+     *
+     * Note: negative values are also supported, see AG-48788.
+     *
+     * @see https://github.com/AdguardTeam/tsurlfilter/issues/59
+     * @see https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect
+     */
     const colonIndex = name.lastIndexOf(COLON);
 
     if (colonIndex !== -1 && /^-?\d+$/.test(name.slice(colonIndex + 1))) {
@@ -47,8 +64,8 @@ const redirectNameNormalizer = (name: string): string => {
 };
 
 /**
- * A minimal redirect resource table that provides only what is needed for modifier validation.
- * Uses the same underlying data as `RedirectsCompatibilityTable`.
+ * Redirect resource table used for modifier value validation. Uses the same
+ * underlying data and name normalization as `RedirectsCompatibilityTable`.
  */
 class RedirectResourceTable extends CompatibilityTableBase<RedirectDataSchema> {
     /**
@@ -60,7 +77,7 @@ class RedirectResourceTable extends CompatibilityTableBase<RedirectDataSchema> {
 
     /**
      * Validates a redirect resource name against the compatibility table.
-     * Mirrors `RedirectsCompatibilityTable.validate()`.
+     * Also used by `RedirectsCompatibilityTable.validate()`.
      *
      * @param data Redirect name as string.
      * @param ctx Validation context to collect issues into.
@@ -73,6 +90,7 @@ class RedirectResourceTable extends CompatibilityTableBase<RedirectDataSchema> {
 
         const redirectName = typeof data === 'string' ? data : '';
 
+        // Get platform-specific data (product-level wildcards are supported by `query`)
         const specificRedirectData = this.query(redirectName, platform);
 
         if (!specificRedirectData) {

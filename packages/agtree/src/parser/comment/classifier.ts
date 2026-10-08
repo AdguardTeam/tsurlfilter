@@ -85,14 +85,16 @@ export class CommentParser implements StructuralParser {
 
                 // Preprocessor: `!#`
                 if (t1 === TokenType.HashMark) {
-                    // `!###...` decorative separators are commonly used in
-                    // AdGuard filter lists and must stay plain comments
-                    // (matches AGTree v4 behavior).
-                    const hashOff = tokenStart(ctx, ti2);
-                    const isHashSeparator = hashOff + 1 < ctx.source.length
-                        && ctx.source[hashOff + 1] === '#';
+                    // Comments starting with `!##` (e.g. `!###...` decorative
+                    // separators or `!##div[data-google-av-itpl]`) must stay
+                    // plain comments instead of preprocessor directives with
+                    // unknown names (matches AGTree v4 behavior). The second
+                    // `#` is its own HashMark token, so the check stays
+                    // token-based like the rest of the classifier.
+                    const isDoubleHashComment = ti2 + 1 < endTi
+                        && types[ti2 + 1] === TokenType.HashMark;
 
-                    if (!isHashSeparator) {
+                    if (!isDoubleHashComment) {
                         PreprocessorCommentParser.parse(ctx, startTi, endTi, dataOffset);
                         return;
                     }

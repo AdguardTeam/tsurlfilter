@@ -24,6 +24,7 @@
  *   [+4] valueEnd       - Source index where value ends (exclusive), or NO_VALUE (-1).
  */
 
+import { CHAR_BACKSLASH } from '../../tokenizer/char-codes';
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { regionEquals, skipWs, tokenStart } from '../context';
@@ -238,15 +239,21 @@ export class NetworkRuleParser implements StructuralParser {
                 break;
             }
 
-            // A `$` inside a modifier value is not a separator: skip `$`
-            // preceded by an escape (`\$`) or followed by `/` (a regex end
-            // anchor like `/regex$/`) — matches AGTree v4 behavior.
+            // Keep in sync with `findNetworkRuleSeparatorIndex` in tsurlfilter
+            // (`src/filterlist/rule-parts.ts`), which mirrors this logic. The
+            // two already differ for regex values with `$` in the middle:
+            // tsurlfilter also skips `$` inside `=/…/` regions, so e.g.
+            // `$removeparam=/x$y,z/` and `$replace=/a$b=c/d/` are handled there.
+            //
+            // A `$` inside a modifier value is not a separator: skip a `$`
+            // preceded by an escaped backslash (e.g. `/^\\$ja=/`). A `$`
+            // directly preceded by `\$` never reaches this loop — the tokenizer
+            // emits `\$` as a single `Escaped` token. A `$` followed by `/`
+            // (a regex end anchor) is already rejected by
+            // `isPotentialNetModifier` below.
             const dollarOff = tokenStart(ctx, i);
-            const nextChar = dollarOff + 1 < source.length ? source[dollarOff + 1] : '';
-            const prevChar = dollarOff > 0 ? source[dollarOff - 1] : '';
 
-            if (nextChar === '/' || prevChar === '\\') {
-                // eslint-disable-next-line no-continue
+            if (source.charCodeAt(dollarOff - 1) === CHAR_BACKSLASH) {
                 continue;
             }
 

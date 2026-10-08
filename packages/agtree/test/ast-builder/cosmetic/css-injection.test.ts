@@ -325,6 +325,21 @@ describe('RuleParser — ADG CSS injection: parseCssSelectorList', () => {
         expect(ast.body.mediaQueryList).toBeDefined();
         expect(ast.body.mediaQueryList!.value).toBe('(max-width: 768px)');
     });
+
+    test('parseCssSelectorList: true with a small capacity keeps the media query intact', () => {
+        // The media query offsets must be read before the selector list parser
+        // overwrites ctx.data — with a tiny capacity the selector data overlaps
+        // the CSS injection slots, corrupting the media query.
+        const tinyParser = new RuleParserPipeline({ itemCapacity: 4, secondaryCapacity: 1 });
+        const ast = tinyParser.parse(
+            'example.com#$#@media screen { .a.b.c.d.e.f { color: red; } }',
+            { parseCssSelectorList: true },
+        ) as CssInjectionRule;
+
+        expect(ast.body.mediaQueryList).toBeDefined();
+        expect(ast.body.mediaQueryList!.value).toBe('screen');
+        expect(ast.body.selectorList.type).toBe('SelectorList');
+    });
 });
 
 describe('RuleParser — ADG CSS injection: parseCssDeclarationList', () => {

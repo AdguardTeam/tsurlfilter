@@ -1544,16 +1544,13 @@ describe('ModifierValidator', () => {
         });
 
         describe('redirect values with wildcard platforms', () => {
-            test('valid redirect passes with a product-level wildcard', () => {
-                const modifier = getModifier('redirect=noop.txt');
-                const validationResult = modifierValidator.validate([Platform.AdgAny], modifier);
-                expect(validationResult.valid).toBeTruthy();
-                expect(validationResult.error).toBeUndefined();
-            });
-
-            test('valid redirect passes with the any-product wildcard', () => {
-                const modifier = getModifier('redirect=noop.txt');
-                const validationResult = modifierValidator.validate([Platform.Any], modifier);
+            test.each([
+                ['redirect=noop.txt', Platform.AdgAny],
+                ['redirect=noop.txt', Platform.Any],
+                ['redirect=noop.txt', Platform.UboAny],
+            ])('valid redirect %s passes with wildcard platform %s', (raw, platform) => {
+                const modifier = getModifier(raw);
+                const validationResult = modifierValidator.validate([platform], modifier);
                 expect(validationResult.valid).toBeTruthy();
                 expect(validationResult.error).toBeUndefined();
             });
@@ -1564,10 +1561,19 @@ describe('ModifierValidator', () => {
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error).toBeDefined();
             });
+        });
 
-            test('valid redirect passes with a uBO product-level wildcard', () => {
-                const modifier = getModifier('redirect=noop.txt');
-                const validationResult = modifierValidator.validate([Platform.UboAny], modifier);
+        describe('any-product wildcard skips product-specific checks', () => {
+            test.each([
+                // Removed in AdGuard but supported by ABP.
+                'webrtc',
+                // Block-only for AdGuard, but uBO accepts it in exceptions.
+                'all',
+                // Supported only by AdGuard.
+                'app=com.x',
+            ])('%s is valid with [Platform.Any]', (raw) => {
+                const modifier = getModifier(raw);
+                const validationResult = modifierValidator.validate([Platform.Any], modifier, true);
                 expect(validationResult.valid).toBeTruthy();
                 expect(validationResult.error).toBeUndefined();
             });

@@ -34,16 +34,25 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
     describe('optional value modifiers', () => {
         test.each([
             'cookie',
-            'csp',
             'hls',
             'jsonprune',
+            'removeparam',
+        ])('%s without value is valid in blocking and exception rules', (raw) => {
+            expect(validateModifier(raw).valid).toBe(true);
+            expect(validateModifier(raw, Platform.AdgOsWindows, true).valid).toBe(true);
+        });
+
+        test.each([
+            'csp',
             'redirect',
             'redirect-rule',
             'removeheader',
-            'removeparam',
-        ])('%s without value is valid', (raw) => {
-            const ctx = validateModifier(raw);
-            expect(ctx.valid).toBe(true);
+        ])('%s without value is valid only in exception rules', (raw) => {
+            const blockingCtx = validateModifier(raw);
+            expect(blockingCtx.valid).toBe(false);
+            expect(blockingCtx.issues?.[0]?.messageId).toContain('Value is required');
+
+            expect(validateModifier(raw, Platform.AdgOsWindows, true).valid).toBe(true);
         });
     });
 
@@ -691,29 +700,55 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
     });
 
     describe('wildcard platforms', () => {
-        test('supported modifier is valid with a product-level wildcard', () => {
-            const ctx = validateModifier('third-party', Platform.AdgAny);
+        test.each([
+            ['third-party', Platform.AdgAny],
+            ['third-party', Platform.Any],
+            ['redirect=noop.js', Platform.Any],
+        ])('%s is valid with wildcard platform %s', (raw, platform) => {
+            const ctx = validateModifier(raw, platform);
             expect(ctx.valid).toBe(true);
         });
 
-        test('supported modifier is valid with the any-product wildcard', () => {
-            const ctx = validateModifier('third-party', Platform.Any);
-            expect(ctx.valid).toBe(true);
-        });
-
-        test('unknown modifier is invalid with a wildcard', () => {
+        test('unknown modifier is invalid with a product-level wildcard', () => {
             const ctx = validateModifier('no-such-modifier', Platform.AdgAny);
             expect(ctx.valid).toBe(false);
         });
 
-        test('redirect value is validated against a wildcard platform', () => {
+        test('unknown modifier is invalid with the any-product wildcard', () => {
+            const ctx = validateModifier('no-such-modifier', Platform.Any);
+            expect(ctx.valid).toBe(false);
+        });
+
+        test('redirect value is validated against a product-level wildcard', () => {
             const ctx = validateModifier('redirect=noop.js', Platform.AdgAny);
             expect(ctx.valid).toBe(true);
         });
 
-        test('unknown redirect value fails with a wildcard platform', () => {
+        test('unknown redirect value fails with a product-level wildcard', () => {
             const ctx = validateModifier('redirect=no-such-resource', Platform.AdgAny);
             expect(ctx.valid).toBe(false);
+        });
+
+        // `Platform.Any` spans several products, so product-specific flags are
+        // not checked: only the modifier's existence is verified. This mirrors
+        // `ModifierValidator` for multi-product platform sets.
+        describe('any-product wildcard semantics', () => {
+            test.each([
+                // Removed in AdGuard but supported by ABP.
+                'webrtc',
+                // Block-only for AdGuard, but uBO accepts it in exceptions.
+                'all',
+                // Supported only by AdGuard.
+                'app=com.x',
+            ])('%s is valid because no single product applies', (raw) => {
+                const ctx = validateModifier(raw, Platform.Any, true);
+                expect(ctx.valid).toBe(true);
+            });
+
+            test('removed modifier is still invalid with a product-level wildcard', () => {
+                const ctx = validateModifier('webrtc', Platform.AdgAny);
+                expect(ctx.valid).toBe(false);
+            });
         });
     });
 });

@@ -46,6 +46,9 @@ export interface FilterListParseOptions extends ParseOptions {
     /**
      * Optional callback invoked for every rule that fails to parse in
      * tolerant mode, before the rule is wrapped into an `InvalidRule` node.
+     * Receives structural parser errors, AST builder errors, and parser
+     * buffer overflows. If the callback throws, the exception propagates out
+     * of `parse()`.
      */
     onParseError?: ScanErrorCallback;
 }

@@ -11,7 +11,13 @@
 /* eslint-disable no-bitwise */
 
 import type { ParserCapacity } from '../ast-builder/capacity';
-import { CapacityOverflowError, REGION_TOKENS } from '../errors/capacity-overflow-error';
+import {
+    CapacityOverflowError,
+    REGION_DOMAINS,
+    REGION_MODIFIERS,
+    REGION_SCRIPTLET_BODY,
+    REGION_TOKENS,
+} from '../errors/capacity-overflow-error';
 import type { CapacityRegion } from '../errors/capacity-overflow-error';
 import {
     MAX_DOMAIN_CAPACITY,
@@ -31,6 +37,7 @@ import type { ParserContext } from '../parser/context';
 import type { RuleParserOptions } from '../parser/options';
 import type { RuleKind } from '../parser/rule';
 import { StructuralRuleParser } from '../parser/rule';
+import { CHAR_CARRIAGE_RETURN, CHAR_FORM_FEED, CHAR_LINE_FEED } from '../tokenizer/char-codes';
 import { TokenType } from '../tokenizer/token-types';
 import { Tokenizer } from '../tokenizer/tokenizer';
 
@@ -87,10 +94,16 @@ export type ScanCallback = (
 export type EmptyLineCallback = (ruleStart: number, ruleEnd: number) => void;
 
 /**
- * Callback type for rule-level structural parse errors.
+ * Callback type for per-rule parse failures.
  *
- * Called when `StructuralRuleParser.parse()` throws for a rule. The rule's source range
- * is passed so the caller can construct an `InvalidRule` node.
+ * Called when a rule cannot be parsed:
+ * - the structural parser ({@link StructuralRuleParser.parse}) throws,
+ * - an AST builder invoked from the rule callback throws,
+ * - a parser buffer overflows its hard cap.
+ *
+ * The rule's source range is passed so the caller can construct an
+ * `InvalidRule` node. If the callback itself throws, the exception propagates
+ * out of `scan()` (and out of `FilterListPipeline.parse()`).
  *
  * @param error The thrown error.
  * @param ruleStart Source offset where the rule starts.
@@ -104,6 +117,9 @@ export type ScanErrorCallback = (
 
 /**
  * Scan forward from `offset` in `source` to find the next line-break.
+ *
+ * Recognizes every character the tokenizer treats as a line break: `\n`,
+ * `\r`, `\r\n`, and `\f`.
  *
  * @param source Source string.
  * @param offset Position to start searching from.
@@ -119,11 +135,11 @@ function findNextNewline(
     const len = source.length;
     for (let i = offset; i < len; i += 1) {
         const c = source.charCodeAt(i);
-        if (c === 0x0A) {
+        if (c === CHAR_LINE_FEED || c === CHAR_FORM_FEED) {
             return [i, i + 1];
         }
-        if (c === 0x0D) {
-            if (i + 1 < len && source.charCodeAt(i + 1) === 0x0A) {
+        if (c === CHAR_CARRIAGE_RETURN) {
+            if (i + 1 < len && source.charCodeAt(i + 1) === CHAR_LINE_FEED) {
                 return [i, i + 2];
             }
             return [i, i + 1];
@@ -414,10 +430,10 @@ export class FilterListScanner {
      */
     private static hardCapForRegion(region: CapacityRegion): number {
         switch (region) {
-            case 'tokens': return MAX_TOKEN_CAPACITY;
-            case 'modifiers': return MAX_MODIFIER_CAPACITY;
-            case 'domains': return MAX_DOMAIN_CAPACITY;
-            case 'scriptletBody': return MAX_SCRIPTLET_BODY_CAPACITY;
+            case REGION_TOKENS: return MAX_TOKEN_CAPACITY;
+            case REGION_MODIFIERS: return MAX_MODIFIER_CAPACITY;
+            case REGION_DOMAINS: return MAX_DOMAIN_CAPACITY;
+            case REGION_SCRIPTLET_BODY: return MAX_SCRIPTLET_BODY_CAPACITY;
             default: return MAX_TOKEN_CAPACITY;
         }
     }
