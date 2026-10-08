@@ -191,7 +191,13 @@ describe('FilterConverter (withSourceMap: true)', () => {
             );
 
             const declarativeRules = await ruleset.getDeclarativeRules();
+            // Asserting the surviving rule as well, otherwise the check would
+            // pass for the wrong reason when `badFilterRules` is ignored.
             expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action).toStrictEqual({
+                type: 'redirect',
+                redirect: { transform: { queryTransform: { removeParams: ['bar'] } } },
+            });
         });
 
         it('negates a rule with the same value-bearing modifier value', async () => {

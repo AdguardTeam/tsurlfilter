@@ -173,9 +173,8 @@ describe('Rule', () => {
 
         it('negatesBadfilter: null permittedDomains on badfilter side is a wildcard', () => {
             // A $badfilter with no $domain (null permittedDomains) should be
-            // treated as a wildcard and intersect with any domain list.
-            // Without the fix, stringArraysHaveIntersection(null, ['x.com'])
-            // returned false, preventing the badfilter from matching.
+            // treated as a wildcard and intersect with any domain list, in both
+            // directions.
             const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$badfilter');
             const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=x.com');
 

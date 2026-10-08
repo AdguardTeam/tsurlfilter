@@ -16,13 +16,13 @@ import {
 import { RuleConverter } from '@adguard/agtree/converter';
 import { RuleGenerator } from '@adguard/agtree/generator';
 
-import { MASK_REGEX_RULE } from '../constants';
+import { MASK_NEGATE_CHARACTER, MASK_REGEX_RULE } from '../constants';
 import { type RequestMethod, ResourceType } from '../declarative-rule/rule-condition';
 import { getErrorMessage } from '../utils/error';
 import { fastHash, fastHash31, hasSpaces } from '../utils/string';
 
 import { OPTION_NAMES } from './option-names';
-import { RuleBadfilter } from './rule-badfilter';
+import { RuleBadfilter, type WrittenModifiersKeys } from './rule-badfilter';
 import { RulePriority } from './rule-priority';
 import { type ConversionMeta, type HttpHeaderMatcher } from './rule-types';
 
@@ -240,21 +240,15 @@ export const REMOVEHEADER_COMPATIBLE_MODIFIERS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Modifiers left out of the written-modifiers comparison key: `$badfilter` is the
- * marker of the rule being compared, and `$domain` / `$denyallow` are compared
- * separately, with domain normalization.
- */
-const EXCLUDED_FROM_WRITTEN_KEY: ReadonlySet<string> = new Set([
-    OPTION_NAMES.BADFILTER,
-    OPTION_NAMES.DOMAIN,
-    OPTION_NAMES.DENYALLOW,
-]);
-
-/**
- * Separator of the written-modifiers comparison key. A rule is a single line, so
+ * Separator of the written-modifiers comparison keys. A rule is a single line, so
  * a modifier name or value cannot contain a line break.
  */
 const WRITTEN_MODIFIER_SEPARATOR = '\n';
+
+/**
+ * Written modifiers of a rule that has none.
+ */
+const EMPTY_WRITTEN_KEYS: WrittenModifiersKeys = { full: '', withoutDomain: '' };
 
 /**
  * Parsed and normalized network filtering rule.
@@ -371,24 +365,23 @@ export class Rule {
      * must be distinguishable from "no value".
      *
      * This is the parsed value used by the converters. For `$badfilter`
-     * identity see {@link writtenModifiersKey}.
+     * identity see {@link writtenKeys}.
      */
     readonly advancedModifierValue: string | null = null;
 
     /**
-     * Value-bearing modifiers exactly as written in the rule text, in order.
+     * Modifiers exactly as written in the rule text, in order.
      *
      * A `$badfilter` rule disables a rule only when the rule text matches, so
      * these entries are compared instead of the parsed (normalized) state —
      * see {@link RuleBadfilter.negates}. They are collected before conversion to
      * AG syntax, because conversion rewrites names and values (for example
-     * `$redirect=noop.js` becomes `$redirect=noopjs`). `$domain` and `$denyallow`
-     * are not included: their values are compared separately.
+     * `$redirect=noop.js` becomes `$redirect=noopjs`).
      *
      * The order and the multiplicity of the written rule are preserved: a
      * repeated modifier (`$csp=a,csp=b`) is not collapsed.
      */
-    readonly writtenModifiersKey: string;
+    readonly writtenKeys: WrittenModifiersKeys;
 
     /**
      * Rule text exactly as written in the filter list, before conversion to AG
@@ -396,7 +389,7 @@ export class Rule {
      *
      * Serialization must keep it: rebuilding a rule from its converted text
      * would silently change the written spelling of modifiers, and with it the
-     * `$badfilter` identity — see {@link writtenModifiersKey}.
+     * `$badfilter` identity — see {@link writtenKeys}.
      */
     readonly originalText: string;
 
@@ -430,13 +423,13 @@ export class Rule {
 
     /**
      * Creates a new {@link Rule} from filter list metadata, an already-converted
-     * network rule AST node and the values of value-bearing modifiers as written.
+     * network rule AST node and the modifiers as written in the original text.
      *
      * @param filterListId Filter list ID.
      * @param index Rule index within the filter list.
      * @param node Network rule AST node (must already be in AG syntax).
-     * @param writtenModifiersKey Modifiers as written in the original rule
-     *   text, collected before conversion to AG syntax.
+     * @param writtenKeys Modifiers as written in the original rule text,
+     *   collected before conversion to AG syntax.
      * @param originalText Rule text as written in the filter list.
      *
      * @throws `SyntaxError` when the pattern contains spaces, the rule is too
@@ -446,10 +439,10 @@ export class Rule {
         filterListId: number,
         index: number,
         node: NetworkRuleNode,
-        writtenModifiersKey: string,
+        writtenKeys: WrittenModifiersKeys,
         originalText: string,
     ) {
-        this.writtenModifiersKey = writtenModifiersKey;
+        this.writtenKeys = writtenKeys;
         this.originalText = originalText;
         const pattern = node.pattern.value;
         if (pattern && hasSpaces(pattern)) {
@@ -1078,10 +1071,10 @@ export class Rule {
         text: string,
     ): Rule[] {
         let rulesConvertedToAGSyntax: AnyRule[];
-        let writtenModifiersKey: string;
+        let writtenKeys: WrittenModifiersKeys;
         try {
             const node = RuleParser.parse(text);
-            writtenModifiersKey = Rule.buildWrittenModifiersKey(node);
+            writtenKeys = Rule.buildWrittenKeys(node);
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
                 rulesConvertedToAGSyntax = conversionResult.result;
@@ -1104,7 +1097,7 @@ export class Rule {
             }
 
             try {
-                rules.push(new Rule(filterId, ruleIndex, ruleNode, writtenModifiersKey, text));
+                rules.push(new Rule(filterId, ruleIndex, ruleNode, writtenKeys, text));
             } catch (e: unknown) {
                 throw new Error(
                     // eslint-disable-next-line max-len
@@ -1136,10 +1129,10 @@ export class Rule {
         node: AnyRule,
     ): Rule[] {
         let rulesConvertedToAG: AnyRule[];
-        let writtenModifiersKey: string;
+        let writtenKeys: WrittenModifiersKeys;
         const originalText = Rule.getWrittenText(node);
         try {
-            writtenModifiersKey = Rule.buildWrittenModifiersKey(node);
+            writtenKeys = Rule.buildWrittenKeys(node);
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
                 rulesConvertedToAG = conversionResult.result;
@@ -1162,7 +1155,7 @@ export class Rule {
             }
 
             try {
-                rules.push(new Rule(filterListId, index, ruleNode, writtenModifiersKey, originalText));
+                rules.push(new Rule(filterListId, index, ruleNode, writtenKeys, originalText));
             } catch (e: unknown) {
                 let msg = `"${getErrorMessage(e)}" in the rule: `;
 
@@ -1195,7 +1188,7 @@ export class Rule {
     /**
      * Returns the text of a rule node as written in the filter list.
      *
-     * The parser records the raw text in `node.raws.text` when the location info
+     * The parser records the raw text in `node.raws.text` when the `includeRaws`
      * option is enabled, which the scanner always does. Nodes built by hand may
      * lack it, so the text is regenerated as a fallback.
      *
@@ -1219,10 +1212,10 @@ export class Rule {
     }
 
     /**
-     * Builds the comparison key of the modifiers as written in the original rule
+     * Builds the comparison keys of the modifiers as written in the original rule
      * text, in order.
      *
-     * `$badfilter` requires the rule text to match, so the key is built from the
+     * `$badfilter` requires the rule text to match, so the keys are built from the
      * node parsed from the written text, before conversion to AG syntax: the
      * conversion rewrites modifier names and values (for example
      * `$queryprune=foo` becomes `$removeparam=foo`, and `$empty` becomes
@@ -1233,30 +1226,68 @@ export class Rule {
      *
      * @param node Rule AST node, possibly of a non-network category.
      *
-     * @returns Comparison key, or an empty string when there is nothing to
-     *   compare.
+     * @returns Written modifier comparison keys.
      */
-    private static buildWrittenModifiersKey(node: AnyRule): string {
+    private static buildWrittenKeys(node: AnyRule): WrittenModifiersKeys {
         if (!Rule.isNetworkRuleNode(node)) {
-            return '';
+            return EMPTY_WRITTEN_KEYS;
         }
 
-        const entries: string[] = [];
+        const full: string[] = [];
+        const withoutDomain: string[] = [];
+        let hasDomain = false;
 
         for (const modifier of node.modifiers?.children ?? []) {
             const name = modifier.name.value;
 
-            if (EXCLUDED_FROM_WRITTEN_KEY.has(name)) {
+            if (name === OPTION_NAMES.BADFILTER) {
                 continue;
             }
 
-            const exception = modifier.exception ? '~' : '';
-            const value = modifier.value === undefined ? '' : `=${modifier.value.value}`;
+            const entry = Rule.formatWrittenModifier(
+                name,
+                modifier.value?.value,
+                modifier.exception,
+            );
 
-            entries.push(`${exception}${name}${value}`);
+            full.push(entry);
+
+            if (name === OPTION_NAMES.DOMAIN) {
+                hasDomain = true;
+            } else {
+                withoutDomain.push(entry);
+            }
         }
 
-        return entries.join(WRITTEN_MODIFIER_SEPARATOR);
+        const fullKey = full.join(WRITTEN_MODIFIER_SEPARATOR);
+
+        // Without `$domain` both keys hold the same entries, so the string is
+        // shared instead of being built twice for every rule.
+        if (!hasDomain) {
+            return { full: fullKey, withoutDomain: fullKey };
+        }
+
+        return {
+            full: fullKey,
+            withoutDomain: withoutDomain.join(WRITTEN_MODIFIER_SEPARATOR),
+        };
+    }
+
+    /**
+     * Formats a single modifier for the written-modifiers comparison key.
+     *
+     * @param name Modifier name.
+     * @param value Modifier value, or `undefined` when the modifier has none.
+     * @param exception Whether the modifier is negated.
+     *
+     * @returns Key entry.
+     */
+    private static formatWrittenModifier(
+        name: string,
+        value: string | undefined,
+        exception: boolean | undefined,
+    ): string {
+        return `${exception ? MASK_NEGATE_CHARACTER : ''}${name}${value === undefined ? '' : `=${value}`}`;
     }
 }
 

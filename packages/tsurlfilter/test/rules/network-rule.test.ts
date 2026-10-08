@@ -688,9 +688,10 @@ describe('NetworkRule constructor', () => {
     }
 
     it.each([
-        [String.raw`/FOO\.bar/`, String.raw`/foo\.bar/`, true],
-        [String.raw`/[A-Z]+\.bar/`, String.raw`/[a-z]+\.bar/`, true],
-        [String.raw`/FOO\D\.bar/`, String.raw`/foo\D\.bar/`, true],
+        // Regexp domains are compared as written, so only identical patterns match.
+        [String.raw`/FOO\.bar/`, String.raw`/foo\.bar/`, false],
+        [String.raw`/[A-Z]+\.bar/`, String.raw`/[a-z]+\.bar/`, false],
+        [String.raw`/FOO\D\.bar/`, String.raw`/foo\D\.bar/`, false],
         [String.raw`/foo\D\.bar/`, String.raw`/foo\d\.bar/`, false],
         [String.raw`/foo\W\.bar/`, String.raw`/foo\w\.bar/`, false],
         [String.raw`/foo\S\.bar/`, String.raw`/foo\s\.bar/`, false],
@@ -700,7 +701,7 @@ describe('NetworkRule constructor', () => {
         [String.raw`/\cA/`, String.raw`/\ca/`, false],
         [String.raw`/(?<A>foo)\k<A>/`, String.raw`/(?<a>foo)\k<a>/`, false],
         [String.raw`/\u0041/`, String.raw`/\u0041/`, true],
-    ])('compares regexp domain identity for badfilter: %s and %s', (domain, other, expected) => {
+    ])('compares regexp domains as written for badfilter: %s and %s', (domain, other, expected) => {
         for (const prefix of ['', '~']) {
             assertBadfilterNegates(
                 `*$domain=${prefix}${domain}`,
@@ -708,6 +709,46 @@ describe('NetworkRule constructor', () => {
                 expected,
             );
         }
+    });
+
+    // This block locks the domain-scoped exception that the written-text
+    // comparison preserves. The written-text comparison itself is locked by the
+    // regexp-identity table above and by the cross-package parity table.
+    it('cancels a rule with $domain for the domains present in both lists', () => {
+        // A narrower badfilter still disables the target rule.
+        assertBadfilterNegates(
+            '*$domain=example.com|example.org|example.io',
+            '*$domain=example.com,badfilter',
+            true,
+        );
+        assertBadfilterNegates(
+            '*$domain=example.com|example.org|example.io',
+            '*$domain=example.com|example.org,badfilter',
+            true,
+        );
+        // A wildcard TLD entry overlaps only an identically written entry: matching
+        // it against the domains it stands for needs the public suffix list, which
+        // the Manifest V3 converter does not have.
+        assertBadfilterNegates('*$domain=example.*', '*$domain=example.*,badfilter', true);
+        assertBadfilterNegates('*$domain=example.*', '*$domain=example.com,badfilter', false);
+        // Domains that cannot match the same request do not disable anything.
+        assertBadfilterNegates('*$domain=example.com', '*$domain=example.org,badfilter', false);
+        // A rule without $domain restricts nothing, so it overlaps either way.
+        assertBadfilterNegates('*$domain=example.com', '*$badfilter', true);
+        assertBadfilterNegates('||example.com^', '||example.com^$domain=example.com,badfilter', true);
+        // In the domain-scoped case the position of $domain is not compared,
+        // unlike the position of every other modifier.
+        assertBadfilterNegates(
+            '||example.com^$script,domain=example.com',
+            '||example.com^$domain=example.com,script,badfilter',
+            true,
+        );
+        // A negated domain makes the cancellation complete, so the text is compared.
+        assertBadfilterNegates(
+            '*$domain=example.com|example.org|example.io',
+            '*$domain=example.com|~example.org,badfilter',
+            false,
+        );
     });
 
     it('works if badfilter modifier works properly', () => {

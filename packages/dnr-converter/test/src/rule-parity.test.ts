@@ -356,6 +356,8 @@ describe('$badfilter detection and negation parity', () => {
             false,
         ],
         ['||example.com^$redirect=nooptext', '||example.com^$redirect=noopjs,badfilter', false],
+        // Repeats are kept, so a duplicate modifier makes the texts different.
+        ['||example.com^$removeparam=foo,removeparam=bar', '||example.com^$removeparam=bar,badfilter', false],
         // The whole modifier list is compared as written, so the position of a
         // modifier relative to the others is part of the match.
         ['||example.com^$csp=a,third-party', '||example.com^$third-party,csp=a,badfilter', false],
@@ -363,10 +365,27 @@ describe('$badfilter detection and negation parity', () => {
         ['||example.com^$script,image,csp=a', '||example.com^$csp=a,script,image,badfilter', false],
         ['||example.com^$script,image', '||example.com^$script,image,badfilter', true],
         ['||example.com^$~third-party', '||example.com^$third-party,badfilter', false],
-        // `$domain` and `$denyallow` stay out of the written key: a narrower
-        // badfilter still negates a wider rule (AG-57204).
+        // `$domain` is compared as written, so regexp patterns and wildcard TLD
+        // entries negate only identically written ones, while plain domain names
+        // are compared case-insensitively. A narrower badfilter still negates a
+        // wider rule.
         ['||example.com^$domain=foo.com|bar.com', '||example.com^$domain=foo.com,badfilter', true],
         ['||example.com^$domain=foo.com', '||example.com^$domain=bar.com,badfilter', false],
+        ['||example.com^$domain=foo.com', '||example.com^$badfilter', true],
+        ['||example.com^$domain=FOO.com', '||example.com^$domain=foo.com,badfilter', true],
+        ['||example.com^$domain=/foo\\.bar/', '||example.com^$domain=/foo\\.bar/,badfilter', true],
+        ['||example.com^$domain=/FOO\\.bar/', '||example.com^$domain=/foo\\.bar/,badfilter', false],
+        ['||example.com^$domain=example.*', '||example.com^$domain=example.*,badfilter', true],
+        // A wildcard TLD entry overlaps only an identically written entry: matching
+        // it against the domains it stands for needs the public suffix list, which
+        // the Manifest V3 converter does not have.
+        ['||example.com^$domain=example.*', '||example.com^$domain=example.com|example.org,badfilter', false],
+        // In the domain-scoped case the position of $domain is not compared,
+        // unlike the position of every other modifier.
+        ['||example.com^$script,domain=example.com', '||example.com^$domain=example.com,script,badfilter', true],
+        // A rule without $domain restricts nothing, so it overlaps either way.
+        ['||example.com^$domain=example.com', '||example.com^$badfilter', true],
+        ['||example.com^', '||example.com^$domain=example.com,badfilter', true],
         // $redirect and $redirect-rule share one option flag but are different modifiers.
         ['||example.com^$redirect=nooptext', '||example.com^$redirect-rule=nooptext,badfilter', false],
         ['||example.com^$redirect-rule=nooptext', '||example.com^$redirect-rule=nooptext,badfilter', true],
@@ -393,6 +412,10 @@ describe('$badfilter detection and negation parity', () => {
         // $app values are compared in MV2 and MV3 alike.
         ['||example.com^$app=a|b', '||example.com^$app=b|a,badfilter', false],
         ['||example.com^$app=a|b', '||example.com^$app=a|b,badfilter', true],
+        // $stealth values are compared in MV2 and MV3 alike ($stealth is
+        // allowed on allowlist rules only).
+        ['@@||example.com^$stealth=referrer', '@@||example.com^$stealth=referrer,badfilter', true],
+        ['@@||example.com^$stealth=referrer', '@@||example.com^$stealth=donottrack,badfilter', false],
         // $permissions values (AG-36226 / AdguardBrowserExtension#2961).
         ['||example.com^$permissions=fullscreen=()', '||example.com^$permissions=fullscreen=(),badfilter', true],
         [
@@ -430,15 +453,21 @@ describe('$badfilter detection and negation parity', () => {
  * Matches a request against rules through the MV2 engine.
  *
  * @param rules Rule texts.
+ * @param url Request URL.
+ * @param sourceUrl Request source URL, which `$domain` is matched against.
  *
  * @returns `true` when any rule was applied to the request.
  */
-const matchesThroughEngine = (rules: string[]): boolean => {
+const matchesThroughEngine = (
+    rules: string[],
+    url = 'https://example.com/',
+    sourceUrl: string | null = null,
+): boolean => {
     const engine = Engine.createSync({
         filters: [{ id: 1, content: rules.join('\n') }],
     });
     const result = engine.matchRequest(
-        new Request('https://example.com/', null, RequestType.Document),
+        new Request(url, sourceUrl, RequestType.Document),
     );
 
     const ruleLists = [
@@ -509,12 +538,72 @@ describe('badfilter negation through the MV2 engine', () => {
     // rule text has already been converted to AG syntax. These cases go through
     // the engine, and a `$badfilter` rule must negate exactly the same rules.
     it.each(ENGINE_BADFILTER_CASES)(
-        'negates=%s for target %s vs badfilter %s',
+        'target %s vs badfilter %s → negated=%s',
         (targetText, badfilterText, negated) => {
             // The target rule must apply on its own, otherwise the check below
             // would pass for the wrong reason.
             expect(matchesThroughEngine([targetText])).toBe(true);
             expect(matchesThroughEngine([targetText, badfilterText])).toBe(!negated);
+        },
+    );
+});
+
+/**
+ * Engine-level `$domain` cases: target rule text, badfilter rule text, the
+ * source URL the request is matched with, and whether the badfilter rule is
+ * expected to negate the target.
+ */
+const ENGINE_DOMAIN_BADFILTER_CASES: [
+    target: string,
+    badfilter: string,
+    sourceUrl: string,
+    negated: boolean,
+][] = [
+    // Identically written lists cancel for every source.
+    [
+        '||example.com^$domain=example.com|example.org',
+        '||example.com^$domain=example.com|example.org,badfilter',
+        'https://example.com/',
+        true,
+    ],
+    // A narrower list cancels only for the domains named in both lists.
+    [
+        '||example.com^$domain=example.com|example.org',
+        '||example.com^$domain=example.com,badfilter',
+        'https://example.com/',
+        true,
+    ],
+    [
+        '||example.com^$domain=example.com|example.org',
+        '||example.com^$domain=example.com,badfilter',
+        'https://example.org/',
+        false,
+    ],
+    // A rule without $domain restricts nothing, so it cancels for any source.
+    [
+        '||example.com^$domain=example.com|example.org',
+        '||example.com^$badfilter',
+        'https://example.org/',
+        true,
+    ],
+    // Lists that cannot match the same request do not cancel anything.
+    [
+        '||example.com^$domain=example.com',
+        '||example.com^$domain=example.org,badfilter',
+        'https://example.com/',
+        false,
+    ],
+];
+
+describe('$domain badfilter negation through the MV2 engine', () => {
+    it.each(ENGINE_DOMAIN_BADFILTER_CASES)(
+        'target %s vs badfilter %s from %s → negated=%s',
+        (targetText, badfilterText, sourceUrl, negated) => {
+            // The target rule must apply on its own, otherwise the check below
+            // would pass for the wrong reason.
+            expect(matchesThroughEngine([targetText], 'https://example.com/', sourceUrl)).toBe(true);
+            expect(matchesThroughEngine([targetText, badfilterText], 'https://example.com/', sourceUrl))
+                .toBe(!negated);
         },
     );
 });

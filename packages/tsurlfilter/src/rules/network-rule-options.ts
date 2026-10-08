@@ -59,17 +59,6 @@ export const NETWORK_RULE_OPTIONS = {
 export const OPTIONS_DELIMITER = '$';
 
 /**
- * Modifiers left out of the written-modifiers comparison key of a `$badfilter`
- * rule: `$badfilter` is the marker of the rule being compared, and `$domain` /
- * `$denyallow` are compared separately, with domain normalization.
- */
-export const EXCLUDED_FROM_WRITTEN_KEY: ReadonlySet<string> = new Set([
-    NETWORK_RULE_OPTIONS.BADFILTER,
-    NETWORK_RULE_OPTIONS.DOMAIN,
-    NETWORK_RULE_OPTIONS.DENYALLOW,
-]);
-
-/**
  * Separator of the written-modifiers comparison key. A rule is a single line, so
  * a modifier name or value cannot contain a line break.
  */
