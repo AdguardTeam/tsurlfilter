@@ -9,8 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `TsWebExtension.syncDeferredRulesets()` method which creates rule sets of
+  disabled static filters after the start, so that `configure()` does not run
+  the expensive runtime `FilterList.prepare()` for them (AG-57686).
+
 ### Changed
 
+- Rule sets of disabled static filters are no longer created during
+  `configure()`: they are deferred and created later via
+  `TsWebExtension.syncDeferredRulesets()`, which keeps the startup critical
+  path short (AG-57686).
 - Updated `@types/webextension-polyfill` to `0.12.6`, which adds Firefox 153+
   `documentId`/`parentDocumentId` support to webNavigation types and renames
   `WebRequest.BlockingResponseOrPromise` to `BlockingResponseOrPromiseOrVoid`;

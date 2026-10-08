@@ -521,7 +521,13 @@ describe('RulesetsLoaderApi', () => {
 
 // Tested here because it reuses the ruleset files and IndexedDB setup above.
 describe('TsWebExtension.loadStaticRulesets', () => {
-    it('reports the number of metadata rules of every manifest ruleset, enabled or not', async () => {
+    /**
+     * Serves a small and a large ruleset and mocks the manifest with both of
+     * them disabled at the browser level.
+     *
+     * @returns Rules of the large ruleset.
+     */
+    const serveTwoRulesets = async (): Promise<string[]> => {
         const largeRules = getLargeFilterRules(3000);
         serveRulesets({
             [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES),
@@ -540,16 +546,57 @@ describe('TsWebExtension.loadStaticRulesets', () => {
             },
         });
 
-        // Only filter 1 is enabled; the large ruleset is still created for its
-        // counters. `loadStaticRulesets` is private: `configure()` would need
-        // the whole MV3 runtime just to reach it.
+        return largeRules;
+    };
+
+    it('creates rule sets of enabled filters only and defers the rest', async () => {
+        const largeRules = await serveTwoRulesets();
+
+        // Only filter 1 is enabled; the large ruleset is deferred and is not
+        // synced with IDB until `syncDeferredRulesets` is called.
+        // `loadStaticRulesets` is private: `configure()` would need the whole
+        // MV3 runtime just to reach it.
         // eslint-disable-next-line @typescript-eslint/dot-notation
         const staticRulesets = await TsWebExtension['loadStaticRulesets'](rulesetsPath, [createSmallFilter()]);
 
-        expect(staticRulesets.map((ruleset) => [ruleset.getId(), ruleset.getMetadataRulesCount()])).toEqual([
-            [RULESET_ID, 1],
-            [LARGE_RULESET_ID, readServedRuleset(LARGE_RULESET_ID).metadataRulesCount],
-        ]);
-        expect(staticRulesets[1].getSafeRulesCount()).toBe(largeRules.length);
+        expect(staticRulesets.map((ruleset) => ruleset.getId())).toEqual([RULESET_ID]);
+        expect(countFetches(LARGE_RULESET_ID)).toBe(0);
+        expect(await readIdb(RULESETS_STORE, rulesetKey('checksum', LARGE_RULESET_ID))).toBeUndefined();
+
+        const deferredRulesets = await TsWebExtension.syncDeferredRulesets();
+
+        expect(deferredRulesets.map((ruleset) => ruleset.getId())).toEqual([LARGE_RULESET_ID]);
+        expect(deferredRulesets[0].getMetadataRulesCount())
+            .toBe(readServedRuleset(LARGE_RULESET_ID).metadataRulesCount);
+        expect(deferredRulesets[0].getSafeRulesCount()).toBe(largeRules.length);
+        expect(countFetches(LARGE_RULESET_ID)).toBe(1);
+        expect(await readIdb(RULESETS_STORE, rulesetKey('checksum', LARGE_RULESET_ID)))
+            .toBe(createHash('md5').update(files.get(getRulesetPath(LARGE_RULESET_ID))!).digest('hex'));
+    });
+
+    it('does not sync deferred rule sets twice', async () => {
+        await serveTwoRulesets();
+
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        await TsWebExtension['loadStaticRulesets'](rulesetsPath, [createSmallFilter()]);
+        await TsWebExtension.syncDeferredRulesets();
+        const secondSync = await TsWebExtension.syncDeferredRulesets();
+
+        expect(secondSync).toEqual([]);
+    });
+
+    it('does not defer rule sets of enabled filters', async () => {
+        await serveTwoRulesets();
+
+        const largeFilter = new Filter(LARGE_FILTER_ID, getLargeFilterRules(10).join('\n'));
+
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        const staticRulesets = await TsWebExtension['loadStaticRulesets'](
+            rulesetsPath,
+            [createSmallFilter(), largeFilter],
+        );
+
+        expect(staticRulesets.map((ruleset) => ruleset.getId())).toEqual([RULESET_ID, LARGE_RULESET_ID]);
+        await expect(TsWebExtension.syncDeferredRulesets()).resolves.toEqual([]);
     });
 });
