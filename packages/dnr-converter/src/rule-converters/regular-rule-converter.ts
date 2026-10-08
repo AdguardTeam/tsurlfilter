@@ -132,6 +132,7 @@ import { type Rule } from '../rule/rule';
 import { RuleDeclarativeValidator } from '../rule/rule-validator';
 import { getErrorMessage } from '../utils/error';
 import {
+    encodeNonAscii,
     isRegexPattern,
     prepareASCII,
     removeSlashes,
@@ -209,11 +210,14 @@ export class RegularRuleConverter {
     }
 
     /**
-     * Converts the hostname of a domain-anchored URL filter to ASCII.
+     * Converts a URL filter to an ASCII-only string.
+     *
+     * The hostname is converted to punycode, while the rest of the pattern is
+     * percent-encoded: this is how DNR matches it against a request URL.
      *
      * @param pattern URL filter pattern.
      *
-     * @returns URL filter pattern with an ASCII hostname.
+     * @returns URL filter pattern with non-ASCII characters converted.
      */
     private static prepareUrlFilter(pattern: string): string {
         if (!pattern.startsWith('||')) {
@@ -228,7 +232,7 @@ export class RegularRuleConverter {
 
         const hostname = hostAndSuffix.substring(0, hostnameEndIndex);
         const suffix = hostAndSuffix.substring(hostnameEndIndex);
-        return `||${prepareASCII(hostname)}${suffix}`;
+        return `||${prepareASCII(hostname)}${encodeNonAscii(suffix)}`;
     }
 
     /**
@@ -419,6 +423,9 @@ export class RegularRuleConverter {
      * - value cannot be URI-decoded.
      * - param name contains urlFilter special characters (`|`, `*`, `^`).
      *
+     * Non-ASCII characters in the param name are percent-encoded, because
+     * the token is matched against a url where they are encoded as well.
+     *
      * @param rule Rule with $removeparam modifier enabled.
      *
      * @returns A urlFilter token string, or null if augmentation should be skipped.
@@ -454,7 +461,8 @@ export class RegularRuleConverter {
             return null;
         }
 
-        return `^${decoded}=`;
+        // The token is matched against the url, where non-ASCII characters are percent-encoded.
+        return `^${encodeNonAscii(decoded)}=`;
     }
 
     /**

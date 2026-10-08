@@ -51,6 +51,16 @@ describe('FilterConverter', () => {
             expect(limitations).toBeDefined();
         });
 
+        it('converts a non-ASCII path to an ASCII-only urlFilter', async () => {
+            const filter = createFilter(['||example.com/путь']);
+            const [{ ruleset }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.urlFilter)
+                .toBe('||example.com/%D0%BF%D1%83%D1%82%D1%8C');
+        });
+
         it('converts value-less $removeparam into a strip-all-query redirect, not a block', async () => {
             const filter = createFilter(['||example.org^$removeparam']);
             const [{ ruleset, errors }] = await converter.convert([filter]);

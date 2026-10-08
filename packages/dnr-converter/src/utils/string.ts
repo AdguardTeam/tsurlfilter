@@ -95,6 +95,21 @@ export function toASCII(strings: string[]): string[] {
 }
 
 /**
+ * Percent-encodes non-ASCII characters, leaving ASCII characters as is.
+ *
+ * Unlike {@link prepareASCII}, which converts a domain to punycode, this is
+ * meant for the rest of a URL filter: DNR matches it against a URL where
+ * non-ASCII characters are percent-encoded in UTF-8.
+ *
+ * @param str String to convert.
+ *
+ * @returns A string containing only ASCII characters.
+ */
+export function encodeNonAscii(str: string): string {
+    return str.replace(/[^\x00-\x7F]/gu, (char) => encodeURIComponent(char));
+}
+
+/**
  * Removes slashes from the beginning and end of the string.
  *
  * @param str String to remove slashes.

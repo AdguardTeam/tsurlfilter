@@ -1003,6 +1003,26 @@ describe('RuleConverter', () => {
             expect(condition.urlFilter).toBe('asciiPrepared(example.com/path)');
         });
 
+        it('percent-encodes a non-ASCII suffix in urlFilter', () => {
+            const rule = createRuleMock({
+                pattern: '||example.com/путь',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('||asciiPrepared(example.com)/%D0%BF%D1%83%D1%82%D1%8C');
+        });
+
+        it('percent-encodes a non-ASCII param name in the $removeparam token', () => {
+            const rule = createRuleMock({
+                pattern: '||example.com^',
+                isRegexRule: false,
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
+                advancedModifierValue: 'ф',
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('||asciiPrepared(example.com)^*^%D1%84=');
+        });
+
         it('removes || from ||* prefix from urlFilter', () => {
             const rule = createRuleMock({
                 pattern: '||*example.com/path',
