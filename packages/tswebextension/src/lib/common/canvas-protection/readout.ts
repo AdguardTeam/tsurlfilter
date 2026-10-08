@@ -78,6 +78,11 @@ export interface OffscreenNatives extends SurfaceNatives {
 }
 
 /**
+ * Getter of the canvas a bitmap renderer draws on.
+ */
+type BitmapContextCanvas = (this: ImageBitmapRenderingContext) => HTMLCanvasElement | OffscreenCanvas;
+
+/**
  * Canvas intrinsics captured from the protected document before page code runs.
  */
 export interface CanvasNatives {
@@ -96,7 +101,11 @@ export interface CanvasNatives {
     readonly setCanvasHeight: (this: HTMLCanvasElement, value: number) => void;
     readonly getImageData: CanvasRenderingContext2D['getImageData'];
     readonly contextCanvas: (this: CanvasRenderingContext2D) => HTMLCanvasElement;
-    readonly bitmapContextCanvas: (this: ImageBitmapRenderingContext) => HTMLCanvasElement | OffscreenCanvas;
+    /**
+     * Absent before Firefox 97, which has no `canvas` on a bitmap renderer.
+     * TODO: remove when Firefox before 97 is no longer supported.
+     */
+    readonly bitmapContextCanvas: BitmapContextCanvas | undefined;
     readonly videoWidth: (this: HTMLVideoElement) => number;
     readonly canvasWidth: (this: HTMLCanvasElement) => number;
     readonly canvasHeight: (this: HTMLCanvasElement) => number;
@@ -148,10 +157,10 @@ export function captureCanvasNatives(realm: Window): CanvasNatives {
         setCanvasHeight: global.Object.getOwnPropertyDescriptor(canvas, 'height')!.set!,
         getImageData: context.getImageData,
         contextCanvas: getter(context, 'canvas') as CanvasNatives['contextCanvas'],
-        bitmapContextCanvas: getter(
+        bitmapContextCanvas: global.Object.getOwnPropertyDescriptor(
             global.ImageBitmapRenderingContext.prototype,
             'canvas',
-        ) as CanvasNatives['bitmapContextCanvas'],
+        )?.get as CanvasNatives['bitmapContextCanvas'],
         videoWidth: getter(global.HTMLVideoElement.prototype, 'videoWidth') as CanvasNatives['videoWidth'],
         canvasWidth: getter(canvas, 'width') as CanvasNatives['canvasWidth'],
         canvasHeight: getter(canvas, 'height') as CanvasNatives['canvasHeight'],

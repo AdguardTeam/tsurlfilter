@@ -17,15 +17,18 @@ const expectedScriptTemplate = (text: string): string => `(function() {\
     if (window.scriptExecuted${timestamp} || document instanceof XMLDocument) {\
         return;\
     }\
+    var text = "${text}";\
+    if (text === undefined) {\
+        window.scriptExecuted${timestamp} = true;\
+        return;\
+    }\
     var script = document.createElement("script");\
-    var blob;\
-    var url;\
     try {\
-        var textNode = document.createTextNode("${text}");\
+        var textNode = document.createTextNode(text);\
         script.appendChild(textNode);\
     } catch (e) {\
         script.setAttribute("type", "text/javascript");\
-        script.textContent = "${text}";\
+        script.textContent = text;\
     }\
     var FRAME_REQUESTS_LIMIT = 500;\
     var frameRequests = 0;\
@@ -37,9 +40,6 @@ const expectedScriptTemplate = (text: string): string => `(function() {\
         }\
         try {\
             parent.appendChild(script);\
-            if (url) {\
-                URL.revokeObjectURL(url);\
-            }\
             script.remove();\
         } catch (e) {\
         } finally {\

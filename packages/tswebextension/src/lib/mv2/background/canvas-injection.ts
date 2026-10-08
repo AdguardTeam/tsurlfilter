@@ -1,3 +1,4 @@
+import { CanvasProtectionCode } from '../../common/canvas-protection/code';
 import {
     CanvasAvailabilityStatus,
     CanvasOperationStatus,
@@ -6,6 +7,7 @@ import {
 } from '../../common/canvas-protection/constants';
 import {
     type Available,
+    type CanvasBootstrapSnapshot,
     type ProtectionPolicyArtifact,
     type RegistrationOperationOutcome,
 } from '../../common/canvas-protection/contracts';
@@ -16,7 +18,7 @@ import {
 import { logger } from '../../common/utils/logger';
 
 import { appContext } from './app-context';
-import { buildScriptText, InjectionGuard } from './injection-helper';
+import { buildScriptInserter, InjectionGuard } from './injection-helper';
 import { TabsApi } from './tabs/tabs-api';
 import { MatchPatterns } from './utils/match-patterns';
 
@@ -43,7 +45,9 @@ export class ChromiumMv2CanvasInjection implements CanvasRegistrationAdapter {
     private delivery: CanvasDelivery | undefined;
 
     /**
-     * Injection needs no optional browser API.
+     * Injection needs no optional browser API. Unlike a registration, a script set up
+     * here is acknowledged by no browser: injection into a document can still fail,
+     * e.g. when the user limits the extension's site access.
      *
      * @returns Whether a script is set up for delivery.
      */
@@ -52,9 +56,25 @@ export class ChromiumMv2CanvasInjection implements CanvasRegistrationAdapter {
     }
 
     /**
+     * Generates a content script that inserts the engine as a page script.
+     *
+     * @param snapshot Browser-acknowledged seed and prepared policy.
+     *
+     * @returns Code to inject.
+     */
+    // eslint-disable-next-line class-methods-use-this -- Implements the adapter contract.
+    public createCode(snapshot: CanvasBootstrapSnapshot): string {
+        return buildScriptInserter(
+            CanvasProtectionCode.createPageScriptExpression(snapshot),
+            appContext.startTimeMs,
+            InjectionGuard.CanvasProtection,
+        );
+    }
+
+    /**
      * Replaces the delivered script and its selectors.
      *
-     * @param code Self-contained page code with the prepared snapshot.
+     * @param code Code from {@link ChromiumMv2CanvasInjection.createCode}.
      * @param policy Trusted prepared selectors.
      *
      * @returns The registration outcome.
@@ -81,7 +101,7 @@ export class ChromiumMv2CanvasInjection implements CanvasRegistrationAdapter {
             }]);
         }
         this.delivery = {
-            script: buildScriptText(code, appContext.startTimeMs, InjectionGuard.CanvasProtection),
+            script: code,
             matches,
             excludeMatches,
         };

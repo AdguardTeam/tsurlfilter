@@ -9,6 +9,7 @@ import {
 import browser from 'webextension-polyfill';
 
 import { extSessionStorage } from '../../../../src/lib';
+import { CanvasProtectionCode } from '../../../../src/lib/common/canvas-protection/code';
 import {
     CanvasAvailabilityStatus,
     CanvasOperationStatus,
@@ -17,10 +18,12 @@ import {
 } from '../../../../src/lib/common/canvas-protection/constants';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { FirefoxCanvasRegistration } from '../../../../src/lib/mv2/background/canvas-registration';
+import { browserDetectorMV2 } from '../../../../src/lib/mv2/background/utils/browser-detector';
 import { createProtectAllPolicy } from '../../common/canvas-protection/fixtures/prepared-policies';
 
 describe('Firefox canvas registration', () => {
     let adapter: FirefoxCanvasRegistration;
+    const session = { root: '0123456789abcdef0123456789abcdef', generation: 'abcdef0123456789abcdef0123456789' };
 
     beforeAll(() => {
         extSessionStorage.init();
@@ -42,16 +45,29 @@ describe('Firefox canvas registration', () => {
         expect(await adapter.checkAvailability()).toMatchObject({ status: CanvasAvailabilityStatus.Unavailable });
     });
 
+    it('registers the engine in the page world since Firefox 128', async () => {
+        const snapshot = { session, policy: createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a') };
+        await adapter.checkAvailability();
+        expect(adapter.createCode(snapshot)).toBe(CanvasProtectionCode.create(snapshot));
+    });
+
     // TODO: remove when Firefox before 128 is no longer supported.
     it('registers a page script inserter before Firefox 128', async () => {
+        vi.spyOn(browserDetectorMV2, 'isFirefox').mockReturnValue(true);
         vi.mocked(browser.runtime.getBrowserInfo).mockResolvedValueOnce({
             name: 'Firefox', vendor: 'Mozilla', version: '115.0', buildID: '',
         });
         vi.mocked(browser.contentScripts.register).mockResolvedValueOnce({ unregister: vi.fn() });
-        await adapter.install('engine()', createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a'));
+        const policy = createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a');
+        await adapter.checkAvailability();
+        const code = adapter.createCode({ session, policy });
+        expect(code).toContain('window.canvasProtectionExecuted1');
+        expect(code).toContain('window.wrappedJSObject');
+        expect(code).toContain(CanvasProtectionCode.createPageScriptExpression({ session, policy }));
+        await adapter.install(code, policy);
         const [options] = vi.mocked(browser.contentScripts.register).mock.calls[0];
         expect(options).not.toHaveProperty('world');
-        expect(options.js).toEqual([{ code: expect.stringMatching(/canvasProtectionExecuted1[\s\S]*engine\(\)/) }]);
+        expect(options.js).toEqual([{ code }]);
     });
 
     it('creates a replacement before retiring the previous handle', async () => {

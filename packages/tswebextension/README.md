@@ -243,11 +243,14 @@ filled only from video frames or `putImageData()` is read natively.
   document commits, and it inserts the engine as an inline page script. It
   usually runs before external page scripts, but an inline script that
   arrives in the first chunk of the response runs earlier and reads native
-  pixels.
+  pixels. Opera fires no webRequest events for documents, so there the
+  script is injected only when the document commits.
 - Firefox before 128 runs registered scripts only in the content script
   sandbox, so the script there inserts the engine as an inline page script.
   On a page whose CSP blocks inline scripts it falls back to a `blob:` script,
-  which runs after the page's first scripts or not at all.
+  which runs after the page's first scripts or not at all. Firefox before 97
+  has no `canvas` on `ImageBitmapRenderingContext`, so a canvas filled only
+  through `transferFromImageBitmap()` is read natively there.
 - A document loaded before the script is registered stays native until
   reload. Chromium MV3 keeps registered user scripts across restarts:
   `initStorage()` removes the previous session's script, and documents loaded
@@ -485,7 +488,9 @@ type: `ProtectionPolicyArtifact | undefined`
 Prepared delivery selectors and exclusions for
 [canvas protection](#canvas-protection). Required when it is enabled.
 
-- `selectors`: match patterns of the registered script.
+- `selectors`: match patterns of the documents that get the script. The
+  browser applies them to the registered script; in Chromium MV2 the
+  extension applies them to the document URL before injecting.
 - `ownFrameExclusions`: rules for a document itself. A condition reads the
   document's URL (`CanvasConditionInput.FrameUrl`), its top-level document
   (`TopUrl`) or its parent (`SourceUrl`).
@@ -683,7 +688,10 @@ Available in MV2 and MV3:
 The setters reject when there is no application configuration or the policy
 is invalid. Every method returns the
 registration state, `CanvasRegistrationStatus`: `Installed`, `Disabled`,
-`Unavailable` with a `requiredUserAction`, or `Failed`. `start()` and
+`Unavailable` with a `requiredUserAction`, or `Failed`. In Chromium MV2
+`Installed` means the script is set up for injection: no browser
+acknowledges it, and a document where injection fails, e.g. after the user
+limited the extension's site access, stays native without an error. `start()` and
 `configure()` return it as `canvasProtection`. A later `configure()`
 replaces setter changes with its own `settings.stealth.protectCanvas` and
 `canvasProtectionPolicy`; omitting them disables protection. Changes apply

@@ -152,19 +152,34 @@ export function sipHash24(key: Uint8Array, input: Uint8Array): Uint8Array {
 }
 
 /**
- * Decodes the captured browser-run root.
+ * Decodes a 16-byte key: the browser-run root or a site seed.
  *
- * @param session Trusted captured root in hex.
+ * @param hex Trusted key in hex.
  *
- * @returns The 16-byte root key.
+ * @returns The 16-byte key.
  */
-const parseRoot = (session: ProtectionSession): Uint8Array => {
-    const root = new intrinsics.Uint8Array(16);
+export const parseKey = (hex: string): Uint8Array => {
+    const key = new intrinsics.Uint8Array(16);
     for (let index = 0; index < 16; index += 1) {
-        const hex = intrinsics.apply(intrinsics.slice, session.root, [index * 2, index * 2 + 2]);
-        root[index] = intrinsics.parseInt(hex, 16);
+        key[index] = intrinsics.parseInt(intrinsics.apply(intrinsics.slice, hex, [index * 2, index * 2 + 2]), 16);
     }
-    return root;
+    return key;
+};
+
+/**
+ * Encodes bytes in lowercase hex.
+ *
+ * @param bytes Key or digest bytes.
+ * @param length Number of leading bytes to encode.
+ *
+ * @returns The hex text.
+ */
+export const formatKey = (bytes: Uint8Array, length: number): string => {
+    let text = '';
+    for (let index = 0; index < length; index += 1) {
+        text += HEX_DIGITS[bytes[index] >>> 4] + HEX_DIGITS[bytes[index] & 15];
+    }
+    return text;
 };
 
 /**
@@ -188,12 +203,7 @@ export function deriveInstallationTokens(seed: Uint8Array): InstallationTokens {
     const input = new intrinsics.Uint8Array(1);
     const token = (domain: number): string => {
         input[0] = domain;
-        const digest = sipHash24(seed, input);
-        let text = '';
-        for (let index = 0; index < 8; index += 1) {
-            text += HEX_DIGITS[digest[index] >>> 4] + HEX_DIGITS[digest[index] & 15];
-        }
-        return text;
+        return formatKey(sipHash24(seed, input), 8);
     };
     return {
         probe: token(INSTALLATION_DOMAINS[0]),
@@ -212,7 +222,7 @@ export function deriveInstallationTokens(seed: Uint8Array): InstallationTokens {
  * @returns The 16-byte key shared by every readout in this site and generation.
  */
 export function deriveSiteSeed(session: ProtectionSession, siteKey: string): Uint8Array {
-    const root = parseRoot(session);
+    const root = parseKey(session.root);
     const encoder = new intrinsics.TextEncoder();
     const generation = intrinsics.apply(intrinsics.encode, encoder, [session.generation]) as Uint8Array;
     const site = intrinsics.apply(intrinsics.encode, encoder, [siteKey]) as Uint8Array;

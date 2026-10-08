@@ -60,7 +60,6 @@ const request = (revision = 'policy-a'): Parameters<CanvasProtectionRegistration
 describe('Canvas protection registration', () => {
     let present: boolean;
     let adapter: { [Method in keyof CanvasRegistrationAdapter]: Mock<CanvasRegistrationAdapter[Method]> };
-    let createCode: Mock<(value: CanvasBootstrapSnapshot) => string>;
     let store: CanvasProtectionStore;
     let registration: CanvasProtectionRegistration;
 
@@ -69,13 +68,14 @@ describe('Canvas protection registration', () => {
      *
      * @returns New registration.
      */
-    const create = (): CanvasProtectionRegistration => new CanvasProtectionRegistration(adapter, createCode, store);
+    const create = (): CanvasProtectionRegistration => new CanvasProtectionRegistration(adapter, store);
 
     beforeEach(() => {
         vi.stubGlobal('crypto', webcrypto);
         present = false;
         adapter = {
             checkAvailability: vi.fn(async () => ({ status: CanvasAvailabilityStatus.Available, value: present })),
+            createCode: vi.fn((value: CanvasBootstrapSnapshot) => JSON.stringify(value)),
             install: vi.fn(async () => {
                 present = true;
                 return [registered];
@@ -85,7 +85,6 @@ describe('Canvas protection registration', () => {
                 return [unregistered];
             }),
         };
-        createCode = vi.fn((value) => JSON.stringify(value));
         store = { canvasProtectionSession: undefined, canvasProtectionRegistration: undefined };
         registration = create();
     });
@@ -120,8 +119,8 @@ describe('Canvas protection registration', () => {
         const requested = request();
         const result = await registration.apply(requested);
         const session = store.canvasProtectionSession!;
-        expect(createCode).toHaveBeenCalledWith({ session, policy: requested.policy });
-        expect(adapter.install).toHaveBeenCalledWith(createCode.mock.results[0].value, requested.policy);
+        expect(adapter.createCode).toHaveBeenCalledWith({ session, policy: requested.policy });
+        expect(adapter.install).toHaveBeenCalledWith(adapter.createCode.mock.results[0].value, requested.policy);
         expect(result).toEqual({
             requested: { gates: enabled, revision: 'policy-a' },
             installed: {

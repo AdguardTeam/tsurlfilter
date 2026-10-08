@@ -1,6 +1,10 @@
+import { SimpleRegex } from '@adguard/tsurlfilter';
+
 /**
  * Evaluates extension match patterns where the browser does not apply them itself.
- * Used by Chromium MV2 canvas protection only.
+ * Used by Chromium MV2 canvas protection only. Hosts are compared as Chromium does:
+ * IDN hosts in punycode, without a trailing dot, and a default port matches the
+ * same port given explicitly.
  *
  * TODO: remove when Chromium MV2 is no longer supported.
  *
@@ -8,9 +12,29 @@
  */
 export class MatchPatterns {
     /**
-     * Scheme, host with an optional port, and path of a match pattern.
+     * Schemes matched by `<all_urls>`. A pattern may name one of them or `*`.
      */
-    private static readonly PATTERN = /^(\*|https?|file|ftp):\/\/(\*|(?:\*\.)?[^/*:]+(?::(?:\d+|\*))?)?(\/.*)$/;
+    private static readonly SCHEMES = ['http', 'https', 'file', 'ftp'];
+
+    /**
+     * Schemes matched by the `*` scheme.
+     */
+    private static readonly WILDCARD_SCHEMES = ['http', 'https'];
+
+    /**
+     * Ports a URL of a scheme has when it names none.
+     */
+    private static readonly DEFAULT_PORTS: Readonly<Record<string, string>> = {
+        http: '80',
+        https: '443',
+        ftp: '21',
+    };
+
+    /**
+     * Scheme, host (`*`, an optional `*.` prefix and a name or a bracketed IPv6 address,
+     * then an optional port or `*`) and path of a match pattern.
+     */
+    private static readonly PATTERN = /^([a-z]+|\*):\/\/(?:(\*)|(\*\.)?(\[[^\]/]+\]|[^/*:[\]]+)(?::(\d+|\*))?)?(\/.*)$/;
 
     /**
      * Compiles patterns into one expression for {@link MatchPatterns.test}.
@@ -43,7 +67,10 @@ export class MatchPatterns {
         } catch {
             return false;
         }
-        return compiled.test(`${parsed.protocol}//${parsed.host}${parsed.pathname}${parsed.search}`);
+        const scheme = parsed.protocol.slice(0, -1);
+        const port = parsed.port || MatchPatterns.DEFAULT_PORTS[scheme];
+        const host = `${MatchPatterns.normalizeHost(parsed.hostname)}${port ? `:${port}` : ''}`;
+        return compiled.test(`${scheme}://${host}${parsed.pathname}${parsed.search}`);
     }
 
     /**
@@ -57,29 +84,44 @@ export class MatchPatterns {
      */
     private static toSource(pattern: string): string {
         if (pattern === '<all_urls>') {
-            return '(?:https?|file|ftp)://.*';
+            return `(?:${MatchPatterns.SCHEMES.join('|')})://.*`;
         }
         const parts = MatchPatterns.PATTERN.exec(pattern);
         if (!parts) {
             throw new Error(`Invalid match pattern: ${pattern}`);
         }
-        const [, scheme, host = '', path] = parts;
-        if ((scheme === 'file') !== (host === '')) {
+        const [, scheme, anyHost, subdomains, name, port, path] = parts;
+        const hasHost = anyHost !== undefined || name !== undefined;
+        if ((scheme !== '*' && !MatchPatterns.SCHEMES.includes(scheme)) || (scheme === 'file') === hasHost) {
             throw new Error(`Invalid match pattern: ${pattern}`);
         }
-        const escape = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         let hostSource = '';
-        if (host === '*') {
+        if (anyHost !== undefined) {
             hostSource = '[^/]*';
-        } else if (host !== '') {
-            const [name, port] = host.toLowerCase().split(':');
-            hostSource = name.startsWith('*.')
-                ? `(?:[^/:]+\\.)?${escape(name.slice(2))}`
-                : escape(name);
+        } else if (name !== undefined) {
+            let hostname: string;
+            try {
+                hostname = MatchPatterns.normalizeHost(new URL(`http://${name}`).hostname);
+            } catch {
+                throw new Error(`Invalid match pattern: ${pattern}`);
+            }
+            hostSource = `${subdomains ? '(?:[^/:]+\\.)?' : ''}${SimpleRegex.escapeRegexSpecials(hostname)}`;
             // Without a port, or with `*`, a pattern matches any port.
             hostSource += port === undefined || port === '*' ? '(?::\\d+)?' : `:${port}`;
         }
-        const schemeSource = scheme === '*' ? 'https?' : scheme;
-        return `${schemeSource}://${hostSource}${path.split('*').map(escape).join('.*')}`;
+        const schemeSource = scheme === '*' ? `(?:${MatchPatterns.WILDCARD_SCHEMES.join('|')})` : scheme;
+        const pathSource = path.split('*').map((part) => SimpleRegex.escapeRegexSpecials(part)).join('.*');
+        return `${schemeSource}://${hostSource}${pathSource}`;
+    }
+
+    /**
+     * Drops the trailing dot of a fully qualified host name.
+     *
+     * @param hostname Host name as `URL` returns it.
+     *
+     * @returns The host name without a trailing dot.
+     */
+    private static normalizeHost(hostname: string): string {
+        return hostname.endsWith('.') ? hostname.slice(0, -1) : hostname;
     }
 }

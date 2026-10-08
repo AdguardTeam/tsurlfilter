@@ -48,12 +48,12 @@ const escapeJs = (match: string): string => {
 /**
  * Builds script to inject in a safe way for Firefox.
  *
- * @param scriptText Script text to execute.
+ * @param textExpression Expression that evaluates to the script text, or to `undefined` for no script.
  * @param variableName Variable name to check if script was executed.
  *
  * @returns Wrapped script text to inject on the page.
  */
-const buildScriptTextForFirefox = (scriptText: string, variableName: string): string => {
+const buildScriptTextForFirefox = (textExpression: string, variableName: string): string => {
     /**
      * Unique guard ID to check if a script was executed at the first attempt.
      *
@@ -62,17 +62,19 @@ const buildScriptTextForFirefox = (scriptText: string, variableName: string): st
      * It is used to check whether the first script injection attempt was successful.
      * So if the script was not executed, tries to use `script.src + blob`
      * as a workaround for {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1733 | CSP issue}.
+     * Only the first attempt sets the guard, so the fallbacks leave nothing on the page window.
      *
      * @see {@link https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/Sharing_objects_with_page_scripts}
      */
     const guardId = nanoid();
 
-    const scriptWithGuard = `window['${guardId}'] = true;\n${scriptText}`;
-
-    const preparedScriptText = `${scriptWithGuard.replace(reJsEscape, escapeJs)}`;
-
     return `(function() {\
         if (window.${variableName} || document instanceof XMLDocument) {\
+            return;\
+        }\
+        var text = ${textExpression};\
+        if (text === undefined) {\
+            window.${variableName} = true;\
             return;\
         }\
         var script;\
@@ -88,7 +90,7 @@ const buildScriptTextForFirefox = (scriptText: string, variableName: string): st
             }\
             try {\
                 script = document.createElement("script");\
-                var textNode = document.createTextNode("${preparedScriptText}");\
+                var textNode = document.createTextNode("window['${guardId}'] = true;\\n" + text);\
                 script.appendChild(textNode);\
                 parent.appendChild(script);\
             } catch (e) {\
@@ -103,14 +105,14 @@ const buildScriptTextForFirefox = (scriptText: string, variableName: string): st
             }
             try {\
                 script = document.createElement("script");\
-                blob = new Blob(["${preparedScriptText}"], { type: "text/javascript; charset=utf-8" });\
+                blob = new Blob([text], { type: "text/javascript; charset=utf-8" });\
                 url = URL.createObjectURL(blob);\
                 script.async = false;\
                 script.src = url;\
                 parent.appendChild(script);\
             } catch (e) {\
                 script.setAttribute("type", "text/javascript");\
-                script.textContent = "${preparedScriptText}";\
+                script.textContent = text;\
             }\
             if (script) {\
                 if (url) {\
@@ -133,27 +135,28 @@ const buildScriptTextForFirefox = (scriptText: string, variableName: string): st
 /**
  * Builds script to inject in a safe way for browsers other than Firefox.
  *
- * @param scriptText Script text to execute.
+ * @param textExpression Expression that evaluates to the script text, or to `undefined` for no script.
  * @param variableName Variable name to check if script was executed.
  *
  * @returns Wrapped script text to inject on the page.
  */
-const buildScriptTextCommon = (scriptText: string, variableName: string): string => {
-    const preparedScriptText = scriptText.replace(reJsEscape, escapeJs);
-
+const buildScriptTextCommon = (textExpression: string, variableName: string): string => {
     return `(function() {\
         if (window.${variableName} || document instanceof XMLDocument) {\
             return;\
         }\
+        var text = ${textExpression};\
+        if (text === undefined) {\
+            window.${variableName} = true;\
+            return;\
+        }\
         var script = document.createElement("script");\
-        var blob;\
-        var url;\
         try {\
-            var textNode = document.createTextNode("${preparedScriptText}");\
+            var textNode = document.createTextNode(text);\
             script.appendChild(textNode);\
         } catch (e) {\
             script.setAttribute("type", "text/javascript");\
-            script.textContent = "${preparedScriptText}";\
+            script.textContent = text;\
         }\
         var FRAME_REQUESTS_LIMIT = 500;\
         var frameRequests = 0;\
@@ -165,9 +168,6 @@ const buildScriptTextCommon = (scriptText: string, variableName: string): string
             }\
             try {\
                 parent.appendChild(script);\
-                if (url) {\
-                    URL.revokeObjectURL(url);\
-                }\
                 script.remove();\
             } catch (e) {\
             } finally {\
@@ -185,11 +185,9 @@ const buildScriptTextCommon = (scriptText: string, variableName: string): string
 };
 
 /**
- * Builds script to inject in a safe way.
+ * Builds a content script that inserts a page script whose text it computes itself.
  *
- * @see {@link LocalScriptRulesService} for details about script source.
- *
- * @param scriptText Script text.
+ * @param textExpression Expression that evaluates to the script text, or to `undefined` for no script.
  * @param startTimeMs App start time in milliseconds.
  * @param guard Flag that keeps the script from running twice in one document.
  *
@@ -197,8 +195,8 @@ const buildScriptTextCommon = (scriptText: string, variableName: string): string
  *
  * @throws Error if start time is not defined.
  */
-export const buildScriptText = (
-    scriptText: string,
+export const buildScriptInserter = (
+    textExpression: string,
     startTimeMs: number | undefined,
     guard: InjectionGuard,
 ): string => {
@@ -246,6 +244,25 @@ export const buildScriptText = (
      * 2) script.textContent is used as a fallback.
      */
     return isFirefox
-        ? buildScriptTextForFirefox(scriptText, variableName)
-        : buildScriptTextCommon(scriptText, variableName);
+        ? buildScriptTextForFirefox(textExpression, variableName)
+        : buildScriptTextCommon(textExpression, variableName);
 };
+
+/**
+ * Builds script to inject in a safe way.
+ *
+ * @see {@link LocalScriptRulesService} for details about script source.
+ *
+ * @param scriptText Script text.
+ * @param startTimeMs App start time in milliseconds.
+ * @param guard Flag that keeps the script from running twice in one document.
+ *
+ * @returns Script to inject.
+ *
+ * @throws Error if start time is not defined.
+ */
+export const buildScriptText = (
+    scriptText: string,
+    startTimeMs: number | undefined,
+    guard: InjectionGuard,
+): string => buildScriptInserter(`"${scriptText.replace(reJsEscape, escapeJs)}"`, startTimeMs, guard);

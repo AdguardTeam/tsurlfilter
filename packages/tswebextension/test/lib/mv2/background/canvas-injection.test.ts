@@ -8,6 +8,7 @@ import {
 } from 'vitest';
 
 import { extSessionStorage } from '../../../../src/lib';
+import { CanvasProtectionCode } from '../../../../src/lib/common/canvas-protection/code';
 import {
     CanvasAvailabilityStatus,
     CanvasOperationStatus,
@@ -36,6 +37,13 @@ describe('Chromium MV2 canvas injection', () => {
         adapter = new ChromiumMv2CanvasInjection();
     });
 
+    it('generates a content script that inserts the engine', () => {
+        const session = { root: '0123456789abcdef0123456789abcdef', generation: 'abcdef0123456789abcdef0123456789' };
+        const code = adapter.createCode({ session, policy });
+        expect(code).toContain('window.canvasProtectionExecuted1');
+        expect(code).toContain(CanvasProtectionCode.createPageScriptExpression({ session, policy }));
+    });
+
     it('injects the installed script into documents the selectors match', async () => {
         adapter.inject(1, 0, 'https://example.org/');
         expect(TabsApi.injectScript).not.toHaveBeenCalled();
@@ -46,11 +54,7 @@ describe('Chromium MV2 canvas injection', () => {
         adapter.inject(1, 0, 'https://example.org/');
         adapter.inject(1, 2, 'https://excluded.example.org/');
         adapter.inject(1, 3, 'https://example.com/');
-        expect(TabsApi.injectScript).toHaveBeenCalledExactlyOnceWith(
-            1,
-            0,
-            expect.stringMatching(/canvasProtectionExecuted1[\s\S]*engine\(\)/),
-        );
+        expect(TabsApi.injectScript).toHaveBeenCalledExactlyOnceWith(1, 0, 'engine()');
     });
 
     it('stops injecting after removal', async () => {
@@ -79,6 +83,6 @@ describe('Chromium MV2 canvas injection', () => {
             }],
         });
         adapter.inject(1, 0, 'https://example.org/');
-        expect(TabsApi.injectScript).toHaveBeenCalledWith(1, 0, expect.stringContaining('engine()'));
+        expect(TabsApi.injectScript).toHaveBeenCalledWith(1, 0, 'engine()');
     });
 });

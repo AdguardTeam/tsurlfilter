@@ -16,7 +16,7 @@ export interface DrawTrackingNatives {
     readonly apply: typeof Reflect.apply;
     readonly contextCanvas: Function;
     readonly offscreen: { readonly contextCanvas: Function } | undefined;
-    readonly bitmapContextCanvas: Function;
+    readonly bitmapContextCanvas: Function | undefined;
     readonly videoWidth: (this: HTMLVideoElement) => number;
 }
 
@@ -70,10 +70,15 @@ export function createDrawTracking(native: DrawTrackingNatives): DrawTracking {
     const canvases = new intrinsics.WeakSet<object>();
     const placeholders = new intrinsics.WeakMap<object, object>();
     // An HTML 2D context, an OffscreenCanvas 2D context or a bitmap renderer: each getter accepts its own kind.
-    // TODO: remove when Firefox before 105 is no longer supported.
-    const owners = native.offscreen === undefined
-        ? [native.contextCanvas, native.bitmapContextCanvas]
-        : [native.contextCanvas, native.offscreen.contextCanvas, native.bitmapContextCanvas];
+    // A browser without a 2D OffscreenCanvas or `canvas` on a bitmap renderer lacks that owner.
+    // TODO: remove the checks when Firefox before 105 is no longer supported.
+    const owners: Function[] = [native.contextCanvas];
+    if (native.offscreen !== undefined) {
+        owners[owners.length] = native.offscreen.contextCanvas;
+    }
+    if (native.bitmapContextCanvas !== undefined) {
+        owners[owners.length] = native.bitmapContextCanvas;
+    }
     const mark = (context: unknown): void => {
         if (intrinsics.apply(intrinsics.weakHas, contexts, [context])) {
             return;
