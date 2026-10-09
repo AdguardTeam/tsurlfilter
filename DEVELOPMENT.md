@@ -49,6 +49,10 @@ node scripts/inject-package-versions.mjs
 
 Do not commit the injected `version` fields.
 
+`@adguard/agtree` falls back to a `0.0.0-dev` version placeholder when the
+injection step is skipped, so its local builds work without it; run the
+injection for accurate version output.
+
 There are two ways to build:
 
 **1. Via Lerna (from the monorepo root)** — builds the package and all its

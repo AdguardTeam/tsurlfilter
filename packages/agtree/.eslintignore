@@ -2,3 +2,5 @@ node_modules
 dist
 coverage
 test/smoke
+test/converter-fixture.bench.ts
+test/parse-fixture.bench.ts

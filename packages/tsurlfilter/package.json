@@ -109,6 +109,7 @@
     },
     "devDependencies": {
         "tsurlfilter-v3": "npm:@adguard/tsurlfilter@^3.3.3",
+        "tsurlfilter-v6": "npm:@adguard/tsurlfilter@6.0.3",
         "@adguard/eslint-plugin-logger-context": "^1.0.1",
         "@rollup/plugin-alias": "catalog:",
         "@rollup/plugin-commonjs": "catalog:",

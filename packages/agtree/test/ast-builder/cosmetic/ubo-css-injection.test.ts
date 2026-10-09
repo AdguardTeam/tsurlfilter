@@ -285,6 +285,38 @@ describe('UboCssInjectionAstBuilder — CSS sub-parsing options', () => {
         expect(ast.body.selectorList.type).toBe('SelectorList');
         expect(ast.body.declarationList?.type).toBe('CssDeclarationList');
     });
+
+    test('parseCssSelectorList: true falls back to Raw for pseudo-element selectors', () => {
+        // Pseudo-elements are valid CSS but rejected by the strict selector
+        // sub-parser; the builder must keep the raw text instead of failing.
+        const ast = parser.parse('##h1::before:style(padding: 0;)', {
+            parseCssSelectorList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'h1::before' });
+    });
+
+    test('parseCssDeclarationList: true falls back to Raw for malformed declarations', () => {
+        // Malformed declarations are kept raw by the base pipeline; the builder
+        // must not fail the whole rule when the strict sub-parser rejects them.
+        const ast = parser.parse('##body:style(color red)', {
+            parseCssDeclarationList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color red' });
+    });
+
+    test('parseCssDeclarationList: true falls back to Raw when declarations overflow the capacity', () => {
+        // More declarations than DEFAULT_MAX_DECLARATIONS (16): the declaration
+        // sub-parser signals overflow via ctx.status instead of throwing, and
+        // the builder must still fall back to raw declarations.
+        const declarationList = 'a:1;b:2;c:3;d:4;e:5;f:6;g:7;h:8;i:9;j:10;k:11;l:12;m:13;n:14;o:15;p:16;q:17';
+        const ast = parser.parse(`##body:style(${declarationList})`, {
+            parseCssDeclarationList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: declarationList });
+    });
 });
 
 describe('UboCssInjectionAstBuilder — negated :matches-media()', () => {

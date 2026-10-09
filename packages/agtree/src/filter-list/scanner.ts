@@ -37,9 +37,9 @@ import type { ParserContext } from '../parser/context';
 import type { RuleParserOptions } from '../parser/options';
 import type { RuleKind } from '../parser/rule';
 import { StructuralRuleParser } from '../parser/rule';
-import { CHAR_CARRIAGE_RETURN, CHAR_FORM_FEED, CHAR_LINE_FEED } from '../tokenizer/char-codes';
 import { TokenType } from '../tokenizer/token-types';
 import { Tokenizer } from '../tokenizer/tokenizer';
+import { findNextTokenizerLineBreak } from '../utils/line-break';
 
 /**
  * Error message used when the data buffer (modifiers / domains / scriptlet
@@ -118,8 +118,10 @@ export type ScanErrorCallback = (
 /**
  * Scan forward from `offset` in `source` to find the next line-break.
  *
- * Recognizes every character the tokenizer treats as a line break: `\n`,
- * `\r`, `\r\n`, and `\f`.
+ * Delegates the line-break policy to the shared
+ * {@link findNextTokenizerLineBreak} helper, so the fallback splits exactly
+ * where the tokenizer's line-break tokens do (including `\f`) and cannot
+ * drift from the normal token-based scan.
  *
  * @param source Source string.
  * @param offset Position to start searching from.
@@ -132,20 +134,8 @@ function findNextNewline(
     source: string,
     offset: number,
 ): [ruleEnd: number, nextStart: number] {
-    const len = source.length;
-    for (let i = offset; i < len; i += 1) {
-        const c = source.charCodeAt(i);
-        if (c === CHAR_LINE_FEED || c === CHAR_FORM_FEED) {
-            return [i, i + 1];
-        }
-        if (c === CHAR_CARRIAGE_RETURN) {
-            if (i + 1 < len && source.charCodeAt(i + 1) === CHAR_LINE_FEED) {
-                return [i, i + 2];
-            }
-            return [i, i + 1];
-        }
-    }
-    return [len, len];
+    const [lineBreakIndex, lineBreakLength] = findNextTokenizerLineBreak(source, offset);
+    return [lineBreakIndex, lineBreakIndex + lineBreakLength];
 }
 
 /**
