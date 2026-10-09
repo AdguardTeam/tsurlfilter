@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- In MV3, static filters, custom filters and user rules were handed to the
+  converter already converted by the extension, so `$badfilter` rules from those
+  sources were compared by the converted text instead of the text as written and
+  could cancel a rule written differently, e.g. `$queryprune=foo` against
+  `$removeparam=foo`. The adapters now pass the original rule spelling.
 - Wrong `frameDomain` in cosmetic hits filtering-log events for subframes, breaking
   exception rules created from the filtering log [AdguardBrowserExtension#1449].
 - Domain-scoped cosmetic and JavaScript rules not applying on hosts with labels
