@@ -519,6 +519,32 @@ describe('RulesetsLoaderApi', () => {
     });
 });
 
+describe('RulesetsLoaderApi.unloadContentOfDisabledRulesets', () => {
+    it('unloads content of cached rule sets which are not enabled', async () => {
+        serveRulesets({ [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES) });
+
+        const ruleset = await new RulesetsLoaderApi(rulesetsPath)
+            .createRuleset(RULESET_ID, [createSmallFilter()]);
+        const unloadSpy = vi.spyOn(ruleset, 'unloadContent');
+
+        RulesetsLoaderApi.unloadContentOfDisabledRulesets(new Set());
+
+        expect(unloadSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps content of cached rule sets which are enabled', async () => {
+        serveRulesets({ [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES) });
+
+        const ruleset = await new RulesetsLoaderApi(rulesetsPath)
+            .createRuleset(RULESET_ID, [createSmallFilter()]);
+        const unloadSpy = vi.spyOn(ruleset, 'unloadContent');
+
+        RulesetsLoaderApi.unloadContentOfDisabledRulesets(new Set([RULESET_ID]));
+
+        expect(unloadSpy).not.toHaveBeenCalled();
+    });
+});
+
 // Tested here because it reuses the ruleset files and IndexedDB setup above.
 describe('TsWebExtension.loadStaticRulesets', () => {
     /**
@@ -556,7 +582,7 @@ describe('TsWebExtension.loadStaticRulesets', () => {
         // not synced with IDB. `loadStaticRulesets` is private: `configure()`
         // would need the whole MV3 runtime just to reach it.
         // eslint-disable-next-line @typescript-eslint/dot-notation
-        const staticRulesets = await TsWebExtension['loadStaticRulesets'](rulesetsPath, [createSmallFilter()]);
+        const staticRulesets = await TsWebExtension['loadStaticRulesets'](rulesetsPath, [createSmallFilter()], []);
 
         expect(staticRulesets.map((ruleset) => ruleset.getId())).toEqual([RULESET_ID]);
         expect(countFetches(LARGE_RULESET_ID)).toBe(0);
@@ -572,9 +598,26 @@ describe('TsWebExtension.loadStaticRulesets', () => {
         const staticRulesets = await TsWebExtension['loadStaticRulesets'](
             rulesetsPath,
             [createSmallFilter(), largeFilter],
+            [],
         );
 
         expect(staticRulesets.map((ruleset) => ruleset.getId())).toEqual([RULESET_ID, LARGE_RULESET_ID]);
         expect(staticRulesets[1].getSafeRulesCount()).toBe(largeRules.length);
+    });
+
+    it('creates rule sets still enabled in the browser even if their filters are disabled', async () => {
+        await serveTwoRulesets();
+
+        // Filter 1 is enabled in the configuration, filter 2 is not, but both
+        // rule sets are enabled in the browser: the browser may have refused
+        // to disable the second one.
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        const staticRulesets = await TsWebExtension['loadStaticRulesets'](
+            rulesetsPath,
+            [createSmallFilter()],
+            [RULESET_ID, LARGE_RULESET_ID],
+        );
+
+        expect(staticRulesets.map((ruleset) => ruleset.getId())).toEqual([RULESET_ID, LARGE_RULESET_ID]);
     });
 });

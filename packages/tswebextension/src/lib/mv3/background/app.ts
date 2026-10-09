@@ -385,14 +385,19 @@ export class TsWebExtension implements AppInterface<
                 filtersIdsToEnable,
             );
 
+            // Get rule sets enabled in the browser. They may differ from the
+            // configuration if the browser refused to disable a rule set, and
+            // such rule sets must still be created so that the dynamic rules
+            // and session rules match the browser state.
+            const enabledRulesetsIds = await browser.declarativeNetRequest.getEnabledRulesets();
+
             // Create static rulesets.
             const staticRulesets = await TsWebExtension.loadStaticRulesets(
                 configuration.rulesetsPath,
                 staticFilters,
+                enabledRulesetsIds,
             );
 
-            // Get enabled static rule sets
-            const enabledRulesetsIds = await browser.declarativeNetRequest.getEnabledRulesets();
             const enabledStaticRulesets = staticRulesets.filter((ruleset) => {
                 const rulesetId = ruleset.getId();
                 return enabledRulesetsIds.includes(rulesetId);
@@ -494,6 +499,13 @@ export class TsWebExtension implements AppInterface<
                 for (const ruleset of rulesets) {
                     ruleset.unloadContent();
                 }
+
+                // Cached rule sets of disabled filters are not part of
+                // `rulesets` anymore, but they may still hold content loaded
+                // for the filtering log; unload it as well.
+                RulesetsLoaderApi.unloadContentOfDisabledRulesets(
+                    new Set(enabledStaticRulesets.map((ruleset) => ruleset.getId())),
+                );
             }
 
             res.staticFilters = staticRulesets;
@@ -757,8 +769,14 @@ export class TsWebExtension implements AppInterface<
      * disabled filters are created later, when their filters are enabled
      * (AG-57686).
      *
+     * Rule sets which are still enabled in the browser are created even if
+     * their filters are disabled in the configuration, so that the dynamic
+     * rules and session rules match the browser state when the browser
+     * refused to disable a rule set.
+     *
      * @param rulesetsPath Path to the rule set metadata.
      * @param staticFilters List of enabled static {@link IFilter}.
+     * @param enabledRulesetsIds Ids of rule sets enabled in the browser.
      *
      * @returns A list of static {@link IRulesetWithSourceMap} of enabled
      * filters, or an empty list if an error occurred during the rule scanning
@@ -767,6 +785,7 @@ export class TsWebExtension implements AppInterface<
     private static async loadStaticRulesets(
         rulesetsPath: ConfigurationMV3['rulesetsPath'],
         staticFilters: IFilter[],
+        enabledRulesetsIds: string[],
     ): Promise<IRulesetWithSourceMap[]> {
         // Wrap filters into rule sets
         const rulesetsLoaderApi = new RulesetsLoaderApi(rulesetsPath);
@@ -779,12 +798,14 @@ export class TsWebExtension implements AppInterface<
             staticFilters.map((filter) => getRulesetId(filter.getId())),
         );
 
+        const browserEnabledRulesetIds = new Set(enabledRulesetsIds);
+
         // Note: we skip metadata ruleset, because it is not a real ruleset.
         const manifestRulesets = manifest.declarative_net_request.rule_resources
             .filter(({ id }) => id !== getRulesetId(METADATA_RULESET_ID));
 
         const staticRulesetsTasks = manifestRulesets
-            .filter(({ id }) => enabledRulesetIds.has(id))
+            .filter(({ id }) => enabledRulesetIds.has(id) || browserEnabledRulesetIds.has(id))
             .map(({ id }) => rulesetsLoaderApi.createRuleset(id, staticFilters));
 
         try {

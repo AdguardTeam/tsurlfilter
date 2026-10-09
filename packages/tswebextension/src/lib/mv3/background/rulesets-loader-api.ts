@@ -509,4 +509,22 @@ export class RulesetsLoaderApi {
 
         return ruleset;
     }
+
+    /**
+     * Unloads content of cached rule sets which are not in the given set of
+     * enabled rule sets.
+     *
+     * Rule sets of disabled filters are not created during configuration
+     * (AG-57686), so the caller does not unload their content anymore. This
+     * method frees the content of such rule sets until it is needed again.
+     *
+     * @param enabledRulesetIds Ids of rule sets which should keep their content.
+     */
+    public static unloadContentOfDisabledRulesets(enabledRulesetIds: Set<string>): void {
+        for (const [rulesetId, ruleset] of RulesetsLoaderApi.rulesetsCache) {
+            if (!enabledRulesetIds.has(rulesetId)) {
+                ruleset.unloadContent();
+            }
+        }
+    }
 }
