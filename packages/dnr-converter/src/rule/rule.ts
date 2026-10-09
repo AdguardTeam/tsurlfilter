@@ -16,13 +16,13 @@ import {
 import { RuleConverter } from '@adguard/agtree/converter';
 import { RuleGenerator } from '@adguard/agtree/generator';
 
-import { MASK_NEGATE_CHARACTER, MASK_REGEX_RULE } from '../constants';
+import { MASK_REGEX_RULE } from '../constants';
 import { type RequestMethod, ResourceType } from '../declarative-rule/rule-condition';
 import { getErrorMessage } from '../utils/error';
 import { fastHash, fastHash31, hasSpaces } from '../utils/string';
 
 import { OPTION_NAMES } from './option-names';
-import { RuleBadfilter, type WrittenModifiersKeys } from './rule-badfilter';
+import { RuleBadfilter } from './rule-badfilter';
 import { RulePriority } from './rule-priority';
 import { type ConversionMeta, type HttpHeaderMatcher } from './rule-types';
 
@@ -240,17 +240,6 @@ export const REMOVEHEADER_COMPATIBLE_MODIFIERS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Separator of the written-modifiers comparison keys. A rule is a single line, so
- * a modifier name or value cannot contain a line break.
- */
-const WRITTEN_MODIFIER_SEPARATOR = '\n';
-
-/**
- * Written modifiers of a rule that has none.
- */
-const EMPTY_WRITTEN_KEYS: WrittenModifiersKeys = { full: '', withoutDomain: '' };
-
-/**
  * Parsed and normalized network filtering rule.
  *
  * Instances are created exclusively via the static factory methods
@@ -365,31 +354,23 @@ export class Rule {
      * must be distinguishable from "no value".
      *
      * This is the parsed value used by the converters. For `$badfilter`
-     * identity see {@link writtenKeys}.
+     * identity see {@link originalText}.
      */
     readonly advancedModifierValue: string | null = null;
-
-    /**
-     * Modifiers exactly as written in the rule text, in order.
-     *
-     * A `$badfilter` rule disables a rule only when the rule text matches, so
-     * these entries are compared instead of the parsed (normalized) state —
-     * see {@link RuleBadfilter.negates}. They are collected before conversion to
-     * AG syntax, because conversion rewrites names and values (for example
-     * `$redirect=noop.js` becomes `$redirect=noopjs`).
-     *
-     * The order and the multiplicity of the written rule are preserved: a
-     * repeated modifier (`$csp=a,csp=b`) is not collapsed.
-     */
-    readonly writtenKeys: WrittenModifiersKeys;
 
     /**
      * Rule text exactly as written in the filter list, before conversion to AG
      * syntax.
      *
+     * A `$badfilter` rule disables a rule only when the rule text matches, so
+     * the text as written is compared instead of the parsed (normalized) state —
+     * see {@link RuleBadfilter.negates}. Conversion rewrites names and values
+     * (for example `$redirect=noop.js` becomes `$redirect=noopjs`), so the text
+     * has to be captured before it.
+     *
      * Serialization must keep it: rebuilding a rule from its converted text
      * would silently change the written spelling of modifiers, and with it the
-     * `$badfilter` identity — see {@link writtenKeys}.
+     * `$badfilter` identity.
      */
     readonly originalText: string;
 
@@ -423,14 +404,13 @@ export class Rule {
 
     /**
      * Creates a new {@link Rule} from filter list metadata, an already-converted
-     * network rule AST node and the modifiers as written in the original text.
+     * network rule AST node and the rule text as written in the filter list.
      *
      * @param filterListId Filter list ID.
      * @param index Rule index within the filter list.
      * @param node Network rule AST node (must already be in AG syntax).
-     * @param writtenKeys Modifiers as written in the original rule text,
-     *   collected before conversion to AG syntax.
-     * @param originalText Rule text as written in the filter list.
+     * @param originalText Rule text as written in the filter list, captured
+     *   before conversion to AG syntax.
      *
      * @throws `SyntaxError` when the pattern contains spaces, the rule is too
      *   general, or any modifier is invalid.
@@ -439,10 +419,8 @@ export class Rule {
         filterListId: number,
         index: number,
         node: NetworkRuleNode,
-        writtenKeys: WrittenModifiersKeys,
         originalText: string,
     ) {
-        this.writtenKeys = writtenKeys;
         this.originalText = originalText;
         const pattern = node.pattern.value;
         if (pattern && hasSpaces(pattern)) {
@@ -1071,10 +1049,8 @@ export class Rule {
         text: string,
     ): Rule[] {
         let rulesConvertedToAGSyntax: AnyRule[];
-        let writtenKeys: WrittenModifiersKeys;
         try {
             const node = RuleParser.parse(text);
-            writtenKeys = Rule.buildWrittenKeys(node);
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
                 rulesConvertedToAGSyntax = conversionResult.result;
@@ -1097,7 +1073,7 @@ export class Rule {
             }
 
             try {
-                rules.push(new Rule(filterId, ruleIndex, ruleNode, writtenKeys, text));
+                rules.push(new Rule(filterId, ruleIndex, ruleNode, text));
             } catch (e: unknown) {
                 throw new Error(
                     // eslint-disable-next-line max-len
@@ -1129,10 +1105,8 @@ export class Rule {
         node: AnyRule,
     ): Rule[] {
         let rulesConvertedToAG: AnyRule[];
-        let writtenKeys: WrittenModifiersKeys;
         const originalText = Rule.getWrittenText(node);
         try {
-            writtenKeys = Rule.buildWrittenKeys(node);
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
                 rulesConvertedToAG = conversionResult.result;
@@ -1155,7 +1129,7 @@ export class Rule {
             }
 
             try {
-                rules.push(new Rule(filterListId, index, ruleNode, writtenKeys, originalText));
+                rules.push(new Rule(filterListId, index, ruleNode, originalText));
             } catch (e: unknown) {
                 let msg = `"${getErrorMessage(e)}" in the rule: `;
 
@@ -1209,85 +1183,6 @@ export class Rule {
             // still works, it just cannot be serialized back to text.
             return '';
         }
-    }
-
-    /**
-     * Builds the comparison keys of the modifiers as written in the original rule
-     * text, in order.
-     *
-     * `$badfilter` requires the rule text to match, so the keys are built from the
-     * node parsed from the written text, before conversion to AG syntax: the
-     * conversion rewrites modifier names and values (for example
-     * `$queryprune=foo` becomes `$removeparam=foo`, and `$empty` becomes
-     * `$redirect=nooptext`).
-     *
-     * The whole modifier list takes part, not only the ones carrying a value: the
-     * position of a modifier relative to the others is part of the rule text.
-     *
-     * @param node Rule AST node, possibly of a non-network category.
-     *
-     * @returns Written modifier comparison keys.
-     */
-    private static buildWrittenKeys(node: AnyRule): WrittenModifiersKeys {
-        if (!Rule.isNetworkRuleNode(node)) {
-            return EMPTY_WRITTEN_KEYS;
-        }
-
-        const full: string[] = [];
-        const withoutDomain: string[] = [];
-        let hasDomain = false;
-
-        for (const modifier of node.modifiers?.children ?? []) {
-            const name = modifier.name.value;
-
-            if (name === OPTION_NAMES.BADFILTER) {
-                continue;
-            }
-
-            const entry = Rule.formatWrittenModifier(
-                name,
-                modifier.value?.value,
-                modifier.exception,
-            );
-
-            full.push(entry);
-
-            if (name === OPTION_NAMES.DOMAIN) {
-                hasDomain = true;
-            } else {
-                withoutDomain.push(entry);
-            }
-        }
-
-        const fullKey = full.join(WRITTEN_MODIFIER_SEPARATOR);
-
-        // Without `$domain` both keys hold the same entries, so the string is
-        // shared instead of being built twice for every rule.
-        if (!hasDomain) {
-            return { full: fullKey, withoutDomain: fullKey };
-        }
-
-        return {
-            full: fullKey,
-            withoutDomain: withoutDomain.join(WRITTEN_MODIFIER_SEPARATOR),
-        };
-    }
-
-    /**
-     * Formats a single modifier for the written-modifiers comparison key.
-     *
-     * @param name Modifier name.
-     * @param value Modifier value, or `undefined` when the modifier has none.
-     * @param exception Whether the modifier is negated.
-     *
-     * @returns Key entry.
-     */
-    private static formatWrittenModifier(
-        name: string,
-        value: string | undefined,
-        exception: boolean | undefined,
-    ): string {
-        return `${exception ? MASK_NEGATE_CHARACTER : ''}${name}${value === undefined ? '' : `=${value}`}`;
     }
 }
 

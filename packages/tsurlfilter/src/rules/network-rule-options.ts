@@ -58,12 +58,6 @@ export const NETWORK_RULE_OPTIONS = {
 
 export const OPTIONS_DELIMITER = '$';
 
-/**
- * Separator of the written-modifiers comparison key. A rule is a single line, so
- * a modifier name or value cannot contain a line break.
- */
-export const WRITTEN_MODIFIER_SEPARATOR = '\n';
-
 export const MASK_ALLOWLIST = '@@';
 
 export const NOT_MARK = '~';

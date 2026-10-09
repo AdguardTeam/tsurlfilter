@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `Rule.writtenKeys` is gone: `$badfilter` compares the rule text as written
+  (`Rule.originalText`), so a rule no longer keeps a comparison key.
+
 ### Deprecated
 
 ### Removed

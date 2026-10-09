@@ -5,29 +5,10 @@
  * logic can be reasoned about and tested in isolation.
  */
 
+import { OPTIONS_DELIMITER } from '../constants';
 import { isRegexPattern } from '../utils/string';
 
 import { OPTION_NAMES } from './option-names';
-
-/**
- * Modifiers of a rule as written in the rule text, used by the `$badfilter`
- * comparison.
- *
- * A `$badfilter` rule disables a rule only when the rule text matches, so the
- * modifiers are kept as written instead of the parsed (normalized) state.
- */
-export interface WrittenModifiersKeys {
-    /**
-     * All modifiers as written, except `$badfilter` itself.
-     */
-    readonly full: string;
-
-    /**
-     * The same list without `$domain`, used when a rule with `$domain` disables
-     * the target rule only partially.
-     */
-    readonly withoutDomain: string;
-}
 
 /**
  * Minimal structural interface required by {@link RuleBadfilter.negates}.
@@ -35,27 +16,93 @@ export interface WrittenModifiersKeys {
  * without creating a circular module dependency.
  */
 interface BadfilterTarget {
+    /**
+     * Enabled modifiers, used to check that the rule carries `$badfilter`.
+     */
     readonly enabledModifiers: ReadonlySet<string>;
-    readonly disabledModifiers: ReadonlySet<string>;
-    readonly allowlist: boolean;
-    readonly pattern: string;
-    readonly permittedResourceTypes: readonly string[];
-    readonly restrictedResourceTypes: readonly string[];
-    readonly restrictedDomains: string[] | null;
     readonly permittedDomains: string[] | null;
-    readonly writtenKeys: WrittenModifiersKeys;
+    readonly restrictedDomains: string[] | null;
+    /**
+     * Rule text as written in the filter list, before conversion to AG syntax.
+     */
+    readonly originalText: string;
 }
 
 /**
- * Joins sorted elements of an array into a comma-separated string.
+ * Separates the entries of a written modifier list.
  *
- * @param arr Input array.
- *
- * @returns Sorted, comma-joined string.
+ * A separator escaped with a backslash belongs to the value, not to the list.
  */
-function sortedJoin(arr: readonly string[]): string {
-    return [...arr].sort().join(',');
-}
+const WRITTEN_MODIFIER_SEPARATOR_REGEXP = /(?<!\\),/;
+
+/**
+ * Name of the `$domain` alias of other syntaxes, as it appears in the written
+ * rule text.
+ */
+const DOMAIN_ALIAS_OPTION_NAME = 'from';
+
+/**
+ * Returns the name of a written modifier entry, without the negation mark.
+ *
+ * @param entry Written modifier entry, e.g. `~third-party` or `csp=script-src`.
+ *
+ * @returns Modifier name.
+ */
+const getWrittenModifierName = (entry: string): string => entry.replace(/^~/, '').split('=')[0] ?? '';
+
+/**
+ * Removes the given modifiers from the rule text as written.
+ *
+ * `$badfilter` requires the text to match, so the modifiers that take part in
+ * the match are dropped from the text instead of being compared separately.
+ *
+ * The modifier list starts at the first `$`, and the text is rebuilt as it was
+ * apart from the dropped entries — a regexp pattern that contains `$` or `,` is
+ * therefore preserved, and its segments are dropped only if one of them reads
+ * exactly like a modifier name.
+ *
+ * @param text Rule text as written.
+ * @param shouldStrip Predicate selecting the modifier names to remove.
+ *
+ * @returns Rule text without the selected modifiers.
+ */
+const stripWrittenModifiers = (text: string, shouldStrip: (name: string) => boolean): string => {
+    const delimiterIndex = text.indexOf(OPTIONS_DELIMITER);
+
+    if (delimiterIndex === -1) {
+        return text;
+    }
+
+    const pattern = text.slice(0, delimiterIndex);
+    const kept = text
+        .slice(delimiterIndex + 1)
+        .split(WRITTEN_MODIFIER_SEPARATOR_REGEXP)
+        .filter((entry) => !shouldStrip(getWrittenModifierName(entry)));
+
+    return kept.length === 0 ? pattern : `${pattern}${OPTIONS_DELIMITER}${kept.join(',')}`;
+};
+
+/**
+ * Checks whether the modifier name is `$badfilter`.
+ *
+ * @param name Modifier name.
+ *
+ * @returns True for the `$badfilter` modifier.
+ */
+const isBadfilterModifier = (name: string): boolean => name === OPTION_NAMES.BADFILTER;
+
+/**
+ * Checks whether the modifier name restricts a rule by domain.
+ *
+ * `$domain` has the `$from` alias in other syntaxes, and both are dropped when a
+ * rule with `$domain` disables the target rule only partially.
+ *
+ * @param name Modifier name.
+ *
+ * @returns True for `$domain` and its alias.
+ */
+const isDomainModifier = (name: string): boolean => name === OPTION_NAMES.DOMAIN
+    || name === DOMAIN_ALIAS_OPTION_NAME;
 
 /**
  * Helper class for checking whether a `$badfilter` rule negates another rule.
@@ -64,20 +111,17 @@ export class RuleBadfilter {
     /**
      * Checks whether `badfilterRule` negates `targetRule`.
      *
-     * A `$badfilter` rule negates another rule when both rules have:
-     * - the same allowlist flag,
-     * - the same pattern,
-     * - the same enabled modifiers (excluding `$badfilter` itself),
-     * - the same disabled modifiers,
-     * - the same permitted/restricted resource types, and
-     * - the same text, as written in the rule text (same modifier names, values,
-     *   order and repeats), except that a rule with `$domain` and without negated
-     *   domains negates the target rule for the domains present in both lists.
+     * A `$badfilter` rule negates another rule when the text of the two rules, as
+     * written in the rule text, matches: the whole text is taken, `$badfilter` is
+     * dropped from it, and the rest must be equal. That covers the pattern, the
+     * allowlist flag and every modifier with its value, order and repeats — rules
+     * that only look equal after parsing (for example `$removeheader=Set-Cookie`
+     * against `set-cookie`, or `$queryprune` against `$removeparam`) do not match.
      *
-     * The structural checks above the text comparison are redundant once the
-     * written text is available — the same text implies the same parsed state —
-     * but they still discriminate when the text could not be captured, so they
-     * are kept.
+     * A rule with `$domain` and without negated domains is an exception: it
+     * negates the target rule only for the domains present in both lists, so the
+     * `$domain` entries are dropped from both texts and the rest is compared,
+     * together with an intersection check of the two domain lists.
      *
      * @param badfilterRule The rule that carries the `$badfilter` modifier.
      * @param targetRule The rule to test for negation.
@@ -89,72 +133,14 @@ export class RuleBadfilter {
             return false;
         }
 
-        if (badfilterRule.allowlist !== targetRule.allowlist) {
-            return false;
-        }
+        const withoutBadfilter = stripWrittenModifiers(badfilterRule.originalText, isBadfilterModifier);
 
-        if (badfilterRule.pattern !== targetRule.pattern) {
-            return false;
-        }
-
-        // Compare resource type arrays (order-independent).
-        if (sortedJoin(badfilterRule.permittedResourceTypes) !== sortedJoin(targetRule.permittedResourceTypes)) {
-            return false;
-        }
-        if (sortedJoin(badfilterRule.restrictedResourceTypes) !== sortedJoin(targetRule.restrictedResourceTypes)) {
-            return false;
-        }
-
-        // Compare enabled modifiers excluding $badfilter itself.
-        const badfilterEnabled = new Set(badfilterRule.enabledModifiers);
-        badfilterEnabled.delete(OPTION_NAMES.BADFILTER);
-
-        const sameSize = badfilterEnabled.size === targetRule.enabledModifiers.size;
-        const sameModifiers = [...badfilterEnabled].every((m) => targetRule.enabledModifiers.has(m));
-        if (!sameSize || !sameModifiers) {
-            return false;
-        }
-
-        // Compare disabled modifiers.
-        if (
-            badfilterRule.disabledModifiers.size !== targetRule.disabledModifiers.size
-            || ![...badfilterRule.disabledModifiers].every((m) => targetRule.disabledModifiers.has(m))
-        ) {
-            return false;
-        }
-
-        return RuleBadfilter.matchesWrittenRuleText(badfilterRule, targetRule);
-    }
-
-    /**
-     * Checks whether the two rules have the same text, as written in the filter
-     * list.
-     *
-     * Written text is used on purpose: a `$badfilter` rule disables a rule only
-     * when the rule text matches, so rules that differ as written must not negate
-     * each other even if they are equivalent after parsing (for example
-     * `$removeheader=Set-Cookie` and `$removeheader=set-cookie`, or `$queryprune`
-     * and `$removeparam`). The order of the modifiers is part of the rule text as
-     * well, so a reordered rule does not match.
-     *
-     * A rule with `$domain` and without negated domains is an exception: it
-     * disables the target rule only for the domains present in both lists, so the
-     * domain values are left out of the comparison and the lists are checked for
-     * an intersection instead. The position of `$domain` among the other
-     * modifiers is therefore not compared in this case, unlike the position of
-     * every other modifier.
-     *
-     * @param badfilterRule The rule that carries the `$badfilter` modifier.
-     * @param targetRule The rule to test for negation.
-     *
-     * @returns True when the written text matches.
-     */
-    private static matchesWrittenRuleText(badfilterRule: BadfilterTarget, targetRule: BadfilterTarget): boolean {
         if (!RuleBadfilter.isPartialDomainCase(badfilterRule, targetRule)) {
-            return badfilterRule.writtenKeys.full === targetRule.writtenKeys.full;
+            return withoutBadfilter === targetRule.originalText;
         }
 
-        return badfilterRule.writtenKeys.withoutDomain === targetRule.writtenKeys.withoutDomain
+        return stripWrittenModifiers(withoutBadfilter, isDomainModifier)
+                === stripWrittenModifiers(targetRule.originalText, isDomainModifier)
             && RuleBadfilter.haveIntersection(
                 badfilterRule.permittedDomains,
                 targetRule.permittedDomains,

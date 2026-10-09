@@ -34,7 +34,6 @@ import {
     NETWORK_RULE_OPTIONS,
     NOT_MARK,
     OPTIONS_DELIMITER,
-    WRITTEN_MODIFIER_SEPARATOR,
 } from './network-rule-options';
 import { type NetworkRuleOption as NetworkRuleOptionType, OptionFlags } from './option-flags';
 import { Pattern } from './pattern';
@@ -374,28 +373,107 @@ export const NetworkRuleGroupOptions = {
 } as const;
 
 /**
- * Written modifiers of a rule, used by the `$badfilter` comparison.
+ * Resolves the text of a rule as written in the filter list.
  *
- * A `$badfilter` rule compares the rule text, so the modifiers are kept as
- * written instead of the parsed (normalized) state.
+ * A `$badfilter` comparison needs the text as written, before the conversion to
+ * AG syntax rewrites modifier names and values, and indexed rules do not keep
+ * their text in memory — so the engine passes a resolver that reads it from the
+ * filter list, see {@link RuleStorage.createWrittenTextResolver}.
+ *
+ * @param rule Rule to resolve the text for.
+ *
+ * @returns Rule text as written, or `null` when it cannot be resolved.
  */
-interface WrittenModifiersKeys {
-    /**
-     * All modifiers as written, except `$badfilter` itself.
-     */
-    readonly full: string;
-
-    /**
-     * The same list without `$domain`, used when a rule with `$domain` disables
-     * the target rule only partially.
-     */
-    readonly withoutDomain: string;
-}
+export type WrittenRuleTextResolver = (rule: NetworkRule) => string | null;
 
 /**
- * Written modifiers of a rule that has none.
+ * Resolver for rules that keep their own text: rules created from text and rules
+ * converted to another syntax. It returns `null` for indexed rules, which do not
+ * keep it — the engine passes a resolver that reads those from the filter list.
+ *
+ * @param rule Rule to resolve the text for.
+ *
+ * @returns Rule text as written, or `null` when the rule does not keep it.
  */
-const EMPTY_WRITTEN_KEYS: WrittenModifiersKeys = { full: '', withoutDomain: '' };
+export const resolveOwnWrittenText: WrittenRuleTextResolver = (
+    rule: NetworkRule,
+): string | null => rule.getWrittenText();
+
+/**
+ * Separates the entries of a written modifier list.
+ *
+ * A separator escaped with a backslash belongs to the value, not to the list.
+ */
+const WRITTEN_MODIFIER_SEPARATOR_REGEXP = /(?<!\\),/;
+
+/**
+ * Returns the name of a written modifier entry, without the negation mark.
+ *
+ * @param entry Written modifier entry, e.g. `~third-party` or `csp=script-src`.
+ *
+ * @returns Modifier name.
+ */
+const getWrittenModifierName = (entry: string): string => entry.replace(/^~/, '').split('=')[0] ?? '';
+
+/**
+ * Removes the given modifiers from the rule text as written.
+ *
+ * `$badfilter` requires the text to match, so the modifiers that take part in
+ * the match are dropped from the text instead of being compared separately.
+ *
+ * The modifier list starts at the first `$`, and the text is rebuilt as it was
+ * apart from the dropped entries — a regexp pattern that contains `$` or `,` is
+ * therefore preserved, and its segments are dropped only if one of them reads
+ * exactly like a modifier name.
+ *
+ * @param text Rule text as written.
+ * @param shouldStrip Predicate selecting the modifier names to remove.
+ *
+ * @returns Rule text without the selected modifiers.
+ */
+const stripWrittenModifiers = (text: string, shouldStrip: (name: string) => boolean): string => {
+    const delimiterIndex = text.indexOf(OPTIONS_DELIMITER);
+
+    if (delimiterIndex === -1) {
+        return text;
+    }
+
+    const pattern = text.slice(0, delimiterIndex);
+    const kept = text
+        .slice(delimiterIndex + 1)
+        .split(WRITTEN_MODIFIER_SEPARATOR_REGEXP)
+        .filter((entry) => !shouldStrip(getWrittenModifierName(entry)));
+
+    return kept.length === 0 ? pattern : `${pattern}${OPTIONS_DELIMITER}${kept.join(',')}`;
+};
+
+/**
+ * Checks whether the modifier name is `$badfilter`.
+ *
+ * @param name Modifier name.
+ *
+ * @returns True for the `$badfilter` modifier.
+ */
+const isBadfilterModifier = (name: string): boolean => name === NETWORK_RULE_OPTIONS.BADFILTER;
+
+/**
+ * Name of the `$domain` alias of other syntaxes, as it appears in the written
+ * rule text.
+ */
+const DOMAIN_ALIAS_OPTION_NAME = 'from';
+
+/**
+ * Checks whether the modifier name restricts a rule by domain.
+ *
+ * `$domain` has the `$from` alias in other syntaxes, and both are dropped when a
+ * rule with `$domain` disables the target rule only partially.
+ *
+ * @param name Modifier name.
+ *
+ * @returns True for `$domain` and its alias.
+ */
+const isDomainModifier = (name: string): boolean => name === NETWORK_RULE_OPTIONS.DOMAIN
+    || name === DOMAIN_ALIAS_OPTION_NAME;
 
 /**
  * Basic network filtering rule.
@@ -499,26 +577,14 @@ export class NetworkRule implements IRule {
     private stealthModifier: StealthModifier | null = null;
 
     /**
-     * Comparison key of the modifiers as written in the original rule text, in
-     * order.
-     *
-     * A `$badfilter` rule requires the rule text to match, so these keys are
-     * compared instead of the parsed (normalized) modifier state. Filled during
-     * {@link loadOptions} when the rule was not converted: the parsed node is the
-     * original one then, so nothing has to be parsed twice.
-     */
-    private writtenKeysCache: WrittenModifiersKeys | null = null;
-
-    /**
      * Rule text as written in the filter list, kept only when the rule was
      * converted to another syntax.
      *
      * Conversion rewrites modifier names and values (for example
-     * `$queryprune=foo` becomes `$removeparam=foo`), so the written form has to
-     * be kept to build {@link writtenKeys} on demand. Indexed rules do not keep
-     * their text in memory, so only converted rules carry this field; rules that
-     * were not converted build their keys during construction instead (see
-     * {@link loadOptions}).
+     * `$queryprune=foo` becomes `$removeparam=foo`), while a `$badfilter` rule
+     * requires the text as written. Indexed rules do not keep their text in
+     * memory, so only converted rules carry it; for the rest the text is read
+     * from the filter list on demand — see {@link getWrittenText}.
      */
     private readonly originalRuleText: string | null;
 
@@ -719,6 +785,19 @@ export class NetworkRule implements IRule {
      */
     public getText(): string | undefined {
         return this.ruleText;
+    }
+
+    /**
+     * Returns the rule text as written in the filter list, when the rule keeps it.
+     *
+     * Indexed rules do not keep their text in memory, so this returns `null` for
+     * them and the text has to be read from the filter list — see
+     * {@link WrittenRuleTextResolver}.
+     *
+     * @returns Rule text as written, or `null` when the rule does not keep it.
+     */
+    public getWrittenText(): string | null {
+        return this.originalRuleText ?? this.ruleText ?? null;
     }
 
     /**
@@ -1446,13 +1525,6 @@ export class NetworkRule implements IRule {
      * @throws An error if there is an unsupported modifier.
      */
     private loadOptions(node: NetworkRuleNode): void {
-        // The written keys are built here for rules that were not converted: the
-        // node is the one parsed from the written text then, and it is not
-        // retained, so the keys cannot be built on demand later.
-        if (this.originalRuleText === null) {
-            this.writtenKeysCache = NetworkRule.buildWrittenKeys(node);
-        }
-
         for (const option of node.modifiers?.children ?? []) {
             let value = EMPTY_STRING;
 
@@ -1549,82 +1621,48 @@ export class NetworkRule implements IRule {
      * Returns true if this rule negates the specified rule.
      *
      * A `$badfilter` rule disables the rules whose text matches, so the text as
-     * written is compared. A rule with `$domain` and without negated domains is
-     * an exception: it disables the target rule only for the domains present in
-     * both lists.
+     * written is compared: the whole text is taken, `$badfilter` is dropped from
+     * it, and the rest must be equal. That covers the pattern, the allowlist flag
+     * and every modifier with its value, order and repeats — rules that only look
+     * equal after parsing (for example `$removeheader=Set-Cookie` against
+     * `set-cookie`, or `$queryprune` against `$removeparam`) do not match.
      *
-     * The structural checks above the text comparison are redundant once the
-     * written text is available — the same text implies the same parsed state —
-     * but they still discriminate when the text could not be captured, so they
-     * are kept.
+     * A rule with `$domain` and without negated domains is an exception: it
+     * disables the target rule only for the domains present in both lists, so the
+     * `$domain` entries are dropped from both texts and the rest is compared,
+     * together with an intersection check of the two domain lists.
      *
      * Only makes sense when this rule has a `badfilter` modifier.
      *
      * @param specifiedRule Rule to check.
+     * @param resolveText Resolves the text of a rule as written in the filter
+     *   list, since indexed rules do not keep it.
      *
      * @returns True if this rule negates the specified rule.
      */
-    public negatesBadfilter(specifiedRule: NetworkRule): boolean {
+    public negatesBadfilter(
+        specifiedRule: NetworkRule,
+        resolveText: WrittenRuleTextResolver = resolveOwnWrittenText,
+    ): boolean {
         if (!this.isOptionEnabled(NetworkRuleOption.Badfilter)) {
             return false;
         }
 
-        if (this.allowlist !== specifiedRule.allowlist) {
+        const badfilterText = resolveText(this);
+        const targetText = resolveText(specifiedRule);
+
+        if (badfilterText === null || targetText === null) {
             return false;
         }
 
-        if (this.pattern.pattern !== specifiedRule.pattern.pattern) {
-            return false;
-        }
+        const withoutBadfilter = stripWrittenModifiers(badfilterText, isBadfilterModifier);
 
-        if (this.permittedRequestTypes !== specifiedRule.permittedRequestTypes) {
-            return false;
-        }
-
-        if (this.restrictedRequestTypes !== specifiedRule.restrictedRequestTypes) {
-            return false;
-        }
-
-        const xored = OptionFlags.xor(this.enabledOptions, NetworkRuleOption.Badfilter);
-        if (!OptionFlags.equals(xored, specifiedRule.enabledOptions)) {
-            return false;
-        }
-
-        if (!OptionFlags.equals(this.disabledOptions, specifiedRule.disabledOptions)) {
-            return false;
-        }
-
-        return this.matchesWrittenRuleText(specifiedRule);
-    }
-
-    /**
-     * Checks whether this rule and the given rule have the same text, as written
-     * in the filter list.
-     *
-     * Written text is used on purpose: a `$badfilter` rule disables a rule only
-     * when the rule text matches, so rules that differ as written must not negate
-     * each other even if they are equivalent after parsing (for example
-     * `$removeheader=Set-Cookie` and `$removeheader=set-cookie`, or `$queryprune`
-     * and `$removeparam`). The order of the modifiers is part of the rule text as
-     * well, so a reordered rule does not match.
-     *
-     * A rule with `$domain` and without negated domains is an exception: it
-     * disables the target rule only for the domains present in both lists, so the
-     * domain values are left out of the comparison and the lists are checked for
-     * an intersection instead. The position of `$domain` among the other
-     * modifiers is therefore not compared in this case, unlike the position of
-     * every other modifier.
-     *
-     * @param specifiedRule Rule to compare with.
-     *
-     * @returns True when the written text matches.
-     */
-    private matchesWrittenRuleText(specifiedRule: NetworkRule): boolean {
         if (!NetworkRule.isPartialDomainCase(this, specifiedRule)) {
-            return this.writtenKeys.full === specifiedRule.writtenKeys.full;
+            return withoutBadfilter === targetText;
         }
 
-        return this.writtenKeys.withoutDomain === specifiedRule.writtenKeys.withoutDomain
+        return stripWrittenModifiers(withoutBadfilter, isDomainModifier)
+                === stripWrittenModifiers(targetText, isDomainModifier)
             && DomainModifier.haveIntersection(
                 this.getPermittedDomains(),
                 specifiedRule.getPermittedDomains(),
@@ -1649,108 +1687,6 @@ export class NetworkRule implements IRule {
         return (targetRule.getPermittedDomains() !== null || badfilterRule.getPermittedDomains() !== null)
             && targetRule.getRestrictedDomains() === null
             && badfilterRule.getRestrictedDomains() === null;
-    }
-
-    /**
-     * Returns the comparison keys of the modifiers as written in the original rule
-     * text.
-     *
-     * The original text is parsed on demand: only a `$badfilter` comparison needs
-     * the written form, and re-parsing every converted rule up front would put
-     * that work on the rule construction path.
-     *
-     * @returns Written modifier comparison keys.
-     */
-    private get writtenKeys(): WrittenModifiersKeys {
-        const text = this.originalRuleText;
-
-        if (this.writtenKeysCache === null) {
-            if (text === null) {
-                // Filled during loadOptions for rules that were not converted.
-                this.writtenKeysCache = EMPTY_WRITTEN_KEYS;
-            } else {
-                try {
-                    const node = NetworkRuleParser.parse(text, NetworkRule.PARSER_OPTIONS);
-
-                    this.writtenKeysCache = NetworkRule.buildWrittenKeys(node);
-                } catch {
-                    // The text was already parsed once by the filter list, so this
-                    // is not expected. Treat the rule as having no written modifiers
-                    // instead of failing the comparison.
-                    this.writtenKeysCache = EMPTY_WRITTEN_KEYS;
-                }
-            }
-        }
-
-        return this.writtenKeysCache;
-    }
-
-    /**
-     * Builds the written modifier comparison keys from the given node, in order.
-     *
-     * Conversion to AG syntax rewrites modifier names and values (for example
-     * `$queryprune=foo` becomes `$removeparam=foo`), while `$badfilter` requires
-     * the text as written, so the node must be parsed from the written text.
-     *
-     * The whole modifier list takes part, not only the ones carrying a value: the
-     * position of a modifier relative to the others is part of the rule text.
-     *
-     * @param node Network rule AST node parsed from the written rule text.
-     *
-     * @returns Written modifier comparison keys.
-     */
-    private static buildWrittenKeys(node: NetworkRuleNode): WrittenModifiersKeys {
-        const full: string[] = [];
-        const withoutDomain: string[] = [];
-        let hasDomain = false;
-
-        for (const option of node.modifiers?.children ?? []) {
-            const name = option.name.value;
-
-            if (name === NETWORK_RULE_OPTIONS.BADFILTER) {
-                continue;
-            }
-
-            const entry = NetworkRule.formatWrittenModifier(name, option.value?.value, option.exception);
-
-            full.push(entry);
-
-            if (name === NETWORK_RULE_OPTIONS.DOMAIN) {
-                hasDomain = true;
-            } else {
-                withoutDomain.push(entry);
-            }
-        }
-
-        const fullKey = full.join(WRITTEN_MODIFIER_SEPARATOR);
-
-        // Without `$domain` both keys hold the same entries, so the string is
-        // shared instead of being built twice for every rule.
-        if (!hasDomain) {
-            return { full: fullKey, withoutDomain: fullKey };
-        }
-
-        return {
-            full: fullKey,
-            withoutDomain: withoutDomain.join(WRITTEN_MODIFIER_SEPARATOR),
-        };
-    }
-
-    /**
-     * Formats a single modifier for the written-modifiers comparison key.
-     *
-     * @param name Modifier name.
-     * @param value Modifier value, or `undefined` when the modifier has none.
-     * @param exception Whether the modifier is negated.
-     *
-     * @returns Key entry.
-     */
-    private static formatWrittenModifier(
-        name: string,
-        value: string | undefined,
-        exception: boolean | undefined,
-    ): string {
-        return `${exception ? NOT_MARK : ''}${name}${value === undefined ? '' : `=${value}`}`;
     }
 
     /**
