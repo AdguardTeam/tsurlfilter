@@ -519,6 +519,62 @@ describe('RulesetsLoaderApi', () => {
     });
 });
 
+describe('RulesetsLoaderApi.getRulesetCounters', () => {
+    it('reads counters from IDB after the rule set is synced', async () => {
+        serveRulesets({ [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES) });
+
+        await new RulesetsLoaderApi(rulesetsPath).syncRulesetWithIdb(RULESET_ID);
+        const fetchesAfterSync = countFetches(RULESET_ID);
+
+        const counters = await new RulesetsLoaderApi(rulesetsPath).getRulesetCounters(RULESET_ID);
+
+        const { metadata, metadataRulesCount } = readServedRuleset();
+        expect(counters).toEqual({
+            rulesCount: metadata.safeRulesCount + metadata.unsafeRulesCount,
+            regexpRulesCount: metadata.regexpRulesCount,
+            metadataRulesCount,
+        });
+        expect(countFetches(RULESET_ID)).toBe(fetchesAfterSync);
+    });
+
+    it('reads counters from the rule set file when IDB has no metadata', async () => {
+        serveRulesets({ [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES) });
+
+        const counters = await new RulesetsLoaderApi(rulesetsPath).getRulesetCounters(RULESET_ID);
+
+        const { metadata, metadataRulesCount } = readServedRuleset();
+        expect(counters).toEqual({
+            rulesCount: metadata.safeRulesCount + metadata.unsafeRulesCount,
+            regexpRulesCount: metadata.regexpRulesCount,
+            metadataRulesCount,
+        });
+        expect(countFetches(RULESET_ID)).toBe(1);
+        // Reading counters must not write to IDB.
+        expect(await readIdb(RULESETS_STORE, rulesetKey('checksum'))).toBeUndefined();
+    });
+
+    it('returns undefined when the rule set file is missing', async () => {
+        serveRulesets({ [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES) });
+
+        const counters = await new RulesetsLoaderApi(rulesetsPath).getRulesetCounters(LARGE_RULESET_ID);
+
+        expect(counters).toBeUndefined();
+    });
+
+    it('reads counters of a static filter without creating its rule set', async () => {
+        serveRulesets({ [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES) });
+
+        const counters = await TsWebExtension.getRulesetCounters(FILTER_ID, rulesetsPath);
+
+        const { metadata, metadataRulesCount } = readServedRuleset();
+        expect(counters).toEqual({
+            rulesCount: metadata.safeRulesCount + metadata.unsafeRulesCount,
+            regexpRulesCount: metadata.regexpRulesCount,
+            metadataRulesCount,
+        });
+    });
+});
+
 // Tested here because it reuses the ruleset files and IndexedDB setup above.
 describe('TsWebExtension.loadStaticRulesets', () => {
     /**
