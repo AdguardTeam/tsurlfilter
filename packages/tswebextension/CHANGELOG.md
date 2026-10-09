@@ -9,10 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `TsWebExtension.getRulesetCounters()` method which reads rule counts of a
-  static rule set without creating it, so clients can check filters limits
-  before enabling a filter whose rule set is not created yet (AG-57686).
-
 ### Changed
 
 - Rule sets of disabled static filters are no longer created during

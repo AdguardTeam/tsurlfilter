@@ -30,7 +30,7 @@ import { extSessionStorage } from './ext-session-storage';
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
 import { MessagesApi } from './messages-api';
 import { RequestEvents } from './request/events/request-events';
-import { type RulesetCounters, RulesetsLoaderApi } from './rulesets-loader-api';
+import { RulesetsLoaderApi } from './rulesets-loader-api';
 import { CspService } from './services/csp-service';
 import { documentBlockingService } from './services/document-blocking-service';
 import { type LocalScriptFunctionData, localScriptRulesService } from './services/local-script-rules-service';
@@ -215,32 +215,6 @@ export class TsWebExtension implements AppInterface<
         const rulesetId = `${RULESET_NAME_PREFIX}${staticFilterId}`;
 
         await rulesetsLoaderApi.syncRulesetWithIdb(rulesetId);
-    }
-
-    /**
-     * Reads counters of a static rule set without creating it.
-     *
-     * The counters are read from the rule set metadata cached in IDB when it
-     * is available, otherwise from the rule set file metadata. Unlike
-     * {@link syncRulesetWithIdbByFilterId}, this does not run
-     * `FilterList.prepare()` and does not write to IDB, so it is cheap enough
-     * for clients to check filters limits before enabling a filter whose rule
-     * set has not been created yet (AG-57686).
-     *
-     * @param staticFilterId Static filter id.
-     * @param rulesetsPath Path to rule sets.
-     *
-     * @returns Counters of the rule set or undefined if they cannot be read.
-     */
-    public static async getRulesetCounters(
-        staticFilterId: number,
-        rulesetsPath: string,
-    ): Promise<RulesetCounters | undefined> {
-        const rulesetsLoaderApi = new RulesetsLoaderApi(rulesetsPath);
-
-        const rulesetId = `${RULESET_NAME_PREFIX}${staticFilterId}`;
-
-        return rulesetsLoaderApi.getRulesetCounters(rulesetId);
     }
 
     /**

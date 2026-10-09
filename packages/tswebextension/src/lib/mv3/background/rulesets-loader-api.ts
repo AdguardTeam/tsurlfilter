@@ -12,35 +12,12 @@ import {
     MetadataRuleset,
     parseCompactRuleset,
     RulesetWithSourceMap,
-    type SerializedRulesetData,
 } from '@adguard/dnr-converter';
 import { fetchExtensionResourceText, FilterList } from '@adguard/tsurlfilter';
 
 import { IdbSingleton } from '../../common/idb-singleton';
 import { FiltersStorage } from '../../common/storage/filters';
 import { logger } from '../../common/utils/logger';
-
-/**
- * Counts of a rule set, read without creating the rule set. Used by clients
- * to check filters limits before enabling a filter whose rule set has not
- * been created yet (AG-57686).
- */
-export type RulesetCounters = {
-    /**
-     * Number of safe and unsafe rules, without metadata rules.
-     */
-    rulesCount: number;
-
-    /**
-     * Number of regexp rules.
-     */
-    regexpRulesCount: number;
-
-    /**
-     * Number of metadata rules at the beginning of the rule set file.
-     */
-    metadataRulesCount: number;
-};
 
 /**
  * RulesetsLoaderApi is responsible for creating {@link IRulesetWithSourceMap} instances
@@ -158,15 +135,6 @@ export class RulesetsLoaderApi {
      * This cache is shared across all instances of the class.
      */
     private static idbChecksumsCache = new Map<string, string>();
-
-    /**
-     * Cache of rule set counters read without creating the rule set, to avoid
-     * repeated rule set file reads. Key format:
-     * `<rulesetsPath>_<rulesetId>`. Entries are dropped when the rule set is
-     * synced with IDB, since its counters may have changed. This cache is
-     * shared across all instances of the class.
-     */
-    private static rulesetCountersCache = new Map<string, RulesetCounters>();
 
     /**
      * Race condition lock map per rulesetId.
@@ -446,10 +414,6 @@ export class RulesetsLoaderApi {
                 // After updating cache in db we should update it in memory cache
                 RulesetsLoaderApi.idbChecksumsCache.set(cacheKey, checksum);
 
-                // The rule set may have changed, so its cached counters are
-                // not valid anymore.
-                RulesetsLoaderApi.rulesetCountersCache.delete(cacheKey);
-
                 // Invalidate the ruleset cache since the data has changed
                 RulesetsLoaderApi.rulesetsCache.delete(rulesetId);
 
@@ -544,106 +508,5 @@ export class RulesetsLoaderApi {
         }
 
         return ruleset;
-    }
-
-    /**
-     * Reads counters of a rule set without creating it.
-     *
-     * The counters are read from the rule set metadata cached in IDB when it
-     * is available, otherwise from the rule set file metadata. Unlike
-     * {@link createRuleset}, this does not run `FilterList.prepare()` and does
-     * not write to IDB, so it is cheap enough to check filters limits before
-     * enabling a filter whose rule set has not been created yet (AG-57686).
-     *
-     * @param rulesetId Rule set id.
-     *
-     * @returns Counters of the rule set or undefined if they cannot be read.
-     */
-    public async getRulesetCounters(rulesetId: string): Promise<RulesetCounters | undefined> {
-        const cacheKey = `${this.rulesetsPath}_${rulesetId}`;
-
-        const cachedCounters = RulesetsLoaderApi.rulesetCountersCache.get(cacheKey);
-        if (cachedCounters) {
-            return cachedCounters;
-        }
-
-        try {
-            if (!this.isInitialized) {
-                await this.initialize();
-            }
-
-            const counters = await RulesetsLoaderApi.readRulesetCountersFromIdb(rulesetId)
-                ?? await this.readRulesetCountersFromFile(rulesetId);
-
-            RulesetsLoaderApi.rulesetCountersCache.set(cacheKey, counters);
-
-            return counters;
-        } catch (e) {
-            logger.error(`[tsweb.RulesetsLoaderApi.getRulesetCounters]: failed to read counters of rule set ${rulesetId}:`, e);
-
-            return undefined;
-        }
-    }
-
-    /**
-     * Reads counters of a rule set from its metadata cached in IDB.
-     *
-     * @param rulesetId Rule set id.
-     *
-     * @returns Counters of the rule set or undefined if the metadata is not
-     * cached in IDB.
-     */
-    private static async readRulesetCountersFromIdb(rulesetId: string): Promise<RulesetCounters | undefined> {
-        const [rawMetadata, metadataRulesCount]: [string | undefined, number | undefined] = await Promise.all([
-            RulesetsLoaderApi.getValueFromIdb(
-                RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_RULESET_METADATA, rulesetId),
-            ),
-            RulesetsLoaderApi.getValueFromIdb(
-                RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_METADATA_RULES_COUNT, rulesetId),
-            ),
-        ]);
-
-        if (rawMetadata === undefined || metadataRulesCount === undefined) {
-            return undefined;
-        }
-
-        const metadata = JSON.parse(rawMetadata) as SerializedRulesetData;
-
-        return RulesetsLoaderApi.createRulesetCounters(metadata, metadataRulesCount);
-    }
-
-    /**
-     * Reads counters of a rule set from its file metadata.
-     *
-     * @param rulesetId Rule set id.
-     *
-     * @returns Counters of the rule set.
-     */
-    private async readRulesetCountersFromFile(rulesetId: string): Promise<RulesetCounters> {
-        const rulesetPath = getRulesetPath(rulesetId, this.rulesetsPath);
-        const rawRuleset = await fetchExtensionResourceText(browser.runtime.getURL(rulesetPath));
-
-        const { metadata, metadataRulesCount } = parseCompactRuleset(rulesetId, JSON.parse(rawRuleset));
-
-        return RulesetsLoaderApi.createRulesetCounters(metadata, metadataRulesCount);
-    }
-
-    /**
-     * Creates counters of a rule set from its metadata.
-     *
-     * @param metadata Rule set metadata.
-     * @param metadataRulesCount Number of metadata rules in the rule set file.
-     *
-     * @returns Counters of the rule set.
-     */
-    private static createRulesetCounters(
-        metadata: SerializedRulesetData,
-        metadataRulesCount: number,
-    ): RulesetCounters {
-        return {
-            rulesCount: metadata.safeRulesCount + metadata.unsafeRulesCount,
-            regexpRulesCount: metadata.regexpRulesCount,
-            metadataRulesCount,
-        };
     }
 }
