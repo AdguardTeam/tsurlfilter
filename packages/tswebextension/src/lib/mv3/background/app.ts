@@ -54,17 +54,6 @@ type FiltersUpdateInfo = {
     filtersIdsToDisable: number[];
 };
 
-/**
- * Rule sets of disabled filters which were not created during the last
- * {@link TsWebExtension.configure} call and should be synced later, after the
- * start, to keep the startup critical path short (AG-57686).
- */
-type DeferredRulesetsContext = {
-    rulesetsPath: string;
-    rulesetIds: string[];
-    staticFilters: IFilter[];
-};
-
 // Reexport types
 export type {
     ConfigurationResult,
@@ -125,20 +114,6 @@ export class TsWebExtension implements AppInterface<
      * starts or wakes up.
      */
     private startPromise: Promise<ConfigurationResult> | undefined;
-
-    /**
-     * Rule sets of disabled filters which were not created during the last
-     * {@link configure} call. They are created later, after the start, via
-     * {@link syncDeferredRulesets}, so that the runtime `FilterList.prepare()`
-     * of disabled filters does not delay the start (AG-57686).
-     */
-    private static deferredRulesetsContext: DeferredRulesetsContext | undefined;
-
-    /**
-     * In-flight promise of {@link syncDeferredRulesets}, used to deduplicate
-     * concurrent calls.
-     */
-    private static deferredRulesetsSyncPromise: Promise<IRulesetWithSourceMap[]> | undefined;
 
     /**
      * Web accessible resources path in the result bundle
@@ -240,89 +215,6 @@ export class TsWebExtension implements AppInterface<
         const rulesetId = `${RULESET_NAME_PREFIX}${staticFilterId}`;
 
         await rulesetsLoaderApi.syncRulesetWithIdb(rulesetId);
-    }
-
-    /**
-     * Creates rule sets of disabled static filters, which were deferred
-     * during the last {@link configure} call, and synchronizes them with IDB.
-     *
-     * Creating a rule set runs `FilterList.prepare()` for its whole filter
-     * content and writes the result to IDB, which is expensive and useless
-     * for filters that are disabled. Therefore, during the start only rule
-     * sets of enabled filters are created, and the rest are created by this
-     * method, after the start, when it does not delay the initialization
-     * (AG-57686).
-     *
-     * The method is idempotent: concurrent calls share the same promise, and
-     * rule sets which are already synced with IDB are skipped.
-     *
-     * @returns Created rule sets for the deferred filters.
-     */
-    public static async syncDeferredRulesets(): Promise<IRulesetWithSourceMap[]> {
-        if (TsWebExtension.deferredRulesetsSyncPromise) {
-            return TsWebExtension.deferredRulesetsSyncPromise;
-        }
-
-        const context = TsWebExtension.deferredRulesetsContext;
-
-        if (!context || context.rulesetIds.length === 0) {
-            return [];
-        }
-
-        const syncPromise = TsWebExtension.createDeferredRulesets(context);
-
-        TsWebExtension.deferredRulesetsSyncPromise = syncPromise;
-
-        try {
-            return await syncPromise;
-        } finally {
-            if (TsWebExtension.deferredRulesetsSyncPromise === syncPromise) {
-                TsWebExtension.deferredRulesetsSyncPromise = undefined;
-            }
-        }
-    }
-
-    /**
-     * Creates rule sets of disabled filters one by one, yielding to the event
-     * loop between them, so that the service worker stays responsive while
-     * they are synced with IDB.
-     *
-     * @param context Deferred rule sets context.
-     *
-     * @returns Created rule sets for the deferred filters.
-     */
-    private static async createDeferredRulesets(
-        context: DeferredRulesetsContext,
-    ): Promise<IRulesetWithSourceMap[]> {
-        const { rulesetsPath, rulesetIds, staticFilters } = context;
-        const rulesetsLoaderApi = new RulesetsLoaderApi(rulesetsPath);
-        const rulesets: IRulesetWithSourceMap[] = [];
-
-        for (const rulesetId of rulesetIds) {
-            try {
-                // eslint-disable-next-line no-await-in-loop
-                const ruleset = await rulesetsLoaderApi.createRuleset(rulesetId, staticFilters);
-
-                rulesets.push(ruleset);
-            } catch (e) {
-                logger.error(`[tsweb.TsWebExtension.createDeferredRulesets]: cannot create rule set ${rulesetId} due to: `, e);
-            }
-
-            // Yield to the event loop, so that syncing of the rule set does
-            // not block handling of other events, e.g. messages.
-            // eslint-disable-next-line no-await-in-loop
-            await new Promise((resolve) => {
-                setTimeout(resolve, 0);
-            });
-        }
-
-        // Clear the queue only if the context was not replaced by a newer
-        // configure() call while the rule sets were being synced.
-        if (TsWebExtension.deferredRulesetsContext === context) {
-            TsWebExtension.deferredRulesetsContext.rulesetIds = [];
-        }
-
-        return rulesets;
     }
 
     /**
@@ -862,9 +754,8 @@ export class TsWebExtension implements AppInterface<
      * Only rule sets of enabled filters are created: creating a rule set runs
      * `FilterList.prepare()` for its whole filter content and writes it to
      * IDB, which is expensive and useless for disabled filters. Rule sets of
-     * disabled filters are remembered in
-     * {@link TsWebExtension.deferredRulesetsContext} and can be created later
-     * via {@link TsWebExtension.syncDeferredRulesets} (AG-57686).
+     * disabled filters are created later, when their filters are enabled
+     * (AG-57686).
      *
      * @param rulesetsPath Path to the rule set metadata.
      * @param staticFilters List of enabled static {@link IFilter}.
@@ -892,29 +783,9 @@ export class TsWebExtension implements AppInterface<
         const manifestRulesets = manifest.declarative_net_request.rule_resources
             .filter(({ id }) => id !== getRulesetId(METADATA_RULESET_ID));
 
-        const rulesetIdsToCreate: string[] = [];
-        const deferredRulesetIds: string[] = [];
-
-        for (const { id } of manifestRulesets) {
-            if (enabledRulesetIds.has(id)) {
-                rulesetIdsToCreate.push(id);
-            } else {
-                deferredRulesetIds.push(id);
-            }
-        }
-
-        // Rule sets of disabled filters are created after the start via
-        // syncDeferredRulesets(), when their counters are needed by the client
-        // for checking limits.
-        TsWebExtension.deferredRulesetsContext = {
-            rulesetsPath,
-            rulesetIds: deferredRulesetIds,
-            staticFilters,
-        };
-
-        const staticRulesetsTasks = rulesetIdsToCreate.map((id) => {
-            return rulesetsLoaderApi.createRuleset(id, staticFilters);
-        });
+        const staticRulesetsTasks = manifestRulesets
+            .filter(({ id }) => enabledRulesetIds.has(id))
+            .map(({ id }) => rulesetsLoaderApi.createRuleset(id, staticFilters));
 
         try {
             const staticRulesets = await Promise.all(staticRulesetsTasks);
