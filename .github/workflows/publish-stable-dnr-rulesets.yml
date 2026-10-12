@@ -1,7 +1,7 @@
 name: Publish stable DNR rulesets
 
-# Twice daily (00:17/12:17, ahead of the 00:30/12:30 extension auto-build),
-# build and publish @adguard/dnr-rulesets from each of the
+# Once daily (00:17 UTC, ahead of the 00:30 extension auto-build), build and
+# publish @adguard/dnr-rulesets from each of the
 # supported stable/dnr-rulesets-* branches (5.0, 6.0).
 # The lines carry incompatible ruleset formats: 6.0 is built with
 # @adguard/dnr-converter 2.x (metadata split into `metadata.chunk` rules) and
@@ -14,15 +14,18 @@ name: Publish stable DNR rulesets
 # Each line is built and published by _publish-stable-dnr-rulesets-line.yml:
 # the tarball goes to the internal Artifact Keeper (AK) npm registry (shared
 # deploy-to-ak-npm.yml workflow), which the extension auto-build installs
-# rulesets from. The npm leg is disabled (AG-58867, npm 429) — see the note
-# in that workflow.
+# rulesets from. The npm leg runs again (AG-60418): one round a day makes one
+# npm publish per line, and the first round after the re-enable is the fresh
+# 429 example npm support asked for — see the note in that workflow.
 # resolve-lines skips a line whose branch isn't on the current CI yet.
 
 on:
   schedule:
-    # The extension auto-build (00:30/12:30) only picks up the package every
-    # 12 h; :17 publishes every line just before it.
-    - cron: '17 0,12 * * *'
+    # Once a day, ahead of the 00:30 extension auto-build (the 12:30 auto-build
+    # then installs the same tarball from AK); one round a day also keeps the
+    # npm traffic at one publish per line while the 429 escalation runs
+    # (AG-60418).
+    - cron: '17 0 * * *'
   workflow_dispatch:
     inputs:
       line:
@@ -129,8 +132,8 @@ jobs:
     # deploy-to-ak-npm.yml only receives through `secrets: inherit` (see the
     # publish-ak job there).
     secrets: inherit
-    # id-token: write is for the (disabled) npm OIDC publish: a called
-    # workflow cannot raise the caller's permissions.
+    # id-token: write is for the npm OIDC publish (Trusted Publishing): a
+    # called workflow cannot raise the caller's permissions.
     permissions:
       contents: read
       id-token: write
