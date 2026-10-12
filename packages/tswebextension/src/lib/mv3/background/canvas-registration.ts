@@ -1,4 +1,5 @@
 /* eslint-disable class-methods-use-this -- Browser adapters implement a common instance dependency contract. */
+import { CanvasProtectionCode } from '../../common/canvas-protection/code';
 import {
     CanvasAvailabilityStatus,
     CanvasOperationStatus,
@@ -7,6 +8,7 @@ import {
 } from '../../common/canvas-protection/constants';
 import {
     type Available,
+    type CanvasBootstrapSnapshot,
     type ProtectionPolicyArtifact,
     type RegistrationOperationOutcome,
 } from '../../common/canvas-protection/contracts';
@@ -37,6 +39,17 @@ export class ChromiumCanvasRegistration implements CanvasRegistrationAdapter {
                 + 'Enable Allow User Scripts for this extension (Developer mode before Chrome 138).',
             };
         }
+    }
+
+    /**
+     * Generates the engine for the page world, where user scripts run.
+     *
+     * @param snapshot Browser-acknowledged seed and prepared policy.
+     *
+     * @returns Page-world code.
+     */
+    public createCode(snapshot: CanvasBootstrapSnapshot): string {
+        return CanvasProtectionCode.create(snapshot);
     }
 
     /**

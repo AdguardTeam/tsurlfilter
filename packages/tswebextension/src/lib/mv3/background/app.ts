@@ -12,7 +12,6 @@ import { LogLevel } from '@adguard/logger';
 import { FilterList } from '@adguard/tsurlfilter';
 
 import { type AppInterface, type MessageHandler } from '../../common/app';
-import { CanvasProtectionCode } from '../../common/canvas-protection/code';
 import { type ProtectionPolicyArtifact, type RegistrationResult } from '../../common/canvas-protection/contracts';
 import { CanvasProtectionController } from '../../common/canvas-protection/controller';
 import { CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
@@ -118,7 +117,7 @@ export class TsWebExtension implements AppInterface<
      * Owns browser registration acknowledgment and current-session code generation.
      */
     private readonly canvasProtection = new CanvasProtectionController(
-        new CanvasProtectionRegistration(new ChromiumCanvasRegistration(), CanvasProtectionCode.create, appContext),
+        new CanvasProtectionRegistration(new ChromiumCanvasRegistration(), appContext),
         () => (appContext.isStorageInitialized ? this.configuration : undefined),
     );
 

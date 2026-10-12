@@ -1,6 +1,7 @@
 /* eslint-disable no-await-in-loop -- Registration retirement is acknowledged in browser operation order. */
 import browser from 'webextension-polyfill';
 
+import { CanvasProtectionCode } from '../../common/canvas-protection/code';
 import {
     CanvasAvailabilityStatus,
     CanvasOperationStatus,
@@ -9,6 +10,7 @@ import {
 } from '../../common/canvas-protection/constants';
 import {
     type Available,
+    type CanvasBootstrapSnapshot,
     type ProtectionPolicyArtifact,
     type RegistrationOperationOutcome,
 } from '../../common/canvas-protection/contracts';
@@ -17,6 +19,9 @@ import {
     CanvasRegistrationOperationError,
 } from '../../common/canvas-protection/registration';
 
+import { appContext } from './app-context';
+import { buildScriptInserter, InjectionGuard } from './injection-helper';
+
 /**
  * Owns Firefox dynamic registration handles for a persistent background lifetime.
  */
@@ -24,7 +29,7 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
     /**
      * The first Firefox version that runs dynamically registered content scripts in the page world.
      */
-    private static readonly MIN_VERSION = 128;
+    private static readonly MAIN_WORLD_VERSION = 128;
 
     /**
      * Handles remain owned after partial replacement so cleanup can retry them.
@@ -32,9 +37,15 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
     private readonly registrations = new Set<browser.ContentScripts.RegisteredContentScript>();
 
     /**
+     * Whether registered scripts run in the page world, known after the first availability check.
+     * Firefox before 128 ignores `world: 'MAIN'` and runs them in the content script sandbox,
+     * where they do not reach page code. There the script inserts the engine as a page script.
+     * TODO: remove when Firefox before 128 is no longer supported.
+     */
+    private mainWorld = true;
+
+    /**
      * Checks that the selected dynamic registration dependency is present.
-     * Firefox before 128 ignores `world: 'MAIN'` and would run the engine in the
-     * content script sandbox, where it does not reach page code.
      *
      * @returns Live owned registration presence or the missing dependency.
      */
@@ -46,20 +57,31 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
             };
         }
         const { version } = await browser.runtime.getBrowserInfo();
-        if (Number.parseInt(version, 10) < FirefoxCanvasRegistration.MIN_VERSION) {
-            return {
-                status: CanvasAvailabilityStatus.Unavailable,
-                reason: `Firefox ${FirefoxCanvasRegistration.MIN_VERSION} or later is required, `
-                    + `the browser is ${version}`,
-            };
-        }
+        this.mainWorld = Number.parseInt(version, 10) >= FirefoxCanvasRegistration.MAIN_WORLD_VERSION;
         return { status: CanvasAvailabilityStatus.Available, value: this.registrations.size > 0 };
+    }
+
+    /**
+     * Generates the engine for the page world, or before Firefox 128 a content script that inserts it.
+     *
+     * @param snapshot Browser-acknowledged seed and prepared policy.
+     *
+     * @returns Code to register.
+     */
+    public createCode(snapshot: CanvasBootstrapSnapshot): string {
+        return this.mainWorld
+            ? CanvasProtectionCode.create(snapshot)
+            : buildScriptInserter(
+                CanvasProtectionCode.createPageScriptExpression(snapshot),
+                appContext.startTimeMs,
+                InjectionGuard.CanvasProtection,
+            );
     }
 
     /**
      * Creates replacement delivery before retiring handles from the prior code.
      *
-     * @param code Self-contained MAIN-world code with the prepared snapshot.
+     * @param code Code from {@link FirefoxCanvasRegistration.createCode}.
      * @param policy Trusted prepared native selectors.
      *
      * @returns Actual registration and retirement outcomes.
@@ -78,7 +100,7 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
         try {
             const registration = await browser.contentScripts.register({
                 js: [{ code }],
-                world: 'MAIN',
+                ...(this.mainWorld ? { world: 'MAIN' as const } : {}),
                 runAt: 'document_start',
                 allFrames: true,
                 matches: [...policy.selectors.matches],

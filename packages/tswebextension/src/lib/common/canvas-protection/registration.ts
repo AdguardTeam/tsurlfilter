@@ -24,6 +24,10 @@ import { CanvasProtectionSession } from './session';
  */
 export interface CanvasRegistrationAdapter {
     checkAvailability(): Promise<Available<boolean>>;
+    /**
+     * Generates self-contained delivery code after a check found the dependency available.
+     */
+    createCode(snapshot: CanvasBootstrapSnapshot): string;
     install(code: string, policy: ProtectionPolicyArtifact): Promise<readonly RegistrationOperationOutcome[]>;
     remove(): Promise<readonly RegistrationOperationOutcome[]>;
 }
@@ -49,11 +53,6 @@ export class CanvasRegistrationOperationError extends Error {
         this.operations = operations;
     }
 }
-
-/**
- * Generates self-contained delivery code from the current trusted snapshot.
- */
-export type CanvasProtectionCodeFactory = (snapshot: CanvasBootstrapSnapshot) => string;
 
 /**
  * Requested state of canvas protection.
@@ -96,12 +95,10 @@ export class CanvasProtectionRegistration {
      * Owns registration lifecycle and code generation for a browser dependency.
      *
      * @param adapter The selected browser registration dependency.
-     * @param createCode Generates delivery code from the current snapshot.
      * @param store Session state kept by the application context.
      */
     constructor(
         private readonly adapter: CanvasRegistrationAdapter,
-        private readonly createCode: CanvasProtectionCodeFactory,
         private readonly store: CanvasProtectionStore,
     ) {}
 
@@ -211,7 +208,7 @@ export class CanvasProtectionRegistration {
         if (active) {
             const session = this.store.canvasProtectionSession ?? CanvasProtectionSession.create();
             this.store.canvasProtectionSession = session;
-            code = this.createCode({ session, policy: policy! });
+            code = this.adapter.createCode({ session, policy: policy! });
             next = {
                 revision: policy!.revision,
                 generation: session.generation,

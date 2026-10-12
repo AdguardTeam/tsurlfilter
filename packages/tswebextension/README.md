@@ -161,11 +161,11 @@ relative to your current working directory by default
 
 ## Canvas protection
 
-Opt-in protection against canvas fingerprinting for Chromium MV3 and Firefox
-MV2. It adds noise to the pixels a page reads through `getImageData()`,
-`toDataURL()` and `toBlob()` of an HTML canvas and `getImageData()` and
-`convertToBlob()` of an OffscreenCanvas. Drawing and the canvas bitmap stay
-untouched. The noise is stable for a site within one
+Opt-in protection against canvas fingerprinting for Chromium MV3, Chromium
+MV2 and Firefox MV2. It adds noise to the pixels a page reads through
+`getImageData()`, `toDataURL()` and `toBlob()` of an HTML canvas and
+`getImageData()` and `convertToBlob()` of an OffscreenCanvas. Drawing and the
+canvas bitmap stay untouched. The noise is stable for a site within one
 browser session and differs between sites and sessions. A frame uses the site
 of its top-level document.
 
@@ -195,17 +195,17 @@ async function enableCanvasProtection(app: TsWebExtension) {
 }
 ```
 
-For Firefox MV2, use the root package import and
-`CanvasPolicyBrowser.FirefoxMv2`.
+For MV2, use the root package import and `CanvasPolicyBrowser.FirefoxMv2` in
+Firefox or `CanvasPolicyBrowser.ChromiumMv2` in Chromium.
 The returned `RegistrationResult` tells whether the script is installed and,
 if not, why. Filter rules and the allowlist are not compiled into the policy
 automatically.
 
 Requirements:
 
-- Chromium: the `userScripts` permission, host permissions and user scripts
-  allowed by the user.
-- Firefox 128 or later.
+- Chromium MV3: the `userScripts` permission, host permissions and user
+  scripts allowed by the user.
+- Chromium MV2: host permissions.
 - Private windows: the extension must be allowed to run there.
 
 Only canvases that received rendering are noised: any 2D context call that
@@ -238,8 +238,21 @@ filled only from video frames or `putImageData()` is read natively.
   `referrerpolicy="no-referrer"` or `"same-origin"` on the frame. The frame
   then uses its own hostname, so it gets the same noise on every site, and
   inherits no document exclusions.
+- Chromium MV2 has no early script registration. The script is injected with
+  `tabs.executeScript` when the document response starts and again when the
+  document commits, and it inserts the engine as an inline page script. It
+  usually runs before external page scripts, but an inline script that
+  arrives in the first chunk of the response runs earlier and reads native
+  pixels. Opera fires no webRequest events for documents, so there the
+  script is injected only when the document commits.
+- Firefox before 128 runs registered scripts only in the content script
+  sandbox, so the script there inserts the engine as an inline page script.
+  On a page whose CSP blocks inline scripts it falls back to a `blob:` script,
+  which runs after the page's first scripts or not at all. Firefox before 97
+  has no `canvas` on `ImageBitmapRenderingContext`, so a canvas filled only
+  through `transferFromImageBitmap()` is read natively there.
 - A document loaded before the script is registered stays native until
-  reload. Chromium keeps registered user scripts across restarts:
+  reload. Chromium MV3 keeps registered user scripts across restarts:
   `initStorage()` removes the previous session's script, and documents loaded
   before that get the previous session's seed.
 - The protection is detectable and a determined page can defeat it. The
@@ -475,7 +488,9 @@ type: `ProtectionPolicyArtifact | undefined`
 Prepared delivery selectors and exclusions for
 [canvas protection](#canvas-protection). Required when it is enabled.
 
-- `selectors`: match patterns of the registered script.
+- `selectors`: match patterns of the documents that get the script. The
+  browser applies them to the registered script; in Chromium MV2 the
+  extension applies them to the document URL before injecting.
 - `ownFrameExclusions`: rules for a document itself. A condition reads the
   document's URL (`CanvasConditionInput.FrameUrl`), its top-level document
   (`TopUrl`) or its parent (`SourceUrl`).
@@ -673,7 +688,10 @@ Available in MV2 and MV3:
 The setters reject when there is no application configuration or the policy
 is invalid. Every method returns the
 registration state, `CanvasRegistrationStatus`: `Installed`, `Disabled`,
-`Unavailable` with a `requiredUserAction`, or `Failed`. `start()` and
+`Unavailable` with a `requiredUserAction`, or `Failed`. In Chromium MV2
+`Installed` means the script is set up for injection: no browser
+acknowledges it, and a document where injection fails, e.g. after the user
+limited the extension's site access, stays native without an error. `start()` and
 `configure()` return it as `canvasProtection`. A later `configure()`
 replaces setter changes with its own `settings.stealth.protectCanvas` and
 `canvasProtectionPolicy`; omitting them disables protection. Changes apply

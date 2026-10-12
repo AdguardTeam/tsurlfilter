@@ -71,12 +71,23 @@ export interface SurfaceNatives {
 }
 
 /**
+ * OffscreenCanvas bindings, with the export method only it has.
+ */
+export interface OffscreenNatives extends SurfaceNatives {
+    readonly convertToBlob: OffscreenCanvas['convertToBlob'];
+}
+
+/**
+ * Getter of the canvas a bitmap renderer draws on.
+ */
+type BitmapContextCanvas = (this: ImageBitmapRenderingContext) => HTMLCanvasElement | OffscreenCanvas;
+
+/**
  * Canvas intrinsics captured from the protected document before page code runs.
  */
 export interface CanvasNatives {
     readonly toDataURL: HTMLCanvasElement['toDataURL'];
     readonly toBlob: HTMLCanvasElement['toBlob'];
-    readonly convertToBlob: OffscreenCanvas['convertToBlob'];
     readonly getContext: HTMLCanvasElement['getContext'];
     readonly getContextAttributes: CanvasRenderingContext2D['getContextAttributes'];
     readonly exceptionName: (this: DOMException) => string;
@@ -90,11 +101,20 @@ export interface CanvasNatives {
     readonly setCanvasHeight: (this: HTMLCanvasElement, value: number) => void;
     readonly getImageData: CanvasRenderingContext2D['getImageData'];
     readonly contextCanvas: (this: CanvasRenderingContext2D) => HTMLCanvasElement;
-    readonly bitmapContextCanvas: (this: ImageBitmapRenderingContext) => HTMLCanvasElement | OffscreenCanvas;
+    /**
+     * Absent before Firefox 97, which has no `canvas` on a bitmap renderer.
+     * TODO: remove when Firefox before 97 is no longer supported.
+     */
+    readonly bitmapContextCanvas: BitmapContextCanvas | undefined;
     readonly videoWidth: (this: HTMLVideoElement) => number;
     readonly canvasWidth: (this: HTMLCanvasElement) => number;
     readonly canvasHeight: (this: HTMLCanvasElement) => number;
-    readonly offscreen: SurfaceNatives;
+    /**
+     * Absent in browsers without a 2D OffscreenCanvas, such as Firefox before 105:
+     * pages there cannot read one either.
+     * TODO: remove when Firefox before 105 is no longer supported.
+     */
+    readonly offscreen: OffscreenNatives | undefined;
     readonly Proxy: typeof Proxy;
     readonly apply: typeof Reflect.apply;
     readonly trunc: typeof Math.trunc;
@@ -119,11 +139,11 @@ export function captureCanvasNatives(realm: Window): CanvasNatives {
     const context = global.CanvasRenderingContext2D.prototype;
     const canvas = global.HTMLCanvasElement.prototype;
     const { OffscreenCanvas } = global;
-    const offscreenContext = global.OffscreenCanvasRenderingContext2D.prototype;
+    // TODO: remove when Firefox before 105 is no longer supported.
+    const offscreenContext = global.OffscreenCanvasRenderingContext2D?.prototype;
     return {
         toDataURL: canvas.toDataURL,
         toBlob: canvas.toBlob,
-        convertToBlob: OffscreenCanvas.prototype.convertToBlob,
         getContext: canvas.getContext,
         getContextAttributes: context.getContextAttributes,
         exceptionName: getter(global.DOMException.prototype, 'name') as CanvasNatives['exceptionName'],
@@ -137,14 +157,14 @@ export function captureCanvasNatives(realm: Window): CanvasNatives {
         setCanvasHeight: global.Object.getOwnPropertyDescriptor(canvas, 'height')!.set!,
         getImageData: context.getImageData,
         contextCanvas: getter(context, 'canvas') as CanvasNatives['contextCanvas'],
-        bitmapContextCanvas: getter(
+        bitmapContextCanvas: global.Object.getOwnPropertyDescriptor(
             global.ImageBitmapRenderingContext.prototype,
             'canvas',
-        ) as CanvasNatives['bitmapContextCanvas'],
+        )?.get as CanvasNatives['bitmapContextCanvas'],
         videoWidth: getter(global.HTMLVideoElement.prototype, 'videoWidth') as CanvasNatives['videoWidth'],
         canvasWidth: getter(canvas, 'width') as CanvasNatives['canvasWidth'],
         canvasHeight: getter(canvas, 'height') as CanvasNatives['canvasHeight'],
-        offscreen: {
+        offscreen: offscreenContext === undefined ? undefined : {
             create: (width, height) => new OffscreenCanvas(width, height),
             getContext: OffscreenCanvas.prototype.getContext,
             getContextAttributes: (offscreenContext as { getContextAttributes?: Function }).getContextAttributes,
@@ -156,6 +176,7 @@ export function captureCanvasNatives(realm: Window): CanvasNatives {
             contextCanvas: getter(offscreenContext, 'canvas'),
             canvasWidth: getter(OffscreenCanvas.prototype, 'width'),
             canvasHeight: getter(OffscreenCanvas.prototype, 'height'),
+            convertToBlob: OffscreenCanvas.prototype.convertToBlob,
         },
         Proxy: global.Proxy,
         apply: global.Reflect.apply,
@@ -317,6 +338,7 @@ export function createGetImageDataWrapper(
  * Protects raw readouts of OffscreenCanvas objects used in the document.
  *
  * @param native Captured native methods and accessors.
+ * @param offscreen Captured OffscreenCanvas bindings.
  * @param seed Captured site key.
  * @param taint Canvases that received fingerprintable rendering.
  *
@@ -324,12 +346,13 @@ export function createGetImageDataWrapper(
  */
 export function createOffscreenGetImageDataWrapper(
     native: CanvasNatives,
+    offscreen: OffscreenNatives,
     seed: Uint8Array,
     taint: CanvasTaint,
 ): OffscreenCanvasRenderingContext2D['getImageData'] {
     return createReadWrapper(
         native,
-        native.offscreen,
+        offscreen,
         seed,
         taint,
     ) as OffscreenCanvasRenderingContext2D['getImageData'];
@@ -570,6 +593,7 @@ export function createToBlobWrapper(
  * because their getters and conversions can still draw on the canvas.
  *
  * @param native Captured browser bindings.
+ * @param offscreen Captured OffscreenCanvas bindings.
  * @param seed Captured site seed.
  * @param taint Canvases that received fingerprintable rendering.
  *
@@ -577,13 +601,14 @@ export function createToBlobWrapper(
  */
 export function createConvertToBlobWrapper(
     native: CanvasNatives,
+    offscreen: OffscreenNatives,
     seed: Uint8Array,
     taint: CanvasTaint,
 ): OffscreenCanvas['convertToBlob'] {
-    return new native.Proxy(native.convertToBlob, withoutPrototype({
+    return new native.Proxy(offscreen.convertToBlob, withoutPrototype({
         apply: (target, receiver, args): Promise<Blob> => {
             try {
-                native.apply(native.offscreen.canvasWidth, receiver, []);
+                native.apply(offscreen.canvasWidth, receiver, []);
             } catch {
                 return native.apply(target, receiver, args);
             }
@@ -598,7 +623,7 @@ export function createConvertToBlobWrapper(
                     type: isObjectLike(type) ? native.String(type) : type,
                 });
             }
-            const source = taint.has(receiver) ? prepareExport(native, native.offscreen, seed, receiver) : receiver;
+            const source = taint.has(receiver) ? prepareExport(native, offscreen, seed, receiver) : receiver;
             return native.apply(target, source, args);
         },
     }));

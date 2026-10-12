@@ -1,11 +1,13 @@
 import { describe, expect, test } from 'vitest';
 
 import {
+    createFilled,
     decodeExport,
     HEIGHT,
     illegalInvocation,
     install,
     type Installed,
+    readoutKind,
     type Realm,
     WIDTH,
     withRealm,
@@ -198,6 +200,19 @@ describe('canvas protection of OffscreenCanvas in a document', () => {
                 expect(await illegalInvocation(realm, method)).toBe(await illegalInvocation(realm, natives[index]));
             }
             expect(realm.OffscreenCanvasRenderingContext2D.prototype.lineTo.toString()).toContain('[native code]');
+        });
+    });
+
+    // TODO: remove when Firefox before 105 is no longer supported.
+    test('protects HTML canvases in a browser without a 2D OffscreenCanvas', async () => {
+        await withRealm((realm) => {
+            // Firefox before 105 has neither.
+            Reflect.deleteProperty(realm, 'OffscreenCanvas');
+            Reflect.deleteProperty(realm, 'OffscreenCanvasRenderingContext2D');
+            const installed = install(realm);
+            const context = createFilled(realm);
+            context.fillRect(0, 0, 0, 0);
+            expect(readoutKind(context, installed)).toBe('noised');
         });
     });
 });

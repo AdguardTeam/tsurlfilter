@@ -1,4 +1,5 @@
 import {
+    beforeAll,
     beforeEach,
     describe,
     expect,
@@ -7,17 +8,27 @@ import {
 } from 'vitest';
 import browser from 'webextension-polyfill';
 
+import { extSessionStorage } from '../../../../src/lib';
+import { CanvasProtectionCode } from '../../../../src/lib/common/canvas-protection/code';
 import {
     CanvasAvailabilityStatus,
     CanvasOperationStatus,
     CanvasPolicyBrowser,
     CanvasRegistrationOperation,
 } from '../../../../src/lib/common/canvas-protection/constants';
+import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { FirefoxCanvasRegistration } from '../../../../src/lib/mv2/background/canvas-registration';
+import { browserDetectorMV2 } from '../../../../src/lib/mv2/background/utils/browser-detector';
 import { createProtectAllPolicy } from '../../common/canvas-protection/fixtures/prepared-policies';
 
 describe('Firefox canvas registration', () => {
     let adapter: FirefoxCanvasRegistration;
+    const session = { root: '0123456789abcdef0123456789abcdef', generation: 'abcdef0123456789abcdef0123456789' };
+
+    beforeAll(() => {
+        extSessionStorage.init();
+        appContext.startTimeMs = 1;
+    });
 
     beforeEach(() => {
         Object.defineProperty(browser, 'contentScripts', { configurable: true, value: { register: vi.fn() } });
@@ -34,14 +45,29 @@ describe('Firefox canvas registration', () => {
         expect(await adapter.checkAvailability()).toMatchObject({ status: CanvasAvailabilityStatus.Unavailable });
     });
 
-    it('reports Firefox without page-world content scripts as unavailable', async () => {
+    it('registers the engine in the page world since Firefox 128', async () => {
+        const snapshot = { session, policy: createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a') };
+        await adapter.checkAvailability();
+        expect(adapter.createCode(snapshot)).toBe(CanvasProtectionCode.create(snapshot));
+    });
+
+    // TODO: remove when Firefox before 128 is no longer supported.
+    it('registers a page script inserter before Firefox 128', async () => {
+        vi.spyOn(browserDetectorMV2, 'isFirefox').mockReturnValue(true);
         vi.mocked(browser.runtime.getBrowserInfo).mockResolvedValueOnce({
-            name: 'Firefox', vendor: 'Mozilla', version: '127.0', buildID: '',
+            name: 'Firefox', vendor: 'Mozilla', version: '115.0', buildID: '',
         });
-        expect(await adapter.checkAvailability()).toEqual({
-            status: CanvasAvailabilityStatus.Unavailable,
-            reason: 'Firefox 128 or later is required, the browser is 127.0',
-        });
+        vi.mocked(browser.contentScripts.register).mockResolvedValueOnce({ unregister: vi.fn() });
+        const policy = createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a');
+        await adapter.checkAvailability();
+        const code = adapter.createCode({ session, policy });
+        expect(code).toContain('window.canvasProtectionExecuted1');
+        expect(code).toContain('window.wrappedJSObject');
+        expect(code).toContain(CanvasProtectionCode.createPageScriptExpression({ session, policy }));
+        await adapter.install(code, policy);
+        const [options] = vi.mocked(browser.contentScripts.register).mock.calls[0];
+        expect(options).not.toHaveProperty('world');
+        expect(options.js).toEqual([{ code }]);
     });
 
     it('creates a replacement before retiring the previous handle', async () => {

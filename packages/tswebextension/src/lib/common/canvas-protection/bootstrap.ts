@@ -2,7 +2,12 @@
 // see engine-entry.ts.
 import { CanvasPolicyRequestType } from './constants';
 import { type CanvasBootstrapSnapshot, type DocumentPolicyInput } from './contracts';
-import { deriveInstallationTokens, deriveSiteSeed } from './noise';
+import {
+    deriveInstallationTokens,
+    deriveSiteSeed,
+    formatKey,
+    parseKey,
+} from './noise';
 import { resolveProtectedSite } from './policy';
 import { createRealmProtection, sendInstallationToken } from './realm';
 
@@ -52,24 +57,54 @@ export function readDocumentPolicyInput(realm: Window): DocumentPolicyInput {
 }
 
 /**
- * Decides synchronously whether this document is protected and installs the
- * readouts with the draw tracking that selects the canvases they protect.
- * A document that is not protected is left untouched. Nothing is defined on the
- * global object; the seed stays reachable only through private wrapper closures.
+ * Installs the readouts with the draw tracking that selects the canvases they protect.
+ * Nothing is defined on the global object; the seed stays reachable only through
+ * private wrapper closures.
  *
- * @param snapshot Trusted browser-acknowledged delivery state.
+ * @param seed The site key of this document.
  */
-export function bootstrapCanvasProtection(snapshot: CanvasBootstrapSnapshot): void {
-    const site = resolveProtectedSite(snapshot.policy, readDocumentPolicyInput(window));
-    if (site === undefined) {
-        return;
-    }
+const protectDocument = (seed: Uint8Array): void => {
     // The engine can be delivered twice, and the parent document protects a frame
     // while it still shows `about:blank`. Existing wrappers then serve this document.
-    const seed = deriveSiteSeed(snapshot.session, site);
     const tokens = deriveInstallationTokens(seed);
     if (sendInstallationToken(window, tokens.adopt, tokens.reply)) {
         return;
     }
     createRealmProtection(window, seed, tokens).protect(window);
+};
+
+/**
+ * Decides synchronously whether this document is protected and protects it.
+ * A document that is not protected is left untouched.
+ *
+ * @param snapshot Trusted browser-acknowledged delivery state.
+ */
+export function bootstrapCanvasProtection(snapshot: CanvasBootstrapSnapshot): void {
+    const site = resolveProtectedSite(snapshot.policy, readDocumentPolicyInput(window));
+    if (site !== undefined) {
+        protectDocument(deriveSiteSeed(snapshot.session, site));
+    }
+}
+
+/**
+ * Makes the protection decision in a content script world, so that a script
+ * inserted into the page carries the site key only and never the session root,
+ * which keys every site.
+ *
+ * @param snapshot Trusted browser-acknowledged delivery state.
+ *
+ * @returns The site key in hex, or `undefined` for a document that is not protected.
+ */
+export function resolveCanvasSeed(snapshot: CanvasBootstrapSnapshot): string | undefined {
+    const site = resolveProtectedSite(snapshot.policy, readDocumentPolicyInput(window));
+    return site === undefined ? undefined : formatKey(deriveSiteSeed(snapshot.session, site), 16);
+}
+
+/**
+ * Protects the document with a site key resolved by {@link resolveCanvasSeed}.
+ *
+ * @param seed The site key in hex.
+ */
+export function bootstrapSeededCanvasProtection(seed: string): void {
+    protectDocument(parseKey(seed));
 }
