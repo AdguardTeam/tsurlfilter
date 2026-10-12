@@ -428,6 +428,22 @@ describe('$badfilter detection and negation parity', () => {
         ['||example.com^$header=x:/foo/', '||example.com^$header=x:foo,badfilter', false],
         ['||example.com^$method=~HEAD', '||example.com^$method=~GET,badfilter', false],
         ['||example.com^$to=~a.com', '||example.com^$to=~b.com,badfilter', false],
+        // The modifier list starts after the separator, so a `$` in the pattern —
+        // for example an end anchor in a regexp — is not taken for it.
+        [String.raw`/ads\.js$/`, String.raw`/ads\.js$/$badfilter`, true],
+        [String.raw`/ads\.js$/$script`, String.raw`/ads\.js$/$badfilter,script`, true],
+        [String.raw`/ads\.js$/$script`, String.raw`/ads\.js$/$badfilter,image`, false],
+        [String.raw`/ads\.js$/$script`, String.raw`/ads\.js$/$badfilter`, false],
+        [
+            String.raw`/\.php$/$script,domain=a.com|b.com`,
+            String.raw`/\.php$/$script,domain=a.com,badfilter`,
+            true,
+        ],
+        [
+            String.raw`/\.php$/$script,domain=a.com|b.com`,
+            String.raw`/\.php$/$script,domain=c.com,badfilter`,
+            false,
+        ],
         // Values are taken from the rule text, before conversion to AG syntax,
         // so resource aliases and priority suffixes are compared as written.
         ['||example.com^$redirect=noop.js', '||example.com^$redirect=noopjs,badfilter', false],

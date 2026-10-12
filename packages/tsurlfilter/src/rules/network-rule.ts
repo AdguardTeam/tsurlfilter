@@ -421,10 +421,10 @@ const getWrittenModifierName = (entry: string): string => entry.replace(/^~/, ''
  * `$badfilter` requires the text to match, so the modifiers that take part in
  * the match are dropped from the text instead of being compared separately.
  *
- * The modifier list starts at the first `$`, and the text is rebuilt as it was
- * apart from the dropped entries — a regexp pattern that contains `$` or `,` is
- * therefore preserved, and its segments are dropped only if one of them reads
- * exactly like a modifier name.
+ * The modifier list starts after the separator, found the same way as in the
+ * parser: the last unescaped `$` that is not followed by a regexp marker, so an
+ * end anchor in a regexp pattern is not taken for it. The text is rebuilt as it
+ * was apart from the dropped entries.
  *
  * @param text Rule text as written.
  * @param shouldStrip Predicate selecting the modifier names to remove.
@@ -432,7 +432,7 @@ const getWrittenModifierName = (entry: string): string => entry.replace(/^~/, ''
  * @returns Rule text without the selected modifiers.
  */
 const stripWrittenModifiers = (text: string, shouldStrip: (name: string) => boolean): string => {
-    const delimiterIndex = text.indexOf(OPTIONS_DELIMITER);
+    const delimiterIndex = NetworkRuleParser.findNetworkRuleSeparatorIndex(text);
 
     if (delimiterIndex === -1) {
         return text;

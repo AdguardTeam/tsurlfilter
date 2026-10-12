@@ -751,6 +751,25 @@ describe('NetworkRule constructor', () => {
         );
     });
 
+    // The modifier list starts after the separator, so a `$` in the pattern — for
+    // example an end anchor in a regexp — is not taken for it.
+    it('splits the modifier list at the separator, not at a `$` in the pattern', () => {
+        assertBadfilterNegates(String.raw`/ads\.js$/`, String.raw`/ads\.js$/$badfilter`, true);
+        assertBadfilterNegates(String.raw`/ads\.js$/$script`, String.raw`/ads\.js$/$badfilter,script`, true);
+        assertBadfilterNegates(String.raw`/ads\.js$/$script`, String.raw`/ads\.js$/$badfilter,image`, false);
+        assertBadfilterNegates(String.raw`/ads\.js$/$script`, String.raw`/ads\.js$/$badfilter`, false);
+        assertBadfilterNegates(
+            String.raw`/\.php$/$script,domain=a.com|b.com`,
+            String.raw`/\.php$/$script,domain=a.com,badfilter`,
+            true,
+        );
+        assertBadfilterNegates(
+            String.raw`/\.php$/$script,domain=a.com|b.com`,
+            String.raw`/\.php$/$script,domain=c.com,badfilter`,
+            false,
+        );
+    });
+
     it('works if badfilter modifier works properly', () => {
         assertBadfilterNegates('*$image,domain=example.org', '*$image,domain=example.org,badfilter', true);
         assertBadfilterNegates('*$image,domain=example.org', '*$image,domain=example.org', false);
