@@ -54,7 +54,6 @@
         - [filterslist-KO Classic filter list](#chromium-mv3-filters-language-specific-filterslist-ko-classic-filter-list)
         - [Adblock List for Finland](#chromium-mv3-filters-language-specific-adblock-list-for-finland)
         - [Persian Blocker](#chromium-mv3-filters-language-specific-persian-blocker)
-        - [Polish Anti Adblock Filters](#chromium-mv3-filters-language-specific-polish-anti-adblock-filters)
         - [Frellwit's Swedish Filter](#chromium-mv3-filters-language-specific-frellwits-swedish-filter)
         - [Dandelion Sprout's Nordic Filters](#chromium-mv3-filters-language-specific-dandelion-sprouts-nordic-filters)
         - [Dandelion Sprout's Serbo-Croatian List](#chromium-mv3-filters-language-specific-dandelion-sprouts-serbo-croatian-list)
@@ -114,7 +113,6 @@
         - [filterslist-KO Classic filter list](#edge-mv3-filters-language-specific-filterslist-ko-classic-filter-list)
         - [Adblock List for Finland](#edge-mv3-filters-language-specific-adblock-list-for-finland)
         - [Persian Blocker](#edge-mv3-filters-language-specific-persian-blocker)
-        - [Polish Anti Adblock Filters](#edge-mv3-filters-language-specific-polish-anti-adblock-filters)
         - [Frellwit's Swedish Filter](#edge-mv3-filters-language-specific-frellwits-swedish-filter)
         - [Dandelion Sprout's Nordic Filters](#edge-mv3-filters-language-specific-dandelion-sprouts-nordic-filters)
         - [Dandelion Sprout's Serbo-Croatian List](#edge-mv3-filters-language-specific-dandelion-sprouts-serbo-croatian-list)
@@ -174,7 +172,6 @@
         - [filterslist-KO Classic filter list](#opera-mv3-filters-language-specific-filterslist-ko-classic-filter-list)
         - [Adblock List for Finland](#opera-mv3-filters-language-specific-adblock-list-for-finland)
         - [Persian Blocker](#opera-mv3-filters-language-specific-persian-blocker)
-        - [Polish Anti Adblock Filters](#opera-mv3-filters-language-specific-polish-anti-adblock-filters)
         - [Frellwit's Swedish Filter](#opera-mv3-filters-language-specific-frellwits-swedish-filter)
         - [Dandelion Sprout's Nordic Filters](#opera-mv3-filters-language-specific-dandelion-sprouts-nordic-filters)
         - [Dandelion Sprout's Serbo-Croatian List](#opera-mv3-filters-language-specific-dandelion-sprouts-serbo-croatian-list)
@@ -521,13 +518,6 @@ Filter list for blocking ads and trackers on websites in Persian.
 
 - Filter ID: **235**
 - Path: `dist/filters/chromium-mv3/declarative/ruleset_235/ruleset_235.json`
-
-#### <a id="chromium-mv3-filters-language-specific-polish-anti-adblock-filters"></a> Polish Anti Adblock Filters
-
-Official Polish filters against Adblock alerts.
-
-- Filter ID: **238**
-- Path: `dist/filters/chromium-mv3/declarative/ruleset_238/ruleset_238.json`
 
 #### <a id="chromium-mv3-filters-language-specific-frellwits-swedish-filter"></a> Frellwit's Swedish Filter
 
@@ -904,13 +894,6 @@ Filter list for blocking ads and trackers on websites in Persian.
 - Filter ID: **235**
 - Path: `dist/filters/edge-mv3/declarative/ruleset_235/ruleset_235.json`
 
-#### <a id="edge-mv3-filters-language-specific-polish-anti-adblock-filters"></a> Polish Anti Adblock Filters
-
-Official Polish filters against Adblock alerts.
-
-- Filter ID: **238**
-- Path: `dist/filters/edge-mv3/declarative/ruleset_238/ruleset_238.json`
-
 #### <a id="edge-mv3-filters-language-specific-frellwits-swedish-filter"></a> Frellwit's Swedish Filter
 
 Filter that aims to remove regional Swedish ads, tracking, social media, annoyances, sponsored articles etc.
@@ -1285,13 +1268,6 @@ Filter list for blocking ads and trackers on websites in Persian.
 
 - Filter ID: **235**
 - Path: `dist/filters/opera-mv3/declarative/ruleset_235/ruleset_235.json`
-
-#### <a id="opera-mv3-filters-language-specific-polish-anti-adblock-filters"></a> Polish Anti Adblock Filters
-
-Official Polish filters against Adblock alerts.
-
-- Filter ID: **238**
-- Path: `dist/filters/opera-mv3/declarative/ruleset_238/ruleset_238.json`
 
 #### <a id="opera-mv3-filters-language-specific-frellwits-swedish-filter"></a> Frellwit's Swedish Filter
 
