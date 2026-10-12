@@ -29,6 +29,10 @@ describe('MatchPatterns', () => {
         ['https://example.org/*', 'https://example.org./', true],
         ['http://[::1]/*', 'http://[::1]:8080/', true],
         ['http://[::1]:8080/*', 'http://[0:0::1]:8080/', true],
+        ['https://*:8080/*', 'https://example.org:8080/', true],
+        ['https://*:8080/*', 'https://example.org:9999/', false],
+        ['https://*:8080/*', 'https://example.org/', false],
+        ['https://*:*/*', 'https://example.org:9999/', true],
     ])('%s matches %s: %s', (pattern, url, expected) => {
         expect(MatchPatterns.test(MatchPatterns.compile([pattern]), url)).toBe(expected);
     });
@@ -39,7 +43,7 @@ describe('MatchPatterns', () => {
         expect(MatchPatterns.test(MatchPatterns.compile([]), 'https://a.org/')).toBe(false);
     });
 
-    it.each(['example.org', 'https://example.org', 'https://exa*mple.org/', 'file://host/', 'https:///a', 'chrome://*/*', 'ws://example.org/*'])(
+    it.each(['example.org', 'https://example.org', 'https://exa*mple.org/', 'file://host/', 'https:///a', 'chrome://*/*', 'ws://example.org/*', 'https://:8080/', 'file://*'])(
         'rejects %s',
         (pattern) => {
             expect(() => MatchPatterns.compile([pattern])).toThrow('Invalid match pattern');

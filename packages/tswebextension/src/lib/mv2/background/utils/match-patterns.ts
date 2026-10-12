@@ -4,7 +4,9 @@ import { SimpleRegex } from '@adguard/tsurlfilter';
  * Evaluates extension match patterns where the browser does not apply them itself.
  * Used by Chromium MV2 canvas protection only. Hosts are compared as Chromium does:
  * IDN hosts in punycode, without a trailing dot, and a default port matches the
- * same port given explicitly.
+ * same port given explicitly. Of `file:` patterns only `file:///path` is supported:
+ * Chromium also accepts `file://*` and `file://host/path`, taking everything after
+ * `file://` as the path, but other MV2 features do not run on `file:` pages either.
  *
  * TODO: remove when Chromium MV2 is no longer supported.
  *
@@ -31,10 +33,10 @@ export class MatchPatterns {
     };
 
     /**
-     * Scheme, host (`*`, an optional `*.` prefix and a name or a bracketed IPv6 address,
-     * then an optional port or `*`) and path of a match pattern.
+     * Scheme, host (`*`, or an optional `*.` prefix and a name or a bracketed IPv6 address),
+     * an optional port or `*`, and path of a match pattern.
      */
-    private static readonly PATTERN = /^([a-z]+|\*):\/\/(?:(\*)|(\*\.)?(\[[^\]/]+\]|[^/*:[\]]+)(?::(\d+|\*))?)?(\/.*)$/;
+    private static readonly PATTERN = /^([a-z]+|\*):\/\/(?:(\*)|(\*\.)?(\[[^\]/]+\]|[^/*:[\]]+))?(?::(\d+|\*))?(\/.*)$/;
 
     /**
      * Compiles patterns into one expression for {@link MatchPatterns.test}.
@@ -92,12 +94,14 @@ export class MatchPatterns {
         }
         const [, scheme, anyHost, subdomains, name, port, path] = parts;
         const hasHost = anyHost !== undefined || name !== undefined;
-        if ((scheme !== '*' && !MatchPatterns.SCHEMES.includes(scheme)) || (scheme === 'file') === hasHost) {
+        if ((scheme !== '*' && !MatchPatterns.SCHEMES.includes(scheme))
+            || (scheme === 'file') === hasHost
+            || (!hasHost && port !== undefined)) {
             throw new Error(`Invalid match pattern: ${pattern}`);
         }
         let hostSource = '';
         if (anyHost !== undefined) {
-            hostSource = '[^/]*';
+            hostSource = port === undefined || port === '*' ? '[^/]*' : `[^/:]*:${port}`;
         } else if (name !== undefined) {
             let hostname: string;
             try {
