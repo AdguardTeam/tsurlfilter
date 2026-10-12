@@ -23,11 +23,15 @@ topological publish order.
    `build-<package>-output` targets, verifies the produced `.tgz`, and uploads
    it as an Actions artifact.
 3. **Publish** — publishes the `.tgz` to npm with OIDC trusted publishing,
-   under the computed dist-tag.
+   under the computed dist-tag. With the `publish_target: ak` input the npm
+   leg is skipped and the `.tgz` goes to the internal Artifact Keeper npm
+   registry instead (used for dnr-rulesets while npm throttles the shared
+   GitHub egress IP).
 4. **Tag** — creates the `<package>-v<version>` tag on the target ref **only
-   after the npm publish has succeeded** (`force: false`, the shared
-   `git-tag.yml` default, so an existing tag is never silently moved — a
-   re-run of an already-released version fails instead of rewriting history).
+   after the publish leg has succeeded** (npm or Artifact Keeper;
+   `force: false`, the shared `git-tag.yml` default, so an existing tag is never
+   silently moved — a re-run of an already-released version fails instead of
+   rewriting history).
 5. **Mirror and release** — mirrors refs to the public repo and creates a
    GitHub Release with the changelog section and the package attached.
 6. **Notify** — posts a Slack success message; a separate job alerts the
@@ -40,11 +44,12 @@ topological publish order.
 | `package` | string | *required* | Package directory name under `packages/`; also the tag prefix and `.tgz` base name (e.g. `agtree`) |
 | `npm_package_name` | string | *required* | npm package name for the Slack notification (e.g. `@adguard/agtree`) |
 | `target_repo` | string | *required* | Public mirror repo (e.g. `AdguardTeam/tsurlfilter`) |
-| `ref` | string | `''` | Ref to publish (merge commit SHA). Leave empty for the triggering commit. |
+| `ref` | string | `''` | Ref to publish (merge commit SHA) — pin to the release PR merge commit; an empty ref checks out the current `master` tip. |
 | `team` | string | `extensions` | Team label for runner selection |
 | `environment` | string | `npm` | GitHub environment for npm publish protection rules |
 | `slack_channel` | string | `#adguard-extension-vcs` | Slack channel for release notifications |
 | `dry_run` | boolean | `false` | Run `npm publish` with `--dry-run` (no registry contact). For CI testing. |
+| `publish_target` | string | `npm` | Registry to publish to: `npm` (default) or `ak` (internal Artifact Keeper npm registry) |
 
 ## Tag convention
 
@@ -75,6 +80,10 @@ keep the diagram there, not duplicated here, so it cannot rot).
 ## GitHub Environment
 
 The `publish` job uses the **`npm`** GitHub environment (input `environment`).
+With `publish_target: ak`, the `publish-ak` job runs with **no environment**
+(`environment: ''`) — the AK publish authenticates with the
+`ARTIFACT_KEEPER_API_KEY` secret instead of npm OIDC and stays ungated (no
+approval), like the stable line's AK publish.
 
 | Setting | Value |
 | --- | --- |
@@ -91,8 +100,14 @@ environment with the `extensions` team as reviewer).
 
 On success, a Slack notification is posted via the shared `slack` action from
 the [`actions`](https://github.com/AdGuardSoftwareLimited/actions) repo,
-controlled by the `slack_channel` input. Notification failures are
-non-blocking.
+controlled by the `slack_channel` input. For Artifact Keeper publishes, the
+message includes install instructions for the internal AK registry: a
+project-scoped `npm config set @adguard:registry … --location=project` (a
+global entry in `~/.npmrc` would redirect every `@adguard` install to the
+VPN-only AK host, so the cleanup step is included too) plus `pnpm add`. The
+message intentionally carries no re-run command — how to re-run a release
+manually is documented in `DEPLOYMENT.md` ("Re-running a release manually").
+Notification failures are non-blocking.
 
 ## Troubleshooting
 
@@ -128,6 +143,10 @@ version via the prepare workflow. A `dry_run` re-run never hits this — under
 ### Re-running a failed publish
 
 Go to **Actions → Publish release → Run workflow** and trigger the caller with
-`package`, an optional `ref` (leave empty for the merge commit / current
-`master`), and optionally `dry_run: true` to validate the pipeline without
-touching the registry.
+`package` and the `ref` pinned to the merge commit SHA of the release PR. Do
+not leave `ref` empty: the changelog at the current `master` tip may already
+describe a newer version, and an empty `ref` publishes whatever it says. For
+failures after something has already been published, re-dispatching is not
+safe — see ["Re-running a release manually"](../../DEPLOYMENT.md#re-running-a-release-manually)
+in `DEPLOYMENT.md` for the right recovery path. Optionally set `dry_run: true`
+to validate the pipeline without touching the registry.

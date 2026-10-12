@@ -141,7 +141,7 @@ if (bridgeAk[1] !== expectedAkPath) {
 }
 console.log(`bridge registry path: OK (AK_REGISTRY points at '${bridgeAk[1]}')`);
 
-// 4c. The `-dev.pr<N>.<sha>` version grammar is re-encoded in devex-bridge.yml
+// 4c. The `-dev.pr<N>.<run>` version grammar is re-encoded in devex-bridge.yml
 //     (VERSION_SUFFIX) and the consumer-side tool in browser-extension. Unlike
 //     the package list there is no JSON source, so this keeps the in-repo copy
 //     honest syntactically: every `-dev.<...>` literal in the bridge workflow
@@ -172,6 +172,30 @@ for (const file of versionGrammarLiterals) {
     }
 }
 console.log('bridge version grammar: OK (all -dev.<...> literals are -dev.pr<N> or VERSION_SUFFIX interpolations)');
+
+// 4d. The devex-bridge.yml suffix must stamp the workflow run number: the
+//     consumer groups published versions by (PR, run), selects the highest
+//     run, and requires its complete set. A suffix without the run number
+//     silently breaks run grouping and reintroduces the ambiguous-heads
+//     failure this change exists to fix. The expression is duplicated
+//     (pack + publish), so the guard pins both copies.
+const runNumberSuffix = 'SUFFIX="pr${PR_NUMBER}.${RUN_NUMBER}"';
+const suffixCount = bridgeWorkflow.split(runNumberSuffix).length - 1;
+if (suffixCount !== 2) {
+    fail(
+        `devex-bridge.yml must compute ${runNumberSuffix} in both the pack and publish jobs`
+        + ` (found ${suffixCount}) — the consumer selects the highest run number, so the run segment is required`,
+    );
+}
+const runNumberEnv = 'RUN_NUMBER: ${{ github.run_number }}';
+const runNumberEnvCount = bridgeWorkflow.split(runNumberEnv).length - 1;
+if (runNumberEnvCount !== 2) {
+    fail(
+        `devex-bridge.yml must define ${runNumberEnv} in both suffix steps`
+        + ` (found ${runNumberEnvCount})`,
+    );
+}
+console.log('bridge run-number suffix: OK (pack and publish stamp github.run_number)');
 
 console.log('package list drift check passed');
 
@@ -216,5 +240,36 @@ const agentsLines = [...agents.matchAll(/stable\/dnr-rulesets-([0-9]+\.[0-9]+)/g
 if (agentsLines.length > 0) {
     assertStableLines('AGENTS.md', agentsLines);
 }
+
+// 6. LATEST_LINE in the same workflow names the line that publishes under
+//    `latest`. It must be one of ALL_LINES (otherwise no line gets `latest`
+//    and no job fails), and the docs that name the `latest` line — the
+//    DEPLOYMENT.md table row and the AGENTS.md workflow inventory — must agree
+//    with it, so moving `latest` to a newer line cannot leave them stale.
+const latestVarMatch = stableWorkflow.match(/LATEST_LINE="([^"]*)"/);
+if (!latestVarMatch) {
+    fail('publish-stable-dnr-rulesets.yml: could not find the LATEST_LINE="..." assignment (format changed?)');
+}
+const latestLine = latestVarMatch[1];
+if (!stableLines.includes(latestLine)) {
+    fail(`publish-stable-dnr-rulesets.yml: LATEST_LINE "${latestLine}" is not in ALL_LINES (${stableLines.join(', ')})`);
+}
+
+const assertLatestLine = (label, content, pattern) => {
+    const lines = [...content.matchAll(pattern)].map((m) => m[1]);
+    if (lines.length === 0) {
+        fail(`${label}: could not find the line published under \`latest\` (format changed?)`);
+    }
+    if (lines.some((line) => line !== latestLine)) {
+        fail(`${label} names ${lines.join(', ')} as the \`latest\` line; publish-stable-dnr-rulesets.yml LATEST_LINE is ${latestLine}`);
+    }
+    console.log(`${label}: OK (latest = ${latestLine})`);
+};
+
+// 6a. DEPLOYMENT.md table row "| 5.0 | `stable/dnr-rulesets-5.0` | `latest` |".
+assertLatestLine('DEPLOYMENT.md', deployment, /^\s*\| ([0-9]+\.[0-9]+) \|[^|\n]*\| `latest` \|$/gm);
+
+// 6b. AGENTS.md "5.0 publishes under `latest`" (may wrap after "under").
+assertLatestLine('AGENTS.md', agents, /([0-9]+\.[0-9]+) publishes under\s+`latest`/g);
 
 console.log('stable-lines drift check passed');

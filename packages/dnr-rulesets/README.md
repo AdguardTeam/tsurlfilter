@@ -5,6 +5,7 @@ Utility to load prebuilt AdGuard DNR rulesets for mv3 extensions.
 The list of available filters can be found by `filters` in the metadata of:
 
 - [Chromium MV3 filters](https://filters.adtidy.org/extension/chromium-mv3/filters.json),
+- [Edge MV3 filters](https://filters.adtidy.org/extension/edge-mv3/filters.json),
 - [Opera MV3 filters](https://filters.adtidy.org/extension/opera-mv3/filters.json).
 
 - [Dnr-rulesets](#dnr-rulesets)
@@ -61,7 +62,7 @@ dnr-rulesets load <path-to-output>
 - `-l, --latest-filters` - download latest text filters instead of DNR rulesets (default: false)
 - `-b, --browser <browser>` - specify browser to load filters for
   (default: "chromium-mv3").
-  Available browsers: `chromium-mv3`, `opera-mv3`.
+  Available browsers: `chromium-mv3`, `edge-mv3`, `opera-mv3`.
 
 #### `manifest` command
 
@@ -113,14 +114,14 @@ dnr-rulesets watch <path-to-manifest> <path-to-resources> [options]
 - `-l, --latest-filters` - download latest text filters on first start before watch (default: false)
 - `-b, --browser <browser>` - specify browser to download latest filters for
   (default: "chromium-mv3"). See `--latest-filters` option.
-  Available browsers: `chromium-mv3`, `opera-mv3`.
+  Available browsers: `chromium-mv3`, `edge-mv3`, `opera-mv3`.
 - `-d, --debug` - enable extended logging during conversion (default: false)
 - `-j, --prettify-json` - prettify JSON output (default: true)
 
 ### `exclude-unsafe-rules` command
 
-Scans rulesets in the specified directory, excludes unsafe rules, and saves
-excluded unsafe rules to the metadata files, and update rulesets checksums.
+Scans rulesets in the specified directory, moves unsafe rules into the metadata
+of each ruleset and updates the ruleset checksums in `ruleset_0`.
 
 ```bash
 dnr-rulesets exclude-unsafe-rules <dir> [options]
@@ -357,7 +358,12 @@ await excludeUnsafeRules('<path-to-rulesets-dir>', {
             |filter_i18n.json # i18n metadata (name, description, etc.) for filters
 ```
 
-Where `<browser>` is the browser for which the rulesets are built, e.g. `chromium-mv3` or `opera-mv3`.
+Where `<browser>` is the browser for which the rulesets are built, e.g. `chromium-mv3`, `edge-mv3` or `opera-mv3`.
+
+Each ruleset file, including `ruleset_0.json`, starts with metadata rules that carry the ruleset metadata in chunks,
+see [Compact ruleset file format] in `@adguard/dnr-converter`.
+
+[Compact ruleset file format]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/dnr-converter#compact-ruleset-file-format
 
 ### Utils
 
@@ -464,8 +470,8 @@ the registry for a supported browser. Typical scenarios:
 
 3. Update `tasks/validator-data.json` with the new data. The easiest way is to
    copy the output from the build into the file, keeping the JSON structure
-   with per-browser entries (`chromium-mv3`, `opera-mv3`), each containing
-   `version`, `rulesetIds`, and `rulesetMetadataKeys`.
+   with per-browser entries (`chromium-mv3`, `edge-mv3`, `opera-mv3`), each
+   containing `version`, `rulesetIds`, and `rulesetMetadataKeys`.
 
 4. Bump the package version — at least the **minor** version, not just the
    patch. Filter list versions are timestamp-based (e.g.

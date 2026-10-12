@@ -119,13 +119,17 @@ async function updateMetadataRuleset(
 }
 
 /**
- * Excludes unsafe rules from rulesets and places them into the metadata rule.
+ * Excludes unsafe rules from rulesets and places them into the ruleset metadata.
  *
  * @param params Parameters for processing rulesets.
  * @param params.dir The directory containing the rulesets to process.
  * @param params.limit Optional limit for the maximum number of unsafe rules
  * to exclude.
  * @param params.prettifyJson Whether to prettify the JSON output.
+ *
+ * @throws Error if the number of unsafe rules exceeds `params.limit`.
+ * @throws Error naming the file if a ruleset cannot be loaded, e.g. one written
+ * by `@adguard/dnr-converter` 1.x (the cause is `InvalidMetadataChunksError`).
  */
 export async function excludeUnsafeRules(params: ExcludeUnsafeRulesOptions): Promise<void> {
     const {

@@ -98,6 +98,21 @@ describe('startDownload', () => {
         );
     });
 
+    it('downloads filters from the browser-specific URL', async () => {
+        await startDownload(tmpDir, BrowserFilters.EdgeMv3);
+
+        // All 5 filters should be downloaded from the edge-mv3 URL.
+        expect(axios.get).toHaveBeenCalledTimes(5);
+        expect(axios.get).toHaveBeenCalledWith(
+            'https://filters.adtidy.org/extension/edge-mv3/filters/1.txt',
+            expect.anything(),
+        );
+        expect(axios.get).toHaveBeenCalledWith(
+            'https://filters.adtidy.org/extension/edge-mv3/filters/5.txt',
+            expect.anything(),
+        );
+    });
+
     it('downloads only allowed filters when allowedFilterIds is provided', async () => {
         const allowed = new Set([1, 2, 3]);
 

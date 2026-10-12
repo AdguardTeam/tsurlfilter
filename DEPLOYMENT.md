@@ -41,15 +41,53 @@ derived from the package changelog and injected temporarily by
    `release-bump/<package>-v<version>` and opens the release PR.
 2. **Merge**: review and merge the release PR into `master`.
 3. **Publish**: `publish-release.yml` auto-fires on the merged
-   `release-bump/<package>-v<version>` PR — Docker test + build → npm publish →
-   tag `<package>-v<version>` (created only after the publish succeeds) →
-   mirror to `AdguardTeam/tsurlfilter` + GitHub Release → Slack.
+   `release-bump/<package>-v<version>` PR — Docker test + build → npm publish
+   (`@adguard/dnr-rulesets` publishes to the internal Artifact Keeper instead;
+   its npm publish is paused while npm throttles the shared GitHub egress IP,
+   see AG-58865) → tag `<package>-v<version>` (created only after the publish
+   succeeds) → mirror to `AdguardTeam/tsurlfilter` + GitHub Release → Slack.
 
 There is no version-increment workflow. Start the next release by dispatching
 `prepare-release.yml` with the next version.
 
 For a dry-run of the publish pipeline without touching the registry, dispatch
 `publish-release.yml` with `dry_run: true`.
+
+### Re-running a release manually
+
+The Slack notification intentionally carries no re-run command — see this
+section instead.
+
+- **Transient failure before anything was published** (e.g. the npm 429
+  throttle or a registry hiccup): re-dispatch the publish pinned to the release
+  commit. The changelog at `master` tip may already describe a newer version,
+  so always pass the merge commit SHA of the release PR:
+
+  ```bash
+  gh workflow run publish-release.yml \
+    -f package=<package> \
+    -f ref=<merge-commit-sha-of-the-release-pr>
+  ```
+
+- **Partial publish** (the version is already on the registry, but a later leg
+  failed — e.g. tag or mirror): do **not** re-dispatch — the publish would be
+  rejected (409) and the later legs are gated on a successful publish. Re-run
+  the failed jobs of the original run instead, so the tag and GitHub Release
+  complete for the already-published version:
+
+  ```bash
+  gh run rerun <run-id> --failed
+  ```
+
+  If the publish leg itself succeeded but the downstream jobs were *skipped*
+  (rather than failed — e.g. the pre-fix skip propagation in AG-59411):
+  re-running does not help. A run with no failures still offers *Re-run all
+  jobs* (`gh run rerun <run-id>`), which re-runs skipped jobs too, but a
+  re-run replays the original workflow revision and commit SHA — the pre-fix
+  `if` conditions would skip the same jobs again — and re-running the publish
+  leg would hit the 409 anyway. Re-dispatch with the pinned `ref` above only
+  if the version is not yet on the registry, otherwise complete the
+  tag/mirror legs manually.
 
 ## Scheduled automation
 
@@ -58,28 +96,51 @@ For a dry-run of the publish pipeline without touching the registry, dispatch
    Octopass `protected-push` (the commit avoids `[skip ci]` so `mirror.yml`
    still syncs the update to the public repo). Failures are reported to Slack.
 - `publish-stable-dnr-rulesets.yml` builds and publishes `@adguard/dnr-rulesets`
-   twice daily (00:17/12:17 UTC) from the `stable/dnr-rulesets-5.0` branch.
-   Only the 5.0 line is published (as `latest`); the older stable lines are no
-   longer published. Versions use `<major>.<minor>.<UTC timestamp>` and are
-   injected only for that build. The exact version is checked for idempotency
-   before publishing (`scripts/ci/check-npm-version.sh`), and a failed publish
-   gets one retry after a backoff (outlasts npm's throttle window). The same
-   tarball is also published to the internal Artifact Keeper npm registry
-   (shared `deploy-to-ak-npm.yml`, tag `latest`) independently of the npm
-   publish, so the browser-extension auto-build can install rulesets from AK
-   when npm throttles. Failures are reported to Slack.
+   twice daily (00:17/12:17 UTC) from the `stable/dnr-rulesets-5.0` and
+   `stable/dnr-rulesets-6.0` branches; the older stable lines are no longer
+   published. The two lines carry incompatible ruleset formats: 6.0 is built
+   with `@adguard/dnr-converter` 2.x (metadata split into `metadata.chunk`
+   rules), 5.0 with 1.x, and neither reader loads the other format. Each line
+   therefore has its own dist-tag:
+
+   | Line | Branch | Dist-tag |
+   | --- | --- | --- |
+   | 5.0 | `stable/dnr-rulesets-5.0` | `latest` |
+   | 6.0 | `stable/dnr-rulesets-6.0` | `stable-6.0` |
+
+   `latest` stays on 5.0 until consumers read the 6.0 format; to move it,
+   change `LATEST_LINE` in the workflow, this table and `AGENTS.md`
+   (`scripts/ci/check-package-lists.mjs` fails on a mismatch). Versions use
+   `<major>.<minor>.<UTC timestamp>` and are injected only for that build.
+   Each line runs `_publish-stable-dnr-rulesets-line.yml` and publishes its
+   tarball to the internal Artifact Keeper npm registry (shared
+   `deploy-to-ak-npm.yml`), where the browser-extension auto-build installs
+   rulesets from. The npm leg (idempotency check with
+   `scripts/ci/check-npm-version.sh`, publish, one retry after a backoff) is
+   disabled while npm throttles the package (AG-58867). A manual dispatch with
+   `line` set publishes one line; an empty `line` publishes all of them.
+   Failures are reported to Slack.
   - **Prerequisite — the branch must be on the current CI** (root
-    `Dockerfile` with a `dnr-rulesets-auto-build-output` target +
-    `scripts/inject-package-versions.mjs` in the branch tip). The workflow
-    checks branch readiness and skips the round if the branch has not been
-    migrated yet, so the runs neither fail nor spam Slack during the
-    backport window (see the workflow's `resolve-lines` job).
-  - **Branch protection required**: with `environment: ''` this pipeline
-    publishes to npm straight from the tip of the `stable/dnr-rulesets-5.0`
-    branch, so push access to that branch is effectively npm publish access
-    (bypassing the `npm` environment review that gates normal releases).
-    Provision branch protection for `stable/dnr-rulesets-*` in terraform-github
-    (teams with push rights are the only gate on the unattended path).
+    `Dockerfile` with a `dnr-rulesets-auto-build-output` target,
+    `scripts/inject-package-versions.mjs`, `.github/actions/docker-build`
+    and the `scripts/ci` helpers in the branch tip). The `resolve-lines`
+    job skips a scheduled line whose branch is not ready, so the runs
+    neither fail nor spam Slack during a backport window; a manual
+    dispatch of such a line fails.
+  - **Adding a line**: create `stable/dnr-rulesets-<line>` from the
+    release commit of that version, add the line to `ALL_LINES` in the
+    workflow and to this list and `AGENTS.md`
+    (`scripts/ci/check-package-lists.mjs` fails on a mismatch).
+  - **Branch protection required**: the pipeline runs without a GitHub
+    environment and publishes straight from the tip of each stable
+    branch, so push access to `stable/dnr-rulesets-*` is effectively
+    publish access (bypassing the `npm` environment review that gates
+    normal releases). These branches are covered only by the
+    organization-wide rulesets (no force push, committer email, no bare
+    issue references); the terraform-github repository rulesets
+    (`strict-master`, `require-ci-before-merge`) protect only `master` and
+    `release/**`. Provision a ruleset for `stable/dnr-rulesets-*` in
+    terraform-github to restrict pushes and deletion.
 
 ## Publishing order
 
@@ -109,14 +170,15 @@ publisher for the workflow that actually invokes `deploy-to-npm.yml`:
 - **Nine normal packages** — register the trusted publisher for this repo's
   `publish-release.yml` (which calls the monorepo publish engine) and restrict
   it to the `npm` environment.
-- **`@adguard/dnr-rulesets`** — register the trusted publisher for
-  `publish-stable-dnr-rulesets.yml`, **not** `publish-release.yml`: the
-  unattended hourly stable path calls the shared `deploy-to-npm.yml` directly
-  and never passes through `publish-release.yml`. Register it **without** the
-  `npm` environment restriction so the unattended hourlies are accepted;
-  normal DNR releases via `publish-release.yml` still use the protected GitHub
-  `npm` environment. Getting this identity wrong fails OIDC validation on the
-  first scheduled run.
+- **`@adguard/dnr-rulesets`** — its npm publish is paused everywhere while
+  npm throttles the shared GitHub egress IP: both the stable path
+  (`publish-stable-dnr-rulesets.yml`) and normal releases
+  (`publish-release.yml` with `publish_target: ak`) skip `deploy-to-npm.yml`
+  and publish to the internal Artifact Keeper instead. The OIDC trusted
+  publisher for `publish-stable-dnr-rulesets.yml` (no `npm` environment
+  restriction) can stay registered until npm publishing is re-enabled;
+  while paused, no dnr-rulesets workflow run contacts npm. The AK publish
+  runs without a GitHub environment (no approval gate), like the stable line.
 
 ## External setup checklist
 
