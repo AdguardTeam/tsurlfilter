@@ -512,11 +512,13 @@ export class RulesetsLoaderApi {
 
     /**
      * Unloads content of cached rule sets which are not in the given set of
-     * enabled rule sets.
+     * rule sets in use.
      *
      * Rule sets of disabled filters are not created during configuration
-     * (AG-57686), so the caller does not unload their content anymore. This
-     * method frees the content of such rule sets until it is needed again.
+     * (AG-57686), so the caller does not unload their content anymore, even
+     * when the declarative filtering log is enabled and the content of the
+     * rule sets in use must stay loaded. This method frees the content of such
+     * rule sets until it is needed again.
      *
      * @param enabledRulesetIds Ids of rule sets which should keep their content.
      */

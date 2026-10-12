@@ -499,14 +499,15 @@ export class TsWebExtension implements AppInterface<
                 for (const ruleset of rulesets) {
                     ruleset.unloadContent();
                 }
-
-                // Cached rule sets of disabled filters are not part of
-                // `rulesets` anymore, but they may still hold content loaded
-                // for the filtering log; unload it as well.
-                RulesetsLoaderApi.unloadContentOfDisabledRulesets(
-                    new Set(enabledStaticRulesets.map((ruleset) => ruleset.getId())),
-                );
             }
+
+            // Cached rule sets of disabled filters are not part of `rulesets`
+            // anymore, but they may still hold content loaded for the filtering
+            // log; unload it as well. Rule sets passed to the filtering log
+            // keep their content.
+            RulesetsLoaderApi.unloadContentOfDisabledRulesets(
+                new Set(rulesets.map((ruleset) => ruleset.getId())),
+            );
 
             res.staticFilters = staticRulesets;
         } else {
