@@ -24,6 +24,7 @@
  *   [+4] valueEnd       - Source index where value ends (exclusive), or NO_VALUE (-1).
  */
 
+import { CHAR_BACKSLASH } from '../../tokenizer/char-codes';
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { regionEquals, skipWs, tokenStart } from '../context';
@@ -228,7 +229,7 @@ export class NetworkRuleParser implements StructuralParser {
      * @returns Token index of the separator, or -1 if not found.
      */
     private static findNetSeparator(ctx: ParserContext, searchStart: number, endTi = ctx.tokenCount): number {
-        const { types } = ctx;
+        const { types, source } = ctx;
         let i = endTi;
 
         while (i > searchStart) {
@@ -236,6 +237,24 @@ export class NetworkRuleParser implements StructuralParser {
 
             if (i === -1 || i < searchStart) {
                 break;
+            }
+
+            // Keep in sync with `findNetworkRuleSeparatorIndex` in tsurlfilter
+            // (`src/filterlist/rule-parts.ts`), which mirrors this logic. The
+            // two already differ for regex values with `$` in the middle:
+            // tsurlfilter also skips `$` inside `=/…/` regions, so e.g.
+            // `$removeparam=/x$y,z/` and `$replace=/a$b=c/d/` are handled there.
+            //
+            // A `$` inside a modifier value is not a separator: skip a `$`
+            // preceded by an escaped backslash (e.g. `/^\\$ja=/`). A `$`
+            // directly preceded by `\$` never reaches this loop — the tokenizer
+            // emits `\$` as a single `Escaped` token. A `$` followed by `/`
+            // (a regex end anchor) is already rejected by
+            // `isPotentialNetModifier` below.
+            const dollarOff = tokenStart(ctx, i);
+
+            if (source.charCodeAt(dollarOff - 1) === CHAR_BACKSLASH) {
+                continue;
             }
 
             if (isPotentialNetModifier(ctx, i + 1, endTi)) {

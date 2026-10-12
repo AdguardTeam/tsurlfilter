@@ -75,6 +75,28 @@ describe('SimpleCommentParser', () => {
             parse('##########################');
             expect(CommentParser.kind(ctx)).toBe(CommentKind.Simple);
         });
+
+        // `!#` followed by `#` is a decorative separator (`!###...`), not a
+        // preprocessor directive. Commonly used in AdGuard filter lists.
+        test('!###', () => {
+            parse('!###');
+            expect(CommentParser.kind(ctx)).toBe(CommentKind.Simple);
+        });
+
+        test('!######################################################', () => {
+            parse('!######################################################');
+            expect(CommentParser.kind(ctx)).toBe(CommentKind.Simple);
+        });
+
+        test('!######### Block useless widgets #######################', () => {
+            parse('!######### Block useless widgets #######################');
+            expect(CommentParser.kind(ctx)).toBe(CommentKind.Simple);
+        });
+
+        test('!##div[data-google-av-itpl]', () => {
+            parse('!##div[data-google-av-itpl]');
+            expect(CommentParser.kind(ctx)).toBe(CommentKind.Simple);
+        });
     });
 
     describe('marker position', () => {

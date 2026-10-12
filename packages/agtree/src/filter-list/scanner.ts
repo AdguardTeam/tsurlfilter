@@ -11,7 +11,13 @@
 /* eslint-disable no-bitwise */
 
 import type { ParserCapacity } from '../ast-builder/capacity';
-import { CapacityOverflowError, REGION_TOKENS } from '../errors/capacity-overflow-error';
+import {
+    CapacityOverflowError,
+    REGION_DOMAINS,
+    REGION_MODIFIERS,
+    REGION_SCRIPTLET_BODY,
+    REGION_TOKENS,
+} from '../errors/capacity-overflow-error';
 import type { CapacityRegion } from '../errors/capacity-overflow-error';
 import {
     MAX_DOMAIN_CAPACITY,
@@ -33,7 +39,7 @@ import type { RuleKind } from '../parser/rule';
 import { StructuralRuleParser } from '../parser/rule';
 import { TokenType } from '../tokenizer/token-types';
 import { Tokenizer } from '../tokenizer/tokenizer';
-import { findNextLineBreak } from '../utils/line-break';
+import { findNextTokenizerLineBreak } from '../utils/line-break';
 
 /**
  * Error message used when the data buffer (modifiers / domains / scriptlet
@@ -88,10 +94,16 @@ export type ScanCallback = (
 export type EmptyLineCallback = (ruleStart: number, ruleEnd: number) => void;
 
 /**
- * Callback type for rule-level structural parse errors.
+ * Callback type for per-rule parse failures.
  *
- * Called when `StructuralRuleParser.parse()` throws for a rule. The rule's source range
- * is passed so the caller can construct an `InvalidRule` node.
+ * Called when a rule cannot be parsed:
+ * - the structural parser ({@link StructuralRuleParser.parse}) throws,
+ * - an AST builder invoked from the rule callback throws,
+ * - a parser buffer overflows its hard cap.
+ *
+ * The rule's source range is passed so the caller can construct an
+ * `InvalidRule` node. If the callback itself throws, the exception propagates
+ * out of `scan()` (and out of `FilterListPipeline.parse()`).
  *
  * @param error The thrown error.
  * @param ruleStart Source offset where the rule starts.
@@ -107,7 +119,9 @@ export type ScanErrorCallback = (
  * Scan forward from `offset` in `source` to find the next line-break.
  *
  * Delegates the line-break policy to the shared
- * {@link findNextLineBreak} helper so it cannot drift from the converter.
+ * {@link findNextTokenizerLineBreak} helper, so the fallback splits exactly
+ * where the tokenizer's line-break tokens do (including `\f`) and cannot
+ * drift from the normal token-based scan.
  *
  * @param source Source string.
  * @param offset Position to start searching from.
@@ -120,7 +134,7 @@ function findNextNewline(
     source: string,
     offset: number,
 ): [ruleEnd: number, nextStart: number] {
-    const [lineBreakIndex, lineBreakLength] = findNextLineBreak(source, offset);
+    const [lineBreakIndex, lineBreakLength] = findNextTokenizerLineBreak(source, offset);
     return [lineBreakIndex, lineBreakIndex + lineBreakLength];
 }
 
@@ -406,10 +420,10 @@ export class FilterListScanner {
      */
     private static hardCapForRegion(region: CapacityRegion): number {
         switch (region) {
-            case 'tokens': return MAX_TOKEN_CAPACITY;
-            case 'modifiers': return MAX_MODIFIER_CAPACITY;
-            case 'domains': return MAX_DOMAIN_CAPACITY;
-            case 'scriptletBody': return MAX_SCRIPTLET_BODY_CAPACITY;
+            case REGION_TOKENS: return MAX_TOKEN_CAPACITY;
+            case REGION_MODIFIERS: return MAX_MODIFIER_CAPACITY;
+            case REGION_DOMAINS: return MAX_DOMAIN_CAPACITY;
+            case REGION_SCRIPTLET_BODY: return MAX_SCRIPTLET_BODY_CAPACITY;
             default: return MAX_TOKEN_CAPACITY;
         }
     }

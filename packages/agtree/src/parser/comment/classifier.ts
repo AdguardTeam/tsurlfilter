@@ -85,8 +85,19 @@ export class CommentParser implements StructuralParser {
 
                 // Preprocessor: `!#`
                 if (t1 === TokenType.HashMark) {
-                    PreprocessorCommentParser.parse(ctx, startTi, endTi, dataOffset);
-                    return;
+                    // Comments starting with `!##` (e.g. `!###...` decorative
+                    // separators or `!##div[data-google-av-itpl]`) must stay
+                    // plain comments instead of preprocessor directives with
+                    // unknown names (matches AGTree v4 behavior). The second
+                    // `#` is its own HashMark token, so the check stays
+                    // token-based like the rest of the classifier.
+                    const isDoubleHashComment = ti2 + 1 < endTi
+                        && types[ti2 + 1] === TokenType.HashMark;
+
+                    if (!isDoubleHashComment) {
+                        PreprocessorCommentParser.parse(ctx, startTi, endTi, dataOffset);
+                        return;
+                    }
                 }
 
                 // Hint: `!+`

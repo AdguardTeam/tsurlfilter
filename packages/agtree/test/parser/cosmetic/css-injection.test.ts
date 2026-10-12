@@ -115,6 +115,79 @@ describe('AdgCssInjectionParser', () => {
             expect(sl(source, d, 0, CSS_INJ_SL_SOURCE_START, CSS_INJ_SL_SOURCE_END)).toBe('body');
             expect(sl(source, d, 0, CSS_INJ_DL_SOURCE_START, CSS_INJ_DL_SOURCE_END)).toBe('padding: 0;');
         });
+
+        test('trailing colon before the close brace stays in the declaration list', () => {
+            // A trailing colon (real-world typo: `!important:` instead of
+            // `!important;`) is kept as-is, so it stays visible to consumers
+            // such as AGLint instead of being silently trimmed.
+            const source = '.single-cta-wrapper { display: none !important: }';
+            expect(parse(source)).toBe(true);
+            const d = ctx.data;
+
+            expect(sl(source, d, 0, CSS_INJ_DL_SOURCE_START, CSS_INJ_DL_SOURCE_END))
+                .toBe('display: none !important:');
+        });
+
+        test('unterminated quote in selector does not hide the open brace', () => {
+            // Real-world rule with an unterminated quote typo in :contains()
+            const source = "main > div:has(> div > div > script:contains(blockId: 'R-A)) "
+                + '{ position: absolute !important; top: -9999px !important; }';
+            expect(parse(source)).toBe(true);
+            const d = ctx.data;
+
+            expect(sl(source, d, 0, CSS_INJ_SL_SOURCE_START, CSS_INJ_SL_SOURCE_END))
+                .toBe("main > div:has(> div > div > script:contains(blockId: 'R-A))");
+            expect(sl(source, d, 0, CSS_INJ_DL_SOURCE_START, CSS_INJ_DL_SOURCE_END))
+                .toBe('position: absolute !important; top: -9999px !important;');
+        });
+
+        test('unterminated quote outside parentheses does not make a body CSS injection', () => {
+            // The unterminated-string tolerance is limited to pseudo-class
+            // arguments: outside them a stray quote keeps the old behavior, so
+            // these bodies fall back to ABP snippet parsing.
+            expect(parse('.ad " { display: none !important; }', 0, false)).toBe(false);
+            expect(parse("div[x='a { remove: true; }", 0, false)).toBe(false);
+            expect(parse("log 'hello {world}", 0, false)).toBe(false);
+            expect(parse("log 'a{b", 0, false)).toBe(false);
+        });
+
+        test('unterminated quote outside parentheses makes a required body invalid', () => {
+            // `#$?#` bodies require a declaration block, so the same input is
+            // an error instead of a removal rule.
+            expect(() => parse('.ad " { remove: true; }')).toThrow(/opening brace/i);
+        });
+
+        test('string closed by the last token is not treated as unterminated', () => {
+            // A closed string whose closing quote is the last token of the
+            // scanned range also ends at `endTi`, but a brace inside it must
+            // not be treated as a declaration block.
+            expect(parse('snippet0 \'{"a":1}\'', 0, false)).toBe(false);
+            expect(parse("log 'a{b'", 0, false)).toBe(false);
+        });
+
+        test('close brace inside a closed string does not close the declaration block', () => {
+            // The `}` inside the string must not terminate the declaration
+            // block, so the rule stays invalid instead of becoming `remove: true`.
+            expect(() => parse(".banner { remove: true; content: '}'"))
+                .toThrow(/closing brace/i);
+        });
+
+        test('close brace after a closed string is still found', () => {
+            const source = ".banner { remove: true; content: '}' }";
+            expect(parse(source)).toBe(true);
+
+            expect(ctx.data[CSS_INJ_FLAGS] & CSS_INJ_FLAG_REMOVE).toBe(CSS_INJ_FLAG_REMOVE);
+        });
+
+        test('unterminated string in the declaration list hides the close brace', () => {
+            // The `}` is inside the unterminated string, so no declaration
+            // block close is found and the rule is invalid.
+            expect(() => parse('.x { content: "abc }')).toThrow(/closing brace/i);
+        });
+
+        test('content after the closing brace is rejected', () => {
+            expect(() => parse('.a { color: red } garbage')).toThrow(/unexpected content/i);
+        });
     });
 
     describe('@media-wrapped rules', () => {
@@ -153,6 +226,19 @@ describe('AdgCssInjectionParser', () => {
             expect(sl(source, d, 0, CSS_INJ_SL_SOURCE_START, CSS_INJ_SL_SOURCE_END)).toBe('body:-abp-has(.ad)');
             expect(sl(source, d, 0, CSS_INJ_DL_SOURCE_START, CSS_INJ_DL_SOURCE_END)).toBe('padding: 0;');
         });
+
+        test('content between the rule and the @media close brace is rejected', () => {
+            expect(() => parse('@media screen { .a { color: red } garbage }'))
+                .toThrow(/unexpected content/i);
+        });
+
+        test('unterminated quote in the wrapped selector does not hide the @media close brace', () => {
+            const source = "@media screen { main:contains(blockId: 'R-A)) { color: red; } }";
+            expect(parse(source)).toBe(true);
+
+            expect(ctx.data[CSS_INJ_FLAGS] & CSS_INJ_FLAG_HAS_MEDIA).toBe(CSS_INJ_FLAG_HAS_MEDIA);
+            expect(ctx.data[CSS_INJ_MEDIA_CLOSE_BRACE_TI]).not.toBe(-1);
+        });
     });
 
     describe('remove: true detection', () => {
@@ -181,6 +267,20 @@ describe('AdgCssInjectionParser', () => {
 
         test('normal declarations do not set remove flag', () => {
             const source = 'body { display: none !important; }';
+            expect(parse(source)).toBe(true);
+
+            expect(ctx.data[CSS_INJ_FLAGS] & CSS_INJ_FLAG_REMOVE).toBe(0);
+        });
+
+        test('remove: true inside a single-quoted value is not detected', () => {
+            const source = ".x { content: 'remove: true' }";
+            expect(parse(source)).toBe(true);
+
+            expect(ctx.data[CSS_INJ_FLAGS] & CSS_INJ_FLAG_REMOVE).toBe(0);
+        });
+
+        test('remove: true inside a double-quoted value is not detected', () => {
+            const source = '.x { content: "remove: true" }';
             expect(parse(source)).toBe(true);
 
             expect(ctx.data[CSS_INJ_FLAGS] & CSS_INJ_FLAG_REMOVE).toBe(0);

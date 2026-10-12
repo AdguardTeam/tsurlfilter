@@ -44,6 +44,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   the `isHostRuleCandidate` helper, the `DomainItem` type, and a
   `RuleParserPipeline.parseStructural` entry point for zero-AST consumption of
   the structural parser output (`@adguard/agtree/parser`).
+- Added `onParseError` option to `FilterListParseOptions`. In tolerant mode the
+  pipeline now invokes `onParseError(error, ruleStart, ruleEnd)` for every rule
+  that fails to parse, before wrapping it into an `InvalidRule` node.
 - Added `RuleParserPipeline.parseFromCurrentCtx` to build an AST node from an
   already-populated structural context without re-tokenizing or re-running the
   structural parser.
@@ -130,6 +133,42 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Modifier validation no longer throws for wildcard platforms:
+  `ModifierValidator.validate()` and `ModifiersCompatibilityTable.validate()`
+  accept generic platforms such as `Platform.AdgAny` or `Platform.UboAny`, and
+  `$redirect`/`$redirect-rule` values no longer raise "get() requires a specific
+  platform" when validated against them. `Platform.Any` spans all products, so
+  product-specific checks are skipped for it and only the modifier's existence
+  is verified, matching the existing multi-product behavior.
+- Comments starting with `!##` (e.g. `!###...` decorative separators, commonly
+  used in AdGuard filter lists) are again classified as plain comments instead
+  of preprocessor directives with unknown names.
+- Network rule modifier separator detection no longer splits on a `$` preceded
+  by a backslash or followed by `/` (a regex end anchor), so modifier values
+  like `/^\\$ja=/` parse correctly.
+- AdGuard CSS injection rules whose selector contains an unterminated quote
+  inside a pseudo-class argument (e.g. `:contains(blockId: 'R-A))`) are now
+  parsed as CSS injection rules instead of falling back to ABP snippet rules,
+  including when they are wrapped in `@media`. Unterminated quotes outside such
+  arguments keep their previous behavior.
+- The `remove: true` property is no longer detected inside quoted declaration
+  values, so `#$#.x { content: 'remove: true' }` is generated as written instead
+  of turning into a removal rule.
+- CSS injection bodies with tokens after the declaration block's closing brace
+  (e.g. `#$#.a { color: red } garbage`) are now rejected instead of silently
+  dropping the trailing content.
+- Blocking rules using `$csp`, `$redirect`, `$redirect-rule`, `$removeheader`,
+  `$replace`, or `$urltransform` without a value are now invalid, matching
+  `ModifierValidator`: these modifiers may omit the value only in exception
+  rules.
+- Media queries in `@media`-wrapped CSS injection rules are no longer corrupted
+  when `parseCssSelectorList: true` is combined with small parser capacities.
+- The scanner's capacity-overflow fallback now treats `\f` as a line break, as
+  the tokenizer does, so an oversized rule followed by a form feed no longer
+  swallows the next rule into the same error.
+- If `FilterListParseOptions.onParseError` throws, the exception now propagates
+  out of `FilterListPipeline.parse()` instead of being passed to the callback a
+  second time as the rule error.
 - Network and cosmetic (`[$…]`) modifier parsing no longer drops the `$`
   separator when the first modifier name starts with an underscore, so noop
   modifiers such as `$_`, `$___`, and `$_invalid_` are parsed correctly.

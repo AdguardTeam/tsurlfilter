@@ -9,7 +9,7 @@
  * Writes structural offsets to ctx.data with zero heap allocations.
  */
 
-import { cssStringLength } from '../../css/tokenizer/css-token-mapping';
+import { cssStringLength, isCssStringUnterminated } from '../../css/tokenizer/css-token-mapping';
 import { isCssIdentRun } from '../../css/tokenizer/css-token-utils';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { TokenType } from '../../tokenizer/token-types';
@@ -51,7 +51,11 @@ const MEDIA_KEYWORD = 'media';
  * CSS strings via {@link cssStringLength} (handles bad-string, unterminated
  * strings, and `Escaped` tokens correctly).
  *
- * Same pattern as `CssAtRuleParser` Phase 3.
+ * An unterminated string is tolerated only inside parentheses, where a
+ * real-world `:contains(blockId: 'R-A)` typo lives: there the opening quote
+ * is treated as a delimiter so the declaration block's brace is still found.
+ * Outside parentheses the whole unterminated string is skipped, so a stray
+ * quote cannot make an ABP snippet (e.g. `log 'a{b`) look like CSS injection.
  *
  * @param types Token type array.
  * @param startTi Start token index.
@@ -78,8 +82,13 @@ function findOpenBrace(
         // and unterminated strings.
         const strLen = cssStringLength(types, ti, endTi);
         if (strLen > 0) {
+            // See the JSDoc above for why the unterminated-string tolerance is
+            // limited to parenthesis arguments.
+            if (parenDepth > 0 && isCssStringUnterminated(types, ti, strLen)) {
+                ti += 1;
+                continue;
+            }
             ti += strLen;
-            // eslint-disable-next-line no-continue
             continue;
         }
         const tt = types[ti];
@@ -108,7 +117,12 @@ function findOpenBrace(
  * Scan forward for a CloseBrace token at a target brace depth, skipping
  * CSS strings via {@link cssStringLength}.
  *
- * Same pattern as `CssAtRuleParser` Phase 5.
+ * Like {@link findOpenBrace}, an unterminated string is tolerated only inside
+ * parentheses: in `@media` mode the outer close-brace scan crosses the
+ * selector, and an unterminated `:contains(blockId: 'R-A)` quote must not hide
+ * the wrapper's closing brace. Outside parentheses the unterminated string is
+ * skipped as a whole, so a `}` inside it (e.g. `content: '}'`) cannot close
+ * the declaration block.
  *
  * @param types Token type array.
  * @param startTi Start token index (should be after the corresponding OpenBrace).
@@ -128,11 +142,15 @@ function findCloseBrace(
     let parenDepth = 0;
     let ti = startTi;
     while (ti < endTi) {
-        // Skip CSS strings — same as findOpenBrace.
+        // Skip CSS strings — see the JSDoc above for the parenthesis-limited
+        // unterminated-string tolerance.
         const strLen = cssStringLength(types, ti, endTi);
         if (strLen > 0) {
+            if (parenDepth > 0 && isCssStringUnterminated(types, ti, strLen)) {
+                ti += 1;
+                continue;
+            }
             ti += strLen;
-            // eslint-disable-next-line no-continue
             continue;
         }
         const tt = types[ti];
@@ -158,6 +176,34 @@ function findCloseBrace(
 }
 
 /**
+ * Reject any non-whitespace tokens between a closing brace and the end of the
+ * scanned range.
+ *
+ * The CSS injection parser stores source offsets, not the trailing tokens, so
+ * silently dropping content such as `#$#.a { color: red } garbage` would
+ * break round-trip fidelity.
+ *
+ * @param ctx Parser context.
+ * @param closeBraceTi Token index of the closing brace.
+ * @param endTi Exclusive end of the range to check.
+ *
+ * @throws Error if the range contains anything but whitespace.
+ */
+function assertNoTrailingContent(ctx: ParserContext, closeBraceTi: number, endTi: number): void {
+    const trailingStartTi = skipWs(ctx, closeBraceTi + 1);
+    if (trailingStartTi >= endTi) {
+        return;
+    }
+
+    const trailingEndTi = lastNonWs(ctx, trailingStartTi, endTi);
+    throw new AdblockSyntaxError(
+        'Unexpected content after the declaration block',
+        tokenStart(ctx, trailingStartTi),
+        ctx.ends[trailingEndTi],
+    );
+}
+
+/**
  * Scan declaration tokens for `remove: true` pattern.
  * Also validates that `remove:` is only followed by `true`.
  *
@@ -165,6 +211,9 @@ function findCloseBrace(
  * then falls back to source-text comparison (via `regionEquals`) only
  * for the actual keyword check — consistent with how other parsers
  * handle ident matching.
+ *
+ * CSS strings are skipped as a whole, so a quoted value such as
+ * `content: 'remove: true'` does not set the removal flag.
  *
  * Guards against partial-ident false positives (e.g. `no-remove: true`)
  * by checking that the `Letter` token for "remove" is not preceded by
@@ -188,6 +237,15 @@ function detectRemoveTrue(
     const TRUE = 'true';
 
     for (let ti = dlStartTi; ti < dlEndTi; ti += 1) {
+        // Skip CSS strings as a whole: a quoted value such as
+        // `content: 'remove: true'` must not be detected as the `remove`
+        // property.
+        const strLen = cssStringLength(types, ti, dlEndTi);
+        if (strLen > 0) {
+            ti += strLen - 1;
+            continue;
+        }
+
         // Look for Letter token
         if (types[ti] !== TokenType.Letter) {
             // eslint-disable-next-line no-continue
@@ -476,7 +534,10 @@ export class AdgCssInjectionParser implements StructuralParser {
 
         data[dataOffset + CSS_INJ_CLOSE_BRACE_TI] = innerCloseBraceTi;
 
-        // Declaration list = tokens between inner { and inner } (trimmed)
+        // Declaration list = tokens between inner { and inner } (trimmed).
+        // A trailing colon (e.g. `display: none !important:`) stays part of
+        // the declaration list on purpose: it is visible to consumers (AGLint)
+        // and matches AGTree v4 behavior.
         const dlCandidateStartTi = skipWs(ctx, innerOpenBraceTi + 1);
         const dlEndTi = lastNonWs(ctx, dlCandidateStartTi, innerCloseBraceTi);
 
@@ -498,6 +559,14 @@ export class AdgCssInjectionParser implements StructuralParser {
         if (detectRemoveTrue(ctx, dlStartTi, dlEndTi + 1)) {
             data[dataOffset + CSS_INJ_FLAGS] |= CSS_INJ_FLAG_REMOVE;
         }
+
+        // Tokens after the rule's closing brace are not part of the rule and
+        // would be silently dropped on generation — reject them instead.
+        // Inside @media the wrapped rule must be the only content of the block.
+        if (outerCloseBraceTi >= 0) {
+            assertNoTrailingContent(ctx, innerCloseBraceTi, outerCloseBraceTi);
+        }
+        assertNoTrailingContent(ctx, outerCloseBraceTi >= 0 ? outerCloseBraceTi : innerCloseBraceTi, endTi);
 
         return true;
     }

@@ -4,7 +4,7 @@
 
 import { sprintf } from 'sprintf-js';
 
-import { type Platform } from '../compatibility-tables';
+import { type Platform, ProductCode } from '../compatibility-tables';
 import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers';
 import { type Modifier } from '../nodes';
 import { NEWLINE, SPACE, UNDERSCORE } from '../utils/constants';
@@ -21,6 +21,7 @@ import { validateValue } from './value';
  * @param platforms Platforms to check the modifier for. Can be a specific platform (e.g., [AdgExtChrome])
  * or a generic platform for a single product (e.g., [AdgAny]).
  * If multiple products are specified (e.g., [AdgAny, UboAny]), validation is skipped and returns valid.
+ * `Platform.Any` spans all products, so it is treated the same way.
  * @param modifier Parsed modifier AST node.
  * @param isException Whether the modifier is used in exception rule.
  * Needed to check whether the modifier is allowed only in blocking or exception rules.
@@ -38,9 +39,10 @@ const validateForSpecificProduct = (
         throw new Error('At least one platform must be specified for validation');
     }
 
-    // Detect if multiple products are specified
+    // Detect if multiple products are specified. `Platform.Any` spans all
+    // products, so it is treated like a multi-product set.
     const uniqueProducts = new Set(platforms.map((p) => p.product));
-    if (uniqueProducts.size > 1) {
+    if (uniqueProducts.size > 1 || uniqueProducts.has(ProductCode.Any)) {
         // Multiple products specified, skip validation
         return { valid: true };
     }
@@ -167,7 +169,8 @@ class ModifierValidator {
      * @returns Result of modifier validation.
      *
      * @note For single product: validates using first platform's compatibility data.
-     * If multiple products are specified (e.g., [AdgAny, UboAny]), validation is skipped and returns valid.
+     * If multiple products are specified (e.g., [AdgAny, UboAny]) or the global
+     * `Platform.Any` wildcard is used, validation is skipped and returns valid.
      */
     public validate = (platforms: Platform[], modifier: Modifier, isException = false): ValidationResult => {
         // special case: handle noop modifier which may be used as multiple underscores (not just one)

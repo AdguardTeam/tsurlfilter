@@ -2,59 +2,16 @@
  * @file Compatibility tables for redirects.
  */
 
-import { sprintf } from 'sprintf-js';
-
-import { COLON, NEWLINE, SPACE } from '../utils/constants';
 import { isNull, isString, isUndefined } from '../utils/type-guards';
-import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from '../validator/constants';
 
 import { CompatibilityTableBase } from './base';
 import { type Platform } from './platform';
+import { redirectNameNormalizer, redirectResourceTable } from './redirect-resource-bridge';
 import { redirectsCompatibilityTableData } from './redirects-compatibility-table-data';
 import { type RedirectDataSchema } from './schemas';
 import { type CompatibilityTable } from './types';
 import { getResourceTypeModifier } from './utils/resource-type-helpers';
 import { type ValidationContext } from './validators/types';
-
-/**
- * Prefix for resource redirection names.
- */
-const ABP_RESOURCE_PREFIX = 'abp-resource:';
-const ABP_RESOURCE_PREFIX_LENGTH = ABP_RESOURCE_PREFIX.length;
-
-/**
- * Normalizes the redirect name.
- *
- * @param name Redirect name to normalize.
- *
- * @returns Normalized redirect name.
- *
- * @example
- * redirectNameNormalizer('abp-resource:my-resource') // => 'my-resource'
- * redirectNameNormalizer('noop.js:99') // => 'noop.js'
- */
-const redirectNameNormalizer = (name: string): string => {
-    // Remove ABP resource prefix, if present
-    if (name.startsWith(ABP_RESOURCE_PREFIX)) {
-        return name.slice(ABP_RESOURCE_PREFIX_LENGTH);
-    }
-
-    /**
-     * Remove :[integer] priority suffix from the name, if present.
-     *
-     * Note: negative values are also supported, see AG-48788.
-     *
-     * @see https://github.com/AdguardTeam/tsurlfilter/issues/59
-     * @see https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect
-     */
-    const colonIndex = name.lastIndexOf(COLON);
-
-    if (colonIndex !== -1 && /^-?\d+$/.test(name.slice(colonIndex + 1))) {
-        return name.slice(0, colonIndex);
-    }
-
-    return name;
-};
 
 /**
  * Compatibility table for redirects.
@@ -112,41 +69,21 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
     /**
      * Validates a redirect against the compatibility table.
      *
+     * Delegates to the shared redirect resource bridge — the same
+     * implementation used by the modifier table. Keeping the logic there
+     * avoids the `modifiers.ts` → `redirects.ts` import cycle.
+     *
      * @param data Redirect name as string.
      * @param ctx Validation context to collect issues into.
      * @param platform Platform to validate against.
      */
+    // eslint-disable-next-line class-methods-use-this
     public validate(data: string, ctx: ValidationContext, platform?: Platform): void {
         if (platform === undefined) {
             throw new Error('Platform is required for redirect validation');
         }
 
-        const redirectName = isString(data) ? data : '';
-
-        // Get platform-specific data
-        const specificRedirectData = this.get(redirectName, platform);
-
-        if (!specificRedirectData) {
-            ctx.addError(
-                sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, platform.toHumanReadable()),
-            );
-            return;
-        }
-
-        // Check if removed
-        if (specificRedirectData.removed) {
-            ctx.addError(`${VALIDATION_ERROR_PREFIX.REMOVED}: '${redirectName}'`);
-            return;
-        }
-
-        // Check if deprecated
-        if (specificRedirectData.deprecated) {
-            if (!specificRedirectData.deprecationMessage) {
-                throw new Error(`${SOURCE_DATA_ERROR_PREFIX.NO_DEPRECATION_MESSAGE}: '${redirectName}'`);
-            }
-            const warn = specificRedirectData.deprecationMessage.replace(NEWLINE, SPACE);
-            ctx.addWarning(warn);
-        }
+        redirectResourceTable.validate(data, ctx, platform);
     }
 }
 

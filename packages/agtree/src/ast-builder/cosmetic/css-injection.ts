@@ -174,6 +174,8 @@ export class CssInjectionAstBuilder {
         const dlSourceEnd = data[injBase + CSS_INJ_DL_SOURCE_END];
         const dlStartTi = data[injBase + CSS_INJ_DL_START_TI];
         const dlEndTi = data[injBase + CSS_INJ_DL_END_TI];
+        const mqStart = data[injBase + CSS_INJ_MEDIA_QUERY_START];
+        const mqEnd = data[injBase + CSS_INJ_MEDIA_QUERY_END];
 
         // Build selectorList — sub-parse when requested and ctx is available.
         let selectorList: SelectorList | Raw;
@@ -218,9 +220,6 @@ export class CssInjectionAstBuilder {
         // selectorList (SelectorList) and declarationList (CssDeclarationList)
         // which use Raw as a transitional representation.
         if (hasMedia) {
-            const mqStart = data[injBase + CSS_INJ_MEDIA_QUERY_START];
-            const mqEnd = data[injBase + CSS_INJ_MEDIA_QUERY_END];
-
             const mediaQueryList: Value = {
                 type: NodeType.Value,
                 value: source.slice(mqStart, mqEnd),

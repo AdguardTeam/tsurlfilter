@@ -135,6 +135,19 @@ describe('parseNetworkRule', () => {
             expect(ModifierParser.getValue(source, d, 0)).toBe('/^id\\$$/');
         });
 
+        test('escaped backslash followed by $ inside regex modifier value', () => {
+            // Real-world rule (TrackParamFilter): the $ is preceded by a
+            // backslash and must not be treated as a rule separator.
+            const source = '||ad.doubleclick.net/ddm/clk/$removeparam=/^\\\\$ja=/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||ad.doubleclick.net/ddm/clk/');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('removeparam');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/^\\\\$ja=/');
+        });
+
         test('complex regex with $ end anchor in modifier value', () => {
             // Real-world rule: $ at end is a regex end anchor, not a rule separator
             const source = '||www.amazon.$removeparam=/^[a-z_]{1,20}=[a-zA-Z0-9._-]{80,}$/';

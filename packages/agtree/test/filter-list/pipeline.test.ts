@@ -83,6 +83,143 @@ describe('FilterListPipeline', () => {
         }).toThrow();
     });
 
+    test('reports rule errors through onParseError in tolerant mode', () => {
+        const source = '||example.com^\n#%#//scriptlet(';
+        const errors: Array<{ error: unknown; start: number; end: number }> = [];
+
+        const ast = pipeline.parse(source, {
+            tolerant: true,
+            isLocIncluded: true,
+            onParseError: (error, start, end) => {
+                errors.push({ error, start, end });
+            },
+        });
+
+        expect(errors).toHaveLength(1);
+        expect(errors[0]!.error).toBeInstanceOf(Error);
+        expect(errors[0]!.start).toBe(15);
+        expect(errors[0]!.end).toBe(30);
+        expect(ast.children).toHaveLength(2);
+        expect(ast.children[1]!.type).toBe(NodeType.InvalidRule);
+    });
+
+    test('tolerates an unterminated quote in a CSS injection selector', () => {
+        // AGLint-like options: `tolerant: true`, `isLocIncluded: true`, and
+        // `parseCssSelectorList` left at its default (`false`), so the selector
+        // list stays raw. The real-world unterminated-quote typo must not turn
+        // the rule into an `InvalidRule`.
+        const source = "example.com#$#main > div:has(> div > div > script:contains(blockId: 'R-A)) "
+            + '{ position: absolute !important; top: -9999px !important; }';
+        const errors: unknown[] = [];
+
+        const ast = pipeline.parse(source, {
+            tolerant: true,
+            isLocIncluded: true,
+            onParseError: (error) => {
+                errors.push(error);
+            },
+        });
+
+        expect(errors).toHaveLength(0);
+        expect(ast.children).toHaveLength(1);
+        expect(ast.children[0]!.type).toBe(CosmeticRuleType.CssInjectionRule);
+    });
+
+    test('tolerates an unterminated quote in an @media-wrapped CSS injection selector', () => {
+        const source = "example.com#$#@media screen { main:contains(blockId: 'R-A)) "
+            + '{ color: red; } }';
+        const errors: unknown[] = [];
+
+        const ast = pipeline.parse(source, { onParseError: (error) => errors.push(error) });
+
+        expect(errors).toHaveLength(0);
+        expect(ast.children).toHaveLength(1);
+        expect(ast.children[0]!.type).toBe(CosmeticRuleType.CssInjectionRule);
+    });
+
+    test('keeps stray unterminated quotes outside pseudo-class arguments as ABP snippets', () => {
+        // The unterminated-string tolerance is limited to `:contains(...)`
+        // arguments. These `#$#` bodies must fall back to ABP snippets instead
+        // of being parsed as CSS injection, and `#$?#` must stay invalid.
+        const source = [
+            'example.com#$#.ad " { display: none !important; }',
+            "example.com#$#div[x='a { remove: true; }",
+            "example.com#$#log 'hello {world}",
+            "example.com#$#log 'a{b",
+            'example.com#$?#.ad " { remove: true; }',
+        ].join('\n');
+        const errors: unknown[] = [];
+
+        const ast = pipeline.parse(source, {
+            onParseError: (error) => errors.push(error),
+        });
+
+        expect(ast.children).toHaveLength(5);
+        for (let i = 0; i < 4; i += 1) {
+            expect(ast.children[i]!.type).toBe(CosmeticRuleType.ScriptletInjectionRule);
+        }
+        expect(ast.children[4]!.type).toBe(NodeType.InvalidRule);
+        expect(errors).toHaveLength(1);
+    });
+
+    test('does not detect remove: true inside a quoted declaration value', () => {
+        const source = "example.com#$#.x { content: 'remove: true' }";
+        const ast = pipeline.parse(source);
+
+        expect(ast.children).toHaveLength(1);
+        expect(ast.children[0]!.type).toBe(CosmeticRuleType.CssInjectionRule);
+        const { body } = ast.children[0] as { body: { remove?: boolean } };
+        expect(body.remove).toBeUndefined();
+    });
+
+    test('rejects content after the CSS injection declaration block', () => {
+        const source = 'example.com#$#.a { color: red } garbage';
+        const errors: unknown[] = [];
+        const ast = pipeline.parse(source, { onParseError: (error) => errors.push(error) });
+
+        expect(ast.children).toHaveLength(1);
+        expect(ast.children[0]!.type).toBe(NodeType.InvalidRule);
+        expect((errors[0] as Error).message).toMatch(/unexpected content/i);
+    });
+
+    test('AST builder errors are routed through onParseError', () => {
+        const source = 'example.com##+js(some-scriptlet)';
+        const errors: unknown[] = [];
+        const ast = pipeline.parse(source, {
+            tolerant: true,
+            parseUboSpecificRules: false,
+            onParseError: (error) => errors.push(error),
+        });
+
+        expect(ast.children).toHaveLength(1);
+        expect(ast.children[0]!.type).toBe(NodeType.InvalidRule);
+        expect(errors).toHaveLength(1);
+        expect((errors[0] as Error).message).toMatch(/parseUboSpecificRules/);
+    });
+
+    test('a throwing onParseError propagates out of parse()', () => {
+        expect(() => pipeline.parse('#%#//scriptlet(', {
+            tolerant: true,
+            onParseError: () => {
+                throw new Error('callback failed');
+            },
+        })).toThrow('callback failed');
+    });
+
+    test('capacity overflows are routed through onParseError', () => {
+        const tinyPipeline = new FilterListPipeline({ tokenCapacity: 4, grow: false });
+        const errors: unknown[] = [];
+        const ast = tinyPipeline.parse('example.com##.ad-banner', {
+            onParseError: (error) => errors.push(error),
+        });
+
+        expect(ast.children).toHaveLength(1);
+        expect(ast.children[0]!.type).toBe(NodeType.InvalidRule);
+        expect(errors).toHaveLength(1);
+        expect(errors[0]).toBeInstanceOf(Error);
+        expect((errors[0] as Error).message).toMatch(/exceeds the token capacity/i);
+    });
+
     test('ignoreNetwork produces RawRule for network rules', () => {
         const source = '||example.com^\n! comment';
         const ast = pipeline.parse(source, { ignoreNetwork: true });
@@ -199,6 +336,23 @@ describe('FilterListPipeline', () => {
             expect(ast.children).toHaveLength(2);
             expect(ast.children[0].type).toBe(NodeType.InvalidRule);
             expect(ast.children[1].type).toBe(NodeType.InvalidRule);
+        });
+
+        test('tolerant mode: form feed separates oversized rules', () => {
+            // The tokenizer treats `\f` as a line break, so the capacity-overflow
+            // fallback must split on it as well — otherwise both rules are
+            // reported as a single error.
+            const tinyPipeline = new FilterListPipeline({ tokenCapacity: 4, grow: false });
+            const errors: Array<{ start: number; end: number }> = [];
+            const source = 'example.com##.ad-banner\f#%#//scriptlet(';
+            const ast = tinyPipeline.parse(source, {
+                onParseError: (_error, start, end) => errors.push({ start, end }),
+            });
+
+            expect(ast.children).toHaveLength(2);
+            expect(errors).toHaveLength(2);
+            expect(errors[0]).toMatchObject({ start: 0, end: 23 });
+            expect(errors[1]).toMatchObject({ start: 24, end: source.length });
         });
     });
 });

@@ -417,6 +417,34 @@ export function cssStringLength(
 }
 
 /**
+ * Whether a {@link cssStringLength} span is an unterminated string.
+ *
+ * `cssStringLength` ends a span at the closing quote, at a bad-string
+ * `LineBreak`, or at the end of the token range. The last case is an
+ * unterminated string; it is identified by the span's final token being
+ * neither the opening quote nor a `LineBreak`, since either of those would
+ * have ended the span earlier.
+ *
+ * @param types Token type buffer.
+ * @param offset Start index of the string (the opening quote).
+ * @param spanLength Span length returned by {@link cssStringLength}.
+ *
+ * @returns `true` if the span is an unterminated string.
+ */
+export function isCssStringUnterminated(
+    types: Uint8Array,
+    offset: number,
+    spanLength: number,
+): boolean {
+    if (spanLength === 0) {
+        return false;
+    }
+
+    const lastType = types[offset + spanLength - 1];
+    return lastType !== types[offset] && lastType !== TokenType.LineBreak;
+}
+
+/**
  * Number of adblock tokens that form a CSS numeric value starting at `offset`.
  *
  * Parses: `[+|-]? ([0-9]+ '.'? [0-9]* | '.' [0-9]+) ([eE] [+|-]? [0-9]+)?`.

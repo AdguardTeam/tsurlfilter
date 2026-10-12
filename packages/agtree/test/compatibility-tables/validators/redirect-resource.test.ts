@@ -42,9 +42,14 @@ describe('redirect_resource validator', () => {
             expect(ctx.valid).toBe(false);
         });
 
-        test('redirect without value is valid (value_optional)', () => {
-            const ctx = validateModifier('redirect', Platform.AdgOsWindows);
-            expect(ctx.valid).toBe(true);
+        test('redirect without value requires an exception rule', () => {
+            // `value_optional_exception_only`: blocking rules must specify a value.
+            const blockingCtx = validateModifier('redirect', Platform.AdgOsWindows);
+            expect(blockingCtx.valid).toBe(false);
+
+            const exceptionCtx = new ValidationContext();
+            modifiersCompatibilityTable.validate('redirect', exceptionCtx, Platform.AdgOsWindows, true);
+            expect(exceptionCtx.valid).toBe(true);
         });
     });
 
@@ -98,9 +103,13 @@ describe('redirect_resource validator', () => {
             expect(ctx.valid).toBe(false);
         });
 
-        test('redirect-rule without value is valid (value_optional)', () => {
-            const ctx = validateModifier('redirect-rule', Platform.AdgOsWindows);
-            expect(ctx.valid).toBe(true);
+        test('redirect-rule without value requires an exception rule', () => {
+            const blockingCtx = validateModifier('redirect-rule', Platform.AdgOsWindows);
+            expect(blockingCtx.valid).toBe(false);
+
+            const exceptionCtx = new ValidationContext();
+            modifiersCompatibilityTable.validate('redirect-rule', exceptionCtx, Platform.AdgOsWindows, true);
+            expect(exceptionCtx.valid).toBe(true);
         });
     });
 });

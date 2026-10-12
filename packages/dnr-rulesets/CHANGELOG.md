@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Removed the obsolete PolskiFiltrAdg filter list (ID 238) from `chromium-mv3`
+  and `opera-mv3` rulesets, as the filter is disabled in the FiltersRegistry.
+  Updated `tasks/validator-data.json` accordingly.
 - Migrated from the removed `FilterListParser` / `defaultParserOptions` API
   (`@adguard/agtree/parser`) to the new `FilterListPipeline` instance-based API
   (`@adguard/agtree`). Location offsets (`start`/`end`) replace the removed

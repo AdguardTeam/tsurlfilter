@@ -5,6 +5,8 @@
 import type { ParseOptions } from '../ast-builder/options';
 import type { RuleKind } from '../parser/classifier';
 
+import type { ScanErrorCallback } from './scanner';
+
 /**
  * Information about a scanned rule, passed to the scanner callback.
  *
@@ -40,4 +42,13 @@ export interface FilterListParseOptions extends ParseOptions {
      * When `false`, the first syntax error throws immediately.
      */
     tolerant?: boolean;
+
+    /**
+     * Optional callback invoked for every rule that fails to parse in
+     * tolerant mode, before the rule is wrapped into an `InvalidRule` node.
+     * Receives structural parser errors, AST builder errors, and parser
+     * buffer overflows. If the callback throws, the exception propagates out
+     * of `parse()`.
+     */
+    onParseError?: ScanErrorCallback;
 }
