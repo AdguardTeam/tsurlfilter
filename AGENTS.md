@@ -155,9 +155,9 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   publishes the tarball to the internal Artifact Keeper npm registry (shared
   `deploy-to-ak-npm.yml`), where the browser-extension auto-build installs
   rulesets from. The npm leg (version check, publish, one retry after a
-  backoff) runs again once a day (AG-60418, fresh 429 diagnostics for the npm
-  throttling escalation). A failure-notify job alerts Slack when any leg
-  fails.
+  backoff) is disabled again while npm throttles the package (AG-58867); the
+  one-off try re-enabled in AG-60418 still got HTTP 429. A failure-notify job
+  alerts Slack when any leg fails.
 - `mirror.yml` — syncs master to the public `AdguardTeam/tsurlfilter` mirror.
 - `update-companiesdb.yml` — refreshes the tswebextension companies database
   every Tuesday and pushes meaningful changes with Octopass. The push avoids
