@@ -17,6 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `$badfilter` incorrectly negated rules with different values of value-bearing
+  modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
+  `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when
+  the whole modifier list is written the same way — names, values, their order
+  and repeats, `$permissions` included — so `$redirect-rule` is no longer treated
+  as `$redirect`, and spellings that are equivalent after parsing (e.g.
+  `Set-Cookie` and `set-cookie`) do not negate each other.
+- `$badfilter` with `$domain` still disables the rule it refers to for the
+  domains present in both lists, but regular expression domains now keep their
+  case, so `$domain=/A/` no longer cancels `$domain=/a/`. This exception applies
+  only while neither rule has a negated `~domain`; otherwise the whole text is
+  compared.
 - Fixed cosmetic rules with multiple domains in the `$domain` modifier not
   applying on permitted domains [AdguardBrowserExtension#3605].
 - Fixed duplicate cosmetic rule matches for overlapping domain restrictions
