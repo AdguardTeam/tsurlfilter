@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Removed Polish Anti Adblock Filters (ID 238) from the MV3 rulesets
+  (`chromium-mv3`, `edge-mv3`, `opera-mv3`), because the filter is no longer
+  present in the filters metadata on `filters.adtidy.org`.
+
 ### Fixed
 
 ### Security
