@@ -14,16 +14,15 @@ name: Publish stable DNR rulesets
 # Each line is built and published by _publish-stable-dnr-rulesets-line.yml:
 # the tarball goes to the internal Artifact Keeper (AK) npm registry (shared
 # deploy-to-ak-npm.yml workflow), which the extension auto-build installs
-# rulesets from. The npm leg runs again (AG-60418): one round a day makes one
-# npm publish per line, and the first round after the re-enable is the fresh
-# 429 example npm support asked for — see the note in that workflow.
-# resolve-lines skips a line whose branch isn't on the current CI yet.
+# rulesets from. The npm leg is disabled again (AG-58867, npm 429) — the
+# one-off try re-enabled in AG-60418 still got HTTP 429; see the note in that
+# workflow. resolve-lines skips a line whose branch isn't on the current CI yet.
 
 on:
   schedule:
-    # Once a day, ahead of the 00:30 extension auto-build; one round a day also
-    # keeps the npm traffic at one publish per line while the 429 escalation
-    # runs (AG-60418).
+    # Once a day, ahead of the 00:30 extension auto-build. The round was cut
+    # from twice a day to one in AG-60418 (to hold npm traffic down) and the
+    # cadence stays with the npm leg disabled again (AG-58867).
     - cron: '17 0 * * *'
   workflow_dispatch:
     inputs:
@@ -131,8 +130,8 @@ jobs:
     # deploy-to-ak-npm.yml only receives through `secrets: inherit` (see the
     # publish-ak job there).
     secrets: inherit
-    # id-token: write is for the npm OIDC publish (Trusted Publishing): a
-    # called workflow cannot raise the caller's permissions.
+    # id-token: write is for the (disabled) npm OIDC publish: a called
+    # workflow cannot raise the caller's permissions.
     permissions:
       contents: read
       id-token: write

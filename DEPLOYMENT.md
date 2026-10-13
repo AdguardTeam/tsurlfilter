@@ -116,9 +116,9 @@ section instead.
    tarball to the internal Artifact Keeper npm registry (shared
    `deploy-to-ak-npm.yml`), where the browser-extension auto-build installs
    rulesets from. The npm leg (idempotency check with
-   `scripts/ci/check-npm-version.sh`, publish, one retry after a backoff) runs
-   again once a day to collect fresh 429 diagnostics for the npm throttling
-   escalation (AG-60418). A manual dispatch with
+   `scripts/ci/check-npm-version.sh`, publish, one retry after a backoff) is
+   disabled again while npm throttles the package (AG-58867); the one-off try
+   re-enabled in AG-60418 still got HTTP 429. A manual dispatch with
    `line` set publishes one line; an empty `line` publishes all of them.
    Failures are reported to Slack.
   - **Prerequisite — the branch must be on the current CI** (root

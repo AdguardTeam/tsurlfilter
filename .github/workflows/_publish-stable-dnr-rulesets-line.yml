@@ -9,16 +9,18 @@ name: Publish stable DNR rulesets line
 # suffix (-<line>), and its jobs gate only on its own build, so a broken line
 # fails alone.
 #
-# npm leg — ENABLED (AG-60418): publishing to npm runs again to give npm
-# support a fresh 429 example from the Trusted Publishing/OIDC flow. The
-# version check (check-npm, a registry metadata GET) and the publish
-# (publish-npm, a PUT) both run, so a throttled round shows which request is
-# hit; the caller's schedule limits this to one round a day. If the throttle
-# is still there, disable the four npm jobs again (`if: false` plus the
-# commented conditions) and keep the package quiet for npm support (AG-58867);
-# moving off registry.npmjs.org is tracked in AG-59859. One round makes one
-# npm publish per line; if the throttle budget turns out to be a single
-# publish, serialize the lines with `max-parallel: 1` in the caller.
+# npm leg — DISABLED (AG-58867): the try re-enabled in AG-60418 was a one-off
+# to give npm support a fresh 429 example from the Trusted Publishing/OIDC
+# flow, and the 2026-10-13 round still got HTTP 429 Too Many Requests on the
+# publish (PUT https://registry.npmjs.org/@adguard%2fdnr-rulesets). The four
+# npm jobs are disabled again (check-npm / publish-npm / retry-npm /
+# retry-publish-npm), so no npm request is made at all and the package stays
+# quiet for npm support. Building and the Artifact Keeper publish (publish-ak)
+# keep running. To re-enable, drop `if: false` and restore the commented
+# conditions on all four npm jobs together; the caller's once-daily schedule
+# then makes one npm publish per line per round — if the throttle budget turns
+# out to be a single publish, serialize the lines with `max-parallel: 1` in
+# the caller. Moving off registry.npmjs.org is tracked in AG-59859.
 
 on:
   workflow_call:
@@ -115,10 +117,12 @@ jobs:
     permissions:
       contents: read
 
+  # DISABLED (AG-58867): see the npm leg note in the header.
   check-npm:
     name: Check version not on npm yet
     needs: build
-    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    # if: ${{ !cancelled() && needs.build.result == 'success' }}
+    if: false
     runs-on: team-extensions
     timeout-minutes: 10
     outputs:
@@ -142,10 +146,12 @@ jobs:
         shell: bash
         run: bash scripts/ci/check-npm-version.sh artifact/dnr-rulesets.tgz
 
+  # DISABLED (AG-58867): see the npm leg note in the header.
   publish-npm:
     name: Publish to npm
     needs: [build, check-npm]
-    if: ${{ !cancelled() && needs.check-npm.result == 'success' && needs.check-npm.outputs.exists == 'false' }}
+    # if: ${{ !cancelled() && needs.check-npm.result == 'success' && needs.check-npm.outputs.exists == 'false' }}
+    if: false
     uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
     with:
       artifact-name: dnr-rulesets-${{ inputs.line }}
@@ -157,10 +163,13 @@ jobs:
       contents: read
       id-token: write
 
+  # DISABLED (AG-58867): part of the npm leg — it re-checks npm after the
+  # backoff, so it is disabled with the rest.
   retry-npm:
     name: Retry npm
     needs: [build, publish-npm]
-    if: ${{ !cancelled() && needs.publish-npm.result == 'failure' }}
+    # if: ${{ !cancelled() && needs.publish-npm.result == 'failure' }}
+    if: false
     runs-on: team-extensions
     timeout-minutes: 20
     outputs:
@@ -188,10 +197,12 @@ jobs:
         shell: bash
         run: bash scripts/ci/check-npm-version.sh artifact/dnr-rulesets.tgz
 
+  # DISABLED (AG-58867): same as publish-npm, do not upload to npm.
   retry-publish-npm:
     name: Publish to npm (retry)
     needs: [retry-npm]
-    if: ${{ !cancelled() && needs.retry-npm.result == 'success' && needs.retry-npm.outputs.exists == 'false' }}
+    # if: ${{ !cancelled() && needs.retry-npm.result == 'success' && needs.retry-npm.outputs.exists == 'false' }}
+    if: false
     uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
     with:
       artifact-name: dnr-rulesets-${{ inputs.line }}
