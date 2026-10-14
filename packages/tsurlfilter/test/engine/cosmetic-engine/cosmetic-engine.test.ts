@@ -624,9 +624,11 @@ describe('Test cosmetic engine - JS rules', () => {
         });
     });
 
-    describe('isAllowlisted() with ignoreExceptionPath', () => {
+    describe('isAllowlisted() with ignoreExceptionUrlConditions', () => {
         const blockingRuleText = "[$domain=example.org,path=/only-here]#%#//scriptlet('set-cookie', 'name', 'val')";
         const exceptionRuleText = "[$domain=example.org,path=/only-here]#@%#//scriptlet('set-cookie', 'name', 'val')";
+        const jsRuleText = 'example.org#%#window.foo=1';
+        const jsUrlExceptionText = String.raw`[$url=/example\.org\/embed/]#@%#window.foo=1`;
 
         it('does not cancel the rule by default when the exception path does not match', () => {
             const blockingRule = new CosmeticRule(blockingRuleText, 1);
@@ -644,7 +646,7 @@ describe('Test cosmetic engine - JS rules', () => {
             expect(isAllowlisted).toBe(false);
         });
 
-        it('cancels the rule when ignoreExceptionPath skips the exception path check', () => {
+        it('cancels the rule when ignoreExceptionUrlConditions skips the exception path check', () => {
             const blockingRule = new CosmeticRule(blockingRuleText, 1);
             const cosmeticEngine = createCosmeticEngine([
                 new StringRuleList(1, [blockingRuleText, exceptionRuleText].join('\n')),
@@ -661,7 +663,7 @@ describe('Test cosmetic engine - JS rules', () => {
             expect(isAllowlisted).toBe(true);
         });
 
-        it('still requires the domain to match when ignoreExceptionPath is set', () => {
+        it('still requires the domain to match when ignoreExceptionUrlConditions is set', () => {
             const blockingRule = new CosmeticRule(blockingRuleText, 1);
             const cosmeticEngine = createCosmeticEngine([
                 new StringRuleList(1, [blockingRuleText, exceptionRuleText].join('\n')),
@@ -674,6 +676,60 @@ describe('Test cosmetic engine - JS rules', () => {
             );
 
             expect(isAllowlisted).toBe(false);
+        });
+
+        it('does not cancel a JS rule by default when its $url exception does not match the root request', () => {
+            const jsRule = new CosmeticRule(jsRuleText, 1);
+            const cosmeticEngine = createCosmeticEngine([
+                new StringRuleList(1, [jsRuleText, jsUrlExceptionText].join('\n')),
+            ]);
+
+            const isAllowlisted = cosmeticEngine.isAllowlisted(
+                createRequest('https://example.org/'),
+                jsRule,
+            );
+
+            // The exception is scoped to `/embed/` URLs; the root request
+            // does not match it, so the rule stays applicable.
+            expect(isAllowlisted).toBe(false);
+        });
+
+        it('cancels a JS rule when ignoreExceptionUrlConditions is set and a $url exception exists', () => {
+            const jsRule = new CosmeticRule(jsRuleText, 1);
+            const cosmeticEngine = createCosmeticEngine([
+                new StringRuleList(1, [jsRuleText, jsUrlExceptionText].join('\n')),
+            ]);
+
+            const isAllowlisted = cosmeticEngine.isAllowlisted(
+                createRequest('https://example.org/'),
+                jsRule,
+                true,
+            );
+
+            // The `$url` exception cannot be evaluated against the synthetic
+            // root URL, so it is treated as cancelling the rule.
+            expect(isAllowlisted).toBe(true);
+        });
+
+        it('still evaluates the $url exception against the request URL without the flag', () => {
+            const jsRule = new CosmeticRule(jsRuleText, 1);
+            const cosmeticEngine = createCosmeticEngine([
+                new StringRuleList(1, [jsRuleText, jsUrlExceptionText].join('\n')),
+            ]);
+
+            const onEmbed = cosmeticEngine.isAllowlisted(
+                createRequest('https://example.org/embed/xyz'),
+                jsRule,
+            );
+            const onWatch = cosmeticEngine.isAllowlisted(
+                createRequest('https://example.org/watch'),
+                jsRule,
+            );
+
+            // The dynamic path evaluates the URL scope of the exception
+            // precisely: it cancels the rule only on matching URLs.
+            expect(onEmbed).toBe(true);
+            expect(onWatch).toBe(false);
         });
     });
 });

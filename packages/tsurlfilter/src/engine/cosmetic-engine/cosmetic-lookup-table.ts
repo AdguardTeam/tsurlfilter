@@ -227,11 +227,12 @@ export class CosmeticLookupTable {
      *
      * @param content Content of the scriptlet. Empty string '' searches for scriptlets allowlisted globally.
      * @param request Request details to match against allowlist rules.
-     * @param ignoreExceptionPath If true, the `$path` modifier of exception rules is skipped.
+     * @param ignoreExceptionUrlConditions If true, URL conditions of exception
+     * rules (`$path`, `$url`) are ignored.
      *
      * @returns True if allowlisted by a matching rule or a generic rule. False otherwise.
      */
-    isScriptletAllowlisted = (content: string, request: Request, ignoreExceptionPath = false) => {
+    isScriptletAllowlisted = (content: string, request: Request, ignoreExceptionUrlConditions = false) => {
         // check for rules with that content
         const allowlistScriptletRulesIndexes = this.allowlist.get(content);
         if (allowlistScriptletRulesIndexes) {
@@ -245,7 +246,7 @@ export class CosmeticLookupTable {
                 return true;
             }
             // here we check if there is at least one allowlist rule that matches the request
-            const hasRuleMatchingRequest = rules.some((r) => r.match(request, ignoreExceptionPath));
+            const hasRuleMatchingRequest = rules.some((r) => r.match(request, ignoreExceptionUrlConditions));
             if (hasRuleMatchingRequest) {
                 return true;
             }
@@ -258,25 +259,26 @@ export class CosmeticLookupTable {
      *
      * @param request Request to check.
      * @param rule Rule to check.
-     * @param ignoreExceptionPath If true, the `$path` modifier of allowlist
-     * rules is skipped, i.e. an exception applying to any path of the
-     * hostname cancels the rule.
+     * @param ignoreExceptionUrlConditions If true, URL conditions of allowlist
+     * rules (`$path`, `$url`) are ignored, i.e. an exception applying to any
+     * URL of the hostname cancels the rule. Used by checks that run against a
+     * synthetic root URL, where those conditions cannot be evaluated.
      *
      * @returns True if the rule is disabled on the specified hostname.
      */
-    public isAllowlisted(request: Request, rule: CosmeticRule, ignoreExceptionPath = false): boolean {
+    public isAllowlisted(request: Request, rule: CosmeticRule, ignoreExceptionUrlConditions = false): boolean {
         if (rule.isScriptlet) {
             // Empty string '' is a special case for scriptlet when the allowlist scriptlet has no name
             // e.g. #@%#//scriptlet(); example.org#@%#//scriptlet();
             const EMPTY_SCRIPTLET_NAME = '';
-            if (this.isScriptletAllowlisted(EMPTY_SCRIPTLET_NAME, request, ignoreExceptionPath)) {
+            if (this.isScriptletAllowlisted(EMPTY_SCRIPTLET_NAME, request, ignoreExceptionUrlConditions)) {
                 return true;
             }
 
             // If scriptlet allowlisted by name
             // e.g. #@%#//scriptlet('set-cookie'); example.org#@%#//scriptlet('set-cookie');
             if (rule.scriptletParams.name !== undefined
-                && this.isScriptletAllowlisted(rule.scriptletParams.name, request, ignoreExceptionPath)) {
+                && this.isScriptletAllowlisted(rule.scriptletParams.name, request, ignoreExceptionUrlConditions)) {
                 return true;
             }
 
@@ -285,7 +287,11 @@ export class CosmeticLookupTable {
             // e.g. #@%#//scriptlet("set-cookie", "arg1"); example.org#@%#//scriptlet('set-cookie', 'arg1');
             if (rule.scriptletParams.name !== undefined
                 && rule.scriptletParams.args.length > 0
-                && this.isScriptletAllowlisted(rule.scriptletParams.toString(), request, ignoreExceptionPath)) {
+                && this.isScriptletAllowlisted(
+                    rule.scriptletParams.toString(),
+                    request,
+                    ignoreExceptionUrlConditions,
+                )) {
                 return true;
             }
         }
@@ -297,7 +303,18 @@ export class CosmeticLookupTable {
 
         for (let j = 0; j < rulesIndexes.length; j += 1) {
             const r = this.ruleStorage.retrieveRule(rulesIndexes[j]) as CosmeticRule;
-            if (r && r.match(request, ignoreExceptionPath)) {
+            if (!r) {
+                continue;
+            }
+
+            // A `$url` exception cannot be evaluated against the synthetic
+            // root URL of the sync-time check — treat it as cancelling the
+            // rule, mirroring the `$path` handling of the flag.
+            if (ignoreExceptionUrlConditions && r.urlModifier) {
+                return true;
+            }
+
+            if (r.match(request, ignoreExceptionUrlConditions)) {
                 return true;
             }
         }

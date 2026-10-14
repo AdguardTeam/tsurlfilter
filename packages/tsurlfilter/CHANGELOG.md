@@ -10,9 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `Engine.getCosmeticResult()` and `Engine.isCosmeticRuleAllowlisted()`
-  accept an options object with `ignorePath` / `ignoreExceptionPath`,
-  skipping the `$path` modifier check for JS/scriptlet rules and the
-  `$path` check of exceptions (build-time preregistration discovery).
+  accept an options object with `ignorePath` /
+  `ignoreExceptionUrlConditions`, skipping the `$path` modifier check for
+  JS/scriptlet rules and the `$path`/`$url` checks of exceptions
+  (build-time preregistration discovery).
 
 ### Changed
 

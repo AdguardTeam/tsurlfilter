@@ -314,8 +314,9 @@ export class PreregisteredScriptsService {
      * each treated independently (no apex/`www.` expansion or union).
      *
      * Individual rules degrade to dynamic injection when cancelled by a
-     * runtime `$path` exception or absent from the manifest (no generated
-     * file for them). A hostname with no surviving rules is not registered.
+     * runtime `$path`/`$url` exception or absent from the manifest (no
+     * generated file for them). A hostname with no surviving rules is not
+     * registered.
      *
      * @param hostnames Preregistered hostnames (already normalized).
      * @param scriptsPath Extension-relative path to preregistered scripts.
@@ -374,9 +375,13 @@ export class PreregisteredScriptsService {
 
                         const { rule, hash } = hashResult;
 
-                        if (engineApi.isCosmeticRuleAllowlisted(hostname, rule, { ignoreExceptionPath: true })) {
+                        if (engineApi.isCosmeticRuleAllowlisted(
+                            hostname,
+                            rule,
+                            { ignoreExceptionUrlConditions: true },
+                        )) {
                             PreregisteredScriptsService.logDegradedRule(
-                                'is cancelled by a runtime $path exception',
+                                'is cancelled by a runtime $path/$url exception',
                                 hash,
                                 hostname,
                             );

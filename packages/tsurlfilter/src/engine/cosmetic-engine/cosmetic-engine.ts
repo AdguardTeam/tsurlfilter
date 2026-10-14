@@ -168,14 +168,14 @@ export class CosmeticEngine {
      *
      * @param request Request to check.
      * @param rule Cosmetic rule to check.
-     * @param ignoreExceptionPath If true, the `$path` modifier of exceptions
-     * is skipped, i.e. an exception applying to any path of the hostname
-     * cancels the rule. Defaults to false.
+     * @param ignoreExceptionUrlConditions If true, URL conditions of exceptions
+     * (`$path`, `$url`) are ignored, i.e. an exception applying to any URL of
+     * the hostname cancels the rule. Defaults to false.
      *
      * @returns True if the rule is cancelled by an exception.
      */
-    public isAllowlisted(request: Request, rule: CosmeticRule, ignoreExceptionPath = false): boolean {
-        return this.jsLookupTable.isAllowlisted(request, rule, ignoreExceptionPath);
+    public isAllowlisted(request: Request, rule: CosmeticRule, ignoreExceptionUrlConditions = false): boolean {
+        return this.jsLookupTable.isAllowlisted(request, rule, ignoreExceptionUrlConditions);
     }
 
     /**

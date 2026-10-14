@@ -646,14 +646,14 @@ describe('PreregisteredScriptsService', () => {
             expect(scripts[0].js).toHaveLength(4); // bundle + function file + the covered rule + cleanup
         });
 
-        it('asks the engine to ignore the exception `$path` modifier', async () => {
+        it('asks the engine to ignore the exception URL conditions', async () => {
             const blockedRule = new CosmeticRule(blockedRuleText, 1);
             await setupRulesWithManifest({ 'youtube.com': [blockedRule] });
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
             expect(engineApi.isCosmeticRuleAllowlisted)
-                .toHaveBeenCalledWith('youtube.com', blockedRule, { ignoreExceptionPath: true });
+                .toHaveBeenCalledWith('youtube.com', blockedRule, { ignoreExceptionUrlConditions: true });
         });
 
         it('does not register the domain when its only rule is cancelled by a $path exception', async () => {
