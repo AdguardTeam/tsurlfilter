@@ -9,15 +9,18 @@ name: Publish stable DNR rulesets line
 # suffix (-<line>), and its jobs gate only on its own build, so a broken line
 # fails alone.
 #
-# npm leg — DISABLED (AG-58867): npm throttles the shared GitHub egress IP
-# (HTTP 429), so the npm publish is disabled (publish-npm / retry-publish-npm).
-# At npm support's request the npm version checks (check-npm / retry-npm) are
-# disabled too, so no npm request is made at all. Building and the Artifact
-# Keeper publish (publish-ak) keep running. Publishing moves off
-# registry.npmjs.org per AG-59859. To re-enable, drop `if: false` and restore
-# the commented conditions on all four npm jobs together. One round then makes
-# one npm publish per line; if the throttle budget turns out to be a single
-# publish, serialize the lines with `max-parallel: 1` in the caller.
+# npm leg — DISABLED (AG-58867): the try re-enabled in AG-60418 was a one-off
+# to give npm support a fresh 429 example from the Trusted Publishing/OIDC
+# flow, and the 2026-10-13 round still got HTTP 429 Too Many Requests on the
+# publish (PUT https://registry.npmjs.org/@adguard%2fdnr-rulesets). The four
+# npm jobs are disabled again (check-npm / publish-npm / retry-npm /
+# retry-publish-npm), so no npm request is made at all and the package stays
+# quiet for npm support. Building and the Artifact Keeper publish (publish-ak)
+# keep running. To re-enable, drop `if: false` and restore the commented
+# conditions on all four npm jobs together; the caller's once-daily schedule
+# then makes one npm publish per line per round — if the throttle budget turns
+# out to be a single publish, serialize the lines with `max-parallel: 1` in
+# the caller. Moving off registry.npmjs.org is tracked in AG-59859.
 
 on:
   workflow_call:

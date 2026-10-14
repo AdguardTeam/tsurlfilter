@@ -96,7 +96,7 @@ section instead.
    Octopass `protected-push` (the commit avoids `[skip ci]` so `mirror.yml`
    still syncs the update to the public repo). Failures are reported to Slack.
 - `publish-stable-dnr-rulesets.yml` builds and publishes `@adguard/dnr-rulesets`
-   twice daily (00:17/12:17 UTC) from the `stable/dnr-rulesets-5.0` and
+   once daily (00:17 UTC) from the `stable/dnr-rulesets-5.0` and
    `stable/dnr-rulesets-6.0` branches; the older stable lines are no longer
    published. The two lines carry incompatible ruleset formats: 6.0 is built
    with `@adguard/dnr-converter` 2.x (metadata split into `metadata.chunk`
@@ -117,7 +117,8 @@ section instead.
    `deploy-to-ak-npm.yml`), where the browser-extension auto-build installs
    rulesets from. The npm leg (idempotency check with
    `scripts/ci/check-npm-version.sh`, publish, one retry after a backoff) is
-   disabled while npm throttles the package (AG-58867). A manual dispatch with
+   disabled again while npm throttles the package (AG-58867); the one-off try
+   re-enabled in AG-60418 still got HTTP 429. A manual dispatch with
    `line` set publishes one line; an empty `line` publishes all of them.
    Failures are reported to Slack.
   - **Prerequisite — the branch must be on the current CI** (root
