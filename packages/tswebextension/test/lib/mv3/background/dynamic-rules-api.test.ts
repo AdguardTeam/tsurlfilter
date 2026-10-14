@@ -2,6 +2,7 @@ import {
     describe,
     expect,
     it,
+    type Mock,
     vi,
 } from 'vitest';
 import browser from 'webextension-polyfill';
@@ -15,8 +16,123 @@ import {
     USER_FILTER_ID,
 } from '../../../../src/lib/common/constants';
 import { CspRulesManager } from '../../../../src/lib/mv3/background/csp-rules-manager';
-import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
+import DynamicRulesApi, { type DynamicRulesSnapshot } from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import { createFilter } from '../helpers';
+
+/**
+ * Overrides for the mocked DNR quota limits.
+ */
+type CspQuotaLimits = {
+    /**
+     * Maximum number of dynamic rules.
+     */
+    maxNumberOfDynamicRules?: number;
+
+    /**
+     * Maximum number of unsafe dynamic rules.
+     */
+    maxNumberOfUnsafeDynamicRules?: number;
+
+    /**
+     * Maximum number of regexp rules.
+     */
+    maxNumberOfRegexpRules?: number;
+};
+
+/**
+ * Mocked DNR API.
+ */
+type DnrApiMock = {
+    /**
+     * Returns current dynamic rules.
+     */
+    getDynamicRules: Mock;
+
+    /**
+     * Updates dynamic rules.
+     */
+    updateDynamicRules: Mock;
+
+    /**
+     * Maximum number of unsafe dynamic rules.
+     */
+    MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES: number;
+
+    /**
+     * Maximum number of dynamic rules.
+     */
+    MAX_NUMBER_OF_DYNAMIC_RULES: number;
+
+    /**
+     * Maximum number of regexp rules.
+     */
+    MAX_NUMBER_OF_REGEX_RULES: number;
+};
+
+/**
+ * Prepared conversion results and the DNR API mock.
+ */
+type CspConversion = {
+    /**
+     * Mocked DNR API.
+     */
+    mockDeclarativeNetRequest: DnrApiMock;
+
+    /**
+     * Dynamic rules conversion result.
+     */
+    conversionResult: Awaited<ReturnType<typeof DynamicRulesApi.prepareDynamicFiltering>>;
+
+    /**
+     * Rebuilt CSP rules conversion result.
+     */
+    cspResult: Awaited<ReturnType<typeof CspRulesManager.build>>;
+};
+
+/**
+ * Mocks the DNR APIs and prepares the dynamic rules and rebuilt CSP rules
+ * conversion results for the given user rules.
+ *
+ * @param userRules User rules to convert.
+ * @param limits Overrides for the mocked DNR quota limits.
+ *
+ * @returns DNR API mock and prepared conversion results.
+ */
+const prepareCspConversion = async (
+    userRules: string[],
+    limits: CspQuotaLimits = {},
+): Promise<CspConversion> => {
+    const mockDeclarativeNetRequest: DnrApiMock = {
+        getDynamicRules: vi.fn().mockResolvedValue([{ id: 100 }]),
+        updateDynamicRules: vi.fn().mockResolvedValue({}),
+        MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES: limits.maxNumberOfUnsafeDynamicRules ?? 10,
+        MAX_NUMBER_OF_DYNAMIC_RULES: limits.maxNumberOfDynamicRules ?? 10,
+        MAX_NUMBER_OF_REGEX_RULES: limits.maxNumberOfRegexpRules ?? 10,
+    };
+
+    // @ts-expect-error(2540)
+    browser.declarativeNetRequest = mockDeclarativeNetRequest;
+    // @ts-expect-error(2740)
+    chrome.declarativeNetRequest = mockDeclarativeNetRequest;
+
+    const userFilter = createFilter(userRules, USER_FILTER_ID);
+    const conversionResult = await DynamicRulesApi.prepareDynamicFiltering(
+        createFilter([], ALLOWLIST_FILTER_ID),
+        createFilter([], BLOCKING_TRUSTED_FILTER_ID),
+        userFilter,
+        [],
+        [],
+        undefined,
+        true,
+    );
+    const cspResult = await CspRulesManager.build([], [userFilter]);
+
+    return {
+        mockDeclarativeNetRequest,
+        conversionResult,
+        cspResult,
+    };
+};
 
 describe('DynamicRulesApi', () => {
     describe('updateDynamicFiltering', () => {
@@ -206,33 +322,14 @@ describe('DynamicRulesApi', () => {
         });
 
         it('atomically replaces separately rebuilt CSP rules', async () => {
-            const mockDeclarativeNetRequest = {
-                getDynamicRules: vi.fn().mockResolvedValue([{ id: 100 }]),
-                updateDynamicRules: vi.fn().mockResolvedValue({}),
-                MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES: 10,
-                MAX_NUMBER_OF_DYNAMIC_RULES: 10,
-                MAX_NUMBER_OF_REGEX_RULES: 10,
-            };
-
-            // @ts-expect-error(2540)
-            browser.declarativeNetRequest = mockDeclarativeNetRequest;
-            // @ts-expect-error(2740)
-            chrome.declarativeNetRequest = mockDeclarativeNetRequest;
-
-            const userFilter = createFilter([
+            const {
+                mockDeclarativeNetRequest,
+                conversionResult,
+                cspResult,
+            } = await prepareCspConversion([
                 '||ads.example^',
                 "||example.com^$csp=script-src 'none'",
-            ], USER_FILTER_ID);
-            const conversionResult = await DynamicRulesApi.prepareDynamicFiltering(
-                createFilter([], ALLOWLIST_FILTER_ID),
-                createFilter([], BLOCKING_TRUSTED_FILTER_ID),
-                userFilter,
-                [],
-                [],
-                undefined,
-                true,
-            );
-            const cspResult = await CspRulesManager.build([], [userFilter]);
+            ]);
 
             await DynamicRulesApi.applyDynamicFiltering(
                 conversionResult,
@@ -254,33 +351,18 @@ describe('DynamicRulesApi', () => {
         });
 
         it('omits rebuilt CSP rules that exceed the dynamic limit', async () => {
-            const mockDeclarativeNetRequest = {
-                getDynamicRules: vi.fn().mockResolvedValue([{ id: 100 }]),
-                updateDynamicRules: vi.fn().mockResolvedValue({}),
-                MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES: 1,
-                MAX_NUMBER_OF_DYNAMIC_RULES: 1,
-                MAX_NUMBER_OF_REGEX_RULES: 10,
-            };
-
-            // @ts-expect-error(2540)
-            browser.declarativeNetRequest = mockDeclarativeNetRequest;
-            // @ts-expect-error(2740)
-            chrome.declarativeNetRequest = mockDeclarativeNetRequest;
-
-            const userFilter = createFilter([
-                '||ads.example^',
-                "||example.com^$csp=script-src 'none'",
-            ], USER_FILTER_ID);
-            const conversionResult = await DynamicRulesApi.prepareDynamicFiltering(
-                createFilter([], ALLOWLIST_FILTER_ID),
-                createFilter([], BLOCKING_TRUSTED_FILTER_ID),
-                userFilter,
-                [],
-                [],
-                undefined,
-                true,
+            const {
+                mockDeclarativeNetRequest,
+                conversionResult,
+                cspResult,
+            } = await prepareCspConversion(
+                [
+                    '||ads.example^',
+                    "||example.com^$csp=script-src 'none'",
+                ],
+                { maxNumberOfDynamicRules: 1 },
             );
-            const cspResult = await CspRulesManager.build([], [userFilter]);
+
             const limitedCspRules = DynamicRulesApi.limitRebuiltCspRules(
                 conversionResult,
                 cspResult.dynamicRules,
@@ -305,33 +387,14 @@ describe('DynamicRulesApi', () => {
         });
 
         it('omits rebuilt CSP rules that exceed the unsafe dynamic limit', async () => {
-            const mockDeclarativeNetRequest = {
-                getDynamicRules: vi.fn().mockResolvedValue([{ id: 100 }]),
-                updateDynamicRules: vi.fn().mockResolvedValue({}),
-                MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES: 0,
-                MAX_NUMBER_OF_DYNAMIC_RULES: 10,
-                MAX_NUMBER_OF_REGEX_RULES: 10,
-            };
-
-            // @ts-expect-error(2540)
-            browser.declarativeNetRequest = mockDeclarativeNetRequest;
-            // @ts-expect-error(2740)
-            chrome.declarativeNetRequest = mockDeclarativeNetRequest;
-
-            const userFilter = createFilter([
-                '||ads.example^',
-                "||example.com^$csp=script-src 'none'",
-            ], USER_FILTER_ID);
-            const conversionResult = await DynamicRulesApi.prepareDynamicFiltering(
-                createFilter([], ALLOWLIST_FILTER_ID),
-                createFilter([], BLOCKING_TRUSTED_FILTER_ID),
-                userFilter,
-                [],
-                [],
-                undefined,
-                true,
+            const { conversionResult, cspResult } = await prepareCspConversion(
+                [
+                    '||ads.example^',
+                    "||example.com^$csp=script-src 'none'",
+                ],
+                { maxNumberOfUnsafeDynamicRules: 0 },
             );
-            const cspResult = await CspRulesManager.build([], [userFilter]);
+
             const limitedCspRules = DynamicRulesApi.limitRebuiltCspRules(
                 conversionResult,
                 cspResult.dynamicRules,
@@ -346,33 +409,17 @@ describe('DynamicRulesApi', () => {
         });
 
         it('omits rebuilt CSP rules that exceed the limit instead of failing', async () => {
-            const mockDeclarativeNetRequest = {
-                getDynamicRules: vi.fn().mockResolvedValue([{ id: 100 }]),
-                updateDynamicRules: vi.fn().mockResolvedValue({}),
-                MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES: 10,
-                MAX_NUMBER_OF_DYNAMIC_RULES: 1,
-                MAX_NUMBER_OF_REGEX_RULES: 10,
-            };
-
-            // @ts-expect-error(2540)
-            browser.declarativeNetRequest = mockDeclarativeNetRequest;
-            // @ts-expect-error(2740)
-            chrome.declarativeNetRequest = mockDeclarativeNetRequest;
-
-            const userFilter = createFilter([
-                '||ads.example^',
-                "||example.com^$csp=script-src 'none'",
-            ], USER_FILTER_ID);
-            const conversionResult = await DynamicRulesApi.prepareDynamicFiltering(
-                createFilter([], ALLOWLIST_FILTER_ID),
-                createFilter([], BLOCKING_TRUSTED_FILTER_ID),
-                userFilter,
-                [],
-                [],
-                undefined,
-                true,
+            const {
+                mockDeclarativeNetRequest,
+                conversionResult,
+                cspResult,
+            } = await prepareCspConversion(
+                [
+                    '||ads.example^',
+                    "||example.com^$csp=script-src 'none'",
+                ],
+                { maxNumberOfDynamicRules: 1 },
             );
-            const cspResult = await CspRulesManager.build([], [userFilter]);
 
             // Rebuilt CSP rules are passed without pre-limiting on purpose: the
             // merge must fit them into the quota instead of failing the apply.
@@ -465,8 +512,8 @@ describe('DynamicRulesApi', () => {
             // @ts-expect-error(2740)
             chrome.declarativeNetRequest = mockDeclarativeNetRequest;
 
-            const snapshot = {
-                rules: [{ id: 100 }],
+            const snapshot: DynamicRulesSnapshot = {
+                rules: [{ id: 100 }] as browser.DeclarativeNetRequest.Rule[],
                 sourceMap: new Map([[100, ['_csp', 1]]]),
                 disabledStaticRuleIds: new Map([
                     ['ruleset_1', [10]],
@@ -474,7 +521,7 @@ describe('DynamicRulesApi', () => {
                 ]),
             };
 
-            await expect(DynamicRulesApi.rollbackDynamicFiltering(snapshot as any)).resolves.toBeUndefined();
+            await expect(DynamicRulesApi.rollbackDynamicFiltering(snapshot)).resolves.toBeUndefined();
 
             expect(mockDeclarativeNetRequest.updateDynamicRules).toHaveBeenCalledWith({
                 removeRuleIds: [200],

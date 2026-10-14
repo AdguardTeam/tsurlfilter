@@ -33,7 +33,7 @@ type LimitedCspRules = {
     limitations: DynamicConversionResult['limitations'];
 };
 
-type DynamicRulesSnapshot = {
+export type DynamicRulesSnapshot = {
     rules: browser.DeclarativeNetRequest.Rule[];
     sourceMap: Map<number, [string, number]>;
     disabledStaticRuleIds: Map<string, number[]>;
