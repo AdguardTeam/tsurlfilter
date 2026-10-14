@@ -11,6 +11,20 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [4.3.0] - 2026-10-14
+
+### Added
+
 - `:has-text()` is now accepted as a synonym of `:contains()` in AdGuard
   HTML filtering rules during ADG→ADG conversion.
 
@@ -30,10 +44,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   instead of being glued into `$$div:contains(/foo[)]/)`, and the
   selector list and last complex selector source ranges are extended to
   cover the appended pseudo-class when locations are enabled.
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 
@@ -89,7 +99,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `Expected '<ident-token>', but got '<string-token>'`; it now converts to
   `msn.com$$li[class="hasimage"]:contains(/^(?=.{0,2000}$)(?=.*"NativeAdHeadlineItemViewModel").*/s)`.
 
-### Security
+[4.3.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.3.0
 
 ## [4.2.1] - 2026-08-12
 
