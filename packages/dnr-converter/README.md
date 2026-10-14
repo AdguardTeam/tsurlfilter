@@ -27,6 +27,7 @@ extensions.
     - [`ConverterOptions`](#converteroptions)
     - [Simple flow: `FilterConverter` + `Ruleset`](#simple-flow-filterconverter--ruleset)
     - [Advanced flow: `FilterConverter` with `withSourceMap: true` + `RulesetWithSourceMap`](#advanced-flow-filterconverter-with-withsourcemap-true--rulesetwithsourcemap)
+    - [Standalone CSP conversion: `convertCspRules()`](#standalone-csp-conversion-convertcsprules)
     - [`MetadataRuleset`](#metadataruleset)
     - [`isSafeRule(rule)`](#issaferulerule)
     - [`DNR_CONVERTER_VERSION`](#dnr_converter_version)
@@ -69,7 +70,9 @@ MV3 limitations (inherent to the Declarative Net Request API) are:
 - `$important`, `$match-case`, `$method`, `$to`, `$denyallow`, `$header`
   (no regex values), `$all`
 - `$redirect` — allowlist rules not supported
-- `$csp`, `$removeparam`, `$removeheader`, `$permissions` — allowlist rules
+- `$csp` — exceptions are supported for exact conditions and clean domain
+  exclusions; path-level subtraction is not expressible in DNR
+- `$removeparam`, `$removeheader`, `$permissions` — allowlist rules
   not supported; rules with identical conditions are combined only within the
   same filter, not across filters
 - `$urltransform` — limited; complex transforms produce multiple declarative
@@ -176,6 +179,7 @@ Configuration for the conversion process:
 | `combine` | `boolean?` | Merge all input filters into a single combined rule set. |
 | `withSourceMap` | `boolean?` | When `true`, returns `RulesetWithSourceMap` instead of `Ruleset`. Enables source maps, `$badfilter` cross-filter support, and lazy loading. |
 | `badFilterRules` | `Rule[]?` | Static `$badfilter` rules to apply at scan time (`withSourceMap: true` only). |
+| `excludeCspRules` | `boolean?` | Skip CSP rules during regular conversion when they are rebuilt by [`convertCspRules()`](#standalone-csp-conversion-convertcsprules) (`withSourceMap: true` only). |
 
 ### Simple flow: `FilterConverter` + `Ruleset`
 
@@ -289,6 +293,33 @@ Result returned by converter methods:
 | `errors` | `(ConversionError \| Error)[]` | Rules that could not be converted |
 | `limitations` | `LimitationError[]` | Warnings about exceeded limits |
 | `declarativeRulesToCancel` | `UpdateStaticRulesOptions[]?` | Static rule IDs to disable (from `computeRulesToDisable`) |
+
+### Standalone CSP conversion: `convertCspRules()`
+
+`$csp` exceptions need a pass over all filters at once: an exception from a user
+rule must be able to cancel a blocking rule from a built-in filter, which
+streaming conversion cannot do. `convertCspRules(filters, resourcesPath?)`
+resolves the exceptions and returns a single combined ruleset of the remaining
+CSP rules (source-map mode).
+
+To avoid converting CSP rules twice, pass `excludeCspRules: true` to the regular
+conversion. `$badfilter` rules stay in the stream — they can still disable other
+rules.
+
+```ts
+const converter = new FilterConverter();
+
+const [regular] = await converter.convert(filters, {
+    withSourceMap: true,
+    excludeCspRules: true,
+});
+const csp = await converter.convertCspRules(filters, '/web-accessible-resources');
+```
+
+Only lines mentioning `$csp`, `$badfilter`, or a `$csp` alias are parsed, so the
+pass cost does not depend on the list size. Exceptions that cannot be applied —
+for example path-level subtraction — are reported as conversion errors and
+leave the blocking rule active.
 
 ### `MetadataRuleset`
 
