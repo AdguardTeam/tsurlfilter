@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `getModifierAliases()` helper which returns raw modifier names converted to
+  a given ADG modifier name.
+
 ### Changed
 
 ### Deprecated

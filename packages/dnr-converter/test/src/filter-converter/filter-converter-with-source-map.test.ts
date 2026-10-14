@@ -112,6 +112,49 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(declarativeRules[0].condition.urlFilter).toBe('||xn--bcher-kva.localtest.me^');
             expect(errors).toHaveLength(0);
         });
+
+        it('resolves the source rule of a selected line by its original offset', async () => {
+            const filter = createFilter([
+                '||ads.example^',
+                '||tracker.example^',
+                "||example.com^$csp=script-src 'none'",
+                '||another.example^',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(await ruleset.getRulesById(declarativeRules[0].id)).toEqual([
+                { filterId: 1, sourceRule: "||example.com^$csp=script-src 'none'" },
+            ]);
+        });
+
+        it('converts rules with CSP aliases', async () => {
+            const filter = createFilter([
+                '||example.com^$inline-script',
+                '||example.org^$inline-font',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(2);
+        });
+
+        it('does not parse filters without CSP-related rules', async () => {
+            const filter = createFilter([
+                '||csp.example.com^',
+                'invalid rule',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+
+            expect(errors).toHaveLength(0);
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
     });
 
     describe('convert (per-filter mode)', () => {

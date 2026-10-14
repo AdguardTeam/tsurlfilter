@@ -99,6 +99,9 @@
  */
 /* eslint-enable jsdoc/require-description-complete-sentence */
 
+import { getModifierAliases } from '@adguard/agtree';
+
+import { type DeclarativeRule } from '../declarative-rule';
 import {
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRulesError,
@@ -159,12 +162,14 @@ export class FilterConverter {
 
     /**
      * Raw modifier names which may affect CSP conversion.
+     *
+     * Aliases of `$csp` are taken from the AGTree conversion map, so they
+     * cannot drift from it.
      */
     private static readonly CSP_RAW_MODIFIER_NAMES = [
-        OPTION_NAMES.CSP,
-        OPTION_NAMES.BADFILTER,
-        'inline-script',
-        'inline-font',
+        `$${OPTION_NAMES.CSP}`,
+        `$${OPTION_NAMES.BADFILTER}`,
+        ...getModifierAliases(OPTION_NAMES.CSP).map((name) => `$${name}`),
     ];
 
     /**
@@ -269,6 +274,9 @@ export class FilterConverter {
     /**
      * Converts CSP rules from all provided filters into one ruleset.
      *
+     * Only lines which may contain `$csp` or `$badfilter` rules are parsed,
+     * so the cost does not depend on the filter list size.
+     *
      * @param filters Source filters.
      * @param resourcesPath Path to web-accessible resources.
      *
@@ -296,10 +304,15 @@ export class FilterConverter {
         const {
             errors: scanErrors,
             filters: scannedFilters,
-        } = await RulesScanner.scanFilters(relevantFilters, (rule) => (
-            rule.isModifierEnabled(OPTION_NAMES.CSP)
-            || rule.isModifierEnabled(OPTION_NAMES.BADFILTER)
-        ));
+        } = await RulesScanner.scanFilters(
+            relevantFilters,
+            (rule) => (
+                rule.isModifierEnabled(OPTION_NAMES.CSP)
+                || rule.isModifierEnabled(OPTION_NAMES.BADFILTER)
+            ),
+            undefined,
+            FilterConverter.isCspRelatedLine,
+        );
 
         const convertedRules = await RulesConverter.convertCspRules(scannedFilters, options);
         const badFilterRules = scannedFilters.flatMap(({ badFilterRules: rules }) => rules);
@@ -328,6 +341,17 @@ export class FilterConverter {
         return filters.filter((filter, index) => FilterConverter.CSP_RAW_MODIFIER_NAMES.some((modifier) => (
             contents[index].includes(modifier)
         )));
+    }
+
+    /**
+     * Checks whether a raw filter line may contain a CSP-related rule.
+     *
+     * @param line Raw line of the filter list.
+     *
+     * @returns `true` if the line should be parsed by the CSP pass.
+     */
+    private static isCspRelatedLine(line: string): boolean {
+        return FilterConverter.CSP_RAW_MODIFIER_NAMES.some((name) => line.includes(name));
     }
 
     /**
@@ -442,6 +466,34 @@ export class FilterConverter {
     }
 
     /**
+     * Creates a predicate to filter out rules which must not be converted.
+     *
+     * When CSP rules are rebuilt globally, the regular conversion must not
+     * convert them again, while `$badfilter` rules are kept because they can
+     * still disable other rules.
+     *
+     * @param skipNegatedRulesFn Predicate to skip rules negated by `$badfilter`,
+     * if any.
+     * @param excludeCspRules Whether CSP rules are rebuilt separately.
+     *
+     * @returns Predicate to filter out rules.
+     */
+    private static createRuleFilterFn(
+        skipNegatedRulesFn?: (r: Rule) => boolean,
+        excludeCspRules?: boolean,
+    ): (rule: Rule) => boolean {
+        return (rule: Rule): boolean => {
+            if (skipNegatedRulesFn && !skipNegatedRulesFn(rule)) {
+                return false;
+            }
+
+            return !excludeCspRules
+                || !rule.isModifierEnabled(OPTION_NAMES.CSP)
+                || rule.isModifierEnabled(OPTION_NAMES.BADFILTER);
+        };
+    }
+
+    /**
      * Runs the advanced conversion flow: scans with optional `$badfilter`
      * pre-filtering, converts, wraps in {@link RulesetWithSourceMap}.
      *
@@ -478,18 +530,10 @@ export class FilterConverter {
             };
         }
 
-        // When CSP rules are rebuilt globally, the regular conversion must not
-        // convert them again. `$badfilter` rules are kept because they can
-        // still disable other rules.
-        const filterRule = (rule: Rule): boolean => {
-            if (skipNegatedRulesFn && !skipNegatedRulesFn(rule)) {
-                return false;
-            }
-
-            return !options.excludeCspRules
-                || !rule.isModifierEnabled(OPTION_NAMES.CSP)
-                || rule.isModifierEnabled(OPTION_NAMES.BADFILTER);
-        };
+        const filterRule = FilterConverter.createRuleFilterFn(
+            skipNegatedRulesFn,
+            options.excludeCspRules,
+        );
 
         const scannedLimit = options?.maxNumberOfRules
             ? Math.ceil(
@@ -550,6 +594,9 @@ export class FilterConverter {
      * Creates new {@link RulesetWithSourceMap} and wraps all data for
      * {@link RulesetContentProvider}.
      *
+     * Freshly converted rulesets have no metadata-stored unsafe rules yet:
+     * unsafe rules are excluded later by the `serializeCompact()` caller.
+     *
      * @param rulesetId Rule set id.
      * @param filterList List of raw filters.
      * @param scannedFilters Already scanned filters.
@@ -595,6 +642,7 @@ export class FilterConverter {
         const safeRulesCount = declarativeRules.length - unsafeRulesCount;
 
         const regexRulesCount = declarativeRules.filter((r) => RulesConverter.isRegexRule(r)).length;
+        const unsafeRulesFromMetadata: DeclarativeRule[] = [];
 
         const ruleset = new RulesetWithSourceMap(
             rulesetId,
@@ -604,9 +652,7 @@ export class FilterConverter {
             rulesetContent,
             badFilterRules,
             rulesHashMap,
-            // Freshly-converted rulesets have no metadata-stored unsafe rules yet;
-            // unsafe-rule exclusion is performed later by the serializeCompact() caller.
-            [],
+            unsafeRulesFromMetadata,
         );
 
         return {

@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The standalone CSP conversion parses only lines which may contain `$csp` or
+  `$badfilter` rules instead of the whole filter list; `$csp` aliases are now
+  taken from the AGTree conversion map.
+
 ### Deprecated
 
 ### Removed
