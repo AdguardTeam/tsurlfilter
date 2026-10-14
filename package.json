@@ -17,6 +17,7 @@
     "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
     "scripts": {
         "lint": "lerna run lint",
+        "bench": "lerna run bench",
         "clean": "node scripts/cleanup.mjs",
         "prepare": "node .husky/install.mjs",
         "tgz": "lerna run build --scope @adguard/dnr-rulesets --scope @adguard/api --scope @adguard/api-mv3 --include-dependencies && lerna run tgz --scope @adguard/dnr-rulesets --scope @adguard/api --scope @adguard/api-mv3 --include-dependencies",
@@ -31,7 +32,8 @@
     "pnpm": {
         "neverBuiltDependencies": [],
         "overrides": {
-            "@adguard/agtree": "workspace:^"
+            "@adguard/agtree": "workspace:^",
+            "@adguard/tsurlfilter@3>@adguard/agtree": "^3.2.3"
         }
     }
 }

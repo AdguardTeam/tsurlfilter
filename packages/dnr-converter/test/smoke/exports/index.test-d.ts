@@ -2,6 +2,7 @@ import {
     DNR_CONVERTER_VERSION,
     Filter,
     FilterConverter,
+    InvalidMetadataChunksError,
     MetadataRuleset,
     METADATA_RULESET_ID,
     Ruleset,
@@ -10,6 +11,8 @@ import {
     getRulesetPath,
     extractRulesetId,
     isCspDeclarativeRule,
+    parseCompactRuleset,
+    type CompactRulesetContent,
     type ConversionResult,
     type DeserializedRuleset,
     type IFilter,
@@ -32,6 +35,13 @@ expectType<typeof Filter>(Filter);
 expectType<typeof FilterConverter>(FilterConverter);
 expectType<typeof Ruleset>(Ruleset);
 expectType<typeof RulesetWithSourceMap>(RulesetWithSourceMap);
+expectType<RulesetWithSourceMap>(
+    RulesetWithSourceMap.fromCompact('ruleset_1', {} as CompactRulesetContent, []),
+);
+expectType<RulesetWithSourceMap>(
+    RulesetWithSourceMap.fromDeserialized({} as DeserializedRuleset, 0),
+);
+expectType<number>(({} as IRulesetWithSourceMap).getMetadataRulesCount());
 expectType<typeof MetadataRuleset>(MetadataRuleset);
 expectType<0>(METADATA_RULESET_ID);
 
@@ -39,6 +49,8 @@ expectType<typeof getRulesetId>(getRulesetId);
 expectType<typeof getRulesetPath>(getRulesetPath);
 expectType<typeof extractRulesetId>(extractRulesetId);
 expectType<typeof isCspDeclarativeRule>(isCspDeclarativeRule);
+expectType<typeof parseCompactRuleset>(parseCompactRuleset);
+expectType<typeof InvalidMetadataChunksError>(InvalidMetadataChunksError);
 
 // Verify type exports are accessible (no runtime assertions needed for types)
 type AssertIRuleset = IRuleset;
@@ -54,6 +66,7 @@ type AssertSerializedRuleset = SerializedRuleset;
 type AssertDeserializedRuleset = DeserializedRuleset;
 type AssertSerializedRulesetData = SerializedRulesetData;
 type AssertSerializedRulesetLazyData = SerializedRulesetLazyData;
+type AssertCompactRulesetContent = CompactRulesetContent;
 
 expectType<(
     filtersAndMetadataDir: string,

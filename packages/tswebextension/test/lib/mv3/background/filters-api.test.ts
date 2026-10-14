@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import { FilterConverter } from '@adguard/dnr-converter';
+import { FilterList } from '@adguard/tsurlfilter';
+
 import { type CustomFilterMV3 } from '../../../../src/lib/mv3/background/configuration';
 import FiltersApi from '../../../../src/lib/mv3/background/filters-api';
 
@@ -61,6 +64,33 @@ describe('FiltersApi', () => {
             expect(content).toBe('||example.com^');
         });
 
+        it('should preserve the original rule spelling for $badfilter comparison', async () => {
+            // The extension stores the CONVERTED content and passes it together
+            // with the conversion data, so the original spelling is only
+            // recoverable from the conversion data.
+            const original = [
+                '||example.com^$queryprune=foo',
+                '||example.com^$removeparam=foo,badfilter',
+            ].join('\n');
+            const filterList = new FilterList(original, 1);
+
+            const customFilters: CustomFilterMV3[] = [
+                {
+                    filterId: 1,
+                    content: filterList.getContent(),
+                    conversionData: filterList.getConversionData(),
+                    trusted: true,
+                },
+            ];
+
+            const filters = FiltersApi.createCustomFilters(customFilters);
+            const [{ ruleset }] = await new FilterConverter().convert(filters);
+
+            // `$queryprune` and `$removeparam` are different spellings, so the
+            // rules must not cancel each other — same as in MV2.
+            expect(ruleset.getDeclarativeRules()).toHaveLength(1);
+        });
+
         it('should assign distinct filterIds to each custom filter', async () => {
             const customFilters: CustomFilterMV3[] = [
                 {
@@ -87,6 +117,27 @@ describe('FiltersApi', () => {
 
             expect(errors2).toHaveLength(1);
             expect(errors2[0].filterId).toBe(20);
+        });
+    });
+
+    describe('createUserRulesFilter', () => {
+        it('should preserve the original rule spelling for $badfilter comparison', async () => {
+            const original = [
+                '||example.com^$queryprune=foo',
+                '||example.com^$removeparam=foo,badfilter',
+            ].join('\n');
+            const filterList = new FilterList(original, 0);
+
+            const filter = FiltersApi.createUserRulesFilter({
+                content: filterList.getContent(),
+                conversionData: filterList.getConversionData(),
+            });
+
+            const [{ ruleset }] = await new FilterConverter().convert([filter]);
+
+            // `$queryprune` and `$removeparam` are different spellings, so the
+            // rules must not cancel each other — same as in MV2.
+            expect(ruleset.getDeclarativeRules()).toHaveLength(1);
         });
     });
 });

@@ -8,10 +8,12 @@ import {
     describe,
     expect,
     it,
+    vi,
 } from 'vitest';
 
 import { convertFilters } from '../../cli/convert-filters';
 import { Extractor } from '../../cli/extract-filters';
+import { createMetadataRuleMock } from '../mocks/metadata-rule';
 
 describe('Extractor', () => {
     let tmpDir: string;
@@ -77,5 +79,37 @@ describe('Extractor', () => {
             fs.readFileSync(metadataPath, 'utf-8'),
         );
         expect(extractedMetadata).toEqual(metadata);
+    });
+
+    it('reports an unreadable ruleset file and keeps extracting the others', async () => {
+        fs.writeFileSync(path.join(filtersDir, 'filter_1.txt'), '||example.com^\n');
+        fs.writeFileSync(
+            path.join(filtersDir, 'filters.json'),
+            JSON.stringify([{ filterId: 1, name: 'Test Filter' }]),
+        );
+        await convertFilters(filtersDir, resourcesDir, rulesetsDir);
+
+        // A metadata rule without a string chunk.
+        const brokenDir = path.join(rulesetsDir, 'ruleset_5');
+        fs.mkdirSync(brokenDir, { recursive: true });
+        fs.writeFileSync(path.join(brokenDir, 'ruleset_5.json'), JSON.stringify([
+            createMetadataRuleMock({ filterContent: '||broken.com^' }),
+        ]));
+
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            await Extractor.extract(rulesetsDir, extractDir);
+
+            // Assert before `mockRestore()`, which also clears recorded calls.
+            expect(errorSpy).toHaveBeenCalledWith(
+                expect.stringContaining('ruleset_5.json'),
+                expect.objectContaining({ message: expect.stringContaining('is not a string') }),
+            );
+        } finally {
+            errorSpy.mockRestore();
+        }
+
+        expect(fs.existsSync(path.join(extractDir, 'filter_1.txt'))).toBe(true);
+        expect(fs.existsSync(path.join(extractDir, 'filter_5.txt'))).toBe(false);
     });
 });

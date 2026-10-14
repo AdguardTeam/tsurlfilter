@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The standalone CSP conversion parses only lines which may contain `$csp` or
   `$badfilter` rules instead of the whole filter list; `$csp` aliases are now
   taken from the AGTree conversion map.
+- `Rule.writtenKeys` is gone: `$badfilter` compares the rule text as written
+  (`Rule.originalText`), so a rule no longer keeps a comparison key.
 
 ### Deprecated
 
@@ -30,8 +32,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   syntax and match their punycode hostnames.
 - Invalid `resourcesPath` is now rejected by `convertCspRules()` instead of
   being applied silently.
+- `$badfilter` incorrectly negated rules with different values of value-bearing
+  modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
+  `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when
+  the whole modifier list is written the same way — names, values, their order
+  and repeats, `$permissions` included — so `$redirect-rule` is no longer treated
+  as `$redirect`, and spellings that are equivalent after parsing (e.g.
+  `Set-Cookie` and `set-cookie`) do not negate each other.
+- `$badfilter` with `$domain` still disables the rule it refers to for the
+  domains present in both lists, but regular expression domains now keep their
+  case, so `$domain=/A/` no longer cancels `$domain=/a/`. This exception applies
+  only while neither rule has a negated `~domain`; otherwise the whole text is
+  compared. As before, the whole declarative rule is disabled rather than only
+  the domains named in both lists.
+- `$badfilter` rules that also carried a convertible modifier (e.g.
+  `||example.com^$csp=script-src 'none',badfilter`) were converted into
+  declarative rules instead of disabling the rule they refer to.
+- Fixed named `$removeparam` rules with an anchored literal URL pattern ending
+  in `^` failing to remove the first query parameter before MV3 requests.
+  Rules whose generated regexp fails validation retain their previous matching
+  [AdguardBrowserExtension#3615].
+
+[AdguardBrowserExtension#3615]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3615
 
 ### Security
+
+## [2.0.0] - 2026-09-29
+
+### Added
+
+- `parseCompactRuleset()` reads a parsed ruleset file: metadata, ordinary
+  rules and the number of metadata rules.
+- `RulesetWithSourceMap.fromCompact()` and
+  `RulesetWithSourceMap.fromDeserialized()` build a rule set from
+  `parseCompactRuleset()` or `deserialize()` output.
+- `IRulesetWithSourceMap.getMetadataRulesCount()` returns the number of
+  metadata rules in the ruleset file, for static rule quota accounting.
+- `InvalidMetadataChunksError` for missing or malformed metadata rules.
+
+### Changed
+
+- **BREAKING:** Ruleset metadata is split into `metadata.chunk` fragments of
+  at most 64 KiB in leading metadata rules, so that Edge Add-ons accepts MV3
+  packages [MicrosoftEdge-Extensions#603]. Applies to filter rulesets and
+  `ruleset_0`. 1.x and 2.x ruleset files are incompatible; rebuild rulesets
+  with this version.
+
+[2.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-converter-v2.0.0
 
 ## [1.1.2] - 2026-08-25
 
@@ -99,3 +146,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [1.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-converter-v1.0.0
 
 [@adguard/scriptlets]: https://github.com/AdguardTeam/Scriptlets/blob/master/CHANGELOG.md
+[MicrosoftEdge-Extensions#603]: https://github.com/microsoft/MicrosoftEdge-Extensions/issues/603

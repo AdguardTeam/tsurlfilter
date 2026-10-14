@@ -97,6 +97,7 @@ program
             console.info(`assets was copied to ${dest}`);
         } catch (e) {
             console.error(e);
+            process.exitCode = 1;
         }
     });
 

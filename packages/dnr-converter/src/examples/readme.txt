@@ -642,11 +642,21 @@ $removeheader=location,domain=example.com
 ! <br/>
 ! Regexps, negation and allow-rules are not supported
 ! <br/>
-! Each rule generates a param-aware urlFilter condition (e.g., ^utm_source=)
+! Named parameter rules generate a param-aware URL condition (e.g., ^utm_source=)
 ! so that Chrome DNR can chain multiple redirect hops, stripping one parameter
 ! per hop until all matching parameters are removed. Rules with different
 ! parameter names are no longer merged into a single DNR rule — this is by
 ! design, as merging would prevent multi-hop chaining across priority levels.
+! <br/>
+! An anchored literal URL pattern starting with `|` or `||` and ending in `^`
+! uses a regexFilter so that the final separator can also delimit the first
+! query parameter. These rules count toward Chrome's regex rule quota and are
+! subject to its regex size limit. If the generated regexp fails validation,
+! the rule retains its previous urlFilter matching, including its limitation
+! for the first query parameter.
+! Unanchored patterns and patterns containing wildcards, query or fragment
+! markers, or additional separators retain the existing urlFilter conversion.
+! Domain anchors with an empty host pattern also retain urlFilter matching.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -677,6 +687,10 @@ $removeparam=/^(utm_content|utm_campaign|utm_referrer)=/
 ||testcases.adguard.com$xmlhttprequest,removeparam=p2case1
 ||testcases.adguard.com$xmlhttprequest,removeparam=P3Case1
 $xmlhttprequest,removeparam=p1case2
+
+! example 11
+! A trailing separator matches a named parameter in any query position.
+||bing.com/search^$removeparam=cvid
 
 ! ## $replace
 ! <b>Status</b>: not supported

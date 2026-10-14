@@ -17,7 +17,7 @@ export class SanitizeApi {
      *
      * @returns Blocking response or null.
      */
-    public static onBeforeSendHeaders(context: RequestContext): WebRequest.BlockingResponseOrPromise | null {
+    public static onBeforeSendHeaders(context: RequestContext): WebRequest.BlockingResponseOrPromiseOrVoid | null {
         const {
             requestHeaders,
             referrerUrl,

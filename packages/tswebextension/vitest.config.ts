@@ -39,10 +39,10 @@ const createProjectForManifestVersion = (
 
 export default defineConfig({
     test: {
-        setupFiles: [
-            'fake-indexeddb/auto',
-            './vitest.setup.ts',
-        ],
+        // Setup files are configured per-project below: the jsdom projects use
+        // `fake-indexeddb/auto` + `./vitest.setup.ts`, while the browser project
+        // needs neither (the real browser provides native IndexedDB, and the
+        // sinon-chrome `global` mock in `vitest.setup.ts` is jsdom-only).
         environment: 'jsdom',
         environmentOptions: {},
         projects: [

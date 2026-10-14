@@ -19,6 +19,12 @@ export const COMMA_SEPARATOR = ',';
 export const PIPE_SEPARATOR = '|';
 
 /**
+ * Domain list separator character — `,` for the classic cosmetic domain list,
+ * `|` for the `$domain` modifier.
+ */
+export type DomainSeparator = typeof COMMA_SEPARATOR | typeof PIPE_SEPARATOR;
+
+/**
  * Processed domain list.
  */
 export interface ProcessedDomainList {
@@ -40,6 +46,12 @@ export interface ProcessedDomainList {
  * The only difference between them is that in one case we use `|` as a separator,
  * and in the other case - `,`.
  *
+ * Domain values are normalized while the list is processed: the separator escape
+ * is resolved in every value, plain and wildcard domains are lower-cased, and
+ * regexp pattern values keep their case. Only non-basic modifier values get
+ * the additional modifier escapes unescaped. The stored lists and the getters
+ * return values ready to be used as regular expressions, not the raw rule text.
+ *
  * @example
  * `||example.org^$domain=example.com|~sub.example.com` -- network rule
  * `example.com,~sub.example.com##banner` -- cosmetic rule
@@ -57,31 +69,37 @@ export class DomainModifier {
 
     /**
      * Processes domain list node, which means extracting permitted and restricted
-     * domains from it.
+     * domains from it and normalizing their values.
      *
      * @param domainListNode Domain list node to process.
+     * @param nonBasicModifier Whether values use the non-basic modifier escape syntax.
      *
-     * @returns Processed domain list (permitted and restricted domains) ({@link ProcessedDomainList}).
+     * @returns Processed domain list with normalized values
+     * (permitted and restricted domains) ({@link ProcessedDomainList}).
+     *
+     * @throws An error if a domain value is invalid.
      */
-    public static processDomainList(domainListNode: DomainList): ProcessedDomainList {
+    public static processDomainList(domainListNode: DomainList, nonBasicModifier = false): ProcessedDomainList {
         const result: ProcessedDomainList = {
             permittedDomains: [],
             restrictedDomains: [],
         };
 
-        const { children: domains } = domainListNode;
+        const { children: domains, separator } = domainListNode;
 
         for (const { exception, value: domain } of domains) {
-            const domainLowerCased = domain.toLowerCase();
+            const normalized = DomainModifier.normalizeDomain(domain, separator, nonBasicModifier);
 
-            if (!SimpleRegex.isRegexPattern(domain) && domain.includes(WILDCARD) && !domain.endsWith(WILDCARD)) {
-                throw new SyntaxError(`Wildcards are only supported for top-level domains: "${domain}"`);
+            if (!SimpleRegex.isRegexPattern(normalized)
+                && normalized.includes(WILDCARD)
+                && !normalized.endsWith(WILDCARD)) {
+                throw new SyntaxError(`Wildcards are only supported for top-level domains: "${normalized}"`);
             }
 
             if (exception) {
-                result.restrictedDomains.push(domainLowerCased);
+                result.restrictedDomains.push(normalized);
             } else {
-                result.permittedDomains.push(domainLowerCased);
+                result.permittedDomains.push(normalized);
             }
         }
 
@@ -93,10 +111,11 @@ export class DomainModifier {
      *
      * @param domains Domain list string or AGTree DomainList node.
      * @param separator Separator — `,` or `|`.
+     * @param nonBasicModifier Whether values come from a non-basic `[$domain=...]` modifier.
      *
      * @throws An error if the domains string is empty or invalid.
      */
-    constructor(domains: string | DomainList, separator: typeof COMMA_SEPARATOR | typeof PIPE_SEPARATOR) {
+    constructor(domains: string | DomainList, separator: DomainSeparator, nonBasicModifier = false) {
         let processed: ProcessedDomainList;
 
         if (isString(domains)) {
@@ -111,19 +130,15 @@ export class DomainModifier {
                 throw new SyntaxError('At least one domain must be specified');
             }
 
-            processed = DomainModifier.processDomainList(node);
+            processed = DomainModifier.processDomainList(node, nonBasicModifier);
         } else {
             // domain list node stores the separator
             if (separator !== domains.separator) {
                 throw new SyntaxError('Separator mismatch');
             }
 
-            processed = DomainModifier.processDomainList(domains);
+            processed = DomainModifier.processDomainList(domains, nonBasicModifier);
         }
-
-        // Unescape separator character in domains
-        processed.permittedDomains = processed.permittedDomains.map((domain) => unescapeChar(domain, separator));
-        processed.restrictedDomains = processed.restrictedDomains.map((domain) => unescapeChar(domain, separator));
 
         this.restrictedDomains = processed.restrictedDomains.length > 0 ? processed.restrictedDomains : null;
         this.permittedDomains = processed.permittedDomains.length > 0 ? processed.permittedDomains : null;
@@ -223,7 +238,7 @@ export class DomainModifier {
                      *
                      * TODO: use SimpleRegex.patternFromString(d) after it is refactored to not add 'g' flag.
                      */
-                    const domainPattern = new RegExp(d.slice(1, -1));
+                    const domainPattern = new RegExp(d.slice(1, -1), 'i');
                     if (domainPattern.test(domain)) {
                         return true;
                     }
@@ -258,6 +273,99 @@ export class DomainModifier {
      */
     public static isWildcardOrRegexDomain(domain: string): boolean {
         return DomainModifier.isWildcardDomain(domain) || SimpleRegex.isRegexPattern(domain);
+    }
+
+    /**
+     * Checks whether two domain lists can match the same request domain.
+     *
+     * Used by `$badfilter`: a rule with `$domain` disables the target rule for
+     * the domains present in both lists. A plain domain name is compared
+     * case-insensitively, because a domain name is case-insensitive, while a
+     * regexp pattern keeps its case.
+     *
+     * The entries come from {@link getPermittedDomains}, so they are the values
+     * stored after parsing, not the raw rule text: {@link normalizeDomain} has
+     * already resolved the separator escape. An escaped separator in a regexp
+     * entry therefore compares equal to the unescaped one here, while the
+     * Manifest V3 converter compares the raw text — a pre-existing divergence
+     * that the `$domain` decision has to settle.
+     *
+     * A wildcard TLD entry (`example.*`) therefore overlaps only an identically
+     * written entry: matching it against the domains it stands for needs the
+     * public suffix list, which the Manifest V3 converter does not have, and a
+     * prefix-based approximation cancels rules for domains the wildcard does not
+     * cover.
+     *
+     * @param left First domain list.
+     * @param right Second domain list.
+     *
+     * @returns True when at least one entry of one list equals an entry of the
+     *   other list. A missing list matches any domain, the same way a
+     *   `$badfilter` without `$domain` disables a rule everywhere it applies.
+     */
+    public static haveIntersection(
+        left: readonly string[] | null,
+        right: readonly string[] | null,
+    ): boolean {
+        if (left === null || right === null) {
+            return true;
+        }
+
+        return left.some((leftDomain) => right.some(
+            (rightDomain) => DomainModifier.normalizeForComparison(leftDomain)
+                === DomainModifier.normalizeForComparison(rightDomain),
+        ));
+    }
+
+    /**
+     * Brings a domain entry to the form used by the `$badfilter` comparison:
+     * domain names are case-insensitive, while regexp patterns keep their case.
+     *
+     * @param domain Domain entry.
+     *
+     * @returns Domain entry to compare.
+     */
+    private static normalizeForComparison(domain: string): string {
+        return SimpleRegex.isRegexPattern(domain) ? domain : domain.toLowerCase();
+    }
+
+    /**
+     * Normalizes a single domain value after parsing.
+     *
+     * The separator escape is resolved in every value. Plain domains are
+     * lower-cased; regexp sources retain their case and match with the `i` flag.
+     * Only non-basic modifier values have an additional escape layer for
+     * brackets, commas and backslashes. Basic rules and classic domain lists
+     * retain their regexp escapes.
+     *
+     * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#non-basic-rules-modifiers}
+     *
+     * @param domain Domain value to normalize.
+     * @param separator Separator character.
+     * @param nonBasicModifier Whether to decode the non-basic modifier escape layer.
+     *
+     * @returns Normalized domain value.
+     *
+     * @throws An error if a regexp value does not compile after unescaping.
+     */
+    private static normalizeDomain(domain: string, separator: DomainSeparator, nonBasicModifier: boolean): string {
+        const unescaped = unescapeChar(domain, separator);
+
+        if (!SimpleRegex.isRegexPattern(unescaped)) {
+            return unescaped.toLowerCase();
+        }
+
+        const pattern = nonBasicModifier ? SimpleRegex.unescapeModifierPatternValue(unescaped) : unescaped;
+
+        try {
+            // Validate compilability once at parse time, the same way
+            // the pattern is compiled at match time.
+            RegExp(pattern.slice(1, -1), 'i');
+        } catch {
+            throw new SyntaxError(`Invalid regular expression as domain pattern: "${pattern}"`);
+        }
+
+        return pattern;
     }
 
     /**

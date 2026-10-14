@@ -90,7 +90,8 @@ describe('Constructor', () => {
         expect(() => new HostRule(ruleText, 1)).toThrowError();
 
         ruleText = '_prebid._';
-        expect(() => new HostRule(ruleText, 1)).toThrowError();
+        rule = new HostRule(ruleText, 1);
+        expect(rule.getHostnames()).toContain('_prebid._');
     });
 
     it('works when it matches rules', () => {

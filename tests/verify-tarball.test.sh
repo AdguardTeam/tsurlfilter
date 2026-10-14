@@ -107,4 +107,27 @@ expect_fail 'too-few-entries' "${sparse_dir}/fixture.tgz" '2.0.1' 'contains only
 expect_fail 'wrong-name' "${valid_dir}/fixture.tgz" '2.0.1' 'has name @adguard/logger, expected @adguard/other' '@adguard/other'
 expect_pass 'valid-name' "${valid_dir}/fixture.tgz" '2.0.1' '@adguard/logger'
 
+# A tarball with enough entries but no LICENSE/COPYING file must fail: npm/pnpm
+# pack always include such a file from the package directory, so its absence
+# means the package would be published without a license.
+no_license_dir="${TEMP_DIR}/no-license"
+make_tgz "${no_license_dir}" '2.0.1' 'yes' 'src/Logger.ts'
+rm "${no_license_dir}/package/LICENSE"
+(cd "${no_license_dir}" && tar -czf fixture.tgz package)
+expect_fail 'no-license' "${no_license_dir}/fixture.tgz" '2.0.1' 'no LICENSE/COPYING file'
+
+# License files with a suffix (e.g. LICENSE.md, used by @adguard/text-encoding)
+# or the LICENCE spelling must satisfy the check as well.
+license_md_dir="${TEMP_DIR}/license-md"
+make_tgz "${license_md_dir}" '2.0.1' 'yes' 'src/Logger.ts'
+mv "${license_md_dir}/package/LICENSE" "${license_md_dir}/package/LICENSE.md"
+(cd "${license_md_dir}" && tar -czf fixture.tgz package)
+expect_pass 'license-md' "${license_md_dir}/fixture.tgz" '2.0.1'
+
+licence_dir="${TEMP_DIR}/licence-txt"
+make_tgz "${licence_dir}" '2.0.1' 'yes' 'src/Logger.ts'
+mv "${licence_dir}/package/LICENSE" "${licence_dir}/package/LICENCE.txt"
+(cd "${licence_dir}" && tar -czf fixture.tgz package)
+expect_pass 'licence-txt' "${licence_dir}/fixture.tgz" '2.0.1'
+
 echo 'verify-tarball tests passed'

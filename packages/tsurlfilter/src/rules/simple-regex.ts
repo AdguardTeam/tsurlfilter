@@ -593,6 +593,25 @@ export class SimpleRegex {
     }
 
     /**
+     * Unescapes the special characters that must be escaped in modifier values
+     * according to the documentation (`[`, `]`, `,` and `\`) inside a regexp
+     * pattern value.
+     *
+     * Values that are not regexp patterns are returned unchanged.
+     *
+     * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#non-basic-rules-modifiers}
+     *
+     * @param value Modifier value to unescape.
+     *
+     * @returns The value with escaped regex specials unescaped.
+     */
+    public static unescapeModifierPatternValue(value: string): string {
+        return SimpleRegex.isRegexPattern(value)
+            ? SimpleRegex.unescapeRegexSpecials(value, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
+            : value;
+    }
+
+    /**
      * Check if pattern is Regex.
      *
      * @param str The string to check.

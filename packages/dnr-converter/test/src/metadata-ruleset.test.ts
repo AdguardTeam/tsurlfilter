@@ -3,7 +3,20 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { InvalidMetadataChunksError } from '../../src/errors/metadata-errors';
 import { METADATA_RULESET_ID, MetadataRuleset } from '../../src/ruleset/metadata-ruleset';
+import { createMetadataRuleMock, expectMetadataValuesWithinBound } from '../mocks/metadata-rule';
+
+/**
+ * Serialized metadata ruleset file with one metadata rule carrying `payload`.
+ *
+ * @param payload Payload to store in the chunk.
+ *
+ * @returns JSON text.
+ */
+const metadataFile = (payload: unknown): string => {
+    return JSON.stringify([createMetadataRuleMock({ chunk: JSON.stringify(payload) })]);
+};
 
 describe('MetadataRuleset', () => {
     describe('constructor', () => {
@@ -252,17 +265,17 @@ describe('MetadataRuleset', () => {
     });
 
     describe('serialize()', () => {
-        it('produces valid JSON array with a metadata rule', () => {
+        it('produces a JSON array of metadata rules carrying the payload in chunks', () => {
             const ruleset = new MetadataRuleset();
             ruleset.setChecksum('ruleset_1', 'abc123');
 
-            const json = ruleset.serialize();
-            const parsed = JSON.parse(json);
+            const parsed = JSON.parse(ruleset.serialize());
 
             expect(Array.isArray(parsed)).toBe(true);
             expect(parsed).toHaveLength(1);
-            expect(parsed[0]).toHaveProperty('metadata');
-            expect(parsed[0].metadata.checksums).toEqual({ ruleset_1: 'abc123' });
+            expect(parsed[0].metadata).toEqual({
+                chunk: '{"checksums":{"ruleset_1":"abc123"},"additionalProperties":{}}',
+            });
         });
 
         it('includes additional properties in serialized output', () => {
@@ -270,10 +283,10 @@ describe('MetadataRuleset', () => {
             ruleset.setAdditionalProperty('version', '2.5');
             ruleset.setAdditionalProperty('metadata', { filterCount: 10 });
 
-            const json = ruleset.serialize();
-            const parsed = JSON.parse(json);
+            const parsed = JSON.parse(ruleset.serialize());
+            const payload = JSON.parse(parsed[0].metadata.chunk);
 
-            expect(parsed[0].metadata.additionalProperties).toEqual({
+            expect(payload.additionalProperties).toEqual({
                 version: '2.5',
                 metadata: { filterCount: 10 },
             });
@@ -281,8 +294,7 @@ describe('MetadataRuleset', () => {
 
         it('includes the dummy rule fields (id, action, condition)', () => {
             const ruleset = new MetadataRuleset();
-            const json = ruleset.serialize();
-            const parsed = JSON.parse(json);
+            const parsed = JSON.parse(ruleset.serialize());
 
             expect(parsed[0].id).toBe(1);
             expect(parsed[0].action).toEqual({ type: 'block' });
@@ -290,6 +302,21 @@ describe('MetadataRuleset', () => {
                 urlFilter: 'dummy.rule.adguard.com',
                 resourceTypes: ['xmlhttprequest'],
             });
+        });
+
+        it('splits a large payload into several metadata rules within the bound', () => {
+            const ruleset = new MetadataRuleset({}, { blob: 'x'.repeat(200_000) });
+
+            for (const pretty of [false, true]) {
+                const json = ruleset.serialize(pretty);
+                const parsed = JSON.parse(json) as { id: number }[];
+
+                expect(parsed.length).toBeGreaterThan(3);
+                expect(parsed.map((rule) => rule.id)).toEqual(parsed.map((_, i) => i + 1));
+                expectMetadataValuesWithinBound(json, pretty);
+
+                expect(MetadataRuleset.deserialize(json).getAdditionalProperty('blob')).toBe('x'.repeat(200_000));
+            }
         });
 
         it('produces compact JSON by default', () => {
@@ -304,6 +331,12 @@ describe('MetadataRuleset', () => {
             const json = ruleset.serialize(true);
 
             expect(json).toContain('\n');
+        });
+
+        it('is deterministic', () => {
+            const ruleset = new MetadataRuleset({ ruleset_1: 'a' }, { blob: 'y'.repeat(100_000) });
+
+            expect(ruleset.serialize(true)).toBe(ruleset.serialize(true));
         });
     });
 
@@ -360,40 +393,21 @@ describe('MetadataRuleset', () => {
             });
         });
 
-        it('allows extra Chrome DNR top-level fields (loose object at rule level)', () => {
-            const json = JSON.stringify([{
-                id: 1,
-                priority: 2,
-                action: { type: 'block' },
-                condition: {
-                    urlFilter: 'dummy.rule.adguard.com',
-                    resourceTypes: ['xmlhttprequest'],
-                },
-                metadata: {
-                    checksums: { ruleset_1: 'abc' },
-                    additionalProperties: {},
-                },
-            }]);
+        it('ignores extra Chrome DNR top-level fields on metadata rules', () => {
+            const parsed = JSON.parse(metadataFile({ checksums: { ruleset_1: 'abc' }, additionalProperties: {} }));
+            parsed[0].priority = 2;
 
-            const restored = MetadataRuleset.deserialize(json);
+            const restored = MetadataRuleset.deserialize(JSON.stringify(parsed));
 
             expect(restored.getChecksum('ruleset_1')).toBe('abc');
         });
 
-        it('throws on unknown top-level metadata key (strict object at metadata level)', () => {
-            const json = JSON.stringify([{
-                id: 1,
-                action: { type: 'block' },
-                condition: {
-                    urlFilter: 'dummy.rule.adguard.com',
-                    resourceTypes: ['xmlhttprequest'],
-                },
-                metadata: {
-                    checksums: {},
-                    additionalProperties: {},
-                    byteRangeMapsCollection: {},
-                },
-            }]);
+        it('throws on unknown top-level payload key (strict object at payload level)', () => {
+            const json = metadataFile({
+                checksums: {},
+                additionalProperties: {},
+                byteRangeMapsCollection: {},
+            });
 
             expect(() => MetadataRuleset.deserialize(json)).toThrow();
         });
@@ -407,86 +421,40 @@ describe('MetadataRuleset', () => {
         });
 
         it('throws on non-array JSON input', () => {
-            expect(() => MetadataRuleset.deserialize('{"key":"value"}')).toThrow(
-                'Invalid input: expected a single-element array.',
-            );
+            expect(() => MetadataRuleset.deserialize('{"key":"value"}')).toThrow(InvalidMetadataChunksError);
+            expect(() => MetadataRuleset.deserialize('{"key":"value"}')).toThrow('expected an array');
         });
 
         it('throws on "[]" (empty array)', () => {
-            expect(() => MetadataRuleset.deserialize('[]')).toThrow(
-                'Invalid input: expected a single-element array.',
-            );
+            expect(() => MetadataRuleset.deserialize('[]')).toThrow(InvalidMetadataChunksError);
+            expect(() => MetadataRuleset.deserialize('[]')).toThrow('no metadata rules found');
         });
 
-        it('throws on array with more than one element', () => {
-            const valid = JSON.parse(new MetadataRuleset().serialize())[0];
-            const json = JSON.stringify([valid, valid]);
-
-            expect(() => MetadataRuleset.deserialize(json)).toThrow(
-                'Invalid input: expected a single-element array.',
-            );
-        });
-
-        it('throws on array element without metadata field', () => {
+        it('throws on array element without the marker', () => {
             const json = JSON.stringify([{ id: 1, action: { type: 'block' } }]);
 
-            expect(() => MetadataRuleset.deserialize(json)).toThrow();
+            expect(() => MetadataRuleset.deserialize(json)).toThrow(InvalidMetadataChunksError);
         });
 
-        it('throws on metadata.checksums with wrong value type', () => {
-            const badJson = JSON.stringify([{
-                id: 1,
-                action: { type: 'block' },
-                metadata: {
-                    checksums: { ruleset_1: 123 }, // should be string
-                    additionalProperties: {},
-                },
-            }]);
-
-            expect(() => MetadataRuleset.deserialize(badJson)).toThrow();
-        });
-
-        it('throws on non-object metadata value', () => {
-            const badJson = JSON.stringify([{
-                id: 1,
-                action: { type: 'block' },
-                metadata: 'not-an-object',
-            }]);
-
-            expect(() => MetadataRuleset.deserialize(badJson)).toThrow();
-        });
-
-        it('throws when metadata key is missing entirely', () => {
-            const json = JSON.stringify([{
-                id: 1,
-                action: { type: 'block' },
-            }]);
+        it('throws on checksums with wrong value type', () => {
+            const json = metadataFile({
+                checksums: { ruleset_1: 123 }, // should be string
+                additionalProperties: {},
+            });
 
             expect(() => MetadataRuleset.deserialize(json)).toThrow();
         });
 
-        it('throws when checksums key is missing from metadata', () => {
-            const json = JSON.stringify([{
-                id: 1,
-                action: { type: 'block' },
-                metadata: {
-                    additionalProperties: {},
-                },
-            }]);
-
-            expect(() => MetadataRuleset.deserialize(json)).toThrow();
+        it('throws on non-object payload', () => {
+            expect(() => MetadataRuleset.deserialize(metadataFile('not-an-object'))).toThrow();
         });
 
-        it('throws when additionalProperties key is missing from metadata', () => {
-            const json = JSON.stringify([{
-                id: 1,
-                action: { type: 'block' },
-                metadata: {
-                    checksums: {},
-                },
-            }]);
+        it('throws when checksums key is missing from the payload', () => {
+            expect(() => MetadataRuleset.deserialize(metadataFile({ additionalProperties: {} }))).toThrow();
+        });
 
-            expect(() => MetadataRuleset.deserialize(json)).toThrow();
+        it('throws when additionalProperties key is missing from the payload', () => {
+            expect(() => MetadataRuleset.deserialize(metadataFile({ checksums: {} }))).toThrow();
         });
 
         it('deserializes real-world metadata files (chromium-mv3)', () => {
@@ -499,6 +467,9 @@ describe('MetadataRuleset', () => {
             const rawJson = readFileSync(fixturePath, 'utf8');
 
             const ruleset = MetadataRuleset.deserialize(rawJson);
+
+            // Re-serializing the real fixture reproduces it byte for byte.
+            expect(ruleset.serialize()).toBe(rawJson);
 
             // Should have many checksums (one per ruleset)
             const ids = ruleset.getRulesetIds();

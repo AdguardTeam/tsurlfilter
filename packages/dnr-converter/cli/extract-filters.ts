@@ -3,13 +3,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { METADATA_RULESET_ID, MetadataRuleset } from '../src/index';
+import { METADATA_RULESET_ID, MetadataRuleset, parseCompactRuleset } from '../src/index';
 
 import { LOCAL_METADATA_FILE_NAME } from './convert-filters';
 import {
     ensureDir,
     extractRulesetId,
     findFiles,
+    getRulesetId,
     RULESET_FILE_EXT,
 } from './utils';
 
@@ -51,8 +52,8 @@ export class Extractor {
      * @param rulesetsPath Path to the rulesets directory.
      * @param outputPath Path to save extracted filters.
      *
-     * @throws Error if rulesetsPath is not a directory or if an error occurs
-     * while reading or parsing files.
+     * @throws Error if rulesetsPath is not a directory. Read or parse errors of
+     * individual files are logged and the file is skipped.
      */
     public static async extract(
         rulesetsPath: string,
@@ -81,21 +82,7 @@ export class Extractor {
                 }
 
                 const data = await fs.readFile(jsonFilePath, 'utf8');
-                const parsedRuleset = JSON.parse(data);
-
-                if (!Array.isArray(parsedRuleset) || parsedRuleset.length === 0) {
-                    console.log(`Ruleset ${jsonFilePath} is not an array or contains zero elements, skipping.`);
-                    continue;
-                }
-
-                const { metadata } = parsedRuleset[0];
-
-                if (!metadata) {
-                    console.log(`Ruleset ${jsonFilePath} does not contain metadata, skipping.`);
-                    continue;
-                }
-
-                const { filterContent } = metadata;
+                const { filterContent } = parseCompactRuleset(getRulesetId(filterId), JSON.parse(data));
 
                 const outputFileName = `filter_${filterId}.txt`;
                 const outputFilePath = path.join(outputPath, outputFileName);

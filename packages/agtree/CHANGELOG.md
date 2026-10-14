@@ -22,7 +22,90 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Hostnames with labels ending in an underscore are now accepted by domain validation,
+  while domains with a leading dot remain invalid.
+
 ### Security
+
+## [4.3.0] - 2026-10-14
+
+### Added
+
+- `:has-text()` is now accepted as a synonym of `:contains()` in AdGuard
+  HTML filtering rules during ADG→ADG conversion.
+
+### Changed
+
+- AdGuard HTML filtering rule bodies with an unbalanced or unterminated
+  special pseudo-class argument (`:contains()` / `:-abp-contains()` /
+  `:has-text()`), e.g.
+  `$$script:contains((function(g,b,a,c,e,d)`, are now parsed leniently,
+  mirroring CoreLibs: the argument is the raw text between the opening
+  parenthesis of the pseudo-class and the last closing parenthesis of
+  the body, taken as-is. Previously such bodies either threw a parse
+  error or were normalized to a quoted argument during conversion —
+  no quoting is inserted anymore. A descendant combinator in front of
+  the special pseudo-class is preserved as well, so
+  `$$div :has-text(/foo[)]/)` converts to `$$div :contains(/foo[)]/)`
+  instead of being glued into `$$div:contains(/foo[)]/)`, and the
+  selector list and last complex selector source ranges are extended to
+  cover the appended pseudo-class when locations are enabled.
+
+### Fixed
+
+- `[tag-content]` values are now emitted raw during ADG→ADG conversion:
+  quotes within the value (e.g. `[tag-content='"advert"']` →
+  `:contains("advert")`) are literal characters of the text to match,
+  not a transport encoding to strip later, mirroring CoreLibs.
+- AdGuard HTML filtering rules whose bodies cannot be parsed as CSS
+  selector lists, even leniently, are now kept as-is during conversion
+  instead of throwing a parse error, e.g. `[tag-content]` with escaped
+  double quotes that break CSS tokenization. This tolerant fallback is
+  gated on special selector markers — unparseable bodies without
+  `:contains()` / `:-abp-contains()` / `:has-text()` or `[tag-content]` /
+  `[wildcard]` / `[min-length]` / `[max-length]` markers (outside of
+  quoted text) still throw.
+- uBlock `:min-text-length()` conversion now caps the upper bound of the
+  generated length-matching regular expression at 65535 instead of 262144,
+  because CoreLibs compiles `:contains(/.../)` patterns with PCRE2, which
+  rejects quantifier numbers greater than 65535. `:min-text-length()`
+  arguments greater than 65535 now throw a conversion error instead of
+  producing a PCRE2-invalid pattern.
+- ADG→ADG conversion of HTML filtering rules now merges combinations of
+  deprecated special attribute selectors that cannot be represented as a
+  chain of separate `:contains()` pseudo-classes into a single regex
+  `:contains()` built from lookaheads. CoreLibs allows at most one literal
+  and one regex `:contains()` per selector, and its argument scanner
+  treats an unbalanced or quoted literal as the last argument of the
+  chain, so e.g.
+  `aces.gg$$script[tag-content="$('#alert').on('click'"][max-length="250"]`
+  now converts to
+  `aces.gg$$script:contains(/^(?=.{0,250}$)(?=.*\$\('#alert'\)\.on\('click').*/s)`
+  instead of the CoreLibs-rejected
+  `aces.gg$$script:contains($('#alert').on('click'):contains(/^(?=.{0,250}$).*/s)`.
+  Multiple `[tag-content]` values and multiple `[wildcard]` globs are
+  AND-merged the same way (`$$div[tag-content="a"][tag-content="b"]` →
+  `$$div:contains(/^(?=.*a)(?=.*b).*/s)`), while a literal that is safe
+  to chain (non-empty, not starting with `/`, containing no quotes,
+  parentheses, brackets, braces, backslashes or colons) is still emitted
+  as a standalone `:contains()` followed by at most one regex
+  `:contains()`. Converted special attribute pseudo-classes are now
+  appended after pre-existing `:contains()` pseudo-classes of the same
+  selector.
+- `QuoteUtils.escapeAttributeDoubleQuotes()` and
+  `QuoteUtils.unescapeAttributeDoubleQuotes()` no longer get stuck inside
+  the first quoted attribute selector's value for the rest of the
+  selector: an unpaired double quote now closes the value and leaves the
+  nesting state. Previously, an attribute selector following a quoted one
+  was handled as if it were still inside the first value, so the legacy
+  `""` quote doubling there was paired with shifted quotes and escaped
+  incorrectly. For example, the body of
+  `msn.com$$li[class="hasimage"][tag-content="""NativeAdHeadlineItemViewModel"""][max-length="2000"]`
+  previously failed to parse with
+  `Expected '<ident-token>', but got '<string-token>'`; it now converts to
+  `msn.com$$li[class="hasimage"]:contains(/^(?=.{0,2000}$)(?=.*"NativeAdHeadlineItemViewModel").*/s)`.
+
+[4.3.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.3.0
 
 ## [4.2.1] - 2026-08-12
 

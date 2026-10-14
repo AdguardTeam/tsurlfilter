@@ -502,15 +502,12 @@ export class CosmeticRule implements IRule {
                         throw new SyntaxError(`'$${modifierName}' modifier is not allowed in a domain-specific rule`);
                     }
 
-                    result.domainModifier = new DomainModifier(modifierValue, PIPE_MODIFIER_SEPARATOR);
+                    result.domainModifier = new DomainModifier(modifierValue, PIPE_MODIFIER_SEPARATOR, true);
                     break;
 
                 case CosmeticRuleModifier.Path:
                     result.pathModifier = new Pattern(
-                        SimpleRegex.isRegexPattern(modifierValue)
-                            // eslint-disable-next-line max-len
-                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
-                            : modifierValue,
+                        SimpleRegex.unescapeModifierPatternValue(modifierValue),
                     );
                     break;
 
@@ -520,10 +517,7 @@ export class CosmeticRule implements IRule {
                     }
 
                     result.urlModifier = new Pattern(
-                        SimpleRegex.isRegexPattern(modifierValue)
-                            // eslint-disable-next-line max-len
-                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
-                            : modifierValue,
+                        SimpleRegex.unescapeModifierPatternValue(modifierValue),
                     );
                     break;
 
@@ -641,6 +635,20 @@ export class CosmeticRule implements IRule {
 
                             currentSpecialSelectors.push({
                                 name: HtmlSpecialSelectorName.Contains,
+                                // The argument is used as-is, mirroring CoreLibs:
+                                // it is the raw text between the parentheses of
+                                // the pseudo-class, so wrapping quotes (of any
+                                // kind) are literal characters of the matched
+                                // text — e.g. `:contains('advert')` matches text
+                                // containing the apostrophes, and
+                                // `:contains("(function(p,a,c)")` matches text
+                                // containing the double quotes. An unbalanced
+                                // argument, e.g. `:contains((function(g,b,a,c,e,d)`,
+                                // is possible as well: AGTree parses such rules
+                                // leniently. A regexp-looking argument
+                                // (`/.../flags`) is compiled to a RegExp by
+                                // `SimpleRegex.fromLiteral`, anything else is
+                                // matched as a literal substring.
                                 value: SimpleRegex.fromLiteral(simpleSelectorNode.argument.value),
                             });
                         } else {

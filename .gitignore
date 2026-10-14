@@ -13,6 +13,9 @@ node_modules
 # Rollup cache
 .rollup.cache
 
+# Vitest benchmark output
+.vitest/
+
 # TypeScript incremental build info
 *.tsbuildinfo
 
