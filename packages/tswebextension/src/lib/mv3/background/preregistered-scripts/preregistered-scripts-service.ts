@@ -272,7 +272,7 @@ export class PreregisteredScriptsService {
                 );
             }
 
-            await ContentScriptManager.syncDetailed(PREREGISTERED_SCRIPTS_NAMESPACE, scripts);
+            await ContentScriptManager.sync(PREREGISTERED_SCRIPTS_NAMESPACE, scripts);
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.doSync]: Sync failed, keeping dynamic injection', e);
 

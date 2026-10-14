@@ -552,7 +552,7 @@ export class TsWebExtension implements AppInterface<
      * (Manifest V3). Consumers that branch on manifest version should
      * guard calls to this method accordingly.
      *
-     * Delegates to {@link ContentScriptManager.syncDetailed}. The operation
+     * Delegates to {@link ContentScriptManager.sync}. The operation
      * is **not atomic** — unregister, register, and update are executed as
      * independent steps via `Promise.allSettled`. Partial failures are
      * reported in the result (`errors` plus the IDs whose desired state is
@@ -574,7 +574,7 @@ export class TsWebExtension implements AppInterface<
         namespace: string,
         descriptors: ContentScriptDescriptor[],
     ): Promise<SyncScriptsResult> {
-        return ContentScriptManager.syncDetailed(namespace, descriptors);
+        return ContentScriptManager.sync(namespace, descriptors);
     }
 
     /**

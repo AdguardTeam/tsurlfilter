@@ -324,7 +324,7 @@ describe('ContentScriptManager', () => {
         });
     });
 
-    describe('syncDetailed', () => {
+    describe('sync', () => {
         it('should register new scripts, unregister stale ones, and update existing', async () => {
             await ContentScriptManager.register(NS, [
                 { id: 'old', js: ['old.js'], matches: ['<all_urls>'] },
@@ -335,7 +335,7 @@ describe('ContentScriptManager', () => {
                 { id: 'critical:old', js: ['old.js'], matches: ['<all_urls>'] },
                 { id: 'critical:keep', js: ['keep.js'], matches: ['<all_urls>'] },
             ]);
-            await ContentScriptManager.syncDetailed(NS, [
+            await ContentScriptManager.sync(NS, [
                 { id: 'keep', js: ['keep.js'], matches: ['<all_urls>'] },
                 { id: 'new', js: ['new.js'], matches: ['<all_urls>'] },
             ]);
@@ -356,7 +356,7 @@ describe('ContentScriptManager', () => {
             mockGetRegistered.mockResolvedValue([
                 { id: 'critical:domains', js: ['domains.js'], matches: ['<all_urls>'] },
             ]);
-            await ContentScriptManager.syncDetailed(NS, []);
+            await ContentScriptManager.sync(NS, []);
             expect(mockUnregister).toHaveBeenCalledWith({ ids: ['critical:domains'] });
             expect(mockRegister).not.toHaveBeenCalled();
         });
@@ -369,7 +369,7 @@ describe('ContentScriptManager', () => {
             mockGetRegistered.mockResolvedValue([
                 { id: 'critical:domains', js: ['domains.js'], matches: ['<all_urls>'] },
             ]);
-            await ContentScriptManager.syncDetailed(NS, [
+            await ContentScriptManager.sync(NS, [
                 { id: 'domains', js: ['domains.js'], matches: ['<all_urls>'] },
             ]);
             // Script exists in both sets with identical descriptor → no update needed.
@@ -400,7 +400,7 @@ describe('ContentScriptManager', () => {
                     world: 'ISOLATED',
                 },
             ]);
-            await ContentScriptManager.syncDetailed(NS, [
+            await ContentScriptManager.sync(NS, [
                 { id: 'domains', js: ['domains.js'], matches: ['<all_urls>'] },
             ]);
             expect(mockUnregister).not.toHaveBeenCalled();
@@ -416,7 +416,7 @@ describe('ContentScriptManager', () => {
             mockGetRegistered.mockResolvedValue([
                 { id: 'critical:domains', js: ['old.js'], matches: ['<all_urls>'] },
             ]);
-            await ContentScriptManager.syncDetailed(NS, [
+            await ContentScriptManager.sync(NS, [
                 { id: 'domains', js: ['new.js'], matches: ['<all_urls>'] },
             ]);
             // Script exists in both sets with changed properties → updated.
@@ -430,7 +430,7 @@ describe('ContentScriptManager', () => {
             mockGetRegistered.mockResolvedValue([
                 { id: 'critical:external', js: ['external.js'], matches: ['<all_urls>'] },
             ]);
-            await ContentScriptManager.syncDetailed(NS, [
+            await ContentScriptManager.sync(NS, [
                 { id: 'managed', js: ['managed.js'], matches: ['<all_urls>'] },
             ]);
             expect(mockUnregister).toHaveBeenCalledWith({ ids: ['critical:external'] });
@@ -451,7 +451,7 @@ describe('ContentScriptManager', () => {
                 { id: 'critical:c', js: ['c-old.js'], matches: ['<all_urls>'] },
             ]);
             // Desired: a (unchanged), c (changed js), d (new)
-            await ContentScriptManager.syncDetailed(NS, [
+            await ContentScriptManager.sync(NS, [
                 { id: 'a', js: ['a.js'], matches: ['<all_urls>'] },
                 { id: 'c', js: ['c-new.js'], matches: ['<all_urls>'] },
                 { id: 'd', js: ['d.js'], matches: ['<all_urls>'] },
@@ -566,9 +566,9 @@ describe('ContentScriptManager', () => {
             ).rejects.toThrow('Namespace must not be empty');
         });
 
-        it('should validate namespace on syncDetailed', async () => {
+        it('should validate namespace on sync', async () => {
             await expect(
-                ContentScriptManager.syncDetailed('foo:bar', [script]),
+                ContentScriptManager.sync('foo:bar', [script]),
             ).rejects.toThrow('contains forbidden character');
         });
     });
@@ -583,11 +583,11 @@ describe('ContentScriptManager', () => {
         });
     });
 
-    describe('get error path via syncDetailed', () => {
-        it('should propagate getRegisteredContentScripts errors through syncDetailed()', async () => {
+    describe('get error path via sync', () => {
+        it('should propagate getRegisteredContentScripts errors through sync()', async () => {
             mockGetRegistered.mockRejectedValueOnce(new Error('Chrome API failure'));
             await expect(
-                ContentScriptManager.syncDetailed(NS, [
+                ContentScriptManager.sync(NS, [
                     { id: 'test', js: ['test.js'], matches: ['<all_urls>'] },
                 ]),
             ).rejects.toThrow('Chrome API failure');
@@ -596,7 +596,7 @@ describe('ContentScriptManager', () => {
     });
 
     describe('TsWebExtension.syncContentScripts', () => {
-        it('should delegate to ContentScriptManager.syncDetailed()', async () => {
+        it('should delegate to ContentScriptManager.sync()', async () => {
             const result = await TsWebExtension.syncContentScripts(NS, [
                 { id: 'test', js: ['test.js'], matches: ['<all_urls>'] },
             ]);
@@ -618,7 +618,7 @@ describe('ContentScriptManager', () => {
 
         it('should return rejected results when sync operations fail', async () => {
             // Pre-register a script, then make its update fail.
-            // (Register failures are surfaced via syncDetailed's failedScriptIds
+            // (Register failures are surfaced via sync's failedScriptIds
             // instead — see the batch failure tests below.)
             await ContentScriptManager.register(NS, [
                 { id: 'existing', js: ['old.js'], matches: ['<all_urls>'] },
@@ -656,10 +656,10 @@ describe('ContentScriptManager', () => {
         });
     });
 
-    describe('syncDetailed edge cases', () => {
+    describe('sync edge cases', () => {
         it('should no-op when namespace is empty and desired is empty', async () => {
             mockGetRegistered.mockResolvedValue([]);
-            await ContentScriptManager.syncDetailed(NS, []);
+            await ContentScriptManager.sync(NS, []);
             expect(mockUnregister).not.toHaveBeenCalled();
             expect(mockRegister).not.toHaveBeenCalled();
             expect(mockUpdate).not.toHaveBeenCalled();
@@ -670,7 +670,7 @@ describe('ContentScriptManager', () => {
                 { id: 'critical:domains', js: ['domains.js'], matches: ['<all_urls>'] },
             ]);
             mockUnregister.mockRejectedValue(new Error('Unregister API failure'));
-            const { errors } = await ContentScriptManager.syncDetailed(NS, [
+            const { errors } = await ContentScriptManager.sync(NS, [
                 { id: 'new', js: ['new.js'], matches: ['<all_urls>'] },
             ]);
             expect(errors).toHaveLength(1);
@@ -696,11 +696,11 @@ describe('ContentScriptManager', () => {
             // per-script retry. 'new' ends up in failedScriptIds.
             mockRegister.mockRejectedValue(new Error('Invalid match pattern'));
 
-            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
+            const { errors, failedScriptIds } = await ContentScriptManager.sync(NS, [
                 { id: 'new', js: ['new.js'], matches: ['<invalid>'] },
             ]);
 
-            // syncDetailed() collects errors — it does NOT throw.
+            // sync() collects errors — it does NOT throw.
             // errors holds the batch-level failure; the failed per-script
             // retry surfaces via failedScriptIds.
             expect(errors).toHaveLength(1);
@@ -725,7 +725,7 @@ describe('ContentScriptManager', () => {
                 .mockRejectedValueOnce(new Error('Invalid match pattern'))
                 .mockResolvedValueOnce(undefined);
 
-            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
+            const { errors, failedScriptIds } = await ContentScriptManager.sync(NS, [
                 { id: 'new', js: ['new.js'], matches: ['<all_urls>'] },
             ]);
 
@@ -1008,7 +1008,7 @@ describe('ContentScriptManager', () => {
         });
     });
 
-    describe('syncDetailed — batch failures', () => {
+    describe('sync — batch failures', () => {
         it('should isolate the failure to the bad entry via per-script retry', async () => {
             mockGetRegistered.mockResolvedValue([]);
             // Batch calls (2 scripts) reject; per-script retries reject only
@@ -1020,7 +1020,7 @@ describe('ContentScriptManager', () => {
                 return Promise.resolve(undefined);
             });
 
-            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
+            const { errors, failedScriptIds } = await ContentScriptManager.sync(NS, [
                 { id: 'good', js: ['good.js'], matches: ['<all_urls>'] },
                 { id: 'bad', js: ['bad.js'], matches: ['<invalid>'] },
             ]);
@@ -1043,7 +1043,7 @@ describe('ContentScriptManager', () => {
             ]);
             mockUpdate.mockRejectedValue(new Error('Update API failure'));
 
-            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
+            const { errors, failedScriptIds } = await ContentScriptManager.sync(NS, [
                 { id: 'existing', js: ['new.js'], matches: ['<all_urls>'] },
             ]);
 
@@ -1067,7 +1067,7 @@ describe('ContentScriptManager', () => {
                 .mockRejectedValueOnce(new Error('Update API failure'))
                 .mockResolvedValue(undefined);
 
-            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
+            const { errors, failedScriptIds } = await ContentScriptManager.sync(NS, [
                 { id: 'existing', js: ['new.js'], matches: ['<all_urls>'] },
             ]);
 
@@ -1082,7 +1082,7 @@ describe('ContentScriptManager', () => {
             mockGetRegistered.mockResolvedValue([]);
             mockRegister.mockRejectedValue(new Error('Register API failure'));
 
-            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
+            const { errors, failedScriptIds } = await ContentScriptManager.sync(NS, [
                 { id: 'a', js: ['a.js'], matches: ['<all_urls>'] },
                 { id: 'b', js: ['b.js'], matches: ['<all_urls>'] },
             ]);
@@ -1100,7 +1100,7 @@ describe('ContentScriptManager', () => {
             ]);
             mockUnregister.mockRejectedValue(new Error('Unregister API failure'));
 
-            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, []);
+            const { errors, failedScriptIds } = await ContentScriptManager.sync(NS, []);
 
             // A stale registration is still active — reported as failed.
             expect(errors).toHaveLength(1);
@@ -1116,12 +1116,67 @@ describe('ContentScriptManager', () => {
                 .mockRejectedValueOnce(new Error('Unregister API failure'))
                 .mockResolvedValue(undefined);
 
-            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, []);
+            const { errors, failedScriptIds } = await ContentScriptManager.sync(NS, []);
 
             // The batch failure was fully healed by the per-script retry:
             // no error and no failed ID.
             expect(errors).toEqual([]);
             expect(failedScriptIds).toEqual([]);
+        });
+
+        it('should not re-list registrations for per-item register retries', async () => {
+            // Batch register fails as a unit; the per-script retry must
+            // reuse the IDs known from the sync snapshot instead of
+            // re-listing the registrations for every item.
+            mockRegister
+                .mockRejectedValueOnce(new Error('Invalid match pattern'))
+                .mockResolvedValueOnce(undefined);
+
+            await ContentScriptManager.sync(NS, [
+                { id: 'new', js: ['new.js'], matches: ['<all_urls>'] },
+            ]);
+
+            // Only the initial snapshot — no extra listing from the retry.
+            expect(mockGetRegistered).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not re-list registrations for per-item unregister retries', async () => {
+            mockGetRegistered.mockResolvedValue([
+                { id: 'critical:stale', js: ['old.js'], matches: ['<all_urls>'] },
+            ]);
+            mockUnregister
+                .mockRejectedValueOnce(new Error('Unregister API failure'))
+                .mockResolvedValueOnce(undefined);
+
+            await ContentScriptManager.sync(NS, []);
+
+            // Only the initial snapshot — no extra listing from the retry.
+            expect(mockGetRegistered).toHaveBeenCalledTimes(1);
+        });
+
+        it('should bound the concurrency of per-item retries', async () => {
+            const scripts = Array.from({ length: 10 }, (_, index) => ({
+                id: `s${index}`,
+                js: [`s${index}.js`],
+                matches: ['<all_urls>'],
+            }));
+
+            let inFlight = 0;
+            let maxInFlight = 0;
+            mockRegister.mockImplementation(async () => {
+                inFlight += 1;
+                maxInFlight = Math.max(maxInFlight, inFlight);
+                await Promise.resolve();
+                inFlight -= 1;
+                throw new Error('Invalid match pattern');
+            });
+
+            const { failedScriptIds } = await ContentScriptManager.sync(NS, scripts);
+
+            // Every script was retried and reported as failed.
+            expect(failedScriptIds).toHaveLength(10);
+            // Retries run in chunks, never all at once.
+            expect(maxInFlight).toBeLessThanOrEqual(8);
         });
 
         it('should treat reordered js/matches arrays as changed (update)', async () => {
@@ -1133,7 +1188,7 @@ describe('ContentScriptManager', () => {
                 },
             ]);
 
-            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
+            const { errors, failedScriptIds } = await ContentScriptManager.sync(NS, [
                 { id: 'domains', js: ['b.js', 'a.js'], matches: ['*://b.com/*', '*://a.com/*'] },
             ]);
 
