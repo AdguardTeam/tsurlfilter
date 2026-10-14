@@ -311,7 +311,7 @@ export class FilterConverter {
                 || rule.isModifierEnabled(OPTION_NAMES.BADFILTER)
             ),
             undefined,
-            FilterConverter.isCspRelatedLine,
+            FilterConverter.isCspRelatedText,
         );
 
         const convertedRules = await RulesConverter.convertCspRules(scannedFilters, options);
@@ -336,22 +336,25 @@ export class FilterConverter {
      * @returns Filters whose content mentions a CSP-related modifier.
      */
     private static async filterCspFilters(filters: IFilter[]): Promise<IFilter[]> {
-        const contents = await Promise.all(filters.map((filter) => filter.getContent()));
+        const filtersWithContent = await Promise.all(filters.map(async (filter) => ({
+            filter,
+            content: await filter.getContent(),
+        })));
 
-        return filters.filter((filter, index) => FilterConverter.CSP_RAW_MODIFIER_NAMES.some((modifier) => (
-            contents[index].includes(modifier)
-        )));
+        return filtersWithContent
+            .filter(({ content }) => FilterConverter.isCspRelatedText(content))
+            .map(({ filter }) => filter);
     }
 
     /**
-     * Checks whether a raw filter line may contain a CSP-related rule.
+     * Checks whether raw filter text may contain a CSP-related rule.
      *
-     * @param line Raw line of the filter list.
+     * @param text Filter content or a single line of it.
      *
-     * @returns `true` if the line should be parsed by the CSP pass.
+     * @returns `true` if the text should be parsed by the CSP pass.
      */
-    private static isCspRelatedLine(line: string): boolean {
-        return FilterConverter.CSP_RAW_MODIFIER_NAMES.some((name) => line.includes(name));
+    private static isCspRelatedText(text: string): boolean {
+        return FilterConverter.CSP_RAW_MODIFIER_NAMES.some((name) => text.includes(name));
     }
 
     /**

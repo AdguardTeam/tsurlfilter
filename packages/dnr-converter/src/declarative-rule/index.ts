@@ -21,9 +21,6 @@ export {
 
 export {
     type RuleCondition,
-    DOMAIN_LIST_CONDITION_FIELDS,
-    EXCLUSION_LIST_CONDITION_FIELDS,
-    INCLUSION_LIST_CONDITION_FIELDS,
     DomainType,
     RequestMethod,
     ResourceType,
