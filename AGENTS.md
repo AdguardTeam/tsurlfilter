@@ -133,12 +133,12 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   the publish succeeds → mirror → GitHub Release → Slack); thin caller of
   `_publish-release-monorepo.yml`. dnr-rulesets releases skip npm (registry
   429 throttling, AG-58865) and publish to the internal Artifact Keeper
-  instead, like the stable line.
+  instead.
 - `_publish-release-monorepo.yml` — reusable monorepo publish engine
   (Docker test/build → npm or Artifact Keeper (`publish_target` input; the AK
   leg is ungated, like the stable line) → tag after publish → mirror → GitHub
   Release → Slack, with a failure-notify Slack job).
-- `publish-stable-dnr-rulesets.yml` — twice-daily scheduled build/publish of
+- `publish-stable-dnr-rulesets.yml` — once-daily scheduled build/publish of
   `@adguard/dnr-rulesets` from the `stable/dnr-rulesets-5.0` and
   `stable/dnr-rulesets-6.0` branches; older stable lines are no longer
   published. The lines carry incompatible ruleset formats (6.0 is built with
@@ -155,8 +155,9 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   publishes the tarball to the internal Artifact Keeper npm registry (shared
   `deploy-to-ak-npm.yml`), where the browser-extension auto-build installs
   rulesets from. The npm leg (version check, publish, one retry after a
-  backoff) is disabled while npm throttles the package (AG-58867). A
-  failure-notify job alerts Slack when any leg fails.
+  backoff) is disabled again while npm throttles the package (AG-58867); the
+  one-off try re-enabled in AG-60418 still got HTTP 429. A failure-notify job
+  alerts Slack when any leg fails.
 - `mirror.yml` — syncs master to the public `AdguardTeam/tsurlfilter` mirror.
 - `update-companiesdb.yml` — refreshes the tswebextension companies database
   every Tuesday and pushes meaningful changes with Octopass. The push avoids
