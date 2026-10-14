@@ -88,6 +88,22 @@ class DeclarativeFilteringLog {
     }
 
     /**
+     * Releases the mutex after a failed update, keeping the previous rule sets.
+     *
+     * Used when a configuration step throws after {@link startUpdate}: the
+     * update never completed, so the rule sets and the listener keep their
+     * previous state. Does nothing when the mutex is already released.
+     */
+    public abortUpdate(): void {
+        if (!this.mutex.isLocked()) {
+            logger.debug('[tsweb.DeclarativeFilteringLog.abortUpdate]: no update in progress, nothing to abort');
+            return;
+        }
+
+        this.mutex.unlock();
+    }
+
+    /**
      * Returns converted declarative json rule, original text rule,
      * filter name and id specifically for session rules, since they are
      * collected from static rulesets.

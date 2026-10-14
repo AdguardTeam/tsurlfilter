@@ -15,6 +15,7 @@ import { declarativeFilteringLog } from '../../../../src/lib/mv3/background/decl
 import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import { requestContextStorage } from '../../../../src/lib/mv3/background/request/request-context-storage';
 import { SessionRulesApi } from '../../../../src/lib/mv3/background/session-rules-api';
+import { TimeoutError } from '../../../../src/lib/mv3/errors/timeout-error';
 
 // Counter for generating unique nanoid values in tests.
 let nanoidCounter = 0;
@@ -394,5 +395,32 @@ describe('DeclarativeFilteringLog.logMatchedRule', () => {
         expect(cspRuleset.getUnsafeRules).not.toHaveBeenCalled();
         expect(cspRuleset.getDeclarativeRules).toHaveBeenCalledTimes(1);
         expect(result.sourceRules).toEqual([{ sourceRule: '||csp.example^$csp=x', filterId: 2 }]);
+    });
+});
+
+describe('DeclarativeFilteringLog update lock', () => {
+    it('abortUpdate releases the lock so the next update can start', async () => {
+        await declarativeFilteringLog.startUpdate();
+
+        // While the lock is held, another update cannot start.
+        await expect(declarativeFilteringLog.startUpdate(0)).rejects.toThrow(TimeoutError);
+
+        declarativeFilteringLog.abortUpdate();
+
+        // A failed update must not leave the lock locked.
+        await expect(declarativeFilteringLog.startUpdate(0)).resolves.toBeUndefined();
+
+        declarativeFilteringLog.abortUpdate();
+    });
+
+    it('does not throw when there is no update to abort', () => {
+        expect(() => declarativeFilteringLog.abortUpdate()).not.toThrow();
+    });
+
+    it('is idempotent', async () => {
+        await declarativeFilteringLog.startUpdate();
+
+        declarativeFilteringLog.abortUpdate();
+        expect(() => declarativeFilteringLog.abortUpdate()).not.toThrow();
     });
 });

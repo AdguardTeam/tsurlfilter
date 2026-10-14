@@ -369,7 +369,51 @@ export class TsWebExtension implements AppInterface<
         declarativeFilteringLog.stop();
 
         if (configuration.settings.filteringEnabled) {
-            declarativeFilteringLog.startUpdate();
+            await this.applyFilteringConfiguration(configuration, res);
+        } else {
+            await TsWebExtension.removeAllFilteringRules();
+        }
+
+        this.configuration = TsWebExtension.createConfigurationContext(configuration);
+
+        // Update previously opened tabs with new rules - find for each tab
+        // new main frame rule.
+        await tabsApi.updateCurrentTabsMainFrameRules();
+
+        // Reload request events listeners.
+        await WebRequestApi.flushMemoryCache();
+
+        documentBlockingService.configure(config);
+
+        logger.trace('[tsweb.TsWebExtension.configure]: end');
+
+        return res;
+    }
+
+    /**
+     * Applies a filtering configuration under the filtering-log update lock.
+     *
+     * The lock must be released even when a configuration step throws:
+     * `getRuleInfo()` waits for the lock without a timeout, so a leaked lock
+     * would hang the filtering log until the extension is reloaded.
+     *
+     * @param configuration Configuration to apply.
+     * @param res Result object to fill with conversion details.
+     */
+    private async applyFilteringConfiguration(
+        configuration: ConfigurationMV3,
+        res: ConfigurationResult,
+    ): Promise<void> {
+        // Tracks whether this call holds the lock: `startUpdate()` may throw a
+        // timeout after another update has taken the lock, and releasing the
+        // lock in that case would break that update.
+        let isUpdateInProgress = false;
+
+        try {
+            // Awaited so that a timeout is observed and the lock is known to
+            // be held below.
+            await declarativeFilteringLog.startUpdate();
+            isUpdateInProgress = true;
 
             res.stealthResult = await StealthService.applySettings(configuration.settings);
 
@@ -502,7 +546,7 @@ export class TsWebExtension implements AppInterface<
                 try {
                     await DynamicRulesApi.rollbackDynamicFiltering(dynamicRulesSnapshot);
                 } catch (rollbackError) {
-                    logger.error('[tsweb.TsWebExtension.configure]: Cannot roll back dynamic rules:', rollbackError);
+                    logger.error('[tsweb.TsWebExtension.applyFilteringConfiguration]: Cannot roll back dynamic rules:', rollbackError);
                 }
                 throw error;
             }
@@ -532,6 +576,8 @@ export class TsWebExtension implements AppInterface<
 
             // Update rulesets in declarative filtering log.
             declarativeFilteringLog.finishUpdate(rulesets, configuration.declarativeLogEnabled);
+            // The lock is already released by `finishUpdate()`.
+            isUpdateInProgress = false;
 
             // TODO (AG-53262): Measure memory impact of keeping metadata (badFilterRules,
             // rulesHashMap) in memory vs. lazy-loading it on demand. The metadata
@@ -552,24 +598,11 @@ export class TsWebExtension implements AppInterface<
             }
 
             res.staticFilters = staticRulesets;
-        } else {
-            await TsWebExtension.removeAllFilteringRules();
+        } finally {
+            if (isUpdateInProgress) {
+                declarativeFilteringLog.abortUpdate();
+            }
         }
-
-        this.configuration = TsWebExtension.createConfigurationContext(configuration);
-
-        // Update previously opened tabs with new rules - find for each tab
-        // new main frame rule.
-        await tabsApi.updateCurrentTabsMainFrameRules();
-
-        // Reload request events listeners.
-        await WebRequestApi.flushMemoryCache();
-
-        documentBlockingService.configure(config);
-
-        logger.trace('[tsweb.TsWebExtension.configure]: end');
-
-        return res;
     }
 
     /**

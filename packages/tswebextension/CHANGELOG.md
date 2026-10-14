@@ -11,9 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added partial support for `$csp` exceptions in Manifest V3 across built-in,
   custom, and user filters [AdguardBrowserExtension#2965].
-- Rebuilt CSP rules are applied atomically across the dynamic and session DNR
-  scopes, fit into the remaining browser quotas, and are rolled back together
-  with the filtering-log source map when a later configuration step fails.
+- Rebuilt CSP rules replace the previous rules atomically within each DNR
+  scope, fit into the remaining browser quotas, and the dynamic scope is
+  rolled back when the session update fails.
 
 ### Changed
 
