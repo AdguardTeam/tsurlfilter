@@ -35,7 +35,7 @@
     "build": "pnpm clean && pnpm rollup --config rollup.config.ts --configPlugin @rollup/plugin-json --configPlugin @rollup/plugin-typescript && rimraf dist/types",
     "clean": "rimraf dist",
     "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
-    "lint:code": "eslint . --cache --ext .ts",
+    "lint:code": "node ../../scripts/lint-code.mjs . --cache --ext .ts",
     "lint:types": "tsc",
     "lint:md": "markdownlint .",
     "test": "vitest run",

@@ -27,7 +27,7 @@
         "prepush": "pnpm build",
         "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
         "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
-        "lint:code": "eslint --cache --ignore-path .gitignore .",
+        "lint:code": "node ../../scripts/lint-code.mjs --cache --ignore-path .gitignore .",
         "lint:types": "tsc",
         "lint:md": "markdownlint .",
         "test:prod": "pnpm lint",

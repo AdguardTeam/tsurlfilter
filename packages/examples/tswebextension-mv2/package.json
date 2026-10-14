@@ -12,7 +12,7 @@
         "run:ff": "tsx ./scripts/launchFirefoxExtension.ts",
         "test": "tsx ./scripts/browser-test/index.ts",
         "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
-        "lint:code": "eslint --cache --ignore-path .gitignore --ignore-pattern 'web-ext.d.ts' .",
+        "lint:code": "node ../../../scripts/lint-code.mjs --cache --ignore-path .gitignore --ignore-pattern 'web-ext.d.ts' .",
         "lint:types": "tsc --noEmit",
         "lint:md": "markdownlint .",
         "tswebextension": "tswebextension",

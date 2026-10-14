@@ -58,6 +58,7 @@ FROM deps AS source-base
 # config file (e.g. .prettierrc, turbo.json, tsconfig.base.json), add it here
 # as well — otherwise the build may silently use wrong or missing configs.
 COPY nx.json lerna.json vitest.config.ts .eslintignore ./
+COPY oxlint.config.mjs ./
 COPY scripts/ ./scripts/
 
 # ============================================================================
@@ -93,6 +94,8 @@ FROM source-base AS source-leaf-packages
 COPY packages/logger/ ./packages/logger/
 COPY packages/css-tokenizer/ ./packages/css-tokenizer/
 COPY packages/eslint-plugin-logger-context/ ./packages/eslint-plugin-logger-context/
+COPY tests/oxlint.test.mjs ./tests/
+RUN pnpm lint:config
 
 FROM source-leaf-packages AS built-css-tokenizer-and-logger
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \

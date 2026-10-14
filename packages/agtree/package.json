@@ -64,7 +64,7 @@
         "clean": "rimraf dist",
         "coverage": "vitest run --coverage",
         "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
-        "lint:code": "eslint . --cache --ext .ts",
+        "lint:code": "node ../../scripts/lint-code.mjs . --cache --ext .ts",
         "lint:types": "tsc",
         "lint:md": "markdownlint .",
         "precommit": "pnpm lint:types && pnpm lint && pnpm test",

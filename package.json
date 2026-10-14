@@ -17,6 +17,7 @@
     "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
     "scripts": {
         "lint": "lerna run lint",
+        "lint:config": "node --test tests/oxlint.test.mjs",
         "bench": "lerna run bench",
         "clean": "node scripts/cleanup.mjs",
         "prepare": "node .husky/install.mjs",
@@ -25,8 +26,12 @@
         "ri": "pnpm reinstall"
     },
     "devDependencies": {
+        "@agcodeguidelines/oxlint-config": "catalog:",
+        "@agcodeguidelines/oxlint-plugin": "catalog:",
+        "@agcodeguidelines/rule-catalog": "catalog:",
         "husky": "catalog:",
         "lerna": "8.1.8",
+        "oxlint": "catalog:",
         "vitest": "catalog:"
     },
     "pnpm": {

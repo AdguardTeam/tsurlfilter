@@ -7,7 +7,7 @@
     "type": "module",
     "scripts": {
         "build": "rimraf build && tsx ./scripts/build/index.ts",
-        "lint": "eslint --cache --ignore-path .gitignore . && pnpm lint:md",
+        "lint": "node ../../../scripts/lint-code.mjs --cache --ignore-path .gitignore . && pnpm lint:md",
         "lint:md": "markdownlint ."
     },
     "dependencies": {

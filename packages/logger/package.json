@@ -8,7 +8,7 @@
         "test:ci": "vitest run --reporter default --reporter junit --outputFile=./tests-reports/logger.xml",
         "test:prod": "pnpm lint && pnpm test:smoke && pnpm test:ci",
         "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
-        "lint:code": "eslint --cache --ignore-path .gitignore .",
+        "lint:code": "node ../../scripts/lint-code.mjs --cache --ignore-path .gitignore .",
         "lint:types": "tsc",
         "lint:md": "markdownlint .",
         "test:smoke": "(cd tests/smoke/esm && pnpm test) && (cd tests/smoke/cjs && pnpm test) && (cd tests/smoke/typescript && pnpm test)",

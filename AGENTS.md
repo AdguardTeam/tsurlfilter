@@ -15,7 +15,8 @@ high-level extension APIs (`adguard-api`, `adguard-api-mv3`).
   [catalogs](https://pnpm.io/catalogs) (`pnpm-workspace.yaml`)
 - **Orchestration**: Lerna 8 (independent versioning) + Nx (cacheable builds)
 - **Testing**: Vitest (root config delegates to per-package configs)
-- **Linting**: ESLint (per-package configs), markdownlint in some packages
+- **Linting**: Oxlint syntax rules + ESLint fallback (per-package configs),
+  markdownlint in some packages
 - **Target Platform**: Node.js, browser extensions (MV2 and MV3)
 - **Project Type**: Monorepo
 
@@ -76,6 +77,7 @@ All commands are run from the repository root unless noted otherwise.
 
 - **Install dependencies**: `pnpm install`
 - **Lint all packages**: `pnpm lint`
+- **Verify lint ownership and scope**: `pnpm lint:config`
 - **Run all tests**: `npx lerna run test`
 - **Run all benchmarks**: `npx lerna run bench` (per-package `pnpm bench`;
   browser numbers via `pnpm bench:browser` where available — `agtree` and
@@ -237,7 +239,11 @@ You MUST follow the following rules for EVERY task that you perform:
    cleanly under `pnpm lint:types`.
 
 2. **ESLint** is configured per-package (airbnb-typescript base in most
-   packages). Code MUST pass `pnpm lint:code`.
+  packages). Code MUST pass `pnpm lint:code`, which runs the root hybrid
+  runner. Only `no-debugger`, `no-duplicate-case`, and `no-sparse-arrays` move
+  to Oxlint's `ag-compat` provider with their original effective settings;
+  all other rules remain in ESLint. Do not activate additional preset rules
+  or transfer option semantics without parity checks (`pnpm lint:config`).
 
 3. **JSDoc** is required in most packages (enforced by `eslint-plugin-jsdoc`).
 

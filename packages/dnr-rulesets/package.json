@@ -37,7 +37,7 @@
         "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)",
         "test:coverage": "vitest run --coverage",
         "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
-        "lint:code": "eslint --cache .",
+        "lint:code": "node ../../scripts/lint-code.mjs --cache .",
         "lint:types": "tsc",
         "lint:md": "markdownlint .",
         "tgz": "pnpm pack --out dnr-rulesets.tgz"

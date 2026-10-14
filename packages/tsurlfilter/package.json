@@ -66,7 +66,7 @@
     "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#readme",
     "scripts": {
         "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
-        "lint:code": "eslint --cache --ignore-path .gitignore .",
+        "lint:code": "node ../../scripts/lint-code.mjs --cache --ignore-path .gitignore .",
         "lint:types": "tsc",
         "lint:md": "markdownlint .",
         "start": "rollup -c rollup.config.ts -w",
@@ -90,7 +90,7 @@
     },
     "lint-staged": {
         "{src,test}/**/*.ts": [
-            "eslint"
+            "node ../../scripts/lint-code.mjs"
         ]
     },
     "dependencies": {

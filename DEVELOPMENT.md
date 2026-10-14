@@ -183,9 +183,49 @@ base). See per-package linter configs for specific formatting rules.
 pnpm lint
 
 # Lint a specific package (from its directory)
-pnpm lint:code   # ESLint only
+pnpm lint:code   # Oxlint syntax rules + ESLint fallback
 pnpm lint:types  # TypeScript type checking only
 ```
+
+Code linting uses the root `scripts/lint-code.mjs` runner and
+`oxlint.config.mjs` factory. The factory calls the shared
+`@agcodeguidelines/oxlint-config` syntax-only compatibility preset with the
+`adguard-projects` profile, then disables every preset rule and override before
+enabling the verified owners below. Tool versions are pinned in the root pnpm
+catalog; only the three exact shared-package builds have release-age exceptions.
+
+| Owner | Rules |
+| --- | --- |
+| Oxlint (`ag-compat`) | `no-debugger`, `no-duplicate-case`, `no-sparse-arrays` |
+| ESLint | Every other existing rule, including typed rules, JSDoc, imports, boundaries, formatting and logger context |
+
+These three optionless rules have negative-fixture diagnostic parity checks.
+The catalog resolves their recorded default mappings, but rejects caller
+settings for them; severity parity is checked locally instead. Unverified
+options fail closed rather than silently changing enforcement. Do not transfer
+logger options or other rules merely because a catalog mapping exists.
+
+The runner uses each package's installed ESLint version (including ESLint 9's
+flat configuration for `dnr-rulesets`) to select files with the existing CLI
+ignores and extensions. It disables only the three owned rules in the fallback,
+reads their original effective settings, and groups exact filenames by those
+settings for Oxlint. Nested `root: true` resets, disabled rules, warning
+severities, smoke fixtures and builder scopes therefore retain their original
+behavior. TypeScript and Markdown scripts are unchanged. The four examples
+remain in root Lerna lint; builders without their own lint script are not given
+new standalone lint tasks. The published logger-context plugin is unchanged.
+
+Package-local staged checks use the same runner. For future suppressions of
+transferred rules, use the resolved `ag-compat/<rule>` name with an
+`oxlint-disable` directive; keep ESLint directives for fallback rules. No
+existing qualified suppression targets the transferred rules. Blanket ESLint
+suppression compatibility is covered by the regression checks.
+
+Run `pnpm lint:config` from the root for configuration, negative-fixture,
+suppression, ignore, nested-reset, warning and staged-file regression checks.
+Adding a new owner requires comparable parity checks before reducing ESLint.
+This intentionally modest hybrid does not promise a speedup: the compatibility
+provider is JavaScript and ESLint still owns most checks.
 
 ### Running Tests
 
@@ -215,7 +255,7 @@ same ordered set of checks regardless of the package:
 lint → test:smoke (where applicable) → test:ci
 ```
 
-- **`lint`** — runs `lint:code` (ESLint) and `lint:types` (TypeScript) and,
+- **`lint`** — runs `lint:code` (Oxlint + ESLint) and `lint:types` (TypeScript) and,
   where configured, `lint:md` (markdownlint).
 - **`test:smoke`** — imports the built package from ESM, CJS, and TypeScript
   to verify that the published exports resolve correctly.

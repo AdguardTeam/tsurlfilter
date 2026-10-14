@@ -10,6 +10,9 @@ minimumReleaseAge: 10080
 # 5 stack adopted on 2026-09-03. They never expire, so revisit and drop them once
 # those majors are past the window (or add a version suffix to each entry).
 minimumReleaseAgeExclude:
+  - '@agcodeguidelines/oxlint-config@0.1.0-build.11600659'
+  - '@agcodeguidelines/oxlint-plugin@0.1.0-build.11600659'
+  - '@agcodeguidelines/rule-catalog@0.1.0-build.11600659'
   - '@adguard/*'
   - '@vitest/*'
   - 'vitest'
@@ -18,6 +21,9 @@ minimumReleaseAgeExclude:
 
 # default catalog
 catalog:
+  '@agcodeguidelines/oxlint-config': 0.1.0-build.11600659
+  '@agcodeguidelines/oxlint-plugin': 0.1.0-build.11600659
+  '@agcodeguidelines/rule-catalog': 0.1.0-build.11600659
   '@adguard/assistant': ^4.4.12
   '@adguard/scriptlets': 2.5.1
   '@rollup/plugin-alias': ^5.1.1
@@ -77,6 +83,7 @@ catalog:
   markdownlint: ^0.37.4
   markdownlint-cli: ^0.44.0
   playwright: ^1.52.0
+  oxlint: 1.82.0
   punycode: 2.3.1
   react: ^17.0.2
   react-dom: ^17.0.2

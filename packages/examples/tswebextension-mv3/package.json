@@ -10,7 +10,7 @@
         "build:extension": "tsx ./scripts/build",
         "build:precompile-rules": "tsx ./scripts/precompile-rules.ts",
         "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
-        "lint:code": "eslint --cache --ignore-path .gitignore .",
+        "lint:code": "node ../../../scripts/lint-code.mjs --cache --ignore-path .gitignore .",
         "lint:types": "tsc --noEmit",
         "lint:md": "markdownlint .",
         "tswebextension": "tswebextension",
