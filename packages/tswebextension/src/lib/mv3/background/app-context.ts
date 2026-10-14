@@ -59,9 +59,8 @@ export class AppContext {
      * snapshot must not survive an extension update that changes
      * registrations.
      *
-     * Used to decide which rules are proven to have executed at
-     * `document_start` in a pre-existing tab (skip dynamic injection) and
-     * which are not (inject dynamically).
+     * Used to decide which rules are covered for a pre-existing tab (skip
+     * dynamic injection) and which are not (inject dynamically).
      */
     public preregisteredScriptRulesAtBoot?: Map<string, Set<string>>;
 }

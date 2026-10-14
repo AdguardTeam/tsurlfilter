@@ -44,9 +44,8 @@ export const readActiveRegistrations = async (namespace: string): Promise<Map<st
 
 /**
  * Recovers, per hostname, the hashes of rules covered by registrations
- * persisted from previous service-worker lifetimes — the rules proven to
- * have executed at `document_start` in pre-existing tabs — and publishes
- * the snapshot into the app context.
+ * persisted from previous service-worker lifetimes — the coverage basis
+ * for pre-existing tabs — and publishes the snapshot into the app context.
  *
  * A failed snapshot is NOT persisted into the app context, so the next
  * configure retries it instead of sticking with an empty map for the rest

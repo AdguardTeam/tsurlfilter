@@ -44,18 +44,11 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  * preregistered domains, so build-time-known scriptlet/JS rules run at
  * `document_start`, before the extension itself finishes starting up.
  *
- * For each configured hostname (plus its derived `www.` alias) the service
- * queries the engine (ignoring `$path`, so path-qualified rules aren't
- * missed), hashes the matching rules and registers
- * `js: [bundle, ...scriptletFunctionFiles, ...perRuleFiles, cleanup]`.
- * Scriptlet function files carry only the implementations the host's rules
- * use (from the manifest's `scriptletFiles` map). The per-rule file itself
- * enforces any `$path` condition via `location`. `cleanup` runs last,
- * deleting the coordination `window` property before page scripts run.
- *
- * `matchOriginAsFallback: true` additionally covers `about:blank`/srcdoc
- * frames on these hosts, which the dynamic path never reaches — an
- * intentional behavior extension.
+ * `matchOriginAsFallback: true` makes the registrations cover
+ * `about:blank`/srcdoc frames too: the dynamic path treats such frames as
+ * covered by their nearest HTTP ancestor's hostname, so the preregistered
+ * files must actually be injected there as well — otherwise the rules
+ * would be suppressed on both paths.
  *
  * Hostnames not in the list keep the standard dynamic injection path.
  *
@@ -63,19 +56,20 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  * - Documents are judged against the latest reported coverage, not the
  *   registrations they received at `document_start`: after a mid-lifetime
  *   sync, pages loaded before it may skip rules the sync added (missed
- *   execution) or re-run rules it removed (harmless — the shared dedup
- *   set makes re-execution safe). Pre-existing tabs are judged against
- *   the boot snapshot.
+ *   execution) or re-run rules it removed (harmless — scriptlets are
+ *   idempotent, and the dynamic path does not consult the coordination
+ *   set, which `cleanup` deletes before page scripts run). Pre-existing
+ *   tabs are judged against the boot snapshot.
  *
  * Known limitations:
  * - Scriptlet executions are deduped by rule hash, unlike the dynamic
  *   path — both paths rely on scriptlets being idempotent.
  * - `$url`-modified rules are never preregistered (the engine is queried
  *   per hostname root) and stay on the dynamic injection path.
- * - Preregistered executions bypass hit logging; they do appear in the
- *   filtering log, but the entries reflect the coverage decision, not the
- *   in-page execution outcome — a preregistered file failing inside the
- *   page is not observable.
+ * - `$document`/`$jsinject` exceptions below the root path (e.g.
+ *   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for
+ *   the host: rules registered on `*://youtube.com/*` still execute on
+ *   `/embed/…` — tracked in AG-54564.
  */
 export class PreregisteredScriptsService {
     /**
@@ -105,10 +99,8 @@ export class PreregisteredScriptsService {
         // Snapshot unconditionally, before sync/clear mutates registrations,
         // so pre-existing tabs are judged against the registrations that
         // existed when their pages loaded — even when the feature is not
-        // configured anymore (an update may have removed it). A failed
-        // snapshot is NOT persisted into the app context, so the next
-        // configure retries it instead of sticking with an empty map for
-        // the rest of the service-worker lifetime.
+        // configured anymore (an update may have removed it). Failure
+        // handling: see snapshotBootRegistrations().
         if (appContext.preregisteredScriptRulesAtBoot === undefined) {
             await snapshotBootRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE);
         }
@@ -187,10 +179,12 @@ export class PreregisteredScriptsService {
     }
 
     /**
-     * Returns the best-known coverage to publish when the active
-     * registrations cannot be observed: the last published coverage (the
-     * registrations it described are still active), or the boot snapshot
-     * before the first sync, or an empty map.
+     * Returns the best-known coverage to publish when a sync or the clear
+     * of the registrations failed: the last published coverage (its
+     * registrations are still active), the boot snapshot before the first
+     * sync, or an empty map. A failed post-sync read does NOT use this — it
+     * publishes an empty map, since the registrations were already
+     * replaced.
      *
      * @returns Hostname to covered rule hashes map.
      */
@@ -274,7 +268,7 @@ export class PreregisteredScriptsService {
 
             await ContentScriptManager.sync(PREREGISTERED_SCRIPTS_NAMESPACE, scripts);
         } catch (e) {
-            logger.error('[tsweb.PreregisteredScriptsService.doSync]: Sync failed, keeping dynamic injection', e);
+            logger.error('[tsweb.PreregisteredScriptsService.doSync]: Sync failed, keeping the previous coverage', e);
 
             const fallback = PreregisteredScriptsService.getFallbackCoverage();
             appContext.preregisteredScriptRules = fallback;
@@ -333,6 +327,16 @@ export class PreregisteredScriptsService {
         const cleanupPath = `${scriptsPath}/${CLEANUP_FILENAME}`;
 
         const scripts: ContentScriptDescriptor[] = [];
+        const degradedRules = new Set<string>();
+        const degradedHostnames = new Set<string>();
+
+        // Per-rule details go to debug; one warn summarizes the sync below.
+        const logDegradedRule = (reason: string, hash: string, hostname: string): void => {
+            degradedRules.add(hash);
+            degradedHostnames.add(hostname);
+            // eslint-disable-next-line max-len
+            logger.debug(`[tsweb.PreregisteredScriptsService.buildDomainScripts]: Rule ${hash} on "${hostname}" ${reason}, keeping dynamic injection`);
+        };
 
         // Process hostnames in bounded batches: the per-host engine match is
         // cheap, but the fan-out of `crypto.subtle` hashing must stay
@@ -378,7 +382,7 @@ export class PreregisteredScriptsService {
                             rule,
                             { ignoreExceptionUrlConditions: true },
                         )) {
-                            PreregisteredScriptsService.logDegradedRule(
+                            logDegradedRule(
                                 'is cancelled by a runtime $path/$url exception',
                                 hash,
                                 hostname,
@@ -387,7 +391,7 @@ export class PreregisteredScriptsService {
                         }
 
                         if (!manifestHashes.has(hash)) {
-                            PreregisteredScriptsService.logDegradedRule('has no per-hash file', hash, hostname);
+                            logDegradedRule('has no per-hash file', hash, hostname);
                             continue;
                         }
 
@@ -398,7 +402,7 @@ export class PreregisteredScriptsService {
                                 : undefined;
 
                             if (!functionFile) {
-                                PreregisteredScriptsService.logDegradedRule(
+                                logDegradedRule(
                                     'has no scriptlet function file',
                                     hash,
                                     hostname,
@@ -439,18 +443,11 @@ export class PreregisteredScriptsService {
             );
         }
 
-        return scripts;
-    }
+        if (degradedHostnames.size > 0) {
+            // eslint-disable-next-line max-len
+            logger.warn(`[tsweb.PreregisteredScriptsService.buildDomainScripts]: ${degradedRules.size} rule(s) on ${degradedHostnames.size} hostname(s) stay on dynamic injection, see debug logs for details`);
+        }
 
-    /**
-     * Logs why a rule stays on the dynamic injection path.
-     *
-     * @param reason Human-readable reason (no trailing punctuation).
-     * @param hash Rule hash.
-     * @param hostname Hostname the rule was matched for.
-     */
-    private static logDegradedRule(reason: string, hash: string, hostname: string): void {
-        // eslint-disable-next-line max-len
-        logger.warn(`[tsweb.PreregisteredScriptsService.logDegradedRule]: Rule ${hash} on "${hostname}" ${reason}, keeping dynamic injection`);
+        return scripts;
     }
 }

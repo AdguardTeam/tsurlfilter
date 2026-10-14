@@ -122,17 +122,17 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Returns the hashes of preregistered rules proven to have executed in
-     * the frame — those dynamic injection must skip.
+     * Returns the hashes of preregistered rules covered by the registrations
+     * that apply to the frame — those dynamic injection must skip.
      *
      * @param tabId Tab id.
      * @param frameContext Frame context.
      * @param preExistingDocument Whether the document loaded before the
-     * current service worker started: only the rules from registrations
-     * persisted at boot are proven to have executed, since a registration
+     * current service worker started: such a document is judged only against
+     * the rules from registrations persisted at boot, since a registration
      * updated since then may carry rules the page never received.
      *
-     * @returns Covered rule hashes or `undefined` when nothing is proven.
+     * @returns Covered rule hashes or `undefined` when there is no coverage.
      */
     private static getPreregisteredCoveredRules(
         tabId: number,
@@ -159,9 +159,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Filters out the rules covered by preregistered content scripts, keeping
      * those dynamic injection must still deliver.
      *
-     * Rules that fail to hash keep the dynamic injection path — coverage
-     * can't be proven for them. Split coverage can reorder same-domain rules
-     * relative to each other (bundle runs at document_start, dynamic
+     * Rules that fail to hash keep the dynamic injection path — their
+     * coverage cannot be established. Split coverage can reorder same-domain
+     * rules relative to each other (bundle runs at document_start, dynamic
      * injection later) — accepted: rule execution order is not a contract
      * anywhere on the dynamic path.
      *
@@ -174,7 +174,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * would lose the rule on both paths.
      *
      * @param rawRules Candidate rules to filter.
-     * @param coveredRules Hashes of rules proven to have executed already.
+     * @param coveredRules Hashes of rules covered by preregistered registrations.
      * @param frameUrl Frame URL, used for logging and to detect non-HTTP
      * frames.
      *
@@ -684,8 +684,8 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const tasks: Promise<void>[] = [];
 
-        // Skip dynamic injection of the rules proven to have executed via
-        // preregistered content scripts — injecting them again would cause
+        // Skip dynamic injection of the rules covered by preregistered
+        // content scripts — injecting them again would cause
         // double execution. Rules missing from the covered set (degraded at
         // sync time, or added to the registration after a pre-existing page
         // loaded) still go through the dynamic path. `remoteRules` below

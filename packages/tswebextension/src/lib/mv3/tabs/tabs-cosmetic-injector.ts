@@ -146,7 +146,7 @@ export class TabsCosmeticInjector {
                     shouldApplyCss: true,
                     // The page loaded before this service worker started, so
                     // only the preregistered rules from registrations
-                    // persisted at boot are proven to have executed.
+                    // persisted at boot count as covered.
                     preExistingDocument: true,
                 });
             } catch (e) {

@@ -9,11 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `Engine.getCosmeticResult()` and `Engine.isCosmeticRuleAllowlisted()`
-  accept an options object with `ignorePath` /
-  `ignoreExceptionUrlConditions`, skipping the `$path` modifier check for
-  JS/scriptlet rules and the `$path`/`$url` checks of exceptions
-  (build-time preregistration discovery).
+- `Engine.isCosmeticRuleAllowlisted()` — a new method checking whether a
+  cosmetic rule is cancelled by an exception, with an
+  `ignoreExceptionUrlConditions` option skipping the `$path`/`$url` checks
+  of exceptions (build-time preregistration discovery).
+- `Engine.getCosmeticResult()` accepts an `ignorePath` option, and
+  `CosmeticRule.match()` — a new `ignorePath` parameter, both skipping the
+  `$path` modifier check for JS/scriptlet rules.
 
 ### Changed
 
