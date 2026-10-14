@@ -3,6 +3,8 @@ import { CosmeticOption, type CosmeticRule, RequestType } from '@adguard/tsurlfi
 import { DocumentApi } from '../document-api';
 import { engineApi } from '../engine-api';
 
+import { getPreregisteredRootUrl } from './root-request';
+
 /**
  * Queries the engine for JS/scriptlet rules applicable to `hostname`,
  * ignoring the `$path` modifier so path-qualified rules aren't missed.
@@ -23,7 +25,7 @@ import { engineApi } from '../engine-api';
  * @returns Applicable local script rules.
  */
 export const getHostnameScriptRules = (hostname: string): CosmeticRule[] => {
-    const url = `https://${hostname}/`;
+    const url = getPreregisteredRootUrl(hostname);
 
     const frameRule = DocumentApi.matchFrame(url);
 

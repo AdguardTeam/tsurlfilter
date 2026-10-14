@@ -17,6 +17,7 @@ import {
     computeRuleHash,
     getRuleFilename,
     MANIFEST_FILENAME,
+    MANIFEST_SCHEMA_VERSION,
     SHARED_BUNDLE_FILENAME,
 } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
 import {
@@ -155,8 +156,8 @@ const scriptletFilename = (name: string): string => `s-${name}.js`;
  *
  * @param hashes Manifest hash list to serve, or `null` to simulate a missing
  * (404) manifest.
- * @param scriptletFiles Scriptlet name → per-function filename map, or
- * `undefined` to omit the field from the served manifest.
+ * @param scriptletFiles Scriptlet name → per-function filename map.
+ * Defaults to an empty map.
  */
 const setupManifest = (
     hashes: string[] | null,
@@ -176,7 +177,11 @@ const setupManifest = (
         return {
             ok: true,
             status: 200,
-            json: async (): Promise<unknown> => ({ hashes, scriptletFiles }),
+            json: async (): Promise<unknown> => ({
+                schemaVersion: MANIFEST_SCHEMA_VERSION,
+                hashes,
+                scriptletFiles: scriptletFiles ?? {},
+            }),
         };
     }));
 };
@@ -491,18 +496,6 @@ describe('PreregisteredScriptsService', () => {
             expect(scripts).toHaveLength(0);
         });
 
-        it('keeps dynamic injection for scriptlet rules when the manifest has no scriptletFiles field', async () => {
-            const rule = mockScriptletRule('set-cookie', []);
-            setupEngine({ 'youtube.com': [rule] });
-            setupManifest([await computeRuleHash(rule)]);
-
-            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-
-            expect(result).toEqual(new Map());
-            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
-            expect(scripts).toHaveLength(0);
-        });
-
         it('includes each function file once when several rules use the same scriptlet', async () => {
             await setupRulesWithManifest({
                 'youtube.com': [
@@ -550,16 +543,19 @@ describe('PreregisteredScriptsService', () => {
             expect(chrome.runtime.getURL).toHaveBeenCalledWith(`${SCRIPTS_PATH}/${MANIFEST_FILENAME}`);
         });
 
-        it('covers nothing when the manifest is missing (404)', async () => {
+        it('does not clear registrations when the manifest is missing (404)', async () => {
             setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
             setupManifest(null);
 
             const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
+            // A missing manifest is a broken build: the sync fails and the
+            // registrations stay untouched.
+            expect(ContentScriptManager.syncDetailed).not.toHaveBeenCalled();
             expect(result).toEqual(new Map());
         });
 
-        it('unregisters stale registrations when the manifest is missing', async () => {
+        it('keeps stale registrations when the manifest is missing', async () => {
             setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
             // A stale persistAcrossSessions registration from a previous version.
             registryState.descriptors = [
@@ -569,13 +565,13 @@ describe('PreregisteredScriptsService', () => {
 
             const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            // The sync clears the stale registration instead of leaving it
-            // firing at document_start next to revived dynamic injection.
-            expect(ContentScriptManager.syncDetailed).toHaveBeenCalledWith('preregistered', []);
+            // A missing manifest is a broken build: the sync fails instead
+            // of silently dropping the stale registration.
+            expect(ContentScriptManager.syncDetailed).not.toHaveBeenCalled();
             expect(result).toEqual(new Map());
         });
 
-        it('covers nothing when the manifest fetch fails', async () => {
+        it('does not clear registrations when the manifest fetch fails', async () => {
             setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
             const getURL = vi.fn(() => {
                 throw new Error('no chrome.runtime');
@@ -584,22 +580,7 @@ describe('PreregisteredScriptsService', () => {
 
             const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            expect(result).toEqual(new Map());
-        });
-
-        it('covers nothing when the manifest is malformed', async () => {
-            setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
-            const getURL = vi.fn((p: string) => `chrome-extension://test/${p}`);
-            vi.stubGlobal('chrome', { ...chrome, runtime: { ...chrome.runtime, getURL } });
-            vi.stubGlobal('fetch', vi.fn(async () => ({
-                ok: true,
-                status: 200,
-                // `hashes` is not an array.
-                json: async (): Promise<unknown> => ({ hashes: 'not-an-array' }),
-            })));
-
-            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-
+            expect(ContentScriptManager.syncDetailed).not.toHaveBeenCalled();
             expect(result).toEqual(new Map());
         });
 

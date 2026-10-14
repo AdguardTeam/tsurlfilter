@@ -265,13 +265,11 @@ export class PreregisteredScriptsService {
 
             if (preregistrationEnabled && hostnames.length > 0) {
                 const manifest = await readManifest(scriptsPath);
-                if (manifest) {
-                    scripts = await PreregisteredScriptsService.buildDomainScripts(
-                        hostnames,
-                        scriptsPath,
-                        manifest,
-                    );
-                }
+                scripts = await PreregisteredScriptsService.buildDomainScripts(
+                    hostnames,
+                    scriptsPath,
+                    manifest,
+                );
             }
 
             await ContentScriptManager.syncDetailed(PREREGISTERED_SCRIPTS_NAMESPACE, scripts);

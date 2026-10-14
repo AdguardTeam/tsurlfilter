@@ -39,9 +39,9 @@ export const getRuleFilename = (hash: string): string => {
 export const MANIFEST_FILENAME = 'manifest.json';
 
 /**
- * Highest manifest schema version the runtime understands. Manifests
- * without `schemaVersion` are version 0. A manifest reporting a higher
- * version is rejected by the runtime: its fields may have changed meaning.
+ * Manifest schema version written by the build and required by the runtime.
+ * A manifest reporting any other version is rejected: its fields may have
+ * changed meaning.
  */
 export const MANIFEST_SCHEMA_VERSION = 1;
 
@@ -53,10 +53,9 @@ export const MANIFEST_SCHEMA_VERSION = 1;
  */
 export interface PreregisteredScriptsManifest {
     /**
-     * Schema version of the manifest. Absent in manifests written before
-     * the field was introduced; treated as 0.
+     * Schema version of the manifest.
      */
-    schemaVersion?: number;
+    schemaVersion: number;
 
     /**
      * Hashes of the current generation's per-rule files.
@@ -66,8 +65,6 @@ export interface PreregisteredScriptsManifest {
     /**
      * Scriptlet name → per-function filename (`s-{hash}.js`). A rule whose
      * scriptlet has no entry here stays on the dynamic injection path.
-     * May be absent in raw manifests written before this field was
-     * introduced — the runtime reader normalizes it to `{}`.
      */
     scriptletFiles: Record<string, string>;
 }

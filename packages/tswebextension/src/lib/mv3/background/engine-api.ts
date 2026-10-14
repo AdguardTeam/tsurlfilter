@@ -21,6 +21,7 @@ import { logger } from '../../common/utils/logger';
 import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 
 import { type ConfigurationMV3 } from './configuration';
+import { createPreregisteredRootRequest } from './preregistered-scripts/root-request';
 import { type ITrustedFilter } from './trusted-filter';
 import { UserScriptsApi } from './user-scripts-api';
 
@@ -375,7 +376,7 @@ export class EngineApi {
             return false;
         }
 
-        const request = new Request(`https://${hostname}/`, null, RequestType.Document);
+        const request = createPreregisteredRootRequest(hostname);
         return this.engine.isCosmeticRuleAllowlisted(request, rule, { ignoreExceptionUrlConditions });
     }
 

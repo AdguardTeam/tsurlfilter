@@ -29,6 +29,10 @@
             "types": "./dist/types/preregistered-scripts-hasher.d.ts",
             "default": "./dist/preregistered-scripts-hasher.js"
         },
+        "./mv3/preregistered-scripts/root-request": {
+            "types": "./dist/types/preregistered-scripts-root-request.d.ts",
+            "default": "./dist/preregistered-scripts-root-request.js"
+        },
         "./mv3/gpc": {
             "default": "./dist/gpc.mv3.js"
         },

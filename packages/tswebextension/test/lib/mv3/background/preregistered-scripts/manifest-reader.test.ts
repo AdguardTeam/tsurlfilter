@@ -14,16 +14,22 @@ const SCRIPTS_PATH = 'filters/preregistered-scripts';
 /**
  * Serves the given body as the manifest fetch response.
  *
- * @param body Manifest JSON body to serve.
+ * @param body Manifest JSON body to serve, or `null` to simulate a missing
+ * (404) manifest.
  */
-const stubManifestFetch = (body: unknown): void => {
+const stubManifestFetch = (body: unknown | null): void => {
     const getURL = vi.fn((p: string) => `chrome-extension://test/${p}`);
     vi.stubGlobal('chrome', { ...chrome, runtime: { ...chrome.runtime, getURL } });
-    vi.stubGlobal('fetch', vi.fn(async () => ({
-        ok: true,
-        status: 200,
-        json: async (): Promise<unknown> => body,
-    })));
+    vi.stubGlobal('fetch', vi.fn(async () => {
+        if (body === null) {
+            return { ok: false, status: 404 };
+        }
+        return {
+            ok: true,
+            status: 200,
+            json: async (): Promise<unknown> => body,
+        };
+    }));
 };
 
 describe('readManifest', () => {
@@ -31,36 +37,43 @@ describe('readManifest', () => {
         vi.unstubAllGlobals();
     });
 
-    it('drops non-string scriptletFiles entries', async () => {
-        stubManifestFetch({ hashes: [], scriptletFiles: { good: 's-a.js', bad: 123 } });
+    it('returns the manifest as-is when the schema version matches', async () => {
+        const body = {
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: ['0123456789abcdef'],
+            scriptletFiles: { 'set-cookie': 's-set-cookie.js' },
+        };
+        stubManifestFetch(body);
 
         const manifest = await readManifest(SCRIPTS_PATH);
 
-        expect(manifest?.scriptletFiles).toEqual({ good: 's-a.js' });
+        // The manifest is the package's own build output: returned as-is,
+        // without normalization.
+        expect(manifest).toEqual(body);
     });
 
-    it('never resolves inherited keys for missing scriptlet names', async () => {
-        stubManifestFetch({ hashes: [] });
+    it('throws when the manifest is unavailable (404)', async () => {
+        stubManifestFetch(null);
 
-        const manifest = await readManifest(SCRIPTS_PATH);
-
-        // A scriptlet named `constructor` must not resolve the inherited
-        // Object.prototype.constructor.
-        expect(manifest?.scriptletFiles.constructor).toBeUndefined();
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('404');
     });
 
-    it('rejects manifests written under a newer schema version', async () => {
+    it('throws on manifests written under another schema version', async () => {
         stubManifestFetch({
             schemaVersion: MANIFEST_SCHEMA_VERSION + 1,
             hashes: ['0123456789abcdef'],
             scriptletFiles: { 'set-cookie': 's-set-cookie.js' },
         });
 
-        const manifest = await readManifest(SCRIPTS_PATH);
-
-        // A future generation's manifest fields may have changed meaning —
-        // refusing it degrades to dynamic injection instead of silently
+        // A manifest with a different version is a broken build: failing
+        // the sync keeps the previous registrations instead of silently
         // registering mismatched artifacts.
-        expect(manifest).toBeNull();
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('schema version');
+    });
+
+    it('throws when the schema version is missing', async () => {
+        stubManifestFetch({ hashes: [], scriptletFiles: {} });
+
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('schema version');
     });
 });
