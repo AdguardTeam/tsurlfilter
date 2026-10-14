@@ -357,6 +357,19 @@ export class QuoteUtils {
                     continue;
                 }
 
+                // An unpaired double quote closes the attribute selector's
+                // value, so the nesting state should be left. Otherwise, an
+                // attribute selector that follows a quoted one (e.g. the
+                // `[tag-content]` in `[class="a"][tag-content="b""c"]`) would
+                // still be handled as lying inside the first selector's value,
+                // so the `""` doubling there would be paired with shifted
+                // quotes and escaped incorrectly.
+                if (char === DOUBLE_QUOTE) {
+                    nestingBlockStack.pop();
+                    buffer.push(char);
+                    continue;
+                }
+
                 // Normal character inside of attribute selector's value
                 buffer.push(char);
                 continue;
@@ -446,6 +459,19 @@ export class QuoteUtils {
                     // Skip the next double quote
                     i += 1;
 
+                    continue;
+                }
+
+                // An unpaired double quote closes the attribute selector's
+                // value, so the nesting state should be left. Otherwise, an
+                // attribute selector that follows a quoted one (e.g. the
+                // `[tag-content]` in `[class="a"][tag-content="b\"c"]`) would
+                // still be handled as lying inside the first selector's value,
+                // so the `\"` escaping there would be paired with shifted
+                // quotes and unescaped incorrectly.
+                if (char === DOUBLE_QUOTE) {
+                    nestingBlockStack.pop();
+                    buffer.push(char);
                     continue;
                 }
 
