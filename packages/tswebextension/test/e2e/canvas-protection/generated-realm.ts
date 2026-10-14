@@ -1,8 +1,6 @@
 import { expect } from 'vitest';
-import { server } from 'vitest/browser';
 
 import { CanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
-import { CanvasPolicyBrowser } from '../../../src/lib/common/canvas-protection/constants';
 import { type CanvasBootstrapSnapshot } from '../../../src/lib/common/canvas-protection/contracts';
 import { deriveSiteSeed } from '../../../src/lib/common/canvas-protection/noise';
 
@@ -18,9 +16,7 @@ export type Realm = Window & typeof globalThis;
 export const snapshot = (): CanvasBootstrapSnapshot => ({
     session: { root: '0123456789abcdef0123456789abcdef', generation: 'abcdef0123456789abcdef0123456789' },
     policy: {
-        schemaVersion: 1,
         revision: 'current',
-        browser: server.browser === 'firefox' ? CanvasPolicyBrowser.FirefoxMv2 : CanvasPolicyBrowser.ChromiumMv3,
         selectors: { matches: ['<all_urls>'], excludeMatches: [] },
         ownFrameExclusions: [],
         documentExclusions: [],

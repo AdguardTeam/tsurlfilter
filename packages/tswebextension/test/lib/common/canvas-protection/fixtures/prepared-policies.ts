@@ -14,18 +14,14 @@ import {
 /**
  * Creates a prepared policy with no exclusions for supported URL delivery.
  *
- * @param browser Browser registration adapter.
  * @param revision Captured policy revision.
  *
  * @returns A seed-free prepared policy.
  */
 export const createProtectAllPolicy = (
-    browser: ProtectionPolicyArtifact['browser'],
     revision: string,
 ): ProtectionPolicyArtifact => ({
-    schemaVersion: 1,
     revision,
-    browser,
     selectors: { matches: ['<all_urls>'], excludeMatches: [] },
     ownFrameExclusions: [],
     documentExclusions: [],

@@ -21,7 +21,6 @@ import {
 } from '../../../../src/lib';
 import {
     CanvasAvailabilityStatus,
-    CanvasPolicyBrowser,
     CanvasRegistrationStatus,
 } from '../../../../src/lib/common/canvas-protection/constants';
 import { type Message } from '../../../../src/lib/common/message';
@@ -29,7 +28,6 @@ import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { assistant, Assistant } from '../../../../src/lib/mv2/background/assistant';
 import { configurationMV2Validator } from '../../../../src/lib/mv2/background/configuration';
 import { browserDetectorMV2 } from '../../../../src/lib/mv2/background/utils/browser-detector';
-import { createProtectAllPolicy } from '../../common/canvas-protection/fixtures/prepared-policies';
 
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
 import { MockAppContext } from './mocks/mock-app-context';
@@ -66,6 +64,7 @@ describe('TsWebExtension', () => {
         config = getConfigurationMv2Fixture();
         vi.mocked(configurationMV2Validator.parse).mockImplementation((value) => value as ConfigurationMV2);
         vi.spyOn(engineApi, 'startEngine').mockResolvedValue({ conversionErrors: [] });
+        vi.spyOn(engineApi, 'getDocumentExceptionRuleTexts').mockReturnValue([]);
     });
 
     afterEach(() => {
@@ -275,16 +274,13 @@ describe('TsWebExtension', () => {
         });
 
         /**
-         * Starts the app and enables protection with a prepared policy.
-         *
-         * @param revision Policy revision.
+         * Starts the app and enables canvas protection.
          *
          * @returns The registration result of enabling.
          */
-        const enable = async (revision = 'policy-a'): Promise<RegistrationResult> => {
+        const enable = async (): Promise<RegistrationResult> => {
             await instance.initStorage();
             await instance.start(config);
-            await instance.setCanvasProtectionPolicy(createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, revision));
             return instance.setCanvasProtectionEnabled(true);
         };
 
@@ -298,9 +294,13 @@ describe('TsWebExtension', () => {
             expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
         });
 
-        it('requires prepared policy rather than assuming empty exceptions', async () => {
+        it('reports a missing policy before the first start', async () => {
             await instance.initStorage();
-            await instance.start(config);
+            appContext.configuration = {
+                ...config,
+                filters: config.filters.map(({ filterId }) => filterId),
+                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
+            };
             const result = await instance.setCanvasProtectionEnabled(true);
             expect(result).toMatchObject({
                 status: CanvasRegistrationStatus.Unavailable,
@@ -319,15 +319,18 @@ describe('TsWebExtension', () => {
             await instance.setStealthModeEnabled(false);
             expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
             await instance.setStealthModeEnabled(true);
-            const replacement = await instance.setCanvasProtectionPolicy(
-                createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-b'),
-            );
+            vi.mocked(engineApi.getDocumentExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
+            await instance.configure({
+                ...config,
+                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
+            });
+            const replacement = instance.getCanvasProtectionState();
             expect(replacement).toMatchObject({
                 status: CanvasRegistrationStatus.Installed,
                 installed: {
                     status: CanvasAvailabilityStatus.Available,
                     value: {
-                        revision: 'policy-b',
+                        revision: replacement.requested.revision,
                         generation: initial.installed.status === CanvasAvailabilityStatus.Available
                             ? initial.installed.value.generation : undefined,
                     },
@@ -336,6 +339,57 @@ describe('TsWebExtension', () => {
             expect(captured.js).not.toEqual(vi.mocked(browser.contentScripts.register).mock.calls.at(-1)![0].js);
             await instance.stop();
             expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
+        });
+
+        it('compiles exceptions of the engine into the registration', async () => {
+            vi.mocked(engineApi.getDocumentExceptionRuleTexts)
+                .mockReturnValue(['@@||example.org^$stealth=fingerprinting']);
+            await instance.initStorage();
+            await instance.start({
+                ...config,
+                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
+            });
+            expect(browser.contentScripts.register).toHaveBeenLastCalledWith(expect.objectContaining({
+                excludeMatches: ['*://*.example.org/*'],
+            }));
+        });
+
+        it('keeps the registration for the same rules on configure', async () => {
+            vi.mocked(engineApi.getDocumentExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
+            const initial = await enable();
+            vi.mocked(browser.contentScripts.register).mockClear();
+            await instance.configure({
+                ...config,
+                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
+            });
+            expect(instance.getCanvasProtectionState().requested.revision).toBe(initial.requested.revision);
+            expect(browser.contentScripts.register).not.toHaveBeenCalled();
+        });
+
+        it('updates the registration when configure brings new rules', async () => {
+            const initial = await enable();
+            vi.mocked(engineApi.getDocumentExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
+            await instance.configure({
+                ...config,
+                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
+            });
+            expect(instance.getCanvasProtectionState().requested.revision).not.toBe(initial.requested.revision);
+            expect(browser.contentScripts.register).toHaveBeenLastCalledWith(expect.objectContaining({
+                excludeMatches: ['*://*.example.org/*'],
+            }));
+        });
+
+        it('keeps the compiled policy for setters', async () => {
+            const initial = await enable();
+            vi.mocked(engineApi.getDocumentExceptionRuleTexts).mockClear();
+            await instance.setFilteringEnabled(false);
+            await instance.setFilteringEnabled(true);
+            await instance.setStealthModeEnabled(false);
+            await instance.setStealthModeEnabled(true);
+            await instance.setCanvasProtectionEnabled(false);
+            await instance.setCanvasProtectionEnabled(true);
+            expect(engineApi.getDocumentExceptionRuleTexts).not.toHaveBeenCalled();
+            expect(instance.getCanvasProtectionState().requested.revision).toBe(initial.requested.revision);
         });
 
         it('reports failed removal and retries it on the next request', async () => {
@@ -365,26 +419,13 @@ describe('TsWebExtension', () => {
             expect(unregister).toHaveBeenCalledOnce();
         });
 
-        it('rejects a policy for a different browser and keeps the previous acknowledgment', async () => {
-            const initial = await enable();
-            vi.mocked(browser.contentScripts.register).mockClear();
-            const result = await instance.setCanvasProtectionPolicy(
-                createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'wrong'),
-            );
-            expect(result).toMatchObject({ status: CanvasRegistrationStatus.Failed, installed: initial.installed });
-            expect(browser.contentScripts.register).not.toHaveBeenCalled();
-            expect(unregister).not.toHaveBeenCalled();
-        });
-
         it('installs again after a restart that lost the registration', async () => {
             const initial = await enable();
-            const policy = instance.configuration.canvasProtectionPolicy!;
             const restarted = createTsWebExtension('test');
             await restarted.initStorage();
             vi.mocked(browser.contentScripts.register).mockRejectedValueOnce(new Error('reinstallation rejected'));
             const enabled: ConfigurationMV2 = {
                 ...config,
-                canvasProtectionPolicy: policy,
                 settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
             };
             expect(await restarted.start(enabled)).toMatchObject({
@@ -409,7 +450,6 @@ describe('TsWebExtension', () => {
             vi.mocked(engineApi.startEngine).mockRejectedValueOnce(new Error('engine failed'));
             const enabled: ConfigurationMV2 = {
                 ...config,
-                canvasProtectionPolicy: createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a'),
                 settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
             };
             await expect(instance.start(enabled)).rejects.toThrow('engine failed');
@@ -419,15 +459,17 @@ describe('TsWebExtension', () => {
         });
 
         it('does not restart canvas registration through setters after stop', async () => {
-            await enable('before-stop');
+            await enable();
+            vi.mocked(engineApi.getDocumentExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
+            await instance.configure({
+                ...config,
+                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
+            });
             await instance.stop();
             vi.mocked(browser.contentScripts.register).mockClear();
             await instance.setFilteringEnabled(true);
             await instance.setStealthModeEnabled(true);
             await instance.setCanvasProtectionEnabled(true);
-            await instance.setCanvasProtectionPolicy(
-                createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'after-stop'),
-            );
             expect(browser.contentScripts.register).not.toHaveBeenCalled();
             expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
         });

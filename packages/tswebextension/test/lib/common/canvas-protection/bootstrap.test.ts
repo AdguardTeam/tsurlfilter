@@ -13,7 +13,6 @@ import {
     CanvasConditionFlags,
     CanvasConditionInput,
     CanvasConditionType,
-    CanvasPolicyBrowser,
     CanvasPolicyRequestType,
 } from '../../../../src/lib/common/canvas-protection/constants';
 import { type CanvasBootstrapSnapshot } from '../../../../src/lib/common/canvas-protection/contracts';
@@ -28,7 +27,7 @@ import { createProtectAllPolicy } from './fixtures/prepared-policies';
  * @returns A current snapshot.
  */
 const snapshot = (
-    policy = createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'current'),
+    policy = createProtectAllPolicy('current'),
 ): CanvasBootstrapSnapshot => ({
     session: { root: '0123456789abcdef0123456789abcdef', generation: 'abcdef0123456789abcdef0123456789' },
     policy,
@@ -124,7 +123,7 @@ describe('document canvas bootstrap', () => {
         const { toString } = Function.prototype;
         const globals = Reflect.ownKeys(window);
         const excluded = snapshot({
-            ...createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'current'),
+            ...createProtectAllPolicy('current'),
             ownFrameExclusions: [{
                 requestTypes: [CanvasPolicyRequestType.Document],
                 condition: {

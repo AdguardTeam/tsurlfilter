@@ -214,4 +214,20 @@ describe('Engine Api', () => {
             expect(Engine.prototype.getRulesCount).not.toHaveBeenCalled();
         });
     });
+
+    describe('getDocumentExceptionRuleTexts method', () => {
+        it('returns exception texts without allowlist rules', async () => {
+            const configuration = getConfigurationMv2Fixture();
+            configuration.userrules.content = '@@||example.org^$stealth=fingerprinting\n||example.org^';
+            vi.mocked(Allowlist.prototype.getAllowlistRules).mockReturnValueOnce('@@||allowed.org^$document');
+
+            await engineApi.startEngine(configuration);
+
+            expect(engineApi.getDocumentExceptionRuleTexts()).toEqual(['@@||example.org^$stealth=fingerprinting']);
+        });
+
+        it('returns no texts when engine is not started', () => {
+            expect(engineApi.getDocumentExceptionRuleTexts()).toEqual([]);
+        });
+    });
 });

@@ -270,6 +270,30 @@ export class EngineApi {
     }
 
     /**
+     * Gets stealth and document exception texts, excluding generated allowlist rules.
+     *
+     * @returns Exception texts, or an empty array if the engine is not started.
+     */
+    public getDocumentExceptionRuleTexts(): string[] {
+        if (!this.engine) {
+            return [];
+        }
+
+        const ruleTexts: string[] = [];
+        for (const rule of this.engine.getDocumentExceptionRules()) {
+            const filterListId = rule.getFilterListId();
+            if (filterListId !== ALLOWLIST_FILTER_ID) {
+                const ruleText = this.engine.retrieveRuleText(filterListId, rule.getIndex());
+                if (ruleText !== null) {
+                    ruleTexts.push(ruleText);
+                }
+            }
+        }
+
+        return ruleTexts;
+    }
+
+    /**
      * Retrieves rule text by filter list id and rule index.
      *
      * @param filterListId Filter list id.

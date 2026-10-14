@@ -2,7 +2,6 @@ import { expectNotType, expectType } from 'tsd';
 
 import {
     TsWebExtension,
-    type ProtectionPolicyArtifact,
     type RegistrationResult,
 } from '@adguard/tswebextension';
 import {
@@ -21,10 +20,11 @@ console.log('Smoke test passed in index.test-d.ts');
 
 declare const mv2: TsWebExtension;
 declare const mv3: TsWebExtensionMV3;
-declare const policy: ProtectionPolicyArtifact;
 expectType<Promise<RegistrationResult>>(mv2.setCanvasProtectionEnabled(true));
-expectType<Promise<RegistrationResult>>(mv2.setCanvasProtectionPolicy(policy));
+// @ts-expect-error Prepared policy setters are internal.
+mv2.setCanvasProtectionPolicy;
 expectType<RegistrationResult>(mv2.getCanvasProtectionState());
 expectType<Promise<RegistrationResultMV3>>(mv3.setCanvasProtectionEnabled(true));
-expectType<Promise<RegistrationResultMV3>>(mv3.setCanvasProtectionPolicy(policy));
+// @ts-expect-error Prepared policy setters are internal.
+mv3.setCanvasProtectionPolicy;
 expectType<RegistrationResultMV3>(mv3.getCanvasProtectionState());

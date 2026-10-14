@@ -8,7 +8,6 @@ import {
     CanvasConditionFlags,
     CanvasConditionInput,
     CanvasConditionType,
-    CanvasPolicyBrowser,
     CanvasPolicyRequestType,
 } from '../../../../src/lib/common/canvas-protection/constants';
 import { type CanvasBootstrapSnapshot } from '../../../../src/lib/common/canvas-protection/contracts';
@@ -47,7 +46,7 @@ const execute = (snapshot: CanvasBootstrapSnapshot): boolean => {
 describe('generated canvas delivery code', () => {
     it('executes generated bundle with serialized hostile strings', () => {
         const text = '"\');globalThis.injected=true;//</script>\u2028\u2029';
-        const policy = createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, text);
+        const policy = createProtectAllPolicy(text);
         const untouched = execute({
             session: { root: '0123456789abcdef0123456789abcdef', generation: text },
             policy: {
@@ -66,31 +65,9 @@ describe('generated canvas delivery code', () => {
         });
         expect(untouched).toBe(true);
     });
-    it('renames the script in Chromium stack traces only', () => {
-        const state = {
-            session: { root: '0123456789abcdef0123456789abcdef', generation: 'generation' },
-        };
-        expect(
-            CanvasProtectionCode.create({
-                ...state,
-                policy: createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'current'),
-            }),
-        )
-            .toMatch(/\n\/\/# sourceURL=<anonymous>$/);
-        expect(
-            CanvasProtectionCode.create({
-                ...state,
-                policy: createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'current'),
-            }),
-        )
-            .not.toContain('sourceURL');
-    });
 
     it('keeps excluded readouts native across duplicate delivery', () => {
-        const policy = createProtectAllPolicy(
-            CanvasPolicyBrowser.ChromiumMv3,
-            '";globalThis.injected=true;//</script>\u2028\u2029',
-        );
+        const policy = createProtectAllPolicy('";globalThis.injected=true;//</script>\u2028\u2029');
         const exclusions = [{
             requestTypes: [CanvasPolicyRequestType.Document],
             condition: {

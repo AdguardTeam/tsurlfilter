@@ -3,7 +3,6 @@ import { CanvasProtectionCode } from '../../common/canvas-protection/code';
 import {
     CanvasAvailabilityStatus,
     CanvasOperationStatus,
-    CanvasPolicyBrowser,
     CanvasRegistrationOperation,
 } from '../../common/canvas-protection/constants';
 import {
@@ -49,7 +48,8 @@ export class ChromiumCanvasRegistration implements CanvasRegistrationAdapter {
      * @returns Page-world code.
      */
     public createCode(snapshot: CanvasBootstrapSnapshot): string {
-        return CanvasProtectionCode.create(snapshot);
+        // Chromium names a user script by its extension URL in stack traces, so the script is renamed.
+        return `${CanvasProtectionCode.create(snapshot)}\n//# sourceURL=<anonymous>`;
     }
 
     /**
@@ -66,9 +66,6 @@ export class ChromiumCanvasRegistration implements CanvasRegistrationAdapter {
         code: string,
         policy: ProtectionPolicyArtifact,
     ): Promise<readonly RegistrationOperationOutcome[]> {
-        if (policy.browser !== CanvasPolicyBrowser.ChromiumMv3) {
-            throw new CanvasRegistrationOperationError('Chromium canvas policy browser mismatch', []);
-        }
         const operations: RegistrationOperationOutcome[] = [];
         let existing: chrome.userScripts.RegisteredUserScript[];
         try {

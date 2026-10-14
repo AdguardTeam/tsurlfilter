@@ -9,6 +9,7 @@ Table of content:
     - [Install](#install)
     - [Usage](#usage)
     - [Canvas protection](#canvas-protection)
+        - [Exceptions](#exceptions)
     - [CLI](#cli)
     - [Side effects](#side-effects)
     - [API](#api)
@@ -37,7 +38,6 @@ Table of content:
                 - [conversionData](#conversiondata-2)
             - [verbose (deprecated)](#verbose-deprecated)
             - [logLevel](#loglevel)
-            - [canvasProtectionPolicy](#canvasprotectionpolicy)
             - [settings](#settings)
                 - [allowlistInverted](#allowlistinverted)
                 - [allowlistEnabled](#allowlistenabled)
@@ -169,37 +169,21 @@ canvas bitmap stay untouched. The noise is stable for a site within one
 browser session and differs between sites and sessions. A frame uses the site
 of its top-level document.
 
-Protection needs `settings.filteringEnabled`, `settings.stealthModeEnabled`,
-`settings.stealth.protectCanvas` and a prepared
-[`canvasProtectionPolicy`](#canvasprotectionpolicy). This policy protects
-every document, without exclusions:
+Protection needs `settings.filteringEnabled`, `settings.stealthModeEnabled`
+and `settings.stealth.protectCanvas`. The library compiles exceptions from
+filter rules and the allowlist automatically.
 
 ```ts
-import {
-    CanvasPolicyBrowser,
-    type ProtectionPolicyArtifact,
-    type TsWebExtension,
-} from '@adguard/tswebextension/mv3';
+import { type TsWebExtension } from '@adguard/tswebextension/mv3';
 
 async function enableCanvasProtection(app: TsWebExtension) {
-    const policy: ProtectionPolicyArtifact = {
-        schemaVersion: 1,
-        revision: 'canvas-empty-v1',
-        browser: CanvasPolicyBrowser.ChromiumMv3,
-        selectors: { matches: ['<all_urls>'], excludeMatches: [] },
-        ownFrameExclusions: [],
-        documentExclusions: [],
-    };
-    await app.setCanvasProtectionPolicy(policy);
     return app.setCanvasProtectionEnabled(true);
 }
 ```
 
-For MV2, use the root package import and `CanvasPolicyBrowser.FirefoxMv2` in
-Firefox or `CanvasPolicyBrowser.ChromiumMv2` in Chromium.
+For MV2, use the root package import.
 The returned `RegistrationResult` tells whether the script is installed and,
-if not, why. Filter rules and the allowlist are not compiled into the policy
-automatically.
+if not, why.
 
 Requirements:
 
@@ -211,6 +195,27 @@ Requirements:
 Only canvases that received rendering are noised: any 2D context call that
 can put device-dependent pixels on a canvas marks it for good. A canvas
 filled only from video frames or `putImageData()` is read natively.
+
+### Exceptions
+
+- `@@||host^$stealth` and `@@||host^$stealth=fingerprinting` exclude the
+  host and its subdomains by the document's own URL. A list of stealth
+  options containing `fingerprinting` and the `$important` modifier are
+  supported. Frames from other sites remain protected.
+- `@@||host^$document` and the allowlist, in normal or inverted mode,
+  exclude the top-level document and its frames when the browser reveals
+  the top-level document's URL. See [Limits](#limits) for browser restrictions.
+  `$document` may also use `$important` or combine with `$stealth`.
+- `$badfilter` cancels an exception. Other forms, including paths,
+  `$domain`, regular expressions and wildcard hosts such as `example.*`,
+  do not affect canvas protection; skipped rules appear in the debug log.
+  `$urlblock`, `$genericblock`, `$content` and trusted domains do not
+  disable it.
+- Rules with a Unicode hostname apply to canvas protection after conversion
+  to punycode. The rest of filtering currently does not apply these rules.
+
+Exceptions are recalculated at `start()` and `configure()` and apply to
+documents loaded afterwards.
 
 ### Limits
 
@@ -481,24 +486,6 @@ type: `string | undefined`
 Optional flag that sets logging level, defaults to 'error'.
 Available levels: 'error', 'warn', 'info', 'debug', 'trace'.
 
-#### canvasProtectionPolicy
-
-type: `ProtectionPolicyArtifact | undefined`
-
-Prepared delivery selectors and exclusions for
-[canvas protection](#canvas-protection). Required when it is enabled.
-
-- `selectors`: match patterns of the documents that get the script. The
-  browser applies them to the registered script; in Chromium MV2 the
-  extension applies them to the document URL before injecting.
-- `ownFrameExclusions`: rules for a document itself. A condition reads the
-  document's URL (`CanvasConditionInput.FrameUrl`), its top-level document
-  (`TopUrl`) or its parent (`SourceUrl`).
-- `documentExclusions`: rules for a top-level document. Its frames inherit
-  the result.
-
-A condition whose URL is unknown excludes nothing.
-
 #### settings
 
 type: `SettingsConfig`
@@ -648,7 +635,7 @@ Blocks the possibility of leaking your IP address through WebRTC, even if you us
 type: `boolean | undefined`
 
 Optional `settings.stealth.protectCanvas`; omitted means disabled. Requires
-filtering, stealth mode and a prepared `canvasProtectionPolicy`. See
+filtering and stealth mode. See
 [Canvas protection](#canvas-protection) for scope and prerequisites.
 
 ### TsWebExtension
@@ -682,11 +669,10 @@ Is app started.
 Available in MV2 and MV3:
 
 - `setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult>`
-- `setCanvasProtectionPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult>`
 - `getCanvasProtectionState(): RegistrationResult`
 
-The setters reject when there is no application configuration or the policy
-is invalid. Every method returns the
+The setter rejects when there is no application configuration. Every method
+returns the
 registration state, `CanvasRegistrationStatus`: `Installed`, `Disabled`,
 `Unavailable` with a `requiredUserAction`, or `Failed`. In Chromium MV2
 `Installed` means the script is set up for injection: no browser
@@ -694,8 +680,8 @@ acknowledges it, and a document where injection fails, e.g. after the user
 limited the extension's site access, stays native without an error. `start()` and
 `configure()` return it as `canvasProtection`. A later `configure()`
 replaces setter changes with its own `settings.stealth.protectCanvas` and
-`canvasProtectionPolicy`; omitting them disables protection. Changes apply
-to documents loaded afterwards.
+recalculates exceptions; omitting the setting disables protection. Changes
+apply to documents loaded afterwards.
 
 ##### initStorage()
 

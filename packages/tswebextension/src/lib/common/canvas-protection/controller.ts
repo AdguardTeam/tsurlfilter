@@ -1,9 +1,5 @@
-import {
-    type CanvasFeatureGates,
-    type ProtectionPolicyArtifact,
-    protectionPolicyArtifactValidator,
-    type RegistrationResult,
-} from './contracts';
+import { type CanvasFeatureGates, type ProtectionPolicyArtifact, type RegistrationResult } from './contracts';
+import { CanvasPolicyCompiler, type PolicyAllowlist } from './policy-compiler';
 import { type CanvasProtectionRegistration } from './registration';
 
 /**
@@ -15,7 +11,6 @@ interface CanvasConfiguration {
         readonly stealthModeEnabled: boolean;
         readonly stealth: { protectCanvas?: boolean };
     };
-    canvasProtectionPolicy?: ProtectionPolicyArtifact;
 }
 
 /**
@@ -23,6 +18,8 @@ interface CanvasConfiguration {
  */
 export class CanvasProtectionController {
     private stopped = false;
+
+    private policy: ProtectionPolicyArtifact | undefined;
 
     /**
      * Connects application configuration to its browser registration authority.
@@ -65,7 +62,7 @@ export class CanvasProtectionController {
             stealthModeEnabled: settings?.stealthModeEnabled === true,
             protectCanvas: settings?.stealth.protectCanvas === true,
         };
-        return this.registration.apply({ gates, policy: configuration?.canvasProtectionPolicy });
+        return this.registration.apply({ gates, policy: this.policy });
     }
 
     /**
@@ -83,17 +80,13 @@ export class CanvasProtectionController {
     }
 
     /**
-     * Validates genuinely external policy input before storing the parsed value.
+     * Replaces canvas exclusions after the filtering engine has been rebuilt.
      *
-     * @param policy Prepared selectors and exact exclusions.
-     *
-     * @returns The browser registration result.
-     *
-     * @throws When the policy is invalid or application configuration has not been supplied.
+     * @param ruleTexts Active document exception rule texts.
+     * @param allowlist Configured platform allowlist.
      */
-    public async setPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult> {
-        this.requireConfiguration().canvasProtectionPolicy = protectionPolicyArtifactValidator.parse(policy);
-        return this.apply();
+    public updatePolicy(ruleTexts: readonly string[], allowlist: PolicyAllowlist): void {
+        this.policy = CanvasPolicyCompiler.compile(ruleTexts, allowlist);
     }
 
     /**

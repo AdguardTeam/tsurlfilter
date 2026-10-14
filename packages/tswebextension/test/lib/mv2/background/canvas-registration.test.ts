@@ -13,7 +13,6 @@ import { CanvasProtectionCode } from '../../../../src/lib/common/canvas-protecti
 import {
     CanvasAvailabilityStatus,
     CanvasOperationStatus,
-    CanvasPolicyBrowser,
     CanvasRegistrationOperation,
 } from '../../../../src/lib/common/canvas-protection/constants';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
@@ -46,9 +45,10 @@ describe('Firefox canvas registration', () => {
     });
 
     it('registers the engine in the page world since Firefox 128', async () => {
-        const snapshot = { session, policy: createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a') };
+        const snapshot = { session, policy: createProtectAllPolicy('policy-a') };
         await adapter.checkAvailability();
         expect(adapter.createCode(snapshot)).toBe(CanvasProtectionCode.create(snapshot));
+        expect(adapter.createCode(snapshot)).not.toContain('sourceURL');
     });
 
     // TODO: remove when Firefox before 128 is no longer supported.
@@ -58,7 +58,7 @@ describe('Firefox canvas registration', () => {
             name: 'Firefox', vendor: 'Mozilla', version: '115.0', buildID: '',
         });
         vi.mocked(browser.contentScripts.register).mockResolvedValueOnce({ unregister: vi.fn() });
-        const policy = createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a');
+        const policy = createProtectAllPolicy('policy-a');
         await adapter.checkAvailability();
         const code = adapter.createCode({ session, policy });
         expect(code).toContain('window.canvasProtectionExecuted1');
@@ -78,7 +78,7 @@ describe('Firefox canvas registration', () => {
             events.push('register-current');
             return current;
         });
-        const policy = createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a');
+        const policy = createProtectAllPolicy('policy-a');
         expect(await adapter.install('old code', policy)).toEqual([{
             operation: CanvasRegistrationOperation.Register,
             status: CanvasOperationStatus.Succeeded,
@@ -103,7 +103,7 @@ describe('Firefox canvas registration', () => {
         const old = { unregister: vi.fn().mockResolvedValue(undefined) };
         vi.mocked(browser.contentScripts.register).mockResolvedValueOnce(old)
             .mockRejectedValueOnce(new Error('registration rejected'));
-        const policy = createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a');
+        const policy = createProtectAllPolicy('policy-a');
         await adapter.install('old code', policy);
         await expect(adapter.install('new code', policy)).rejects.toMatchObject({
             operations: [
@@ -127,7 +127,7 @@ describe('Firefox canvas registration', () => {
         };
         const current = { unregister: vi.fn().mockResolvedValue(undefined) };
         vi.mocked(browser.contentScripts.register).mockResolvedValueOnce(old).mockResolvedValueOnce(current);
-        const policy = createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a');
+        const policy = createProtectAllPolicy('policy-a');
         await adapter.install('old code', policy);
         await expect(adapter.install('new code', policy)).rejects.toMatchObject({
             operations: [
@@ -154,7 +154,7 @@ describe('Firefox canvas registration', () => {
                 .mockResolvedValue(undefined),
         };
         vi.mocked(browser.contentScripts.register).mockResolvedValueOnce(current);
-        await adapter.install('code', createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'policy-a'));
+        await adapter.install('code', createProtectAllPolicy('policy-a'));
         await expect(adapter.remove()).rejects.toMatchObject({
             operations: [
                 {
@@ -170,16 +170,5 @@ describe('Firefox canvas registration', () => {
             status: CanvasOperationStatus.Succeeded,
         }]);
         expect(await adapter.checkAvailability()).toEqual({ status: CanvasAvailabilityStatus.Available, value: false });
-    });
-    it('rejects a policy for a different browser before registration writes', async () => {
-        const previous = { unregister: vi.fn().mockResolvedValue(undefined) };
-        vi.mocked(browser.contentScripts.register).mockResolvedValueOnce(previous);
-        await adapter.install('previous', createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'previous'));
-        vi.mocked(browser.contentScripts.register).mockClear();
-        await expect(adapter.install('wrong', createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'wrong')))
-            .rejects.toMatchObject({ name: 'CanvasRegistrationOperationError', operations: [] });
-        expect(browser.contentScripts.register).not.toHaveBeenCalled();
-        expect(previous.unregister).not.toHaveBeenCalled();
-        expect(await adapter.checkAvailability()).toEqual({ status: CanvasAvailabilityStatus.Available, value: true });
     });
 });

@@ -47,16 +47,6 @@ export enum CanvasOperationStatus {
 }
 
 /**
- * Browser a prepared policy is built for.
- */
-export enum CanvasPolicyBrowser {
-    // TODO: remove when Chromium MV2 is no longer supported.
-    ChromiumMv2 = 'chromium-mv2',
-    ChromiumMv3 = 'chromium-mv3',
-    FirefoxMv2 = 'firefox-mv2',
-}
-
-/**
  * Kind of document a prepared exclusion applies to.
  */
 export enum CanvasPolicyRequestType {

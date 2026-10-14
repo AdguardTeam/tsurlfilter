@@ -10,8 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added opt-in canvas protection for Chromium MV3, Chromium MV2 and Firefox
-  MV2 with `stealth.protectCanvas`, prepared `canvasProtectionPolicy` and
-  methods to update protection [AdguardBrowserExtension#3475].
+  MV2 with `stealth.protectCanvas` and methods to update protection.
+  Exceptions are compiled from filter rules and the allowlist, including
+  `$stealth=fingerprinting` [AdguardBrowserExtension#3475].
 
 [AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475
 

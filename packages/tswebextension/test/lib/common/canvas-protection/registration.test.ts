@@ -12,7 +12,6 @@ import {
 import {
     CanvasAvailabilityStatus,
     CanvasOperationStatus,
-    CanvasPolicyBrowser,
     CanvasRegistrationOperation,
     CanvasRegistrationStatus,
 } from '../../../../src/lib/common/canvas-protection/constants';
@@ -54,7 +53,7 @@ const unregistered: RegistrationOperationOutcome = {
  * @returns Request for the registration.
  */
 const request = (revision = 'policy-a'): Parameters<CanvasProtectionRegistration['apply']>[0] => ({
-    gates: enabled, policy: createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, revision),
+    gates: enabled, policy: createProtectAllPolicy(revision),
 });
 
 describe('Canvas protection registration', () => {
@@ -275,7 +274,7 @@ describe('Canvas protection registration', () => {
     it('owns a copy of the request', async () => {
         const requested = {
             gates: { ...enabled },
-            policy: createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'policy-a'),
+            policy: createProtectAllPolicy('policy-a'),
         };
         const pending = registration.apply(requested);
         requested.gates.protectCanvas = false;

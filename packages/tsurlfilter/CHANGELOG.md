@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added the `fingerprinting` value for `$stealth`
+  (`StealthOptionName.Fingerprinting`).
+- Added `Engine.getDocumentExceptionRules()` to retrieve `$stealth` and
+  `$document` exceptions with `$badfilter` applied.
+
 ### Changed
 
 - Escaped regular-expression domains in non-basic `[$domain=...]` rules now

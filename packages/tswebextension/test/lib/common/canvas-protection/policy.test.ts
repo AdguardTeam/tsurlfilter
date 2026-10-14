@@ -4,14 +4,12 @@ import {
     CanvasConditionFlags,
     CanvasConditionInput,
     CanvasConditionType,
-    CanvasPolicyBrowser,
     CanvasPolicyRequestType,
 } from '../../../../src/lib/common/canvas-protection/constants';
 import {
     type DocumentPolicyInput,
     type PreparedCondition,
     type ProtectionPolicyArtifact,
-    protectionPolicyArtifactValidator,
 } from '../../../../src/lib/common/canvas-protection/contracts';
 import { resolveProtectedSite, resolveSiteKey } from '../../../../src/lib/common/canvas-protection/policy';
 import { getDomain } from '../../../../src/lib/common/utils/url';
@@ -28,7 +26,7 @@ import { createProtectAllPolicy, preparedPolicyFixtures } from './fixtures/prepa
 const createPolicy = (
     exclusions: Partial<Pick<ProtectionPolicyArtifact, 'ownFrameExclusions' | 'documentExclusions'>> = {},
 ): ProtectionPolicyArtifact => ({
-    ...createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'policy'),
+    ...createProtectAllPolicy('policy'),
     ...exclusions,
 });
 
@@ -201,89 +199,8 @@ describe('canvas protection policy', () => {
         }
     });
 
-    it('validates external prepared artifacts once', () => {
-        const policy = createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'external-revision');
-        expect(protectionPolicyArtifactValidator.parse(JSON.parse(JSON.stringify(policy)))).toEqual(policy);
-        const invalidInputs = [
-            { ...policy, schemaVersion: 2 },
-            { ...policy, browser: 'unknown' },
-            { ...policy, revision: 42 },
-            { ...policy, selectors: { matches: 'all', excludeMatches: [] } },
-            { ...policy, extra: 'unrecognized' },
-            {
-                ...policy,
-                ownFrameExclusions: [{
-                    requestTypes: ['script'],
-                    condition: {
-                        type: CanvasConditionType.Unavailable, reason: 'no-source',
-                    },
-                }],
-            },
-            {
-                ...policy,
-                ownFrameExclusions: [{
-                    requestTypes: [CanvasPolicyRequestType.Document],
-                    condition: {
-                        type: CanvasConditionType.UrlRegexp,
-                        input: CanvasConditionInput.FrameUrl,
-                        pattern: '[',
-                        flags: CanvasConditionFlags.None,
-                    },
-                }],
-            },
-            {
-                ...policy,
-                ownFrameExclusions: [{
-                    requestTypes: [CanvasPolicyRequestType.Document],
-                    condition: {
-                        type: CanvasConditionType.UrlRegexp,
-                        input: CanvasConditionInput.FrameUrl,
-                        pattern: '.',
-                        flags: 'g',
-                    },
-                }],
-            },
-            {
-                ...policy,
-                ownFrameExclusions: [{
-                    requestTypes: [CanvasPolicyRequestType.Document],
-                    condition: {
-                        type: CanvasConditionType.UrlRegexp,
-                        input: 'referrer',
-                        pattern: '.',
-                        flags: CanvasConditionFlags.None,
-                    },
-                }],
-            },
-            {
-                ...policy,
-                ownFrameExclusions: [{
-                    requestTypes: [CanvasPolicyRequestType.Document],
-                    condition: {
-                        type: CanvasConditionType.Not, operand: { type: CanvasConditionType.Unavailable },
-                    },
-                }],
-            },
-            // Rules that could never match.
-            {
-                ...policy,
-                ownFrameExclusions: [{ requestTypes: [], condition: matches(CanvasConditionInput.FrameUrl, '.') }],
-            },
-            {
-                ...policy,
-                documentExclusions: [{
-                    requestTypes: [CanvasPolicyRequestType.Subdocument],
-                    condition: matches(CanvasConditionInput.FrameUrl, '.'),
-                }],
-            },
-        ];
-        for (const value of invalidInputs) {
-            expect(protectionPolicyArtifactValidator.safeParse(value).success).toBe(false);
-        }
-    });
-
     it.each(preparedPolicyFixtures)('evaluates exact prepared fixture: $name', (fixture) => {
-        const policy = protectionPolicyArtifactValidator.parse(createPolicy({ ownFrameExclusions: [fixture.rule] }));
+        const policy = createPolicy({ ownFrameExclusions: [fixture.rule] });
         const input = fixture.requestType === CanvasPolicyRequestType.Subdocument
             ? childFrame(fixture.url, undefined, fixture.sourceUrl) : topDocument(fixture.url);
         expect(resolveProtectedSite(policy, input) === undefined).toBe(fixture.excluded);

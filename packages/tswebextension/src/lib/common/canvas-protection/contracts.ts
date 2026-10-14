@@ -1,13 +1,10 @@
-import { z as zod } from 'zod';
-
 import {
     type CanvasAvailabilityStatus,
-    CanvasConditionFlags,
-    CanvasConditionInput,
-    CanvasConditionType,
+    type CanvasConditionFlags,
+    type CanvasConditionInput,
+    type CanvasConditionType,
     type CanvasOperationStatus,
-    CanvasPolicyBrowser,
-    CanvasPolicyRequestType,
+    type CanvasPolicyRequestType,
     type CanvasRegistrationOperation,
     type CanvasRegistrationStatus,
 } from './constants';
@@ -154,61 +151,15 @@ export interface CanvasReadout {
     readonly colorSpace: PredefinedColorSpace;
 }
 
-const regexpConditionValidator = zod.object({
-    type: zod.literal(CanvasConditionType.UrlRegexp),
-    input: zod.nativeEnum(CanvasConditionInput),
-    pattern: zod.string(),
-    flags: zod.nativeEnum(CanvasConditionFlags),
-}).strict().superRefine((condition, context) => {
-    try {
-        // Validate syntax once at the external boundary; downstream predicates are trusted.
-        new RegExp(condition.pattern, condition.flags);
-    } catch {
-        context.addIssue({
-            code: zod.ZodIssueCode.custom,
-            message: 'Invalid URL regular expression',
-            path: ['pattern'],
-        });
-    }
-});
-
-const preparedConditionValidator: zod.ZodType<PreparedCondition> = zod.lazy(() => zod.union([
-    regexpConditionValidator,
-    zod.object({
-        type: zod.enum([CanvasConditionType.And, CanvasConditionType.Or]),
-        operands: preparedConditionValidator.array(),
-    }).strict(),
-    zod.object({ type: zod.literal(CanvasConditionType.Not), operand: preparedConditionValidator }).strict(),
-    zod.object({ type: zod.literal(CanvasConditionType.Unavailable), reason: zod.string().min(1) }).strict(),
-]));
-
-const preparedPolicyRuleValidator = zod.object({
-    requestTypes: zod.nativeEnum(CanvasPolicyRequestType).array().min(1).readonly(),
-    condition: preparedConditionValidator,
-}).strict();
-
-// A document exclusion is evaluated for the top-level document only, also on behalf of its frames.
-const documentExclusionValidator = preparedPolicyRuleValidator.refine(
-    (rule) => rule.requestTypes.includes(CanvasPolicyRequestType.Document),
-    { message: 'A document exclusion must apply to documents', path: ['requestTypes'] },
-);
-
 /**
- * Validates genuinely external prepared JSON once before it enters trusted code.
+ * Seed-free canvas policy compiled by the library from filter rules and the allowlist.
  */
-export const protectionPolicyArtifactValidator = zod.object({
-    schemaVersion: zod.literal(1),
-    revision: zod.string().min(1),
-    browser: zod.nativeEnum(CanvasPolicyBrowser),
-    selectors: zod.object({
-        matches: zod.string().min(1).array().readonly(),
-        excludeMatches: zod.string().min(1).array().readonly(),
-    }).strict().readonly(),
-    ownFrameExclusions: preparedPolicyRuleValidator.array().readonly(),
-    documentExclusions: documentExclusionValidator.array().readonly(),
-}).strict().readonly();
-
-/**
- * A seed-free policy inferred from the external-input validator.
- */
-export type ProtectionPolicyArtifact = zod.infer<typeof protectionPolicyArtifactValidator>;
+export interface ProtectionPolicyArtifact {
+    readonly revision: string;
+    readonly selectors: {
+        readonly matches: readonly string[];
+        readonly excludeMatches: readonly string[];
+    };
+    readonly ownFrameExclusions: readonly PreparedPolicyRule[];
+    readonly documentExclusions: readonly PreparedPolicyRule[];
+}

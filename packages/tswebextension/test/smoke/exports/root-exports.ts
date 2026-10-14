@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
-import { type ConfigurationMV2, type ProtectionPolicyArtifact } from '@adguard/tswebextension';
+import { type ConfigurationMV2 } from '@adguard/tswebextension';
 
 // TODO: add more exports
 
@@ -13,7 +13,7 @@ assert.ok(config);
 // eslint-disable-next-line no-console
 console.log('Smoke test for @adguard/tswebextension passed in root-exports.ts');
 
-// Existing consumers may omit both the opt-in and prepared policy.
+// Existing consumers may omit the canvas opt-in.
 const legacyStealth: ConfigurationMV2['settings']['stealth'] = {
     selfDestructFirstPartyCookies: false,
     selfDestructFirstPartyCookiesTime: 0,
@@ -25,7 +25,10 @@ const legacyStealth: ConfigurationMV2['settings']['stealth'] = {
     sendDoNotTrack: false,
     blockWebRTC: false,
 };
-const canvasConfiguration: Pick<ConfigurationMV2, 'canvasProtectionPolicy'> = {};
-const policy: ProtectionPolicyArtifact | undefined = canvasConfiguration.canvasProtectionPolicy;
 assert.equal(legacyStealth.protectCanvas, undefined);
-assert.equal(policy, undefined);
+
+
+// @ts-expect-error Prepared policy configuration is internal.
+type RemovedPolicyConfiguration = ConfigurationMV2['canvasProtectionPolicy'];
+// @ts-expect-error Prepared policy types are internal.
+import { type CanvasPolicyBrowser, type ProtectionPolicyArtifact } from '@adguard/tswebextension';

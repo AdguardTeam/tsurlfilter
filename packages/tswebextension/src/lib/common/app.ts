@@ -1,6 +1,6 @@
 import { type Runtime } from 'webextension-polyfill';
 
-import { type ProtectionPolicyArtifact, type RegistrationResult } from './canvas-protection/contracts';
+import { type RegistrationResult } from './canvas-protection/contracts';
 import { type FilteringLogEvent } from './filtering-log';
 import { type Message } from './message';
 import { type EventChannelInterface } from './utils/channels';
@@ -108,13 +108,6 @@ export interface AppInterface<
      * @param enabled Whether canvas protection is requested.
      */
     setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult>;
-
-    /**
-     * Replaces the prepared canvas protection policy.
-     *
-     * @param policy Prepared canvas exclusions and browser delivery selectors.
-     */
-    setCanvasProtectionPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult>;
 
     /**
      * Returns the most recent canvas protection registration result.
