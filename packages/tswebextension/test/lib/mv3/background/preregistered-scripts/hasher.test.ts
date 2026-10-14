@@ -172,19 +172,19 @@ describe('computeRuleHashCached', () => {
         expect(await computeRuleHashCached(make())).toBe(await computeRuleHashCached(make()));
     });
 
-    it('does not cache rejections (a later call retries)', async () => {
+    it('caches rejections (a failing rule is hashed only once)', async () => {
         let dataCalls = 0;
         const rule: any = {
             isScriptlet: true,
-            getScriptletData: (): object | null => {
+            getScriptletData: (): null => {
                 dataCalls += 1;
-                return dataCalls === 1 ? null : { params: { name: 'set-cookie', args: [] } };
+                return null;
             },
         };
 
         await expect(computeRuleHashCached(rule)).rejects.toThrow();
-        await expect(computeRuleHashCached(rule)).resolves.toMatch(/^[0-9a-f]{16}$/);
-        expect(dataCalls).toBe(2);
+        await expect(computeRuleHashCached(rule)).rejects.toThrow();
+        expect(dataCalls).toBe(1);
     });
 });
 

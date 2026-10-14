@@ -69,6 +69,13 @@ interface ApplyCosmeticRulesParams {
 }
 
 /**
+ * Rules whose hash failure has already been logged. Hashing failures are
+ * deterministic and this filter runs per frame, so without the set one
+ * broken rule would re-log on every frame of every covered host.
+ */
+const loggedHashFailures = new WeakSet<CosmeticRule>();
+
+/**
  * Cosmetic api class.
  * Used to prepare and inject javascript and css into pages.
  */
@@ -191,8 +198,11 @@ export class CosmeticApi extends CosmeticApiCommon {
             try {
                 return coveredRules.has(await computeRuleHashCached(rule)) ? null : rule;
             } catch (e) {
-                // eslint-disable-next-line max-len
-                logger.error(`[tsweb.CosmeticApi.filterUncoveredRules]: Failed to hash a rule for "${frameUrl}", keeping dynamic injection`, e);
+                if (!loggedHashFailures.has(rule)) {
+                    loggedHashFailures.add(rule);
+                    // eslint-disable-next-line max-len
+                    logger.error(`[tsweb.CosmeticApi.filterUncoveredRules]: Failed to hash a rule for "${frameUrl}", keeping dynamic injection`, e);
+                }
                 return rule;
             }
         }));

@@ -216,6 +216,9 @@ const ruleHashCache = new WeakMap<CosmeticRule, Promise<string>>();
 /**
  * {@link computeRuleHash} memoized per rule object — hashing runs on the
  * per-frame injection path, where the same rules are hashed repeatedly.
+ * Rejections are cached too: a failing rule (e.g. a scriptlet with no
+ * parseable data) fails deterministically, so a retry would only re-hash
+ * and re-log it on every frame.
  *
  * @param rule A constructed `CosmeticRule` instance.
  *
@@ -227,8 +230,6 @@ export const computeRuleHashCached = (rule: CosmeticRule): Promise<string> => {
     if (!cached) {
         cached = computeRuleHash(rule);
         ruleHashCache.set(rule, cached);
-
-        cached.catch(() => ruleHashCache.delete(rule));
     }
 
     return cached;

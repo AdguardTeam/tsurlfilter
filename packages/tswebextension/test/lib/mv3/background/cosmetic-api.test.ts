@@ -8,6 +8,7 @@ import {
     vi,
 } from 'vitest';
 
+import { logger } from '../../../../src/lib/common/utils/logger';
 import { appContext } from '../../../../src/lib/mv3/background/app-context';
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 import { computeRuleHash } from '../../../../src/lib/mv3/background/preregistered-scripts/hasher';
@@ -175,6 +176,29 @@ describe('CosmeticApi — preregistered script rules', () => {
             );
 
             expect(applyLocal).not.toHaveBeenCalled();
+        });
+
+        it('keeps a failing-hash rule on the dynamic path and logs it once', async () => {
+            // A scriptlet rule with no parseable data fails hashing
+            // deterministically; across frames it must stay on the dynamic
+            // path and be logged only once.
+            const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
+            const failingRule = { isScriptlet: true, getScriptletData: (): null => null };
+            const coverage: Array<[string, Set<string>]> = [['youtube.com', new Set(['deadbeefdeadbeef'])]];
+
+            await runCosmeticApply(coverage, makeFrameContext('https://youtube.com/watch?v=123', [failingRule]));
+            const { applyLocal } = await runCosmeticApply(
+                coverage,
+                makeFrameContext('https://youtube.com/watch?v=123', [failingRule]),
+            );
+
+            // The rule was not skipped — the hash failure kept it dynamic.
+            expect(applyLocal).toHaveBeenCalled();
+
+            const hashFailureLogs = loggerErrorSpy.mock.calls.filter(
+                ([message]) => String(message).includes('Failed to hash a rule'),
+            );
+            expect(hashFailureLogs).toHaveLength(1);
         });
 
         // eslint-disable-next-line max-len
