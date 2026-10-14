@@ -120,8 +120,8 @@ dnr-rulesets watch <path-to-manifest> <path-to-resources> [options]
 
 ### `exclude-unsafe-rules` command
 
-Scans rulesets in the specified directory, excludes unsafe rules, and saves
-excluded unsafe rules to the metadata files, and update rulesets checksums.
+Scans rulesets in the specified directory, moves unsafe rules into the metadata
+of each ruleset and updates the ruleset checksums in `ruleset_0`.
 
 ```bash
 dnr-rulesets exclude-unsafe-rules <dir> [options]
@@ -359,6 +359,11 @@ await excludeUnsafeRules('<path-to-rulesets-dir>', {
 ```
 
 Where `<browser>` is the browser for which the rulesets are built, e.g. `chromium-mv3`, `edge-mv3` or `opera-mv3`.
+
+Each ruleset file, including `ruleset_0.json`, starts with metadata rules that carry the ruleset metadata in chunks,
+see [Compact ruleset file format] in `@adguard/dnr-converter`.
+
+[Compact ruleset file format]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/dnr-converter#compact-ruleset-file-format
 
 ### Utils
 

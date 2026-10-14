@@ -15,9 +15,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Removed Polish Anti Adblock Filters (ID 238) from the MV3 rulesets
+  (`chromium-mv3`, `edge-mv3`, `opera-mv3`), because the filter is no longer
+  present in the filters metadata on `filters.adtidy.org`.
+
 ### Fixed
 
 ### Security
+
+## [6.0.0] - 2026-09-29
+
+### Changed
+
+- Updated [@adguard/dnr-converter] to `v2.0.0`.
+- **BREAKING:** Ruleset metadata is split into `metadata.chunk` fragments of
+  at most 64 KiB; reading the rulesets requires `@adguard/dnr-converter` 2.x.
+
+[6.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v6.0.0
 
 ## [5.1.0-beta.1] - 2026-09-22
 

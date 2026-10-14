@@ -2,8 +2,9 @@
  * @file MetadataRuleset class for managing and serializing metadata rulesets.
  *
  * A metadata ruleset stores checksums and additional properties for a
- * collection of DNR rulesets. It serializes to a JSON array containing a
- * single declarative rule with a `metadata` field.
+ * collection of DNR rulesets. It serializes to a JSON array of metadata
+ * rules whose `metadata.chunk` fragments, joined in order, form the payload
+ * `{ checksums, additionalProperties }`.
  */
 
 import * as v from 'valibot';
@@ -11,7 +12,7 @@ import * as v from 'valibot';
 import { getRulesetId } from '../utils/ruleset-utils';
 import { serializeJson } from '../utils/string';
 
-import { createMetadataRule, type MetadataRule } from './metadata-rule';
+import { MetadataRules } from './metadata-rule';
 
 /**
  * Metadata ruleset ID.
@@ -29,7 +30,8 @@ const checksumMapValidator = v.record(v.string(), v.string());
 type ChecksumMap = v.InferOutput<typeof checksumMapValidator>;
 
 /**
- * Metadata validator.
+ * Metadata validator. Uses `v.strictObject` so unknown payload keys are
+ * rejected at deserialization time.
  */
 const metadataValidator = v.strictObject({
     /**
@@ -52,18 +54,6 @@ const metadataValidator = v.strictObject({
 type Metadata = v.InferOutput<typeof metadataValidator>;
 
 /**
- * Metadata rule validator.
- *
- * Uses `v.looseObject` to allow additional Chrome DNR fields (`id`,
- * `priority`, `action`, `condition` etc.) that are outside our control.
- * The nested `metadata` field uses `v.strictObject()` so unknown metadata
- * keys are rejected at deserialization time.
- */
-const metadataRuleValidator = v.looseObject({
-    metadata: metadataValidator,
-});
-
-/**
  * Represents a specialized metadata ruleset for managing and validating
  * metadata associated with various rulesets.
  *
@@ -72,9 +62,9 @@ const metadataRuleValidator = v.looseObject({
  */
 export class MetadataRuleset {
     /**
-     * The underlying metadata rule holding checksums and additional properties.
+     * Checksums and additional properties.
      */
-    private metadataRule: MetadataRule<Metadata>;
+    private metadata: Metadata;
 
     /**
      * Creates an instance of the MetadataRuleset class.
@@ -94,10 +84,10 @@ export class MetadataRuleset {
         checksums: ChecksumMap = {},
         additionalProperties: Record<string, unknown> = {},
     ) {
-        this.metadataRule = createMetadataRule({
+        this.metadata = {
             checksums: { ...checksums },
             additionalProperties: { ...additionalProperties },
-        });
+        };
     }
 
     /**
@@ -118,7 +108,7 @@ export class MetadataRuleset {
      * @param checksum Checksum.
      */
     public setChecksum(rulesetId: string, checksum: string): void {
-        this.metadataRule.metadata.checksums[rulesetId] = checksum;
+        this.metadata.checksums[rulesetId] = checksum;
     }
 
     /**
@@ -129,7 +119,7 @@ export class MetadataRuleset {
      * @returns Checksum or undefined if not found.
      */
     public getChecksum(rulesetId: string): string | undefined {
-        return this.metadataRule.metadata.checksums[rulesetId];
+        return this.metadata.checksums[rulesetId];
     }
 
     /**
@@ -138,7 +128,7 @@ export class MetadataRuleset {
      * @returns Rule set ids.
      */
     public getRulesetIds(): string[] {
-        return Object.keys(this.metadataRule.metadata.checksums);
+        return Object.keys(this.metadata.checksums);
     }
 
     /**
@@ -149,7 +139,7 @@ export class MetadataRuleset {
      * @returns Property value or undefined if not found.
      */
     public getAdditionalProperty(key: string): unknown {
-        return this.metadataRule.metadata.additionalProperties[key];
+        return this.metadata.additionalProperties[key];
     }
 
     /**
@@ -160,7 +150,7 @@ export class MetadataRuleset {
      * JSON-serializable; callers are responsible for ensuring serializability.
      */
     public setAdditionalProperty(key: string, value: unknown): void {
-        this.metadataRule.metadata.additionalProperties[key] = value;
+        this.metadata.additionalProperties[key] = value;
     }
 
     /**
@@ -171,7 +161,7 @@ export class MetadataRuleset {
      * @returns Whether the property exists.
      */
     public hasAdditionalProperty(key: string): boolean {
-        return Object.hasOwn(this.metadataRule.metadata.additionalProperties, key);
+        return Object.hasOwn(this.metadata.additionalProperties, key);
     }
 
     /**
@@ -180,18 +170,22 @@ export class MetadataRuleset {
      * @param key Property key.
      */
     public removeAdditionalProperty(key: string): void {
-        delete this.metadataRule.metadata.additionalProperties[key];
+        delete this.metadata.additionalProperties[key];
     }
 
     /**
-     * Serializes the ruleset to a string.
+     * Serializes the ruleset to a string: a JSON array of metadata rules
+     * carrying the payload in `metadata.chunk` fragments.
      *
      * @param pretty Whether to prettify the output.
      *
      * @returns Serialized ruleset.
      */
     public serialize(pretty = false): string {
-        return serializeJson([this.metadataRule], pretty);
+        // The metadata ruleset has no ordinary rules, so no ids are taken.
+        const rules = MetadataRules.create(this.metadata, new Set(), pretty);
+
+        return serializeJson(rules, pretty);
     }
 
     /**
@@ -201,22 +195,17 @@ export class MetadataRuleset {
      *
      * @returns Deserialized ruleset.
      *
-     * @throws {ValiError} If the metadata fails schema validation.
      * @throws {SyntaxError} If `rawJson` is not valid JSON.
+     * @throws {InvalidMetadataChunksError} If the metadata rules are missing
+     * or malformed.
+     * @throws {ValiError} If the payload fails schema validation.
      */
     public static deserialize(rawJson: string): MetadataRuleset {
-        const parsed: unknown = JSON.parse(rawJson);
+        const rulesetId = getRulesetId(METADATA_RULESET_ID);
 
-        if (!Array.isArray(parsed) || parsed.length !== 1) {
-            throw new Error('Invalid input: expected a single-element array.');
-        }
+        const { payload } = MetadataRules.read(rulesetId, JSON.parse(rawJson));
 
-        const {
-            metadata: {
-                checksums,
-                additionalProperties,
-            },
-        } = v.parse(metadataRuleValidator, parsed[0]);
+        const { checksums, additionalProperties } = v.parse(metadataValidator, payload);
 
         return new MetadataRuleset(checksums, additionalProperties);
     }
