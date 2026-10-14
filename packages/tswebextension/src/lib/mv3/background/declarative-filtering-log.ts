@@ -88,19 +88,34 @@ class DeclarativeFilteringLog {
     }
 
     /**
-     * Releases the mutex after a failed update, keeping the previous rule sets.
+     * Runs an operation while holding the update lock.
      *
-     * Used when a configuration step throws after {@link startUpdate}: the
-     * update never completed, so the rule sets and the listener keep their
-     * previous state. Does nothing when the mutex is already released.
+     * The lock is released when the operation finishes, whether it succeeds or
+     * throws. On success the operation calls {@link finishUpdate} itself; a
+     * throw before that releases the lock and keeps the previous rule sets, so
+     * a failed update cannot block the filtering log.
+     *
+     * @param operation Operation to run under the lock.
+     *
+     * @throws Whatever the operation throws.
      */
-    public abortUpdate(): void {
-        if (!this.mutex.isLocked()) {
-            logger.debug('[tsweb.DeclarativeFilteringLog.abortUpdate]: no update in progress, nothing to abort');
-            return;
-        }
+    public async withUpdateLock(operation: () => Promise<void>): Promise<void> {
+        await this.startUpdate();
 
-        this.mutex.unlock();
+        try {
+            await operation();
+        } finally {
+            this.abortUpdate();
+        }
+    }
+
+    /**
+     * Releases the update lock if it is still held.
+     */
+    private abortUpdate(): void {
+        if (this.mutex.isLocked()) {
+            this.mutex.unlock();
+        }
     }
 
     /**

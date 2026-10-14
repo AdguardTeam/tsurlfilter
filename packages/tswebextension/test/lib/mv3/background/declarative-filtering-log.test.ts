@@ -398,29 +398,39 @@ describe('DeclarativeFilteringLog.logMatchedRule', () => {
     });
 });
 
-describe('DeclarativeFilteringLog update lock', () => {
-    it('abortUpdate releases the lock so the next update can start', async () => {
+describe('DeclarativeFilteringLog.withUpdateLock', () => {
+    it('releases the lock when the operation throws', async () => {
+        await expect(declarativeFilteringLog.withUpdateLock(async () => {
+            throw new Error('configuration failed');
+        })).rejects.toThrow('configuration failed');
+
+        await expect(declarativeFilteringLog.startUpdate(0)).resolves.toBeUndefined();
+        declarativeFilteringLog.finishUpdate([], false);
+    });
+
+    it('allows the operation to finish the update', async () => {
+        await declarativeFilteringLog.withUpdateLock(async () => {
+            declarativeFilteringLog.finishUpdate([], false);
+        });
+
+        await expect(declarativeFilteringLog.startUpdate(0)).resolves.toBeUndefined();
+        declarativeFilteringLog.finishUpdate([], false);
+    });
+
+    it('does not release the lock held by another update', async () => {
         await declarativeFilteringLog.startUpdate();
 
-        // While the lock is held, another update cannot start.
+        const startUpdateSpy = vi
+            .spyOn(declarativeFilteringLog, 'startUpdate')
+            .mockRejectedValueOnce(new TimeoutError());
+
+        await expect(declarativeFilteringLog.withUpdateLock(async () => {
+            throw new Error('operation must not run');
+        })).rejects.toThrow(TimeoutError);
+
+        startUpdateSpy.mockRestore();
         await expect(declarativeFilteringLog.startUpdate(0)).rejects.toThrow(TimeoutError);
 
-        declarativeFilteringLog.abortUpdate();
-
-        // A failed update must not leave the lock locked.
-        await expect(declarativeFilteringLog.startUpdate(0)).resolves.toBeUndefined();
-
-        declarativeFilteringLog.abortUpdate();
-    });
-
-    it('does not throw when there is no update to abort', () => {
-        expect(() => declarativeFilteringLog.abortUpdate()).not.toThrow();
-    });
-
-    it('is idempotent', async () => {
-        await declarativeFilteringLog.startUpdate();
-
-        declarativeFilteringLog.abortUpdate();
-        expect(() => declarativeFilteringLog.abortUpdate()).not.toThrow();
+        declarativeFilteringLog.finishUpdate([], false);
     });
 });

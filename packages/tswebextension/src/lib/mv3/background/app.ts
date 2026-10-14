@@ -393,10 +393,6 @@ export class TsWebExtension implements AppInterface<
     /**
      * Applies a filtering configuration under the filtering-log update lock.
      *
-     * The lock must be released even when a configuration step throws:
-     * `getRuleInfo()` waits for the lock without a timeout, so a leaked lock
-     * would hang the filtering log until the extension is reloaded.
-     *
      * @param configuration Configuration to apply.
      * @param res Result object to fill with conversion details.
      */
@@ -404,17 +400,7 @@ export class TsWebExtension implements AppInterface<
         configuration: ConfigurationMV3,
         res: ConfigurationResult,
     ): Promise<void> {
-        // Tracks whether this call holds the lock: `startUpdate()` may throw a
-        // timeout after another update has taken the lock, and releasing the
-        // lock in that case would break that update.
-        let isUpdateInProgress = false;
-
-        try {
-            // Awaited so that a timeout is observed and the lock is known to
-            // be held below.
-            await declarativeFilteringLog.startUpdate();
-            isUpdateInProgress = true;
-
+        await declarativeFilteringLog.withUpdateLock(async () => {
             res.stealthResult = await StealthService.applySettings(configuration.settings);
 
             // Extract filters info from configuration and wrap them into IFilters.
@@ -576,8 +562,6 @@ export class TsWebExtension implements AppInterface<
 
             // Update rulesets in declarative filtering log.
             declarativeFilteringLog.finishUpdate(rulesets, configuration.declarativeLogEnabled);
-            // The lock is already released by `finishUpdate()`.
-            isUpdateInProgress = false;
 
             // TODO (AG-53262): Measure memory impact of keeping metadata (badFilterRules,
             // rulesHashMap) in memory vs. lazy-loading it on demand. The metadata
@@ -598,11 +582,7 @@ export class TsWebExtension implements AppInterface<
             }
 
             res.staticFilters = staticRulesets;
-        } finally {
-            if (isUpdateInProgress) {
-                declarativeFilteringLog.abortUpdate();
-            }
-        }
+        });
     }
 
     /**
