@@ -350,6 +350,30 @@ describe('FilterConverter (withSourceMap: true)', () => {
             await expect(convert).rejects.toThrow(new ResourcesPathError(msg));
         });
 
+        it('throws error if the CSP resources path does not start with a slash', async () => {
+            const filter = createFilter(["||example.org^$csp=script-src 'none'"]);
+            const resourcesPath = 'path';
+            const convert = async (): Promise<void> => {
+                await converter.convertCspRules([filter], resourcesPath);
+            };
+
+            const msg = 'Path to web accessible resources should '
+                + `start with a leading slash: ${resourcesPath}`;
+            await expect(convert).rejects.toThrow(new ResourcesPathError(msg));
+        });
+
+        it('throws error if the CSP resources path ended with a slash', async () => {
+            const filter = createFilter(["||example.org^$csp=script-src 'none'"]);
+            const resourcesPath = '/path/';
+            const convert = async (): Promise<void> => {
+                await converter.convertCspRules([filter], resourcesPath);
+            };
+
+            const msg = 'Path to web accessible resources should '
+                + `not end with a slash: ${resourcesPath}`;
+            await expect(convert).rejects.toThrow(new ResourcesPathError(msg));
+        });
+
         it('throws error if max number of rules is equal to or less than 0', async () => {
             const filter = createFilter(['||example.org^']);
             const maxNumberOfRules = 0;

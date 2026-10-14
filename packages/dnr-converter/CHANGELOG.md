@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added partial `$csp` exception support for exact conditions and clean domain
   exclusions, including a focused runtime CSP conversion API.
+- `ComputedWithSourceMapOptions` type for callers that compute `withSourceMap`
+  at runtime — now includes every source-map-only option.
 
 ### Changed
 
@@ -22,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Unicode domain anchors in converted URL filters now preserve their Adblock
   syntax and match their punycode hostnames.
+- Invalid `resourcesPath` is now rejected by `convertCspRules()` instead of
+  being applied silently.
 
 ### Security
 

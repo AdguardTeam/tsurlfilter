@@ -125,7 +125,7 @@ import { getRulesetId } from '../utils/ruleset-utils';
 
 import { type ConversionResult } from './conversion-result';
 import {
-    type BaseFilterConverterOptions,
+    type ComputedWithSourceMapOptions,
     type FilterConverterOptions,
     type SimpleConverterOptions,
     type SourceMapConverterOptions,
@@ -221,6 +221,8 @@ export class FilterConverter {
      * `ruleset`'s methods. Use a literal `true`/`false` to select a specific
      * overload and get a precise return type.
      *
+     * @see {@link ComputedWithSourceMapOptions} for details.
+     *
      * @param filters List of {@link IFilter} to convert.
      * @param options Converter options with a computed `withSourceMap` flag.
      *
@@ -228,7 +230,7 @@ export class FilterConverter {
      */
     public convert(
         filters: IFilter[],
-        options: BaseFilterConverterOptions & { withSourceMap: boolean; badFilterRules?: Rule[] },
+        options: ComputedWithSourceMapOptions,
     ): Promise<ConversionResult<IRuleset | IRulesetWithSourceMap>[]>;
 
     /**
@@ -271,12 +273,25 @@ export class FilterConverter {
      * @param resourcesPath Path to web-accessible resources.
      *
      * @returns Combined CSP conversion result with source-map support.
+     *
+     * @throws An {@link ResourcesPathError} if the resources path does not
+     * start with a slash or ends with a slash.
      */
     // eslint-disable-next-line class-methods-use-this
     public async convertCspRules(
         filters: IFilter[],
         resourcesPath?: string,
     ): Promise<ConversionResult<IRulesetWithSourceMap>> {
+        const options: SourceMapConverterOptions = {
+            combine: true,
+            withSourceMap: true,
+        };
+        if (resourcesPath !== undefined) {
+            options.resourcesPath = resourcesPath;
+        }
+
+        FilterConverter.checkConverterOptions(options);
+
         const relevantFilters = await FilterConverter.filterCspFilters(filters);
         const {
             errors: scanErrors,
@@ -285,14 +300,6 @@ export class FilterConverter {
             rule.isModifierEnabled(OPTION_NAMES.CSP)
             || rule.isModifierEnabled(OPTION_NAMES.BADFILTER)
         ));
-
-        const options: SourceMapConverterOptions = {
-            combine: true,
-            withSourceMap: true,
-        };
-        if (resourcesPath !== undefined) {
-            options.resourcesPath = resourcesPath;
-        }
 
         const convertedRules = await RulesConverter.convertCspRules(scannedFilters, options);
         const badFilterRules = scannedFilters.flatMap(({ badFilterRules: rules }) => rules);
