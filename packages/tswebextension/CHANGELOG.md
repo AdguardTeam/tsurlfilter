@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   documentation now reflects that document tracking works the same in Firefox 153+
   as in Chromium. Consumers compiling against the published declarations must use
   `@types/webextension-polyfill` >= 0.12.6, since the previous alias is gone.
+- HTML filtering `:contains()` arguments are now handled with CoreLibs
+  semantics (via [@adguard/tsurlfilter]): wrapping quotes of any kind are
+  literal characters of the matched text, unbalanced arguments (e.g.
+  `$$script:contains((function(g,b,a,c,e,d)`) are matched as-is, and
+  `/regexp/`-looking arguments keep their regexp semantics.
 
 ### Deprecated
 

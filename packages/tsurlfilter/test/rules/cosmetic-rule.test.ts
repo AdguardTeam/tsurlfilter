@@ -1138,6 +1138,144 @@ describe('HTML filtering rules (content rules)', () => {
         });
     });
 
+    it('correctly parses html rules - contains with unbalanced argument', () => {
+        // `:contains()` arguments with unbalanced parentheses are parsed
+        // leniently by AGTree (CoreLibs parity): the raw text between the
+        // parentheses of the pseudo-class is matched as-is
+        const rule = createCosmeticRule(
+            'example.org$$script:contains((function(g,b,a,c,e,d))',
+            0,
+        );
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [{
+                    name: 'contains',
+                    value: '(function(g,b,a,c,e,d)',
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - contains with quoted argument (literal quotes)', () => {
+        // Quoting is not a transport encoding: wrapping quotes of any kind
+        // are literal characters of the matched text (CoreLibs parity) —
+        // `:contains("(function(p,a,c)")` matches text containing the
+        // double quotes themselves
+        const rule = createCosmeticRule(
+            'example.org$$script:contains("(function(g,b,a,c,e,d)")',
+            0,
+        );
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [{
+                    name: 'contains',
+                    value: '"(function(g,b,a,c,e,d)"',
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - contains with regexp argument', () => {
+        // An argument that looks like a `/regexp/` is compiled to a RegExp,
+        // same as CoreLibs does for `:contains()` arguments
+        const rule = createCosmeticRule(
+            String.raw`example.org$$script:contains(/window\.open\([^)]*\);\s*\w+\.focus/)`,
+            0,
+        );
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [{
+                    name: 'contains',
+                    value: /window\.open\([^)]*\);\s*\w+\.focus/,
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - contains with quoted regexp argument (literal)', () => {
+        // A quoted regexp-lookalike is NOT a regexp: the wrapping quotes
+        // are literal characters of the matched text (CoreLibs parity)
+        const rule = createCosmeticRule(
+            String.raw`example.org$$script:contains("/window\.open\([^)]*\);\s*\w+\.focus/")`,
+            0,
+        );
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [{
+                    name: 'contains',
+                    value: String.raw`"/window\.open\([^)]*\);\s*\w+\.focus/"`,
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - contains with escaped quotes in argument (literal)', () => {
+        // Escapes and quotes are literal characters of the matched text:
+        // the raw argument text is matched as-is (CoreLibs parity)
+        const rule = createCosmeticRule(
+            String.raw`example.org$$div:contains("say \"hello\" to 'all'")`,
+            0,
+        );
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div',
+                specialSelectors: [{
+                    name: 'contains',
+                    value: String.raw`"say \"hello\" to 'all'"`,
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - contains with single-quoted argument (literal quotes preserved)', () => {
+        // Quotes are literal characters of the matched text (CoreLibs parity):
+        // `:contains('advert')` (e.g. converted from `[tag-content="'advert'"]`)
+        // matches text containing the apostrophes
+        const rule = createCosmeticRule(
+            "example.org$$script:contains('advert')",
+            0,
+        );
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [{
+                    name: 'contains',
+                    value: "'advert'",
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - contains with literal double quotes (converted form)', () => {
+        // `[tag-content='"advert"']` is converted to `:contains("advert")` —
+        // the double quotes are literal characters of the matched text
+        // (CoreLibs parity), not a transport encoding
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$script[tag-content=\'"advert"\']',
+        );
+        const rule = createCosmeticRule(convertedRuleText, 0);
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [{
+                    name: 'contains',
+                    value: '"advert"',
+                }],
+            }]],
+        });
+    });
+
     it('correctly parses html rules - attribute selectors', () => {
         // eslint-disable-next-line max-len
         const contentPart = 'div[attr1="value1"][attr2*="value" i][attr3]';

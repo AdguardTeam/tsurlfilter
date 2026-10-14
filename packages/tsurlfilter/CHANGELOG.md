@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
 ### Changed
 
 - Escaped regular-expression domains in non-basic `[$domain=...]` rules now
@@ -14,6 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   their regexp escapes [#190].
 - Regexp domains now match case-insensitively without changing escape tokens
   such as `\D` into `\d`.
+- `:contains()` arguments of HTML filtering rules are now handled exactly
+  like CoreLibs does: the argument is the raw text between the parentheses
+  of the pseudo-class, so wrapping quotes of any kind (e.g.
+  `:contains('advert')` or `:contains("...")`) are literal characters of
+  the matched text, never a transport encoding. An argument that looks like
+  a `/regexp/` is compiled to a `RegExp`, everything else is matched as a
+  literal substring. Unbalanced arguments, e.g.
+  `$$script:contains((function(g,b,a,c,e,d)`, are now parsed and matched
+  as-is, mirroring CoreLibs [#96].
+
+### Deprecated
+
+### Removed
 
 ### Fixed
 
@@ -35,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [AdguardBrowserExtension#3605].
 - Domain-scoped cosmetic and JavaScript rules not matching hosts with labels
   ending in an underscore.
+
+### Security
 
 [Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.3...HEAD
 [#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190

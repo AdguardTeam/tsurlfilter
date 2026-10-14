@@ -444,7 +444,7 @@ Additional filter list for websites in Romanian.
 
 #### <a id="chromium-mv3-filters-language-specific-adblockid"></a> AdBlockID
 
-Additional filter list for websites in Indonesian.
+Additional filter list for websites in Indonesian and Malay.
 
 - Filter ID: **120**
 - Path: `dist/filters/chromium-mv3/declarative/ruleset_120/ruleset_120.json`
@@ -819,7 +819,7 @@ Additional filter list for websites in Romanian.
 
 #### <a id="edge-mv3-filters-language-specific-adblockid"></a> AdBlockID
 
-Additional filter list for websites in Indonesian.
+Additional filter list for websites in Indonesian and Malay.
 
 - Filter ID: **120**
 - Path: `dist/filters/edge-mv3/declarative/ruleset_120/ruleset_120.json`
@@ -1194,7 +1194,7 @@ Additional filter list for websites in Romanian.
 
 #### <a id="opera-mv3-filters-language-specific-adblockid"></a> AdBlockID
 
-Additional filter list for websites in Indonesian.
+Additional filter list for websites in Indonesian and Malay.
 
 - Filter ID: **120**
 - Path: `dist/filters/opera-mv3/declarative/ruleset_120/ruleset_120.json`
