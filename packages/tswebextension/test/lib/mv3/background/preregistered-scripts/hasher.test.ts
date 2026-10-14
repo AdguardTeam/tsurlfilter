@@ -26,6 +26,11 @@ describe('expandHostnames', () => {
         expect(expandHostnames(['Youtube.com', 'www.youtube.com']))
             .toEqual(['youtube.com', 'www.youtube.com']);
     });
+
+    it('expands a non-ASCII apex into punycode hostnames', () => {
+        expect(expandHostnames(['пример.рф']))
+            .toEqual(['xn--e1afmkfd.xn--p1ai', 'www.xn--e1afmkfd.xn--p1ai']);
+    });
 });
 
 describe('hashString', () => {
@@ -118,6 +123,20 @@ describe('computeRuleHash', () => {
         const noPath = await computeRuleHash(jsRule('window._foo = 1;'));
         const rootOnly = await computeRuleHash(jsRule('window._foo = 1;', { pattern: '' }));
         expect(rootOnly).not.toBe(noPath);
+    });
+
+    it('does not collapse a body containing the path marker into a $path rule', async () => {
+        // Plain concatenation hashed these two rules identically.
+        const withPath = await computeRuleHash(jsRule('window._foo = 1;', { pattern: '/watch' }));
+        const markerInBody = await computeRuleHash(jsRule('window._foo = 1;|path:/watch'));
+        expect(markerInBody).not.toBe(withPath);
+    });
+
+    it('does not collapse $path patterns containing the marker (regex alternation)', async () => {
+        // `|` is regex alternation, so `|path:` inside a pattern is legitimate.
+        const inPattern = await computeRuleHash(jsRule('window._foo = 1;', { pattern: '/a|path:/b' }));
+        const inBody = await computeRuleHash(jsRule('window._foo = 1;|path:/a', { pattern: '/b' }));
+        expect(inPattern).not.toBe(inBody);
     });
 
     it('throws when a scriptlet rule has no scriptlet data', async () => {
@@ -231,5 +250,22 @@ describe('normalizeDomain', () => {
 
     it('leaves an already-normalized domain unchanged', () => {
         expect(normalizeDomain('youtube.com')).toBe('youtube.com');
+    });
+
+    it('canonicalizes a non-ASCII domain to punycode', () => {
+        // A raw IDN key would never match a browser-reported (punycode) hostname.
+        expect(normalizeDomain('пример.рф')).toBe('xn--e1afmkfd.xn--p1ai');
+    });
+
+    it('canonicalizes a non-ASCII www alias', () => {
+        expect(normalizeDomain('WWW.Пример.РФ')).toBe('www.xn--e1afmkfd.xn--p1ai');
+    });
+
+    it('leaves an already-punycoded domain unchanged', () => {
+        expect(normalizeDomain('xn--e1afmkfd.xn--p1ai')).toBe('xn--e1afmkfd.xn--p1ai');
+    });
+
+    it('falls back to best-effort normalization for an unparseable domain', () => {
+        expect(normalizeDomain('  not a domain  ')).toBe('not a domain');
     });
 });

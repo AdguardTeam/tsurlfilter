@@ -134,33 +134,20 @@ export const hashString = async (text: string): Promise<string> => {
 };
 
 /**
- * Type-discriminator prefixes so a scriptlet invocation and a JS rule body
+ * Type-discriminator kinds so a scriptlet invocation and a JS rule body
  * can never hash to the same value even if their raw text happens to
  * coincide (e.g. a JS rule body that's textually identical to
  * `name + JSON.stringify(args)` for some scriptlet).
  */
-const SCRIPTLET_HASH_PREFIX = 's:';
-const JS_RULE_HASH_PREFIX = 'j:';
-
-/**
- * Suffix appended to the hash input when a rule carries a `$path` modifier,
- * so the same rule body with different `$path` values hashes differently.
- *
- * An empty `$path` pattern is valid and means root-only: it must hash
- * differently from a rule without `$path`, so the root-only artifact can
- * never cover the unrestricted variant (the collector keeps the first entry
- * for a hash, and coverage suppresses dynamic injection on other paths).
- *
- * @param pathPattern Raw `$path` modifier pattern.
- *
- * @returns Suffix string or an empty string.
- */
-const pathHashSuffix = (pathPattern?: string): string => {
-    return pathPattern !== undefined ? `|path:${pathPattern}` : '';
-};
+const SCRIPTLET_HASH_KIND = 's';
+const JS_RULE_HASH_KIND = 'j';
 
 /**
  * Computes the stable hash for a scriptlet invocation.
+ *
+ * The input is a JSON-encoded tuple, never concatenation: concatenation let
+ * a rule body containing `|path:` collide with a different rule carrying a
+ * `$path` pattern.
  *
  * @param name Scriptlet name.
  * @param args Scriptlet arguments array.
@@ -173,11 +160,13 @@ const computeScriptletHash = async (
     args: string[],
     pathPattern?: string,
 ): Promise<string> => {
-    return hashString(SCRIPTLET_HASH_PREFIX + name + JSON.stringify(args) + pathHashSuffix(pathPattern));
+    return hashString(JSON.stringify([SCRIPTLET_HASH_KIND, name, args, pathPattern ?? null]));
 };
 
 /**
- * Computes the stable hash for a JS injection rule.
+ * Computes the stable hash for a JS injection rule. See
+ * {@link computeScriptletHash} for the input format; `null` (no `$path`)
+ * differs from an empty root-only pattern.
  *
  * @param body Generated JS rule body.
  * @param pathPattern Optional raw `$path` modifier pattern of the rule.
@@ -185,7 +174,7 @@ const computeScriptletHash = async (
  * @returns SHA-256 hex hash string.
  */
 const computeJsRuleHash = async (body: string, pathPattern?: string): Promise<string> => {
-    return hashString(JS_RULE_HASH_PREFIX + body + pathHashSuffix(pathPattern));
+    return hashString(JSON.stringify([JS_RULE_HASH_KIND, body, pathPattern ?? null]));
 };
 
 /**
@@ -247,16 +236,24 @@ export const computeRuleHashCached = (rule: CosmeticRule): Promise<string> => {
 
 /**
  * Normalizes a domain string for comparison: trims whitespace, lower-cases
- * it, and strips leading/trailing dots. The `www.` prefix is NOT stripped:
- * content-script match patterns are exact-host, so apex and `www.` are
- * distinct registrations — collapsing them would silently widen coverage.
+ * it, strips leading/trailing dots and canonicalizes non-ASCII hosts to
+ * punycode — the form browsers report in `URL.hostname`. The `www.` prefix
+ * is NOT stripped: content-script match patterns are exact-host, so apex
+ * and `www.` are distinct registrations.
  *
  * @param domain Raw domain string.
  *
  * @returns Normalized domain string.
  */
 export const normalizeDomain = (domain: string): string => {
-    return domain.trim().toLowerCase().replace(/^\.+|\.+$/g, '');
+    const normalized = domain.trim().toLowerCase().replace(/^\.+|\.+$/g, '');
+
+    try {
+        return new URL(`http://${normalized}`).hostname;
+    } catch {
+        // Not a parseable host.
+        return normalized;
+    }
 };
 
 /**
