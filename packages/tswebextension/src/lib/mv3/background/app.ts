@@ -5,6 +5,7 @@ import {
     getRulesetId,
     type IFilter,
     type IRulesetWithSourceMap,
+    type LimitationError,
     METADATA_RULESET_ID,
     RULESET_NAME_PREFIX,
 } from '@adguard/dnr-converter';
@@ -44,7 +45,13 @@ import { WebRequestApi } from './web-request-api';
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult;
     staticFilters: IRulesetWithSourceMap[];
-    cspRules?: Pick<CspRulesResult, 'errors' | 'limitations'>;
+    /**
+     * Limitations of rules omitted due to the browser quotas, aggregated
+     * across all scopes: dynamic rules conversion, rebuilt CSP rules and
+     * session rules.
+     */
+    limitations?: LimitationError[];
+    cspRules?: Pick<CspRulesResult, 'errors'>;
     dynamicRules?: ConversionResult;
     stealthResult?: StealthConfigurationResult;
 };
@@ -334,6 +341,8 @@ export class TsWebExtension implements AppInterface<
      * - list of errors for static filters, if any of them has been thrown
      * - converted dynamic rule set with rule set, errors and limitations.
      * Details: {@link ConversionResult}.
+     * - limitations of rules omitted due to the browser quotas, aggregated
+     * across all rule scopes.
      *
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
@@ -495,10 +504,7 @@ export class TsWebExtension implements AppInterface<
                 ],
                 this.webAccessibleResourcesPath,
             );
-            res.cspRules = {
-                errors: cspRules.errors,
-                limitations: cspRules.limitations,
-            };
+            res.cspRules = { errors: cspRules.errors };
 
             const limitedDynamicCspRules = DynamicRulesApi.limitRebuiltCspRules(
                 dynamicRules,
@@ -508,11 +514,11 @@ export class TsWebExtension implements AppInterface<
             res.dynamicRules = {
                 ...dynamicRules,
                 errors: dynamicRules.errors.concat(cspRules.dynamicErrors),
-                limitations: dynamicRules.limitations.concat(
-                    cspRules.limitations,
-                    limitedDynamicCspRules.limitations,
-                ),
             };
+            res.limitations = [
+                ...dynamicRules.limitations,
+                ...limitedDynamicCspRules.limitations,
+            ];
 
             const dynamicRulesSnapshot = await DynamicRulesApi.applyDynamicFiltering(
                 res.dynamicRules,
@@ -522,12 +528,13 @@ export class TsWebExtension implements AppInterface<
             );
 
             try {
-                await SessionRulesApi.updateSessionRules(
+                const sessionLimitations = await SessionRulesApi.updateSessionRules(
                     enabledStaticRulesets,
                     res.dynamicRules.declarativeRulesToCancel,
                     cspRules.staticRules,
                     cspRules.ruleset,
                 );
+                res.limitations.push(...sessionLimitations);
             } catch (error) {
                 try {
                     await DynamicRulesApi.rollbackDynamicFiltering(dynamicRulesSnapshot);

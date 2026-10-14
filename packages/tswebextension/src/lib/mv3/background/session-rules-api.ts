@@ -4,6 +4,9 @@ import {
     type DeclarativeRule,
     type IRulesetWithSourceMap,
     isCspDeclarativeRule,
+    type LimitationError,
+    TooManyRegexpRulesError,
+    TooManyUnsafeRulesError,
     type UpdateStaticRulesOptions,
 } from '@adguard/dnr-converter';
 
@@ -116,8 +119,9 @@ export class SessionRulesApi {
     }
 
     /**
-     * Update session rules with unsafe rules from static filters. If we overflow
-     * the limit of session rules, some rules will be ignored.
+     * Update session rules with unsafe rules from static filters. Rules that
+     * do not fit into the browser quotas are omitted and reported as
+     * limitations.
      *
      * @param enabledStaticRulesets List of enabled static rule sets.
      * @param declarativeRulesToCancel List of declarative rules to cancel
@@ -125,14 +129,14 @@ export class SessionRulesApi {
      * @param rebuiltCspRules Globally rebuilt CSP rules from static filters.
      * @param cspRuleset Source ruleset for rebuilt CSP rules.
      *
-     * @returns Resolved promise when the session rules are updated.
+     * @returns Limitations for session rules omitted due to the browser quotas.
      */
     public static async updateSessionRules(
         enabledStaticRulesets: IRulesetWithSourceMap[],
         declarativeRulesToCancel?: UpdateStaticRulesOptions[] | undefined,
         rebuiltCspRules?: DeclarativeRule[],
         cspRuleset?: IRulesetWithSourceMap,
-    ): Promise<void> {
+    ): Promise<LimitationError[]> {
         const rulesToCancel = new Map<string, number[]>(
             declarativeRulesToCancel
                 ? declarativeRulesToCancel.map(({ rulesetId, disableRuleIds }) => [rulesetId, disableRuleIds])
@@ -190,11 +194,14 @@ export class SessionRulesApi {
         );
 
         let availableId = SessionRulesApi.MIN_DECLARATIVE_RULE_ID + 1;
+        const excludedByUnsafeLimitIds: number[] = [];
+        const excludedByRegexpLimitIds: number[] = [];
 
         // Reset id for each rule via saving its source and check the limits.
         unsafeRulesFromStaticFilters.forEach(({ rulesetId, rules }) => {
             rules.forEach((rule) => {
                 if (availableId > SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES) {
+                    excludedByUnsafeLimitIds.push(rule.id);
                     ignoredRules.get(rulesetId)?.push(rule.id);
 
                     return;
@@ -205,6 +212,7 @@ export class SessionRulesApi {
                     regexpRulesCounter += 1;
 
                     if (regexpRulesCounter > SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES) {
+                        excludedByRegexpLimitIds.push(rule.id);
                         ignoredRules.get(rulesetId)?.push(rule.id);
 
                         return;
@@ -234,6 +242,24 @@ export class SessionRulesApi {
             logger.debug(`[tsweb.SessionRulesApi.updateSessionRules]: Some session rules were ignored due to the limit of ${SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES} (current count of unsafe rules: ${unsafeRulesFromEnabledRulesets}) or limit of ${SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES} regex rules (current count of regex rules: ${regexpRulesCounter}): \n`, stringifiedIgnoredRules);
         }
 
+        const limitations: LimitationError[] = [];
+        if (excludedByUnsafeLimitIds.length > 0) {
+            limitations.push(new TooManyUnsafeRulesError(
+                `Session rules exceed the unsafe rules limit: ${excludedByUnsafeLimitIds.length} rules were omitted`,
+                excludedByUnsafeLimitIds,
+                SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES,
+                excludedByUnsafeLimitIds.length,
+            ));
+        }
+        if (excludedByRegexpLimitIds.length > 0) {
+            limitations.push(new TooManyRegexpRulesError(
+                `Session rules exceed the regexp rules limit: ${excludedByRegexpLimitIds.length} rules were omitted`,
+                excludedByRegexpLimitIds,
+                SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES,
+                excludedByRegexpLimitIds.length,
+            ));
+        }
+
         // The rules with IDs listed in options.removeRuleIds are first removed,
         // and then the rules given in options.addRules are added
         await chrome.declarativeNetRequest.updateSessionRules({
@@ -248,6 +274,8 @@ export class SessionRulesApi {
         // failed update never leaves stale mappings behind.
         SessionRulesApi.sourceMapForUnsafeRules.clear();
         nextSourceMap.forEach((source, id) => SessionRulesApi.sourceMapForUnsafeRules.set(id, source));
+
+        return limitations;
     }
 
     /**

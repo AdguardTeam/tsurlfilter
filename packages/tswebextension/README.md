@@ -579,8 +579,9 @@ that **must be checked**:
 - **`dynamicRules.errors`**: Array of conversion errors that occurred
   during dynamic rules conversion (custom filters, user rules,
   allowlist).
-- **`dynamicRules.limitations`**: Array of limitation errors if dynamic
-  rules were truncated due to browser limits.
+- **`limitations`**: Array of limitation errors for rules omitted due to
+  the browser quotas, aggregated across all scopes: dynamic rules
+  conversion, rebuilt CSP rules and session rules.
 
 **These errors are not thrown** but returned in the result.
 **You must check these fields for critical errors and handle them
@@ -594,14 +595,16 @@ if (result.staticFiltersStatus.errors.length > 0) {
     console.error('Failed to enable rulesets:', result.staticFiltersStatus.errors);
 }
 
-// Check dynamic rules errors and limitations
+// Check dynamic rules errors
 if (result.dynamicRules) {
     if (result.dynamicRules.errors.length > 0) {
         console.error('Dynamic rules conversion errors:', result.dynamicRules.errors);
     }
-    if (result.dynamicRules.limitations.length > 0) {
-        console.warn('Dynamic rules were truncated:', result.dynamicRules.limitations);
-    }
+}
+
+// Check limitations
+if (result.limitations && result.limitations.length > 0) {
+    console.warn('Rules were omitted due to browser quotas:', result.limitations);
 }
 ```
 

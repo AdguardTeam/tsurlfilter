@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rebuilt CSP rules replace the previous rules atomically within each DNR
   scope, fit into the remaining browser quotas, and the dynamic scope is
   rolled back when the session update fails.
+- All limitations of the applied configuration — rules omitted due to the
+  browser quotas during conversion, CSP rules rebuilding or session rules
+  update — are aggregated in `ConfigurationResult.limitations`.
 
 ### Changed
 

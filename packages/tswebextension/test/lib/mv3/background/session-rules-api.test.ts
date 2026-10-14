@@ -7,7 +7,13 @@ import {
 } from 'vitest';
 import browser from 'webextension-polyfill';
 
-import { type DeclarativeRule, type IRulesetWithSourceMap, RuleActionType } from '@adguard/dnr-converter';
+import {
+    type DeclarativeRule,
+    type IRulesetWithSourceMap,
+    RuleActionType,
+    TooManyRegexpRulesError,
+    TooManyUnsafeRulesError,
+} from '@adguard/dnr-converter';
 
 import { SessionRulesApi } from '../../../../src/lib/mv3/background/session-rules-api';
 
@@ -75,7 +81,7 @@ describe('SessionRulesApi', () => {
         const staticRuleset = createRuleset('ruleset_1', [oldCspRule, removeHeaderRule]);
         const cspRuleset = createRuleset('_csp', []);
 
-        await SessionRulesApi.updateSessionRules(
+        const limitations = await SessionRulesApi.updateSessionRules(
             [staticRuleset],
             undefined,
             [rebuiltCspRule],
@@ -87,6 +93,7 @@ describe('SessionRulesApi', () => {
         expect(addRules.map((rule: DeclarativeRule) => rule.action.responseHeaders?.[0].header))
             .toEqual(['Content-Security-Policy', 'Set-Cookie']);
         expect(SessionRulesApi.sourceMapForUnsafeRules.get(7)).toEqual(['_csp', 4]);
+        expect(limitations).toEqual([]);
     });
 
     it('preserves the previous source map when the browser update fails', async () => {
@@ -132,7 +139,7 @@ describe('SessionRulesApi', () => {
         // @ts-expect-error(2540)
         browser.declarativeNetRequest = declarativeNetRequest;
 
-        await SessionRulesApi.updateSessionRules(
+        const limitations = await SessionRulesApi.updateSessionRules(
             [createRuleset('ruleset_1', [staticRule])],
             undefined,
             [cspRule],
@@ -142,5 +149,39 @@ describe('SessionRulesApi', () => {
         const [{ addRules }] = updateSessionRules.mock.calls[0];
         expect(addRules).toHaveLength(1);
         expect(addRules[0].action.responseHeaders?.[0].header).toBe('Content-Security-Policy');
+
+        expect(limitations).toHaveLength(1);
+        expect(limitations[0]).toBeInstanceOf(TooManyUnsafeRulesError);
+        expect((limitations[0] as TooManyUnsafeRulesError).excludedRulesIds).toEqual([staticRule.id]);
+    });
+
+    it('reports a limitation when the session regexp quota is exhausted', async () => {
+        const regexpRule = {
+            id: 2,
+            action: { type: RuleActionType.Block },
+            condition: { regexFilter: '/ads/' },
+        } as DeclarativeRule;
+        const updateSessionRules = vi.fn().mockResolvedValue(undefined);
+
+        const declarativeNetRequest = {
+            getSessionRules: vi.fn().mockResolvedValue([]),
+            updateSessionRules,
+            MAX_NUMBER_OF_SESSION_RULES: 5000,
+            MAX_NUMBER_OF_UNSAFE_SESSION_RULES: 5000,
+            MAX_NUMBER_OF_REGEX_RULES: 0,
+        } as unknown as typeof chrome.declarativeNetRequest;
+        chrome.declarativeNetRequest = declarativeNetRequest;
+        // @ts-expect-error(2540)
+        browser.declarativeNetRequest = declarativeNetRequest;
+
+        const limitations = await SessionRulesApi.updateSessionRules(
+            [createRuleset('ruleset_1', [regexpRule])],
+        );
+
+        const [{ addRules }] = updateSessionRules.mock.calls[0];
+        expect(addRules).toHaveLength(0);
+        expect(limitations).toHaveLength(1);
+        expect(limitations[0]).toBeInstanceOf(TooManyRegexpRulesError);
+        expect((limitations[0] as TooManyRegexpRulesError).excludedRulesIds).toEqual([regexpRule.id]);
     });
 });
