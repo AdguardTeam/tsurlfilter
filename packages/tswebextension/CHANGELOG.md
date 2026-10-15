@@ -11,12 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- HTML filtering `:contains()` arguments are now handled with CoreLibs
-  semantics (via [@adguard/tsurlfilter]): wrapping quotes of any kind are
-  literal characters of the matched text, unbalanced arguments (e.g.
-  `$$script:contains((function(g,b,a,c,e,d)`) are matched as-is, and
-  `/regexp/`-looking arguments keep their regexp semantics.
-
 ### Deprecated
 
 ### Removed
@@ -24,6 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## [6.0.1] - 2026-10-15
+
+### Changed
+
+- HTML filtering `:contains()` arguments are now handled with CoreLibs
+  semantics (via [@adguard/tsurlfilter]): wrapping quotes of any kind are
+  literal characters of the matched text, unbalanced arguments (e.g.
+  `$$script:contains((function(g,b,a,c,e,d)`) are matched as-is, and
+  `/regexp/`-looking arguments keep their regexp semantics.
+
+[6.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v6.0.1
 
 ## [6.0.0] - 2026-09-29
 
