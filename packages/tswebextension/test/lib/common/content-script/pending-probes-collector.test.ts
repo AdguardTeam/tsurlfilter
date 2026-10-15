@@ -150,6 +150,26 @@ describe('PendingProbesCollector', () => {
         collector.stop();
     });
 
+    it('ignores resource-bearing and structural tags', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const ignoredElements = ['img', 'link', 'iframe', 'style', 'meta', 'video']
+            .map((tag) => document.createElement(tag));
+        const bait = document.createElement('div');
+
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [...ignoredElements, bait],
+            target: document.body,
+        })]);
+
+        const probes = collector.takePendingProbes();
+
+        expect(probes.map((probe) => probe.element)).toEqual([bait]);
+
+        collector.stop();
+    });
+
     it('returns collected probes and keeps observing', () => {
         const collector = new PendingProbesCollector();
         collector.start();
@@ -264,7 +284,7 @@ describe('PendingProbesCollector', () => {
         collector.stop();
     });
 
-    it('stops observing after the observation timeout and keeps collected probes', () => {
+    it('stops observing and drops collected probes after the observation timeout', () => {
         vi.useFakeTimers();
 
         try {
@@ -280,10 +300,8 @@ describe('PendingProbesCollector', () => {
             vi.advanceTimersByTime(30000);
 
             expect(MutationObserverMock.last!.isDisconnected).toBe(true);
-
-            const probes = collector.takePendingProbes();
-            expect(probes).toHaveLength(1);
-            expect(probes[0].element).toBe(bait);
+            // Detached subtrees must not be retained after observation ends.
+            expect(collector.takePendingProbes()).toHaveLength(0);
 
             collector.stop();
         } finally {
@@ -317,6 +335,26 @@ describe('PendingProbesCollector', () => {
 
         const bait = document.createElement('div');
         MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [bait],
+            target: document.body,
+        })]);
+
+        const onProbesCollected = vi.fn();
+        collector.setOnProbesCollected(onProbesCollected);
+
+        expect(onProbesCollected).toHaveBeenCalledTimes(1);
+        expect(onProbesCollected.mock.calls[0][0][0].element).toBe(bait);
+
+        collector.stop();
+    });
+
+    it('flushes undelivered mutation records when a subscriber is set', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const bait = document.createElement('div');
+        // The record is queued in the observer but not delivered yet.
+        MutationObserverMock.last!.enqueueRecords([createMutationRecord({
             addedNodes: [bait],
             target: document.body,
         })]);

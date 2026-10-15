@@ -60,16 +60,27 @@ export class PendingProbesCollector {
      * Maximum observation time in milliseconds.
      *
      * If the counter is not initialized by then (e.g. the background is not
-     * responding), the observer is disconnected to avoid a permanent
-     * overhead on the page. Already collected elements are kept for a
-     * possible later take.
+     * responding), the observer is disconnected and the collected elements
+     * are dropped to avoid a permanent overhead and DOM retention on the
+     * page.
      */
     private static readonly MAX_OBSERVATION_TIME_MS = 30000;
 
     /**
      * Tags ignored by the collector.
+     *
+     * Baits are hidden content elements, usually `div`/`span`, while
+     * re-inserting resource-bearing or structural tags can re-run page side
+     * effects: re-issue network requests, reload a frame, re-apply styles or
+     * fire custom element callbacks. The counter re-inserts collected
+     * elements to read their computed style, so such tags must not be
+     * collected.
      */
-    private static readonly IGNORED_TAGS = ['script', 'html', 'body'];
+    private static readonly IGNORED_TAGS = [
+        'script', 'html', 'body', 'head', 'style', 'link', 'meta', 'title', 'base',
+        'img', 'picture', 'source', 'iframe', 'frame', 'object', 'embed', 'video',
+        'audio', 'track', 'svg',
+    ];
 
     /**
      * Mutation observer.
@@ -147,7 +158,9 @@ export class PendingProbesCollector {
     public setOnProbesCollected(callback: ((probes: PendingProbe[]) => void) | null): void {
         this.onProbesCollected = callback;
 
-        if (callback && this.pendingProbes.length > 0) {
+        if (callback) {
+            // Flush undelivered records and the buffer, so probes collected
+            // before the subscription are not lost.
             const probes = this.takePendingProbes();
             if (probes.length > 0) {
                 callback(probes);
@@ -183,7 +196,8 @@ export class PendingProbesCollector {
     }
 
     /**
-     * Disconnects the observer and cancels the observation timeout.
+     * Disconnects the observer, cancels the observation timeout and drops
+     * collected elements.
      */
     private disconnect(): void {
         if (this.observer) {
@@ -195,6 +209,11 @@ export class PendingProbesCollector {
             window.clearTimeout(this.observationTimeoutId);
             this.observationTimeoutId = null;
         }
+
+        // Do not retain detached DOM subtrees once observation ends: the
+        // probes collected so far are stale and would otherwise live for the
+        // page lifetime.
+        this.pendingProbes = [];
     }
 
     /**

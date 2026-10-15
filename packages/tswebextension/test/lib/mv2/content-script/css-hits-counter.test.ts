@@ -328,6 +328,63 @@ describe('CssHitsCounter', () => {
         }
     });
 
+    it('gives probes delivered during a retry their own retry budget', () => {
+        vi.useFakeTimers();
+
+        // This probe never matches any rule and consumes its retry budget.
+        const staleBait = document.createElement('div');
+        staleBait.className = 'never-hidden';
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, {
+                pendingProbes: [{
+                    element: staleBait,
+                    target: document.body,
+                    previousSibling: null,
+                    nextSibling: null,
+                }],
+            });
+
+            // Spend four attempts of the stale probe's budget; a retry is
+            // still armed.
+            vi.advanceTimersByTime(300);
+
+            // The late probe joins while the retry is armed, so it must not
+            // share the stale probe's remaining attempts.
+            const lateBait = document.createElement('div');
+            lateBait.className = 'late-streamed-bait';
+            counter.addPendingProbes([{
+                element: lateBait,
+                target: document.body,
+                previousSibling: null,
+                nextSibling: null,
+            }]);
+
+            // The stale probe exhausts its budget here; the late probe gets
+            // its first attempt.
+            vi.advanceTimersByTime(100);
+
+            const style = document.createElement('style');
+            style.textContent = [
+                'div.late-streamed-bait',
+                "{ display: none !important; --adguard-hit: 'adguard13%3B13' !important; }",
+            ].join(' ');
+            document.head.appendChild(style);
+
+            vi.advanceTimersByTime(300);
+
+            const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(flat).toContainEqual(expect.objectContaining({ filterId: 13, ruleIndex: 13 }));
+            expect(lateBait.parentNode).toBeNull();
+
+            counter.stop();
+            style.remove();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('counts probes added after the counter initialization', () => {
         vi.useFakeTimers();
 

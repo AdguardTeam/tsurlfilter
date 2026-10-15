@@ -111,7 +111,7 @@ export class CssHitsCounter {
     private countIsWorking = false;
 
     /**
-     * Probes collected before the counter initialization.
+     * Probes collected before and after the counter initialization.
      */
     private pendingProbes: PendingProbe[] = [];
 
@@ -121,9 +121,12 @@ export class CssHitsCounter {
     private pendingProbesCollector: PendingProbesCollector | null = null;
 
     /**
-     * Number of counting attempts performed for {@link pendingProbes}.
+     * Number of counting attempts already performed for each pending probe.
+     *
+     * Attempts are tracked per probe, so probes delivered later get their own
+     * retry budget instead of sharing the in-flight one.
      */
-    private pendingProbesAttempt = 0;
+    private pendingProbeAttempts = new WeakMap<PendingProbe, number>();
 
     /**
      * Timer for the next attempt to count {@link pendingProbes}.
@@ -149,8 +152,10 @@ export class CssHitsCounter {
     private readonly boundStartCounter = this.startCounter.bind(this);
 
     /**
-     * This function prepares calculation of css hits.
-     * We are waiting for 'load' event and start calculation.
+     * Attaches the mutation observer immediately while the document is still
+     * loading, so elements added and removed before the document becomes
+     * interactive are not missed. The full DOM scan is performed once the
+     * document is interactive or complete.
      *
      * @param callback Which receives {@link ICountedElement} and handles counted css hits.
      * @param options CssHitsCounter options.
@@ -226,7 +231,8 @@ export class CssHitsCounter {
      * Adds probes collected after the counter initialization.
      *
      * The probes are counted by the regular probe processing pass. If a pass
-     * or a retry is already scheduled, the new probes are picked up by it.
+     * or a retry is already scheduled, the new probes are picked up by it and
+     * get their own retry budget.
      *
      * @param probes Probes collected by {@link PendingProbesCollector}.
      */
@@ -243,9 +249,6 @@ export class CssHitsCounter {
             return;
         }
 
-        // No pass is scheduled: start one for the collected probes with a
-        // fresh retry budget.
-        this.pendingProbesAttempt = 0;
         this.pendingProbesTimeoutId = window.setTimeout(() => {
             this.pendingProbesTimeoutId = null;
             this.countPendingProbes();
@@ -595,8 +598,6 @@ export class CssHitsCounter {
             return;
         }
 
-        this.pendingProbesAttempt += 1;
-
         const probes = this.pendingProbes;
         this.pendingProbes = [];
 
@@ -645,15 +646,29 @@ export class CssHitsCounter {
             this.onCssHitsFoundCallback(result);
         }
 
-        const uncountedProbes = probes.filter((probe) => !countedElements.has(probe.element));
+        // Each probe has its own retry budget, so probes delivered while a
+        // retry is armed are not dropped with the batch they joined.
+        const retryProbes: PendingProbe[] = [];
 
-        if (uncountedProbes.length === 0
-            || this.stopped
-            || this.pendingProbesAttempt >= CssHitsCounter.PENDING_PROBES_MAX_ATTEMPTS) {
+        for (let i = 0; i < probes.length; i += 1) {
+            const probe = probes[i];
+            if (countedElements.has(probe.element)) {
+                continue;
+            }
+
+            const attempts = (this.pendingProbeAttempts.get(probe) ?? 0) + 1;
+            this.pendingProbeAttempts.set(probe, attempts);
+
+            if (attempts < CssHitsCounter.PENDING_PROBES_MAX_ATTEMPTS) {
+                retryProbes.push(probe);
+            }
+        }
+
+        if (retryProbes.length === 0 || this.stopped) {
             return;
         }
 
-        this.pendingProbes = uncountedProbes;
+        this.pendingProbes = retryProbes;
         this.pendingProbesTimeoutId = window.setTimeout(() => {
             this.pendingProbesTimeoutId = null;
             this.countPendingProbes();
