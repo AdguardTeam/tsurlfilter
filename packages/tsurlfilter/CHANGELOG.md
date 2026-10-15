@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   literal substring. Unbalanced arguments, e.g.
   `$$script:contains((function(g,b,a,c,e,d)`, are now parsed and matched
   as-is, mirroring CoreLibs [#96].
+- Updated [@adguard/agtree] to `v4.3.0`.
 
 [6.0.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v6.0.4
 
