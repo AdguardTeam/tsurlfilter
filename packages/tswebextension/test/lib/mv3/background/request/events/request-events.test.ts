@@ -11,6 +11,7 @@ import { HTTPMethod } from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog, FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
 import { DocumentLifecycle } from '../../../../../../src/lib/common/interfaces';
+import { requestContextStorage } from '../../../../../../src/lib/mv3/background/request';
 import {
     type OnBeforeRequestDetailsType,
     RequestEvents,
@@ -252,6 +253,26 @@ describe('Request Events', () => {
                 context: expect.objectContaining({
                     isPrefetchRequest: false,
                 }),
+            }));
+        });
+    });
+
+    describe('cookie store details capture', () => {
+        it('should store cookieStoreId and incognito from the onBeforeRequest details', () => {
+            RequestEvents.init();
+
+            const requestId = 'cookie-store-details-1';
+
+            browser.webRequest.onBeforeRequest.dispatch(<OnBeforeRequestDetailsType>{
+                ...commonRequestData,
+                requestId,
+                cookieStoreId: 'firefox-container-4',
+                incognito: true,
+            });
+
+            expect(requestContextStorage.get(requestId)).toEqual(expect.objectContaining({
+                cookieStoreId: 'firefox-container-4',
+                incognito: true,
             }));
         });
     });

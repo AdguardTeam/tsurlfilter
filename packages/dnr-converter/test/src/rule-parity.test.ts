@@ -9,7 +9,13 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { NetworkRule, NetworkRuleOption, RequestType } from '@adguard/tsurlfilter';
+import {
+    Engine,
+    NetworkRule,
+    NetworkRuleOption,
+    Request,
+    RequestType,
+} from '@adguard/tsurlfilter';
 
 import { ResourceType } from '../../src/declarative-rule/rule-condition';
 import { OPTION_NAMES } from '../../src/rule/option-names';
@@ -324,6 +330,298 @@ describe('$badfilter detection and negation parity', () => {
         expect(dnrBf.negatesBadfilter(dnrOther)).toBe(false);
         expect(tsBf.negatesBadfilter(tsOther)).toBe(false);
     });
+
+    it.each([
+        // Advanced modifier values.
+        ['||example.com^$removeparam=foo', '||example.com^$removeparam=foo,badfilter', true],
+        ['||example.com^$removeparam=bar', '||example.com^$removeparam=foo,badfilter', false],
+        ['||example.com^$removeparam', '||example.com^$removeparam,badfilter', true],
+        ['||example.com^$removeparam', '||example.com^$removeparam=foo,badfilter', false],
+        ["||example.com^$csp=script-src 'self'", "||example.com^$csp=script-src 'self',badfilter", true],
+        ["||example.com^$csp=script-src 'none'", "||example.com^$csp=script-src 'self',badfilter", false],
+        // Repeated modifiers are kept as separate entries, in the written order.
+        [
+            "||example.com^$csp=script-src 'self'",
+            "||example.com^$csp=script-src 'self',csp=img-src 'none',badfilter",
+            false,
+        ],
+        [
+            "||example.com^$csp=script-src 'self',csp=img-src 'none'",
+            "||example.com^$csp=script-src 'self',csp=img-src 'none',badfilter",
+            true,
+        ],
+        [
+            "||example.com^$csp=img-src 'none',csp=script-src 'self'",
+            "||example.com^$csp=script-src 'self',csp=img-src 'none',badfilter",
+            false,
+        ],
+        ['||example.com^$redirect=nooptext', '||example.com^$redirect=noopjs,badfilter', false],
+        // Repeats are kept, so a duplicate modifier makes the texts different.
+        ['||example.com^$removeparam=foo,removeparam=bar', '||example.com^$removeparam=bar,badfilter', false],
+        // The whole modifier list is compared as written, so the position of a
+        // modifier relative to the others is part of the match.
+        ['||example.com^$csp=a,third-party', '||example.com^$third-party,csp=a,badfilter', false],
+        ['||example.com^$script,image', '||example.com^$image,script,badfilter', false],
+        ['||example.com^$script,image,csp=a', '||example.com^$csp=a,script,image,badfilter', false],
+        ['||example.com^$script,image', '||example.com^$script,image,badfilter', true],
+        ['||example.com^$~third-party', '||example.com^$third-party,badfilter', false],
+        // `$domain` is compared as written, so regexp patterns and wildcard TLD
+        // entries negate only identically written ones, while plain domain names
+        // are compared case-insensitively. A narrower badfilter still negates a
+        // wider rule.
+        ['||example.com^$domain=foo.com|bar.com', '||example.com^$domain=foo.com,badfilter', true],
+        ['||example.com^$domain=foo.com', '||example.com^$domain=bar.com,badfilter', false],
+        ['||example.com^$domain=foo.com', '||example.com^$badfilter', true],
+        ['||example.com^$domain=FOO.com', '||example.com^$domain=foo.com,badfilter', true],
+        ['||example.com^$domain=/foo\\.bar/', '||example.com^$domain=/foo\\.bar/,badfilter', true],
+        ['||example.com^$domain=/FOO\\.bar/', '||example.com^$domain=/foo\\.bar/,badfilter', false],
+        ['||example.com^$domain=example.*', '||example.com^$domain=example.*,badfilter', true],
+        // A wildcard TLD entry overlaps only an identically written entry: matching
+        // it against the domains it stands for needs the public suffix list, which
+        // the Manifest V3 converter does not have.
+        ['||example.com^$domain=example.*', '||example.com^$domain=example.com|example.org,badfilter', false],
+        // In the domain-scoped case the position of $domain is not compared,
+        // unlike the position of every other modifier.
+        ['||example.com^$script,domain=example.com', '||example.com^$domain=example.com,script,badfilter', true],
+        // A rule without $domain restricts nothing, so it overlaps either way.
+        ['||example.com^$domain=example.com', '||example.com^$badfilter', true],
+        ['||example.com^', '||example.com^$domain=example.com,badfilter', true],
+        // $redirect and $redirect-rule share one option flag but are different modifiers.
+        ['||example.com^$redirect=nooptext', '||example.com^$redirect-rule=nooptext,badfilter', false],
+        ['||example.com^$redirect-rule=nooptext', '||example.com^$redirect-rule=nooptext,badfilter', true],
+        // $header, $method and $to values.
+        ['||example.com^$header=set-cookie:/a/', '||example.com^$header=set-cookie:/a/,badfilter', true],
+        ['||example.com^$header=set-cookie:/a/', '||example.com^$header=set-cookie:/b/,badfilter', false],
+        ['||example.com^$header=set-cookie', '||example.com^$header=referer,badfilter', false],
+        ['||example.com^$method=GET', '||example.com^$method=GET,badfilter', true],
+        ['||example.com^$method=GET', '||example.com^$method=POST,badfilter', false],
+        ['||example.com^$to=a.com', '||example.com^$to=a.com,badfilter', true],
+        ['||example.com^$to=a.com', '||example.com^$to=b.com,badfilter', false],
+        // Values are compared as written: spellings that are equivalent after
+        // parsing must not negate each other in either engine.
+        ['||example.com^$removeheader=Set-Cookie', '||example.com^$removeheader=set-cookie,badfilter', false],
+        ['||example.com^$to=Example.com', '||example.com^$to=example.com,badfilter', false],
+        ['||example.com^$method=GET', '||example.com^$method=get,badfilter', false],
+        ['||example.com^$method=GET|POST', '||example.com^$method=POST|GET,badfilter', false],
+        ['||example.com^$to=a.com|b.com', '||example.com^$to=b.com|a.com,badfilter', false],
+        [
+            '||example.com^$permissions=fullscreen=()\\,document-domain=()',
+            '||example.com^$permissions=fullscreen=()|document-domain=(),badfilter',
+            false,
+        ],
+        // $app values are compared in MV2 and MV3 alike.
+        ['||example.com^$app=a|b', '||example.com^$app=b|a,badfilter', false],
+        ['||example.com^$app=a|b', '||example.com^$app=a|b,badfilter', true],
+        // $stealth values are compared in MV2 and MV3 alike ($stealth is
+        // allowed on allowlist rules only).
+        ['@@||example.com^$stealth=referrer', '@@||example.com^$stealth=referrer,badfilter', true],
+        ['@@||example.com^$stealth=referrer', '@@||example.com^$stealth=donottrack,badfilter', false],
+        // $permissions values (AG-36226 / AdguardBrowserExtension#2961).
+        ['||example.com^$permissions=fullscreen=()', '||example.com^$permissions=fullscreen=(),badfilter', true],
+        [
+            '||example.com^$permissions=document-domain=()',
+            '||example.com^$permissions=fullscreen=(),badfilter',
+            false,
+        ],
+        // $header regexp and restricted $method/$to values.
+        ['||example.com^$header=x:/foo/', '||example.com^$header=x:/foo/,badfilter', true],
+        ['||example.com^$header=x:/foo/', '||example.com^$header=x:foo,badfilter', false],
+        ['||example.com^$method=~HEAD', '||example.com^$method=~GET,badfilter', false],
+        ['||example.com^$to=~a.com', '||example.com^$to=~b.com,badfilter', false],
+        // The modifier list starts after the separator, so a `$` in the pattern —
+        // for example an end anchor in a regexp — is not taken for it.
+        [String.raw`/ads\.js$/`, String.raw`/ads\.js$/$badfilter`, true],
+        [String.raw`/ads\.js$/$script`, String.raw`/ads\.js$/$badfilter,script`, true],
+        [String.raw`/ads\.js$/$script`, String.raw`/ads\.js$/$badfilter,image`, false],
+        [String.raw`/ads\.js$/$script`, String.raw`/ads\.js$/$badfilter`, false],
+        [
+            String.raw`/\.php$/$script,domain=a.com|b.com`,
+            String.raw`/\.php$/$script,domain=a.com,badfilter`,
+            true,
+        ],
+        [
+            String.raw`/\.php$/$script,domain=a.com|b.com`,
+            String.raw`/\.php$/$script,domain=c.com,badfilter`,
+            false,
+        ],
+        // Values are taken from the rule text, before conversion to AG syntax,
+        // so resource aliases and priority suffixes are compared as written.
+        ['||example.com^$redirect=noop.js', '||example.com^$redirect=noopjs,badfilter', false],
+        ['||example.com^$redirect=noop.js:99', '||example.com^$redirect=noop.js,badfilter', false],
+        ['||example.com^$empty', '||example.com^$redirect=nooptext,badfilter', false],
+        ['||example.com^$redirect=noopjs', '||example.com^$redirect=noopjs,badfilter', true],
+    ])('MV2 and MV3 agree on negation for target %s vs badfilter %s', (targetText, badfilterText, expected) => {
+        const [dnrBadfilter] = Rule.createFromText(1, 0, badfilterText);
+        const [dnrTarget] = Rule.createFromText(1, 0, targetText);
+        const tsBadfilter = new NetworkRule(badfilterText, 1);
+        const tsTarget = new NetworkRule(targetText, 1);
+
+        expect(dnrBadfilter.negatesBadfilter(dnrTarget)).toBe(expected);
+        expect(tsBadfilter.negatesBadfilter(tsTarget)).toBe(expected);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// $badfilter through the MV2 engine
+// ---------------------------------------------------------------------------
+
+/**
+ * Matches a request against rules through the MV2 engine.
+ *
+ * @param rules Rule texts.
+ * @param url Request URL.
+ * @param sourceUrl Request source URL, which `$domain` is matched against.
+ *
+ * @returns `true` when any rule was applied to the request.
+ */
+const matchesThroughEngine = (
+    rules: string[],
+    url = 'https://example.com/',
+    sourceUrl: string | null = null,
+): boolean => {
+    const engine = Engine.createSync({
+        filters: [{ id: 1, content: rules.join('\n') }],
+    });
+    const result = engine.matchRequest(
+        new Request(url, sourceUrl, RequestType.Document),
+    );
+
+    const ruleLists = [
+        result.cspRules,
+        result.cookieRules,
+        result.replaceRules,
+        result.urlTransformRules,
+        result.redirectRules,
+        result.removeParamRules,
+        result.removeHeaderRules,
+        result.permissionsRules,
+        result.headerRules,
+        result.stealthRules,
+    ];
+
+    return result.basicRule !== null
+        || result.documentRule !== null
+        || ruleLists.some((list) => list !== null && list.length > 0);
+};
+
+/**
+ * Engine-level `$badfilter` cases: target rule text, badfilter rule text, and
+ * whether the badfilter rule is expected to negate the target.
+ */
+const ENGINE_BADFILTER_CASES: [target: string, badfilter: string, negated: boolean][] = [
+    // Source-syntax aliases are compared by the name as written.
+    ['||example.com^$queryprune=foo', '||example.com^$queryprune=foo,badfilter', true],
+    ['||example.com^$queryprune=bar', '||example.com^$queryprune=foo,badfilter', false],
+    ['||example.com^$queryprune=foo', '||example.com^$removeparam=foo,badfilter', false],
+    [
+        '||example.com^$rewrite=abp-resource:blank-js',
+        '||example.com^$rewrite=abp-resource:blank-js,badfilter',
+        true,
+    ],
+    ['||example.com^$rewrite=abp-resource:blank-js', '||example.com^$redirect=noopjs,badfilter', false],
+    // Values that conversion rewrites must not negate a differently written rule.
+    ['||example.com^$redirect=noop.js', '||example.com^$redirect=noopjs,badfilter', false],
+    ['||example.com^$empty', '||example.com^$redirect=nooptext,badfilter', false],
+    // Repeated modifiers are not collapsed and are order-sensitive.
+    [
+        "||example.com^$csp=script-src 'self'",
+        "||example.com^$csp=script-src 'self',csp=img-src 'none',badfilter",
+        false,
+    ],
+    [
+        "||example.com^$csp=script-src 'self',csp=img-src 'none'",
+        "||example.com^$csp=script-src 'self',csp=img-src 'none',badfilter",
+        true,
+    ],
+    [
+        "||example.com^$csp=img-src 'none',csp=script-src 'self'",
+        "||example.com^$csp=script-src 'self',csp=img-src 'none',badfilter",
+        false,
+    ],
+    // Unconverted rules keep negating as before.
+    ['||example.com^$removeparam=foo', '||example.com^$removeparam=foo,badfilter', true],
+    ['||example.com^$removeparam=bar', '||example.com^$removeparam=foo,badfilter', false],
+    ['||example.com^$redirect=noopjs', '||example.com^$redirect=noopjs,badfilter', true],
+    // The whole modifier list is compared as written, so the position of a
+    // modifier relative to the others is part of the match.
+    ['||example.com^$csp=a,important', '||example.com^$important,csp=a,badfilter', false],
+    ['||example.com^$csp=a,important', '||example.com^$csp=a,important,badfilter', true],
+];
+
+describe('badfilter negation through the MV2 engine', () => {
+    // `new NetworkRule(text)` used above bypasses the `FilterList` conversion,
+    // so that table exercises a path the product never takes: in the engine the
+    // rule text has already been converted to AG syntax. These cases go through
+    // the engine, and a `$badfilter` rule must negate exactly the same rules.
+    it.each(ENGINE_BADFILTER_CASES)(
+        'target %s vs badfilter %s → negated=%s',
+        (targetText, badfilterText, negated) => {
+            // The target rule must apply on its own, otherwise the check below
+            // would pass for the wrong reason.
+            expect(matchesThroughEngine([targetText])).toBe(true);
+            expect(matchesThroughEngine([targetText, badfilterText])).toBe(!negated);
+        },
+    );
+});
+
+/**
+ * Engine-level `$domain` cases: target rule text, badfilter rule text, the
+ * source URL the request is matched with, and whether the badfilter rule is
+ * expected to negate the target.
+ */
+const ENGINE_DOMAIN_BADFILTER_CASES: [
+    target: string,
+    badfilter: string,
+    sourceUrl: string,
+    negated: boolean,
+][] = [
+    // Identically written lists cancel for every source.
+    [
+        '||example.com^$domain=example.com|example.org',
+        '||example.com^$domain=example.com|example.org,badfilter',
+        'https://example.com/',
+        true,
+    ],
+    // A narrower list cancels only for the domains named in both lists.
+    [
+        '||example.com^$domain=example.com|example.org',
+        '||example.com^$domain=example.com,badfilter',
+        'https://example.com/',
+        true,
+    ],
+    [
+        '||example.com^$domain=example.com|example.org',
+        '||example.com^$domain=example.com,badfilter',
+        'https://example.org/',
+        false,
+    ],
+    // A rule without $domain restricts nothing, so it cancels for any source.
+    [
+        '||example.com^$domain=example.com|example.org',
+        '||example.com^$badfilter',
+        'https://example.org/',
+        true,
+    ],
+    // Lists that cannot match the same request do not cancel anything.
+    [
+        '||example.com^$domain=example.com',
+        '||example.com^$domain=example.org,badfilter',
+        'https://example.com/',
+        false,
+    ],
+];
+
+describe('$domain badfilter negation through the MV2 engine', () => {
+    it.each(ENGINE_DOMAIN_BADFILTER_CASES)(
+        'target %s vs badfilter %s from %s → negated=%s',
+        (targetText, badfilterText, sourceUrl, negated) => {
+            // The target rule must apply on its own, otherwise the check below
+            // would pass for the wrong reason.
+            expect(matchesThroughEngine([targetText], 'https://example.com/', sourceUrl)).toBe(true);
+            expect(matchesThroughEngine([targetText, badfilterText], 'https://example.com/', sourceUrl))
+                .toBe(!negated);
+        },
+    );
 });
 
 // ---------------------------------------------------------------------------

@@ -8,7 +8,7 @@ import { RuleStorage } from '../filterlist/rule-storage';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { Request } from '../request';
 import { RequestType } from '../request-type';
-import { type NetworkRule } from '../rules/network-rule';
+import { type NetworkRule, type WrittenRuleTextResolver } from '../rules/network-rule';
 import { type IndexedStorageCosmeticRuleParts, type IndexedStorageNetworkRuleParts } from '../rules/rule';
 
 import { CHUNK_SIZE } from './constants';
@@ -83,6 +83,11 @@ export class Engine {
      * Rules storage.
      */
     private readonly ruleStorage: RuleStorage;
+
+    /**
+     * Resolves the text of a rule as written in the filter list.
+     */
+    private readonly resolveWrittenText: WrittenRuleTextResolver;
 
     /**
      * Request results cache.
@@ -256,6 +261,7 @@ export class Engine {
         this.ruleStorage = ruleStorage;
         this.networkEngine = networkEngine;
         this.cosmeticEngine = cosmeticEngine;
+        this.resolveWrittenText = ruleStorage.createWrittenTextResolver();
         this.resultCache = new LRUCache({ max: Engine.REQUEST_CACHE_SIZE });
         this.conversionErrors = conversionErrors;
     }
@@ -289,7 +295,7 @@ export class Engine {
         }
 
         const networkRules = this.networkEngine.matchAll(request);
-        const result = new MatchingResult(networkRules, frameRule);
+        const result = new MatchingResult(networkRules, frameRule, this.resolveWrittenText);
         this.resultCache.set(cacheKey, result);
         return result;
     }
@@ -306,7 +312,7 @@ export class Engine {
         const sourceRequest = new Request(frameUrl, '', RequestType.Document);
         let sourceRules = this.networkEngine.matchAll(sourceRequest);
 
-        sourceRules = MatchingResult.removeBadfilterRules(sourceRules);
+        sourceRules = MatchingResult.removeBadfilterRules(sourceRules, this.resolveWrittenText);
 
         let result: NetworkRule | null = null;
         sourceRules.forEach((r) => {

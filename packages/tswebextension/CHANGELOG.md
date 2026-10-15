@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `@types/webextension-polyfill` >= 0.12.6, since the previous alias is gone.
 - Updated [@adguard/extended-css] to `v2.3.0`, which adds support for uBlock Origin
   `:remove-attr()` and `:remove-class()` pseudo-classes.
+- HTML filtering `:contains()` arguments are now handled with CoreLibs
+  semantics (via [@adguard/tsurlfilter]): wrapping quotes of any kind are
+  literal characters of the matched text, unbalanced arguments (e.g.
+  `$$script:contains((function(g,b,a,c,e,d)`) are matched as-is, and
+  `/regexp/`-looking arguments keep their regexp semantics.
 
 ### Deprecated
 
@@ -26,13 +31,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- In MV3, static filters, custom filters and user rules were handed to the
+  converter already converted by the extension, so `$badfilter` rules from those
+  sources were compared by the converted text instead of the text as written and
+  could cancel a rule written differently, e.g. `$queryprune=foo` against
+  `$removeparam=foo`. The adapters now pass the original rule spelling.
 - Wrong `frameDomain` in cosmetic hits filtering-log events for subframes, breaking
   exception rules created from the filtering log [AdguardBrowserExtension#1449].
 - Domain-scoped cosmetic and JavaScript rules not applying on hosts with labels
   ending in an underscore in MV2 and MV3 extensions, and incorrect third-party
   request classification for such hosts.
+- Browsing session from incognito window sometimes leaks to normal window when
+  "delete third-party cookies" option is enabled [AdguardBrowserExtension#3553].
 
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
+[AdguardBrowserExtension#3553]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3553
 
 ### Security
 

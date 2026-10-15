@@ -5,6 +5,7 @@
 import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';
 import { createNetworkRuleNode } from '../../ast-utils/network-rules';
 import { isUboResponseHeaderRemovalRuleBody } from '../../common/ubo-html-filtering-body-common';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
     type AnyRule,
@@ -66,10 +67,25 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
         // If so, parse it first as we need to work with AST nodes.
         let body: HtmlFilteringRuleBody | null = null;
         if (rule.body.type === 'Value') {
-            body = UboHtmlFilteringBodyParser.parseResponseHeaderRule(rule.body.value, {
-                isLocIncluded: false,
-                parseHtmlFilteringRuleBodies: true,
-            });
+            try {
+                body = UboHtmlFilteringBodyParser.parseResponseHeaderRule(rule.body.value, {
+                    isLocIncluded: false,
+                    parseHtmlFilteringRuleBodies: true,
+                });
+            } catch (error) {
+                // Tolerant fallback: a parse error does not necessarily mean
+                // that this is not a uBO responseheader(...) rule — the token
+                // stream checks the whole body's balance before the function
+                // name, so malformed responseheader(...) bodies can throw here
+                // too. Hand the rule to the main HTML filtering rule converter
+                // for further handling instead: it keeps rules with special
+                // selectors as-is, and throws for genuinely invalid rules.
+                if (error instanceof AdblockSyntaxError) {
+                    return createNodeConversionResult([rule], false);
+                }
+
+                throw error;
+            }
         } else {
             body = rule.body;
         }

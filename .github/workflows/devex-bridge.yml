@@ -36,7 +36,7 @@ name: DevEx bridge
 # additionally gated to same-repo PRs, but that does not protect against a
 # same-repo insider. This matches the org model used by build.yml: the repo
 # MUST require approval for fork / outside-collaborator PR runs, and
-# .github/CODEOWNERS requires extensions-maintainers review of this workflow
+# .github/CODEOWNERS requires Extensions team review of this workflow
 # and the shared scripts. The jobs
 # touching the secret run npm CLI calls / inline node / the small reviewed
 # helper scripts; they never build or execute PR package code.
