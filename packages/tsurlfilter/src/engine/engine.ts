@@ -255,7 +255,7 @@ export class Engine {
             // The category identifies the network rule parts.
             networkRulesParts.push(indexedRuleParts as IndexedStorageNetworkRuleParts);
 
-            if (Engine.isDocumentExceptionCandidate(indexedRuleParts.ruleParts)) {
+            if (Engine.isDocumentOrStealthExceptionCandidate(indexedRuleParts.ruleParts)) {
                 documentExceptionIndexes.push(indexedRuleParts.index);
             }
         } else if (indexedRuleParts.ruleParts.category === RuleCategory.Cosmetic) {
@@ -271,7 +271,7 @@ export class Engine {
      *
      * @returns Whether the rule may disable document filtering or stealth features.
      */
-    private static isDocumentExceptionCandidate(ruleParts: NetworkRuleParts): boolean {
+    private static isDocumentOrStealthExceptionCandidate(ruleParts: NetworkRuleParts): boolean {
         if (!ruleParts.allowlist || ruleParts.modifiersStart === undefined) {
             return false;
         }

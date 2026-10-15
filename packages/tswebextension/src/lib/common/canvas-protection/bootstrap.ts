@@ -1,6 +1,5 @@
 // Part of the engine injected into pages: plain functions instead of a static class keep it small,
 // see engine-entry.ts.
-import { CanvasPolicyRequestType } from './constants';
 import { type CanvasBootstrapSnapshot, type DocumentPolicyInput } from './contracts';
 import {
     deriveInstallationTokens,
@@ -31,8 +30,8 @@ const readAncestorUrl = (ancestor: Window, origin: string | undefined): string |
 };
 
 /**
- * Reads the document's own URL and what the browser reveals about its top and
- * parent documents. No page-provided marker is trusted for that context.
+ * Reads the document's own URL and what the browser reveals about its top
+ * document. No page-provided marker is trusted for that context.
  *
  * @param realm Delivered document's global object.
  *
@@ -41,19 +40,11 @@ const readAncestorUrl = (ancestor: Window, origin: string | undefined): string |
 export function readDocumentPolicyInput(realm: Window): DocumentPolicyInput {
     const url = realm.location.href;
     if (realm === realm.top) {
-        return {
-            url, requestType: CanvasPolicyRequestType.Document, topUrl: url, sourceUrl: url,
-        };
+        return { url, topUrl: url };
     }
     // Firefox lists ancestor origins since version 148.
     const origins = realm.location.ancestorOrigins as DOMStringList | undefined;
-    const topUrl = readAncestorUrl(realm.top!, origins?.[origins.length - 1]);
-    return {
-        url,
-        requestType: CanvasPolicyRequestType.Subdocument,
-        topUrl,
-        sourceUrl: realm.parent === realm.top ? topUrl : readAncestorUrl(realm.parent, origins?.[0]),
-    };
+    return { url, topUrl: readAncestorUrl(realm.top!, origins?.[origins.length - 1]) };
 }
 
 /**

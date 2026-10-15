@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-    CanvasConditionFlags,
-    CanvasConditionInput,
-    CanvasConditionType,
-    CanvasPolicyRequestType,
-} from '../../../../src/lib/common/canvas-protection/constants';
+import { CanvasConditionFlags, CanvasConditionType } from '../../../../src/lib/common/canvas-protection/constants';
 import {
     type DocumentPolicyInput,
     type PreparedCondition,
@@ -24,21 +19,21 @@ import { createProtectAllPolicy, preparedPolicyFixtures } from './fixtures/prepa
  * @returns A prepared policy.
  */
 const createPolicy = (
-    exclusions: Partial<Pick<ProtectionPolicyArtifact, 'ownFrameExclusions' | 'documentExclusions'>> = {},
+    exclusions: Partial<Pick<ProtectionPolicyArtifact, 'documentExclusions'>> = {},
 ): ProtectionPolicyArtifact => ({
     ...createProtectAllPolicy('policy'),
     ...exclusions,
 });
 
 /**
- * Describes a top document, which is its own top and source.
+ * Describes a top document, which is its own top.
  *
  * @param url Document URL.
  *
  * @returns Document input.
  */
 const topDocument = (url: string): DocumentPolicyInput => ({
-    url, requestType: CanvasPolicyRequestType.Document, topUrl: url, sourceUrl: url,
+    url, topUrl: url,
 });
 
 /**
@@ -46,27 +41,24 @@ const topDocument = (url: string): DocumentPolicyInput => ({
  *
  * @param url Frame URL.
  * @param topUrl What the browser reveals about the top document.
- * @param sourceUrl What the browser reveals about the parent document.
  *
  * @returns Frame input.
  */
-const childFrame = (url: string, topUrl?: string, sourceUrl = topUrl): DocumentPolicyInput => ({
-    url, requestType: CanvasPolicyRequestType.Subdocument, topUrl, sourceUrl,
+const childFrame = (url: string, topUrl?: string): DocumentPolicyInput => ({
+    url, topUrl,
 });
 
 /**
  * Creates a URL predicate.
  *
- * @param input URL the predicate reads.
  * @param pattern Regular expression source.
  *
  * @returns Prepared condition.
  */
 const matches = (
-    input: Extract<PreparedCondition, { type: CanvasConditionType.UrlRegexp }>['input'],
     pattern: string,
 ): PreparedCondition => ({
-    type: CanvasConditionType.UrlRegexp, input, pattern, flags: CanvasConditionFlags.None,
+    type: CanvasConditionType.UrlRegexp, pattern, flags: CanvasConditionFlags.None,
 });
 
 describe('canvas protection policy', () => {
@@ -89,25 +81,9 @@ describe('canvas protection policy', () => {
         expect(resolveProtectedSite(createPolicy(), childFrame(tracker, 'about:blank'))).toBe('tracker.example');
     });
 
-    it('excludes a document by its own URL', () => {
-        const policy = createPolicy({
-            ownFrameExclusions: [{
-                requestTypes: [CanvasPolicyRequestType.Document, CanvasPolicyRequestType.Subdocument],
-                condition: matches(CanvasConditionInput.FrameUrl, '^https://example\\.com/native\\?read=1$'),
-            }],
-        });
-        expect(resolveProtectedSite(policy, topDocument('https://example.com/native?read=1'))).toBeUndefined();
-        expect(resolveProtectedSite(policy, topDocument('https://example.com/native?read=2'))).toBe('example.com');
-        expect(resolveProtectedSite(policy, childFrame('https://example.com/native?read=1', 'https://top.example/')))
-            .toBeUndefined();
-    });
-
     it('applies document exclusions of the top document to its frames', () => {
         const policy = createPolicy({
-            documentExclusions: [{
-                requestTypes: [CanvasPolicyRequestType.Document],
-                condition: matches(CanvasConditionInput.FrameUrl, '^https://top\\.example/'),
-            }],
+            documentExclusions: [matches('^https://top\\.example/')],
         });
         const frame = 'https://frame.example/widget';
         expect(resolveProtectedSite(policy, topDocument('https://top.example/page'))).toBeUndefined();
@@ -121,52 +97,34 @@ describe('canvas protection policy', () => {
         expect(resolveProtectedSite(policy, childFrame(frame))).toBe('frame.example');
     });
 
-    it('evaluates top and source predicates of a child frame', () => {
-        const frame = 'https://frame.example/widget';
-        const byTop = createPolicy({
-            ownFrameExclusions: [{
-                requestTypes: [CanvasPolicyRequestType.Subdocument],
-                condition: matches(CanvasConditionInput.TopUrl, '^https://top\\.example/'),
-            }],
-        });
-        expect(resolveProtectedSite(byTop, childFrame(frame, 'https://top.example/'))).toBeUndefined();
-        expect(resolveProtectedSite(byTop, childFrame(frame, 'https://other.example/'))).toBe('other.example');
-        const bySource = createPolicy({
-            ownFrameExclusions: [{
-                requestTypes: [CanvasPolicyRequestType.Subdocument],
-                condition: matches(CanvasConditionInput.SourceUrl, '^https://publisher\\.example/'),
-            }],
-        });
-        expect(resolveProtectedSite(bySource, childFrame(frame, 'https://top.example/', 'https://publisher.example/')))
-            .toBeUndefined();
-        expect(resolveProtectedSite(bySource, childFrame(frame, 'https://top.example/', 'https://other.example/')))
-            .toBe('top.example');
-    });
-
-    it('does not exclude on a predicate whose URL is unknown', () => {
-        const frame = childFrame('https://frame.example/widget');
-        const unknownTop = matches(CanvasConditionInput.TopUrl, '^https://top\\.example/');
-        const knownFrame = matches(CanvasConditionInput.FrameUrl, '^https://frame\\.example/');
-        const unprepared: PreparedCondition = { type: CanvasConditionType.Unavailable, reason: 'unsupported-rule' };
+    it('preserves three-state logic when the top URL is unknown', () => {
+        const unknownTop = matches('^https://top\\.example/');
+        const always: PreparedCondition = { type: CanvasConditionType.And, operands: [] };
+        const never: PreparedCondition = { type: CanvasConditionType.Or, operands: [] };
         const expectations: [PreparedCondition, boolean][] = [
             [unknownTop, false],
             [{ type: CanvasConditionType.Not, operand: unknownTop }, false],
-            [{ type: CanvasConditionType.Not, operand: unprepared }, false],
-            [{ type: CanvasConditionType.And, operands: [unknownTop, knownFrame] }, false],
-            [{ type: CanvasConditionType.Or, operands: [unknownTop, knownFrame] }, true],
-            [
-                {
-                    type: CanvasConditionType.Or,
-                    operands: [unprepared, { type: CanvasConditionType.Not, operand: knownFrame }],
+            [{ type: CanvasConditionType.And, operands: [unknownTop, always] }, false],
+            [{ type: CanvasConditionType.And, operands: [unknownTop, never] }, false],
+            [{ type: CanvasConditionType.Or, operands: [unknownTop, always] }, true],
+            [{ type: CanvasConditionType.Or, operands: [unknownTop, never] }, false],
+            [{
+                type: CanvasConditionType.Not,
+                operand: {
+                    type: CanvasConditionType.And, operands: [unknownTop, never],
                 },
-                false,
-            ],
+            }, true],
+            [{
+                type: CanvasConditionType.Not,
+                operand: {
+                    type: CanvasConditionType.Or, operands: [unknownTop, never],
+                },
+            }, false],
         ];
         for (const [condition, excluded] of expectations) {
-            const policy = createPolicy({
-                ownFrameExclusions: [{ requestTypes: [CanvasPolicyRequestType.Subdocument], condition }],
-            });
-            expect(resolveProtectedSite(policy, frame)).toBe(excluded ? undefined : 'frame.example');
+            const policy = createPolicy({ documentExclusions: [condition] });
+            expect(resolveProtectedSite(policy, childFrame('https://frame.example/widget')))
+                .toBe(excluded ? undefined : 'frame.example');
         }
     });
 
@@ -200,9 +158,9 @@ describe('canvas protection policy', () => {
     });
 
     it.each(preparedPolicyFixtures)('evaluates exact prepared fixture: $name', (fixture) => {
-        const policy = createPolicy({ ownFrameExclusions: [fixture.rule] });
-        const input = fixture.requestType === CanvasPolicyRequestType.Subdocument
-            ? childFrame(fixture.url, undefined, fixture.sourceUrl) : topDocument(fixture.url);
-        expect(resolveProtectedSite(policy, input) === undefined).toBe(fixture.excluded);
+        const policy = createPolicy({ documentExclusions: [fixture.condition] });
+        expect(resolveProtectedSite(policy, topDocument(fixture.url)) === undefined).toBe(fixture.excluded);
+        expect(resolveProtectedSite(policy, childFrame('https://frame.example/', fixture.url)) === undefined)
+            .toBe(fixture.excluded);
     });
 });

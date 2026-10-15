@@ -198,8 +198,8 @@ export class CanvasProtectionRegistration {
                 ...result,
                 operations: [check],
                 status: CanvasRegistrationStatus.Unavailable,
-                reason: 'A prepared canvas protection policy is required',
-                requiredUserAction: 'Supply a prepared canvas protection policy',
+                reason: 'Canvas protection exceptions have not been compiled yet',
+                requiredUserAction: 'Start the application or apply its configuration',
             };
         }
 
@@ -227,8 +227,12 @@ export class CanvasProtectionRegistration {
             if (!(error instanceof CanvasRegistrationOperationError)) {
                 throw error;
             }
+            // The browser may keep both the old and the new script, so the stored record no longer
+            // describes it and must not let an equal code hash skip the next installation.
+            this.store.canvasProtectionRegistration = undefined;
             return {
                 ...result,
+                installed: CanvasProtectionRegistration.summarize(undefined),
                 operations: [check, ...error.operations],
                 status: CanvasRegistrationStatus.Failed,
                 reason: error.message,

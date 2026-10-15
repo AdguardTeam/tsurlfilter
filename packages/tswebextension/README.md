@@ -10,6 +10,7 @@ Table of content:
     - [Usage](#usage)
     - [Canvas protection](#canvas-protection)
         - [Exceptions](#exceptions)
+        - [Limits](#limits)
     - [CLI](#cli)
     - [Side effects](#side-effects)
     - [API](#api)
@@ -206,6 +207,9 @@ filled only from video frames or `putImageData()` is read natively.
   exclude the top-level document and its frames when the browser reveals
   the top-level document's URL. See [Limits](#limits) for browser restrictions.
   `$document` may also use `$important` or combine with `$stealth`.
+  An allowlist entry matches only its host with `www.`, or the host with
+  its subdomains for a `*.` entry: `example.com` does not match
+  `example.community`.
 - `$badfilter` cancels an exception. Other forms, including paths,
   `$domain`, regular expressions and wildcard hosts such as `example.*`,
   do not affect canvas protection; skipped rules appear in the debug log.
@@ -236,9 +240,8 @@ documents loaded afterwards.
   frame. `data:` frames, sandboxed frames without `allow-same-origin` and
   `about:blank` or `blob:` popups stay native. A popup or a sandboxed frame
   that loads a matching URL gets the script like any other document.
-- A cross-origin frame learns its top-level and parent documents from
-  `location.ancestorOrigins`, which gives origins only: path-specific
-  conditions on those documents do not match there. Firefox before 148 has
+- A cross-origin frame learns its top-level document from
+  `location.ancestorOrigins`, which gives its origin only. Firefox before 148 has
   no such list, and Firefox 148 lists `"null"` when the embedder sets
   `referrerpolicy="no-referrer"` or `"same-origin"` on the frame. The frame
   then uses its own hostname, so it gets the same noise on every site, and

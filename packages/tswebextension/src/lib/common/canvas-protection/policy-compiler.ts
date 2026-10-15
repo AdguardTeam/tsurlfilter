@@ -1,15 +1,10 @@
 import { NetworkRuleType, RuleParser } from '@adguard/agtree';
-import { createAllowlistRuleNode, SimpleRegex, StealthOptionName } from '@adguard/tsurlfilter';
+import { SimpleRegex, StealthOptionName } from '@adguard/tsurlfilter';
 
 import { logger } from '../utils/logger';
 
-import {
-    CanvasConditionFlags,
-    CanvasConditionInput,
-    CanvasConditionType,
-    CanvasPolicyRequestType,
-} from './constants';
-import { type PreparedCondition, type PreparedPolicyRule, type ProtectionPolicyArtifact } from './contracts';
+import { CanvasConditionFlags, CanvasConditionType } from './constants';
+import { type PreparedCondition, type ProtectionPolicyArtifact } from './contracts';
 
 /**
  * Configured platform allowlist state.
@@ -34,6 +29,59 @@ enum ExceptionModifier {
  */
 export class CanvasPolicyCompiler {
     /**
+     * Start of an absolute URL up to its host.
+     */
+    private static readonly URL_START = '^[^:/?#]+://';
+
+    /**
+     * End of a host: an optional trailing dot and port, then a path, query, fragment or the URL end.
+     */
+    private static readonly HOST_END = '\\.?(?::\\d+)?(?:[/?#]|$)';
+
+    /**
+     * URL without an authority, e.g. `file:///`. Frame matching finds no domain there and
+     * never applies the inverted allowlist.
+     */
+    private static readonly NO_AUTHORITY = '^[^:/?#]+:///';
+
+    /**
+     * Optional `www.` subdomain.
+     */
+    private static readonly WWW = '(?:www\\.)?';
+
+    /**
+     * Any number of subdomains.
+     */
+    private static readonly SUBDOMAINS = '(?:[^/?#:]+\\.)?';
+
+    /**
+     * Exactly one label before a domain, not counting a leading `www.`, like the
+     * upper-level domain lookup of frame matching.
+     */
+    private static readonly FIRST_LABEL = '(?:www\\.[^./?#:]+|(?!www\\.)[^./?#:]+)\\.';
+
+    /**
+     * Wildcard of an allowlist domain, limited to the host.
+     */
+    private static readonly HOST_WILDCARD = '[^/?#:]*';
+
+    /**
+     * Characters a rule host may contain. URL parsing would rewrite or drop the others,
+     * while filtering compares the host as written.
+     */
+    private static readonly RULE_HOST = /^[^\s/?#:@[\]|^\\%*]+$/;
+
+    /**
+     * Any character outside printable ASCII: such a host is converted to punycode.
+     */
+    private static readonly NON_ASCII = /[^ -~]/;
+
+    /**
+     * IPv4 address, which has no subdomains to match.
+     */
+    private static readonly IPV4 = /^\d+\.\d+\.\d+\.\d+$/;
+
+    /**
      * Compiles supported network exceptions and the platform's allowlist semantics.
      *
      * @param ruleTexts Active exception rule texts, with badfilter cancellations already applied.
@@ -43,7 +91,7 @@ export class CanvasPolicyCompiler {
      */
     public static compile(ruleTexts: readonly string[], allowlist: PolicyAllowlist): ProtectionPolicyArtifact {
         const excludeMatches: string[] = [];
-        const documentExclusions: PreparedPolicyRule[] = [];
+        const documentExclusions: PreparedCondition[] = [];
         for (const text of ruleTexts) {
             let rule;
             try {
@@ -91,62 +139,115 @@ export class CanvasPolicyCompiler {
                 logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": wildcard hosts are unsupported`);
                 continue;
             }
-            if (/[/?#:@[\]|^\\\s]/.test(host)) {
-                logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": unsupported host characters`);
+            const hostname = CanvasPolicyCompiler.parseHost(host);
+            if (hostname === undefined) {
+                logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": expected a plain hostname`);
                 continue;
             }
-            let parsed: URL;
-            try {
-                parsed = new URL(`http://${host}`);
-            } catch {
-                logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": invalid hostname`);
-                continue;
-            }
-            if (!parsed.hostname || parsed.pathname !== '/' || parsed.search || parsed.hash) {
-                logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": expected only a hostname`);
-                continue;
-            }
-            const { hostname } = parsed;
             if (fingerprinting) {
-                excludeMatches.push(/^\d+\.\d+\.\d+\.\d+$/.test(hostname)
+                excludeMatches.push(CanvasPolicyCompiler.IPV4.test(hostname)
                     ? `*://${hostname}/*` : `*://*.${hostname}/*`);
             }
             if (document) {
-                documentExclusions.push(CanvasPolicyCompiler.documentExclusion(
-                    CanvasPolicyCompiler.urlCondition(SimpleRegex.patternToRegexp(`||${hostname}^`)),
-                ));
+                const regexp = SimpleRegex.patternToRegexp(`||${hostname}^`);
+                documentExclusions.push(CanvasPolicyCompiler.urlCondition(regexp));
             }
         }
         if (allowlist.enabled) {
-            if (allowlist.inverted) {
-                const operands: PreparedCondition[] = [CanvasPolicyCompiler.urlCondition('^[^:/?#]+:///')];
-                for (const domain of allowlist.domains) {
-                    const pattern = domain.startsWith('*.')
-                        ? `^[^:/?#]+://(?:www\\.[^./?#:]+|(?!www\\.)[^./?#:]+)\\.${SimpleRegex.escapeRegexSpecials(domain.slice(2))}\\.?(?::\\d+)?(?:[/?#]|$)`
-                        : `^[^:/?#]+://(?:www\\.)?${SimpleRegex.escapeRegexSpecials(domain)}\\.?(?::\\d+)?(?:[/?#]|$)`;
-                    operands.push(CanvasPolicyCompiler.urlCondition(pattern));
-                }
-                documentExclusions.push(CanvasPolicyCompiler.documentExclusion({
-                    type: CanvasConditionType.Not,
-                    operand: { type: CanvasConditionType.Or, operands: CanvasPolicyCompiler.sortedUnique(operands) },
-                }));
-            } else {
-                for (const domain of allowlist.domains) {
-                    const rule = createAllowlistRuleNode(domain);
-                    if (rule) {
-                        documentExclusions.push(CanvasPolicyCompiler.documentExclusion(
-                            CanvasPolicyCompiler.urlCondition(SimpleRegex.patternToRegexp(rule.pattern.value)),
-                        ));
-                    }
-                }
-            }
+            documentExclusions.push(...(allowlist.inverted
+                ? [CanvasPolicyCompiler.invertedAllowlistExclusion(allowlist.domains)]
+                : allowlist.domains.map((domain) => CanvasPolicyCompiler.allowlistExclusion(domain))));
         }
         const policy = {
             selectors: { matches: ['<all_urls>'], excludeMatches: [...new Set(excludeMatches)].sort() },
-            ownFrameExclusions: [],
             documentExclusions: CanvasPolicyCompiler.sortedUnique(documentExclusions),
         };
         return { revision: CanvasPolicyCompiler.hash(JSON.stringify(policy)), ...policy };
+    }
+
+    /**
+     * Converts a rule host to the form the browser reports, accepting only hosts that
+     * URL parsing does not rewrite apart from case and punycode.
+     *
+     * @param host Host from a `||host^` pattern.
+     *
+     * @returns Lowercase ASCII hostname, or `undefined` for anything but a plain hostname.
+     */
+    private static parseHost(host: string): string | undefined {
+        if (!CanvasPolicyCompiler.RULE_HOST.test(host)) {
+            return undefined;
+        }
+        let hostname: string;
+        try {
+            ({ hostname } = new URL(`http://${host}`));
+        } catch {
+            return undefined;
+        }
+        if (CanvasPolicyCompiler.NON_ASCII.test(host)) {
+            return hostname;
+        }
+        // URL parsing also rewrites IPv4 shorthands such as `127.1`, which filtering matches literally.
+        return hostname === host.toLowerCase() ? hostname : undefined;
+    }
+
+    /**
+     * Matches a top-level document allowlisted by a normal-mode entry: the domain and its
+     * `www.` subdomain, or the domain with all subdomains for a `*.` entry. A `*` in the
+     * domain matches within the host.
+     *
+     * @param domain Allowlist entry.
+     *
+     * @returns Document exclusion.
+     */
+    private static allowlistExclusion(domain: string): PreparedCondition {
+        const subdomains = domain.startsWith('*.');
+        const host = SimpleRegex.escapeRegexSpecials(subdomains ? domain.slice(2) : domain)
+            .replaceAll('\\*', CanvasPolicyCompiler.HOST_WILDCARD);
+        return CanvasPolicyCompiler.hostCondition(
+            subdomains ? CanvasPolicyCompiler.SUBDOMAINS : CanvasPolicyCompiler.WWW,
+            host,
+        );
+    }
+
+    /**
+     * Matches every top-level document outside the inverted allowlist, as frame matching does:
+     * the host without `www.` equals an entry, or a `*.` entry equals that host without its first label.
+     *
+     * @param domains Allowlist entries.
+     *
+     * @returns Document exclusion.
+     */
+    private static invertedAllowlistExclusion(domains: readonly string[]): PreparedCondition {
+        const operands = [
+            CanvasPolicyCompiler.urlCondition(CanvasPolicyCompiler.NO_AUTHORITY),
+            ...domains.map((domain) => (domain.startsWith('*.')
+                ? CanvasPolicyCompiler.hostCondition(
+                    CanvasPolicyCompiler.FIRST_LABEL,
+                    SimpleRegex.escapeRegexSpecials(domain.slice(2)),
+                )
+                : CanvasPolicyCompiler.hostCondition(
+                    CanvasPolicyCompiler.WWW,
+                    SimpleRegex.escapeRegexSpecials(domain),
+                ))),
+        ];
+        return {
+            type: CanvasConditionType.Not,
+            operand: { type: CanvasConditionType.Or, operands: CanvasPolicyCompiler.sortedUnique(operands) },
+        };
+    }
+
+    /**
+     * Matches a top document by its host.
+     *
+     * @param prefix Regular expression of the labels before the host.
+     * @param host Escaped host regular expression.
+     *
+     * @returns URL predicate.
+     */
+    private static hostCondition(prefix: string, host: string): PreparedCondition {
+        return CanvasPolicyCompiler.urlCondition(
+            `${CanvasPolicyCompiler.URL_START}${prefix}${host}${CanvasPolicyCompiler.HOST_END}`,
+        );
     }
 
     /**
@@ -157,23 +258,7 @@ export class CanvasPolicyCompiler {
      * @returns URL predicate.
      */
     private static urlCondition(pattern: string): PreparedCondition {
-        return {
-            type: CanvasConditionType.UrlRegexp,
-            input: CanvasConditionInput.TopUrl,
-            pattern,
-            flags: CanvasConditionFlags.IgnoreCase,
-        };
-    }
-
-    /**
-     * Applies a predicate to the top document and its descendants.
-     *
-     * @param condition Top-document predicate.
-     *
-     * @returns Document exclusion.
-     */
-    private static documentExclusion(condition: PreparedCondition): PreparedPolicyRule {
-        return { requestTypes: [CanvasPolicyRequestType.Document], condition };
+        return { type: CanvasConditionType.UrlRegexp, pattern, flags: CanvasConditionFlags.IgnoreCase };
     }
 
     /**
@@ -184,8 +269,9 @@ export class CanvasPolicyCompiler {
      * @returns Unique values in deterministic order.
      */
     private static sortedUnique<T>(values: readonly T[]): T[] {
-        const entries = new Map(values.map((value) => [JSON.stringify(value), value]));
-        return [...entries.keys()].sort().map((key) => entries.get(key)!);
+        return [...new Map(values.map((value) => [JSON.stringify(value), value]))]
+            .sort(([a], [b]) => (a < b ? -1 : 1))
+            .map(([, value]) => value);
     }
 
     /**

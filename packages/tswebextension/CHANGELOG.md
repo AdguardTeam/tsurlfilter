@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Domain-scoped cosmetic and JavaScript rules not applying on hosts with labels
   ending in an underscore in MV2 and MV3 extensions, and incorrect third-party
   request classification for such hosts.
+- Inverted allowlist entries with uppercase letters not matching their sites.
 
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
 

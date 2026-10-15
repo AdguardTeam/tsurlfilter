@@ -4,12 +4,7 @@ import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
 import { CanvasProtectionCode } from '../../../../src/lib/common/canvas-protection/code';
-import {
-    CanvasConditionFlags,
-    CanvasConditionInput,
-    CanvasConditionType,
-    CanvasPolicyRequestType,
-} from '../../../../src/lib/common/canvas-protection/constants';
+import { CanvasConditionFlags, CanvasConditionType } from '../../../../src/lib/common/canvas-protection/constants';
 import { type CanvasBootstrapSnapshot } from '../../../../src/lib/common/canvas-protection/contracts';
 
 import { createProtectAllPolicy } from './fixtures/prepared-policies';
@@ -52,14 +47,10 @@ describe('generated canvas delivery code', () => {
             policy: {
                 ...policy,
                 // The delivery must stay inert here: jsdom has no canvas bindings to wrap.
-                ownFrameExclusions: [{
-                    requestTypes: [CanvasPolicyRequestType.Subdocument],
-                    condition: {
-                        type: CanvasConditionType.UrlRegexp,
-                        input: CanvasConditionInput.FrameUrl,
-                        pattern: '.',
-                        flags: CanvasConditionFlags.None,
-                    },
+                documentExclusions: [{
+                    type: CanvasConditionType.UrlRegexp,
+                    pattern: '.',
+                    flags: CanvasConditionFlags.None,
                 }],
             },
         });
@@ -69,17 +60,13 @@ describe('generated canvas delivery code', () => {
     it('keeps excluded readouts native across duplicate delivery', () => {
         const policy = createProtectAllPolicy('";globalThis.injected=true;//</script>\u2028\u2029');
         const exclusions = [{
-            requestTypes: [CanvasPolicyRequestType.Document],
-            condition: {
-                type: CanvasConditionType.UrlRegexp,
-                input: CanvasConditionInput.FrameUrl,
-                pattern: '^https://canvas\\.test/',
-                flags: CanvasConditionFlags.None,
-            },
-        }] satisfies typeof policy.ownFrameExclusions;
+            type: CanvasConditionType.UrlRegexp,
+            pattern: '^https://canvas\\.test/',
+            flags: CanvasConditionFlags.None,
+        }] satisfies typeof policy.documentExclusions;
         const code = CanvasProtectionCode.create({
             session: { root: '11111111111111111111111111111111', generation: '22222222222222222222222222222222' },
-            policy: { ...policy, ownFrameExclusions: exclusions },
+            policy: { ...policy, documentExclusions: exclusions },
         });
         const result = runInNewContext(`
             globalThis.window = globalThis;

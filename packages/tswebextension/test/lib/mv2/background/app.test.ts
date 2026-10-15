@@ -304,7 +304,8 @@ describe('TsWebExtension', () => {
             const result = await instance.setCanvasProtectionEnabled(true);
             expect(result).toMatchObject({
                 status: CanvasRegistrationStatus.Unavailable,
-                requiredUserAction: expect.stringContaining('prepared canvas protection policy'),
+                reason: 'Canvas protection exceptions have not been compiled yet',
+                requiredUserAction: 'Start the application or apply its configuration',
             });
             expect(browser.contentScripts.register).not.toHaveBeenCalled();
         });
@@ -393,10 +394,10 @@ describe('TsWebExtension', () => {
         });
 
         it('reports failed removal and retries it on the next request', async () => {
-            const initial = await enable();
+            await enable();
             unregister.mockRejectedValueOnce(new Error('removal rejected'));
             expect(await instance.setCanvasProtectionEnabled(false)).toMatchObject({
-                status: CanvasRegistrationStatus.Failed, installed: initial.installed,
+                status: CanvasRegistrationStatus.Failed, installed: { status: CanvasAvailabilityStatus.Unavailable },
             });
             expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Failed);
             expect(

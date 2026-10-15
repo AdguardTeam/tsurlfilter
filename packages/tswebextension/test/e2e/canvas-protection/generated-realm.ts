@@ -18,7 +18,6 @@ export const snapshot = (): CanvasBootstrapSnapshot => ({
     policy: {
         revision: 'current',
         selectors: { matches: ['<all_urls>'], excludeMatches: [] },
-        ownFrameExclusions: [],
         documentExclusions: [],
     },
 });

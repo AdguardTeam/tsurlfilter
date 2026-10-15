@@ -193,7 +193,8 @@ describe('Canvas protection registration', () => {
     it('requires a prepared policy', async () => {
         expect(await registration.apply({ gates: enabled })).toMatchObject({
             status: CanvasRegistrationStatus.Unavailable,
-            requiredUserAction: 'Supply a prepared canvas protection policy',
+            reason: 'Canvas protection exceptions have not been compiled yet',
+            requiredUserAction: 'Start the application or apply its configuration',
         });
         expect(adapter.install).not.toHaveBeenCalled();
     });
@@ -222,7 +223,7 @@ describe('Canvas protection registration', () => {
     });
 
     it('reports a failed operation with its partial evidence and allows a retry', async () => {
-        const initial = await registration.apply(request());
+        await registration.apply(request());
         const failure: RegistrationOperationOutcome = {
             operation: CanvasRegistrationOperation.Unregister,
             status: CanvasOperationStatus.Failed,
@@ -234,12 +235,39 @@ describe('Canvas protection registration', () => {
         expect(await registration.apply(request('policy-b'))).toMatchObject({
             status: CanvasRegistrationStatus.Failed,
             reason: 'retirement rejected',
-            installed: initial.installed,
+            installed: { status: CanvasAvailabilityStatus.Unavailable },
             operations: [check, registered, failure],
         });
         adapter.install.mockRejectedValueOnce(new Error('unexpected'));
         await expect(registration.apply(request('policy-b'))).rejects.toThrow('unexpected');
         expect((await registration.apply(request('policy-b'))).status).toBe(CanvasRegistrationStatus.Installed);
+    });
+
+    it('clears the stored record after partial installation and reinstalls the previous configuration', async () => {
+        const configuration = request();
+        await registration.apply(configuration);
+        expect(store.canvasProtectionRegistration).toBeDefined();
+        const failure: RegistrationOperationOutcome = {
+            operation: CanvasRegistrationOperation.Unregister,
+            status: CanvasOperationStatus.Failed,
+            reason: 'rejected',
+        };
+        adapter.install.mockImplementationOnce(async () => {
+            present = true;
+            throw new CanvasRegistrationOperationError('retirement rejected', [registered, failure]);
+        });
+        expect(await registration.apply(request('policy-b'))).toMatchObject({
+            status: CanvasRegistrationStatus.Failed,
+            installed: { status: CanvasAvailabilityStatus.Unavailable },
+            operations: [check, registered, failure],
+        });
+        expect(store.canvasProtectionRegistration).toBeUndefined();
+        expect(adapter.install).toHaveBeenCalledTimes(2);
+
+        // The previous configuration has the old record's hash but must replace the partial installation.
+        expect((await registration.apply(configuration)).status).toBe(CanvasRegistrationStatus.Installed);
+        expect(adapter.install).toHaveBeenCalledTimes(3);
+        expect(store.canvasProtectionRegistration).toBeDefined();
     });
 
     it('runs overlapping requests in order and keeps the latest one pending', async () => {

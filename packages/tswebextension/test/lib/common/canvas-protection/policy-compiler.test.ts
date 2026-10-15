@@ -6,7 +6,6 @@ import {
     vi,
 } from 'vitest';
 
-import { CanvasPolicyRequestType } from '../../../../src/lib/common/canvas-protection/constants';
 import { type ProtectionPolicyArtifact } from '../../../../src/lib/common/canvas-protection/contracts';
 import { resolveProtectedSite } from '../../../../src/lib/common/canvas-protection/policy';
 import { CanvasPolicyCompiler } from '../../../../src/lib/common/canvas-protection/policy-compiler';
@@ -26,17 +25,14 @@ const disabledAllowlist = { enabled: false, inverted: false, domains: [] };
  * @param policy Compiled policy.
  * @param url Document URL.
  * @param topUrl Top URL, empty when unknown.
- * @param frame Whether the document is a frame.
  *
  * @returns Whether protection is disabled.
  */
-const isNative = (policy: ProtectionPolicyArtifact, url: string, topUrl = url, frame = false): boolean => (
+const isNative = (policy: ProtectionPolicyArtifact, url: string, topUrl = url): boolean => (
     MatchPatterns.test(MatchPatterns.compile(policy.selectors.excludeMatches), url)
     || resolveProtectedSite(policy, {
         url,
         topUrl: topUrl || undefined,
-        sourceUrl: topUrl || undefined,
-        requestType: frame ? CanvasPolicyRequestType.Subdocument : CanvasPolicyRequestType.Document,
     }) === undefined
 );
 
@@ -66,7 +62,6 @@ describe('canvas policy compiler', () => {
         expect(policy).toEqual({
             revision: expect.stringMatching(/^[0-9a-f]{8}$/),
             selectors: { matches: ['<all_urls>'], excludeMatches: [] },
-            ownFrameExclusions: [],
             documentExclusions: [],
         });
         expect(isNative(policy, 'https://example.org/')).toBe(false);
@@ -78,7 +73,7 @@ describe('canvas policy compiler', () => {
             expect(policy.selectors.excludeMatches).toEqual(['*://*.example.org/*']);
             expect(isNative(policy, 'https://example.org/')).toBe(true);
             expect(isNative(policy, 'https://sub.example.org/')).toBe(true);
-            expect(isNative(policy, 'https://other.com/', 'https://example.org/', true)).toBe(false);
+            expect(isNative(policy, 'https://other.com/', 'https://example.org/')).toBe(false);
         },
     );
     it('ignores stealth exceptions without fingerprinting silently', () => {
@@ -98,6 +93,9 @@ describe('canvas policy compiler', () => {
         '@@||example.org^$stealth,domain=a.com', '@@||example.org^$document,domain=a.com',
         '@@||example.*^$stealth', '@@||[::1]^$stealth', String.raw`@@||exa\mple.org^$stealth`,
         '@@||exa mple.org^$stealth', '@@||example.org^$stealth,',
+        ...['%65xample.org', '127.1', '0x7f000001'].flatMap((host) => [
+            `@@||${host}^$stealth`, `@@||${host}^$document`,
+        ]),
     ])('skips unsupported forms with a debug message: %s', (text) => {
         const debug = vi.spyOn(logger, 'debug');
         const info = vi.spyOn(logger, 'info');
@@ -126,9 +124,9 @@ describe('canvas policy compiler', () => {
         const policy = CanvasPolicyCompiler.compile(['@@||example.org^$document'], disabledAllowlist);
         expect(isNative(policy, 'https://example.org/')).toBe(true);
         expect(isNative(policy, 'https://sub.example.org/')).toBe(true);
-        expect(isNative(policy, 'https://other.com/', 'https://example.org/', true)).toBe(true);
-        expect(isNative(policy, 'https://example.org/', 'https://other.com/', true)).toBe(false);
-        expect(isNative(policy, 'https://example.org/', '', true)).toBe(false);
+        expect(isNative(policy, 'https://other.com/', 'https://example.org/')).toBe(true);
+        expect(isNative(policy, 'https://example.org/', 'https://other.com/')).toBe(false);
+        expect(isNative(policy, 'https://example.org/', '')).toBe(false);
     });
     it('combines document and stealth in one rule', () => {
         const debug = vi.spyOn(logger, 'debug');
@@ -136,28 +134,70 @@ describe('canvas policy compiler', () => {
         expect(policy.selectors.excludeMatches).toEqual([]);
         expect(policy.documentExclusions).toHaveLength(1);
         expect(isNative(policy, 'https://example.org/')).toBe(true);
-        expect(isNative(policy, 'https://other.com/', 'https://example.org/', true)).toBe(true);
+        expect(isNative(policy, 'https://other.com/', 'https://example.org/')).toBe(true);
         const both = CanvasPolicyCompiler.compile(['@@||example.org^$document,stealth'], disabledAllowlist);
         expect(both.selectors.excludeMatches).toEqual(['*://*.example.org/*']);
         expect(both.documentExclusions).toEqual(policy.documentExclusions);
         expect(debug).not.toHaveBeenCalled();
     });
-    it('repeats engine matching for the allowlist', () => {
+    it('compiles the configured normal allowlist without matching host prefixes', () => {
         for (const allowlist of [new Allowlist(), new AllowlistApi()]) {
             configureAllowlist(allowlist, ['example.com']);
             const policy = CanvasPolicyCompiler.compile([], allowlist);
             for (const url of ['https://example.com/', 'https://www.example.com/']) {
                 expect(isNative(policy, url)).toBe(true);
-                expect(isNative(policy, 'https://other.com/', url, true)).toBe(true);
+                expect(isNative(policy, 'https://other.com/', url)).toBe(true);
             }
             for (const url of ['https://example.community/', 'https://example.com.evil.org/']) {
-                expect(isNative(policy, url)).toBe(true);
+                expect(isNative(policy, url)).toBe(false);
             }
             expect(isNative(policy, 'https://sub.example.com/')).toBe(allowlist instanceof AllowlistApi);
             allowlist.enabled = false;
             expect(CanvasPolicyCompiler.compile([], allowlist))
                 .toEqual(CanvasPolicyCompiler.compile([], disabledAllowlist));
         }
+    });
+    it.each([
+        ['a|b.com', 'https://a/', false],
+        ['a|b.com', 'https://b.com/', false],
+        ['a|b.com', 'https://a|b.com/', true],
+        ['ex(ample.com', 'https://ex(ample.com/', true],
+        ['ex(ample.com', 'https://example.com/', false],
+        ['example.com', 'https://example.com/', true],
+        ['example.com', 'https://www.example.com:8080/x', true],
+        ['example.com', 'https://example.com.:8080/x', true],
+        ['example.com', 'https://example.com?x', true],
+        ['example.com', 'https://example.com#x', true],
+        ['example.com', 'https://example.com', true],
+        ['example.com', 'https://sub.example.com/', false],
+        ['example.com', 'https://example.community/', false],
+        ['example.com', 'https://example.com.evil.org/', false],
+        ['example.com', 'https://other.org/?next=https://example.com/', false],
+        ['*.example.com', 'https://example.com/', true],
+        ['*.example.com', 'https://a.b.example.com/', true],
+        ['*.example.com', 'https://www.example.com:8080/x', true],
+        ['*.example.com', 'https://sub.example.com.:8080/x', true],
+        ['*.example.com', 'https://sub.example.com?x', true],
+        ['*.example.com', 'https://sub.example.com#x', true],
+        ['*.example.com', 'https://sub.example.com', true],
+        ['*.example.com', 'https://sub.example.community/', false],
+        ['*.example.com', 'https://sub.example.com.evil.org/', false],
+        ['*.example.com', 'https://other.org/?next=https://sub.example.com/', false],
+        ['example.*', 'https://example.org/', true],
+        ['example.*', 'https://www.example.co.uk:8080/x', true],
+        ['example.*', 'https://example.com/path', true],
+        ['example.*', 'https://example/next.org/', false],
+        ['example.*', 'https://example/?next=.org', false],
+        ['example.*', 'https://example/#.org', false],
+        ['example.*.com', 'https://example.org/path.com/', false],
+        ['example.*.com', 'https://example.org/?next=.com/', false],
+        ['example.*.com', 'https://example.org/#.com/', false],
+        ['example.*.com', 'https://example.org:8080/.com/', false],
+        ['example.*.com', 'https://example.org.com:8080/x', true],
+    ])('matches allowlist entry %s only within the top host: %s → %s', (domain, topUrl, excluded) => {
+        const policy = CanvasPolicyCompiler.compile([], { enabled: true, inverted: false, domains: [domain] });
+        // A valid frame URL keeps an invalid top hostname from looking like a policy exclusion.
+        expect(isNative(policy, 'https://frame.example/', topUrl)).toBe(excluded);
     });
     it('matches the inverted allowlist like frame matching', () => {
         const urls = [
@@ -176,7 +216,7 @@ describe('canvas policy compiler', () => {
                     if (!url.startsWith('file:')) {
                         expect(isNative(policy, url), `${domains}: ${url}`).toBe(expected);
                     }
-                    expect(isNative(policy, 'https://other.com/', url, true), `${domains}: frame in ${url}`)
+                    expect(isNative(policy, 'https://other.com/', url), `${domains}: frame in ${url}`)
                         .toBe(expected);
                 }
             }

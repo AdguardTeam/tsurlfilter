@@ -1,10 +1,8 @@
 import {
     type CanvasAvailabilityStatus,
     type CanvasConditionFlags,
-    type CanvasConditionInput,
     type CanvasConditionType,
     type CanvasOperationStatus,
-    type CanvasPolicyRequestType,
     type CanvasRegistrationOperation,
     type CanvasRegistrationStatus,
 } from './constants';
@@ -52,12 +50,11 @@ export interface CanvasFeatureGates {
 }
 
 /**
- * Exact JSON predicates evaluated against synchronous document information.
+ * Exact JSON predicates evaluated against the URL of a top-level document.
  */
 export type PreparedCondition =
     | {
         readonly type: CanvasConditionType.UrlRegexp;
-        readonly input: CanvasConditionInput;
         readonly pattern: string;
         readonly flags: CanvasConditionFlags;
     }
@@ -65,27 +62,16 @@ export type PreparedCondition =
         readonly type: CanvasConditionType.And | CanvasConditionType.Or;
         readonly operands: readonly PreparedCondition[];
     }
-    | { readonly type: CanvasConditionType.Not; readonly operand: PreparedCondition }
-    | { readonly type: CanvasConditionType.Unavailable; readonly reason: string };
-
-/**
- * A prepared exclusion with explicit top-document or child-frame applicability.
- */
-export interface PreparedPolicyRule {
-    readonly requestTypes: readonly CanvasPolicyRequestType[];
-    readonly condition: PreparedCondition;
-}
+    | { readonly type: CanvasConditionType.Not; readonly operand: PreparedCondition };
 
 /**
  * Synchronous facts about a delivered document. The browser reveals the complete
- * URL of a same-origin top or parent document and only the origin of a
- * cross-origin one; a URL it does not reveal at all is `undefined`.
+ * URL of a same-origin top document and only the origin of a cross-origin one;
+ * a URL it does not reveal at all is `undefined`.
  */
 export interface DocumentPolicyInput {
     readonly url: string;
-    readonly requestType: CanvasPolicyRequestType;
     readonly topUrl: string | undefined;
-    readonly sourceUrl: string | undefined;
 }
 
 /**
@@ -155,11 +141,29 @@ export interface CanvasReadout {
  * Seed-free canvas policy compiled by the library from filter rules and the allowlist.
  */
 export interface ProtectionPolicyArtifact {
+    /**
+     * Hash of the other fields, reported to the consumer in {@link RegistrationResult}.
+     */
     readonly revision: string;
+
+    /**
+     * Match patterns of the script registration, applied to each document's own URL.
+     */
     readonly selectors: {
+        /**
+         * Documents that get the script.
+         */
         readonly matches: readonly string[];
+
+        /**
+         * Documents that never get the script.
+         */
         readonly excludeMatches: readonly string[];
     };
-    readonly ownFrameExclusions: readonly PreparedPolicyRule[];
-    readonly documentExclusions: readonly PreparedPolicyRule[];
+
+    /**
+     * Conditions on the top-level document's URL. A matching top-level document
+     * stays native together with its frames.
+     */
+    readonly documentExclusions: readonly PreparedCondition[];
 }
