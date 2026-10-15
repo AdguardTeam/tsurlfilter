@@ -13,6 +13,7 @@ import {
 
 import { type CosmeticOption, CosmeticResult, Engine } from '@adguard/tsurlfilter';
 
+import { CanvasExceptionRules } from '../../../../src/lib/common/canvas-protection/exception-rules';
 import { type MatchQuery } from '../../../../src/lib/common/interfaces';
 import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
 import { stealthApi } from '../../../../src/lib/mv2/background/api';
@@ -215,19 +216,19 @@ describe('Engine Api', () => {
         });
     });
 
-    describe('getDocumentExceptionRuleTexts method', () => {
-        it('returns exception texts without allowlist rules', async () => {
+    describe('getDocumentOrStealthExceptionRuleTexts method', () => {
+        it('delegates to the common extractor when the engine is started', async () => {
             const configuration = getConfigurationMv2Fixture();
-            configuration.userrules.content = '@@||example.org^$stealth=fingerprinting\n||example.org^';
-            vi.mocked(Allowlist.prototype.getAllowlistRules).mockReturnValueOnce('@@||allowed.org^$document');
+            expect(engineApi.getDocumentOrStealthExceptionRuleTexts()).toEqual([]);
+            const extract = vi.spyOn(CanvasExceptionRules, 'getRuleTexts')
+                .mockReturnValueOnce(['@@||example.org^$stealth=fingerprinting']);
 
             await engineApi.startEngine(configuration);
 
-            expect(engineApi.getDocumentExceptionRuleTexts()).toEqual(['@@||example.org^$stealth=fingerprinting']);
-        });
-
-        it('returns no texts when engine is not started', () => {
-            expect(engineApi.getDocumentExceptionRuleTexts()).toEqual([]);
+            expect(engineApi.getDocumentOrStealthExceptionRuleTexts())
+                .toEqual(['@@||example.org^$stealth=fingerprinting']);
+            expect(extract).toHaveBeenCalledWith(expect.any(Engine));
+            extract.mockRestore();
         });
     });
 });

@@ -207,9 +207,15 @@ filled only from video frames or `putImageData()` is read natively.
   exclude the top-level document and its frames when the browser reveals
   the top-level document's URL. See [Limits](#limits) for browser restrictions.
   `$document` may also use `$important` or combine with `$stealth`.
-  An allowlist entry matches only its host with `www.`, or the host with
-  its subdomains for a `*.` entry: `example.com` does not match
-  `example.community`.
+  In normal mode, MV2 entries such as `example.com` cover the host and
+  `www.`, while `*.example.com` covers the host and all its subdomains.
+  In MV3, every entry also covers subdomains.
+  In inverted mode, protection stays on for listed hosts: a plain entry
+  covers the host and `www.`, and a `*.` entry covers subdomains at any
+  depth, excluding the host itself. MV3 adds a `*.` twin to every entry,
+  so plain entries also cover all subdomains there.
+  Hosts that only start with an entry, such as `example.community` for
+  `example.com`, never match.
 - `$badfilter` cancels an exception. Other forms, including paths,
   `$domain`, regular expressions and wildcard hosts such as `example.*`,
   do not affect canvas protection; skipped rules appear in the debug log.

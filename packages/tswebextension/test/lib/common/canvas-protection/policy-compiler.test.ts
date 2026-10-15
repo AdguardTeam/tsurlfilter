@@ -11,8 +11,6 @@ import { resolveProtectedSite } from '../../../../src/lib/common/canvas-protecti
 import { CanvasPolicyCompiler } from '../../../../src/lib/common/canvas-protection/policy-compiler';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
-import { DocumentApi } from '../../../../src/lib/mv2/background/document-api';
-import { type EngineApi } from '../../../../src/lib/mv2/background/engine-api';
 import { MatchPatterns } from '../../../../src/lib/mv2/background/utils/match-patterns';
 import { AllowlistApi } from '../../../../src/lib/mv3/background/allowlist-api';
 import { getConfigurationMv2Fixture } from '../../mv2/background/fixtures/configuration';
@@ -66,6 +64,7 @@ describe('canvas policy compiler', () => {
         });
         expect(isNative(policy, 'https://example.org/')).toBe(false);
     });
+
     it.each(['stealth', 'stealth=fingerprinting', 'stealth=referrer|fingerprinting', 'stealth,important'])(
         'excludes the host and its subdomains for stealth exceptions covering fingerprinting: %s',
         (modifier) => {
@@ -76,18 +75,29 @@ describe('canvas policy compiler', () => {
             expect(isNative(policy, 'https://other.com/', 'https://example.org/')).toBe(false);
         },
     );
+
+    it.each([
+        ['stealth=fingerprinting,stealth=referrer', false],
+        ['stealth=referrer,stealth=fingerprinting', true],
+    ])('uses the last stealth modifier: %s', (modifiers, excluded) => {
+        const policy = CanvasPolicyCompiler.compile([`@@||x.org^$${modifiers}`], disabledAllowlist);
+        expect(isNative(policy, 'https://x.org/')).toBe(excluded);
+    });
+
     it('ignores stealth exceptions without fingerprinting silently', () => {
         const debug = vi.spyOn(logger, 'debug');
         expect(CanvasPolicyCompiler.compile(['@@||example.org^$stealth=referrer'], disabledAllowlist))
             .toEqual(CanvasPolicyCompiler.compile([], disabledAllowlist));
         expect(debug).not.toHaveBeenCalled();
     });
+
     it('ignores rules that are not network exceptions silently', () => {
         const debug = vi.spyOn(logger, 'debug');
         expect(CanvasPolicyCompiler.compile(['||example.org^$document', 'example.org##.ad'], disabledAllowlist))
             .toEqual(CanvasPolicyCompiler.compile([], disabledAllowlist));
         expect(debug).not.toHaveBeenCalled();
     });
+
     it.each([
         '@@||example.org$stealth', '@@||example.org/path$stealth',
         '@@||example.org^$stealth,domain=a.com', '@@||example.org^$document,domain=a.com',
@@ -108,18 +118,34 @@ describe('canvas policy compiler', () => {
         expect(warn).not.toHaveBeenCalled();
         expect(error).not.toHaveBeenCalled();
     });
-    it('excludes an IDN host by its punycode form', () => {
+
+    it.each([
+        '@@||example。com^$stealth',
+        '@@||ｅｘａｍｐｌｅ.com^$stealth',
+        '@@||exa\u00admple.com^$stealth',
+        '@@||＊^$document',
+        '@@||﹡^$document',
+    ])('skips Unicode host rewrites beyond punycode: %s', (text) => {
+        const debug = vi.spyOn(logger, 'debug');
+        expect(CanvasPolicyCompiler.compile([text], disabledAllowlist))
+            .toEqual(CanvasPolicyCompiler.compile([], disabledAllowlist));
+        expect(debug).toHaveBeenCalledWith(expect.stringContaining('expected a plain hostname'));
+    });
+
+    it.each(['жкхнсо.рф', 'café.example'])('excludes an IDN host by its punycode form: %s', (host) => {
         expect(isNative(
-            CanvasPolicyCompiler.compile(['@@||жкхнсо.рф^$stealth'], disabledAllowlist),
-            new URL('https://жкхнсо.рф/').href,
+            CanvasPolicyCompiler.compile([`@@||${host}^$stealth`], disabledAllowlist),
+            new URL(`https://${host}/`).href,
         )).toBe(true);
         expect(CanvasPolicyCompiler.compile(['@@||EXAMPLE.org^$stealth'], disabledAllowlist).selectors.excludeMatches)
             .toEqual(['*://*.example.org/*']);
     });
+
     it('uses an exact pattern for an IPv4 host', () => {
         expect(CanvasPolicyCompiler.compile(['@@||192.168.0.1^$stealth'], disabledAllowlist).selectors.excludeMatches)
             .toEqual(['*://192.168.0.1/*']);
     });
+
     it('excludes the top document and its cross-site frames for document exceptions', () => {
         const policy = CanvasPolicyCompiler.compile(['@@||example.org^$document'], disabledAllowlist);
         expect(isNative(policy, 'https://example.org/')).toBe(true);
@@ -128,6 +154,7 @@ describe('canvas policy compiler', () => {
         expect(isNative(policy, 'https://example.org/', 'https://other.com/')).toBe(false);
         expect(isNative(policy, 'https://example.org/', '')).toBe(false);
     });
+
     it('combines document and stealth in one rule', () => {
         const debug = vi.spyOn(logger, 'debug');
         const policy = CanvasPolicyCompiler.compile(['@@||example.org^$document,stealth=referrer'], disabledAllowlist);
@@ -140,6 +167,7 @@ describe('canvas policy compiler', () => {
         expect(both.documentExclusions).toEqual(policy.documentExclusions);
         expect(debug).not.toHaveBeenCalled();
     });
+
     it('compiles the configured normal allowlist without matching host prefixes', () => {
         for (const allowlist of [new Allowlist(), new AllowlistApi()]) {
             configureAllowlist(allowlist, ['example.com']);
@@ -157,6 +185,7 @@ describe('canvas policy compiler', () => {
                 .toEqual(CanvasPolicyCompiler.compile([], disabledAllowlist));
         }
     });
+
     it.each([
         ['a|b.com', 'https://a/', false],
         ['a|b.com', 'https://b.com/', false],
@@ -199,29 +228,63 @@ describe('canvas policy compiler', () => {
         // A valid frame URL keeps an invalid top hostname from looking like a policy exclusion.
         expect(isNative(policy, 'https://frame.example/', topUrl)).toBe(excluded);
     });
-    it('matches the inverted allowlist like frame matching', () => {
-        const urls = [
-            'https://example.com/', 'https://www.example.com/', 'https://sub.example.com/',
-            'https://www.sub.example.com/', 'https://a.sub.example.com/', 'https://www.example.com.evil.org/',
-            'https://other.com:8080/', 'file:///x.html',
-        ];
-        const engineStub = { matchFrame: () => null } as unknown as EngineApi;
+
+    it.each([
+        ['example.com', 'https://example.com/', true],
+        ['example.com', 'https://www.example.com/', true],
+        ['example.com', 'https://sub.example.com/', false],
+        ['example.com', 'https://a.b.example.com/', false],
+        ['*.example.com', 'https://example.com/', false],
+        ['*.example.com', 'https://x.example.com/', true],
+        ['*.example.com', 'https://a.b.example.com/', true],
+        ['*.example.com', 'https://www.example.com/', true],
+        ['*.example.com', 'https://www.a.b.example.com/', true],
+        ['*.example.com', 'https://example.com.evil.org/', false],
+        ['*.example.com', 'https://example.comx.org/', false],
+        ['*.example.com', 'https://example.community/', false],
+        ['example.com', 'https://example.community/', false],
+        ['example.com', 'https://example.com.evil.org/', false],
+    ])('keeps protection for inverted entry %s at %s: %s', (domain, url, protectedHost) => {
+        const policy = CanvasPolicyCompiler.compile([], { enabled: true, inverted: true, domains: [domain] });
+        expect(isNative(policy, url)).toBe(!protectedHost);
+        expect(isNative(policy, 'https://frame.example/', url)).toBe(!protectedHost);
+    });
+
+    it('compiles configured inverted allowlists including the MV3 subdomain twins', () => {
         for (const allowlist of [new Allowlist(), new AllowlistApi()]) {
-            for (const domains of [['example.com'], ['*.example.com'], []]) {
-                configureAllowlist(allowlist, domains, true);
-                const documentApi = new DocumentApi(allowlist, engineStub);
-                const policy = CanvasPolicyCompiler.compile([], allowlist);
-                for (const url of urls) {
-                    const expected = documentApi.matchFrame(url) !== null;
-                    if (!url.startsWith('file:')) {
-                        expect(isNative(policy, url), `${domains}: ${url}`).toBe(expected);
-                    }
-                    expect(isNative(policy, 'https://other.com/', url), `${domains}: frame in ${url}`)
-                        .toBe(expected);
-                }
-            }
+            configureAllowlist(allowlist, ['example.com'], true);
+            const policy = CanvasPolicyCompiler.compile([], allowlist);
+            expect(isNative(policy, 'https://example.com/')).toBe(false);
+            expect(isNative(policy, 'https://www.example.com/')).toBe(false);
+            expect(isNative(policy, 'https://a.b.example.com/')).toBe(!(allowlist instanceof AllowlistApi));
+            expect(isNative(policy, 'https://example.community/')).toBe(true);
+            expect(isNative(policy, 'https://frame.example/', 'file:///x.html')).toBe(false);
         }
     });
+
+    it('excludes hosted documents for an empty inverted allowlist, preserving unknown and hostless tops', () => {
+        const policy = CanvasPolicyCompiler.compile([], { enabled: true, inverted: true, domains: [] });
+        expect(policy.documentExclusions).toHaveLength(1);
+        expect(isNative(policy, 'https://example.com/')).toBe(true);
+        expect(isNative(policy, 'https://frame.example/', 'file:///x.html')).toBe(false);
+        expect(isNative(policy, 'https://frame.example/', '')).toBe(false);
+    });
+
+    it.each([false, true])('uses at most two document exclusions for rules and entries (inverted %s)', (inverted) => {
+        const hosts = Array.from({ length: 20 }, (_, index) => `site${index}.example`);
+        const policy = CanvasPolicyCompiler.compile(hosts.map((host) => `@@||${host}^$document`), {
+            enabled: true, inverted, domains: hosts.map((_, index) => `allowed${index}.example`),
+        });
+        expect(policy.documentExclusions.length).toBeLessThanOrEqual(2);
+        for (const [index, host] of hosts.entries()) {
+            expect(isNative(policy, `https://${host}/`)).toBe(true);
+            expect(isNative(policy, 'https://frame.example/', `https://sub.${host}/`)).toBe(true);
+            expect(isNative(policy, 'https://frame.example/', `https://allowed${index}.example/`)).toBe(!inverted);
+        }
+        expect(isNative(policy, 'https://other.org/')).toBe(inverted);
+        expect(isNative(policy, 'https://frame.example/', '')).toBe(false);
+    });
+
     it('produces the same policy for the same input in any order', () => {
         const texts = ['@@||b.org^$document', '@@||a.org^$stealth', '@@||b.org^$stealth'];
         for (const inverted of [false, true]) {

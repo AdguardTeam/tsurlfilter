@@ -35,12 +35,6 @@ const targetCondition: PreparedCondition = {
     flags: CanvasConditionFlags.None,
 };
 
-const denyCondition: PreparedCondition = {
-    type: CanvasConditionType.UrlRegexp,
-    pattern: '^https://b\\.example\\.com/',
-    flags: CanvasConditionFlags.None,
-};
-
 /**
  * Exact prepared predicates, without filter-text parsing or transformation.
  */
@@ -54,33 +48,6 @@ export const preparedPolicyFixtures: readonly PreparedPolicyFixture[] = [
     {
         name: 'host negative',
         condition: targetCondition,
-        url: 'https://c.example.com/',
-        excluded: false,
-    },
-    {
-        name: 'target to set positive',
-        condition: {
-            type: CanvasConditionType.And,
-            operands: [targetCondition, { type: CanvasConditionType.Not, operand: denyCondition }],
-        },
-        url: 'https://a.example.com/',
-        excluded: true,
-    },
-    {
-        name: 'target denyallow set negative',
-        condition: {
-            type: CanvasConditionType.And,
-            operands: [targetCondition, { type: CanvasConditionType.Not, operand: denyCondition }],
-        },
-        url: 'https://b.example.com/',
-        excluded: false,
-    },
-    {
-        name: 'target outside to set negative',
-        condition: {
-            type: CanvasConditionType.And,
-            operands: [targetCondition, { type: CanvasConditionType.Not, operand: denyCondition }],
-        },
         url: 'https://c.example.com/',
         excluded: false,
     },

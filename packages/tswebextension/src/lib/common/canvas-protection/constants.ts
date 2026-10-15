@@ -51,8 +51,6 @@ export enum CanvasOperationStatus {
  */
 export enum CanvasConditionType {
     UrlRegexp = 'url-regexp',
-    And = 'and',
-    Or = 'or',
     Not = 'not',
 }
 

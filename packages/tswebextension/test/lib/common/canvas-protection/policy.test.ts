@@ -99,27 +99,9 @@ describe('canvas protection policy', () => {
 
     it('preserves three-state logic when the top URL is unknown', () => {
         const unknownTop = matches('^https://top\\.example/');
-        const always: PreparedCondition = { type: CanvasConditionType.And, operands: [] };
-        const never: PreparedCondition = { type: CanvasConditionType.Or, operands: [] };
         const expectations: [PreparedCondition, boolean][] = [
             [unknownTop, false],
             [{ type: CanvasConditionType.Not, operand: unknownTop }, false],
-            [{ type: CanvasConditionType.And, operands: [unknownTop, always] }, false],
-            [{ type: CanvasConditionType.And, operands: [unknownTop, never] }, false],
-            [{ type: CanvasConditionType.Or, operands: [unknownTop, always] }, true],
-            [{ type: CanvasConditionType.Or, operands: [unknownTop, never] }, false],
-            [{
-                type: CanvasConditionType.Not,
-                operand: {
-                    type: CanvasConditionType.And, operands: [unknownTop, never],
-                },
-            }, true],
-            [{
-                type: CanvasConditionType.Not,
-                operand: {
-                    type: CanvasConditionType.Or, operands: [unknownTop, never],
-                },
-            }, false],
         ];
         for (const [condition, excluded] of expectations) {
             const policy = createPolicy({ documentExclusions: [condition] });

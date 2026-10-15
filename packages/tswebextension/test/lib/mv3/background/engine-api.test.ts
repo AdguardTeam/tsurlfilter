@@ -1,31 +1,37 @@
-import { describe, expect, it } from 'vitest';
+import {
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 
 import { Filter } from '@adguard/dnr-converter';
-import { FilterList } from '@adguard/tsurlfilter';
+import { Engine, FilterList } from '@adguard/tsurlfilter';
 
+import { CanvasExceptionRules } from '../../../../src/lib/common/canvas-protection/exception-rules';
 import { USER_FILTER_ID } from '../../../../src/lib/common/constants';
 import { EngineApi } from '../../../../src/lib/mv3/background/engine-api';
 
-describe('getDocumentExceptionRuleTexts method', () => {
-    it('returns exception texts without allowlist rules', async () => {
+describe('getDocumentOrStealthExceptionRuleTexts method', () => {
+    it('delegates to the common extractor when the engine is started', async () => {
         const engineApi = new EngineApi();
-        const ruleTexts = '@@||example.org^$stealth=fingerprinting\n||example.org^';
+        expect(engineApi.getDocumentOrStealthExceptionRuleTexts()).toEqual([]);
+        const extract = vi.spyOn(CanvasExceptionRules, 'getRuleTexts')
+            .mockReturnValueOnce(['@@||example.org^$stealth=fingerprinting']);
 
         await engineApi.startEngine({
             localFilters: [],
             remoteFilters: [],
             userRulesFilter: new Filter(
                 USER_FILTER_ID,
-                async () => new FilterList(ruleTexts, USER_FILTER_ID).getContent(),
+                async () => new FilterList('', USER_FILTER_ID).getContent(),
             ),
-            allowlistRulesList: '@@||allowed.org^$document',
+            allowlistRulesList: null,
             verbose: false,
         });
 
-        expect(engineApi.getDocumentExceptionRuleTexts()).toEqual(['@@||example.org^$stealth=fingerprinting']);
-    });
-
-    it('returns no texts when engine is not started', () => {
-        expect(new EngineApi().getDocumentExceptionRuleTexts()).toEqual([]);
+        expect(engineApi.getDocumentOrStealthExceptionRuleTexts()).toEqual(['@@||example.org^$stealth=fingerprinting']);
+        expect(extract).toHaveBeenCalledWith(expect.any(Engine));
+        extract.mockRestore();
     });
 });

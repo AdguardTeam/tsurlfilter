@@ -30,21 +30,6 @@ export const resolveSiteKey = (url: string): string | undefined => {
 };
 
 /**
- * Combines three-state verdicts without treating an unknown one as false.
- *
- * @param verdicts Operand verdicts.
- * @param decisive The value that decides the result alone: `true` for "or", `false` for "and".
- *
- * @returns The decided value, or `undefined` when only an unknown operand could decide it.
- */
-const combine = (verdicts: readonly Verdict[], decisive: boolean): Verdict => {
-    if (verdicts.includes(decisive)) {
-        return decisive;
-    }
-    return verdicts.includes(undefined) ? undefined : !decisive;
-};
-
-/**
  * Evaluates a prepared condition against the URL of a top-level document.
  *
  * @param condition Predicate prepared by the policy compiler.
@@ -58,12 +43,6 @@ const evaluate = (condition: PreparedCondition, url: string | undefined): Verdic
     switch (condition.type) {
         case CanvasConditionType.UrlRegexp:
             return url === undefined ? undefined : new RegExp(condition.pattern, condition.flags).test(url);
-        case CanvasConditionType.And:
-        case CanvasConditionType.Or:
-            return combine(
-                condition.operands.map((operand) => evaluate(operand, url)),
-                condition.type === CanvasConditionType.Or,
-            );
         case CanvasConditionType.Not: {
             const verdict = evaluate(condition.operand, url);
             return verdict === undefined ? undefined : !verdict;
@@ -90,7 +69,7 @@ export const resolveProtectedSite = (
 ): string | undefined => {
     const { url, topUrl } = input;
     // Unknown verdicts do not exclude.
-    if (combine(policy.documentExclusions.map((condition) => evaluate(condition, topUrl)), true) === true) {
+    if (policy.documentExclusions.some((condition) => evaluate(condition, topUrl) === true)) {
         return undefined;
     }
     return (topUrl === undefined ? undefined : resolveSiteKey(topUrl)) ?? resolveSiteKey(url);

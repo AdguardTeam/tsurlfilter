@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added the `fingerprinting` value for `$stealth`
   (`StealthOptionName.Fingerprinting`).
-- Added `Engine.getDocumentExceptionRules()` to retrieve `$stealth` and
-  `$document` exceptions with `$badfilter` applied.
+- Added `Engine.getDocumentOrStealthExceptionRules()` to retrieve `$stealth`
+  and `$document` exceptions with `$badfilter` applied.
 
 ### Changed
 

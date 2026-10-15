@@ -64,12 +64,12 @@ describe('Stealth modifier api', () => {
     it('parses the fingerprinting value', () => {
         for (const value of ['fingerprinting', 'referrer|fingerprinting']) {
             const modifier = new StealthModifier(value);
-            expect(modifier.hasStealthOption(StealthOptionName.Fingerprinting)).toBe(true);
-            expect(modifier.hasValues()).toBe(true);
+            expect(modifier.hasStealthOption(StealthOptionName.Fingerprinting)).toBeTruthy();
+            expect(modifier.hasValues()).toBeTruthy();
         }
 
         const modifier = new StealthModifier('referrer');
-        expect(modifier.hasStealthOption(StealthOptionName.Fingerprinting)).toBe(false);
+        expect(modifier.hasStealthOption(StealthOptionName.Fingerprinting)).toBeFalsy();
     });
 
     it('checks if given string is a valid stealth option', () => {

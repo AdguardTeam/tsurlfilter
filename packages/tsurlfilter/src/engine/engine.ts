@@ -9,6 +9,7 @@ import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { Request } from '../request';
 import { RequestType } from '../request-type';
 import { type NetworkRule, NetworkRuleOption, type WrittenRuleTextResolver } from '../rules/network-rule';
+import { NETWORK_RULE_OPTIONS } from '../rules/network-rule-options';
 import {
     type IndexedStorageCosmeticRuleParts,
     type IndexedStorageNetworkRuleParts,
@@ -89,9 +90,9 @@ export class Engine {
     private readonly ruleStorage: RuleStorage;
 
     /**
-     * Storage indexes of potential document exceptions, including their badfilter rules.
+     * Storage indexes of potential document or stealth exceptions, including their badfilter rules.
      */
-    private readonly documentExceptionIndexes: number[];
+    private readonly documentOrStealthExceptionIndexes: number[];
 
     /**
      * Resolves the text of a rule as written in the filter list.
@@ -118,7 +119,7 @@ export class Engine {
     public static createSync(options: EngineFactoryOptions): Engine {
         const networkRulesParts: IndexedStorageNetworkRuleParts[] = [];
         const cosmeticRulesParts: IndexedStorageCosmeticRuleParts[] = [];
-        const documentExceptionIndexes: number[] = [];
+        const documentOrStealthExceptionIndexes: number[] = [];
 
         const lists: IRuleList[] = [];
         const conversionErrors: FilterListConversionError[] = [];
@@ -155,13 +156,24 @@ export class Engine {
                 continue;
             }
 
-            Engine.collectRuleParts(indexedRuleParts, networkRulesParts, cosmeticRulesParts, documentExceptionIndexes);
+            Engine.collectRuleParts(
+                indexedRuleParts,
+                networkRulesParts,
+                cosmeticRulesParts,
+                documentOrStealthExceptionIndexes,
+            );
         }
 
         const networkEngine = NetworkEngine.createSync(networkRulesParts, storage);
         const cosmeticEngine = CosmeticEngine.createSync(cosmeticRulesParts, storage);
 
-        const engine = new Engine(storage, networkEngine, cosmeticEngine, conversionErrors, documentExceptionIndexes);
+        const engine = new Engine(
+            storage,
+            networkEngine,
+            cosmeticEngine,
+            conversionErrors,
+            documentOrStealthExceptionIndexes,
+        );
 
         return engine;
     }
@@ -176,7 +188,7 @@ export class Engine {
     public static async createAsync(options: EngineFactoryOptions): Promise<Engine> {
         const networkRulesParts: IndexedStorageNetworkRuleParts[] = [];
         const cosmeticRulesParts: IndexedStorageCosmeticRuleParts[] = [];
-        const documentExceptionIndexes: number[] = [];
+        const documentOrStealthExceptionIndexes: number[] = [];
 
         const lists: IRuleList[] = [];
         const conversionErrors: FilterListConversionError[] = [];
@@ -229,7 +241,12 @@ export class Engine {
                 continue;
             }
 
-            Engine.collectRuleParts(ruleParts, networkRulesParts, cosmeticRulesParts, documentExceptionIndexes);
+            Engine.collectRuleParts(
+                ruleParts,
+                networkRulesParts,
+                cosmeticRulesParts,
+                documentOrStealthExceptionIndexes,
+            );
         }
 
         const [networkEngine, cosmeticEngine] = await Promise.all([
@@ -237,31 +254,37 @@ export class Engine {
             CosmeticEngine.createAsync(cosmeticRulesParts, storage),
         ]);
 
-        const engine = new Engine(storage, networkEngine, cosmeticEngine, conversionErrors, documentExceptionIndexes);
+        const engine = new Engine(
+            storage,
+            networkEngine,
+            cosmeticEngine,
+            conversionErrors,
+            documentOrStealthExceptionIndexes,
+        );
 
         return engine;
     }
 
     /**
-     * Collects rule parts for matching engines and indexes potential document exceptions.
+     * Collects rule parts for matching engines and indexes potential document or stealth exceptions.
      *
      * @param indexedRuleParts Scanned rule parts with their storage index.
      * @param networkRulesParts Collected network rule parts.
      * @param cosmeticRulesParts Collected cosmetic rule parts.
-     * @param documentExceptionIndexes Collected candidate storage indexes.
+     * @param documentOrStealthExceptionIndexes Collected candidate storage indexes.
      */
     private static collectRuleParts(
         indexedRuleParts: IndexedStorageRuleParts,
         networkRulesParts: IndexedStorageNetworkRuleParts[],
         cosmeticRulesParts: IndexedStorageCosmeticRuleParts[],
-        documentExceptionIndexes: number[],
+        documentOrStealthExceptionIndexes: number[],
     ): void {
         if (indexedRuleParts.ruleParts.category === RuleCategory.Network) {
             // The category identifies the network rule parts.
             networkRulesParts.push(indexedRuleParts as IndexedStorageNetworkRuleParts);
 
             if (Engine.isDocumentOrStealthExceptionCandidate(indexedRuleParts.ruleParts)) {
-                documentExceptionIndexes.push(indexedRuleParts.index);
+                documentOrStealthExceptionIndexes.push(indexedRuleParts.index);
             }
         } else if (indexedRuleParts.ruleParts.category === RuleCategory.Cosmetic) {
             // The category identifies the cosmetic rule parts.
@@ -282,7 +305,7 @@ export class Engine {
         }
 
         const modifiers = ruleParts.text.slice(ruleParts.modifiersStart, ruleParts.modifiersEnd);
-        return modifiers.includes('stealth') || modifiers.includes('document');
+        return modifiers.includes(NETWORK_RULE_OPTIONS.STEALTH) || modifiers.includes(NETWORK_RULE_OPTIONS.DOCUMENT);
     }
 
     /**
@@ -293,17 +316,17 @@ export class Engine {
      * @param networkEngine Network engine.
      * @param cosmeticEngine Cosmetic engine.
      * @param conversionErrors Conversion errors.
-     * @param documentExceptionIndexes Storage indexes of potential document exceptions.
+     * @param documentOrStealthExceptionIndexes Storage indexes of potential document or stealth exceptions.
      */
     private constructor(
         ruleStorage: RuleStorage,
         networkEngine: NetworkEngine,
         cosmeticEngine: CosmeticEngine,
         conversionErrors: FilterListConversionError[],
-        documentExceptionIndexes: number[],
+        documentOrStealthExceptionIndexes: number[],
     ) {
         this.ruleStorage = ruleStorage;
-        this.documentExceptionIndexes = documentExceptionIndexes;
+        this.documentOrStealthExceptionIndexes = documentOrStealthExceptionIndexes;
         this.networkEngine = networkEngine;
         this.cosmeticEngine = cosmeticEngine;
         this.resolveWrittenText = ruleStorage.createWrittenTextResolver();
@@ -312,15 +335,17 @@ export class Engine {
     }
 
     /**
-     * Returns stealth exceptions and exceptions that disable document filtering.
+     * Returns exceptions whose modifiers include `$stealth` or `$document` as written,
+     * selected by a build-time substring prefilter. An equivalent exception spelled out
+     * as `$elemhide,content,urlblock,jsinject` is not collected.
      * Rules cancelled by `$badfilter` and the `$badfilter` rules themselves are excluded.
      *
-     * @returns Document exception rules with `$badfilter` applied.
+     * @returns Document or stealth exception rules with `$badfilter` applied.
      */
-    public getDocumentExceptionRules(): NetworkRule[] {
+    public getDocumentOrStealthExceptionRules(): NetworkRule[] {
         const rules: NetworkRule[] = [];
 
-        for (const index of this.documentExceptionIndexes) {
+        for (const index of this.documentOrStealthExceptionIndexes) {
             const rule = this.ruleStorage.retrieveNetworkRule(index);
             if (rule) {
                 rules.push(rule);

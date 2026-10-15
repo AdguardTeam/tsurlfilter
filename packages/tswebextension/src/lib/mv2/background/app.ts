@@ -176,7 +176,7 @@ export class TsWebExtension implements AppInterface<
             await this.redirectsService.start();
             this.documentBlockingService.configure(configuration);
             result = await this.engineApi.startEngine(configuration);
-            this.canvasProtection.updatePolicy(this.engineApi.getDocumentExceptionRuleTexts(), allowlist);
+            this.canvasProtection.updatePolicy(this.engineApi.getDocumentOrStealthExceptionRuleTexts(), allowlist);
             await this.tabCosmeticInjector.processOpenTabs();
             await this.tabsApi.start();
             WebRequestApi.start();
@@ -241,7 +241,7 @@ export class TsWebExtension implements AppInterface<
 
         this.documentBlockingService.configure(configuration);
         const result = await this.engineApi.startEngine(configuration);
-        this.canvasProtection.updatePolicy(this.engineApi.getDocumentExceptionRuleTexts(), allowlist);
+        this.canvasProtection.updatePolicy(this.engineApi.getDocumentOrStealthExceptionRuleTexts(), allowlist);
         await this.tabsApi.updateCurrentTabsMainFrameRules();
 
         await WebRequestApi.flushMemoryCache();

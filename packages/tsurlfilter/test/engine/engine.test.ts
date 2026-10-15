@@ -22,7 +22,7 @@ const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
 };
 
 describe('Engine Tests', () => {
-    describe('getDocumentExceptionRules', () => {
+    describe('getDocumentOrStealthExceptionRules', () => {
         it.each(['createSync', 'createAsync'] as const)(
             '%s returns stealth and document exceptions with badfilter applied',
             async (factory) => {
@@ -40,13 +40,14 @@ describe('Engine Tests', () => {
                             '||g.org^$document',
                             '||h.org^',
                             '@@||i.org^$doc',
+                            '@@||explicit.org^$elemhide,content,urlblock,jsinject',
                             '@@||j.org^$stealth=fingerprinting',
                             '@@||j.org^$stealth=referrer,badfilter',
                         ].join('\n'),
                     }],
                 });
 
-                const texts = engine.getDocumentExceptionRules().map((rule) => {
+                const texts = engine.getDocumentOrStealthExceptionRules().map((rule) => {
                     return engine.retrieveRuleText(rule.getFilterListId(), rule.getIndex());
                 });
 
@@ -68,7 +69,7 @@ describe('Engine Tests', () => {
                     filters: [{ id: 1, content: ['||example.org^', 'example.org##.ad'].join('\n') }],
                 });
 
-                expect(engine.getDocumentExceptionRules()).toStrictEqual([]);
+                expect(engine.getDocumentOrStealthExceptionRules()).toStrictEqual([]);
             },
         );
     });

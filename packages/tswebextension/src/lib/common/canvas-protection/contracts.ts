@@ -58,10 +58,6 @@ export type PreparedCondition =
         readonly pattern: string;
         readonly flags: CanvasConditionFlags;
     }
-    | {
-        readonly type: CanvasConditionType.And | CanvasConditionType.Or;
-        readonly operands: readonly PreparedCondition[];
-    }
     | { readonly type: CanvasConditionType.Not; readonly operand: PreparedCondition };
 
 /**

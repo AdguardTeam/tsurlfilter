@@ -64,7 +64,7 @@ describe('TsWebExtension', () => {
         config = getConfigurationMv2Fixture();
         vi.mocked(configurationMV2Validator.parse).mockImplementation((value) => value as ConfigurationMV2);
         vi.spyOn(engineApi, 'startEngine').mockResolvedValue({ conversionErrors: [] });
-        vi.spyOn(engineApi, 'getDocumentExceptionRuleTexts').mockReturnValue([]);
+        vi.spyOn(engineApi, 'getDocumentOrStealthExceptionRuleTexts').mockReturnValue([]);
     });
 
     afterEach(() => {
@@ -320,7 +320,7 @@ describe('TsWebExtension', () => {
             await instance.setStealthModeEnabled(false);
             expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
             await instance.setStealthModeEnabled(true);
-            vi.mocked(engineApi.getDocumentExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
+            vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
             await instance.configure({
                 ...config,
                 settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
@@ -343,7 +343,7 @@ describe('TsWebExtension', () => {
         });
 
         it('compiles exceptions of the engine into the registration', async () => {
-            vi.mocked(engineApi.getDocumentExceptionRuleTexts)
+            vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts)
                 .mockReturnValue(['@@||example.org^$stealth=fingerprinting']);
             await instance.initStorage();
             await instance.start({
@@ -356,7 +356,7 @@ describe('TsWebExtension', () => {
         });
 
         it('keeps the registration for the same rules on configure', async () => {
-            vi.mocked(engineApi.getDocumentExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
+            vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
             const initial = await enable();
             vi.mocked(browser.contentScripts.register).mockClear();
             await instance.configure({
@@ -369,7 +369,7 @@ describe('TsWebExtension', () => {
 
         it('updates the registration when configure brings new rules', async () => {
             const initial = await enable();
-            vi.mocked(engineApi.getDocumentExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
+            vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
             await instance.configure({
                 ...config,
                 settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
@@ -382,14 +382,14 @@ describe('TsWebExtension', () => {
 
         it('keeps the compiled policy for setters', async () => {
             const initial = await enable();
-            vi.mocked(engineApi.getDocumentExceptionRuleTexts).mockClear();
+            vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts).mockClear();
             await instance.setFilteringEnabled(false);
             await instance.setFilteringEnabled(true);
             await instance.setStealthModeEnabled(false);
             await instance.setStealthModeEnabled(true);
             await instance.setCanvasProtectionEnabled(false);
             await instance.setCanvasProtectionEnabled(true);
-            expect(engineApi.getDocumentExceptionRuleTexts).not.toHaveBeenCalled();
+            expect(engineApi.getDocumentOrStealthExceptionRuleTexts).not.toHaveBeenCalled();
             expect(instance.getCanvasProtectionState().requested.revision).toBe(initial.requested.revision);
         });
 
@@ -461,7 +461,7 @@ describe('TsWebExtension', () => {
 
         it('does not restart canvas registration through setters after stop', async () => {
             await enable();
-            vi.mocked(engineApi.getDocumentExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
+            vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
             await instance.configure({
                 ...config,
                 settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },

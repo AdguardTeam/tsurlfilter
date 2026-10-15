@@ -343,6 +343,7 @@ export class TsWebExtension implements AppInterface<
      * filters and user rules on the fly to a single merged rule set), starts
      * declarative filtering log and restarts the engine to reload cosmetic
      * rules.
+     * Recompiles canvas exclusions from the updated rules and allowlist.
      *
      * @param config A {@link ConfigurationMV3} to apply.
      *
@@ -480,7 +481,7 @@ export class TsWebExtension implements AppInterface<
                 verbose: configuration.verbose,
             });
             await engineApi.waitingForEngine;
-            this.canvasProtection.updatePolicy(engineApi.getDocumentExceptionRuleTexts(), allowlistApi);
+            this.canvasProtection.updatePolicy(engineApi.getDocumentOrStealthExceptionRuleTexts(), allowlistApi);
 
             // TODO: Recreate only dynamic ruleset, because static cannot be changed
             const rulesets = [

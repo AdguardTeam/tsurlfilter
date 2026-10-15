@@ -1,5 +1,15 @@
-import { NetworkRuleType, RuleParser } from '@adguard/agtree';
-import { SimpleRegex, StealthOptionName } from '@adguard/tsurlfilter';
+import {
+    type AnyRule,
+    NetworkRuleType,
+    PIPE_MODIFIER_SEPARATOR,
+    RuleParser,
+} from '@adguard/agtree';
+import {
+    fastHash,
+    NETWORK_RULE_OPTIONS,
+    SimpleRegex,
+    StealthOptionName,
+} from '@adguard/tsurlfilter';
 
 import { logger } from '../utils/logger';
 
@@ -13,15 +23,6 @@ export interface PolicyAllowlist {
     readonly enabled: boolean;
     readonly inverted: boolean;
     readonly domains: readonly string[];
-}
-
-/**
- * Modifiers supported by host-only canvas exceptions.
- */
-enum ExceptionModifier {
-    Stealth = 'stealth',
-    Document = 'document',
-    Important = 'important',
 }
 
 /**
@@ -50,15 +51,9 @@ export class CanvasPolicyCompiler {
     private static readonly WWW = '(?:www\\.)?';
 
     /**
-     * Any number of subdomains.
+     * One or more subdomain labels.
      */
-    private static readonly SUBDOMAINS = '(?:[^/?#:]+\\.)?';
-
-    /**
-     * Exactly one label before a domain, not counting a leading `www.`, like the
-     * upper-level domain lookup of frame matching.
-     */
-    private static readonly FIRST_LABEL = '(?:www\\.[^./?#:]+|(?!www\\.)[^./?#:]+)\\.';
+    private static readonly SUBDOMAINS = '(?:[^./?#:]+\\.)+';
 
     /**
      * Wildcard of an allowlist domain, limited to the host.
@@ -91,9 +86,9 @@ export class CanvasPolicyCompiler {
      */
     public static compile(ruleTexts: readonly string[], allowlist: PolicyAllowlist): ProtectionPolicyArtifact {
         const excludeMatches: string[] = [];
-        const documentExclusions: PreparedCondition[] = [];
+        const positivePatterns: string[] = [];
         for (const text of ruleTexts) {
-            let rule;
+            let rule: AnyRule;
             try {
                 rule = RuleParser.parse(text);
             } catch (error) {
@@ -104,10 +99,13 @@ export class CanvasPolicyCompiler {
                 continue;
             }
             const modifiers = rule.modifiers?.children ?? [];
-            const document = modifiers.find((modifier) => modifier.name.value === ExceptionModifier.Document);
-            const stealth = modifiers.find((modifier) => modifier.name.value === ExceptionModifier.Stealth);
+            const document = modifiers.find((modifier) => modifier.name.value === NETWORK_RULE_OPTIONS.DOCUMENT);
+            // The engine keeps the last `$stealth`; `findLast` is missing in older supported Firefox.
+            const stealths = modifiers.filter((modifier) => modifier.name.value === NETWORK_RULE_OPTIONS.STEALTH);
+            const stealth = stealths[stealths.length - 1];
             const fingerprinting = stealth !== undefined && (stealth.value === undefined
-                || stealth.value.value.split('|').some((option) => option.trim() === StealthOptionName.Fingerprinting));
+                || stealth.value.value.split(PIPE_MODIFIER_SEPARATOR)
+                    .some((option) => option.trim() === StealthOptionName.Fingerprinting));
             if (!document && !fingerprinting) {
                 continue;
             }
@@ -116,10 +114,10 @@ export class CanvasPolicyCompiler {
                     return true;
                 }
                 switch (modifier.name.value) {
-                    case ExceptionModifier.Stealth:
+                    case NETWORK_RULE_OPTIONS.STEALTH:
                         return false;
-                    case ExceptionModifier.Document:
-                    case ExceptionModifier.Important:
+                    case NETWORK_RULE_OPTIONS.DOCUMENT:
+                    case NETWORK_RULE_OPTIONS.IMPORTANT:
                         return modifier.value !== undefined;
                     default:
                         return true;
@@ -150,19 +148,24 @@ export class CanvasPolicyCompiler {
             }
             if (document) {
                 const regexp = SimpleRegex.patternToRegexp(`||${hostname}^`);
-                documentExclusions.push(CanvasPolicyCompiler.urlCondition(regexp));
+                positivePatterns.push(regexp);
             }
         }
-        if (allowlist.enabled) {
-            documentExclusions.push(...(allowlist.inverted
-                ? [CanvasPolicyCompiler.invertedAllowlistExclusion(allowlist.domains)]
-                : allowlist.domains.map((domain) => CanvasPolicyCompiler.allowlistExclusion(domain))));
+        if (allowlist.enabled && !allowlist.inverted) {
+            positivePatterns.push(...allowlist.domains.map((domain) => CanvasPolicyCompiler.allowlistPattern(domain)));
+        }
+        const documentExclusions: PreparedCondition[] = [];
+        if (positivePatterns.length > 0) {
+            documentExclusions.push(CanvasPolicyCompiler.urlCondition(positivePatterns));
+        }
+        if (allowlist.enabled && allowlist.inverted) {
+            documentExclusions.push(CanvasPolicyCompiler.invertedAllowlistExclusion(allowlist.domains));
         }
         const policy = {
             selectors: { matches: ['<all_urls>'], excludeMatches: [...new Set(excludeMatches)].sort() },
-            documentExclusions: CanvasPolicyCompiler.sortedUnique(documentExclusions),
+            documentExclusions,
         };
-        return { revision: CanvasPolicyCompiler.hash(JSON.stringify(policy)), ...policy };
+        return { revision: fastHash(JSON.stringify(policy)).toString(16).padStart(8, '0'), ...policy };
     }
 
     /**
@@ -184,7 +187,14 @@ export class CanvasPolicyCompiler {
             return undefined;
         }
         if (CanvasPolicyCompiler.NON_ASCII.test(host)) {
-            return hostname;
+            const writtenLabels = host.split('.');
+            const parsedLabels = hostname.split('.');
+            const punycodeOnly = writtenLabels.length === parsedLabels.length
+                && writtenLabels.every((label, index) => label.length > 0 && parsedLabels[index].length > 0
+                    && (CanvasPolicyCompiler.NON_ASCII.test(label)
+                        ? parsedLabels[index].startsWith('xn--')
+                        : parsedLabels[index] === label.toLowerCase()));
+            return punycodeOnly ? hostname : undefined;
         }
         // URL parsing also rewrites IPv4 shorthands such as `127.1`, which filtering matches literally.
         return hostname === host.toLowerCase() ? hostname : undefined;
@@ -197,42 +207,42 @@ export class CanvasPolicyCompiler {
      *
      * @param domain Allowlist entry.
      *
-     * @returns Document exclusion.
+     * @returns URL regular expression source.
      */
-    private static allowlistExclusion(domain: string): PreparedCondition {
+    private static allowlistPattern(domain: string): string {
         const subdomains = domain.startsWith('*.');
         const host = SimpleRegex.escapeRegexSpecials(subdomains ? domain.slice(2) : domain)
             .replaceAll('\\*', CanvasPolicyCompiler.HOST_WILDCARD);
-        return CanvasPolicyCompiler.hostCondition(
-            subdomains ? CanvasPolicyCompiler.SUBDOMAINS : CanvasPolicyCompiler.WWW,
+        return CanvasPolicyCompiler.hostPattern(
+            subdomains ? `(?:${CanvasPolicyCompiler.SUBDOMAINS})?` : CanvasPolicyCompiler.WWW,
             host,
         );
     }
 
     /**
-     * Matches every top-level document outside the inverted allowlist, as frame matching does:
-     * the host without `www.` equals an entry, or a `*.` entry equals that host without its first label.
+     * Matches hosted top-level documents outside the inverted allowlist. Plain entries cover the
+     * host and `www.`, while `*.` entries cover subdomains at any depth, excluding the host itself.
      *
      * @param domains Allowlist entries.
      *
      * @returns Document exclusion.
      */
     private static invertedAllowlistExclusion(domains: readonly string[]): PreparedCondition {
-        const operands = [
-            CanvasPolicyCompiler.urlCondition(CanvasPolicyCompiler.NO_AUTHORITY),
+        const patterns = [
+            CanvasPolicyCompiler.NO_AUTHORITY,
             ...domains.map((domain) => (domain.startsWith('*.')
-                ? CanvasPolicyCompiler.hostCondition(
-                    CanvasPolicyCompiler.FIRST_LABEL,
+                ? CanvasPolicyCompiler.hostPattern(
+                    CanvasPolicyCompiler.SUBDOMAINS,
                     SimpleRegex.escapeRegexSpecials(domain.slice(2)),
                 )
-                : CanvasPolicyCompiler.hostCondition(
+                : CanvasPolicyCompiler.hostPattern(
                     CanvasPolicyCompiler.WWW,
                     SimpleRegex.escapeRegexSpecials(domain),
                 ))),
         ];
         return {
             type: CanvasConditionType.Not,
-            operand: { type: CanvasConditionType.Or, operands: CanvasPolicyCompiler.sortedUnique(operands) },
+            operand: CanvasPolicyCompiler.urlCondition(patterns),
         };
     }
 
@@ -242,50 +252,21 @@ export class CanvasPolicyCompiler {
      * @param prefix Regular expression of the labels before the host.
      * @param host Escaped host regular expression.
      *
-     * @returns URL predicate.
+     * @returns URL regular expression source.
      */
-    private static hostCondition(prefix: string, host: string): PreparedCondition {
-        return CanvasPolicyCompiler.urlCondition(
-            `${CanvasPolicyCompiler.URL_START}${prefix}${host}${CanvasPolicyCompiler.HOST_END}`,
-        );
+    private static hostPattern(prefix: string, host: string): string {
+        return `${CanvasPolicyCompiler.URL_START}${prefix}${host}${CanvasPolicyCompiler.HOST_END}`;
     }
 
     /**
-     * Creates a predicate evaluated against the top document's URL.
+     * Combines patterns into a single predicate evaluated against the top document's URL.
      *
-     * @param pattern Regular expression source.
+     * @param patterns Regular expression sources.
      *
-     * @returns URL predicate.
+     * @returns URL predicate with deterministic, deduplicated alternatives.
      */
-    private static urlCondition(pattern: string): PreparedCondition {
+    private static urlCondition(patterns: readonly string[]): PreparedCondition {
+        const pattern = [...new Set(patterns)].sort().map((source) => `(?:${source})`).join('|');
         return { type: CanvasConditionType.UrlRegexp, pattern, flags: CanvasConditionFlags.IgnoreCase };
-    }
-
-    /**
-     * Sorts and deduplicates JSON values by their serialized representations.
-     *
-     * @param values Values to canonicalize.
-     *
-     * @returns Unique values in deterministic order.
-     */
-    private static sortedUnique<T>(values: readonly T[]): T[] {
-        return [...new Map(values.map((value) => [JSON.stringify(value), value]))]
-            .sort(([a], [b]) => (a < b ? -1 : 1))
-            .map(([, value]) => value);
-    }
-
-    /**
-     * Computes 32-bit FNV-1a over UTF-16 character codes.
-     *
-     * @param text Canonical serialized policy.
-     *
-     * @returns Eight hexadecimal digits identifying the policy.
-     */
-    private static hash(text: string): string {
-        let hash = 0x811c9dc5;
-        for (let index = 0; index < text.length; index += 1) {
-            hash = Math.imul(hash ^ text.charCodeAt(index), 0x01000193);
-        }
-        return (hash >>> 0).toString(16).padStart(8, '0');
     }
 }

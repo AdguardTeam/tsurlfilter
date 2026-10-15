@@ -23,6 +23,7 @@ This is a TypeScript library that implements AdGuard's content blocking rules.
                 - [Example](#example)
             - [**matchRequest**](#matchrequest)
             - [**matchFrame**](#matchframe)
+            - [**getDocumentOrStealthExceptionRules**](#getdocumentorstealthexceptionrules)
             - [Starting engine](#starting-engine)
             - [Matching requests](#matching-requests)
             - [Retrieving cosmetic data](#retrieving-cosmetic-data)
@@ -182,6 +183,17 @@ matchRequest(request: Request, frameRule: NetworkRule | null = null): MatchingRe
   */
 matchFrame(frameUrl: string): NetworkRule | null;
 ```
+
+##### **getDocumentOrStealthExceptionRules**
+
+```ts
+getDocumentOrStealthExceptionRules(): NetworkRule[];
+```
+
+Returns exceptions whose modifiers include `$stealth` or `$document` as
+written, selected by a build-time substring prefilter, with `$badfilter`
+cancellations applied. An equivalent exception spelled out as
+`$elemhide,content,urlblock,jsinject` is not collected.
 
 ##### Starting engine
 

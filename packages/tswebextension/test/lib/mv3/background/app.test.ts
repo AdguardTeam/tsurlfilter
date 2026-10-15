@@ -79,7 +79,7 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
     it('compiles exceptions after the engine restarts on configure', async () => {
         appContext.isStorageInitialized = true;
         prepareConfigure();
-        vi.spyOn(engineApi, 'getDocumentExceptionRuleTexts')
+        vi.spyOn(engineApi, 'getDocumentOrStealthExceptionRuleTexts')
             .mockReturnValue(['@@||example.org^$stealth=fingerprinting']);
         const config = getConfigurationMv3Fixture();
         config.settings.filteringEnabled = true;
@@ -97,7 +97,7 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
         appContext.isStorageInitialized = true;
         prepareConfigure();
         vi.spyOn(configureBoundaries, 'removeAllFilteringRules').mockResolvedValue(undefined);
-        const rules = vi.spyOn(engineApi, 'getDocumentExceptionRuleTexts').mockReturnValue([]);
+        const rules = vi.spyOn(engineApi, 'getDocumentOrStealthExceptionRuleTexts').mockReturnValue([]);
         rules.mockClear();
         const config = getConfigurationMv3Fixture();
         config.settings.filteringEnabled = false;
