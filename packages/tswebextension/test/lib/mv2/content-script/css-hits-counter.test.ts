@@ -10,6 +10,8 @@ import {
 } from 'vitest';
 
 import { CssHitsCounter } from '../../../../src/lib';
+import { PendingProbesCollector } from '../../../../src/lib/common/content-script/pending-probes-collector';
+import { mockMutationObserver, MutationObserverMock } from '../../../helpers/mutation-observer';
 
 describe('CssHitsCounter', () => {
     // Mock document
@@ -61,87 +63,38 @@ describe('CssHitsCounter', () => {
             expect(stats).not.toBeNull();
         });
 
-        let mutationObserverRef: any;
+        const restoreMutationObserver = mockMutationObserver();
 
-        /**
-         * Mock mutation observer class.
-         * In case original class doesn't work properly in vitest jsdom environment.
-         */
-        window.MutationObserver = class {
-            private callback: MutationCallback;
+        try {
+            const cssHitsCounter = new CssHitsCounter(onCssHitsFound);
 
-            /**
-             * Mock constructor.
-             *
-             * @param callback Mutation callback.
-             */
-            constructor(callback: MutationCallback) {
-                this.callback = callback;
+            const template = document.createElement('div');
+            // eslint-disable-next-line max-len
+            template.innerHTML = '<div id="mutationDiv" style="display: none !important; --adguard-hit:\'adguard3%3B3\';"></div>';
 
-                // Keep the link to current instance
-                // eslint-disable-next-line @typescript-eslint/no-this-alias
-                mutationObserverRef = this;
-            }
+            const mutationRecord = {
+                addedNodes: [template],
+                removedNodes: [],
+                type: 'childList',
+                attributeName: 'style',
+                target: document.body,
+            };
+            MutationObserverMock.last!.trigger([mutationRecord as unknown as MutationRecord]);
 
-            /**
-             * Disconnect mock.
-             */
-            // eslint-disable-next-line class-methods-use-this
-            disconnect(): void {
-                // do nothing;
-            }
+            expect(onCssHitsFound).toHaveBeenCalledTimes(2);
+            expect(onCssHitsFound).toHaveBeenLastCalledWith([{
+                filterId: 3,
+                ruleIndex: 3,
+                element: '<div id="mutationDiv" style="display: none !important; --adguard-hit:\'adguard3%3B3\';">',
+            }]);
 
-            /**
-             * Observe mock.
-             */
-            // eslint-disable-next-line class-methods-use-this
-            observe(): void {
-                // do nothing;
-            }
+            // The probe must not stay in the document.
+            expect(template.parentNode).toBeNull();
 
-            /**
-             * Take records mock.
-             *
-             * @returns Empty array.
-             */
-            // eslint-disable-next-line class-methods-use-this
-            takeRecords(): MutationRecord[] {
-                // do nothing;
-                return [];
-            }
-
-            /**
-             * Mock trigger mutations.
-             *
-             * @param mutations Mutations to trigger.
-             */
-            public trigger(mutations: MutationRecord[]): void {
-                this.callback(mutations, this);
-            }
-        };
-
-        const cssHitsCounter = new CssHitsCounter(onCssHitsFound);
-
-        const template = document.createElement('div');
-        // eslint-disable-next-line max-len
-        template.innerHTML = '<div id="mutationDiv" style="display: none !important; --adguard-hit:\'adguard3%3B3\';"></div>';
-
-        const mutationRecord = {
-            addedNodes: [template],
-            type: 'childList',
-            attributeName: 'style',
-            target: document.body,
-        };
-        mutationObserverRef!.trigger([mutationRecord]);
-
-        expect(onCssHitsFound).toHaveBeenCalledTimes(2);
-        expect(onCssHitsFound).toHaveBeenLastCalledWith([{
-            filterId: 3,
-            ruleIndex: 3,
-            element: '<div id="mutationDiv" style="display: none !important; --adguard-hit:\'adguard3%3B3\';">',
-        }]);
-
-        cssHitsCounter.stop();
+            cssHitsCounter.stop();
+        } finally {
+            restoreMutationObserver();
+        }
     });
 
     it('checks if countAffectedByExtendedCss is ok', () => {
@@ -208,5 +161,305 @@ describe('CssHitsCounter', () => {
         counter.stop();
         target.remove();
         style.remove();
+    });
+
+    it('counts probes collected before the counter initialization (AG-48018)', () => {
+        const style = document.createElement('style');
+        style.textContent = "div.pending-bait { display: none !important; --adguard-hit: 'adguard7%3B7' !important; }";
+        document.head.appendChild(style);
+
+        const bait = document.createElement('div');
+        bait.className = 'pending-bait';
+
+        const onCssHitsFound = vi.fn();
+        const counter = new CssHitsCounter(onCssHitsFound, {
+            pendingProbes: [{
+                element: bait,
+                target: document.body,
+                previousSibling: null,
+                nextSibling: null,
+            }],
+        });
+
+        const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+        expect(flat).toContainEqual(expect.objectContaining({ filterId: 7, ruleIndex: 7 }));
+
+        // The probe must not stay in the document.
+        expect(bait.parentNode).toBeNull();
+        expect(document.body.contains(bait)).toBe(false);
+
+        counter.stop();
+        style.remove();
+    });
+
+    it('restores a pending probe at its original position', () => {
+        const style = document.createElement('style');
+        // The marker is only applied to the second child, so the probe must
+        // be reinserted between its original siblings to be counted.
+        style.textContent = [
+            'div.position-test > div:nth-child(2)',
+            "{ display: none !important; --adguard-hit: 'adguard8%3B8' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        const container = document.createElement('div');
+        container.className = 'position-test';
+        const first = document.createElement('div');
+        const second = document.createElement('div');
+        container.appendChild(first);
+        container.appendChild(second);
+        document.body.appendChild(container);
+
+        const bait = document.createElement('div');
+        bait.className = 'position-bait';
+
+        const onCssHitsFound = vi.fn();
+        const counter = new CssHitsCounter(onCssHitsFound, {
+            pendingProbes: [{
+                element: bait,
+                target: container,
+                previousSibling: first,
+                nextSibling: second,
+            }],
+        });
+
+        const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+        expect(flat).toContainEqual(expect.objectContaining({ filterId: 8, ruleIndex: 8 }));
+        expect(bait.parentNode).toBeNull();
+
+        counter.stop();
+        style.remove();
+        container.remove();
+    });
+
+    it('observes mutations during loading and scans the page only after interactive', () => {
+        const restoreMutationObserver = mockMutationObserver();
+        let readyState = 'loading';
+        Object.defineProperty(document, 'readyState', {
+            configurable: true,
+            get: () => readyState,
+        });
+
+        const style = document.createElement('style');
+        style.textContent = "div.loading-bait { display: none !important; --adguard-hit: 'adguard5%3B5' !important; }";
+        document.head.appendChild(style);
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            // The full scan is deferred until the document becomes
+            // interactive, so the fixture elements must not be counted yet.
+            expect(onCssHitsFound).not.toHaveBeenCalled();
+
+            const bait = document.createElement('div');
+            bait.className = 'loading-bait';
+
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(onCssHitsFound).toHaveBeenCalledTimes(1);
+            expect(onCssHitsFound.mock.calls[0][0]).toEqual([
+                expect.objectContaining({ filterId: 5, ruleIndex: 5 }),
+            ]);
+
+            // The bait must not stay in the document.
+            expect(bait.parentNode).toBeNull();
+
+            readyState = 'interactive';
+            document.dispatchEvent(new Event('readystatechange'));
+
+            // The full scan is performed after the document becomes
+            // interactive and counts the fixture elements.
+            const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(flat).toEqual(expect.arrayContaining([
+                expect.objectContaining({ filterId: 1, ruleIndex: 1 }),
+                expect.objectContaining({ filterId: 2, ruleIndex: 2 }),
+            ]));
+
+            counter.stop();
+        } finally {
+            delete (document as unknown as { readyState?: string }).readyState;
+            style.remove();
+            restoreMutationObserver();
+        }
+    });
+
+    it('retries pending probes until the marker is applied', () => {
+        vi.useFakeTimers();
+
+        const bait = document.createElement('div');
+        bait.className = 'late-bait';
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, {
+                pendingProbes: [{
+                    element: bait,
+                    target: document.body,
+                    previousSibling: null,
+                    nextSibling: null,
+                }],
+            });
+
+            // No marker styles yet, nothing to count for the probe.
+            const getProbeHits = (): unknown[] => onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 9);
+            expect(getProbeHits()).toHaveLength(0);
+
+            const style = document.createElement('style');
+            style.textContent = "div.late-bait { display: none !important; --adguard-hit: 'adguard9%3B9' !important; }";
+            document.head.appendChild(style);
+
+            vi.advanceTimersByTime(100);
+
+            expect(getProbeHits()).toHaveLength(1);
+            expect(bait.parentNode).toBeNull();
+
+            counter.stop();
+            style.remove();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('counts probes added after the counter initialization', () => {
+        vi.useFakeTimers();
+
+        const style = document.createElement('style');
+        style.textContent = "div.added-bait { display: none !important; --adguard-hit: 'adguard10%3B10' !important; }";
+        document.head.appendChild(style);
+
+        try {
+            const bait = document.createElement('div');
+            bait.className = 'added-bait';
+
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            counter.addPendingProbes([{
+                element: bait,
+                target: document.body,
+                previousSibling: null,
+                nextSibling: null,
+            }]);
+
+            vi.advanceTimersByTime(1);
+
+            const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(flat).toContainEqual(expect.objectContaining({ filterId: 10, ruleIndex: 10 }));
+            expect(bait.parentNode).toBeNull();
+
+            counter.stop();
+        } finally {
+            vi.useRealTimers();
+            style.remove();
+        }
+    });
+
+    it('takes probes from the collector and stops it together with the counter', () => {
+        const restoreMutationObserver = mockMutationObserver();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.collector-bait',
+            "{ display: none !important; --adguard-hit: 'adguard11%3B11' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        try {
+            const collector = new PendingProbesCollector();
+            collector.start();
+            const collectorObserver = MutationObserverMock.last!;
+
+            const bait = document.createElement('div');
+            bait.className = 'collector-bait';
+            collectorObserver.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, { pendingProbesCollector: collector });
+
+            const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(flat).toContainEqual(expect.objectContaining({ filterId: 11, ruleIndex: 11 }));
+            expect(bait.parentNode).toBeNull();
+
+            counter.stop();
+
+            // The collector must be stopped together with the counter.
+            const anotherBait = document.createElement('div');
+            collectorObserver.trigger([{
+                addedNodes: [anotherBait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+            expect(collector.takePendingProbes()).toHaveLength(0);
+        } finally {
+            style.remove();
+            restoreMutationObserver();
+        }
+    });
+
+    it('counts probes delivered by the collector after initialization', () => {
+        const restoreMutationObserver = mockMutationObserver();
+        vi.useFakeTimers();
+
+        try {
+            const collector = new PendingProbesCollector();
+            collector.start();
+            const collectorObserver = MutationObserverMock.last!;
+
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, { pendingProbesCollector: collector });
+
+            const style = document.createElement('style');
+            style.textContent = [
+                'div.streamed-bait',
+                "{ display: none !important; --adguard-hit: 'adguard12%3B12' !important; }",
+            ].join(' ');
+            document.head.appendChild(style);
+
+            // The element is added during loading and removed after the
+            // counter exists: the collector must deliver it.
+            const bait = document.createElement('div');
+            bait.className = 'streamed-bait';
+            document.body.appendChild(bait);
+            collectorObserver.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            bait.remove();
+            collectorObserver.trigger([{
+                addedNodes: [],
+                removedNodes: [bait],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            vi.advanceTimersByTime(1);
+
+            const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(flat).toContainEqual(expect.objectContaining({ filterId: 12, ruleIndex: 12 }));
+            expect(bait.parentNode).toBeNull();
+
+            counter.stop();
+            style.remove();
+        } finally {
+            vi.useRealTimers();
+            restoreMutationObserver();
+        }
     });
 });

@@ -1,6 +1,7 @@
 import { type ExtCssConfiguration, ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
 
 import { CssHitsCounter } from '../../common/content-script/css-hits-counter';
+import { PendingProbesCollector } from '../../common/content-script/pending-probes-collector';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
 import { MessageType } from '../../common/message-constants';
@@ -34,6 +35,11 @@ export class CosmeticController {
     private cssHitsCounter?: CssHitsCounter;
 
     /**
+     * Collects short-lived elements created before the counter initialization.
+     */
+    private pendingProbesCollector = new PendingProbesCollector();
+
+    /**
      * Creates new {@link CosmeticController} instance.
      */
     constructor() {
@@ -47,6 +53,10 @@ export class CosmeticController {
     public init(): void {
         const elementCollapser = new ElementCollapser();
         elementCollapser.start();
+        // Start observing the DOM before the asynchronous cosmetic data
+        // request, so that elements created and removed during the document
+        // loading are not missed by the CSS hits counter.
+        this.pendingProbesCollector.start();
         this.process();
     }
 
@@ -97,7 +107,11 @@ export class CosmeticController {
         }
 
         if (areHitsStatsCollected) {
-            this.cssHitsCounter = CosmeticController.createCssHitsCounter();
+            this.cssHitsCounter = CosmeticController.createCssHitsCounter(
+                this.pendingProbesCollector,
+            );
+        } else {
+            this.pendingProbesCollector.stop();
         }
 
         CosmeticController.repairNativeCss(nativeCssSelectors);
@@ -171,14 +185,16 @@ export class CosmeticController {
     /**
      * Create new {@link CssHitsCounter} instance.
      *
+     * @param pendingProbesCollector Collector of short-lived elements.
+     *
      * @returns CssHitsCounter instance.
      */
-    private static createCssHitsCounter(): CssHitsCounter {
+    private static createCssHitsCounter(pendingProbesCollector: PendingProbesCollector): CssHitsCounter {
         return new CssHitsCounter((stats) => {
             sendAppMessage({
                 type: MessageType.SaveCssHitsStats,
                 payload: stats,
             });
-        });
+        }, { pendingProbesCollector });
     }
 }

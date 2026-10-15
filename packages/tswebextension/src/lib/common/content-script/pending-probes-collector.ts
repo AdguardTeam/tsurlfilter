@@ -1,0 +1,311 @@
+/**
+ * Detached element collected by {@link PendingProbesCollector} before the
+ * CSS hits counter is created.
+ *
+ * The element reference is kept because the hidden state is encoded in the
+ * computed style and can only be read while the element is in the document.
+ */
+export interface PendingProbe {
+    /**
+     * Detached element.
+     */
+    element: Element;
+
+    /**
+     * Node the element was added to or removed from.
+     */
+    target: Node;
+
+    /**
+     * Sibling preceding the element at the moment of the mutation, if any.
+     */
+    previousSibling: Node | null;
+
+    /**
+     * Sibling following the element at the moment of the mutation, if any.
+     */
+    nextSibling: Node | null;
+}
+
+/**
+ * Collects short-lived elements that are added and removed during the
+ * document loading.
+ *
+ * The counter is created asynchronously, after the cosmetic data is received
+ * from the background. Until then, the page can already create and remove
+ * anti-adblock probe elements, for example from a script in `<head>`. This
+ * collector observes the DOM from the very beginning of the document loading
+ * and keeps references to such elements, so that the counter can check them
+ * once it is initialized.
+ *
+ * The collector stays alive after the counter is initialized and keeps
+ * feeding newly collected probes to it: a bait can be added during the
+ * loading and removed later, after the counter already exists. It stops
+ * observing when it is stopped explicitly or after
+ * {@link MAX_OBSERVATION_TIME_MS}.
+ */
+export class PendingProbesCollector {
+    /**
+     * Maximum number of elements kept for the counter.
+     *
+     * The queue is only used during the short window between the document
+     * start and the counter initialization, but pathological pages can mutate
+     * faster than we initialize. When the queue is full, the oldest element
+     * is evicted: pages usually create unrelated short-lived elements before
+     * the actual baits, so the most recent probes are the valuable ones.
+     */
+    private static readonly MAX_PENDING_PROBES = 500;
+
+    /**
+     * Maximum observation time in milliseconds.
+     *
+     * If the counter is not initialized by then (e.g. the background is not
+     * responding), the observer is disconnected to avoid a permanent
+     * overhead on the page. Already collected elements are kept for a
+     * possible later take.
+     */
+    private static readonly MAX_OBSERVATION_TIME_MS = 30000;
+
+    /**
+     * Tags ignored by the collector.
+     */
+    private static readonly IGNORED_TAGS = ['script', 'html', 'body'];
+
+    /**
+     * Mutation observer.
+     */
+    private observer: MutationObserver | null = null;
+
+    /**
+     * Collected elements.
+     */
+    private pendingProbes: PendingProbe[] = [];
+
+    /**
+     * Elements added during the observation window.
+     *
+     * Used to detect elements that were added and then removed in a later
+     * task: such elements are attached when the mutation callback for their
+     * addition runs, so they are collected on removal.
+     */
+    private addedElements = new WeakSet<Element>();
+
+    /**
+     * Deduplication set for collected elements.
+     */
+    private collectedElements = new WeakSet<Element>();
+
+    /**
+     * Timer disconnecting the observer after {@link MAX_OBSERVATION_TIME_MS}.
+     */
+    private observationTimeoutId: number | null = null;
+
+    /**
+     * Callback receiving newly collected probes.
+     */
+    private onProbesCollected: ((probes: PendingProbe[]) => void) | null = null;
+
+    /**
+     * Starts DOM observation.
+     */
+    public start(): void {
+        if (this.observer) {
+            return;
+        }
+
+        const { MutationObserver } = window;
+        if (!MutationObserver) {
+            return;
+        }
+
+        this.observer = new MutationObserver((mutationRecords) => {
+            this.collectProbes(mutationRecords, true);
+        });
+
+        // `document.documentElement` may not exist yet at `document_start`,
+        // so observe the document itself.
+        this.observer.observe(document, {
+            childList: true,
+            subtree: true,
+        });
+
+        this.observationTimeoutId = window.setTimeout(() => {
+            this.observationTimeoutId = null;
+            this.disconnect();
+        }, PendingProbesCollector.MAX_OBSERVATION_TIME_MS);
+    }
+
+    /**
+     * Sets a callback receiving newly collected probes.
+     *
+     * Probes collected before the callback is set are passed to it
+     * immediately.
+     *
+     * @param callback Callback receiving collected probes, or `null` to
+     * unsubscribe.
+     */
+    public setOnProbesCollected(callback: ((probes: PendingProbe[]) => void) | null): void {
+        this.onProbesCollected = callback;
+
+        if (callback && this.pendingProbes.length > 0) {
+            const probes = this.takePendingProbes();
+            if (probes.length > 0) {
+                callback(probes);
+            }
+        }
+    }
+
+    /**
+     * Returns collected probes and keeps observing.
+     *
+     * Mutation records that have not been delivered yet are processed before
+     * returning, so no collected element is lost at the handover to the
+     * counter.
+     *
+     * @returns Probes collected since the previous take.
+     */
+    public takePendingProbes(): PendingProbe[] {
+        this.flushQueuedRecords();
+
+        const probes = this.pendingProbes;
+        this.pendingProbes = [];
+
+        return probes;
+    }
+
+    /**
+     * Stops observation and drops collected elements.
+     */
+    public stop(): void {
+        this.onProbesCollected = null;
+        this.disconnect();
+        this.pendingProbes = [];
+    }
+
+    /**
+     * Disconnects the observer and cancels the observation timeout.
+     */
+    private disconnect(): void {
+        if (this.observer) {
+            this.observer.disconnect();
+            this.observer = null;
+        }
+
+        if (this.observationTimeoutId !== null) {
+            window.clearTimeout(this.observationTimeoutId);
+            this.observationTimeoutId = null;
+        }
+    }
+
+    /**
+     * Processes mutation records that are queued but not delivered yet.
+     */
+    private flushQueuedRecords(): void {
+        if (this.observer) {
+            this.collectProbes(this.observer.takeRecords(), false);
+        }
+    }
+
+    /**
+     * Collects detached elements from mutation records.
+     *
+     * @param mutationRecords Mutation records delivered by the observer.
+     * @param notify Flag telling whether the subscriber should be notified
+     * about newly collected probes.
+     */
+    private collectProbes(mutationRecords: MutationRecord[], notify: boolean): void {
+        let hasNewProbes = false;
+
+        for (let i = 0; i < mutationRecords.length; i += 1) {
+            const mutationRecord = mutationRecords[i];
+
+            const { addedNodes } = mutationRecord;
+            for (let j = 0; j < addedNodes.length; j += 1) {
+                const node = addedNodes[j];
+                if (!PendingProbesCollector.isCollectableNode(node)) {
+                    continue;
+                }
+
+                this.addedElements.add(node);
+
+                // The element was added and already removed before the
+                // observer callback has been invoked.
+                if (!node.parentNode) {
+                    hasNewProbes = this.collectProbe(node, mutationRecord) || hasNewProbes;
+                }
+            }
+
+            const { removedNodes } = mutationRecord;
+            for (let j = 0; j < removedNodes.length; j += 1) {
+                const node = removedNodes[j];
+                if (!PendingProbesCollector.isCollectableNode(node)) {
+                    continue;
+                }
+
+                // The element was added during the observation window and
+                // removed later, so its addition callback saw it attached.
+                if (this.addedElements.has(node) && !node.parentNode) {
+                    hasNewProbes = this.collectProbe(node, mutationRecord) || hasNewProbes;
+                }
+            }
+        }
+
+        if (!hasNewProbes || !notify || !this.onProbesCollected) {
+            return;
+        }
+
+        const probes = this.pendingProbes;
+        this.pendingProbes = [];
+        this.onProbesCollected(probes);
+    }
+
+    /**
+     * Stores a detached element.
+     *
+     * If the queue is full, the oldest element is evicted.
+     *
+     * @param element Detached element.
+     * @param mutationRecord Mutation record the element was found in.
+     *
+     * @returns True if the element was stored.
+     */
+    private collectProbe(element: Element, mutationRecord: MutationRecord): boolean {
+        if (this.collectedElements.has(element)) {
+            return false;
+        }
+
+        this.collectedElements.add(element);
+
+        if (this.pendingProbes.length >= PendingProbesCollector.MAX_PENDING_PROBES) {
+            const evictedProbe = this.pendingProbes.shift();
+            if (evictedProbe) {
+                // The evicted element was never handed to the counter, so it
+                // may be collected again if the page re-uses it as a probe.
+                this.collectedElements.delete(evictedProbe.element);
+            }
+        }
+
+        this.pendingProbes.push({
+            element,
+            target: mutationRecord.target,
+            previousSibling: mutationRecord.previousSibling,
+            nextSibling: mutationRecord.nextSibling,
+        });
+
+        return true;
+    }
+
+    /**
+     * Checks if the node should be collected.
+     *
+     * @param node Node to check.
+     *
+     * @returns True if the node is an element and its tag is not ignored.
+     */
+    private static isCollectableNode(node: Node): node is Element {
+        // `node.ELEMENT_NODE` is used instead of the `Element` global, so the
+        // check does not depend on the global scope availability.
+        return node.nodeType === node.ELEMENT_NODE
+            && !PendingProbesCollector.IGNORED_TAGS.includes((node as Element).tagName.toLowerCase());
+    }
+}

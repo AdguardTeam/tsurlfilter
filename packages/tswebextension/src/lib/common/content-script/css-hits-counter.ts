@@ -4,6 +4,7 @@ import { SEMICOLON } from '../constants';
 import { type RuleInfoBasic } from '../rule-info';
 
 import { HitsStorage } from './hits-storage';
+import { type PendingProbe, type PendingProbesCollector } from './pending-probes-collector';
 import { ElementUtils } from './utils/element-utils';
 
 /**
@@ -25,7 +26,22 @@ interface CssHitsCounterOptions {
      * where logs are printed in the developer tools console.
      * By default, is true.
      */
-    elementToString: boolean;
+    elementToString?: boolean;
+
+    /**
+     * Elements that were added and removed before the counter was created
+     * (see {@link PendingProbesCollector}).
+     */
+    pendingProbes?: PendingProbe[];
+
+    /**
+     * Collector of short-lived elements. When set, the counter takes the
+     * already collected probes and subscribes to the collector, so probes
+     * collected later — e.g. elements added during the loading and removed
+     * after the counter initialization — are counted as well. The collector
+     * is stopped together with the counter.
+     */
+    pendingProbesCollector?: PendingProbesCollector;
 }
 
 /**
@@ -61,6 +77,20 @@ export class CssHitsCounter {
     private static readonly COUNT_ALL_CSS_HITS_TIMEOUT_MS = 500;
 
     /**
+     * Delay between attempts to count pending probes, in milliseconds.
+     *
+     * The marker styles may be injected slightly later than the cosmetic
+     * data is received, so a probe that does not match any rule yet is
+     * reinserted and checked again.
+     */
+    private static readonly PENDING_PROBES_RETRY_DELAY_MS = 100;
+
+    /**
+     * Number of attempts to count pending probes.
+     */
+    private static readonly PENDING_PROBES_MAX_ATTEMPTS = 5;
+
+    /**
      * Callback function for counted css hits handling.
      */
     private onCssHitsFoundCallback: (x: ICountedElement[]) => void;
@@ -81,11 +111,42 @@ export class CssHitsCounter {
     private countIsWorking = false;
 
     /**
+     * Probes collected before the counter initialization.
+     */
+    private pendingProbes: PendingProbe[] = [];
+
+    /**
+     * Collector feeding the counter with short-lived elements, if any.
+     */
+    private pendingProbesCollector: PendingProbesCollector | null = null;
+
+    /**
+     * Number of counting attempts performed for {@link pendingProbes}.
+     */
+    private pendingProbesAttempt = 0;
+
+    /**
+     * Timer for the next attempt to count {@link pendingProbes}.
+     */
+    private pendingProbesTimeoutId: number | null = null;
+
+    /**
+     * Lifecycle cleanup flag. Delayed callbacks check it before doing work.
+     */
+    private stopped = false;
+
+    /**
      * Flag determining if we should convert elements to string, or not.
      *
      * @private
      */
     private elementToString = DEFAULT_ELEMENT_TO_STRING;
+
+    /**
+     * Bound readystatechange listener, stored so stop() can remove the same
+     * function reference.
+     */
+    private readonly boundStartCounter = this.startCounter.bind(this);
 
     /**
      * This function prepares calculation of css hits.
@@ -96,8 +157,25 @@ export class CssHitsCounter {
      */
     constructor(callback: (x: ICountedElement[]) => void, options?: CssHitsCounterOptions) {
         if (options) {
-            const { elementToString } = options;
-            this.elementToString = elementToString;
+            const { elementToString, pendingProbes, pendingProbesCollector } = options;
+            if (elementToString !== undefined) {
+                this.elementToString = elementToString;
+            }
+            if (pendingProbes && pendingProbes.length > 0) {
+                this.pendingProbes = pendingProbes;
+            }
+            if (pendingProbesCollector) {
+                this.pendingProbesCollector = pendingProbesCollector;
+
+                const collectedProbes = pendingProbesCollector.takePendingProbes();
+                if (collectedProbes.length > 0) {
+                    this.pendingProbes.push(...collectedProbes);
+                }
+
+                pendingProbesCollector.setOnProbesCollected((probes) => {
+                    this.addPendingProbes(probes);
+                });
+            }
         }
 
         this.onCssHitsFoundCallback = callback;
@@ -106,18 +184,72 @@ export class CssHitsCounter {
             || document.readyState === 'interactive') {
             this.countCssHits();
         } else {
-            document.addEventListener('readystatechange', this.startCounter.bind(this));
+            // Start observing immediately during the document loading.
+            // Waiting for `readystatechange` misses elements that are added
+            // and removed before the document becomes interactive.
+            this.countCssHitsForMutations();
+            document.addEventListener('readystatechange', this.boundStartCounter);
         }
+
+        // Probes collected before the counter initialization are counted
+        // after the observer is attached, so no mutation can slip between
+        // the two.
+        this.countPendingProbes();
     }
 
     /**
      * Stops css hits counting process.
      */
     public stop(): void {
+        this.stopped = true;
         this.onCssHitsFoundCallback = (): void => {};
+
         if (this.observer) {
             this.observer.disconnect();
         }
+
+        if (this.pendingProbesTimeoutId !== null) {
+            window.clearTimeout(this.pendingProbesTimeoutId);
+            this.pendingProbesTimeoutId = null;
+        }
+
+        if (this.pendingProbesCollector) {
+            this.pendingProbesCollector.stop();
+            this.pendingProbesCollector = null;
+        }
+
+        this.pendingProbes = [];
+        document.removeEventListener('readystatechange', this.boundStartCounter);
+    }
+
+    /**
+     * Adds probes collected after the counter initialization.
+     *
+     * The probes are counted by the regular probe processing pass. If a pass
+     * or a retry is already scheduled, the new probes are picked up by it.
+     *
+     * @param probes Probes collected by {@link PendingProbesCollector}.
+     */
+    public addPendingProbes(probes: PendingProbe[]): void {
+        if (this.stopped || probes.length === 0) {
+            return;
+        }
+
+        this.pendingProbes.push(...probes);
+
+        if (this.pendingProbesTimeoutId !== null) {
+            // A pass or a retry is already scheduled and will pick the new
+            // probes up.
+            return;
+        }
+
+        // No pass is scheduled: start one for the collected probes with a
+        // fresh retry budget.
+        this.pendingProbesAttempt = 0;
+        this.pendingProbesTimeoutId = window.setTimeout(() => {
+            this.pendingProbesTimeoutId = null;
+            this.countPendingProbes();
+        }, 0);
     }
 
     /**
@@ -181,11 +313,17 @@ export class CssHitsCounter {
      * Starts counting process.
      */
     private startCounter(): void {
+        if (this.stopped) {
+            return;
+        }
+
         if (document.readyState === 'interactive'
             || document.readyState === 'complete') {
-            this.countCssHits();
+            // The observer is already attached during loading; here we only
+            // perform the full scan after the document has been parsed.
+            this.countAllCssHits();
 
-            document.removeEventListener('readystatechange', this.startCounter);
+            document.removeEventListener('readystatechange', this.boundStartCounter);
         }
     }
 
@@ -193,14 +331,21 @@ export class CssHitsCounter {
      * Counts css hits.
      */
     private countCssHits(): void {
-        this.countAllCssHits();
+        // Start observing first. Otherwise an element added between the
+        // initial querySelectorAll snapshot and the observer setup can be
+        // missed forever if it is removed before the next full scan.
         this.countCssHitsForMutations();
+        this.countAllCssHits();
     }
 
     /**
      * Counts css hits for already affected elements.
      */
     private countAllCssHits(): void {
+        if (this.stopped) {
+            return;
+        }
+
         // we don't start counting again all css hits till previous count process wasn't finished
         if (this.countIsWorking) {
             return;
@@ -247,6 +392,10 @@ export class CssHitsCounter {
         result: ICountedElement[],
         callback: (x: ICountedElement[]) => void,
     ): void {
+        if (this.stopped) {
+            return;
+        }
+
         const length = Math.min(end, elements.length);
         result = result.concat(this.countCssHitsForElements(elements, start, length));
         if (length === elements.length) {
@@ -269,6 +418,7 @@ export class CssHitsCounter {
      * @param elements Array of elements.
      * @param start Start of batch.
      * @param length Length of batch.
+     * @param countedElements Optional set receiving elements that produced a hit.
      *
      * @returns Data with information about rule and element.
      */
@@ -276,6 +426,7 @@ export class CssHitsCounter {
         elements: NodeListOf<Element> | Element[],
         start: number,
         length: number | null,
+        countedElements?: Set<Element>,
     ): ICountedElement[] {
         start = start || 0;
         length = length || elements.length;
@@ -292,9 +443,11 @@ export class CssHitsCounter {
             const ruleAndFilterString = filterId + SEMICOLON + ruleIndex;
 
             if (this.hitsStorage.isCounted(element, ruleAndFilterString)) {
+                countedElements?.add(element);
                 continue;
             }
             this.hitsStorage.setCounted(element, ruleAndFilterString);
+            countedElements?.add(element);
 
             result.push({
                 filterId,
@@ -367,7 +520,15 @@ export class CssHitsCounter {
                             this.observer.disconnect();
                         }
 
-                        mutationRecord.target.appendChild(node);
+                        const restoreTarget = CssHitsCounter.getProbeRestoreTarget(target);
+                        if (restoreTarget) {
+                            CssHitsCounter.insertProbe(
+                                node,
+                                restoreTarget,
+                                mutationRecord.previousSibling,
+                                mutationRecord.nextSibling,
+                            );
+                        }
                     } else if (node.parentNode && target) {
                         // Sometimes probe elements are appended to the DOM
                         potentialProbeElements.push(node);
@@ -418,18 +579,159 @@ export class CssHitsCounter {
     }
 
     /**
+     * Counts probes collected before and after the counter initialization.
+     *
+     * Each probe is temporarily reinserted into the document, so that the
+     * injected marker can be read from its computed style, and removed
+     * synchronously after the counting, so it is never painted. Probes that
+     * did not match any rule are retried a few times, since the marker styles
+     * may be injected slightly after the cosmetic data is received.
+     *
+     * Only native stylesheet markers are detected this way: ExtendedCss
+     * rules are reported when ExtendedCss itself applies them to an element.
+     */
+    private countPendingProbes(): void {
+        if (this.stopped || this.pendingProbes.length === 0) {
+            return;
+        }
+
+        this.pendingProbesAttempt += 1;
+
+        const probes = this.pendingProbes;
+        this.pendingProbes = [];
+
+        const elementsToCount: Element[] = [];
+        const restoredProbeElements: Element[] = [];
+        const countedElements = new Set<Element>();
+        let result: ICountedElement[] = [];
+
+        if (this.observer) {
+            this.observer.disconnect();
+        }
+
+        try {
+            for (let i = 0; i < probes.length; i += 1) {
+                const probe = probes[i];
+                const { element } = probe;
+
+                if (!element.isConnected) {
+                    const restoreTarget = CssHitsCounter.getProbeRestoreTarget(probe.target);
+                    if (restoreTarget) {
+                        CssHitsCounter.insertProbe(
+                            element,
+                            restoreTarget,
+                            probe.previousSibling,
+                            probe.nextSibling,
+                        );
+                        restoredProbeElements.push(element);
+                    }
+                }
+
+                elementsToCount.push(element);
+                ElementUtils.appendChildren(element, elementsToCount);
+            }
+
+            result = this.countCssHitsForElements(elementsToCount, 0, null, countedElements);
+        } finally {
+            /**
+             * Don't remove child elements of probe elements
+             * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1096.
+             */
+            ElementUtils.removeElements(restoredProbeElements);
+            this.startObserver();
+        }
+
+        if (result.length > 0) {
+            this.onCssHitsFoundCallback(result);
+        }
+
+        const uncountedProbes = probes.filter((probe) => !countedElements.has(probe.element));
+
+        if (uncountedProbes.length === 0
+            || this.stopped
+            || this.pendingProbesAttempt >= CssHitsCounter.PENDING_PROBES_MAX_ATTEMPTS) {
+            return;
+        }
+
+        this.pendingProbes = uncountedProbes;
+        this.pendingProbesTimeoutId = window.setTimeout(() => {
+            this.pendingProbesTimeoutId = null;
+            this.countPendingProbes();
+        }, CssHitsCounter.PENDING_PROBES_RETRY_DELAY_MS);
+    }
+
+    /**
      * Starts mutation observer.
      */
     private startObserver(): void {
-        if (this.observer) {
+        if (this.observer && !this.stopped) {
             // TODO: Check, maybe we should observer for 'characterData' and
             // 'characterDataOldValue' like it was in the old extension code
-            this.observer.observe(document.documentElement, {
+            this.observer.observe(document.documentElement || document, {
                 childList: true,
                 subtree: true,
                 attributes: true,
             });
         }
+    }
+
+    /**
+     * Chooses a connected node where a detached probe can be temporarily
+     * restored before `getComputedStyle` is called.
+     *
+     * Walks up from the original mutation target to find the nearest node
+     * still connected to the document. Preserving the cascade context
+     * (descendant selectors, `:nth-child`, etc.) as closely as possible
+     * matters here: appending straight to `document.documentElement` would
+     * place the probe in a completely different tree position and could cause
+     * it to miss context-dependent selectors. `document.documentElement` is
+     * used only as the last resort when no ancestor in the chain is connected
+     * anymore.
+     *
+     * @param target Original mutation target.
+     *
+     * @returns Node where the probe can be safely appended.
+     */
+    private static getProbeRestoreTarget(target: Node): Node | null {
+        let current: Node | null = target;
+
+        while (current) {
+            if (current instanceof Element && current.isConnected) {
+                return current;
+            }
+
+            current = current.parentNode;
+        }
+
+        return document.documentElement;
+    }
+
+    /**
+     * Temporarily restores a detached probe to the document at its original
+     * position, when possible.
+     *
+     * @param element Detached probe element.
+     * @param target Node to append the probe to.
+     * @param previousSibling Sibling preceding the probe at the moment of the mutation.
+     * @param nextSibling Sibling following the probe at the moment of the mutation.
+     */
+    private static insertProbe(
+        element: Element,
+        target: Node,
+        previousSibling: Node | null,
+        nextSibling: Node | null,
+    ): void {
+        if (nextSibling && nextSibling.parentNode === target) {
+            target.insertBefore(element, nextSibling);
+            return;
+        }
+
+        if (previousSibling && previousSibling.parentNode === target) {
+            target.insertBefore(element, previousSibling.nextSibling);
+            return;
+        }
+
+        target.appendChild(element);
     }
 
     /**
@@ -440,12 +742,18 @@ export class CssHitsCounter {
      * @returns Rule info or `null` if no marker is present.
      */
     private static getCssHitData(element: Element): RuleInfoBasic | null {
-        const value = getComputedStyle(element)
-            .getPropertyValue(CssHitsCounter.MARKER_PROPERTY_NAME);
-        if (!value) {
+        try {
+            const value = getComputedStyle(element)
+                .getPropertyValue(CssHitsCounter.MARKER_PROPERTY_NAME);
+            if (!value) {
+                return null;
+            }
+            return ElementUtils.parseInfo(value, CssHitsCounter.MARKER_PREFIX);
+        } catch {
+            // Malformed marker values (e.g. broken percent-encoding) or
+            // elements that cannot be measured should not break counting.
             return null;
         }
-        return ElementUtils.parseInfo(value, CssHitsCounter.MARKER_PREFIX);
     }
 
     /**

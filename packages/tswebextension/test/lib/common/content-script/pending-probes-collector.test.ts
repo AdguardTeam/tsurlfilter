@@ -1,0 +1,332 @@
+/**
+ * @vitest-environment jsdom
+ */
+
+import {
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
+
+import { PendingProbesCollector } from '../../../../src/lib/common/content-script/pending-probes-collector';
+import { mockMutationObserver, MutationObserverMock } from '../../../helpers/mutation-observer';
+
+/**
+ * Creates a mutation record for tests.
+ *
+ * @param params Record parameters.
+ * @param params.addedNodes Added nodes.
+ * @param params.removedNodes Removed nodes.
+ * @param params.target Mutation target.
+ * @param params.previousSibling Previous sibling.
+ * @param params.nextSibling Next sibling.
+ *
+ * @returns Mutation record.
+ */
+const createMutationRecord = ({
+    addedNodes = [],
+    removedNodes = [],
+    target,
+    previousSibling = null,
+    nextSibling = null,
+}: {
+    addedNodes?: Node[];
+    removedNodes?: Node[];
+    target: Node;
+    previousSibling?: Node | null;
+    nextSibling?: Node | null;
+}): MutationRecord => ({
+    addedNodes: addedNodes as unknown as NodeList,
+    removedNodes: removedNodes as unknown as NodeList,
+    target,
+    previousSibling,
+    nextSibling,
+    type: 'childList',
+    attributeName: null,
+    attributeNamespace: null,
+    oldValue: null,
+} as unknown as MutationRecord);
+
+describe('PendingProbesCollector', () => {
+    let restoreMutationObserver: () => void;
+
+    beforeEach(() => {
+        restoreMutationObserver = mockMutationObserver();
+    });
+
+    afterEach(() => {
+        restoreMutationObserver();
+    });
+
+    it('observes the document from the start', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const observer = MutationObserverMock.last!;
+        expect(observer.observedNodes).toEqual([document]);
+        expect(observer.observedOptions).toEqual({ childList: true, subtree: true });
+
+        collector.stop();
+    });
+
+    it('collects an element added and removed before the observer callback', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const target = document.body;
+        const previousSibling = document.createElement('div');
+        const nextSibling = document.createElement('div');
+        const bait = document.createElement('div');
+        target.append(previousSibling, nextSibling);
+
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [bait],
+            target,
+            previousSibling,
+            nextSibling,
+        })]);
+
+        const probes = collector.takePendingProbes();
+
+        expect(probes).toHaveLength(1);
+        expect(probes[0].element).toBe(bait);
+        expect(probes[0].target).toBe(target);
+        expect(probes[0].previousSibling).toBe(previousSibling);
+        expect(probes[0].nextSibling).toBe(nextSibling);
+
+        previousSibling.remove();
+        nextSibling.remove();
+        collector.stop();
+    });
+
+    it('collects an element added and removed in a later task', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const bait = document.createElement('div');
+        document.body.appendChild(bait);
+
+        // The addition callback sees the element attached.
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [bait],
+            target: document.body,
+        })]);
+
+        // The element is removed later.
+        bait.remove();
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            removedNodes: [bait],
+            target: document.body,
+        })]);
+
+        const probes = collector.takePendingProbes();
+
+        expect(probes).toHaveLength(1);
+        expect(probes[0].element).toBe(bait);
+
+        collector.stop();
+    });
+
+    it('ignores script tags and duplicate elements', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const script = document.createElement('script');
+        const bait = document.createElement('div');
+        const record = createMutationRecord({
+            addedNodes: [script, bait],
+            target: document.body,
+        });
+
+        MutationObserverMock.last!.trigger([record, record]);
+
+        const probes = collector.takePendingProbes();
+
+        expect(probes.map((probe) => probe.element)).toEqual([bait]);
+
+        collector.stop();
+    });
+
+    it('returns collected probes and keeps observing', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const firstBait = document.createElement('div');
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [firstBait],
+            target: document.body,
+        })]);
+
+        expect(collector.takePendingProbes()).toHaveLength(1);
+
+        const secondBait = document.createElement('div');
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [secondBait],
+            target: document.body,
+        })]);
+
+        const probes = collector.takePendingProbes();
+        expect(probes).toHaveLength(1);
+        expect(probes[0].element).toBe(secondBait);
+
+        collector.stop();
+    });
+
+    it('drops collected elements on stop', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const bait = document.createElement('div');
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [bait],
+            target: document.body,
+        })]);
+
+        collector.stop();
+
+        expect(collector.takePendingProbes()).toHaveLength(0);
+    });
+
+    it('processes mutation records that were not delivered before take', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const bait = document.createElement('div');
+        MutationObserverMock.last!.enqueueRecords([createMutationRecord({
+            addedNodes: [bait],
+            target: document.body,
+        })]);
+
+        const probes = collector.takePendingProbes();
+
+        expect(probes).toHaveLength(1);
+        expect(probes[0].element).toBe(bait);
+
+        collector.stop();
+    });
+
+    it('evicts the oldest probes when the queue is full', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const maxPendingProbes = 500;
+        const elements = Array.from(
+            { length: maxPendingProbes + 1 },
+            () => document.createElement('div'),
+        );
+
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: elements,
+            target: document.body,
+        })]);
+
+        const probes = collector.takePendingProbes();
+
+        expect(probes).toHaveLength(maxPendingProbes);
+        expect(probes.some((probe) => probe.element === elements[0])).toBe(false);
+        expect(probes[probes.length - 1].element).toBe(elements[maxPendingProbes]);
+
+        collector.stop();
+    });
+
+    it('allows an evicted element to be collected again', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const maxPendingProbes = 500;
+        const elements = Array.from(
+            { length: maxPendingProbes + 1 },
+            () => document.createElement('div'),
+        );
+
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: elements,
+            target: document.body,
+        })]);
+
+        // The first element is evicted by the cap.
+        expect(collector.takePendingProbes()).toHaveLength(maxPendingProbes);
+
+        // The page re-uses the evicted node as a probe: it must be collected
+        // again even though it was evicted earlier.
+        const evictedElement = elements[0];
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            removedNodes: [evictedElement],
+            target: document.body,
+        })]);
+
+        const probes = collector.takePendingProbes();
+        expect(probes.some((probe) => probe.element === evictedElement)).toBe(true);
+
+        collector.stop();
+    });
+
+    it('stops observing after the observation timeout and keeps collected probes', () => {
+        vi.useFakeTimers();
+
+        try {
+            const collector = new PendingProbesCollector();
+            collector.start();
+
+            const bait = document.createElement('div');
+            MutationObserverMock.last!.trigger([createMutationRecord({
+                addedNodes: [bait],
+                target: document.body,
+            })]);
+
+            vi.advanceTimersByTime(30000);
+
+            expect(MutationObserverMock.last!.isDisconnected).toBe(true);
+
+            const probes = collector.takePendingProbes();
+            expect(probes).toHaveLength(1);
+            expect(probes[0].element).toBe(bait);
+
+            collector.stop();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('notifies a subscriber about newly collected probes', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const onProbesCollected = vi.fn();
+        collector.setOnProbesCollected(onProbesCollected);
+
+        const bait = document.createElement('div');
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [bait],
+            target: document.body,
+        })]);
+
+        expect(onProbesCollected).toHaveBeenCalledTimes(1);
+        expect(onProbesCollected.mock.calls[0][0]).toHaveLength(1);
+        expect(onProbesCollected.mock.calls[0][0][0].element).toBe(bait);
+
+        collector.stop();
+    });
+
+    it('passes probes collected before the subscription to the subscriber', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const bait = document.createElement('div');
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [bait],
+            target: document.body,
+        })]);
+
+        const onProbesCollected = vi.fn();
+        collector.setOnProbesCollected(onProbesCollected);
+
+        expect(onProbesCollected).toHaveBeenCalledTimes(1);
+        expect(onProbesCollected.mock.calls[0][0][0].element).toBe(bait);
+
+        collector.stop();
+    });
+});
