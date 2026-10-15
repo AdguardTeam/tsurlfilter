@@ -555,7 +555,7 @@ export class ContentScriptManager {
     private static async retryFailedBatches(
         namespace: string,
         batches: SyncBatchResults,
-    ): Promise<{ errors: PromiseRejectedResult[]; failedScriptIds: string[] }> {
+    ): Promise<SyncScriptsResult> {
         const { unregister, register, update } = batches;
 
         const results = await Promise.all([

@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dynamic injection. Rules that are not covered remain on the dynamic path.
 - Public utilities for hashing preregistered rules and resolving stable
   script filenames. They are exported from
-  `@adguard/tswebextension/mv3/preregistered-scripts/hasher`.
+  `@adguard/tswebextension/mv3/preregistered-scripts/build-contract`.
   The `manifest.json` format and filename contract are shared by the build and
   runtime.
 

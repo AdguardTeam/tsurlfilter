@@ -9,7 +9,10 @@ import {
 import { CosmeticOption, CosmeticRule } from '@adguard/tsurlfilter';
 
 import { appContext } from '../../../../../src/lib/mv3/background/app-context';
-import { ContentScriptManager } from '../../../../../src/lib/mv3/background/content-script-manager';
+import {
+    type ContentScriptDescriptor,
+    ContentScriptManager,
+} from '../../../../../src/lib/mv3/background/content-script-manager';
 import { DocumentApi } from '../../../../../src/lib/mv3/background/document-api';
 import { engineApi } from '../../../../../src/lib/mv3/background/engine-api';
 import {
@@ -41,7 +44,7 @@ vi.mock('../../../../../src/lib/mv3/background/document-api', () => ({
 // Emulated browser registry state: the descriptors the last completed
 // `sync` call registered, read back by `getRegistered`.
 const registryState = vi.hoisted(() => ({
-    descriptors: [] as Array<{ id: string; js: string[] }>,
+    descriptors: [] as ContentScriptDescriptor[],
 }));
 
 vi.mock('../../../../../src/lib/mv3/background/content-script-manager', () => ({
@@ -241,6 +244,24 @@ describe('PreregisteredScriptsService', () => {
         appContext.preregisteredScriptRulesAtBoot = undefined;
         appContext.preregisteredScriptRules = undefined;
         registryState.descriptors = [];
+        // `clearAllMocks` clears calls but not implementations, so the
+        // custom implementations and queued one-shot results of a test
+        // would leak into the tests that run after it: restore the module
+        // defaults here.
+        vi.mocked(ContentScriptManager.sync).mockReset().mockImplementation(async (
+            _namespace,
+            scripts,
+        ) => {
+            registryState.descriptors = scripts;
+            return { errors: [], failedScriptIds: [] };
+        });
+        vi.mocked(ContentScriptManager.getRegistered)
+            .mockReset()
+            .mockImplementation(async () => registryState.descriptors);
+        vi.mocked(ContentScriptManager.clear).mockReset().mockImplementation(async () => {
+            registryState.descriptors = [];
+        });
+        vi.mocked(DocumentApi.matchFrame).mockReset().mockReturnValue(null);
     });
 
     describe('sync — early exits', () => {
@@ -846,11 +867,6 @@ describe('PreregisteredScriptsService', () => {
     });
 
     describe('init', () => {
-        afterEach(() => {
-            appContext.preregisteredScriptRulesAtBoot = undefined;
-            vi.mocked(ContentScriptManager.getRegistered).mockResolvedValue([]);
-        });
-
         it('syncs, snapshots the persisted registrations once, and reports the covered rules', async () => {
             const rule = mockScriptletRule('set-cookie', []);
             await setupRulesWithManifest({ 'youtube.com': [rule] });
@@ -888,7 +904,9 @@ describe('PreregisteredScriptsService', () => {
         });
 
         it('leaves the boot snapshot unset when listing registrations fails, so the next init retries', async () => {
-            await setupRulesWithManifest({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
+            const rule = mockScriptletRule('set-cookie', []);
+            await setupRulesWithManifest({ 'youtube.com': [rule] });
+            const hash = await computeRuleHash(rule);
             vi.mocked(ContentScriptManager.getRegistered).mockRejectedValueOnce(new Error('no scripting'));
 
             await PreregisteredScriptsService.init(true, { domains: ['youtube.com'], path: SCRIPTS_PATH });
@@ -897,7 +915,11 @@ describe('PreregisteredScriptsService', () => {
             // stick for the whole service-worker lifetime and misreport
             // still-active persisted registrations as uncovered.
             expect(appContext.preregisteredScriptRulesAtBoot).toBeUndefined();
-            expect(appContext.preregisteredScriptRules).toEqual(new Map());
+            // The post-sync coverage read sees the registration the sync
+            // just created.
+            expect(appContext.preregisteredScriptRules).toEqual(
+                new Map([['youtube.com', new Set([hash])]]),
+            );
 
             vi.mocked(ContentScriptManager.getRegistered).mockResolvedValue([
                 { id: 'youtube.com', js: [`${SCRIPTS_PATH}/${getRuleFilename('0123456789abcdef')}`] },
@@ -978,11 +1000,6 @@ describe('PreregisteredScriptsService', () => {
             // sync cannot re-register after the clear and publish coverage
             // for registrations the clear just removed.
             expect(order).toEqual(['sync', 'clear']);
-
-            // Restore the default clear implementation for subsequent tests.
-            vi.mocked(ContentScriptManager.clear).mockImplementation(async () => {
-                registryState.descriptors = [];
-            });
         });
 
         it('chains a sync enqueued during a clear after the clear', async () => {

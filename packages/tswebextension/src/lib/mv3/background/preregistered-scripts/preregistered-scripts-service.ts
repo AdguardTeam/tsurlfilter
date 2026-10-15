@@ -70,6 +70,10 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  *   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for
  *   the host: rules registered on `*://youtube.com/*` still execute on
  *   `/embed/…` — tracked in AG-54564.
+ * - With protection disabled on a site (or in inverted allowlist mode),
+ *   YouTube embeds on it still run these scriptlets: the registration
+ *   covers every frame of the host, while the dynamic path would inject
+ *   nothing there — tracked in AG-60054.
  */
 export class PreregisteredScriptsService {
     /**

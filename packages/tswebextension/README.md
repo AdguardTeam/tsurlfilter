@@ -366,6 +366,10 @@ Known limitations:
   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for the
   host: rules registered on `*://youtube.com/*` still execute on `/embed/…`.
   Tracked in [AG-54564](https://jira.int.agrd.dev/browse/AG-54564).
+- With protection disabled on a site (or in inverted allowlist mode),
+  YouTube embeds on it still run these scriptlets: the registration covers
+  every frame of the host, while the dynamic path would inject nothing
+  there. Tracked in [AG-60054](https://jira.int.agrd.dev/browse/AG-60054).
 
 #### allowlist
 

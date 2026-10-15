@@ -5,9 +5,8 @@ import { type CosmeticRule } from '@adguard/tsurlfilter';
  * per-rule files and the cleanup file.
  *
  * Fixed forever: the cleanup file deletes the property before any page
- * script runs, so rotation buys no stealth. A stable key keeps filenames
- * stable, so persisted content-script registrations from a previous
- * extension version keep loading the same paths.
+ * script runs, so rotation buys no stealth. A stable key keeps the
+ * generated filenames stable across build generations.
  */
 export const COORDINATION_KEY = '__ag_7d8a978ba755ed70';
 
@@ -93,8 +92,9 @@ const RULE_FILE_PATH_REGEX = new RegExp(`(?:^|/)([0-9a-f]{${HASH_LENGTH}})\\.js$
 /**
  * Prefix of per-scriptlet-function filenames (`s-{hash}.js`), keeping them
  * apart from per-rule `{hash}.js` files. Part of the shared build/runtime
- * contract: persisted content-script registrations reference these paths,
- * so the build tool validates retained names against this format.
+ * contract: the prefix keeps function files from matching the per-rule file
+ * pattern when coverage is derived from registration file lists, and the
+ * build tool names function files with it.
  */
 export const SCRIPTLET_FUNCTION_FILENAME_PREFIX = 's-';
 
