@@ -11,8 +11,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
-- Support for uBlock Origin `:remove-attr()` and `:remove-class()` operators
-  in element hiding rule conversion.
+- Support for uBlock Origin `:remove-attr()` and `:remove-class()` pseudo-classes
+  in element hiding and CSS injection rule conversion.
 
 ### Changed
 

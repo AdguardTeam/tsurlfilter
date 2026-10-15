@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 ### Added
 
+- `remove-attr` and `remove-class` pseudo-classes to Extended CSS handlers.
+
 ### Changed
 
 ### Deprecated

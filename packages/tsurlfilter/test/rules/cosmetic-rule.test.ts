@@ -875,17 +875,18 @@ describe('Extended css rule', () => {
     expect(rule.isExtendedCss()).toBeTruthy();
     expect(rule.getContent()).toEqual('div { background-color: #333!important; }');
 
-    ruleText = 'example.org##a:remove-attr(href)';
-    rule = createCosmeticRule(ruleText, 0);
+    it.each([
+        ['example.org##a:remove-attr(href)', 'a:remove-attr(href)'],
+        ['example.org##a:remove-attr(/^data-[0-9]+$/)', 'a:remove-attr(/^data-[0-9]+$/)'],
+        ['example.org##a:remove-attr(/^data-.{2}$/)', 'a:remove-attr(/^data-.{2}$/)'],
+        ['example.org##div:remove-class(ads)', 'div:remove-class(ads)'],
+        ['example.org##div:remove-class(/^ad-[0-9]+$/)', 'div:remove-class(/^ad-[0-9]+$/)'],
+    ])('treats %s as an extended CSS rule', (text, expectedContent) => {
+        const extendedRule = createCosmeticRule(text, 0);
 
-    expect(rule.isExtendedCss()).toBeTruthy();
-    expect(rule.getContent()).toEqual('a:remove-attr(href)');
-
-    ruleText = 'example.org#?#div:remove-class(ads)';
-    rule = createCosmeticRule(ruleText, 0);
-
-    expect(rule.isExtendedCss()).toBeTruthy();
-    expect(rule.getContent()).toEqual('div:remove-class(ads)');
+        expect(extendedRule.isExtendedCss()).toBeTruthy();
+        expect(extendedRule.getContent()).toEqual(expectedContent);
+    });
 
     it('does not confuses extended css rules with script rules', () => {
         // eslint-disable-next-line max-len

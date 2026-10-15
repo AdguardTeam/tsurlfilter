@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Support for uBlock Origin `:remove-attr()` and `:remove-class()` operators.
+- Support of uBlock Origin `:remove-attr()` and `:remove-class()` pseudo-classes:
+  rules with them are recognized as Extended CSS and passed to the Extended CSS
+  engine.
 
 ### Changed
 

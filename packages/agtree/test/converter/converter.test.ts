@@ -831,6 +831,21 @@ describe('Converter integration tests', () => {
                     expected: ['example.com#?#a:remove-attr(/^on[a-z]+/)'],
                     shouldConvert: true,
                 },
+                {
+                    actual: 'example.com##a:remove-attr(/^data-[0-9]+$/)',
+                    expected: ['example.com#?#a:remove-attr(/^data-[0-9]+$/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com##div:remove-class(/^ad-[0-9]+$/)',
+                    expected: ['example.com#?#div:remove-class(/^ad-[0-9]+$/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com##a:remove-attr(/^data-.{2}$/)',
+                    expected: ['example.com#?#a:remove-attr(/^data-.{2}$/)'],
+                    shouldConvert: true,
+                },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
@@ -976,6 +991,26 @@ describe('Converter integration tests', () => {
                 {
                     actual: 'example.com#@?#a:remove-attr(href)',
                     expected: ['example.com#@#a:remove-attr(href)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#a:remove-attr(/^on[a-z]+/)',
+                    expected: ['example.com##a:remove-attr(/^on[a-z]+/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#a:remove-attr(/^data-[0-9]+$/)',
+                    expected: ['example.com##a:remove-attr(/^data-[0-9]+$/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#div:remove-class(/^ad-[0-9]+$/)',
+                    expected: ['example.com##div:remove-class(/^ad-[0-9]+$/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#a:remove-attr(/^data-.{2}$/)',
+                    expected: ['example.com##a:remove-attr(/^data-.{2}$/)'],
                     shouldConvert: true,
                 },
             ])("should convert '$actual' to '$expected'", (testData) => {
