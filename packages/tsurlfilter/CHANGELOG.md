@@ -11,6 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [6.0.4] - 2026-10-15
+
+### Changed
+
 - `:contains()` arguments of HTML filtering rules are now handled exactly
   like CoreLibs does: the argument is the raw text between the parentheses
   of the pseudo-class, so wrapping quotes of any kind (e.g.
@@ -21,13 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `$$script:contains((function(g,b,a,c,e,d)`, are now parsed and matched
   as-is, mirroring CoreLibs [#96].
 
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
+[6.0.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v6.0.4
 
 ## [6.0.3] - 2026-08-25
 
