@@ -11,12 +11,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `Rule.writtenKeys` is gone: `$badfilter` compares the rule text as written
+  (`Rule.originalText`), so a rule no longer keeps a comparison key.
+
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
+- `$badfilter` incorrectly negated rules with different values of value-bearing
+  modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
+  `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when
+  the whole modifier list is written the same way — names, values, their order
+  and repeats, `$permissions` included — so `$redirect-rule` is no longer treated
+  as `$redirect`, and spellings that are equivalent after parsing (e.g.
+  `Set-Cookie` and `set-cookie`) do not negate each other.
+- `$badfilter` with `$domain` still disables the rule it refers to for the
+  domains present in both lists, but regular expression domains now keep their
+  case, so `$domain=/A/` no longer cancels `$domain=/a/`. This exception applies
+  only while neither rule has a negated `~domain`; otherwise the whole text is
+  compared. As before, the whole declarative rule is disabled rather than only
+  the domains named in both lists.
+- `$badfilter` rules that also carried a convertible modifier (e.g.
+  `||example.com^$csp=script-src 'none',badfilter`) were converted into
+  declarative rules instead of disabling the rule they refer to.
 - Fixed named `$removeparam` rules with an anchored literal URL pattern ending
   in `^` failing to remove the first query parameter before MV3 requests.
   Rules whose generated regexp fails validation retain their previous matching

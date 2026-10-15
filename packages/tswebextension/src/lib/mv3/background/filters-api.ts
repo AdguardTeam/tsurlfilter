@@ -3,6 +3,7 @@ import browser from 'webextension-polyfill';
 import { Filter, type IFilter, RULESET_NAME_PREFIX } from '@adguard/dnr-converter';
 import { FilterList } from '@adguard/tsurlfilter';
 
+import { USER_FILTER_ID } from '../../common/constants';
 import { FiltersStorage } from '../../common/storage/filters';
 import { FailedEnableRulesetsError } from '../errors/failed-enable-rulesets-error';
 
@@ -24,6 +25,28 @@ export default class FiltersApi {
      * of the same filter.
      */
     private static filtersCache: Map<number, IFilter> = new Map();
+
+    /**
+     * Wraps user rules into {@link IFilter}.
+     *
+     * The original spelling is preserved: the converter compares `$badfilter`
+     * rules by the written rule text, while the content stored by the extension
+     * is already converted.
+     *
+     * @param userrules User rules configuration.
+     *
+     * @returns Filter with user rules.
+     */
+    static createUserRulesFilter(userrules: ConfigurationMV3['userrules']): IFilter {
+        return new Filter(
+            USER_FILTER_ID,
+            async () => new FilterList(
+                userrules.content,
+                USER_FILTER_ID,
+                userrules.conversionData,
+            ).getOriginalContent(),
+        );
+    }
 
     /**
      * Enables or disables the provided rule set identifiers.
@@ -81,6 +104,10 @@ export default class FiltersApi {
     /**
      * Wraps static filters into {@link IFilter}.
      *
+     * The original spelling is preserved: the converter compares `$badfilter`
+     * rules by the written rule text, while the content stored by the extension
+     * is already converted.
+     *
      * @param filtersIds List of filters ids.
      *
      * @returns List of {@link IFilter} with a lazy content loading feature.
@@ -99,7 +126,7 @@ export default class FiltersApi {
                 async (): Promise<string> => {
                     const f = await FiltersApi.loadFilterContent(filterId);
 
-                    return f.getContent();
+                    return f.getOriginalContent();
                 },
             );
 
@@ -111,6 +138,10 @@ export default class FiltersApi {
 
     /**
      * Wraps custom filter into {@link ITrustedFilter}.
+     *
+     * The original spelling is preserved: the converter compares `$badfilter`
+     * rules by the written rule text, while the content stored by the extension
+     * is already converted.
      *
      * @param customFilters List of custom filters.
      *
@@ -125,7 +156,7 @@ export default class FiltersApi {
             );
             return new TrustedFilter(
                 f.filterId,
-                filterList.getContent(),
+                filterList.getOriginalContent(),
                 f.trusted,
                 filterList.getConversionErrors(),
             );

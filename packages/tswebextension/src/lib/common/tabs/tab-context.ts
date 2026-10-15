@@ -43,8 +43,9 @@ export class TabContextCommon<F extends FrameCommon> {
     // TODO: remove later.
     /**
      * @deprecated
-     * This field is used in the extension, and mv2 version uses it,
-     * but it is not used anymore in mv3, so it is deprecated here.
+     * This field is used in the extension, and both mv2 and mv3 use it to
+     * distinguish a context created from Tabs API events from one created
+     * manually (see `createTabContextIfNotExists`).
      *
      * We mark these tabs as synthetic because they may not actually exist.
      */

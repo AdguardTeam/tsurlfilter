@@ -688,9 +688,10 @@ describe('NetworkRule constructor', () => {
     }
 
     it.each([
-        [String.raw`/FOO\.bar/`, String.raw`/foo\.bar/`, true],
-        [String.raw`/[A-Z]+\.bar/`, String.raw`/[a-z]+\.bar/`, true],
-        [String.raw`/FOO\D\.bar/`, String.raw`/foo\D\.bar/`, true],
+        // Regexp domains are compared as written, so only identical patterns match.
+        [String.raw`/FOO\.bar/`, String.raw`/foo\.bar/`, false],
+        [String.raw`/[A-Z]+\.bar/`, String.raw`/[a-z]+\.bar/`, false],
+        [String.raw`/FOO\D\.bar/`, String.raw`/foo\D\.bar/`, false],
         [String.raw`/foo\D\.bar/`, String.raw`/foo\d\.bar/`, false],
         [String.raw`/foo\W\.bar/`, String.raw`/foo\w\.bar/`, false],
         [String.raw`/foo\S\.bar/`, String.raw`/foo\s\.bar/`, false],
@@ -700,7 +701,7 @@ describe('NetworkRule constructor', () => {
         [String.raw`/\cA/`, String.raw`/\ca/`, false],
         [String.raw`/(?<A>foo)\k<A>/`, String.raw`/(?<a>foo)\k<a>/`, false],
         [String.raw`/\u0041/`, String.raw`/\u0041/`, true],
-    ])('compares regexp domain identity for badfilter: %s and %s', (domain, other, expected) => {
+    ])('compares regexp domains as written for badfilter: %s and %s', (domain, other, expected) => {
         for (const prefix of ['', '~']) {
             assertBadfilterNegates(
                 `*$domain=${prefix}${domain}`,
@@ -708,6 +709,65 @@ describe('NetworkRule constructor', () => {
                 expected,
             );
         }
+    });
+
+    // This block locks the domain-scoped exception that the written-text
+    // comparison preserves. The written-text comparison itself is locked by the
+    // regexp-identity table above and by the cross-package parity table.
+    it('cancels a rule with $domain for the domains present in both lists', () => {
+        // A narrower badfilter still disables the target rule.
+        assertBadfilterNegates(
+            '*$domain=example.com|example.org|example.io',
+            '*$domain=example.com,badfilter',
+            true,
+        );
+        assertBadfilterNegates(
+            '*$domain=example.com|example.org|example.io',
+            '*$domain=example.com|example.org,badfilter',
+            true,
+        );
+        // A wildcard TLD entry overlaps only an identically written entry: matching
+        // it against the domains it stands for needs the public suffix list, which
+        // the Manifest V3 converter does not have.
+        assertBadfilterNegates('*$domain=example.*', '*$domain=example.*,badfilter', true);
+        assertBadfilterNegates('*$domain=example.*', '*$domain=example.com,badfilter', false);
+        // Domains that cannot match the same request do not disable anything.
+        assertBadfilterNegates('*$domain=example.com', '*$domain=example.org,badfilter', false);
+        // A rule without $domain restricts nothing, so it overlaps either way.
+        assertBadfilterNegates('*$domain=example.com', '*$badfilter', true);
+        assertBadfilterNegates('||example.com^', '||example.com^$domain=example.com,badfilter', true);
+        // In the domain-scoped case the position of $domain is not compared,
+        // unlike the position of every other modifier.
+        assertBadfilterNegates(
+            '||example.com^$script,domain=example.com',
+            '||example.com^$domain=example.com,script,badfilter',
+            true,
+        );
+        // A negated domain makes the cancellation complete, so the text is compared.
+        assertBadfilterNegates(
+            '*$domain=example.com|example.org|example.io',
+            '*$domain=example.com|~example.org,badfilter',
+            false,
+        );
+    });
+
+    // The modifier list starts after the separator, so a `$` in the pattern — for
+    // example an end anchor in a regexp — is not taken for it.
+    it('splits the modifier list at the separator, not at a `$` in the pattern', () => {
+        assertBadfilterNegates(String.raw`/ads\.js$/`, String.raw`/ads\.js$/$badfilter`, true);
+        assertBadfilterNegates(String.raw`/ads\.js$/$script`, String.raw`/ads\.js$/$badfilter,script`, true);
+        assertBadfilterNegates(String.raw`/ads\.js$/$script`, String.raw`/ads\.js$/$badfilter,image`, false);
+        assertBadfilterNegates(String.raw`/ads\.js$/$script`, String.raw`/ads\.js$/$badfilter`, false);
+        assertBadfilterNegates(
+            String.raw`/\.php$/$script,domain=a.com|b.com`,
+            String.raw`/\.php$/$script,domain=a.com,badfilter`,
+            true,
+        );
+        assertBadfilterNegates(
+            String.raw`/\.php$/$script,domain=a.com|b.com`,
+            String.raw`/\.php$/$script,domain=c.com,badfilter`,
+            false,
+        );
     });
 
     it('works if badfilter modifier works properly', () => {
@@ -744,6 +804,83 @@ describe('NetworkRule constructor', () => {
         assertBadfilterNegates(
             '$script,third-party,denyallow=a.com|b.com|c.com,domain=example.org',
             '$script,third-party,denyallow=a.com|b.com,domain=example.org,badfilter',
+            false,
+        );
+    });
+
+    it('compares values of value-bearing modifiers when matching badfilter rules', () => {
+        // Advanced modifier values.
+        assertBadfilterNegates('*$removeparam=foo', '*$removeparam=foo,badfilter', true);
+        assertBadfilterNegates('*$removeparam=bar', '*$removeparam=foo,badfilter', false);
+        assertBadfilterNegates('*$removeparam', '*$removeparam,badfilter', true);
+        assertBadfilterNegates('*$removeparam', '*$removeparam=foo,badfilter', false);
+        assertBadfilterNegates(
+            "*$csp=script-src 'none'",
+            "*$csp=script-src 'none',badfilter",
+            true,
+        );
+        assertBadfilterNegates(
+            "*$csp=script-src 'none'",
+            "*$csp=script-src 'self',badfilter",
+            false,
+        );
+        assertBadfilterNegates('*$replace=/a/b/', '*$replace=/a/b/,badfilter', true);
+        assertBadfilterNegates('*$replace=/a/b/', '*$replace=/c/d/,badfilter', false);
+        assertBadfilterNegates('*$removeheader=set-cookie', '*$removeheader=set-cookie,badfilter', true);
+        assertBadfilterNegates('*$removeheader=set-cookie', '*$removeheader=referer,badfilter', false);
+        assertBadfilterNegates('*$redirect=nooptext', '*$redirect=nooptext,badfilter', true);
+        assertBadfilterNegates('*$redirect=nooptext', '*$redirect=noopjs,badfilter', false);
+        // $redirect and $redirect-rule share one option flag, so they are compared explicitly.
+        assertBadfilterNegates('*$redirect=nooptext', '*$redirect-rule=nooptext,badfilter', false);
+
+        // $header
+        assertBadfilterNegates('*$header=set-cookie', '*$header=set-cookie,badfilter', true);
+        assertBadfilterNegates('*$header=set-cookie', '*$header=referer,badfilter', false);
+        assertBadfilterNegates('*$header=set-cookie:/a/', '*$header=set-cookie:/a/,badfilter', true);
+        assertBadfilterNegates('*$header=set-cookie:/a/', '*$header=set-cookie:/b/,badfilter', false);
+
+        // $method
+        assertBadfilterNegates('*$method=GET', '*$method=GET,badfilter', true);
+        assertBadfilterNegates('*$method=GET', '*$method=POST,badfilter', false);
+        assertBadfilterNegates('*$method=GET|POST', '*$method=GET,badfilter', false);
+
+        // $to
+        assertBadfilterNegates('*$to=a.com', '*$to=a.com,badfilter', true);
+        assertBadfilterNegates('*$to=a.com', '*$to=b.com,badfilter', false);
+
+        // $stealth is allowed in allowlist rules only.
+        assertBadfilterNegates('@@*$stealth=referrer', '@@*$stealth=referrer,badfilter', true);
+        assertBadfilterNegates('@@*$stealth=referrer', '@@*$stealth=donottrack,badfilter', false);
+
+        // $app
+        assertBadfilterNegates('*$app=org.example.app', '*$app=org.example.app,badfilter', true);
+        assertBadfilterNegates('*$app=org.example.app', '*$app=org.example.other,badfilter', false);
+        // $app sets no option flag, so the value map is the only thing that
+        // distinguishes these rules.
+        assertBadfilterNegates('*$app=org.example.app', '*$badfilter', false);
+
+        // $permissions (also closes AG-36226 / AdguardBrowserExtension#2961).
+        assertBadfilterNegates('*$permissions=fullscreen=()', '*$permissions=fullscreen=(),badfilter', true);
+        assertBadfilterNegates('*$permissions=document-domain=()', '*$permissions=fullscreen=(),badfilter', false);
+
+        // $header regexp and restricted $method/$to values.
+        assertBadfilterNegates('*$header=x:/foo/', '*$header=x:/foo/,badfilter', true);
+        assertBadfilterNegates('*$header=x:/foo/', '*$header=x:foo,badfilter', false);
+        assertBadfilterNegates('*$method=~HEAD', '*$method=~HEAD,badfilter', true);
+        assertBadfilterNegates('*$method=~HEAD', '*$method=~GET,badfilter', false);
+        assertBadfilterNegates('*$to=~a.com', '*$to=~a.com,badfilter', true);
+        assertBadfilterNegates('*$to=~a.com', '*$to=~b.com,badfilter', false);
+
+        // Values are compared as written, so spellings that are equivalent after
+        // parsing must not negate each other.
+        assertBadfilterNegates('*$removeheader=Set-Cookie', '*$removeheader=set-cookie,badfilter', false);
+        assertBadfilterNegates('*$to=Example.com', '*$to=example.com,badfilter', false);
+        assertBadfilterNegates('*$method=GET', '*$method=get,badfilter', false);
+        assertBadfilterNegates('*$method=GET|POST', '*$method=POST|GET,badfilter', false);
+        assertBadfilterNegates('*$to=a.com|b.com', '*$to=b.com|a.com,badfilter', false);
+        assertBadfilterNegates(
+            '*$permissions=fullscreen=()\\,document-domain=()',
+            '*$permissions=fullscreen=()|document-domain=(),badfilter',
             false,
         );
     });
