@@ -13,8 +13,6 @@ enum UniversalStealthOption {
     WebRTC = 'webrtc',
     Push = 'push',
     Location = 'location',
-    Flash = 'flash',
-    Java = 'java',
     HideReferrer = 'referrer',
     UserAgent = 'useragent',
     IP = 'ip',

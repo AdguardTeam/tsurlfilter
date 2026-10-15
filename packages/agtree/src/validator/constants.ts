@@ -49,8 +49,6 @@ export const ALLOWED_STEALTH_OPTIONS = new Set([
     'webrtc',
     'push',
     'location',
-    'flash',
-    'java',
     'referrer',
     'useragent',
     'ip',

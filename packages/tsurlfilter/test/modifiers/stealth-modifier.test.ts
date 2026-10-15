@@ -28,7 +28,7 @@ describe('Stealth modifier api', () => {
         expect(modifier.hasValues()).toBeFalsy();
         expect(loggerMocks.trace).toHaveBeenCalledTimes(0);
 
-        modifier = new StealthModifier('referrer|flash');
+        modifier = new StealthModifier('referrer|webrtc');
         expect(modifier.hasValues()).toBeTruthy();
         expect(modifier.hasStealthOption(StealthOptionName.HideReferrer)).toBeTruthy();
         expect(loggerMocks.trace).toHaveBeenCalledTimes(0);
@@ -43,13 +43,13 @@ describe('Stealth modifier api', () => {
             '[tsurl.StealthModifier.constructor]: duplicate $stealth modifier value "donottrack" in "donottrack|donottrack"',
         );
 
-        modifier = new StealthModifier('webrtc|java');
+        modifier = new StealthModifier('webrtc|push');
         traceCalls += 1;
         expect(modifier.hasValues()).toBeFalsy();
         expect(loggerMocks.trace).toHaveBeenCalledTimes(traceCalls);
         expect(loggerMocks.trace).toHaveBeenCalledWith(
             // eslint-disable-next-line max-len
-            '[tsurl.StealthModifier.constructor]: $stealth modifier does not contain any options supported by browser extension: "webrtc|java"',
+            '[tsurl.StealthModifier.constructor]: $stealth modifier does not contain any options supported by browser extension: "webrtc|push"',
         );
 
         expect(() => {
@@ -59,6 +59,14 @@ describe('Stealth modifier api', () => {
         expect(() => {
             new StealthModifier('not-a-valid-option');
         }).toThrowError('Invalid $stealth option in modifier value: "not-a-valid-option"');
+
+        expect(() => {
+            new StealthModifier('flash');
+        }).toThrowError('Invalid $stealth option in modifier value: "flash"');
+
+        expect(() => {
+            new StealthModifier('java');
+        }).toThrowError('Invalid $stealth option in modifier value: "java"');
     });
 
     it('checks if given string is a valid stealth option', () => {

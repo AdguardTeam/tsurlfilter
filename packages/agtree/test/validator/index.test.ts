@@ -728,7 +728,7 @@ describe('ModifierValidator', () => {
                         'stealth',
                         'stealth=searchqueries',
                         'stealth=donottrack|3p-cookie|1p-cookie|3p-cache|3p-auth',
-                        'stealth=webrtc|push|location|flash|java|referrer',
+                        'stealth=webrtc|push|location|referrer',
                         'stealth=useragent|ip|xclientdata|dpi',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
@@ -787,6 +787,14 @@ describe('ModifierValidator', () => {
                         {
                             actual: 'stealth=~searchqueries|dpi',
                             expected: `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_VALUE}: 'stealth': 'searchqueries'`,
+                        },
+                        {
+                            actual: 'stealth=flash',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'stealth': 'flash'`,
+                        },
+                        {
+                            actual: 'stealth=java',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'stealth': 'java'`,
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);

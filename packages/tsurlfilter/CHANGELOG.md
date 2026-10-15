@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- The `flash` and `java` values of the `$stealth` modifier are no longer
+  recognised. Rules using `$stealth=flash` or `$stealth=java` are now rejected
+  with an `Invalid $stealth option in modifier value` error, matching the
+  removal of these options from CoreLibs.
+
 ### Fixed
 
 - `$badfilter` incorrectly negated rules with different values of value-bearing

@@ -17,6 +17,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Removed
 
+- `flash` and `java` are no longer accepted as `$stealth` modifier values during
+  rule validation.
+
 ### Fixed
 
 - Hostnames with labels ending in an underscore are now accepted by domain validation,
