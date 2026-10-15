@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   literal characters of the matched text, unbalanced arguments (e.g.
   `$$script:contains((function(g,b,a,c,e,d)`) are matched as-is, and
   `/regexp/`-looking arguments keep their regexp semantics.
+- Updated [@adguard/agtree] to `v4.3.0`.
+- Updated [@adguard/tsurlfilter] to `v6.0.4`.
 
 [6.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v6.0.1
 
