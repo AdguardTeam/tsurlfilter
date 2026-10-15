@@ -1,4 +1,4 @@
-import { type ModifierList, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
+import { type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
 import { defaultParserOptions, NetworkRuleParser, type ParserOptions } from '@adguard/agtree/parser';
 
@@ -27,7 +27,7 @@ import { type IValueListModifier } from '../modifiers/value-list-modifier';
 import { type Request } from '../request';
 import { RequestType } from '../request-type';
 import { getBitCount } from '../utils/bit-utils';
-import { hasSpaces, stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
+import { hasSpaces } from '../utils/string-utils';
 
 import {
     MASK_ALLOWLIST,
@@ -373,6 +373,109 @@ export const NetworkRuleGroupOptions = {
 } as const;
 
 /**
+ * Resolves the text of a rule as written in the filter list.
+ *
+ * A `$badfilter` comparison needs the text as written, before the conversion to
+ * AG syntax rewrites modifier names and values, and indexed rules do not keep
+ * their text in memory — so the engine passes a resolver that reads it from the
+ * filter list, see {@link RuleStorage.createWrittenTextResolver}.
+ *
+ * @param rule Rule to resolve the text for.
+ *
+ * @returns Rule text as written, or `null` when it cannot be resolved.
+ */
+export type WrittenRuleTextResolver = (rule: NetworkRule) => string | null;
+
+/**
+ * Resolver for rules that keep their own text: rules created from text and rules
+ * converted to another syntax. It returns `null` for indexed rules, which do not
+ * keep it — the engine passes a resolver that reads those from the filter list.
+ *
+ * @param rule Rule to resolve the text for.
+ *
+ * @returns Rule text as written, or `null` when the rule does not keep it.
+ */
+export const resolveOwnWrittenText: WrittenRuleTextResolver = (
+    rule: NetworkRule,
+): string | null => rule.getWrittenText();
+
+/**
+ * Separates the entries of a written modifier list.
+ *
+ * A separator escaped with a backslash belongs to the value, not to the list.
+ */
+const WRITTEN_MODIFIER_SEPARATOR_REGEXP = /(?<!\\),/;
+
+/**
+ * Returns the name of a written modifier entry, without the negation mark.
+ *
+ * @param entry Written modifier entry, e.g. `~third-party` or `csp=script-src`.
+ *
+ * @returns Modifier name.
+ */
+const getWrittenModifierName = (entry: string): string => entry.replace(/^~/, '').split('=')[0] ?? '';
+
+/**
+ * Removes the given modifiers from the rule text as written.
+ *
+ * `$badfilter` requires the text to match, so the modifiers that take part in
+ * the match are dropped from the text instead of being compared separately.
+ *
+ * The modifier list starts after the separator, found the same way as in the
+ * parser: the last unescaped `$` that is not followed by a regexp marker, so an
+ * end anchor in a regexp pattern is not taken for it. The text is rebuilt as it
+ * was apart from the dropped entries.
+ *
+ * @param text Rule text as written.
+ * @param shouldStrip Predicate selecting the modifier names to remove.
+ *
+ * @returns Rule text without the selected modifiers.
+ */
+const stripWrittenModifiers = (text: string, shouldStrip: (name: string) => boolean): string => {
+    const delimiterIndex = NetworkRuleParser.findNetworkRuleSeparatorIndex(text);
+
+    if (delimiterIndex === -1) {
+        return text;
+    }
+
+    const pattern = text.slice(0, delimiterIndex);
+    const kept = text
+        .slice(delimiterIndex + 1)
+        .split(WRITTEN_MODIFIER_SEPARATOR_REGEXP)
+        .filter((entry) => !shouldStrip(getWrittenModifierName(entry)));
+
+    return kept.length === 0 ? pattern : `${pattern}${OPTIONS_DELIMITER}${kept.join(',')}`;
+};
+
+/**
+ * Checks whether the modifier name is `$badfilter`.
+ *
+ * @param name Modifier name.
+ *
+ * @returns True for the `$badfilter` modifier.
+ */
+const isBadfilterModifier = (name: string): boolean => name === NETWORK_RULE_OPTIONS.BADFILTER;
+
+/**
+ * Name of the `$domain` alias of other syntaxes, as it appears in the written
+ * rule text.
+ */
+const DOMAIN_ALIAS_OPTION_NAME = 'from';
+
+/**
+ * Checks whether the modifier name restricts a rule by domain.
+ *
+ * `$domain` has the `$from` alias in other syntaxes, and both are dropped when a
+ * rule with `$domain` disables the target rule only partially.
+ *
+ * @param name Modifier name.
+ *
+ * @returns True for `$domain` and its alias.
+ */
+const isDomainModifier = (name: string): boolean => name === NETWORK_RULE_OPTIONS.DOMAIN
+    || name === DOMAIN_ALIAS_OPTION_NAME;
+
+/**
  * Basic network filtering rule.
  *
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
@@ -472,6 +575,18 @@ export class NetworkRule implements IRule {
      * Rule Stealth modifier.
      */
     private stealthModifier: StealthModifier | null = null;
+
+    /**
+     * Rule text as written in the filter list, kept only when the rule was
+     * converted to another syntax.
+     *
+     * Conversion rewrites modifier names and values (for example
+     * `$queryprune=foo` becomes `$removeparam=foo`), while a `$badfilter` rule
+     * requires the text as written. Indexed rules do not keep their text in
+     * memory, so only converted rules carry it; for the rest the text is read
+     * from the filter list on demand — see {@link getWrittenText}.
+     */
+    private readonly originalRuleText: string | null;
 
     /**
      * Rule priority, which is needed when the engine has to choose between
@@ -670,6 +785,19 @@ export class NetworkRule implements IRule {
      */
     public getText(): string | undefined {
         return this.ruleText;
+    }
+
+    /**
+     * Returns the rule text as written in the filter list, when the rule keeps it.
+     *
+     * Indexed rules do not keep their text in memory, so this returns `null` for
+     * them and the text has to be read from the filter list — see
+     * {@link WrittenRuleTextResolver}.
+     *
+     * @returns Rule text as written, or `null` when the rule does not keep it.
+     */
+    public getWrittenText(): string | null {
+        return this.originalRuleText ?? this.ruleText ?? null;
     }
 
     /**
@@ -1339,6 +1467,8 @@ export class NetworkRule implements IRule {
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
      * the rule does not have source index.
      * @param node Optional pre-parsed network rule node to avoid re-parsing.
+     * @param originalRuleText Rule text as written in the filter list. Pass it only when the rule was
+     * converted to another syntax — otherwise the converted text is already the original one.
      *
      * @throws Error if it fails to parse the rule or if the rule is not a network rule.
      */
@@ -1347,6 +1477,7 @@ export class NetworkRule implements IRule {
         filterListId: number = FILTER_LIST_ID_NONE,
         ruleIndex: number = RULE_INDEX_NONE,
         node?: NetworkRuleNode,
+        originalRuleText?: string,
     ) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
@@ -1362,13 +1493,17 @@ export class NetworkRule implements IRule {
         const parsedNode = node ?? NetworkRuleParser.parse(ruleText, NetworkRule.PARSER_OPTIONS);
         this.allowlist = parsedNode.exception;
 
+        // `$badfilter` compares the rule as written, so the text as written is
+        // used when the rule was converted to another syntax.
+        this.originalRuleText = originalRuleText ?? null;
+
         const pattern = parsedNode.pattern.value;
         if (pattern && hasSpaces(pattern)) {
             throw new SyntaxError('Rule has spaces, seems to be an host rule');
         }
 
         if (parsedNode.modifiers?.children?.length) {
-            this.loadOptions(parsedNode.modifiers);
+            this.loadOptions(parsedNode);
         }
 
         if (NetworkRule.isTooGeneral(parsedNode)) {
@@ -1385,12 +1520,12 @@ export class NetworkRule implements IRule {
      *
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-modifiers}
      *
-     * @param options Modifier list node.
+     * @param node Network rule AST node the rule was built from.
      *
      * @throws An error if there is an unsupported modifier.
      */
-    private loadOptions(options: ModifierList): void {
-        for (const option of options.children) {
+    private loadOptions(node: NetworkRuleNode): void {
+        for (const option of node.modifiers?.children ?? []) {
             let value = EMPTY_STRING;
 
             if (option.value && option.value.value) {
@@ -1484,61 +1619,74 @@ export class NetworkRule implements IRule {
 
     /**
      * Returns true if this rule negates the specified rule.
+     *
+     * A `$badfilter` rule disables the rules whose text matches, so the text as
+     * written is compared: the whole text is taken, `$badfilter` is dropped from
+     * it, and the rest must be equal. That covers the pattern, the allowlist flag
+     * and every modifier with its value, order and repeats — rules that only look
+     * equal after parsing (for example `$removeheader=Set-Cookie` against
+     * `set-cookie`, or `$queryprune` against `$removeparam`) do not match.
+     *
+     * A rule with `$domain` and without negated domains is an exception: it
+     * disables the target rule only for the domains present in both lists, so the
+     * `$domain` entries are dropped from both texts and the rest is compared,
+     * together with an intersection check of the two domain lists.
+     *
      * Only makes sense when this rule has a `badfilter` modifier.
      *
      * @param specifiedRule Rule to check.
+     * @param resolveText Resolves the text of a rule as written in the filter
+     *   list, since indexed rules do not keep it.
      *
      * @returns True if this rule negates the specified rule.
      */
-    public negatesBadfilter(specifiedRule: NetworkRule): boolean {
+    public negatesBadfilter(
+        specifiedRule: NetworkRule,
+        resolveText: WrittenRuleTextResolver = resolveOwnWrittenText,
+    ): boolean {
         if (!this.isOptionEnabled(NetworkRuleOption.Badfilter)) {
             return false;
         }
 
-        if (this.allowlist !== specifiedRule.allowlist) {
+        const badfilterText = resolveText(this);
+        const targetText = resolveText(specifiedRule);
+
+        if (badfilterText === null || targetText === null) {
             return false;
         }
 
-        if (this.pattern.pattern !== specifiedRule.pattern.pattern) {
-            return false;
+        const withoutBadfilter = stripWrittenModifiers(badfilterText, isBadfilterModifier);
+
+        if (!NetworkRule.isPartialDomainCase(this, specifiedRule)) {
+            return withoutBadfilter === targetText;
         }
 
-        if (this.permittedRequestTypes !== specifiedRule.permittedRequestTypes) {
-            return false;
-        }
+        return stripWrittenModifiers(withoutBadfilter, isDomainModifier)
+                === stripWrittenModifiers(targetText, isDomainModifier)
+            && DomainModifier.haveIntersection(
+                this.getPermittedDomains(),
+                specifiedRule.getPermittedDomains(),
+            );
+    }
 
-        if (this.restrictedRequestTypes !== specifiedRule.restrictedRequestTypes) {
-            return false;
-        }
-
-        const xored = OptionFlags.xor(this.enabledOptions, NetworkRuleOption.Badfilter);
-        if (!OptionFlags.equals(xored, specifiedRule.enabledOptions)) {
-            return false;
-        }
-
-        if (!OptionFlags.equals(this.disabledOptions, specifiedRule.disabledOptions)) {
-            return false;
-        }
-
-        if (!stringArraysEquals(
-            this.getRestrictedDomains()?.map(DomainModifier.getComparisonKey) ?? null,
-            specifiedRule.getRestrictedDomains()?.map(DomainModifier.getComparisonKey) ?? null,
-        )) {
-            return false;
-        }
-
-        if (!stringArraysHaveIntersection(
-            this.getPermittedDomains()?.map(DomainModifier.getComparisonKey) ?? null,
-            specifiedRule.getPermittedDomains()?.map(DomainModifier.getComparisonKey) ?? null,
-        )) {
-            return false;
-        }
-
-        if (!stringArraysEquals(this.getDenyAllowDomains(), specifiedRule.getDenyAllowDomains())) {
-            return false;
-        }
-
-        return true;
+    /**
+     * Checks whether a `$badfilter` rule disables the target rule only partially.
+     *
+     * This is the case when at least one of the two rules restricts itself by
+     * `$domain` and neither rule negates a domain: negated domains cannot be
+     * expressed as an intersection, so such rules are compared by the whole text
+     * instead. A rule without `$domain` restricts nothing, so it keeps cancelling
+     * the other rule everywhere the two rules overlap.
+     *
+     * @param badfilterRule The rule that carries the `$badfilter` modifier.
+     * @param targetRule The rule to test for negation.
+     *
+     * @returns True when the partial cancellation case applies.
+     */
+    private static isPartialDomainCase(badfilterRule: NetworkRule, targetRule: NetworkRule): boolean {
+        return (targetRule.getPermittedDomains() !== null || badfilterRule.getPermittedDomains() !== null)
+            && targetRule.getRestrictedDomains() === null
+            && badfilterRule.getRestrictedDomains() === null;
     }
 
     /**

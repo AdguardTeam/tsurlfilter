@@ -10,7 +10,12 @@ import { type WebRequest } from 'webextension-polyfill';
 
 import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
 
-import { type RequestContext, RequestContextState, RequestEvents } from '../../../../../../src/lib';
+import {
+    type RequestContext,
+    RequestContextState,
+    requestContextStorage,
+    RequestEvents,
+} from '../../../../../../src/lib';
 import { defaultFilteringLog, FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
 import { DocumentLifecycle } from '../../../../../../src/lib/common/interfaces';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
@@ -376,6 +381,26 @@ describe('Request Events', () => {
             expect(tabReloadCalls).toHaveLength(0);
 
             filteringLogSpy.mockRestore();
+        });
+    });
+
+    describe('cookie store details capture', () => {
+        it('should store cookieStoreId and incognito from the onBeforeRequest details', () => {
+            RequestEvents.init();
+
+            const requestId = 'cookie-store-details-1';
+
+            browser.webRequest.onBeforeRequest.dispatch(<WebRequest.OnBeforeRequestDetailsType>{
+                ...commonRequestData,
+                requestId,
+                cookieStoreId: 'firefox-container-4',
+                incognito: true,
+            });
+
+            expect(requestContextStorage.get(requestId)).toEqual(expect.objectContaining({
+                cookieStoreId: 'firefox-container-4',
+                incognito: true,
+            }));
         });
     });
 });

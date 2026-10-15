@@ -276,40 +276,57 @@ export class DomainModifier {
     }
 
     /**
-     * Builds a comparison key for domain restrictions in `$badfilter` rules.
+     * Checks whether two domain lists can match the same request domain.
      *
-     * ASCII letters in regexp literals and ranges are case-insensitive, but
-     * escape tokens such as `\D` and `\d` must remain distinct. Patterns with
-     * named groups, multi-character escapes or non-letter ranges retain exact
-     * source identity (for example, `[A-z]` also includes punctuation);
-     * comparing arbitrary regular expressions for equivalence is not intended.
+     * Used by `$badfilter`: a rule with `$domain` disables the target rule for
+     * the domains present in both lists. A plain domain name is compared
+     * case-insensitively, because a domain name is case-insensitive, while a
+     * regexp pattern keeps its case.
      *
-     * @param domain Normalized domain restriction.
+     * The entries come from {@link getPermittedDomains}, so they are the values
+     * stored after parsing, not the raw rule text: {@link normalizeDomain} has
+     * already resolved the separator escape. An escaped separator in a regexp
+     * entry therefore compares equal to the unescaped one here, while the
+     * Manifest V3 converter compares the raw text — a pre-existing divergence
+     * that the `$domain` decision has to settle.
      *
-     * @returns Domain comparison key.
+     * A wildcard TLD entry (`example.*`) therefore overlaps only an identically
+     * written entry: matching it against the domains it stands for needs the
+     * public suffix list, which the Manifest V3 converter does not have, and a
+     * prefix-based approximation cancels rules for domains the wildcard does not
+     * cover.
+     *
+     * @param left First domain list.
+     * @param right Second domain list.
+     *
+     * @returns True when at least one entry of one list equals an entry of the
+     *   other list. A missing list matches any domain, the same way a
+     *   `$badfilter` without `$domain` disables a rule everywhere it applies.
      */
-    public static getComparisonKey(domain: string): string {
-        if (!SimpleRegex.isRegexPattern(domain)) {
-            return domain;
+    public static haveIntersection(
+        left: readonly string[] | null,
+        right: readonly string[] | null,
+    ): boolean {
+        if (left === null || right === null) {
+            return true;
         }
 
-        // Preserve escaped range endpoints: the loop below only checks adjacent characters.
-        if (domain.includes('(?<') || /\\(?:[cuxkpP]|[\s\S]-)/.test(domain)) {
-            return domain;
-        }
-
-        for (let i = 0; i < domain.length; i += 1) {
-            if (domain[i] === '-') {
-                const range = domain.slice(i - 1, i + 2);
-                if (!/^(?:[A-Z]-[A-Z]|[a-z]-[a-z])$/.test(range)) {
-                    return domain;
-                }
-            }
-        }
-
-        return domain.replace(/\\[\s\S]|[A-Z]/g, (token) => (
-            token.length === 1 ? token.toLowerCase() : token
+        return left.some((leftDomain) => right.some(
+            (rightDomain) => DomainModifier.normalizeForComparison(leftDomain)
+                === DomainModifier.normalizeForComparison(rightDomain),
         ));
+    }
+
+    /**
+     * Brings a domain entry to the form used by the `$badfilter` comparison:
+     * domain names are case-insensitive, while regexp patterns keep their case.
+     *
+     * @param domain Domain entry.
+     *
+     * @returns Domain entry to compare.
+     */
+    private static normalizeForComparison(domain: string): string {
+        return SimpleRegex.isRegexPattern(domain) ? domain : domain.toLowerCase();
     }
 
     /**
