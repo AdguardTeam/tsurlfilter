@@ -54,10 +54,11 @@ export class AppContext {
     /**
      * Per-hostname hashes of rules covered by preregistered content-script
      * registrations that existed when the service worker started (before
-     * the first sync of this SW lifetime), recovered from the persisted
-     * registrations' `js` file lists. Plain (non-persisted) field: a stale
-     * snapshot must not survive an extension update that changes
-     * registrations.
+     * the first sync of this SW lifetime), recovered from the registrations'
+     * `js` file lists. Chrome clears registrations on install and update,
+     * so the snapshot can only describe registrations persisted from
+     * previous service-worker lifetimes of the current version. Plain
+     * (non-persisted) field: it lives for one service-worker lifetime.
      *
      * Used to decide which rules are covered for a pre-existing tab (skip
      * dynamic injection) and which are not (inject dynamically).

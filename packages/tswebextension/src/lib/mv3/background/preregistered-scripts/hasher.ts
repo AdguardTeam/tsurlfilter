@@ -47,8 +47,7 @@ export const MANIFEST_SCHEMA_VERSION = 1;
 /**
  * Shape of the `manifest.json` shipped next to the generated artifacts.
  * Shared contract between the build-time writer (browser-extension tools)
- * and the runtime reader ({@link PreregisteredScriptsService}). The writer
- * may persist extra bookkeeping fields; the runtime ignores them.
+ * and the runtime reader ({@link PreregisteredScriptsService}).
  */
 export interface PreregisteredScriptsManifest {
     /**

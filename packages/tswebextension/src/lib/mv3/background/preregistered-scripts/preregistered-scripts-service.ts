@@ -88,8 +88,8 @@ export class PreregisteredScriptsService {
      * persisted registrations once per service-worker lifetime (used to
      * decide dynamic injection for pre-existing tabs), then syncs them — or
      * clears all when the feature is not configured, since persisted
-     * registrations would otherwise survive forever. Both operations
-     * publish the resulting coverage into {@link appContext}.
+     * registrations would otherwise keep firing across browser sessions.
+     * Both operations publish the resulting coverage into {@link appContext}.
      *
      * @param preregistrationEnabled Whether preregistration should be active
      * (the caller composes it from `filteringEnabled && !debugScriptlets`).
@@ -102,9 +102,8 @@ export class PreregisteredScriptsService {
     ): Promise<void> {
         // Snapshot unconditionally, before sync/clear mutates registrations,
         // so pre-existing tabs are judged against the registrations that
-        // existed when their pages loaded — even when the feature is not
-        // configured anymore (an update may have removed it). Failure
-        // handling: see snapshotBootRegistrations().
+        // existed when their pages loaded, not against the ones this service
+        // worker installs. Failure handling: see snapshotBootRegistrations().
         if (appContext.preregisteredScriptRulesAtBoot === undefined) {
             await snapshotBootRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE);
         }
