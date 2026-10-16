@@ -106,6 +106,7 @@ export function toASCII(strings: string[]): string[] {
  * @returns A string containing only ASCII characters.
  */
 export function encodeNonAscii(str: string): string {
+    // eslint-disable-next-line no-control-regex
     return str.replace(/[^\x00-\x7F]/gu, (char) => encodeURIComponent(char));
 }
 
