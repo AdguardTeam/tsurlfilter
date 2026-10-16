@@ -298,8 +298,9 @@ export class TsWebExtension implements AppInterface<
             logger.warn(`[tsweb.TsWebExtension.removeAllFilteringRules]: Found ${removedRules.length} session rule(s) not cleared by services. Rule IDs: [${removedRules.map((rule) => rule.id).join(', ')}]`);
         }
 
-        declarativeFilteringLog.startUpdate();
-        declarativeFilteringLog.finishUpdate([], false);
+        await declarativeFilteringLog.withUpdateLock(async () => {
+            declarativeFilteringLog.finishUpdate([], false);
+        });
 
         engineApi.stopEngine();
     }

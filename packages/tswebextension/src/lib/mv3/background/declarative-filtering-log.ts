@@ -57,6 +57,9 @@ class DeclarativeFilteringLog {
      * Acquires the mutex lock within the specified timeout.
      * Used to prevent getting rule info during rule set updates.
      *
+     * The lock is released by {@link withUpdateLock} when the operation passed
+     * to it finishes, so this method is only meant to be paired with it.
+     *
      * @param timeoutMs The maximum time to wait (in milliseconds) to acquire the lock.
      * Defaults to {@link DeclarativeFilteringLog.MAX_WAIT_TIME_MS}.
      *
@@ -67,18 +70,16 @@ class DeclarativeFilteringLog {
     }
 
     /**
-     * Releases the mutex and sets the new rule sets.
-     * Used to prevent getting rule info during rule set updates.
-     * Also, you can specify whether to enable declarative logging after update.
+     * Sets the new rule sets and enables or disables declarative logging.
+     *
+     * The update lock is not released here: it stays held until the operation
+     * passed to {@link withUpdateLock} finishes.
      *
      * @param rulesets List of {@link IRulesetWithSourceMap}.
      * @param enableLog Should we enable declarative logging after update.
-     *
-     * @throws Error if no update is in progress.
      */
     public finishUpdate(rulesets: IRulesetWithSourceMap[], enableLog: boolean): void {
         this.sourceRulesets = rulesets;
-        this.mutex.unlock();
 
         if (enableLog) {
             this.start();
@@ -91,9 +92,10 @@ class DeclarativeFilteringLog {
      * Runs an operation while holding the update lock.
      *
      * The lock is released when the operation finishes, whether it succeeds or
-     * throws. On success the operation calls {@link finishUpdate} itself; a
-     * throw before that releases the lock and keeps the previous rule sets, so
-     * a failed update cannot block the filtering log.
+     * throws, so it is released exactly once per acquisition and never while
+     * another update is running. On success the operation calls
+     * {@link finishUpdate}; a throw before that keeps the previous rule sets,
+     * so a failed update cannot block the filtering log.
      *
      * @param operation Operation to run under the lock.
      *
@@ -105,15 +107,6 @@ class DeclarativeFilteringLog {
         try {
             await operation();
         } finally {
-            this.abortUpdate();
-        }
-    }
-
-    /**
-     * Releases the update lock if it is still held.
-     */
-    private abortUpdate(): void {
-        if (this.mutex.isLocked()) {
             this.mutex.unlock();
         }
     }

@@ -399,22 +399,42 @@ describe('DeclarativeFilteringLog.logMatchedRule', () => {
 });
 
 describe('DeclarativeFilteringLog.withUpdateLock', () => {
+    const releaseUpdateLock = (): void => {
+        (declarativeFilteringLog as any).mutex.unlock();
+    };
+
     it('releases the lock when the operation throws', async () => {
         await expect(declarativeFilteringLog.withUpdateLock(async () => {
             throw new Error('configuration failed');
         })).rejects.toThrow('configuration failed');
 
         await expect(declarativeFilteringLog.startUpdate(0)).resolves.toBeUndefined();
-        declarativeFilteringLog.finishUpdate([], false);
+        releaseUpdateLock();
     });
 
-    it('allows the operation to finish the update', async () => {
+    it('keeps the lock until the operation finishes', async () => {
         await declarativeFilteringLog.withUpdateLock(async () => {
             declarativeFilteringLog.finishUpdate([], false);
+
+            await expect(declarativeFilteringLog.startUpdate(0)).rejects.toThrow(TimeoutError);
         });
 
         await expect(declarativeFilteringLog.startUpdate(0)).resolves.toBeUndefined();
-        declarativeFilteringLog.finishUpdate([], false);
+        releaseUpdateLock();
+    });
+
+    it('keeps the lock handed over to a waiting update', async () => {
+        let secondUpdate: Promise<void> = Promise.resolve();
+
+        await declarativeFilteringLog.withUpdateLock(async () => {
+            secondUpdate = declarativeFilteringLog.withUpdateLock(async () => {
+                declarativeFilteringLog.finishUpdate([], false);
+            });
+
+            declarativeFilteringLog.finishUpdate([], false);
+        });
+
+        await expect(secondUpdate).resolves.toBeUndefined();
     });
 
     it('does not release the lock held by another update', async () => {
@@ -431,6 +451,6 @@ describe('DeclarativeFilteringLog.withUpdateLock', () => {
         startUpdateSpy.mockRestore();
         await expect(declarativeFilteringLog.startUpdate(0)).rejects.toThrow(TimeoutError);
 
-        declarativeFilteringLog.finishUpdate([], false);
+        releaseUpdateLock();
     });
 });

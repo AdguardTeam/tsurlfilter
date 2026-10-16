@@ -24,6 +24,11 @@ export class Mutex {
     private waitingResolvers: (() => void)[] = [];
 
     /**
+     * Queue of resolvers waiting for the mutex to be unlocked.
+     */
+    private unlockListeners: (() => void)[] = [];
+
+    /**
      * Attempts to acquire the mutex lock within the specified timeout.
      *
      * If the mutex is free, acquires it immediately.
@@ -67,7 +72,9 @@ export class Mutex {
     /**
      * Releases the mutex and grants the lock to the next waiter in the queue, if any.
      *
-     * If no one is waiting, the mutex becomes unlocked.
+     * If no one is waiting, the mutex becomes unlocked and all
+     * {@link waitUntilUnlocked} waiters are notified. A lock granted to the
+     * next waiter stays locked until that waiter releases it.
      *
      * @throws {Error} If the mutex is already unlocked.
      */
@@ -80,9 +87,11 @@ export class Mutex {
 
         if (next) {
             next();
-        } else {
-            this.locked = false;
+            return;
         }
+
+        this.locked = false;
+        this.notifyUnlocked();
     }
 
     /**
@@ -98,7 +107,9 @@ export class Mutex {
      * Returns a promise that resolves once the mutex is unlocked.
      *
      * If the mutex is already unlocked, the promise resolves immediately.
-     * Otherwise, it waits until the lock is released.
+     * Otherwise, it waits until the lock is released. A lock handed over to
+     * the next waiter keeps the mutex locked, so waiting continues until no
+     * one holds it. Unlike {@link lock}, waiting does not take the lock.
      *
      * @returns A promise that resolves when the mutex becomes available.
      */
@@ -108,7 +119,17 @@ export class Mutex {
         }
 
         await new Promise<void>((resolve) => {
-            this.waitingResolvers.push(resolve);
+            this.unlockListeners.push(resolve);
         });
+    }
+
+    /**
+     * Resolves all resolvers waiting for the mutex to be unlocked.
+     */
+    private notifyUnlocked(): void {
+        const listeners = this.unlockListeners;
+        this.unlockListeners = [];
+
+        listeners.forEach((listener) => listener());
     }
 }

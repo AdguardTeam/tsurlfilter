@@ -65,6 +65,42 @@ describe('Mutex', () => {
         await expect(waitPromise).resolves.toBeUndefined();
     });
 
+    it('should resolve all waitUntilUnlocked listeners', async () => {
+        const mutex = new Mutex();
+        await mutex.lock(1000);
+
+        const firstWaitPromise = mutex.waitUntilUnlocked();
+        const secondWaitPromise = mutex.waitUntilUnlocked();
+
+        mutex.unlock();
+
+        await expect(firstWaitPromise).resolves.toBeUndefined();
+        await expect(secondWaitPromise).resolves.toBeUndefined();
+        expect(mutex.isLocked()).toBe(false);
+    });
+
+    it('should wait for the lock to be free, not for the handover', async () => {
+        const mutex = new Mutex();
+        await mutex.lock(1000);
+
+        let isUnlocked = false;
+        const waitPromise = mutex.waitUntilUnlocked().then(() => {
+            isUnlocked = true;
+        });
+        const lockPromise = mutex.lock(1000);
+
+        mutex.unlock();
+
+        await expect(lockPromise).resolves.toBeUndefined();
+        expect(mutex.isLocked()).toBe(true);
+        expect(isUnlocked).toBe(false);
+
+        mutex.unlock();
+
+        await expect(waitPromise).resolves.toBeUndefined();
+        expect(isUnlocked).toBe(true);
+    });
+
     it('should immediately resolve waitUntilUnlocked if already unlocked', async () => {
         const mutex = new Mutex();
         await expect(mutex.waitUntilUnlocked()).resolves.toBeUndefined();
