@@ -1,22 +1,12 @@
 // Part of the engine injected into pages: plain functions instead of a static class keep it small,
 // see engine-entry.ts.
-import { CanvasConditionInput, CanvasConditionType, CanvasPolicyRequestType } from './constants';
-import {
-    type DocumentPolicyInput,
-    type PreparedCondition,
-    type PreparedPolicyRule,
-    type ProtectionPolicyArtifact,
-} from './contracts';
+import { CanvasConditionType } from './constants';
+import { type DocumentPolicyInput, type PreparedCondition, type ProtectionPolicyArtifact } from './contracts';
 
 /**
- * A predicate's result, or `undefined` when a URL it needs is unknown.
+ * A predicate's result, or `undefined` when the URL it needs is unknown.
  */
 type Verdict = boolean | undefined;
-
-/**
- * URLs a predicate can read, by its input selector.
- */
-type PredicateUrls = Record<CanvasConditionInput, string | undefined>;
 
 /**
  * Resolves the hostname that keys a site's noise with the extension's existing site-key rules.
@@ -40,70 +30,27 @@ export const resolveSiteKey = (url: string): string | undefined => {
 };
 
 /**
- * Combines three-state verdicts without treating an unknown one as false.
+ * Evaluates a prepared condition against the URL of a top-level document.
  *
- * @param verdicts Operand verdicts.
- * @param decisive The value that decides the result alone: `true` for "or", `false` for "and".
+ * @param condition Predicate prepared by the policy compiler.
+ * @param url URL of the top-level document, if known.
  *
- * @returns The decided value, or `undefined` when only an unknown operand could decide it.
- */
-const combine = (verdicts: readonly Verdict[], decisive: boolean): Verdict => {
-    if (verdicts.includes(decisive)) {
-        return decisive;
-    }
-    return verdicts.includes(undefined) ? undefined : !decisive;
-};
-
-/**
- * Evaluates a prepared condition against the URLs known for a document.
- *
- * @param condition Predicate prepared by the policy producer.
- * @param urls URLs the predicate inputs select.
- *
- * @returns Match, mismatch or `undefined` when a required URL is unknown.
+ * @returns Match, mismatch or `undefined` when the URL is unknown.
  *
  * @throws When a trusted artifact contains an unexpected condition type.
  */
-const evaluate = (condition: PreparedCondition, urls: PredicateUrls): Verdict => {
+const evaluate = (condition: PreparedCondition, url: string | undefined): Verdict => {
     switch (condition.type) {
-        case CanvasConditionType.Unavailable:
-            return undefined;
-        case CanvasConditionType.UrlRegexp: {
-            const url = urls[condition.input];
+        case CanvasConditionType.UrlRegexp:
             return url === undefined ? undefined : new RegExp(condition.pattern, condition.flags).test(url);
-        }
-        case CanvasConditionType.And:
-        case CanvasConditionType.Or:
-            return combine(
-                condition.operands.map((operand) => evaluate(operand, urls)),
-                condition.type === CanvasConditionType.Or,
-            );
         case CanvasConditionType.Not: {
-            const verdict = evaluate(condition.operand, urls);
+            const verdict = evaluate(condition.operand, url);
             return verdict === undefined ? undefined : !verdict;
         }
         default:
             throw new Error('Unexpected prepared condition');
     }
 };
-
-/**
- * Tells whether a rule of the given request type certainly matches.
- *
- * @param rules Prepared exclusions with request type masks.
- * @param requestType Kind of the document the rules are evaluated for.
- * @param urls URLs the predicate inputs select.
- *
- * @returns Whether the document is excluded. Unknown verdicts do not exclude.
- */
-const isExcluded = (
-    rules: readonly PreparedPolicyRule[],
-    requestType: DocumentPolicyInput['requestType'],
-    urls: PredicateUrls,
-): boolean => combine(
-    rules.filter((rule) => rule.requestTypes.includes(requestType)).map((rule) => evaluate(rule.condition, urls)),
-    true,
-) === true;
 
 /**
  * Decides whether a document is protected and which site keys its noise.
@@ -120,20 +67,9 @@ export const resolveProtectedSite = (
     policy: ProtectionPolicyArtifact,
     input: DocumentPolicyInput,
 ): string | undefined => {
-    const { url, topUrl, sourceUrl } = input;
-    // A top document is its own top and source.
-    const own: PredicateUrls = {
-        [CanvasConditionInput.FrameUrl]: url,
-        [CanvasConditionInput.TopUrl]: topUrl,
-        [CanvasConditionInput.SourceUrl]: sourceUrl,
-    };
-    const top: PredicateUrls = {
-        [CanvasConditionInput.FrameUrl]: topUrl,
-        [CanvasConditionInput.TopUrl]: topUrl,
-        [CanvasConditionInput.SourceUrl]: topUrl,
-    };
-    if (isExcluded(policy.ownFrameExclusions, input.requestType, own)
-        || isExcluded(policy.documentExclusions, CanvasPolicyRequestType.Document, top)) {
+    const { url, topUrl } = input;
+    // Unknown verdicts do not exclude.
+    if (policy.documentExclusions.some((condition) => evaluate(condition, topUrl) === true)) {
         return undefined;
     }
     return (topUrl === undefined ? undefined : resolveSiteKey(topUrl)) ?? resolveSiteKey(url);

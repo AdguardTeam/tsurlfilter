@@ -47,35 +47,11 @@ export enum CanvasOperationStatus {
 }
 
 /**
- * Browser a prepared policy is built for.
- */
-export enum CanvasPolicyBrowser {
-    // TODO: remove when Chromium MV2 is no longer supported.
-    ChromiumMv2 = 'chromium-mv2',
-    ChromiumMv3 = 'chromium-mv3',
-    FirefoxMv2 = 'firefox-mv2',
-}
-
-/**
- * Kind of document a prepared exclusion applies to.
- */
-export enum CanvasPolicyRequestType {
-    Document = 'document',
-    Subdocument = 'subdocument',
-}
-
-/**
  * Type of a prepared condition.
  */
 export enum CanvasConditionType {
     UrlRegexp = 'url-regexp',
-    And = 'and',
-    Or = 'or',
     Not = 'not',
-    /**
-     * A condition the producer could not express; it never matches.
-     */
-    Unavailable = 'unavailable',
 }
 
 /**
@@ -84,13 +60,4 @@ export enum CanvasConditionType {
 export enum CanvasConditionFlags {
     None = '',
     IgnoreCase = 'i',
-}
-
-/**
- * URL a prepared `url-regexp` condition is tested against.
- */
-export enum CanvasConditionInput {
-    FrameUrl = 'frame-url',
-    TopUrl = 'top-url',
-    SourceUrl = 'source-url',
 }

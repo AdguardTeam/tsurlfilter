@@ -6,10 +6,10 @@ import {
     vi,
 } from 'vitest';
 
+import { CanvasProtectionCode } from '../../../../src/lib/common/canvas-protection/code';
 import {
     CanvasAvailabilityStatus,
     CanvasOperationStatus,
-    CanvasPolicyBrowser,
     CanvasRegistrationOperation,
 } from '../../../../src/lib/common/canvas-protection/constants';
 import { CanvasRegistrationOperationError } from '../../../../src/lib/common/canvas-protection/registration';
@@ -33,6 +33,15 @@ describe('Chromium canvas registration', () => {
         adapter = new ChromiumCanvasRegistration();
     });
 
+    it('names the script anonymous in stack traces', () => {
+        const snapshot = {
+            session: { root: '0123456789abcdef0123456789abcdef', generation: 'abcdef0123456789abcdef0123456789' },
+            policy: createProtectAllPolicy('policy-a'),
+        };
+        expect(adapter.createCode(snapshot)).toMatch(/\n\/\/# sourceURL=<anonymous>$/);
+        expect(CanvasProtectionCode.create(snapshot)).not.toContain('sourceURL');
+    });
+
     it('checks actual access and own registration presence', async () => {
         expect(await adapter.checkAvailability()).toEqual({ status: CanvasAvailabilityStatus.Available, value: false });
         getScripts.mockResolvedValueOnce([{ id: ID, js: [{ code: 'existing code' }] }]);
@@ -46,7 +55,7 @@ describe('Chromium canvas registration', () => {
     });
 
     it('registers only its own early MAIN-world script and returns actual operations', async () => {
-        const policy = createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'policy-a');
+        const policy = createProtectAllPolicy('policy-a');
         expect(await adapter.install('generated code', policy)).toEqual([
             { operation: CanvasRegistrationOperation.Register, status: CanvasOperationStatus.Succeeded },
         ]);
@@ -65,7 +74,7 @@ describe('Chromium canvas registration', () => {
 
     it('updates an existing own registration and preserves it on rejection', async () => {
         getScripts.mockResolvedValue([{ id: ID, js: [{ code: 'existing code' }] }]);
-        const policy = createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'policy-a');
+        const policy = createProtectAllPolicy('policy-a');
         expect(await adapter.install('new code', policy)).toEqual([
             { operation: CanvasRegistrationOperation.Update, status: CanvasOperationStatus.Succeeded },
         ]);
@@ -85,7 +94,7 @@ describe('Chromium canvas registration', () => {
 
     it('reports a rejected registration check without claiming register success', async () => {
         vi.mocked(chrome.userScripts.getScripts).mockRejectedValueOnce(new Error('read rejected'));
-        await expect(adapter.install('code', createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'policy-a')))
+        await expect(adapter.install('code', createProtectAllPolicy('policy-a')))
             .rejects.toBeInstanceOf(CanvasRegistrationOperationError);
         expect(chrome.userScripts.register).not.toHaveBeenCalled();
     });
@@ -106,14 +115,5 @@ describe('Chromium canvas registration', () => {
                 },
             ],
         });
-    });
-    it('rejects a policy for a different browser before registration writes', async () => {
-        getScripts.mockResolvedValue([{ id: ID, js: [{ code: 'previous' }] }]);
-        await expect(adapter.install('wrong', createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'wrong')))
-            .rejects.toMatchObject({ name: 'CanvasRegistrationOperationError', operations: [] });
-        expect(getScripts).not.toHaveBeenCalled();
-        expect(chrome.userScripts.register).not.toHaveBeenCalled();
-        expect(chrome.userScripts.update).not.toHaveBeenCalled();
-        expect(chrome.userScripts.unregister).not.toHaveBeenCalled();
     });
 });

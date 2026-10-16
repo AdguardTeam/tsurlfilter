@@ -6,29 +6,25 @@ import {
     vi,
 } from 'vitest';
 
-import { CanvasPolicyBrowser } from '../../../../src/lib/common/canvas-protection/constants';
-import { type ProtectionPolicyArtifact } from '../../../../src/lib/common/canvas-protection/contracts';
 import { CanvasProtectionController } from '../../../../src/lib/common/canvas-protection/controller';
+import { CanvasPolicyCompiler } from '../../../../src/lib/common/canvas-protection/policy-compiler';
 import { type CanvasProtectionRegistration } from '../../../../src/lib/common/canvas-protection/registration';
-
-import { createProtectAllPolicy } from './fixtures/prepared-policies';
 
 type Configuration = NonNullable<ReturnType<ConstructorParameters<typeof CanvasProtectionController>[1]>>;
 
+const disabledAllowlist = { enabled: false, inverted: false, domains: [] };
+const policy = CanvasPolicyCompiler.compile([], disabledAllowlist);
 const enabled = { filteringEnabled: true, stealthModeEnabled: true, protectCanvas: true };
 
 describe('canvas protection controller', () => {
     let registration: { [Method in 'apply' | 'getState']: ReturnType<typeof vi.fn> };
     let configuration: Configuration | undefined;
     let controller: CanvasProtectionController;
-    let policy: ProtectionPolicyArtifact;
 
     beforeEach(() => {
         registration = { apply: vi.fn(), getState: vi.fn() };
-        policy = createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'policy-a');
         configuration = {
             settings: { filteringEnabled: true, stealthModeEnabled: true, stealth: { protectCanvas: true } },
-            canvasProtectionPolicy: policy,
         };
         controller = new CanvasProtectionController(
             registration as unknown as CanvasProtectionRegistration,
@@ -36,7 +32,10 @@ describe('canvas protection controller', () => {
         );
     });
 
-    it('requests registration with the gates and policy of the current configuration', async () => {
+    it('requests registration with the gates and the compiled policy', async () => {
+        await controller.apply();
+        expect(registration.apply).toHaveBeenLastCalledWith({ gates: enabled, policy: undefined });
+        controller.updatePolicy([], disabledAllowlist);
         await controller.apply();
         expect(registration.apply).toHaveBeenLastCalledWith({ gates: enabled, policy });
         configuration = {
@@ -49,24 +48,29 @@ describe('canvas protection controller', () => {
     });
 
     it('applies setter changes to the configuration', async () => {
+        controller.updatePolicy([], disabledAllowlist);
         await controller.setEnabled(false);
         expect(configuration!.settings.stealth.protectCanvas).toBe(false);
         expect(registration.apply).toHaveBeenLastCalledWith({ gates: { ...enabled, protectCanvas: false }, policy });
-        const replacement = createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'policy-b');
-        await controller.setPolicy(replacement);
-        expect(configuration!.canvasProtectionPolicy).toEqual(replacement);
     });
 
-    it('rejects an invalid policy and a setter call without configuration', async () => {
-        await expect(controller.setPolicy({ ...policy, schemaVersion: 2 } as unknown as ProtectionPolicyArtifact))
-            .rejects.toThrow();
-        expect(configuration!.canvasProtectionPolicy).toBe(policy);
+    it('replaces the policy on update', async () => {
+        controller.updatePolicy(['@@||example.org^$stealth'], disabledAllowlist);
+        await controller.apply();
+        expect(registration.apply).toHaveBeenLastCalledWith({
+            gates: enabled,
+            policy: expect.objectContaining({ selectors: { matches: ['<all_urls>'], excludeMatches: ['*://*.example.org/*'] } }),
+        });
+    });
+
+    it('rejects a setter call without configuration', async () => {
         configuration = undefined;
         await expect(controller.setEnabled(true)).rejects.toThrow('Configuration not set!');
         expect(registration.apply).not.toHaveBeenCalled();
     });
 
     it('keeps registration off after stop until the next start', async () => {
+        controller.updatePolicy([], disabledAllowlist);
         await controller.stop();
         const stopped = { gates: { ...enabled, filteringEnabled: false }, policy };
         expect(registration.apply).toHaveBeenLastCalledWith(stopped);

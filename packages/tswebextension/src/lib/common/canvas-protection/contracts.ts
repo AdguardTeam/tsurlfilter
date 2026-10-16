@@ -1,13 +1,8 @@
-import { z as zod } from 'zod';
-
 import {
     type CanvasAvailabilityStatus,
-    CanvasConditionFlags,
-    CanvasConditionInput,
-    CanvasConditionType,
+    type CanvasConditionFlags,
+    type CanvasConditionType,
     type CanvasOperationStatus,
-    CanvasPolicyBrowser,
-    CanvasPolicyRequestType,
     type CanvasRegistrationOperation,
     type CanvasRegistrationStatus,
 } from './constants';
@@ -55,40 +50,24 @@ export interface CanvasFeatureGates {
 }
 
 /**
- * Exact JSON predicates evaluated against synchronous document information.
+ * Exact JSON predicates evaluated against the URL of a top-level document.
  */
 export type PreparedCondition =
     | {
         readonly type: CanvasConditionType.UrlRegexp;
-        readonly input: CanvasConditionInput;
         readonly pattern: string;
         readonly flags: CanvasConditionFlags;
     }
-    | {
-        readonly type: CanvasConditionType.And | CanvasConditionType.Or;
-        readonly operands: readonly PreparedCondition[];
-    }
-    | { readonly type: CanvasConditionType.Not; readonly operand: PreparedCondition }
-    | { readonly type: CanvasConditionType.Unavailable; readonly reason: string };
-
-/**
- * A prepared exclusion with explicit top-document or child-frame applicability.
- */
-export interface PreparedPolicyRule {
-    readonly requestTypes: readonly CanvasPolicyRequestType[];
-    readonly condition: PreparedCondition;
-}
+    | { readonly type: CanvasConditionType.Not; readonly operand: PreparedCondition };
 
 /**
  * Synchronous facts about a delivered document. The browser reveals the complete
- * URL of a same-origin top or parent document and only the origin of a
- * cross-origin one; a URL it does not reveal at all is `undefined`.
+ * URL of a same-origin top document and only the origin of a cross-origin one;
+ * a URL it does not reveal at all is `undefined`.
  */
 export interface DocumentPolicyInput {
     readonly url: string;
-    readonly requestType: CanvasPolicyRequestType;
     readonly topUrl: string | undefined;
-    readonly sourceUrl: string | undefined;
 }
 
 /**
@@ -154,61 +133,33 @@ export interface CanvasReadout {
     readonly colorSpace: PredefinedColorSpace;
 }
 
-const regexpConditionValidator = zod.object({
-    type: zod.literal(CanvasConditionType.UrlRegexp),
-    input: zod.nativeEnum(CanvasConditionInput),
-    pattern: zod.string(),
-    flags: zod.nativeEnum(CanvasConditionFlags),
-}).strict().superRefine((condition, context) => {
-    try {
-        // Validate syntax once at the external boundary; downstream predicates are trusted.
-        new RegExp(condition.pattern, condition.flags);
-    } catch {
-        context.addIssue({
-            code: zod.ZodIssueCode.custom,
-            message: 'Invalid URL regular expression',
-            path: ['pattern'],
-        });
-    }
-});
-
-const preparedConditionValidator: zod.ZodType<PreparedCondition> = zod.lazy(() => zod.union([
-    regexpConditionValidator,
-    zod.object({
-        type: zod.enum([CanvasConditionType.And, CanvasConditionType.Or]),
-        operands: preparedConditionValidator.array(),
-    }).strict(),
-    zod.object({ type: zod.literal(CanvasConditionType.Not), operand: preparedConditionValidator }).strict(),
-    zod.object({ type: zod.literal(CanvasConditionType.Unavailable), reason: zod.string().min(1) }).strict(),
-]));
-
-const preparedPolicyRuleValidator = zod.object({
-    requestTypes: zod.nativeEnum(CanvasPolicyRequestType).array().min(1).readonly(),
-    condition: preparedConditionValidator,
-}).strict();
-
-// A document exclusion is evaluated for the top-level document only, also on behalf of its frames.
-const documentExclusionValidator = preparedPolicyRuleValidator.refine(
-    (rule) => rule.requestTypes.includes(CanvasPolicyRequestType.Document),
-    { message: 'A document exclusion must apply to documents', path: ['requestTypes'] },
-);
-
 /**
- * Validates genuinely external prepared JSON once before it enters trusted code.
+ * Seed-free canvas policy compiled by the library from filter rules and the allowlist.
  */
-export const protectionPolicyArtifactValidator = zod.object({
-    schemaVersion: zod.literal(1),
-    revision: zod.string().min(1),
-    browser: zod.nativeEnum(CanvasPolicyBrowser),
-    selectors: zod.object({
-        matches: zod.string().min(1).array().readonly(),
-        excludeMatches: zod.string().min(1).array().readonly(),
-    }).strict().readonly(),
-    ownFrameExclusions: preparedPolicyRuleValidator.array().readonly(),
-    documentExclusions: documentExclusionValidator.array().readonly(),
-}).strict().readonly();
+export interface ProtectionPolicyArtifact {
+    /**
+     * Hash of the other fields, reported to the consumer in {@link RegistrationResult}.
+     */
+    readonly revision: string;
 
-/**
- * A seed-free policy inferred from the external-input validator.
- */
-export type ProtectionPolicyArtifact = zod.infer<typeof protectionPolicyArtifactValidator>;
+    /**
+     * Match patterns of the script registration, applied to each document's own URL.
+     */
+    readonly selectors: {
+        /**
+         * Documents that get the script.
+         */
+        readonly matches: readonly string[];
+
+        /**
+         * Documents that never get the script.
+         */
+        readonly excludeMatches: readonly string[];
+    };
+
+    /**
+     * Conditions on the top-level document's URL. A matching top-level document
+     * stays native together with its frames.
+     */
+    readonly documentExclusions: readonly PreparedCondition[];
+}

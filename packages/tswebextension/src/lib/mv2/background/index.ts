@@ -24,20 +24,12 @@ export { MESSAGE_HANDLER_NAME } from '../../common/message-constants';
 export { type LocalScriptRules } from './services/local-script-rules-service';
 
 export {
-    type PreparedCondition,
-    type PreparedPolicyRule,
-    type ProtectionPolicyArtifact,
     type RegistrationOperationOutcome,
     type RegistrationResult,
-    protectionPolicyArtifactValidator,
 } from '../../common/canvas-protection/contracts';
 export {
     CanvasAvailabilityStatus,
-    CanvasConditionInput,
-    CanvasConditionType,
     CanvasOperationStatus,
-    CanvasPolicyBrowser,
-    CanvasPolicyRequestType,
     CanvasRegistrationOperation,
     CanvasRegistrationStatus,
 } from '../../common/canvas-protection/constants';

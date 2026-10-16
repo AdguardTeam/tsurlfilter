@@ -5,7 +5,6 @@ import { CanvasProtectionCode } from '../../common/canvas-protection/code';
 import {
     CanvasAvailabilityStatus,
     CanvasOperationStatus,
-    CanvasPolicyBrowser,
     CanvasRegistrationOperation,
 } from '../../common/canvas-protection/constants';
 import {
@@ -92,9 +91,6 @@ export class FirefoxCanvasRegistration implements CanvasRegistrationAdapter {
         code: string,
         policy: ProtectionPolicyArtifact,
     ): Promise<readonly RegistrationOperationOutcome[]> {
-        if (policy.browser !== CanvasPolicyBrowser.FirefoxMv2) {
-            throw new CanvasRegistrationOperationError('Firefox canvas policy browser mismatch', []);
-        }
         const previous = [...this.registrations];
         const operations: RegistrationOperationOutcome[] = [];
         try {

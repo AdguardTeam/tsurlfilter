@@ -56,6 +56,7 @@ export const ALLOWED_STEALTH_OPTIONS = new Set([
     'ip',
     'xclientdata',
     'dpi',
+    'fingerprinting',
 ]);
 
 /**

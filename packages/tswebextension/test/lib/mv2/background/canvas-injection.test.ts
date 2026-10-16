@@ -12,7 +12,6 @@ import { CanvasProtectionCode } from '../../../../src/lib/common/canvas-protecti
 import {
     CanvasAvailabilityStatus,
     CanvasOperationStatus,
-    CanvasPolicyBrowser,
     CanvasRegistrationOperation,
 } from '../../../../src/lib/common/canvas-protection/constants';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
@@ -23,7 +22,7 @@ import { createProtectAllPolicy } from '../../common/canvas-protection/fixtures/
 describe('Chromium MV2 canvas injection', () => {
     let adapter: ChromiumMv2CanvasInjection;
     const policy = {
-        ...createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv2, 'policy-a'),
+        ...createProtectAllPolicy('policy-a'),
         selectors: { matches: ['https://*.example.org/*'], excludeMatches: ['https://excluded.example.org/*'] },
     };
 
@@ -70,8 +69,6 @@ describe('Chromium MV2 canvas injection', () => {
 
     it('keeps the previous script when a policy is rejected', async () => {
         await adapter.install('engine()', policy);
-        await expect(adapter.install('other()', createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'b')))
-            .rejects.toMatchObject({ name: 'CanvasRegistrationOperationError', operations: [] });
         await expect(adapter.install('other()', {
             ...policy,
             selectors: { matches: ['example.org'], excludeMatches: [] },

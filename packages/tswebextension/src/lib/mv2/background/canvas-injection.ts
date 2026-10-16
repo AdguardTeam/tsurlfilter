@@ -2,7 +2,6 @@ import { CanvasProtectionCode } from '../../common/canvas-protection/code';
 import {
     CanvasAvailabilityStatus,
     CanvasOperationStatus,
-    CanvasPolicyBrowser,
     CanvasRegistrationOperation,
 } from '../../common/canvas-protection/constants';
 import {
@@ -79,15 +78,12 @@ export class ChromiumMv2CanvasInjection implements CanvasRegistrationAdapter {
      *
      * @returns The registration outcome.
      *
-     * @throws When the policy is not for Chromium MV2 or a selector is invalid.
+     * @throws When a selector is invalid.
      */
     public async install(
         code: string,
         policy: ProtectionPolicyArtifact,
     ): Promise<readonly RegistrationOperationOutcome[]> {
-        if (policy.browser !== CanvasPolicyBrowser.ChromiumMv2) {
-            throw new CanvasRegistrationOperationError('Chromium MV2 canvas policy browser mismatch', []);
-        }
         let matches: RegExp;
         let excludeMatches: RegExp;
         try {

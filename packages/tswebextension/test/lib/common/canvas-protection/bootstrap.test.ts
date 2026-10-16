@@ -9,13 +9,7 @@ import {
     bootstrapCanvasProtection,
     readDocumentPolicyInput,
 } from '../../../../src/lib/common/canvas-protection/bootstrap';
-import {
-    CanvasConditionFlags,
-    CanvasConditionInput,
-    CanvasConditionType,
-    CanvasPolicyBrowser,
-    CanvasPolicyRequestType,
-} from '../../../../src/lib/common/canvas-protection/constants';
+import { CanvasConditionFlags, CanvasConditionType } from '../../../../src/lib/common/canvas-protection/constants';
 import { type CanvasBootstrapSnapshot } from '../../../../src/lib/common/canvas-protection/contracts';
 
 import { createProtectAllPolicy } from './fixtures/prepared-policies';
@@ -28,7 +22,7 @@ import { createProtectAllPolicy } from './fixtures/prepared-policies';
  * @returns A current snapshot.
  */
 const snapshot = (
-    policy = createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'current'),
+    policy = createProtectAllPolicy('current'),
 ): CanvasBootstrapSnapshot => ({
     session: { root: '0123456789abcdef0123456789abcdef', generation: 'abcdef0123456789abcdef0123456789' },
     policy,
@@ -64,40 +58,36 @@ const frameWindow = (
 };
 
 describe('document canvas bootstrap', () => {
-    it('describes a top document as its own top and source', () => {
+    it('describes a top document as its own top', () => {
         expect(readDocumentPolicyInput(window)).toEqual({
             url: window.location.href,
-            requestType: CanvasPolicyRequestType.Document,
             topUrl: window.location.href,
-            sourceUrl: window.location.href,
         });
     });
 
-    it('reads the complete URL of same-origin ancestors', () => {
+    it('reads the complete URL of the same-origin top document', () => {
         expect(readDocumentPolicyInput(frameWindow(
             'https://site.example/frame',
             ['https://site.example/parent', 'https://site.example/top'],
             ['https://site.example', 'https://site.example'],
         ))).toEqual({
             url: 'https://site.example/frame',
-            requestType: CanvasPolicyRequestType.Subdocument,
             topUrl: 'https://site.example/top',
-            sourceUrl: 'https://site.example/parent',
         });
     });
 
-    it('reads the listed origin of cross-origin ancestors', () => {
+    it('reads the listed origin of the cross-origin top document', () => {
         expect(readDocumentPolicyInput(frameWindow(
             'https://tracker.example/pixel',
             [null, null],
             ['https://widget.example', 'https://news.example'],
-        ))).toMatchObject({ topUrl: 'https://news.example/', sourceUrl: 'https://widget.example/' });
+        ))).toMatchObject({ topUrl: 'https://news.example/' });
         expect(readDocumentPolicyInput(frameWindow('https://tracker.example/pixel', [null], ['https://news.example'])))
-            .toMatchObject({ topUrl: 'https://news.example/', sourceUrl: 'https://news.example/' });
+            .toMatchObject({ topUrl: 'https://news.example/' });
     });
 
-    it('leaves a cross-origin ancestor unknown when the browser lists no origin for it', () => {
-        const unknown = { requestType: CanvasPolicyRequestType.Subdocument, topUrl: undefined, sourceUrl: undefined };
+    it('leaves the cross-origin top document unknown when the browser lists no origin for it', () => {
+        const unknown = { topUrl: undefined };
         // Firefox before 148 has no list; an opaque or hidden origin is listed as "null".
         expect(readDocumentPolicyInput(frameWindow('https://tracker.example/pixel', [null]))).toMatchObject(unknown);
         expect(readDocumentPolicyInput(frameWindow('https://tracker.example/pixel', [null], ['null'])))
@@ -111,7 +101,7 @@ describe('document canvas bootstrap', () => {
             get: (): never => { calls += 1; throw new Error('page marker must remain unread'); },
         });
         try {
-            expect(readDocumentPolicyInput(window).requestType).toBe(CanvasPolicyRequestType.Document);
+            expect(readDocumentPolicyInput(window).topUrl).toBe(window.location.href);
             expect(calls).toBe(0);
         } finally {
             Reflect.deleteProperty(window, 'adguardCanvasContext');
@@ -124,15 +114,11 @@ describe('document canvas bootstrap', () => {
         const { toString } = Function.prototype;
         const globals = Reflect.ownKeys(window);
         const excluded = snapshot({
-            ...createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'current'),
-            ownFrameExclusions: [{
-                requestTypes: [CanvasPolicyRequestType.Document],
-                condition: {
-                    type: CanvasConditionType.UrlRegexp,
-                    input: CanvasConditionInput.FrameUrl,
-                    pattern: '.',
-                    flags: CanvasConditionFlags.None,
-                },
+            ...createProtectAllPolicy('current'),
+            documentExclusions: [{
+                type: CanvasConditionType.UrlRegexp,
+                pattern: '.',
+                flags: CanvasConditionFlags.None,
             }],
         });
         bootstrapCanvasProtection(excluded);

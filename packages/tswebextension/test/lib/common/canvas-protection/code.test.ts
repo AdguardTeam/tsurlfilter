@@ -4,13 +4,7 @@ import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
 import { CanvasProtectionCode } from '../../../../src/lib/common/canvas-protection/code';
-import {
-    CanvasConditionFlags,
-    CanvasConditionInput,
-    CanvasConditionType,
-    CanvasPolicyBrowser,
-    CanvasPolicyRequestType,
-} from '../../../../src/lib/common/canvas-protection/constants';
+import { CanvasConditionFlags, CanvasConditionType } from '../../../../src/lib/common/canvas-protection/constants';
 import { type CanvasBootstrapSnapshot } from '../../../../src/lib/common/canvas-protection/contracts';
 
 import { createProtectAllPolicy } from './fixtures/prepared-policies';
@@ -47,62 +41,32 @@ const execute = (snapshot: CanvasBootstrapSnapshot): boolean => {
 describe('generated canvas delivery code', () => {
     it('executes generated bundle with serialized hostile strings', () => {
         const text = '"\');globalThis.injected=true;//</script>\u2028\u2029';
-        const policy = createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, text);
+        const policy = createProtectAllPolicy(text);
         const untouched = execute({
             session: { root: '0123456789abcdef0123456789abcdef', generation: text },
             policy: {
                 ...policy,
                 // The delivery must stay inert here: jsdom has no canvas bindings to wrap.
-                ownFrameExclusions: [{
-                    requestTypes: [CanvasPolicyRequestType.Subdocument],
-                    condition: {
-                        type: CanvasConditionType.UrlRegexp,
-                        input: CanvasConditionInput.FrameUrl,
-                        pattern: '.',
-                        flags: CanvasConditionFlags.None,
-                    },
+                documentExclusions: [{
+                    type: CanvasConditionType.UrlRegexp,
+                    pattern: '.',
+                    flags: CanvasConditionFlags.None,
                 }],
             },
         });
         expect(untouched).toBe(true);
     });
-    it('renames the script in Chromium stack traces only', () => {
-        const state = {
-            session: { root: '0123456789abcdef0123456789abcdef', generation: 'generation' },
-        };
-        expect(
-            CanvasProtectionCode.create({
-                ...state,
-                policy: createProtectAllPolicy(CanvasPolicyBrowser.ChromiumMv3, 'current'),
-            }),
-        )
-            .toMatch(/\n\/\/# sourceURL=<anonymous>$/);
-        expect(
-            CanvasProtectionCode.create({
-                ...state,
-                policy: createProtectAllPolicy(CanvasPolicyBrowser.FirefoxMv2, 'current'),
-            }),
-        )
-            .not.toContain('sourceURL');
-    });
 
     it('keeps excluded readouts native across duplicate delivery', () => {
-        const policy = createProtectAllPolicy(
-            CanvasPolicyBrowser.ChromiumMv3,
-            '";globalThis.injected=true;//</script>\u2028\u2029',
-        );
+        const policy = createProtectAllPolicy('";globalThis.injected=true;//</script>\u2028\u2029');
         const exclusions = [{
-            requestTypes: [CanvasPolicyRequestType.Document],
-            condition: {
-                type: CanvasConditionType.UrlRegexp,
-                input: CanvasConditionInput.FrameUrl,
-                pattern: '^https://canvas\\.test/',
-                flags: CanvasConditionFlags.None,
-            },
-        }] satisfies typeof policy.ownFrameExclusions;
+            type: CanvasConditionType.UrlRegexp,
+            pattern: '^https://canvas\\.test/',
+            flags: CanvasConditionFlags.None,
+        }] satisfies typeof policy.documentExclusions;
         const code = CanvasProtectionCode.create({
             session: { root: '11111111111111111111111111111111', generation: '22222222222222222222222222222222' },
-            policy: { ...policy, ownFrameExclusions: exclusions },
+            policy: { ...policy, documentExclusions: exclusions },
         });
         const result = runInNewContext(`
             globalThis.window = globalThis;

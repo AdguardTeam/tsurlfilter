@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- Added the `fingerprinting` value for the `$stealth` modifier.
+
 ### Changed
 
 ### Deprecated

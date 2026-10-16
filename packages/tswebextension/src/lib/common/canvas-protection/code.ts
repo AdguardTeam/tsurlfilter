@@ -1,6 +1,5 @@
 import engineSource from 'virtual:canvas-engine';
 
-import { CanvasPolicyBrowser } from './constants';
 import { type CanvasBootstrapSnapshot } from './contracts';
 
 /**
@@ -15,12 +14,9 @@ export class CanvasProtectionCode {
      * @returns Code ready for a synchronous page-world registration.
      */
     public static create(snapshot: CanvasBootstrapSnapshot): string {
-        // Chromium names a user script by its extension URL in stack traces, so the script is renamed.
-        // Firefox already reports registered code as anonymous.
-        const name = snapshot.policy.browser === CanvasPolicyBrowser.ChromiumMv3 ? '\n//# sourceURL=<anonymous>' : '';
         return `(()=>{
 ${engineSource}
-canvasEngine.bootstrapCanvasProtection(${CanvasProtectionCode.serialize(snapshot)});})();${name}`;
+canvasEngine.bootstrapCanvasProtection(${CanvasProtectionCode.serialize(snapshot)});})();`;
     }
 
     /**

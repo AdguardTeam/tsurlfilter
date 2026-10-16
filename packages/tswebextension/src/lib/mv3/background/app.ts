@@ -12,7 +12,7 @@ import { LogLevel } from '@adguard/logger';
 import { FilterList } from '@adguard/tsurlfilter';
 
 import { type AppInterface, type MessageHandler } from '../../common/app';
-import { type ProtectionPolicyArtifact, type RegistrationResult } from '../../common/canvas-protection/contracts';
+import { type RegistrationResult } from '../../common/canvas-protection/contracts';
 import { CanvasProtectionController } from '../../common/canvas-protection/controller';
 import { CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
 import { ALLOWLIST_FILTER_ID, BLOCKING_TRUSTED_FILTER_ID } from '../../common/constants';
@@ -343,6 +343,7 @@ export class TsWebExtension implements AppInterface<
      * filters and user rules on the fly to a single merged rule set), starts
      * declarative filtering log and restarts the engine to reload cosmetic
      * rules.
+     * Recompiles canvas exclusions from the updated rules and allowlist.
      *
      * @param config A {@link ConfigurationMV3} to apply.
      *
@@ -480,6 +481,7 @@ export class TsWebExtension implements AppInterface<
                 verbose: configuration.verbose,
             });
             await engineApi.waitingForEngine;
+            this.canvasProtection.updatePolicy(engineApi.getDocumentOrStealthExceptionRuleTexts(), allowlistApi);
 
             // TODO: Recreate only dynamic ruleset, because static cannot be changed
             const rulesets = [
@@ -541,19 +543,6 @@ export class TsWebExtension implements AppInterface<
      */
     public setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult> {
         return this.canvasProtection.setEnabled(enabled);
-    }
-
-    /**
-     * Replaces the consumer's prepared policy at its external input boundary.
-     *
-     * @param policy Prepared canvas exclusions and browser delivery selectors.
-     *
-     * @returns The acknowledged or unresolved registration state.
-     *
-     * @throws When the application has no configuration.
-     */
-    public setCanvasProtectionPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult> {
-        return this.canvasProtection.setPolicy(policy);
     }
 
     /**
@@ -752,7 +741,6 @@ export class TsWebExtension implements AppInterface<
             filtersPath,
             rulesetsPath,
             declarativeLogEnabled,
-            canvasProtectionPolicy,
         } = configuration;
 
         return {
@@ -763,7 +751,6 @@ export class TsWebExtension implements AppInterface<
             declarativeLogEnabled,
             verbose,
             settings,
-            canvasProtectionPolicy,
         };
     }
 

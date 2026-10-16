@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 
-import { type Configuration as ConfigurationMV3, type ProtectionPolicyArtifact } from '@adguard/tswebextension/mv3';
+import { type Configuration as ConfigurationMV3 } from '@adguard/tswebextension/mv3';
 
 import { getFilterName } from '@adguard/tswebextension/mv3/utils';
 
@@ -12,9 +12,7 @@ assert.ok(filterName === 'filter_1.txt');
 // eslint-disable-next-line no-console
 console.log('Smoke test for @adguard/tswebextension passed in specific-exports.ts');
 
-const legacyConfiguration: Pick<ConfigurationMV3, 'canvasProtectionPolicy'> = {};
-const policy: ProtectionPolicyArtifact | undefined = legacyConfiguration.canvasProtectionPolicy;
-assert.equal(policy, undefined);
+
 
 const legacyStealth: ConfigurationMV3['settings']['stealth'] = {
     selfDestructFirstPartyCookies: false,
@@ -28,3 +26,8 @@ const legacyStealth: ConfigurationMV3['settings']['stealth'] = {
     blockWebRTC: false,
 };
 assert.equal(legacyStealth.protectCanvas, undefined);
+
+// @ts-expect-error Prepared policy configuration is internal.
+type RemovedPolicyConfiguration = ConfigurationMV3['canvasProtectionPolicy'];
+// @ts-expect-error Prepared policy types are internal.
+import { type CanvasPolicyBrowser, type ProtectionPolicyArtifact } from '@adguard/tswebextension/mv3';

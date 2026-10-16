@@ -2,14 +2,14 @@
 import { LogLevel } from '@adguard/logger';
 
 import { type AppInterface, type MessageHandler } from '../../common/app';
-import { type ProtectionPolicyArtifact, type RegistrationResult } from '../../common/canvas-protection/contracts';
+import { type RegistrationResult } from '../../common/canvas-protection/contracts';
 import { CanvasProtectionController } from '../../common/canvas-protection/controller';
 import { type CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
 import { type FilteringLog, type FilteringLogEvent } from '../../common/filtering-log';
 import { type EventChannel } from '../../common/utils/channels';
 import { logger } from '../../common/utils/logger';
 
-import { removeParamInjectionService } from './api';
+import { allowlist, removeParamInjectionService } from './api';
 import { type AppContext } from './app-context';
 import { assistant, Assistant } from './assistant';
 import {
@@ -176,6 +176,7 @@ export class TsWebExtension implements AppInterface<
             await this.redirectsService.start();
             this.documentBlockingService.configure(configuration);
             result = await this.engineApi.startEngine(configuration);
+            this.canvasProtection.updatePolicy(this.engineApi.getDocumentOrStealthExceptionRuleTexts(), allowlist);
             await this.tabCosmeticInjector.processOpenTabs();
             await this.tabsApi.start();
             WebRequestApi.start();
@@ -217,6 +218,7 @@ export class TsWebExtension implements AppInterface<
      * Also updates webRTC privacy.network settings on demand and flushes browser in-memory request cache.
      *
      * Requires app is started.
+     * Recompiles canvas exclusions from the updated rules and allowlist.
      *
      * @param config App configuration.
      *
@@ -239,6 +241,7 @@ export class TsWebExtension implements AppInterface<
 
         this.documentBlockingService.configure(configuration);
         const result = await this.engineApi.startEngine(configuration);
+        this.canvasProtection.updatePolicy(this.engineApi.getDocumentOrStealthExceptionRuleTexts(), allowlist);
         await this.tabsApi.updateCurrentTabsMainFrameRules();
 
         await WebRequestApi.flushMemoryCache();
@@ -261,19 +264,6 @@ export class TsWebExtension implements AppInterface<
      */
     public setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult> {
         return this.canvasProtection.setEnabled(enabled);
-    }
-
-    /**
-     * Replaces the consumer's prepared policy at its external input boundary.
-     *
-     * @param policy Prepared canvas exclusions and browser delivery selectors.
-     *
-     * @returns The acknowledged or unresolved registration state.
-     *
-     * @throws When the application has no configuration.
-     */
-    public setCanvasProtectionPolicy(policy: ProtectionPolicyArtifact): Promise<RegistrationResult> {
-        return this.canvasProtection.setPolicy(policy);
     }
 
     /**
@@ -598,7 +588,6 @@ export class TsWebExtension implements AppInterface<
             verbose,
             logLevel,
             settings,
-            canvasProtectionPolicy,
         } = configuration;
 
         return {
@@ -606,7 +595,6 @@ export class TsWebExtension implements AppInterface<
             verbose,
             logLevel,
             settings,
-            canvasProtectionPolicy,
         };
     }
 
