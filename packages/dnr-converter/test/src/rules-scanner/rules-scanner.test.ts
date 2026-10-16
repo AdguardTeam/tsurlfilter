@@ -345,6 +345,75 @@ describe('RulesScanner', () => {
             });
         });
 
+        it('should scan a segment with more rules than can be passed as arguments', async () => {
+            const rulesCount = 340_000;
+            const filterRule = '||example.com^';
+            const filter = createFilter([filterRule]);
+            const children = Array.from({ length: rulesCount }, (_, index) => ({
+                category: RuleCategory.Network,
+                start: index,
+                raws: { text: filterRule },
+            }));
+            parserMock.mockReturnValueOnce({ children } as any);
+            const mockRule = createRuleMock({
+                filterListId: 1,
+                pattern: filterRule,
+                index: 0,
+            });
+            parseFromNodeMock.mockReturnValue([mockRule]);
+
+            const result = await RulesScanner.scanFilters([filter]);
+
+            expect(result.filters[0].rules).toHaveLength(rulesCount);
+        });
+
+        it('should respect maximum number of scanned rules limit across segments', async () => {
+            const filterRule1 = '||example1.com^';
+            const filterRule2 = '||example2.com^';
+            const filter = createFilter([filterRule1, '||skipped.com^', filterRule2]);
+            const lineSelector = (line: string): boolean => line !== '||skipped.com^';
+            parserMock.mockReturnValueOnce({
+                children: [{
+                    category: RuleCategory.Network,
+                    start: 0,
+                    raws: { text: filterRule1 },
+                }],
+            } as any);
+            parserMock.mockReturnValueOnce({
+                children: [{
+                    category: RuleCategory.Network,
+                    start: 0,
+                    raws: { text: filterRule2 },
+                }],
+            } as any);
+            const mockRule1 = createRuleMock({
+                filterListId: 1,
+                pattern: filterRule1,
+                index: 0,
+            });
+            parseFromNodeMock.mockReturnValueOnce([mockRule1]);
+            const mockRule2 = createRuleMock({
+                filterListId: 1,
+                pattern: filterRule2,
+                index: 30,
+            });
+            parseFromNodeMock.mockReturnValueOnce([mockRule2]);
+
+            const result = await RulesScanner.scanFilters([filter], undefined, 2, lineSelector);
+
+            expect(result).toEqual({
+                errors: [new MaxScannedRulesError(
+                    'Maximum number of scanned network rules reached at line index 30.',
+                    30,
+                )],
+                filters: [{
+                    id: 1,
+                    rules: [mockRule1, mockRule2],
+                    badFilterRules: [],
+                }],
+            });
+        });
+
         it('should handle filters with empty content', async () => {
             const filter = createFilter();
             const mockAst = { children: [] };

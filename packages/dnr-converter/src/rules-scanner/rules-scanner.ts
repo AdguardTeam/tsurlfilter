@@ -77,16 +77,6 @@ interface LineSegment {
 }
 
 /**
- * Result of parsing a content segment.
- */
-interface SegmentParseResult extends ScannedRulesWithErrors {
-    /**
-     * Whether the scan limit has been reached.
-     */
-    isLimitReached: boolean;
-}
-
-/**
  * Class that responsible for scanning filter rules and converting them into {@link Rule}.
  */
 export class RulesScanner {
@@ -198,19 +188,15 @@ export class RulesScanner {
         };
 
         for (const segment of segments) {
-            const parsed = RulesScanner.parseSegment(
+            const isLimitReached = RulesScanner.parseSegment(
+                result,
                 filterId,
                 segment,
                 filterFn,
-                maxScannedRules === undefined
-                    ? undefined
-                    : maxScannedRules - result.rules.length,
+                maxScannedRules,
             );
 
-            result.rules.push(...parsed.rules);
-            result.errors.push(...parsed.errors);
-
-            if (parsed.isLimitReached) {
+            if (isLimitReached) {
                 break;
             }
         }
@@ -250,33 +236,31 @@ export class RulesScanner {
     }
 
     /**
-     * Parses a segment of the filter content into network rules.
+     * Parses a segment of the filter content and appends network rules and
+     * errors to the scan result.
      *
      * Location info and raw rule text are always present in
      * {@link RulesScanner.PARSER_OPTIONS}, so they are used without additional
      * checks.
      *
+     * @param result Scan result to append to.
      * @param filterId Id of the filter the segment belongs to.
      * @param segment Segment of the filter content.
      * @param filterFn If this function is specified, it will be applied to each
      * parsed rule.
-     * @param maxRulesCount Maximum number of rules to parse, `undefined` if
+     * @param maxScannedRules Maximum number of rules to scan, `undefined` if
      * there is no limit.
      *
-     * @returns Parsed rules, errors and whether the limit has been reached.
+     * @returns Whether the limit of scanned rules has been reached.
      */
     private static parseSegment(
+        result: ScannedRulesWithErrors,
         filterId: number,
         segment: LineSegment,
         filterFn?: (r: Rule) => boolean,
-        maxRulesCount?: number,
-    ): SegmentParseResult {
+        maxScannedRules?: number,
+    ): boolean {
         const ast = FilterListParser.parse(segment.text, RulesScanner.PARSER_OPTIONS);
-        const result: SegmentParseResult = {
-            errors: [],
-            rules: [],
-            isLimitReached: false,
-        };
 
         for (const node of ast.children) {
             const index = segment.offset + node.start!;
@@ -299,19 +283,18 @@ export class RulesScanner {
 
                 result.rules.push(...filteredRules);
 
-                if (maxRulesCount !== undefined && result.rules.length >= maxRulesCount) {
+                if (maxScannedRules !== undefined && result.rules.length >= maxScannedRules) {
                     const lastRuleIndex = rules[rules.length - 1].index;
                     result.errors.push(RulesScanner.createLimitReachedError(lastRuleIndex));
-                    result.isLimitReached = true;
 
-                    break;
+                    return true;
                 }
             } catch (error) {
                 result.errors.push(RulesScanner.createRuleParseError(error, filterId, index, raw));
             }
         }
 
-        return result;
+        return false;
     }
 
     /**
