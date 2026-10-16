@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   MV2 with `stealth.protectCanvas` and methods to update protection.
   Exceptions are compiled from filter rules and the allowlist, including
   `$stealth=fingerprinting` and `$document`, with host boundaries preserved
-  and inverted wildcard entries covering subdomains at any depth
-  [AdguardBrowserExtension#3475].
+  and inverted wildcard entries covering one level below the domain, as frame
+  matching does [AdguardBrowserExtension#3475].
 
 [AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475
 

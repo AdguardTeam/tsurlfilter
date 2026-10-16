@@ -14,7 +14,8 @@ import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
 import { DocumentApi } from '../../../../src/lib/mv2/background/document-api';
 import { type EngineApi } from '../../../../src/lib/mv2/background/engine-api';
 import { MatchPatterns } from '../../../../src/lib/mv2/background/utils/match-patterns';
-import { AllowlistApi } from '../../../../src/lib/mv3/background/allowlist-api';
+import { AllowlistApi, allowlistApi as mv3AllowlistApi } from '../../../../src/lib/mv3/background/allowlist-api';
+import { DocumentApi as Mv3DocumentApi } from '../../../../src/lib/mv3/background/document-api';
 import { getConfigurationMv2Fixture } from '../../mv2/background/fixtures/configuration';
 
 const disabledAllowlist = { enabled: false, inverted: false, domains: [] };
@@ -54,7 +55,12 @@ const configureAllowlist = (allowlist: Allowlist, domains: string[], inverted = 
     return allowlist;
 };
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+    mv3AllowlistApi.enabled = false;
+    mv3AllowlistApi.inverted = false;
+    mv3AllowlistApi.domains = [];
+    vi.restoreAllMocks();
+});
 
 describe('canvas policy compiler', () => {
     it('protects every document without exceptions', () => {
@@ -268,10 +274,13 @@ describe('canvas policy compiler', () => {
     });
 
     it('compiles configured inverted allowlists including the MV3 subdomain twins', () => {
-        for (const allowlist of [new Allowlist(), new AllowlistApi()]) {
+        const mv2Allowlist = new Allowlist();
+        const engineApi = { matchFrame: vi.fn(() => null) } as unknown as EngineApi;
+        for (const { allowlist, documentApi } of [
+            { allowlist: mv2Allowlist, documentApi: new DocumentApi(mv2Allowlist, engineApi) },
+            { allowlist: mv3AllowlistApi, documentApi: Mv3DocumentApi },
+        ]) {
             configureAllowlist(allowlist, ['example.com'], true);
-            const engineApi = { matchFrame: vi.fn(() => null) } as unknown as EngineApi;
-            const documentApi = new DocumentApi(allowlist, engineApi);
             const policy = CanvasPolicyCompiler.compile([], allowlist);
             for (const topUrl of [
                 'https://example.com/', 'https://www.example.com/', 'https://sub.example.com/',
@@ -282,6 +291,22 @@ describe('canvas policy compiler', () => {
                     .toBe(documentApi.matchFrame(topUrl) !== null);
             }
         }
+    });
+
+    it.each([
+        ['https://example.com/', true],
+        ['https://www.example.com/', true],
+        ['https://sub.example.com/', true],
+        ['https://www.sub.example.com/', true],
+        ['https://a.b.example.com/', false],
+        ['https://example.community/', false],
+        ['https://sub.example.com.evil.org/', false],
+    ])('matches the configured inverted MV3 allowlist at %s → listed %s', (topUrl, listed) => {
+        configureAllowlist(mv3AllowlistApi, ['example.com'], true);
+        expect(Mv3DocumentApi.matchFrame(topUrl) !== null).toBe(!listed);
+        const policy = CanvasPolicyCompiler.compile([], mv3AllowlistApi);
+        expect(isNative(policy, topUrl)).toBe(!listed);
+        expect(isNative(policy, 'https://frame.example/', topUrl)).toBe(!listed);
     });
 
     it('excludes hosted documents for an empty inverted allowlist, preserving unknown and hostless tops', () => {
