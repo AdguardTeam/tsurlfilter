@@ -322,7 +322,7 @@ Build-time preregistered script configuration. Registers persistent content
 scripts for `domains` and skips dynamic injection of both JS (`#%#`) and
 scriptlet (`#%#//scriptlet`) rules they cover. Preregistration is disabled
 while debug scriptlets are enabled; toggling via `setDebugScriptlets()`
-takes effect at the next `configure()` call.
+re-evaluates preregistration immediately.
 
 ##### domains
 

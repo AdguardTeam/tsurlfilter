@@ -100,13 +100,17 @@ export class PreregisteredScriptsService {
         preregistrationEnabled: boolean,
         preregisteredScripts?: PreregisteredScriptsConfig,
     ): Promise<void> {
-        // Snapshot unconditionally, before sync/clear mutates registrations,
-        // so pre-existing tabs are judged against the registrations that
-        // existed when their pages loaded, not against the ones this service
-        // worker installs. Failure handling: see snapshotBootRegistrations().
-        if (appContext.preregisteredScriptRulesAtBoot === undefined) {
-            await snapshotBootRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE);
-        }
+        // Snapshot before sync/clear mutates the registrations — through the
+        // queue, so a concurrent init cannot read the pre-sync state after
+        // the registrations were already replaced — so pre-existing tabs are
+        // judged against the registrations that existed when their pages
+        // loaded, not against the ones this service worker installs. Failure
+        // handling: see snapshotBootRegistrations().
+        await PreregisteredScriptsService.enqueue(async () => {
+            if (appContext.preregisteredScriptRulesAtBoot === undefined) {
+                await snapshotBootRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE);
+            }
+        });
 
         if (preregisteredScripts) {
             await PreregisteredScriptsService.sync(

@@ -1,4 +1,4 @@
-import { type ConfigurationMV3Context } from './configuration';
+import { type ConfigurationMV3Context, type PreregisteredScriptsConfig } from './configuration';
 import { sessionDecorator, SessionStorageKey } from './ext-session-storage';
 
 /**
@@ -39,6 +39,13 @@ export class AppContext {
      */
     @sessionDecorator(SessionStorageKey.CosmeticsInjectedOnStartup)
     accessor cosmeticsInjectedOnStartup!: boolean;
+
+    /**
+     * Build-time preregistered script configuration, kept because the stored
+     * configuration context excludes it: preregistration is re-evaluated
+     * when the filtering log toggles debug scriptlets at runtime.
+     */
+    public preregisteredScripts?: PreregisteredScriptsConfig;
 
     /**
      * Per-hostname hashes of rules covered by the currently active

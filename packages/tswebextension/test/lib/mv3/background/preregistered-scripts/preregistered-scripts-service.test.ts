@@ -903,6 +903,25 @@ describe('PreregisteredScriptsService', () => {
             );
         });
 
+        it('snapshots the boot registrations once when two init calls overlap', async () => {
+            vi.mocked(ContentScriptManager.getRegistered).mockResolvedValue([
+                { id: 'youtube.com', js: [`${SCRIPTS_PATH}/${getRuleFilename('0123456789abcdef')}`] },
+            ]);
+
+            // Concurrent inits: the snapshot check-act runs through the sync
+            // queue, so the second init cannot observe the pre-sync state
+            // late and store post-sync registrations as the boot snapshot.
+            await Promise.all([
+                PreregisteredScriptsService.init(true, undefined),
+                PreregisteredScriptsService.init(true, undefined),
+            ]);
+
+            expect(ContentScriptManager.getRegistered).toHaveBeenCalledTimes(1);
+            expect(appContext.preregisteredScriptRulesAtBoot).toEqual(
+                new Map([['youtube.com', new Set(['0123456789abcdef'])]]),
+            );
+        });
+
         it('leaves the boot snapshot unset when listing registrations fails, so the next init retries', async () => {
             const rule = mockScriptletRule('set-cookie', []);
             await setupRulesWithManifest({ 'youtube.com': [rule] });
@@ -944,8 +963,8 @@ describe('PreregisteredScriptsService', () => {
 
             expect(ContentScriptManager.clear).toHaveBeenCalledWith('preregistered');
             // The snapshot must cover pre-existing tabs even when the
-            // feature is gone — an update may have removed it after the
-            // page loaded.
+            // feature is gone: it is taken before the clear erases the
+            // registrations their pages may have received.
             expect(appContext.preregisteredScriptRulesAtBoot).toEqual(
                 new Map([['youtube.com', new Set(['0123456789abcdef'])]]),
             );
