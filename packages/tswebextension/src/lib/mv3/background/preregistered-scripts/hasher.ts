@@ -163,9 +163,10 @@ const computeJsRuleHash = async (body: string, pathPattern?: string): Promise<st
  * dispatching on the rule's own {@link CosmeticRule.isScriptlet} flag.
  *
  * This is the single hashing entry point shared by build-time collection
- * (`ScriptletCollector`) and runtime matching
- * (`PreregisteredScriptsService`), so both sides are guaranteed to hash any
- * given rule identically — there is no separate extraction logic to keep in sync.
+ * (`collectScriptlets` in the browser-extension build tool) and runtime
+ * matching (`PreregisteredScriptsService`), so both sides are guaranteed to
+ * hash any given rule identically — there is no separate extraction logic
+ * to keep in sync.
  *
  * @param rule A constructed `CosmeticRule` instance.
  *
