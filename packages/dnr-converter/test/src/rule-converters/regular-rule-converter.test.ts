@@ -21,6 +21,7 @@ import {
 import {
     EmptyDomainsError,
     EmptyResourcesError,
+    UnexpectedConversionError,
     UnsupportedModifierError,
     UnsupportedRegexpError,
 } from '../../../src/errors/conversion-errors';
@@ -84,32 +85,35 @@ describe('RuleConverter', () => {
     describe('catchConversionError', () => {
         const index = 1;
         const id = 1;
+        const rule = createRuleMock({ index });
         const expectedMessage = `Non-categorized error during a conversion rule (index - ${index}, id - ${id})`;
 
         it('should return conversion error as-is', () => {
             const conversionError = new UnsupportedModifierError('Test unsupported modifier error', {} as Rule);
             // @ts-expect-error Accessing private member for test purposes
-            const error = RegularRuleConverter.catchConversionError(index, id, conversionError);
+            const error = RegularRuleConverter.catchConversionError(rule, id, conversionError);
 
             expect(error).toEqual(conversionError);
         });
 
-        it('should wrap other error types into plain Error', () => {
+        it('should wrap other error types into unexpected conversion error', () => {
             // @ts-expect-error Accessing private member for test purposes
-            const error = RegularRuleConverter.catchConversionError(index, id, 'Test error');
+            const error = RegularRuleConverter.catchConversionError(rule, id, 'Test error');
 
-            expect(error).toBeInstanceOf(Error);
+            expect(error).toBeInstanceOf(UnexpectedConversionError);
             expect(error.message).toBe(expectedMessage);
+            expect(error.rule).toBe(rule);
         });
 
         it('should include error as cause if provided error is instance of Error', () => {
             const originalError = new Error('Original error');
             // @ts-expect-error Accessing private member for test purposes
-            const error = RegularRuleConverter.catchConversionError(index, id, originalError);
+            const error = RegularRuleConverter.catchConversionError(rule, id, originalError);
 
-            expect(error).toBeInstanceOf(Error);
+            expect(error).toBeInstanceOf(UnexpectedConversionError);
             expect(error.message).toBe(expectedMessage);
             expect(error.cause).toEqual(originalError);
+            expect(error.rule).toBe(rule);
         });
     });
 
@@ -1611,7 +1615,7 @@ describe('RuleConverter', () => {
             expect(result.errors).toHaveLength(1);
 
             const wrappedError = result.errors[0];
-            expect(wrappedError).toBeInstanceOf(Error);
+            expect(wrappedError).toBeInstanceOf(UnexpectedConversionError);
             expect(wrappedError.message).toBe('Non-categorized error during a conversion rule (index - 0, id - 100)');
             expect(wrappedError.cause).toBe(genericError);
         });

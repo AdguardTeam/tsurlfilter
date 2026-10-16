@@ -328,6 +328,201 @@ describe('CspRulesResolver.resolve', () => {
         });
     });
 
+    it('lets an unrestricted exception cancel a blocker with an excluded $domain', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=~foo.com",
+            "@@||example.com^$csp=script-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('lets an exception exclude fewer domains than the blocker', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=~foo.com|~bar.com",
+            "@@||example.com^$csp=script-src 'none',domain=~foo.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('lets an exception exclude a subdomain of the blocker excluded domain', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=~foo.com",
+            "@@||example.com^$csp=script-src 'none',domain=~sub.foo.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('rejects an exception excluding a domain the blocker does not exclude', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=~foo.com",
+            "@@||example.com^$csp=script-src 'none',domain=~bar.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('rejects an exception excluding more domains than the blocker', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=~foo.com",
+            "@@||example.com^$csp=script-src 'none',domain=~foo.com|~bar.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('rejects an exception excluding a domain while the blocker excludes nothing', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none'",
+            "@@||example.com^$csp=script-src 'none',domain=~foo.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('rejects an exception excluding a parent of the blocker excluded domain', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=~sub.foo.com",
+            "@@||example.com^$csp=script-src 'none',domain=~foo.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('lets an unrestricted exception cancel a blocker restricted by both $domain lists', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=foo.com|~bar.com",
+            "@@||example.com^$csp=script-src 'none',domain=foo.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('rejects an exception adding an exclusion to the blocker $domain', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=foo.com",
+            "@@||example.com^$csp=script-src 'none',domain=foo.com|~bar.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('excludes a clean domain from a blocker with an excluded $domain', () => {
+        const rules = createRules(
+            "$csp=script-src 'none',domain=~foo.com",
+            "@@||bar.com^$csp=script-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map([[rules[0], ['bar.com']]]),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('rejects a clean domain exception excluding a domain the blocker does not exclude', () => {
+        const rules = createRules(
+            "$csp=script-src 'none',domain=~foo.com",
+            "@@||bar.com^$csp=script-src 'none',domain=~baz.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('lets an unrestricted exception cancel a blocker with a $header condition', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',header=x-custom-header",
+            "@@||example.com^$csp=script-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('lets a header exception cancel a blocker with the same header', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',header=x-custom-header",
+            "@@||example.com^$csp=script-src 'none',header=x-custom-header",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('lets a header exception cancel a blocker with a header value restriction', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',header=set-cookie:/a/",
+            "@@||example.com^$csp=script-src 'none',header=set-cookie",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('rejects an exception restricted by a $header the blocker does not have', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none'",
+            "@@||example.com^$csp=script-src 'none',header=x-custom-header",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
     it('applies an exact exception to its matching blocker while keeping an unrelated global blocker', () => {
         const rules = createRules(
             "|https://example.com/path|$csp=script-src 'none'",
@@ -393,6 +588,19 @@ describe('CspRulesResolver.resolve', () => {
             rules: [rules[0]],
             excludedRequestDomains: new Map(),
             unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('lets a denyallow exception excluding a subdomain cancel a global blocker', () => {
+        const rules = createRules(
+            "$csp=script-src 'none',denyallow=example.com",
+            "@@$csp=script-src 'none',denyallow=sub.example.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
         });
     });
 

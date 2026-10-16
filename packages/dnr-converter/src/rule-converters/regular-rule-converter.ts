@@ -129,6 +129,7 @@ import {
     EmptyDomainsError,
     EmptyResourcesError,
     isConversionError,
+    UnexpectedConversionError,
     UnsupportedModifierError,
     UnsupportedRegexpError,
 } from '../errors/conversion-errors';
@@ -220,7 +221,8 @@ export class RegularRuleConverter {
      * Converts a URL filter to an ASCII-only string.
      *
      * The hostname is converted to punycode, while the rest of the pattern is
-     * percent-encoded: this is how DNR matches it against a request URL.
+     * percent-encoded: this is how DNR matches it against a request URL. An
+     * explicit port belongs to the rest of the pattern, not to the hostname.
      *
      * @param pattern URL filter pattern.
      *
@@ -232,7 +234,7 @@ export class RegularRuleConverter {
         }
 
         const hostAndSuffix = pattern.substring(2);
-        const hostnameEndIndex = hostAndSuffix.search(/[\^/*|?]/);
+        const hostnameEndIndex = hostAndSuffix.search(/[\^/*|?:]/);
         if (hostnameEndIndex === -1) {
             return `||${prepareASCII(hostAndSuffix)}`;
         }
@@ -1018,28 +1020,27 @@ export class RegularRuleConverter {
 
     /**
      * Checks the captured conversion error, if it is one of the expected
-     * conversion errors - returns it, otherwise adds information about
-     * the original rule, packages it into a new error and returns it.
+     * conversion errors - returns it, otherwise packages it into a new error
+     * which keeps the original rule and the captured error as a cause.
      *
-     * @param index Index of {@link Rule}.
+     * @param rule {@link Rule} which could not be converted.
      * @param id Identifier of the desired declarative rule.
      * @param error Captured error.
      *
      * @returns Initial error or new packaged error.
      */
     private static catchConversionError(
-        index: number,
+        rule: Rule,
         id: number,
         error: unknown,
-    ): Error {
+    ): ConversionError {
         if (isConversionError(error)) {
             return error;
         }
 
-        const message = `Non-categorized error during a conversion rule (index - ${index}, id - ${id})`;
-        return error instanceof Error
-            ? new Error(message, { cause: error })
-            : new Error(message);
+        const message = `Non-categorized error during a conversion rule (index - ${rule.index}, id - ${id})`;
+
+        return new UnexpectedConversionError(message, rule, error);
     }
 
     /**
@@ -1088,7 +1089,7 @@ export class RegularRuleConverter {
                 });
                 res.declarativeRules.push(converted);
             } catch (e) {
-                const err = RegularRuleConverter.catchConversionError(index, id, e);
+                const err = RegularRuleConverter.catchConversionError(rule, id, e);
                 res.errors.push(err);
             }
         }));

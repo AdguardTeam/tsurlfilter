@@ -46,6 +46,7 @@ export {
     UnsupportedModifierError,
     UnsupportedRegexpError,
     InvalidDeclarativeRuleError,
+    UnexpectedConversionError,
     isConversionError,
 } from './errors/conversion-errors';
 export {

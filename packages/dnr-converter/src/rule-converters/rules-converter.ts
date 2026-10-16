@@ -186,6 +186,9 @@ export class RulesConverter {
     /**
      * Resolves CSP exceptions and converts the remaining CSP rules.
      *
+     * Blocking rules which cannot be converted are excluded from resolution
+     * and reported once, as they fail the conversion pass anyway.
+     *
      * @param scannedFilters Scanned filters containing CSP and `$badfilter` rules.
      * @param options Options for conversion.
      *
@@ -205,9 +208,9 @@ export class RulesConverter {
             )
         )));
         const blockingPreflightErrors = blockingPreflightResults.flatMap(({ errors }) => errors);
-        const invalidBlockingRules = new Set(blockingPreflightErrors
-            .filter(isConversionError)
-            .map(({ rule }) => rule));
+        const invalidBlockingRules = new Set(blockingPreflightErrors.flatMap((error) => (
+            isConversionError(error) ? [error.rule] : []
+        )));
         const invalidCspExceptions = new Map<Rule, Error>();
         const validCspRules = cspRules.filter((rule) => {
             if (!rule.allowlist) {

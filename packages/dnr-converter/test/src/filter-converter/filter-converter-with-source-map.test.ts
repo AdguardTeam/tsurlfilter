@@ -114,6 +114,59 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(errors).toHaveLength(0);
         });
 
+        it('keeps an explicit port out of the punycoded hostname', async () => {
+            const filter = createFilter([
+                "||b\u00fccher.localtest.me:8080^$csp=script-src 'none'",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.urlFilter).toBe('||xn--bcher-kva.localtest.me:8080^');
+            expect(errors).toHaveLength(0);
+        });
+
+        it('keeps an explicit port for an ASCII hostname', async () => {
+            const filter = createFilter([
+                "||example.com:8080^$csp=script-src 'none'",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.urlFilter).toBe('||example.com:8080^');
+            expect(errors).toHaveLength(0);
+        });
+
+        it('cancels a blocking rule with an excluded $domain condition', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',domain=~foo.com",
+                '@@||example.com^$csp',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('keeps a blocking rule when the exception excludes another domain', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',domain=~foo.com",
+                '@@||example.com^$csp,domain=~bar.com',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['foo.com']);
+            expect(errors).toHaveLength(1);
+        });
+
         it('resolves the source rule of a selected line by its original offset', async () => {
             const filter = createFilter([
                 '||ads.example^',
@@ -155,6 +208,17 @@ describe('FilterConverter (withSourceMap: true)', () => {
 
             expect(errors).toHaveLength(0);
             expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('reports a blocking rule which fails the preflight only once', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',redirect=noopjs",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+            expect(errors).toHaveLength(1);
         });
     });
 

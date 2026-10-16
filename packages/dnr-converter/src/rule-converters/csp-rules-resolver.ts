@@ -38,6 +38,16 @@ type CspPairResult = {
  */
 export class CspRulesResolver {
     /**
+     * Condition fields which are compared by coverage instead of equality.
+     */
+    private static readonly COVERAGE_CONDITION_FIELDS = [
+        'initiatorDomains',
+        'excludedInitiatorDomains',
+        'excludedRequestDomains',
+        'responseHeaders',
+    ] as const;
+
+    /**
      * Canonicalizes a value for order-independent comparison.
      *
      * @param value Value to canonicalize.
@@ -149,49 +159,114 @@ export class CspRulesResolver {
     /**
      * Checks whether an exception covers a blocking rule's non-URL conditions.
      *
+     * Conditions of domain and header fields are compared by coverage: the
+     * exception must not be narrower than the blocking rule in any of them.
+     *
      * @param exceptionRule CSP exception rule.
      * @param blockingRule Blocking CSP rule.
      *
      * @returns `true` if the exception is not narrower than the blocking rule.
      */
     private static coversNonUrlConditions(exceptionRule: Rule, blockingRule: Rule): boolean {
-        const exceptionCondition = CspRulesResolver.getConditionWithoutUrl(exceptionRule);
-        const blockingCondition = CspRulesResolver.getConditionWithoutUrl(blockingRule);
-        const exceptionDomains = exceptionCondition.initiatorDomains;
-        const blockingDomains = blockingCondition.initiatorDomains;
-        const exceptionExcludedRequestDomains = exceptionCondition.excludedRequestDomains;
-        const blockingExcludedRequestDomains = blockingCondition.excludedRequestDomains;
-        const exceptionResponseHeaders = exceptionCondition.responseHeaders;
-        const blockingResponseHeaders = blockingCondition.responseHeaders;
-        delete exceptionCondition.initiatorDomains;
-        delete blockingCondition.initiatorDomains;
-        delete exceptionCondition.excludedRequestDomains;
-        delete blockingCondition.excludedRequestDomains;
-        delete exceptionCondition.responseHeaders;
-        delete blockingCondition.responseHeaders;
+        const exceptionFields = CspRulesResolver.splitCoverageFields(
+            CspRulesResolver.getConditionWithoutUrl(exceptionRule),
+        );
+        const blockingFields = CspRulesResolver.splitCoverageFields(
+            CspRulesResolver.getConditionWithoutUrl(blockingRule),
+        );
 
-        if (JSON.stringify(CspRulesResolver.canonicalize(exceptionCondition))
-            !== JSON.stringify(CspRulesResolver.canonicalize(blockingCondition))) {
+        if (JSON.stringify(CspRulesResolver.canonicalize(exceptionFields.rest))
+            !== JSON.stringify(CspRulesResolver.canonicalize(blockingFields.rest))) {
             return false;
         }
 
-        const coversInitiatorDomains = exceptionDomains === undefined
-            || CspRulesResolver.isDomainListSubset(blockingDomains, exceptionDomains);
-        if (!coversInitiatorDomains) {
-            return false;
-        }
-
-        const coversExcludedRequestDomains = exceptionExcludedRequestDomains === undefined
-            || CspRulesResolver.isDomainListSubset(
-                exceptionExcludedRequestDomains,
-                blockingExcludedRequestDomains,
+        return CspRulesResolver.coversInitiatorDomains(
+            exceptionFields.coverage.initiatorDomains,
+            blockingFields.coverage.initiatorDomains,
+        )
+            && CspRulesResolver.coversExcludedDomains(
+                exceptionFields.coverage.excludedInitiatorDomains,
+                blockingFields.coverage.excludedInitiatorDomains,
+            )
+            && CspRulesResolver.coversExcludedDomains(
+                exceptionFields.coverage.excludedRequestDomains,
+                blockingFields.coverage.excludedRequestDomains,
+            )
+            && CspRulesResolver.coversResponseHeaders(
+                exceptionFields.coverage.responseHeaders,
+                blockingFields.coverage.responseHeaders,
             );
-        if (!coversExcludedRequestDomains) {
-            return false;
-        }
+    }
 
-        return exceptionResponseHeaders === undefined
-            || CspRulesResolver.isHeaderListSubset(blockingResponseHeaders, exceptionResponseHeaders);
+    /**
+     * Splits a condition into fields compared by coverage and the rest.
+     *
+     * @param condition Condition to split.
+     *
+     * @returns Fields compared by coverage and the remaining fields.
+     */
+    private static splitCoverageFields(condition: Record<string, unknown>): {
+        coverage: Record<string, unknown>;
+        rest: Record<string, unknown>;
+    } {
+        const rest: Record<string, unknown> = { ...condition };
+        const coverage: Record<string, unknown> = {};
+
+        CspRulesResolver.COVERAGE_CONDITION_FIELDS.forEach((field) => {
+            coverage[field] = rest[field];
+            delete rest[field];
+        });
+
+        return { coverage, rest };
+    }
+
+    /**
+     * Checks whether an exception's initiator domains cover a blocking rule's ones.
+     *
+     * An absent exception list means the exception is not restricted by the
+     * condition at all, so it covers any list of the blocking rule.
+     *
+     * @param exceptionList Domains of the exception.
+     * @param blockingList Domains of the blocking rule.
+     *
+     * @returns `true` if the exception's list covers the blocking rule's list.
+     */
+    private static coversInitiatorDomains(exceptionList: unknown, blockingList: unknown): boolean {
+        return exceptionList === undefined
+            || CspRulesResolver.isDomainListSubset(blockingList, exceptionList);
+    }
+
+    /**
+     * Checks whether an exception excludes no more domains than a blocking rule.
+     *
+     * Used for excluded initiator domains (`$domain` negations) and excluded
+     * request domains (`$denyallow`, `$to` negations): an absent list means the
+     * rule excludes nothing, so the rule with fewer exclusions has the wider
+     * scope and covers the other one.
+     *
+     * @param exceptionList Excluded domains of the exception.
+     * @param blockingList Excluded domains of the blocking rule.
+     *
+     * @returns `true` if the exception excludes a subset of the blocking rule's domains.
+     */
+    private static coversExcludedDomains(exceptionList: unknown, blockingList: unknown): boolean {
+        return CspRulesResolver.isDomainListSubset(exceptionList ?? [], blockingList ?? []);
+    }
+
+    /**
+     * Checks whether an exception's response headers cover a blocking rule's ones.
+     *
+     * An absent exception list means the exception is not restricted by the
+     * condition at all, so it covers any list of the blocking rule.
+     *
+     * @param exceptionHeaders Headers of the exception.
+     * @param blockingHeaders Headers of the blocking rule.
+     *
+     * @returns `true` if the exception's list covers the blocking rule's list.
+     */
+    private static coversResponseHeaders(exceptionHeaders: unknown, blockingHeaders: unknown): boolean {
+        return exceptionHeaders === undefined
+            || CspRulesResolver.isHeaderListSubset(blockingHeaders, exceptionHeaders);
     }
 
     /**
