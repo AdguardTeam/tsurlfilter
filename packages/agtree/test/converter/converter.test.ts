@@ -846,6 +846,12 @@ describe('Converter integration tests', () => {
                     expected: ['example.com#?#a:remove-attr(/^data-.{2}$/)'],
                     shouldConvert: true,
                 },
+                // CSS injection rules with these pseudo-classes also get the extended CSS separator
+                {
+                    actual: 'example.com#$#a:remove-attr(href) { color: red }',
+                    expected: ['example.com#$?#a:remove-attr(href) { color: red }'],
+                    shouldConvert: true,
+                },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });

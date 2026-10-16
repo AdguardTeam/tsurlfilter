@@ -11,7 +11,8 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 ### Added
 
-- `remove-attr` and `remove-class` pseudo-classes to Extended CSS handlers.
+- `remove-attr` and `remove-class` pseudo-classes to Extended CSS handlers
+  [AdguardBrowserExtension#3538].
 
 ### Changed
 
@@ -22,6 +23,8 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 ### Fixed
 
 ### Security
+
+[AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
 
 ## [1.2.0] - 2025-01-31
 
