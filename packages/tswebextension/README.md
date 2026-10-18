@@ -211,9 +211,10 @@ filled only from video frames or `putImageData()` is read natively.
   `www.`, while `*.example.com` covers the host and all its subdomains.
   In MV3, every entry also covers subdomains.
   In inverted mode, protection stays on for listed hosts: a plain entry
-  covers the host and `www.`, and a `*.` entry covers subdomains at any
-  depth, excluding the host itself. MV3 adds a `*.` twin to every entry,
-  so plain entries also cover all subdomains there.
+  covers the host and `www.`, and a `*.` entry covers subdomains one level
+  below the domain after stripping `www.`, as frame matching does.
+  MV3 adds a `*.` twin to every plain entry, so plain entries also cover
+  one-level subdomains there.
   Hosts that only start with an entry, such as `example.community` for
   `example.com`, never match.
 - `$badfilter` cancels an exception. Other forms, including paths,

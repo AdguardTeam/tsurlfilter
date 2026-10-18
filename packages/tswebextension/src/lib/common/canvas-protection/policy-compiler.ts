@@ -51,6 +51,11 @@ export class CanvasPolicyCompiler {
     private static readonly WWW = '(?:www\\.)?';
 
     /**
+     * One label after stripping `www.`, mirroring the upper-level domain lookup of frame matching.
+     */
+    private static readonly FIRST_LABEL = '(?:www\\.[^./?#:]+|(?!www\\.)[^./?#:]+)\\.';
+
+    /**
      * One or more subdomain labels.
      */
     private static readonly SUBDOMAINS = '(?:[^./?#:]+\\.)+';
@@ -221,7 +226,8 @@ export class CanvasPolicyCompiler {
 
     /**
      * Matches hosted top-level documents outside the inverted allowlist. Plain entries cover the
-     * host and `www.`, while `*.` entries cover subdomains at any depth, excluding the host itself.
+     * host and `www.`, while `*.` entries cover subdomains one level below the domain after
+     * stripping `www.`, mirroring the upper-level domain lookup of frame matching.
      *
      * @param domains Allowlist entries.
      *
@@ -232,7 +238,7 @@ export class CanvasPolicyCompiler {
             CanvasPolicyCompiler.NO_AUTHORITY,
             ...domains.map((domain) => (domain.startsWith('*.')
                 ? CanvasPolicyCompiler.hostPattern(
-                    CanvasPolicyCompiler.SUBDOMAINS,
+                    CanvasPolicyCompiler.FIRST_LABEL,
                     SimpleRegex.escapeRegexSpecials(domain.slice(2)),
                 )
                 : CanvasPolicyCompiler.hostPattern(
