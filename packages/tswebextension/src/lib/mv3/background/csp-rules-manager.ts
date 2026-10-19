@@ -9,8 +9,11 @@ import {
 
 /**
  * Result of rebuilding CSP rules from all active filters.
+ *
+ * `limitations` is omitted: `convertCspRules()` runs without quota options, so
+ * the field is always empty.
  */
-export type CspRulesResult = ConversionResult<IRulesetWithSourceMap> & {
+export type CspRulesResult = Omit<ConversionResult<IRulesetWithSourceMap>, 'limitations'> & {
     /**
      * CSP rules originating from static filters.
      */
