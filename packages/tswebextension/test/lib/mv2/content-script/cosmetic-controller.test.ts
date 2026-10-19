@@ -256,4 +256,51 @@ describe('short-lived probes', () => {
             restoreMutationObserver();
         }
     });
+
+    it('stops the collector when the background does not respond', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+
+        try {
+            vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(null);
+
+            const cosmeticController = new CosmeticController();
+            cosmeticController.init();
+
+            const collectorObserver = MutationObserverMock.last!;
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            expect(collectorObserver.isDisconnected).toBe(true);
+        } finally {
+            restoreMutationObserver();
+        }
+    });
+
+    it('stops the collector when hits stats are not collected', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+
+        try {
+            vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue({
+                isAppStarted: true,
+                areHitsStatsCollected: false,
+                extCssRules: [],
+                nativeCssSelectors: null,
+            });
+
+            const cosmeticController = new CosmeticController();
+            cosmeticController.init();
+
+            const collectorObserver = MutationObserverMock.last!;
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            expect(collectorObserver.isDisconnected).toBe(true);
+        } finally {
+            restoreMutationObserver();
+        }
+    });
 });

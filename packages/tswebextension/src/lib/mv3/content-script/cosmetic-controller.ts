@@ -60,16 +60,26 @@ export class CosmeticController {
      * Sends {@link MessageType.GetCosmeticData} message to background and process response.
      */
     private async process(): Promise<void> {
-        const res = await sendAppMessage({
-            type: MessageType.GetCosmeticData,
-            payload: {
-                documentUrl: window.location.href,
-            },
-        });
+        try {
+            const res = await sendAppMessage({
+                type: MessageType.GetCosmeticData,
+                payload: {
+                    documentUrl: window.location.href,
+                },
+            });
 
-        if (res) {
-            this.applyExtendedCss(res);
+            if (res) {
+                this.applyExtendedCss(res);
+                return;
+            }
+        } catch (e) {
+            this.pendingProbesCollector.stop();
+            throw e;
         }
+
+        // Without a response the counter is never created, so the collected
+        // probes will never be counted: stop observing the DOM.
+        this.pendingProbesCollector.stop();
     }
 
     /**

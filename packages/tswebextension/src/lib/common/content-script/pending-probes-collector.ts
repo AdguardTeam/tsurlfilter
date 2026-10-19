@@ -28,6 +28,115 @@ export interface PendingProbe {
 }
 
 /**
+ * Tags that must never be temporarily re-inserted into the page.
+ *
+ * Baits are hidden content elements, usually `div`/`span`, while re-inserting
+ * resource-bearing or structural tags can re-run page side effects: re-issue
+ * network requests, reload a frame, re-apply styles or fire custom element
+ * callbacks. The counter re-inserts collected elements to read their computed
+ * style, so such tags must not be collected.
+ */
+const IGNORED_TAGS = [
+    'script', 'html', 'body', 'head', 'style', 'link', 'meta', 'title', 'base',
+    'img', 'picture', 'source', 'iframe', 'frame', 'object', 'embed', 'video',
+    'audio', 'track', 'svg',
+];
+
+/**
+ * Tags inside a probe's subtree that make the whole subtree non-restorable.
+ *
+ * Re-inserting these re-runs page side effects: reloads a frame, re-issues a
+ * network request or restarts media. The list is narrower than
+ * {@link IGNORED_TAGS}: it must not include tags whose re-insertion is safe,
+ * otherwise baits that contain them (e.g. an anti-adblock bait with a
+ * `<script>` child, which is common) are never restored and their hits are
+ * lost. In particular, an already executed `<script>` does not run again when
+ * it is re-inserted, so scripts are allowed in subtrees.
+ */
+const RESTRICTED_SUBTREE_TAGS = [
+    'link', 'img', 'picture', 'source', 'iframe', 'frame', 'object', 'embed',
+    'video', 'audio', 'track',
+];
+
+/**
+ * Checks whether an element with the given tag must not be re-inserted as
+ * part of a probe's subtree.
+ *
+ * @param tagName Tag name to check.
+ *
+ * @returns True if the tag makes the subtree non-restorable.
+ */
+export const isRestrictedSubtreeTag = (tagName: string): boolean => {
+    const normalizedTagName = tagName.toLowerCase();
+
+    return RESTRICTED_SUBTREE_TAGS.includes(normalizedTagName)
+        // Custom elements run their callbacks on re-insertion.
+        || normalizedTagName.includes('-');
+};
+
+/**
+ * Checks whether an element with the given tag must never be temporarily
+ * re-inserted into the page.
+ *
+ * Custom elements are rejected as well: re-inserting them runs page-side
+ * callbacks (`connectedCallback`/`disconnectedCallback`), which is exactly
+ * the kind of page code the counter must not trigger.
+ *
+ * @param tagName Tag name to check.
+ *
+ * @returns True if the tag is ignored.
+ */
+export const isIgnoredProbeTag = (tagName: string): boolean => {
+    const normalizedTagName = tagName.toLowerCase();
+
+    return IGNORED_TAGS.includes(normalizedTagName)
+        // Custom element names must contain a hyphen.
+        || normalizedTagName.includes('-');
+};
+
+/**
+ * Checks whether a detached element can be safely re-inserted into the page
+ * to read its computed style.
+ *
+ * The check covers the element itself and its whole subtree: re-inserting a
+ * `div` that contains an `iframe` reloads the frame, and a custom element
+ * inside runs its callbacks, even though the root tag looks safe. Subtrees
+ * are checked against {@link RESTRICTED_SUBTREE_TAGS}, which is narrower than
+ * {@link IGNORED_TAGS} to keep baits with safe children, e.g. scripts,
+ * restorable.
+ *
+ * @param element Detached element to check.
+ * @param descendants Descendants of the element, if already collected by the
+ * caller. When omitted, the subtree is queried.
+ *
+ * @returns True if the element can be re-inserted.
+ */
+export const isProbeRestorable = (element: Element, descendants?: Element[]): boolean => {
+    if (isIgnoredProbeTag(element.tagName)) {
+        return false;
+    }
+
+    if (descendants) {
+        for (let i = 0; i < descendants.length; i += 1) {
+            if (isRestrictedSubtreeTag(descendants[i].tagName)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    const children = element.querySelectorAll('*');
+    for (let i = 0; i < children.length; i += 1) {
+        if (isRestrictedSubtreeTag(children[i].tagName)) {
+            return false;
+        }
+    }
+
+    return true;
+};
+
+/**
  * Collects short-lived elements that are added and removed during the
  * document loading.
  *
@@ -50,9 +159,11 @@ export class PendingProbesCollector {
      *
      * The queue is only used during the short window between the document
      * start and the counter initialization, but pathological pages can mutate
-     * faster than we initialize. When the queue is full, the oldest element
-     * is evicted: pages usually create unrelated short-lived elements before
-     * the actual baits, so the most recent probes are the valuable ones.
+     * faster than we initialize. When the queue is full, new elements are
+     * dropped: baits are usually created by a script in `<head>`, so the
+     * earliest probes are the valuable ones, while later churn is more likely
+     * to be unrelated. Dropped elements can still be collected later, after
+     * the queue is drained.
      */
     private static readonly MAX_PENDING_PROBES = 500;
 
@@ -65,22 +176,6 @@ export class PendingProbesCollector {
      * page.
      */
     private static readonly MAX_OBSERVATION_TIME_MS = 30000;
-
-    /**
-     * Tags ignored by the collector.
-     *
-     * Baits are hidden content elements, usually `div`/`span`, while
-     * re-inserting resource-bearing or structural tags can re-run page side
-     * effects: re-issue network requests, reload a frame, re-apply styles or
-     * fire custom element callbacks. The counter re-inserts collected
-     * elements to read their computed style, so such tags must not be
-     * collected.
-     */
-    private static readonly IGNORED_TAGS = [
-        'script', 'html', 'body', 'head', 'style', 'link', 'meta', 'title', 'base',
-        'img', 'picture', 'source', 'iframe', 'frame', 'object', 'embed', 'video',
-        'audio', 'track', 'svg',
-    ];
 
     /**
      * Mutation observer.
@@ -281,7 +376,8 @@ export class PendingProbesCollector {
     /**
      * Stores a detached element.
      *
-     * If the queue is full, the oldest element is evicted.
+     * The element is not stored if it cannot be safely re-inserted (see
+     * {@link isProbeRestorable}) or if the queue is full.
      *
      * @param element Detached element.
      * @param mutationRecord Mutation record the element was found in.
@@ -293,16 +389,20 @@ export class PendingProbesCollector {
             return false;
         }
 
-        this.collectedElements.add(element);
+        if (!isProbeRestorable(element)) {
+            // Mark the element as seen to avoid rescanning its subtree on
+            // every repeated mutation record.
+            this.collectedElements.add(element);
+            return false;
+        }
 
         if (this.pendingProbes.length >= PendingProbesCollector.MAX_PENDING_PROBES) {
-            const evictedProbe = this.pendingProbes.shift();
-            if (evictedProbe) {
-                // The evicted element was never handed to the counter, so it
-                // may be collected again if the page re-uses it as a probe.
-                this.collectedElements.delete(evictedProbe.element);
-            }
+            // Keep the earliest probes. The element is not marked as seen, so
+            // it can still be collected later, after the queue is drained.
+            return false;
         }
+
+        this.collectedElements.add(element);
 
         this.pendingProbes.push({
             element,
@@ -319,12 +419,12 @@ export class PendingProbesCollector {
      *
      * @param node Node to check.
      *
-     * @returns True if the node is an element and its tag is not ignored.
+     * @returns True if the node is an element with a re-insertable tag.
      */
     private static isCollectableNode(node: Node): node is Element {
         // `node.ELEMENT_NODE` is used instead of the `Element` global, so the
         // check does not depend on the global scope availability.
         return node.nodeType === node.ELEMENT_NODE
-            && !PendingProbesCollector.IGNORED_TAGS.includes((node as Element).tagName.toLowerCase());
+            && !isIgnoredProbeTag((node as Element).tagName);
     }
 }

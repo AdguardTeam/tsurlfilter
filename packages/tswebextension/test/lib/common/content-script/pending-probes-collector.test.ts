@@ -170,6 +170,73 @@ describe('PendingProbesCollector', () => {
         collector.stop();
     });
 
+    it('ignores custom elements', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const customElement = document.createElement('ytd-player');
+        const bait = document.createElement('div');
+
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [customElement, bait],
+            target: document.body,
+        })]);
+
+        const probes = collector.takePendingProbes();
+
+        expect(probes.map((probe) => probe.element)).toEqual([bait]);
+
+        collector.stop();
+    });
+
+    it('ignores elements whose subtree contains a non-restorable tag', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const withIframe = document.createElement('div');
+        withIframe.appendChild(document.createElement('iframe'));
+
+        const withCustomElement = document.createElement('div');
+        withCustomElement.appendChild(document.createElement('my-widget'));
+
+        const withImage = document.createElement('div');
+        withImage.appendChild(document.createElement('img'));
+
+        const bait = document.createElement('div');
+
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [withIframe, withCustomElement, withImage, bait],
+            target: document.body,
+        })]);
+
+        const probes = collector.takePendingProbes();
+
+        expect(probes.map((probe) => probe.element)).toEqual([bait]);
+
+        collector.stop();
+    });
+
+    it('collects a bait whose subtree contains a script', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        // Anti-adblock baits often append a script. Re-inserting an already
+        // executed script does not run it again, so such a bait is restorable.
+        const withScript = document.createElement('div');
+        withScript.appendChild(document.createElement('script'));
+
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [withScript],
+            target: document.body,
+        })]);
+
+        const probes = collector.takePendingProbes();
+
+        expect(probes.map((probe) => probe.element)).toEqual([withScript]);
+
+        collector.stop();
+    });
+
     it('returns collected probes and keeps observing', () => {
         const collector = new PendingProbesCollector();
         collector.start();
@@ -228,7 +295,7 @@ describe('PendingProbesCollector', () => {
         collector.stop();
     });
 
-    it('evicts the oldest probes when the queue is full', () => {
+    it('keeps the earliest probes when the queue is full', () => {
         const collector = new PendingProbesCollector();
         collector.start();
 
@@ -246,13 +313,14 @@ describe('PendingProbesCollector', () => {
         const probes = collector.takePendingProbes();
 
         expect(probes).toHaveLength(maxPendingProbes);
-        expect(probes.some((probe) => probe.element === elements[0])).toBe(false);
-        expect(probes[probes.length - 1].element).toBe(elements[maxPendingProbes]);
+        // Baits from a script in `<head>` come first, so they are kept.
+        expect(probes[0].element).toBe(elements[0]);
+        expect(probes.some((probe) => probe.element === elements[maxPendingProbes])).toBe(false);
 
         collector.stop();
     });
 
-    it('allows an evicted element to be collected again', () => {
+    it('allows a dropped element to be collected after the queue is drained', () => {
         const collector = new PendingProbesCollector();
         collector.start();
 
@@ -267,19 +335,18 @@ describe('PendingProbesCollector', () => {
             target: document.body,
         })]);
 
-        // The first element is evicted by the cap.
+        // The last element is dropped by the cap.
         expect(collector.takePendingProbes()).toHaveLength(maxPendingProbes);
 
-        // The page re-uses the evicted node as a probe: it must be collected
-        // again even though it was evicted earlier.
-        const evictedElement = elements[0];
+        // The queue is drained, so the dropped node can be collected now.
+        const droppedElement = elements[maxPendingProbes];
         MutationObserverMock.last!.trigger([createMutationRecord({
-            removedNodes: [evictedElement],
+            removedNodes: [droppedElement],
             target: document.body,
         })]);
 
         const probes = collector.takePendingProbes();
-        expect(probes.some((probe) => probe.element === evictedElement)).toBe(true);
+        expect(probes.some((probe) => probe.element === droppedElement)).toBe(true);
 
         collector.stop();
     });

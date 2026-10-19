@@ -30,14 +30,17 @@ tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
 }
 
 # check css hits counter size
-# The css-hits-counter smoke bundle is currently ~35 KB unminified; the guard
+# The css-hits-counter smoke bundle is currently ~40 KB unminified; the guard
 # previously used BSD-only `stat -f "%z"`, which silently no-oped on GNU/Linux
 # (treating -f as --file-system), so this check passed green on every Linux CI
 # (both the old ubuntu test.yml and Docker) even as the bundle grew past the old
 # 27000-byte limit. Updated to the current size now that the guard is portable
 # and actually enforces on Linux; raise this only when a genuine size increase
 # lands, never to silence a regression.
-max_size=40000
+# Raised to 42000 for AG-48018: the short-lived probe collector and the
+# chunked probe processing in the counter push the bundle ~1 KB past the
+# previous limit.
+max_size=42000
 filename="dist/css-hits-counter.js"
 # Portable file-size query: GNU stat (Linux/Docker) needs `-c %s`, BSD stat
 # (macOS) needs `-f %z`.

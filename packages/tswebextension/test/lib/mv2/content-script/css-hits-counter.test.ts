@@ -519,4 +519,345 @@ describe('CssHitsCounter', () => {
             restoreMutationObserver();
         }
     });
+
+    it('does not move a probe that the page moved into a detached container', () => {
+        const fragment = document.createDocumentFragment();
+        const bait = document.createElement('div');
+        fragment.appendChild(bait);
+
+        const onCssHitsFound = vi.fn();
+        const counter = new CssHitsCounter(onCssHitsFound, {
+            pendingProbes: [{
+                element: bait,
+                target: document.body,
+                previousSibling: null,
+                nextSibling: null,
+            }],
+        });
+
+        // The element must stay in the container: re-inserting it would tear
+        // it out of there, and a detached element cannot match any rule.
+        expect(bait.parentNode).toBe(fragment);
+
+        counter.stop();
+    });
+
+    it('does not restore a probe without a connected ancestor', () => {
+        const detachedContainer = document.createElement('div');
+        const bait = document.createElement('div');
+
+        const appendChildSpy = vi.spyOn(document.documentElement, 'appendChild');
+        const insertBeforeSpy = vi.spyOn(document.documentElement, 'insertBefore');
+
+        const counter = new CssHitsCounter(vi.fn(), {
+            pendingProbes: [{
+                element: bait,
+                target: detachedContainer,
+                previousSibling: null,
+                nextSibling: null,
+            }],
+        });
+
+        // Measuring the probe under <html> would use a different cascade
+        // context and could report a hit for a rule that does not actually
+        // match the element, so the probe must not be restored at all.
+        expect(appendChildSpy).not.toHaveBeenCalled();
+        expect(insertBeforeSpy).not.toHaveBeenCalled();
+        expect(bait.parentNode).toBeNull();
+
+        appendChildSpy.mockRestore();
+        insertBeforeSpy.mockRestore();
+        counter.stop();
+    });
+
+    it('does not restore a probe whose subtree contains a non-restorable element', () => {
+        const withIframe = document.createElement('div');
+        const iframe = document.createElement('iframe');
+        withIframe.appendChild(iframe);
+
+        const withCustomElement = document.createElement('div');
+        const customElement = document.createElement('my-widget');
+        withCustomElement.appendChild(customElement);
+
+        const onCssHitsFound = vi.fn();
+        const counter = new CssHitsCounter(onCssHitsFound, {
+            pendingProbes: [
+                {
+                    element: withIframe,
+                    target: document.body,
+                    previousSibling: null,
+                    nextSibling: null,
+                },
+                {
+                    element: withCustomElement,
+                    target: document.body,
+                    previousSibling: null,
+                    nextSibling: null,
+                },
+            ],
+        });
+
+        // Re-inserting the subtrees would reload the frame and run the
+        // custom element callbacks.
+        expect(withIframe.parentNode).toBeNull();
+        expect(iframe.parentNode).toBe(withIframe);
+        expect(withCustomElement.parentNode).toBeNull();
+        expect(customElement.parentNode).toBe(withCustomElement);
+
+        counter.stop();
+    });
+
+    it('restores a probe whose subtree contains only a script', () => {
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.script-bait',
+            "{ display: none !important; --adguard-hit: 'adguard17%3B17' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        // Anti-adblock baits often append a script. Re-inserting an already
+        // executed script does not run it again, so the hit must be counted.
+        const bait = document.createElement('div');
+        bait.className = 'script-bait';
+        bait.appendChild(document.createElement('script'));
+
+        const onCssHitsFound = vi.fn();
+        const counter = new CssHitsCounter(onCssHitsFound, {
+            pendingProbes: [{
+                element: bait,
+                target: document.body,
+                previousSibling: null,
+                nextSibling: null,
+            }],
+        });
+
+        const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+        expect(flat).toContainEqual(expect.objectContaining({ filterId: 17, ruleIndex: 17 }));
+        expect(bait.parentNode).toBeNull();
+
+        counter.stop();
+        style.remove();
+    });
+
+    it('does not restore elements removed by ExtendedCss', () => {
+        vi.useFakeTimers();
+
+        try {
+            const bait = document.createElement('div');
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            // ExtendedCss reports the hit and removes the element itself.
+            counter.countAffectedByExtendedCss({
+                node: bait,
+                rules: [{ style: { remove: 'true' } }],
+            });
+
+            counter.addPendingProbes([{
+                element: bait,
+                target: document.body,
+                previousSibling: null,
+                nextSibling: null,
+            }]);
+
+            vi.advanceTimersByTime(1000);
+
+            expect(bait.parentNode).toBeNull();
+
+            counter.stop();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('processes pending probes in chunks', () => {
+        vi.useFakeTimers();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.chunk-bait',
+            "{ display: none !important; --adguard-hit: 'adguard14%3B14' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const probes = Array.from({ length: 30 }, () => {
+                const element = document.createElement('div');
+                element.className = 'chunk-bait';
+
+                return {
+                    element,
+                    target: document.body,
+                    previousSibling: null,
+                    nextSibling: null,
+                };
+            });
+
+            const counter = new CssHitsCounter(onCssHitsFound, { pendingProbes: probes });
+
+            const getChunkHits = (): number => onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 14)
+                .length;
+
+            // Only the first chunk is counted in one task.
+            expect(getChunkHits()).toBe(25);
+
+            vi.advanceTimersByTime(5);
+
+            expect(getChunkHits()).toBe(30);
+
+            counter.stop();
+        } finally {
+            vi.useRealTimers();
+            style.remove();
+        }
+    });
+
+    it('does not re-insert an element already counted by the mutation observer', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.counted-bait',
+            "{ display: none !important; --adguard-hit: 'adguard15%3B15' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+            const bait = document.createElement('div');
+            bait.className = 'counted-bait';
+
+            const appendChildSpy = vi.spyOn(document.body, 'appendChild');
+
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            // The mutation observer re-inserted the probe once and counted it.
+            expect(appendChildSpy).toHaveBeenCalledTimes(1);
+            expect(bait.parentNode).toBeNull();
+
+            // The collector reports the same element later: it must not be
+            // inserted again.
+            counter.addPendingProbes([{
+                element: bait,
+                target: document.body,
+                previousSibling: null,
+                nextSibling: null,
+            }]);
+
+            vi.advanceTimersByTime(1000);
+
+            expect(appendChildSpy).toHaveBeenCalledTimes(1);
+
+            appendChildSpy.mockRestore();
+            counter.stop();
+        } finally {
+            style.remove();
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
+    it('still retries a probe that the mutation observer could not count', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+            const bait = document.createElement('div');
+            bait.className = 'late-counted-bait';
+
+            // The mutation observer re-inserts the probe, but the marker
+            // styles are not applied yet, so nothing is counted for it.
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            const getBaitHits = (): unknown[] => onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 16);
+            expect(getBaitHits()).toHaveLength(0);
+
+            // The collector reports the same element later: it must still be
+            // retried, so the hit is not lost when the styles arrive.
+            counter.addPendingProbes([{
+                element: bait,
+                target: document.body,
+                previousSibling: null,
+                nextSibling: null,
+            }]);
+
+            // The first pending pass runs without the marker styles.
+            vi.advanceTimersByTime(0);
+            expect(getBaitHits()).toHaveLength(0);
+
+            const style = document.createElement('style');
+            style.textContent = [
+                'div.late-counted-bait',
+                "{ display: none !important; --adguard-hit: 'adguard16%3B16' !important; }",
+            ].join(' ');
+            document.head.appendChild(style);
+
+            vi.advanceTimersByTime(100);
+
+            expect(getBaitHits()).toHaveLength(1);
+            expect(bait.parentNode).toBeNull();
+
+            counter.stop();
+            style.remove();
+        } finally {
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
+    it('does not run the full scan while the document is loading', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+        let readyState = 'loading';
+        Object.defineProperty(document, 'readyState', {
+            configurable: true,
+            get: () => readyState,
+        });
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            // The debounced full scan must be skipped while loading.
+            vi.advanceTimersByTime(1000);
+            expect(onCssHitsFound).not.toHaveBeenCalled();
+
+            readyState = 'interactive';
+            document.dispatchEvent(new Event('readystatechange'));
+
+            expect(onCssHitsFound).toHaveBeenCalled();
+
+            counter.stop();
+        } finally {
+            delete (document as unknown as { readyState?: string }).readyState;
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
 });
