@@ -227,8 +227,9 @@ filled only from video frames or `putImageData()` is read natively.
 - Rules with a Unicode hostname apply to canvas protection after conversion
   to punycode. The rest of filtering currently does not apply these rules.
 
-Exceptions are recalculated at `start()` and `configure()` and apply to
-documents loaded afterwards.
+Exceptions follow the rules and allowlist of the last `start()` or
+`configure()` and apply to documents loaded afterwards. They are compiled
+only while protection is enabled.
 
 ### Limits
 

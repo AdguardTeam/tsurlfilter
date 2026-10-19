@@ -6,7 +6,10 @@ import {
     vi,
 } from 'vitest';
 
-import { CanvasProtectionController } from '../../../../src/lib/common/canvas-protection/controller';
+import {
+    type CanvasPolicyInput,
+    CanvasProtectionController,
+} from '../../../../src/lib/common/canvas-protection/controller';
 import { CanvasPolicyCompiler } from '../../../../src/lib/common/canvas-protection/policy-compiler';
 import { type CanvasProtectionRegistration } from '../../../../src/lib/common/canvas-protection/registration';
 
@@ -19,6 +22,7 @@ const enabled = { filteringEnabled: true, stealthModeEnabled: true, protectCanva
 describe('canvas protection controller', () => {
     let registration: { [Method in 'apply' | 'getState']: ReturnType<typeof vi.fn> };
     let configuration: Configuration | undefined;
+    let readPolicyInput: ReturnType<typeof vi.fn<() => CanvasPolicyInput>>;
     let controller: CanvasProtectionController;
 
     beforeEach(() => {
@@ -26,16 +30,18 @@ describe('canvas protection controller', () => {
         configuration = {
             settings: { filteringEnabled: true, stealthModeEnabled: true, stealth: { protectCanvas: true } },
         };
+        readPolicyInput = vi.fn(() => ({ ruleTexts: [], allowlist: disabledAllowlist }));
         controller = new CanvasProtectionController(
             registration as unknown as CanvasProtectionRegistration,
             () => configuration,
+            readPolicyInput,
         );
     });
 
     it('requests registration with the gates and the compiled policy', async () => {
         await controller.apply();
         expect(registration.apply).toHaveBeenLastCalledWith({ gates: enabled, policy: undefined });
-        controller.updatePolicy([], disabledAllowlist);
+        controller.invalidatePolicy();
         await controller.apply();
         expect(registration.apply).toHaveBeenLastCalledWith({ gates: enabled, policy });
         configuration = {
@@ -47,15 +53,38 @@ describe('canvas protection controller', () => {
         });
     });
 
+    it('compiles the policy once, on the first application with every gate enabled', async () => {
+        configuration!.settings.stealth.protectCanvas = false;
+        controller.invalidatePolicy();
+        await controller.apply();
+        expect(readPolicyInput).not.toHaveBeenCalled();
+        expect(registration.apply).toHaveBeenLastCalledWith({
+            gates: { ...enabled, protectCanvas: false }, policy: undefined,
+        });
+        await controller.setEnabled(true);
+        await controller.apply();
+        expect(readPolicyInput).toHaveBeenCalledOnce();
+        expect(registration.apply).toHaveBeenLastCalledWith({ gates: enabled, policy });
+        controller.invalidatePolicy();
+        await controller.setEnabled(false);
+        expect(registration.apply).toHaveBeenLastCalledWith({
+            gates: { ...enabled, protectCanvas: false }, policy: undefined,
+        });
+        await controller.setEnabled(true);
+        expect(readPolicyInput).toHaveBeenCalledTimes(2);
+    });
+
     it('applies setter changes to the configuration', async () => {
-        controller.updatePolicy([], disabledAllowlist);
+        controller.invalidatePolicy();
+        await controller.apply();
         await controller.setEnabled(false);
         expect(configuration!.settings.stealth.protectCanvas).toBe(false);
         expect(registration.apply).toHaveBeenLastCalledWith({ gates: { ...enabled, protectCanvas: false }, policy });
     });
 
-    it('replaces the policy on update', async () => {
-        controller.updatePolicy(['@@||example.org^$stealth'], disabledAllowlist);
+    it('compiles the current exceptions after an update', async () => {
+        readPolicyInput.mockReturnValue({ ruleTexts: ['@@||example.org^$stealth'], allowlist: disabledAllowlist });
+        controller.invalidatePolicy();
         await controller.apply();
         expect(registration.apply).toHaveBeenLastCalledWith({
             gates: enabled,
@@ -70,13 +99,14 @@ describe('canvas protection controller', () => {
     });
 
     it('keeps registration off after stop until the next start', async () => {
-        controller.updatePolicy([], disabledAllowlist);
+        controller.invalidatePolicy();
         await controller.stop();
-        const stopped = { gates: { ...enabled, filteringEnabled: false }, policy };
+        const stopped = { gates: { ...enabled, filteringEnabled: false }, policy: undefined };
         expect(registration.apply).toHaveBeenLastCalledWith(stopped);
         await controller.setEnabled(true);
         expect(registration.apply).toHaveBeenCalledTimes(2);
         expect(registration.apply).toHaveBeenLastCalledWith(stopped);
+        expect(readPolicyInput).not.toHaveBeenCalled();
         controller.resume();
         await controller.apply();
         expect(registration.apply).toHaveBeenLastCalledWith({ gates: enabled, policy });
