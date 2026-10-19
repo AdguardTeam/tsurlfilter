@@ -579,9 +579,13 @@ that **must be checked**:
 - **`dynamicRules.errors`**: Array of conversion errors that occurred
   during dynamic rules conversion (custom filters, user rules,
   allowlist).
-- **`limitations`**: Array of limitation errors for rules omitted due to
-  the browser quotas, aggregated across all scopes: dynamic rules
-  conversion, rebuilt CSP rules and session rules.
+- **`limitations`**: Array of limitation errors for dynamic rules omitted
+  due to the browser quotas: regular conversion and rebuilt CSP rules.
+- **`sessionRules.limitations`**: Array of limitation errors for session
+  rules omitted due to the browser quotas.
+
+Dynamic rules counters (`dynamicRules.counts`) are final: rebuilt CSP
+rules are already included.
 
 **These errors are not thrown** but returned in the result.
 **You must check these fields for critical errors and handle them
@@ -605,6 +609,9 @@ if (result.dynamicRules) {
 // Check limitations
 if (result.limitations && result.limitations.length > 0) {
     console.warn('Rules were omitted due to browser quotas:', result.limitations);
+}
+if (result.sessionRules && result.sessionRules.limitations.length > 0) {
+    console.warn('Session rules were omitted due to browser quotas:', result.sessionRules.limitations);
 }
 ```
 

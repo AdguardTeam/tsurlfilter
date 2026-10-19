@@ -28,9 +28,30 @@ export type DynamicConversionResult = ConversionResult<IRulesetWithSourceMap> & 
 
 export type { DynamicConversionResult as ConversionResult };
 
+/**
+ * Final counts of dynamic rules, rebuilt CSP rules included.
+ */
+export type DynamicRulesCounts = {
+    /**
+     * Total number of dynamic rules that fit the quotas.
+     */
+    total: number;
+
+    /**
+     * Number of unsafe dynamic rules that fit the quotas.
+     */
+    unsafe: number;
+
+    /**
+     * Number of regexp dynamic rules that fit the quotas.
+     */
+    regexp: number;
+};
+
 type LimitedCspRules = {
     rules: DeclarativeRule[];
     limitations: DynamicConversionResult['limitations'];
+    counts: DynamicRulesCounts;
 };
 
 export type DynamicRulesSnapshot = {
@@ -99,7 +120,8 @@ export default class DynamicRulesApi {
      * @param conversionResult Regular dynamic conversion result.
      * @param rebuiltCspRules Rebuilt dynamic CSP rules.
      *
-     * @returns CSP rules that fit and limitations for omitted rules.
+     * @returns CSP rules that fit, limitations for omitted rules and the final
+     * counts of dynamic rules.
      */
     public static limitRebuiltCspRules(
         conversionResult: DynamicConversionResult,
@@ -110,9 +132,9 @@ export default class DynamicRulesApi {
             + conversionResult.ruleset.getUnsafeRulesCount();
         let unsafeCount = conversionResult.ruleset.getUnsafeRulesCount();
         let regexpCount = conversionResult.ruleset.getRegexpRulesCount();
-        let excludedTotalCount = 0;
-        let excludedUnsafeCount = 0;
-        let excludedRegexpCount = 0;
+        const excludedTotalIds: number[] = [];
+        const excludedUnsafeIds: number[] = [];
+        const excludedRegexpIds: number[] = [];
 
         for (const rule of rebuiltCspRules) {
             const isUnsafe = !isSafeRule(rule);
@@ -124,9 +146,15 @@ export default class DynamicRulesApi {
                 && regexpCount >= DynamicRulesApi.MAX_NUMBER_OF_REGEX_RULES;
 
             if (exceedsTotalLimit || exceedsUnsafeLimit || exceedsRegexpLimit) {
-                excludedTotalCount += Number(exceedsTotalLimit);
-                excludedUnsafeCount += Number(isUnsafe && exceedsUnsafeLimit);
-                excludedRegexpCount += Number(isRegexp && exceedsRegexpLimit);
+                if (exceedsTotalLimit) {
+                    excludedTotalIds.push(rule.id);
+                }
+                if (exceedsUnsafeLimit) {
+                    excludedUnsafeIds.push(rule.id);
+                }
+                if (exceedsRegexpLimit) {
+                    excludedRegexpIds.push(rule.id);
+                }
                 continue;
             }
 
@@ -137,32 +165,40 @@ export default class DynamicRulesApi {
         }
 
         const limitations: DynamicConversionResult['limitations'] = [];
-        if (excludedTotalCount > 0) {
+        if (excludedTotalIds.length > 0) {
             limitations.push(new TooManyRulesError(
-                `Rebuilt CSP rules exceed the dynamic rules limit: ${excludedTotalCount} rules were omitted`,
-                [],
+                `Rebuilt CSP rules exceed the dynamic rules limit: ${excludedTotalIds.length} rules were omitted`,
+                excludedTotalIds,
                 DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_RULES,
-                excludedTotalCount,
+                excludedTotalIds.length,
             ));
         }
-        if (excludedUnsafeCount > 0) {
+        if (excludedUnsafeIds.length > 0) {
             limitations.push(new TooManyUnsafeRulesError(
-                `Rebuilt CSP rules exceed the unsafe dynamic rules limit: ${excludedUnsafeCount} rules were omitted`,
-                [],
+                `Rebuilt CSP rules exceed the unsafe dynamic limit: ${excludedUnsafeIds.length} rules were omitted`,
+                excludedUnsafeIds,
                 DynamicRulesApi.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES,
-                excludedUnsafeCount,
+                excludedUnsafeIds.length,
             ));
         }
-        if (excludedRegexpCount > 0) {
+        if (excludedRegexpIds.length > 0) {
             limitations.push(new TooManyRegexpRulesError(
-                `Rebuilt CSP rules exceed the dynamic regexp rules limit: ${excludedRegexpCount} rules were omitted`,
-                [],
+                `Rebuilt CSP rules exceed the dynamic regexp limit: ${excludedRegexpIds.length} rules were omitted`,
+                excludedRegexpIds,
                 DynamicRulesApi.MAX_NUMBER_OF_REGEX_RULES,
-                excludedRegexpCount,
+                excludedRegexpIds.length,
             ));
         }
 
-        return { rules, limitations };
+        return {
+            rules,
+            limitations,
+            counts: {
+                total: totalCount,
+                unsafe: unsafeCount,
+                regexp: regexpCount,
+            },
+        };
     }
 
     /**

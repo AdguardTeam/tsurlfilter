@@ -7,7 +7,7 @@ import {
 } from 'vitest';
 import browser from 'webextension-polyfill';
 
-import { type IRulesetWithSourceMap, TooManyUnsafeRulesError } from '@adguard/dnr-converter';
+import { type IRulesetWithSourceMap, TooManyRulesError, TooManyUnsafeRulesError } from '@adguard/dnr-converter';
 
 import {
     ALLOWLIST_FILTER_ID,
@@ -377,6 +377,10 @@ describe('DynamicRulesApi', () => {
 
             expect(limitedCspRules.rules).toEqual([]);
             expect(limitedCspRules.limitations).toHaveLength(1);
+            expect(limitedCspRules.limitations[0]).toBeInstanceOf(TooManyRulesError);
+            expect((limitedCspRules.limitations[0] as TooManyRulesError).excludedRulesIds)
+                .toEqual([cspResult.dynamicRules[0].id]);
+            expect(limitedCspRules.counts).toEqual({ total: 1, unsafe: 0, regexp: 0 });
             expect(mockDeclarativeNetRequest.updateDynamicRules).toHaveBeenCalledWith({
                 removeRuleIds: [100],
                 addRules: [expect.objectContaining({ action: { type: 'block' } })],
@@ -403,6 +407,30 @@ describe('DynamicRulesApi', () => {
             expect(limitedCspRules.rules).toEqual([]);
             expect(limitedCspRules.limitations).toHaveLength(1);
             expect(limitedCspRules.limitations[0]).toBeInstanceOf(TooManyUnsafeRulesError);
+            expect((limitedCspRules.limitations[0] as TooManyUnsafeRulesError).excludedRulesIds)
+                .toEqual([cspResult.dynamicRules[0].id]);
+            expect(limitedCspRules.counts).toEqual({ total: 1, unsafe: 0, regexp: 0 });
+
+            // @ts-ignore
+            delete browser.declarativeNetRequest;
+        });
+
+        it('counts rebuilt CSP rules in the final dynamic counts', async () => {
+            const { conversionResult, cspResult } = await prepareCspConversion(
+                [
+                    '||ads.example^',
+                    "||example.com^$csp=script-src 'none'",
+                ],
+            );
+
+            const limitedCspRules = DynamicRulesApi.limitRebuiltCspRules(
+                conversionResult,
+                cspResult.dynamicRules,
+            );
+
+            expect(limitedCspRules.rules).toEqual(cspResult.dynamicRules);
+            expect(limitedCspRules.limitations).toEqual([]);
+            expect(limitedCspRules.counts).toEqual({ total: 2, unsafe: 1, regexp: 0 });
 
             // @ts-ignore
             delete browser.declarativeNetRequest;

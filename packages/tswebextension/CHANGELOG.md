@@ -15,8 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scope, fit into the remaining browser quotas, and the dynamic scope is
   rolled back when the session update fails.
 - All limitations of the applied configuration — rules omitted due to the
-  browser quotas during conversion, CSP rules rebuilding or session rules
-  update — are aggregated in `ConfigurationResult.limitations`.
+  browser quotas during conversion or CSP rules rebuilding — are reported in
+  `ConfigurationResult.limitations`; limitations of session rules are reported
+  separately in `ConfigurationResult.sessionRules.limitations`.
+- `ConfigurationResult.dynamicRules.counts` carries the final counts of dynamic
+  rules, rebuilt CSP rules included.
 
 ### Changed
 

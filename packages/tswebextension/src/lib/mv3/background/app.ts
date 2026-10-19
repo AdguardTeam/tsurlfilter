@@ -26,7 +26,7 @@ import { assistant, Assistant } from './assistant';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
 import { CspRulesManager, type CspRulesResult } from './csp-rules-manager';
 import { declarativeFilteringLog } from './declarative-filtering-log';
-import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
+import DynamicRulesApi, { type ConversionResult, type DynamicRulesCounts } from './dynamic-rules-api';
 import { engineApi } from './engine-api';
 import { extSessionStorage } from './ext-session-storage';
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
@@ -46,13 +46,29 @@ type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult;
     staticFilters: IRulesetWithSourceMap[];
     /**
-     * Limitations of rules omitted due to the browser quotas, aggregated
-     * across all scopes: dynamic rules conversion, rebuilt CSP rules and
-     * session rules.
+     * Limitations of dynamic rules omitted due to the browser quotas: regular
+     * conversion and rebuilt CSP rules.
      */
     limitations?: LimitationError[];
+    /**
+     * Session rules result.
+     */
+    sessionRules?: {
+        /**
+         * Limitations of session rules omitted due to the browser quotas.
+         */
+        limitations: LimitationError[];
+    };
     cspRules?: Pick<CspRulesResult, 'errors'>;
-    dynamicRules?: ConversionResult;
+    /**
+     * Dynamic rules conversion result.
+     *
+     * `counts` are the final counts of dynamic rules that fit the quotas:
+     * rebuilt CSP rules are already included.
+     */
+    dynamicRules?: ConversionResult & {
+        counts: DynamicRulesCounts;
+    };
     stealthResult?: StealthConfigurationResult;
 };
 
@@ -340,10 +356,11 @@ export class TsWebExtension implements AppInterface<
      *
      * @returns ConfigurationResult {@link ConfigurationResult} which contains:
      * - list of errors for static filters, if any of them has been thrown
-     * - converted dynamic rule set with rule set, errors and limitations.
+     * - converted dynamic rule set with rule set, errors, limitations and the
+     * final counts of dynamic rules, rebuilt CSP rules included.
      * Details: {@link ConversionResult}.
-     * - limitations of rules omitted due to the browser quotas, aggregated
-     * across all rule scopes.
+     * - limitations of dynamic rules omitted due to the browser quotas and
+     * limitations of session rules in a separate field.
      *
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
@@ -507,6 +524,7 @@ export class TsWebExtension implements AppInterface<
 
             res.dynamicRules = {
                 ...dynamicRules,
+                counts: limitedDynamicCspRules.counts,
                 errors: dynamicRules.errors.concat(cspRules.dynamicErrors),
             };
             res.limitations = [
@@ -528,7 +546,7 @@ export class TsWebExtension implements AppInterface<
                     cspRules.staticRules,
                     cspRules.ruleset,
                 );
-                res.limitations.push(...sessionLimitations);
+                res.sessionRules = { limitations: sessionLimitations };
             } catch (error) {
                 try {
                     await DynamicRulesApi.rollbackDynamicFiltering(dynamicRulesSnapshot);
