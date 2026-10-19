@@ -130,6 +130,39 @@ describe('PendingProbesCollector', () => {
         collector.stop();
     });
 
+    it('collects a bait added inside a container appended to the document', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        // The bait is created inside a detached container, so the observer
+        // does not see its addition; only the container is appended.
+        const container = document.createElement('div');
+        const bait = document.createElement('div');
+        container.appendChild(bait);
+        document.body.appendChild(container);
+
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [container],
+            target: document.body,
+        })]);
+
+        // The bait is removed from the container later.
+        bait.remove();
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            removedNodes: [bait],
+            target: container,
+        })]);
+
+        const probes = collector.takePendingProbes();
+
+        expect(probes).toHaveLength(1);
+        expect(probes[0].element).toBe(bait);
+        expect(probes[0].target).toBe(container);
+
+        container.remove();
+        collector.stop();
+    });
+
     it('ignores script tags and duplicate elements', () => {
         const collector = new PendingProbesCollector();
         collector.start();

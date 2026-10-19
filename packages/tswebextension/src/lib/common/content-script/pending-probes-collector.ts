@@ -188,7 +188,8 @@ export class PendingProbesCollector {
     private pendingProbes: PendingProbe[] = [];
 
     /**
-     * Elements added during the observation window.
+     * Elements added during the observation window, including descendants of
+     * appended subtrees.
      *
      * Used to detect elements that were added and then removed in a later
      * task: such elements are attached when the mutation callback for their
@@ -336,17 +337,32 @@ export class PendingProbesCollector {
             const { addedNodes } = mutationRecord;
             for (let j = 0; j < addedNodes.length; j += 1) {
                 const node = addedNodes[j];
-                if (!PendingProbesCollector.isCollectableNode(node)) {
+                if (node.nodeType !== node.ELEMENT_NODE) {
                     continue;
                 }
 
-                this.addedElements.add(node);
+                const element = node as Element;
 
                 // The element was added and already removed before the
                 // observer callback has been invoked.
-                if (!node.parentNode) {
-                    hasNewProbes = this.collectProbe(node, mutationRecord) || hasNewProbes;
+                if (!element.parentNode) {
+                    if (PendingProbesCollector.isCollectableNode(element)) {
+                        // Remember the element even if the queue is full, so
+                        // it can be collected when it is removed after the
+                        // queue has been drained.
+                        this.addedElements.add(element);
+                        hasNewProbes = this.collectProbe(element, mutationRecord) || hasNewProbes;
+                    }
+
+                    continue;
                 }
+
+                // A mutation record reports only the root of an appended
+                // subtree: its descendants do not get their own addition
+                // records. Register the whole subtree, so a bait created
+                // inside a container before the container was appended is
+                // recognized when it is removed later.
+                this.registerAddedSubtree(element);
             }
 
             const { removedNodes } = mutationRecord;
@@ -371,6 +387,28 @@ export class PendingProbesCollector {
         const probes = this.pendingProbes;
         this.pendingProbes = [];
         this.onProbesCollected(probes);
+    }
+
+    /**
+     * Registers an appended element and all its descendants as added during
+     * the observation window.
+     *
+     * A mutation record reports only the root of an appended subtree, so
+     * descendants of a container inserted in one operation (e.g. a pre-built
+     * subtree appended to the document) do not get their own addition
+     * records. Without registering them, a bait created inside such a
+     * container and removed later would not be recognized as added during the
+     * observation and would be dropped on removal.
+     *
+     * @param element Appended element.
+     */
+    private registerAddedSubtree(element: Element): void {
+        this.addedElements.add(element);
+
+        const descendants = element.querySelectorAll('*');
+        for (let i = 0; i < descendants.length; i += 1) {
+            this.addedElements.add(descendants[i]);
+        }
     }
 
     /**
