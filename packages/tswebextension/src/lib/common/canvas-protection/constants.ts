@@ -50,14 +50,6 @@ export enum CanvasOperationStatus {
  * Type of a prepared condition.
  */
 export enum CanvasConditionType {
-    UrlRegexp = 'url-regexp',
+    Host = 'host',
     Not = 'not',
-}
-
-/**
- * Flags of a prepared `url-regexp` condition.
- */
-export enum CanvasConditionFlags {
-    None = '',
-    IgnoreCase = 'i',
 }

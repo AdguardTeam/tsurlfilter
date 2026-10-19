@@ -9,7 +9,7 @@ import {
     bootstrapCanvasProtection,
     readDocumentPolicyInput,
 } from '../../../../src/lib/common/canvas-protection/bootstrap';
-import { CanvasConditionFlags, CanvasConditionType } from '../../../../src/lib/common/canvas-protection/constants';
+import { CanvasConditionType } from '../../../../src/lib/common/canvas-protection/constants';
 import { type CanvasBootstrapSnapshot } from '../../../../src/lib/common/canvas-protection/contracts';
 
 import { createProtectAllPolicy } from './fixtures/prepared-policies';
@@ -115,10 +115,12 @@ describe('document canvas bootstrap', () => {
         const globals = Reflect.ownKeys(window);
         const excluded = snapshot({
             ...createProtectAllPolicy('current'),
+            // Every top document with a hostname.
             documentExclusions: [{
-                type: CanvasConditionType.UrlRegexp,
-                pattern: '.',
-                flags: CanvasConditionFlags.None,
+                type: CanvasConditionType.Not,
+                operand: {
+                    type: CanvasConditionType.Host, hosts: [], domains: [], parents: [],
+                },
             }],
         });
         bootstrapCanvasProtection(excluded);

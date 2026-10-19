@@ -205,7 +205,9 @@ filled only from video frames or `putImageData()` is read natively.
   supported. Frames from other sites remain protected.
 - `@@||host^$document` and the allowlist, in normal or inverted mode,
   exclude the top-level document and its frames when the browser reveals
-  the top-level document's URL. See [Limits](#limits) for browser restrictions.
+  the top-level document's URL and it has a hostname, so a `file:` or
+  `about:blank` top-level document is never excluded.
+  See [Limits](#limits) for browser restrictions.
   `$document` may also use `$important` or combine with `$stealth`.
   In normal mode, MV2 entries such as `example.com` cover the host and
   `www.`, while `*.example.com` covers the host and all its subdomains.
