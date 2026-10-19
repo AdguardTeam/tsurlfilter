@@ -53,9 +53,9 @@ import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
  * which compiles `:contains(/.../)` patterns with PCRE2, and PCRE2 rejects
  * quantifier numbers greater than 65535 ("quantifier too large" error).
  *
- * Note: the AdGuard `[max-length]` attribute itself defaults to 8192 (8 KB)
- * when not specified, but it is handled natively by CoreLibs and is not
- * affected by the PCRE2 quantifier limit.
+ * Note: this bound applies to the generated regular expression only.
+ * The `[max-length]` and `[min-length]` attribute values are not bounded
+ * by it: products apply those attributes natively, without PCRE2.
  *
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}
  * @see {@link https://www.pcre.org/current/doc/html/pcre2limits.html}
