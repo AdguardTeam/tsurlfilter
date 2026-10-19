@@ -243,6 +243,7 @@ describe('PreregisteredScriptsService', () => {
         vi.unstubAllGlobals();
         appContext.preregisteredScriptRulesAtBoot = undefined;
         appContext.preregisteredScriptRules = undefined;
+        appContext.preregisteredScripts = undefined;
         registryState.descriptors = [];
         // `clearAllMocks` clears calls but not implementations, so the
         // custom implementations and queued one-shot results of a test
@@ -1137,6 +1138,33 @@ describe('PreregisteredScriptsService', () => {
             vi.mocked(ContentScriptManager.clear).mockImplementation(async () => {
                 registryState.descriptors = [];
             });
+        });
+    });
+
+    describe('reapplyGate', () => {
+        it('is a no-op until configure() has stored the configuration', () => {
+            const initSpy = vi.spyOn(PreregisteredScriptsService, 'init').mockResolvedValue();
+
+            PreregisteredScriptsService.reapplyGate(true);
+
+            // A service-worker restart restores the session configuration but
+            // not the in-memory build-time one: re-evaluating now would take
+            // the "feature disabled" path and clear the live registrations.
+            expect(initSpy).not.toHaveBeenCalled();
+
+            initSpy.mockRestore();
+        });
+
+        it('re-evaluates the gate with the stored configuration', () => {
+            const config = { domains: ['youtube.com'], path: SCRIPTS_PATH };
+            appContext.preregisteredScripts = config;
+            const initSpy = vi.spyOn(PreregisteredScriptsService, 'init').mockResolvedValue();
+
+            PreregisteredScriptsService.reapplyGate(false);
+
+            expect(initSpy).toHaveBeenCalledWith(false, config);
+
+            initSpy.mockRestore();
         });
     });
 });

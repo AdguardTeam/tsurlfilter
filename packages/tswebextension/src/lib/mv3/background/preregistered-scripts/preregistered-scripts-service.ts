@@ -155,6 +155,30 @@ export class PreregisteredScriptsService {
     }
 
     /**
+     * Re-applies the preregistration gate at runtime, using the build-time
+     * configuration stored for the current service-worker lifetime.
+     *
+     * Does nothing until `configure()` has stored that configuration: it
+     * stores it right after the engine starts, while a call without a
+     * configuration makes {@link PreregisteredScriptsService.init} treat the
+     * feature as disabled and clear the live registrations.
+     *
+     * @param preregistrationEnabled Whether preregistration should be active.
+     */
+    public static reapplyGate(preregistrationEnabled: boolean): void {
+        const { preregisteredScripts } = appContext;
+        if (!preregisteredScripts) {
+            return;
+        }
+
+        PreregisteredScriptsService
+            .init(preregistrationEnabled, preregisteredScripts)
+            .catch((e) => {
+                logger.error('[tsweb.PreregisteredScriptsService.reapplyGate]: Failed to re-evaluate preregistration', e);
+            });
+    }
+
+    /**
      * Runs a registration mutation through {@link PreregisteredScriptsService.syncQueue},
      * so it cannot overlap with a queued sync or clear.
      *

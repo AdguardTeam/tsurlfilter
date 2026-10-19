@@ -873,11 +873,7 @@ export class TsWebExtension implements AppInterface<
         this.configuration.settings.debugScriptlets = debug;
 
         const { filteringEnabled } = this.configuration.settings;
-        PreregisteredScriptsService
-            .init(filteringEnabled && !debug, appContext.preregisteredScripts)
-            .catch((e) => {
-                logger.error('[tsweb.TsWebExtension.setDebugScriptlets]: Failed to re-evaluate preregistration', e);
-            });
+        PreregisteredScriptsService.reapplyGate(filteringEnabled && !debug);
     }
 
     /**
