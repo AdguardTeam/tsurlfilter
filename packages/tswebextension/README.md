@@ -202,7 +202,10 @@ filled only from video frames or `putImageData()` is read natively.
 - `@@||host^$stealth` and `@@||host^$stealth=fingerprinting` exclude the
   host and its subdomains by the document's own URL. A list of stealth
   options containing `fingerprinting` and the `$important` modifier are
-  supported. Frames from other sites remain protected.
+  supported. Frames from other sites remain protected. While protection is
+  enabled, the [filtering log](#onfilteringlogevent) attaches the exception
+  to the request of each document it keeps native, as a
+  `FilteringEventType.StealthAllowlistAction` event.
 - `@@||host^$document` and the allowlist, in normal or inverted mode,
   exclude the top-level document and its frames when the browser reveals
   the top-level document's URL and it has a hostname, so a `file:` or

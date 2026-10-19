@@ -1,4 +1,5 @@
 import {
+    afterEach,
     beforeEach,
     describe,
     expect,
@@ -6,7 +7,15 @@ import {
     vi,
 } from 'vitest';
 
+import { HTTPMethod, MatchingResult, RequestType } from '@adguard/tsurlfilter';
+
+import { defaultFilteringLog, FilteringEventType } from '../../../../../src/lib/common/filtering-log';
+import { ContentType } from '../../../../../src/lib/common/request-type';
+import { appContext } from '../../../../../src/lib/mv3/background/app-context';
+import { type ConfigurationMV3Context } from '../../../../../src/lib/mv3/background/configuration';
+import { type RequestContext, RequestContextState } from '../../../../../src/lib/mv3/background/request';
 import { StealthService } from '../../../../../src/lib/mv3/background/services/stealth-service';
+import { createNetworkRule } from '../../../../helpers/rule-creator';
 
 describe('StealthService', () => {
     describe('setDisableWebRTC', () => {
@@ -81,6 +90,71 @@ describe('StealthService', () => {
 
             expect(result).toBe(false);
             expect(mockClear).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('onBeforeSendHeaders', () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        /**
+         * Processes a document request and returns the stealth exceptions published for it.
+         *
+         * @param protectCanvas Whether canvas protection is enabled.
+         * @param rule Rule matching the request.
+         *
+         * @returns Applied rule texts of the published event, if any.
+         */
+        const publishedExceptions = (protectCanvas: boolean, rule: string): string[] | undefined => {
+            const publishEvent = vi.spyOn(defaultFilteringLog, 'publishEvent');
+            publishEvent.mockClear();
+            vi.spyOn(appContext, 'configuration', 'get').mockReturnValue({
+                settings: {
+                    filteringEnabled: true,
+                    stealthModeEnabled: true,
+                    stealth: {
+                        blockChromeClientData: false,
+                        hideReferrer: false,
+                        hideSearchQueries: false,
+                        sendDoNotTrack: false,
+                        protectCanvas,
+                    },
+                },
+            } as ConfigurationMV3Context);
+            const context: RequestContext = {
+                eventId: '1',
+                state: RequestContextState.BeforeSendHeaders,
+                requestId: '1',
+                requestUrl: 'https://example.org/',
+                referrerUrl: 'https://example.org/',
+                requestType: RequestType.Document,
+                contentType: ContentType.Document,
+                tabId: 1,
+                frameId: 0,
+                timestamp: Date.now(),
+                thirdParty: false,
+                method: HTTPMethod.GET,
+                requestHeaders: [],
+                matchingResult: new MatchingResult([createNetworkRule(rule, 1)], null),
+            };
+            StealthService.onBeforeSendHeaders(context);
+            const event = publishEvent.mock.calls
+                .map(([published]) => published)
+                .find(({ type }) => type === FilteringEventType.StealthAllowlistAction);
+            return event?.type === FilteringEventType.StealthAllowlistAction
+                ? event.data.rules.map(({ appliedRuleText }) => appliedRuleText)
+                : undefined;
+        };
+
+        it('publishes the exception that keeps a document native', () => {
+            expect(publishedExceptions(true, '@@||example.org^$stealth=fingerprinting'))
+                .toEqual(['@@||example.org^$stealth=fingerprinting']);
+            expect(publishedExceptions(true, '@@||example.org^$stealth')).toEqual(['@@||example.org^$stealth']);
+        });
+
+        it('publishes nothing while canvas protection is off', () => {
+            expect(publishedExceptions(false, '@@||example.org^$stealth=fingerprinting')).toBeUndefined();
         });
     });
 });

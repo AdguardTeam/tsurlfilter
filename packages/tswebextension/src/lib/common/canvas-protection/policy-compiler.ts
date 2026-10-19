@@ -26,6 +26,26 @@ export interface PolicyAllowlist {
 }
 
 /**
+ * What a supported filter rule excludes from canvas protection.
+ */
+export interface CanvasRuleExclusion {
+    /**
+     * Lowercase ASCII hostname of the `||host^` pattern.
+     */
+    readonly hostname: string;
+
+    /**
+     * `$document`: top-level documents of the host and its subdomains, together with their frames.
+     */
+    readonly document: boolean;
+
+    /**
+     * `$stealth` covering fingerprinting: documents of the host and its subdomains by their own URL.
+     */
+    readonly stealth: boolean;
+}
+
+/**
  * Prepares deterministic canvas exclusions from filter rules and the configured allowlist.
  */
 export class CanvasPolicyCompiler {
@@ -74,66 +94,13 @@ export class CanvasPolicyCompiler {
         const domains: string[] = [];
         const patterns: string[] = [];
         for (const text of ruleTexts) {
-            let rule: AnyRule;
-            try {
-                rule = RuleParser.parse(text);
-            } catch (error) {
-                logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": parsing failed: ${error}`);
-                continue;
+            const exclusion = CanvasPolicyCompiler.parseRule(text);
+            if (exclusion?.stealth) {
+                excludeMatches.push(CanvasPolicyCompiler.IPV4.test(exclusion.hostname)
+                    ? `*://${exclusion.hostname}/*` : `*://*.${exclusion.hostname}/*`);
             }
-            if (rule.type !== NetworkRuleType.NetworkRule || rule.exception !== true) {
-                continue;
-            }
-            const modifiers = rule.modifiers?.children ?? [];
-            const document = modifiers.find((modifier) => modifier.name.value === NETWORK_RULE_OPTIONS.DOCUMENT);
-            // The engine keeps the last `$stealth`; `findLast` is missing in older supported Firefox.
-            const stealths = modifiers.filter((modifier) => modifier.name.value === NETWORK_RULE_OPTIONS.STEALTH);
-            const stealth = stealths[stealths.length - 1];
-            const fingerprinting = stealth !== undefined && (stealth.value === undefined
-                || stealth.value.value.split(PIPE_MODIFIER_SEPARATOR)
-                    .some((option) => option.trim() === StealthOptionName.Fingerprinting));
-            if (!document && !fingerprinting) {
-                continue;
-            }
-            const unsupportedModifier = modifiers.some((modifier) => {
-                if (modifier.exception) {
-                    return true;
-                }
-                switch (modifier.name.value) {
-                    case NETWORK_RULE_OPTIONS.STEALTH:
-                        return false;
-                    case NETWORK_RULE_OPTIONS.DOCUMENT:
-                    case NETWORK_RULE_OPTIONS.IMPORTANT:
-                        return modifier.value !== undefined;
-                    default:
-                        return true;
-                }
-            });
-            if (unsupportedModifier) {
-                logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": unsupported modifiers`);
-                continue;
-            }
-            const pattern = rule.pattern.value;
-            if (!pattern.startsWith('||') || !pattern.endsWith('^')) {
-                logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": expected a ||host^ pattern`);
-                continue;
-            }
-            const host = pattern.slice(2, -1);
-            if (host.includes('*')) {
-                logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": wildcard hosts are unsupported`);
-                continue;
-            }
-            const hostname = CanvasPolicyCompiler.parseHost(host);
-            if (hostname === undefined) {
-                logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": expected a plain hostname`);
-                continue;
-            }
-            if (fingerprinting) {
-                excludeMatches.push(CanvasPolicyCompiler.IPV4.test(hostname)
-                    ? `*://${hostname}/*` : `*://*.${hostname}/*`);
-            }
-            if (document) {
-                domains.push(hostname);
+            if (exclusion?.document) {
+                domains.push(exclusion.hostname);
             }
         }
         if (allowlist.enabled && !allowlist.inverted) {
@@ -159,6 +126,71 @@ export class CanvasPolicyCompiler {
             documentExclusions,
         };
         return { revision: fastHash(JSON.stringify(policy)).toString(16).padStart(8, '0'), ...policy };
+    }
+
+    /**
+     * Reads what a filter rule excludes from canvas protection.
+     *
+     * @param text Rule text.
+     *
+     * @returns The exclusion, or `undefined` for a rule that does not affect canvas protection.
+     */
+    public static parseRule(text: string): CanvasRuleExclusion | undefined {
+        let rule: AnyRule;
+        try {
+            rule = RuleParser.parse(text);
+        } catch (error) {
+            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": parsing failed: ${error}`);
+            return undefined;
+        }
+        if (rule.type !== NetworkRuleType.NetworkRule || rule.exception !== true) {
+            return undefined;
+        }
+        const modifiers = rule.modifiers?.children ?? [];
+        const document = modifiers.find((modifier) => modifier.name.value === NETWORK_RULE_OPTIONS.DOCUMENT);
+        // The engine keeps the last `$stealth`; `findLast` is missing in older supported Firefox.
+        const stealths = modifiers.filter((modifier) => modifier.name.value === NETWORK_RULE_OPTIONS.STEALTH);
+        const stealth = stealths[stealths.length - 1];
+        const fingerprinting = stealth !== undefined && (stealth.value === undefined
+            || stealth.value.value.split(PIPE_MODIFIER_SEPARATOR)
+                .some((option) => option.trim() === StealthOptionName.Fingerprinting));
+        if (!document && !fingerprinting) {
+            return undefined;
+        }
+        const unsupportedModifier = modifiers.some((modifier) => {
+            if (modifier.exception) {
+                return true;
+            }
+            switch (modifier.name.value) {
+                case NETWORK_RULE_OPTIONS.STEALTH:
+                    return false;
+                case NETWORK_RULE_OPTIONS.DOCUMENT:
+                case NETWORK_RULE_OPTIONS.IMPORTANT:
+                    return modifier.value !== undefined;
+                default:
+                    return true;
+            }
+        });
+        if (unsupportedModifier) {
+            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": unsupported modifiers`);
+            return undefined;
+        }
+        const pattern = rule.pattern.value;
+        if (!pattern.startsWith('||') || !pattern.endsWith('^')) {
+            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": expected a ||host^ pattern`);
+            return undefined;
+        }
+        const host = pattern.slice(2, -1);
+        if (host.includes('*')) {
+            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": wildcard hosts are unsupported`);
+            return undefined;
+        }
+        const hostname = CanvasPolicyCompiler.parseHost(host);
+        if (hostname === undefined) {
+            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": expected a plain hostname`);
+            return undefined;
+        }
+        return { hostname, document: document !== undefined, stealth: fingerprinting };
     }
 
     /**
