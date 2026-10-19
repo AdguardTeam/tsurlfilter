@@ -652,6 +652,18 @@ describe('CosmeticRule.CSS', () => {
         cssRule = createCosmeticRule(ruleText, 0);
         expect(cssRule).toBeDefined();
         expect(cssRule.getContent()).toBe(selector);
+
+        selector = '.some-class:remove-attr(href)';
+        ruleText = `example.org##${selector}`;
+        cssRule = createCosmeticRule(ruleText, 0);
+        expect(cssRule).toBeDefined();
+        expect(cssRule.getContent()).toBe(selector);
+
+        selector = '.some-class:remove-class(ads)';
+        ruleText = `example.org##${selector}`;
+        cssRule = createCosmeticRule(ruleText, 0);
+        expect(cssRule).toBeDefined();
+        expect(cssRule.getContent()).toBe(selector);
     });
 
     it('throws error on invalid pseudo class', () => {
@@ -862,6 +874,19 @@ describe('Extended css rule', () => {
 
     expect(rule.isExtendedCss()).toBeTruthy();
     expect(rule.getContent()).toEqual('div { background-color: #333!important; }');
+
+    it.each([
+        ['example.org##a:remove-attr(href)', 'a:remove-attr(href)'],
+        ['example.org##a:remove-attr(/^data-[0-9]+$/)', 'a:remove-attr(/^data-[0-9]+$/)'],
+        ['example.org##a:remove-attr(/^data-.{2}$/)', 'a:remove-attr(/^data-.{2}$/)'],
+        ['example.org##div:remove-class(ads)', 'div:remove-class(ads)'],
+        ['example.org##div:remove-class(/^ad-[0-9]+$/)', 'div:remove-class(/^ad-[0-9]+$/)'],
+    ])('treats %s as an extended CSS rule', (text, expectedContent) => {
+        const extendedRule = createCosmeticRule(text, 0);
+
+        expect(extendedRule.isExtendedCss()).toBeTruthy();
+        expect(extendedRule.getContent()).toEqual(expectedContent);
+    });
 
     it('does not confuses extended css rules with script rules', () => {
         // eslint-disable-next-line max-len

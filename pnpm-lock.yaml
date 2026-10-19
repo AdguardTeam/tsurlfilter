@@ -1731,8 +1731,8 @@ importers:
         specifier: workspace:^
         version: link:../dnr-converter
       '@adguard/extended-css':
-        specifier: 2.2.0
-        version: 2.2.0
+        specifier: 2.3.0
+        version: 2.3.0
       '@adguard/logger':
         specifier: workspace:^
         version: link:../logger
@@ -1945,9 +1945,9 @@ packages:
   '@adguard/eslint-plugin-logger-context@1.0.1':
     resolution: {integrity: sha512-KfHD0UrCkkHQK7cq5nBvY9cJ/kDJoMwKfq66cJngLRKnCkCYGKGBT+HPmwapkXK96UItfPswW07i1VWIaZSgpA==}
 
-  '@adguard/extended-css@2.2.0':
-    resolution: {integrity: sha512-LCSQDGV1yvtbehNsFmv0nMFHxLtYAzu8by9QJd9zmS07ZsgL6n5YQ3TZzqaUdLvBIuTIuG4Lfn73xwuRk5J9Og==}
-    engines: {node: '>=16'}
+  '@adguard/extended-css@2.3.0':
+    resolution: {integrity: sha512-NK4py7MZQiVmhObTfsGdLaIwpcnGoWGz6aAivuN8vntR0MtOrBhRnv/jVUUl+C20D+xOr9gfY6ZlzMWEP1PPsQ==}
+    engines: {node: '>=22', pnpm: '>=10.33.4 <11'}
 
   '@adguard/filters-downloader@2.4.2':
     resolution: {integrity: sha512-efloe2ZGHaO4GK+4xQiI8B7FGIlDbMKT05X4g9XAXNfG7uWmXF0OnaaAN8312wYc1q1OXRS4SGwYwN+wocyGBw==}
@@ -9774,7 +9774,7 @@ snapshots:
 
   '@adguard/eslint-plugin-logger-context@1.0.1': {}
 
-  '@adguard/extended-css@2.2.0': {}
+  '@adguard/extended-css@2.3.0': {}
 
   '@adguard/filters-downloader@2.4.2':
     dependencies:

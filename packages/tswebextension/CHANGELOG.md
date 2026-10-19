@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   documentation now reflects that document tracking works the same in Firefox 153+
   as in Chromium. Consumers compiling against the published declarations must use
   `@types/webextension-polyfill` >= 0.12.6, since the previous alias is gone.
+- Updated [@adguard/extended-css] to `v2.3.0`, which adds support for uBlock Origin
+  `:remove-attr()` and `:remove-class()` pseudo-classes [AdguardBrowserExtension#3538].
 
 ### Deprecated
 
@@ -51,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [AdguardBrowserExtension#2965]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2965
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
+[AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
 [AdguardBrowserExtension#3553]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3553
 
 ### Security

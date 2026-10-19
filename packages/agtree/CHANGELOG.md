@@ -11,6 +11,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- Support for uBlock Origin `:remove-attr()` and `:remove-class()` pseudo-classes
+  in element hiding and CSS injection rule conversion. Like `:remove()`, they
+  are validated as actions during parsing: anything other than whitespace or
+  the CSS injection declaration block after them makes the rule invalid
+  [AdguardBrowserExtension#3538].
 - `getModifierAliases()` helper which returns raw modifier names converted to
   a given ADG modifier name.
 
@@ -26,6 +31,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   while domains with a leading dot remain invalid.
 
 ### Security
+
+[AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
 
 ## [4.3.0] - 2026-10-14
 
