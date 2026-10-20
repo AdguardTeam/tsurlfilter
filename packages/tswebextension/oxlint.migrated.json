@@ -405,6 +405,12 @@
       "fixStyle": "inline-type-imports"
      }
     ],
+    "typescript/consistent-type-exports": [
+     "error",
+     {
+      "fixMixedExportsWithInlineTypeSpecifier": true
+     }
+    ],
     "ag-jsdoc/require-throws": [
      "error"
     ],
@@ -1896,6 +1902,12 @@
       "fixStyle": "inline-type-imports"
      }
     ],
+    "typescript/consistent-type-exports": [
+     "error",
+     {
+      "fixMixedExportsWithInlineTypeSpecifier": true
+     }
+    ],
     "ag-jsdoc/require-throws": [
      "error"
     ],
@@ -3270,6 +3282,9 @@
    "specifier": "@agcodeguidelines/oxlint-plugin/typescript-stylistic"
   }
  ],
+ "options": {
+  "typeAware": true
+ },
  "settings": {
   "import/resolver": {
    "node": {
@@ -3322,8 +3337,5 @@
   "typescript",
   "import",
   "react"
- ],
- "options": {
-  "typeAware": true
- }
+ ]
 }

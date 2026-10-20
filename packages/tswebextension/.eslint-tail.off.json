@@ -22,6 +22,7 @@
  "sort-imports": "off",
  "import/order": "off",
  "@typescript-eslint/consistent-type-imports": "off",
+ "@typescript-eslint/consistent-type-exports": "off",
  "jsdoc/require-throws": "off",
  "jsdoc/check-tag-names": "off",
  "jsdoc/require-jsdoc": "off",
