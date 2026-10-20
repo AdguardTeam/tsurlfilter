@@ -327,8 +327,8 @@ export class TokenizerContext {
      * @param tokenType Token type to report
      */
     public consumeTrivialToken(tokenType: TokenType): void {
-        // eslint-disable-next-line no-plusplus
-        this.onToken(tokenType, this.cursor, ++this.cursor, undefined, this.stop);
+        this.onToken(tokenType, this.cursor, this.cursor + 1, undefined, this.stop);
+        this.cursor += 1;
     }
 
     /**

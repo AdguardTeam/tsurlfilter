@@ -1,3 +1,4 @@
+// oxlint-disable ag-compat/no-bitwise
 /* eslint-disable no-bitwise */
 /**
  * @file Hashing functions based on the djb2 algorithm
