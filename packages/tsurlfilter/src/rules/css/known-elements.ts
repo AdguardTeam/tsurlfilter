@@ -32,6 +32,8 @@ export const SUPPORTED_EXT_CSS_PSEUDO_CLASSES: ReadonlySet<string> = new Set([
     'matches-property',
     'nth-ancestor',
     'remove',
+    'remove-attr',
+    'remove-class',
     'upward',
     'xpath',
 ]);

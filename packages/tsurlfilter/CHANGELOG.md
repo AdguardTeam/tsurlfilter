@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support of uBlock Origin `:remove-attr()` and `:remove-class()` pseudo-classes:
+  rules with them are recognized as Extended CSS and passed to the Extended CSS
+  engine [AdguardBrowserExtension#3538].
+
 ### Changed
 
 - Escaped regular-expression domains in non-basic `[$domain=...]` rules now
@@ -15,8 +21,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Regexp domains now match case-insensitively without changing escape tokens
   such as `\D` into `\d`.
 
+### Deprecated
+
+### Removed
+
 ### Fixed
 
+- `$badfilter` incorrectly negated rules with different values of value-bearing
+  modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
+  `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when
+  the whole modifier list is written the same way — names, values, their order
+  and repeats, `$permissions` included — so `$redirect-rule` is no longer treated
+  as `$redirect`, and spellings that are equivalent after parsing (e.g.
+  `Set-Cookie` and `set-cookie`) do not negate each other.
+- `$badfilter` with `$domain` still disables the rule it refers to for the
+  domains present in both lists, but regular expression domains now keep their
+  case, so `$domain=/A/` no longer cancels `$domain=/a/`. This exception applies
+  only while neither rule has a negated `~domain`; otherwise the whole text is
+  compared.
 - Fixed cosmetic rules with multiple domains in the `$domain` modifier not
   applying on permitted domains [AdguardBrowserExtension#3605].
 - Fixed duplicate cosmetic rule matches for overlapping domain restrictions
@@ -24,9 +46,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Domain-scoped cosmetic and JavaScript rules not matching hosts with labels
   ending in an underscore.
 
-[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.3...HEAD
+### Security
+
+[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.4...HEAD
 [#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
+[AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
 [AdguardBrowserExtension#3605]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3605
+
+## [6.0.4] - 2026-10-15
+
+### Changed
+
+- `:contains()` arguments of HTML filtering rules are now handled exactly
+  like CoreLibs does: the argument is the raw text between the parentheses
+  of the pseudo-class, so wrapping quotes of any kind (e.g.
+  `:contains('advert')` or `:contains("...")`) are literal characters of
+  the matched text, never a transport encoding. An argument that looks like
+  a `/regexp/` is compiled to a `RegExp`, everything else is matched as a
+  literal substring. Unbalanced arguments, e.g.
+  `$$script:contains((function(g,b,a,c,e,d)`, are now parsed and matched
+  as-is, mirroring CoreLibs [#96].
+- Updated [@adguard/agtree] to `v4.3.0`.
+
+[6.0.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v6.0.4
 
 ## [6.0.3] - 2026-08-25
 

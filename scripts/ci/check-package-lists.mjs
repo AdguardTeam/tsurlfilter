@@ -241,4 +241,35 @@ if (agentsLines.length > 0) {
     assertStableLines('AGENTS.md', agentsLines);
 }
 
+// 6. LATEST_LINE in the same workflow names the line that publishes under
+//    `latest`. It must be one of ALL_LINES (otherwise no line gets `latest`
+//    and no job fails), and the docs that name the `latest` line — the
+//    DEPLOYMENT.md table row and the AGENTS.md workflow inventory — must agree
+//    with it, so moving `latest` to a newer line cannot leave them stale.
+const latestVarMatch = stableWorkflow.match(/LATEST_LINE="([^"]*)"/);
+if (!latestVarMatch) {
+    fail('publish-stable-dnr-rulesets.yml: could not find the LATEST_LINE="..." assignment (format changed?)');
+}
+const latestLine = latestVarMatch[1];
+if (!stableLines.includes(latestLine)) {
+    fail(`publish-stable-dnr-rulesets.yml: LATEST_LINE "${latestLine}" is not in ALL_LINES (${stableLines.join(', ')})`);
+}
+
+const assertLatestLine = (label, content, pattern) => {
+    const lines = [...content.matchAll(pattern)].map((m) => m[1]);
+    if (lines.length === 0) {
+        fail(`${label}: could not find the line published under \`latest\` (format changed?)`);
+    }
+    if (lines.some((line) => line !== latestLine)) {
+        fail(`${label} names ${lines.join(', ')} as the \`latest\` line; publish-stable-dnr-rulesets.yml LATEST_LINE is ${latestLine}`);
+    }
+    console.log(`${label}: OK (latest = ${latestLine})`);
+};
+
+// 6a. DEPLOYMENT.md table row "| 5.0 | `stable/dnr-rulesets-5.0` | `latest` |".
+assertLatestLine('DEPLOYMENT.md', deployment, /^\s*\| ([0-9]+\.[0-9]+) \|[^|\n]*\| `latest` \|$/gm);
+
+// 6b. AGENTS.md "5.0 publishes under `latest`" (may wrap after "under").
+assertLatestLine('AGENTS.md', agents, /([0-9]+\.[0-9]+) publishes under\s+`latest`/g);
+
 console.log('stable-lines drift check passed');

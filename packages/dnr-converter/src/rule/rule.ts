@@ -352,8 +352,27 @@ export class Rule {
      * `$removeparam`: a value-less `$removeparam` is stored as `''`, because
      * it carries a meaning of its own ("remove all query parameters") that
      * must be distinguishable from "no value".
+     *
+     * This is the parsed value used by the converters. For `$badfilter`
+     * identity see {@link originalText}.
      */
     readonly advancedModifierValue: string | null = null;
+
+    /**
+     * Rule text exactly as written in the filter list, before conversion to AG
+     * syntax.
+     *
+     * A `$badfilter` rule disables a rule only when the rule text matches, so
+     * the text as written is compared instead of the parsed (normalized) state —
+     * see {@link RuleBadfilter.negates}. Conversion rewrites names and values
+     * (for example `$redirect=noop.js` becomes `$redirect=noopjs`), so the text
+     * has to be captured before it.
+     *
+     * Serialization must keep it: rebuilding a rule from its converted text
+     * would silently change the written spelling of modifiers, and with it the
+     * `$badfilter` identity.
+     */
+    readonly originalText: string;
 
     /**
      * Parsed data for the `$header` modifier.
@@ -384,17 +403,25 @@ export class Rule {
     readonly priority: number;
 
     /**
-     * Creates a new {@link Rule} from filter list metadata and an already-converted
-     * network rule AST node.
+     * Creates a new {@link Rule} from filter list metadata, an already-converted
+     * network rule AST node and the rule text as written in the filter list.
      *
      * @param filterListId Filter list ID.
      * @param index Rule index within the filter list.
      * @param node Network rule AST node (must already be in AG syntax).
+     * @param originalText Rule text as written in the filter list, captured
+     *   before conversion to AG syntax.
      *
      * @throws `SyntaxError` when the pattern contains spaces, the rule is too
      *   general, or any modifier is invalid.
      */
-    private constructor(filterListId: number, index: number, node: NetworkRuleNode) {
+    private constructor(
+        filterListId: number,
+        index: number,
+        node: NetworkRuleNode,
+        originalText: string,
+    ) {
+        this.originalText = originalText;
         const pattern = node.pattern.value;
         if (pattern && hasSpaces(pattern)) {
             throw new SyntaxError('Rule has spaces, seems to be a host rule');
@@ -1041,15 +1068,12 @@ export class Rule {
         for (let i = 0; i < rulesConvertedToAGSyntax.length; i += 1) {
             const ruleNode = rulesConvertedToAGSyntax[i];
 
-            if (
-                ruleNode.category !== RuleCategory.Network
-                || ruleNode.type !== NetworkRuleType.NetworkRule
-            ) {
+            if (!Rule.isNetworkRuleNode(ruleNode)) {
                 continue;
             }
 
             try {
-                rules.push(new Rule(filterId, ruleIndex, ruleNode));
+                rules.push(new Rule(filterId, ruleIndex, ruleNode, text));
             } catch (e: unknown) {
                 throw new Error(
                     // eslint-disable-next-line max-len
@@ -1081,6 +1105,7 @@ export class Rule {
         node: AnyRule,
     ): Rule[] {
         let rulesConvertedToAG: AnyRule[];
+        const originalText = Rule.getWrittenText(node);
         try {
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
@@ -1099,15 +1124,12 @@ export class Rule {
         for (let i = 0; i < rulesConvertedToAG.length; i += 1) {
             const ruleNode = rulesConvertedToAG[i];
 
-            if (
-                ruleNode.category !== RuleCategory.Network
-                || ruleNode.type !== NetworkRuleType.NetworkRule
-            ) {
+            if (!Rule.isNetworkRuleNode(ruleNode)) {
                 continue;
             }
 
             try {
-                rules.push(new Rule(filterListId, index, ruleNode));
+                rules.push(new Rule(filterListId, index, ruleNode, originalText));
             } catch (e: unknown) {
                 let msg = `"${getErrorMessage(e)}" in the rule: `;
 
@@ -1123,6 +1145,44 @@ export class Rule {
         }
 
         return rules;
+    }
+
+    /**
+     * Checks whether the given node is a network rule node.
+     *
+     * @param node Rule AST node.
+     *
+     * @returns `true` if the node is a network rule node.
+     */
+    private static isNetworkRuleNode(node: AnyRule): node is NetworkRuleNode {
+        return node.category === RuleCategory.Network
+            && node.type === NetworkRuleType.NetworkRule;
+    }
+
+    /**
+     * Returns the text of a rule node as written in the filter list.
+     *
+     * The parser records the raw text in `node.raws.text` when the `includeRaws`
+     * option is enabled, which the scanner always does. Nodes built by hand may
+     * lack it, so the text is regenerated as a fallback.
+     *
+     * @param node Rule AST node, must not be converted to AG syntax yet.
+     *
+     * @returns Rule text as written, or an empty string when it cannot be
+     *   reconstructed.
+     */
+    private static getWrittenText(node: AnyRule): string {
+        if (typeof node.raws?.text === 'string') {
+            return node.raws.text;
+        }
+
+        try {
+            return RuleGenerator.generate(node);
+        } catch {
+            // A node that cannot be generated has no written form: the rule
+            // still works, it just cannot be serialized back to text.
+            return '';
+        }
     }
 }
 

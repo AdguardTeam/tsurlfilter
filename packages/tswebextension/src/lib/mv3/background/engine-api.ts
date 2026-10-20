@@ -163,7 +163,8 @@ export class EngineApi {
             // User rules can be empty (e.g. on a fresh install); in that case
             // the resolved content is simply empty and we skip adding it.
             if (userrules.length > 0) {
-                // Note: rules are already converted at the extension side
+                // Note: the content is the original spelling — the engine
+                // converts it itself, and `$badfilter` needs the written text.
                 lists.push({
                     id: USER_FILTER_ID,
                     content: userrules,

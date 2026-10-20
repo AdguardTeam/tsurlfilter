@@ -5,6 +5,7 @@
 import { sprintf } from 'sprintf-js';
 
 import { cloneDomainListNode } from '../../ast-utils/clone';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
     AdgHtmlFilteringBodyGenerator,
@@ -29,22 +30,37 @@ import {
 import { AdgHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
 import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { EMPTY, EQUALS } from '../../utils/constants';
+import {
+    BACKSLASH,
+    COLON,
+    DOUBLE_QUOTE,
+    EMPTY,
+    EQUALS,
+    OPEN_SQUARE_BRACKET,
+    SINGLE_QUOTE,
+    SLASH,
+} from '../../utils/constants';
 import { RegExpUtils } from '../../utils/regexp';
+import { SPECIAL_PSEUDO_CLASS_NAMES } from '../../utils/special-pseudo-classes';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 
 /**
- * From the AdGuard docs:
- * Specifies the maximum length for content of HTML element. If this parameter is
- * set and the content length exceeds the value, a rule does not apply to the element.
- * If this parameter is not specified, the max-length is considered to be 8192 (8 KB).
- * When converting from other formats, we set the max-length to 262144 (256 KB).
+ * Upper bound of the length-matching regular expression generated when
+ * converting uBlock `:min-text-length()` to AdGuard `:contains()`.
+ *
+ * The bound must not exceed 65535: converted rules are applied by CoreLibs,
+ * which compiles `:contains(/.../)` patterns with PCRE2, and PCRE2 rejects
+ * quantifier numbers greater than 65535 ("quantifier too large" error).
+ *
+ * Note: this bound applies to the generated regular expression only.
+ * The `[max-length]` and `[min-length]` attribute values are not bounded
+ * by it: products apply those attributes natively, without PCRE2.
  *
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}
+ * @see {@link https://www.pcre.org/current/doc/html/pcre2limits.html}
  */
-const ADG_HTML_DEFAULT_MAX_LENGTH = 8192;
-const ADG_HTML_CONVERSION_MAX_LENGTH = ADG_HTML_DEFAULT_MAX_LENGTH * 32;
+const ADG_HTML_CONVERSION_MAX_LENGTH = 65535;
 
 /**
  * Supported special pseudo-classes from uBlock.
@@ -106,6 +122,39 @@ const SUPPORTED_ADG_PSEUDO_CLASSES = new Set<string>([
 ]);
 
 /**
+ * Markers of special pseudo-class selectors with raw-text arguments,
+ * used to detect special selector markers in raw (unparseable) HTML
+ * filtering rule bodies. Derived from {@link SPECIAL_PSEUDO_CLASS_NAMES},
+ * so the converter stays in sync with the lenient body parser.
+ *
+ * Note: the leading colon is a part of the marker on purpose, so that
+ * `contains(` / `has-text(` occurring inside string literals or attribute
+ * values (e.g. `[data-x="contains(foo"]`) is not mistaken for a special
+ * pseudo-class selector.
+ */
+const SPECIAL_PSEUDO_CLASS_ARG_MARKERS = SPECIAL_PSEUDO_CLASS_NAMES.map((name) => `:${name}(`);
+
+/**
+ * Pattern matching special attribute selectors in a raw HTML filtering rule
+ * body, e.g. `[tag-content=` or `[ min-length =`. Whitespace around the
+ * attribute name and the `=` operator is allowed, as permitted by the
+ * attribute selector grammar.
+ */
+const SPECIAL_ATTRIBUTE_SELECTOR_PATTERN = new RegExp(
+    `^\\[\\s*(?:${Object.values(AdgAttributeSelectors).join('|')})\\s*=`,
+);
+
+/**
+ * Pattern matching [tag-content] values that are NOT chain-safe, i.e. cannot
+ * be emitted as a standalone `:contains()` literal directly followed by
+ * another special pseudo-class: quotes, parentheses, brackets, braces,
+ * backslashes or colons in the literal make CoreLibs' special pseudo-class
+ * argument scanner swallow the next free `:` so that the two pseudo-classes
+ * silently collapse into one bogus literal argument.
+ */
+const CHAIN_UNSAFE_LITERAL_PATTERN = /["'\\()[\]{}:]/;
+
+/**
  * Error messages used in HTML filtering rule conversion.
  */
 /* eslint-disable max-len */
@@ -128,6 +177,7 @@ export const ERROR_MESSAGES = {
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED: "Special pseudo-class selector '%s' requires an argument",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT: "Argument of special pseudo-class selector '%s' must be an integer, got '%s'",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE: "Argument of special pseudo-class selector '%s' must be a positive integer, got '%s'",
+    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_TOO_LARGE: "Argument of special pseudo-class selector '%s' must not exceed %s, got '%s'",
     SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED: "Special pseudo-class selector '%s' is not supported in conversion",
 } as const;
 /* eslint-enable max-len */
@@ -180,7 +230,14 @@ type HtmlFilteringRuleGenerator =
 export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Converts a HTML rule to AdGuard syntax, if possible.
-     * Also can be used to convert AdGuard rules to AdGuard syntax to validate them.
+     *
+     * Note: for AdGuard rules this is not a strict validation. AdGuard rule
+     * bodies with an unbalanced special pseudo-class argument, e.g.
+     * `:contains((function(...)`, are tolerated and parsed leniently by the
+     * parser itself (CoreLibs parity, see `AdgHtmlFilteringBodyParser`);
+     * other unparseable bodies with special selectors are kept as-is with
+     * `isConverted: false`, so callers must not treat a returned result as
+     * proof of rule validity.
      *
      * @param rule Rule node to convert.
      *
@@ -188,7 +245,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
      * If the rule was not converted, the result array will contain the original node with the same object reference.
      *
-     * @throws If the rule is invalid or cannot be converted.
+     * @throws If the rule is genuinely invalid — an unparseable body without
+     * special selector markers, or a conversion error (e.g. mixed AdGuard and
+     * uBlock syntax, invalid length values) — or cannot be converted.
      */
     public static convertToAdg(rule: HtmlFilteringRule): NodeConversionResult<HtmlFilteringRule> {
         let parser: HtmlFilteringRuleParser;
@@ -208,7 +267,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 isConverted = true;
                 return HtmlRuleConverter.convertSpecialAttributeSelectorAdgToAdg(name, value);
             };
-            onSpecialPseudoClassSelector = HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToAdg;
+            onSpecialPseudoClassSelector = (name, argument) => {
+                const result = HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToAdg(name, argument);
+                // Mark rule as converted in ADG -> ADG conversion if the special
+                // pseudo-class selector was replaced (e.g. `:has-text()` -> `:contains()`)
+                if (typeof result !== 'boolean') {
+                    isConverted = true;
+                }
+                return result;
+            };
         } else if (rule.syntax === AdblockSyntax.Ubo) {
             /**
              * Always mark rule as converted in UBO -> ADG conversion.
@@ -222,14 +289,43 @@ export class HtmlRuleConverter extends RuleConverterBase {
         }
 
         // Convert body
-        const convertedBody = HtmlRuleConverter.convertBody(
-            rule.body,
-            parser,
-            AdgHtmlFilteringBodyGenerator,
-            onSpecialAttributeSelector,
-            onSpecialPseudoClassSelector,
-            rule.syntax === AdblockSyntax.Adg,
-        );
+        let convertedBody: Value | HtmlFilteringRuleBody;
+        try {
+            convertedBody = HtmlRuleConverter.convertBody(
+                rule.body,
+                parser,
+                AdgHtmlFilteringBodyGenerator,
+                onSpecialAttributeSelector,
+                onSpecialPseudoClassSelector,
+                rule.syntax === AdblockSyntax.Adg,
+            );
+        } catch (error) {
+            // Tolerant fallback for AdGuard HTML filtering rules whose bodies
+            // cannot be parsed as CSS selector lists even leniently, e.g. an
+            // unterminated string in a special attribute selector value.
+            // Such rules may still be supported by other adblockers, so we
+            // keep them as-is instead of excluding them during conversion.
+            //
+            // Note: unbalanced special pseudo-class arguments, e.g.
+            // `script:contains((function(g,b,a,c,e,d)`, do not reach this
+            // fallback: such bodies are parsed leniently by the parser
+            // itself, mirroring CoreLibs (see AdgHtmlFilteringBodyParser).
+            // This fallback only applies to AdGuard-syntax rules whose raw
+            // body contains special selector markers (see
+            // hasSpecialSimpleSelectors); unparseable rules without such
+            // markers still throw.
+            const isAdgWithSpecialSelectorsWithError = rule.syntax === AdblockSyntax.Adg
+                && error instanceof AdblockSyntaxError
+                && HtmlRuleConverter.hasSpecialSimpleSelectors(
+                    rule.body.type === 'Value' ? rule.body.value : '',
+                );
+
+            if (!isAdgWithSpecialSelectorsWithError) {
+                throw error;
+            }
+
+            return createNodeConversionResult([rule], false);
+        }
 
         if (!isConverted) {
             return createNodeConversionResult([rule], false);
@@ -314,7 +410,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Handles special attribute selectors during AdGuard to AdGuard conversion:
      * - `[tag-content="content"]` -> `:contains(content)`
-     *   direct conversion, no changes to value
+     *   direct conversion, no changes to value. The value is emitted raw:
+     *   any quotes in it are literal characters of the text to match, not
+     *   a transport encoding to strip later. This mirrors CoreLibs, which
+     *   never unquotes `:contains()` arguments.
      * - `[wildcard="*content*"]` -> `:contains(/*.content*./s)`
      *   convert search pattern to regular expression
      * - `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/s)`
@@ -336,6 +435,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // `[tag-content="content"]` -> `:contains(content)`
             // direct conversion, no changes to value
             case AdgAttributeSelectors.TagContent: {
+                // The value is emitted raw: quotes within the value are
+                // literal characters to match, not a transport encoding —
+                // same as CoreLibs, which never unquotes `:contains()`
+                // arguments.
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
                     value,
@@ -396,24 +499,45 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Since special pseudo-class selectors do not need conversion
-     * in AdGuard to AdGuard conversion, we simply return `true` to keep them as-is.
+     * Handles special pseudo-class selectors during AdGuard to AdGuard conversion:
+     * - `:contains(text)` -> kept as-is
+     * - `:-abp-contains(text)` -> kept as-is
+     * - `:has-text(text)` -> `:contains(text)`
+     *   `:has-text()` is a documented synonym for `:contains()` in AdGuard products.
      *
      * @param name Name of the special pseudo-class selector.
+     * @param argument Argument of the special pseudo-class selector.
      *
-     * @returns `true` to keep the special pseudo-class selector as-is.
+     * @returns A {@link SimpleSelector} to add to the current complex selector,
+     * or `true` to keep the original pseudo-class selector as-is.
      *
      * @throws Rule conversion error for mixed syntax.
      */
-    private static convertSpecialPseudoClassSelectorAdgToAdg(name: string): true {
-        if (SUPPORTED_UBO_PSEUDO_CLASSES.has(name)) {
-            throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.INVALID_RULE,
-                ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
-            ));
-        }
+    private static convertSpecialPseudoClassSelectorAdgToAdg(name: string, argument: string): SimpleSelector | true {
+        switch (name) {
+            // `:has-text(text)` -> `:contains(text)`
+            // `:has-text()` is a documented synonym for `:contains()` in AdGuard products:
+            // https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules--contains
+            case UboPseudoClasses.HasText: {
+                return HtmlRuleConverter.getPseudoClassSelectorNode(
+                    AdgPseudoClasses.Contains,
+                    argument,
+                );
+            }
 
-        return true;
+            // Other uBlock-specific pseudo-classes are invalid in AdGuard rules
+            case UboPseudoClasses.MinTextLength: {
+                throw new RuleConversionError(sprintf(
+                    ERROR_MESSAGES.INVALID_RULE,
+                    ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
+                ));
+            }
+
+            // `:contains()` and `:-abp-contains()` are kept as-is in AdGuard rules
+            default: {
+                return true;
+            }
+        }
     }
 
     /**
@@ -467,6 +591,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                 // It's safe to cast to number here after validation
                 const minLength = Number(argument);
+
+                // The generated regular expression must stay within the PCRE2
+                // quantifier limit — see the ADG_HTML_CONVERSION_MAX_LENGTH comment
+                if (minLength > ADG_HTML_CONVERSION_MAX_LENGTH) {
+                    throw new RuleConversionError(sprintf(
+                        ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_TOO_LARGE,
+                        name,
+                        ADG_HTML_CONVERSION_MAX_LENGTH,
+                        argument,
+                    ));
+                }
 
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
@@ -690,6 +825,72 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
+     * Checks whether the raw HTML filtering rule body contains any special
+     * attribute selector or special pseudo-class selector outside of quoted
+     * text, where marker-like substrings may occur as plain text, e.g. the
+     * `:contains(` in `[data-x=":contains(foo"]`.
+     *
+     * Quote handling:
+     * - both single and double quotes toggle the quoted state;
+     * - a backslash-escaped quote (`\"`) does not toggle the quoted state;
+     * - a doubled quote (`""`) inside a quoted section is treated as an
+     *   escaped quote (AdGuard escaping convention for `[tag-content]` values).
+     *
+     * Used by the tolerant fallback to distinguish rules with special
+     * selectors (which must be kept as-is if unparseable) from genuinely
+     * invalid rules (which must be rejected).
+     *
+     * @param raw Raw HTML filtering rule body.
+     *
+     * @returns `true` if the body contains special selectors, otherwise `false`.
+     */
+    private static hasSpecialSimpleSelectors(raw: string): boolean {
+        let quote: string | null = null;
+
+        for (let i = 0; i < raw.length; i += 1) {
+            const char = raw[i];
+
+            if (quote !== null) {
+                // A backslash escapes the next character inside quoted text
+                if (char === BACKSLASH) {
+                    i += 1;
+                    continue;
+                }
+
+                // A doubled quote is an escaped quote
+                // (AdGuard escaping convention for [tag-content] values)
+                if (char === quote && raw[i + 1] === quote) {
+                    i += 1;
+                    continue;
+                }
+
+                // Closing quote
+                if (char === quote) {
+                    quote = null;
+                }
+
+                continue;
+            }
+
+            if (char === DOUBLE_QUOTE || char === SINGLE_QUOTE) {
+                quote = char;
+                continue;
+            }
+
+            // Outside of quoted text — check for special selector markers
+            if (char === OPEN_SQUARE_BRACKET && SPECIAL_ATTRIBUTE_SELECTOR_PATTERN.test(raw.slice(i))) {
+                return true;
+            }
+
+            if (char === COLON && SPECIAL_PSEUDO_CLASS_ARG_MARKERS.some((marker) => raw.startsWith(marker, i))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Converts a HTML filtering rule body by handling special simple selectors via callbacks.
      * Special simple selectors are skipped in the converted selector list and should be handled from callee.
      *
@@ -741,7 +942,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
             const lengthConstraints = shouldMergeLengthSelectors
                 ? HtmlRuleConverter.collectLengthConstraints(selectors)
                 : null;
-            let lengthContainsEmitted = false;
+
+            // Deferred special attribute values (ADG→ADG only): [tag-content]
+            // and [wildcard] cannot be converted in isolation, because their
+            // CoreLibs-safe form depends on the other special attributes of
+            // the same complex selector — see appendSpecialAttributePseudoClasses
+            const deferredTagContentValues: string[] = [];
+            const deferredWildcardValues: string[] = [];
 
             // Convert each selector
             const convertedSelectors: (SimpleSelector | SelectorCombinator)[] = [];
@@ -805,6 +1012,31 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         const name = selector.name.value;
                         const { value } = selector.value;
 
+                        // [tag-content] and [wildcard] are deferred in ADG→ADG
+                        // conversion: their emission may need to be merged with
+                        // the length constraints or with each other to stay
+                        // valid in CoreLibs.
+                        if (
+                            shouldMergeLengthSelectors
+                            && (
+                                name === AdgAttributeSelectors.TagContent
+                                || name === AdgAttributeSelectors.Wildcard
+                            )
+                        ) {
+                            // Invoke the callback to trigger its side effects
+                            // (e.g. the isConverted flag in convertToAdg), but
+                            // discard the single-attribute pseudo-class it
+                            // returns — the actual nodes are emitted after the
+                            // selector loop.
+                            onSpecialAttributeSelector(name, value);
+                            if (name === AdgAttributeSelectors.TagContent) {
+                                deferredTagContentValues.push(value);
+                            } else {
+                                deferredWildcardValues.push(value);
+                            }
+                            continue;
+                        }
+
                         // Merge [min-length] and [max-length] into a single :contains() (ADG→ADG)
                         if (
                             lengthConstraints !== null
@@ -813,21 +1045,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
                                 || name === AdgAttributeSelectors.MaxLength
                             )
                         ) {
-                            if (!lengthContainsEmitted) {
-                                // Invoke the callback once to trigger its side effects
-                                // (e.g. the isConverted flag in convertToAdg), but discard
-                                // the individual :contains() it returns — we emit the
-                                // merged one instead.
-                                onSpecialAttributeSelector(name, value);
-                                convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
-                                    AdgPseudoClasses.Contains,
-                                    RegExpUtils.getLengthRegexp(
-                                        lengthConstraints.min,
-                                        lengthConstraints.max,
-                                    ),
-                                ));
-                                lengthContainsEmitted = true;
-                            }
+                            // Invoke the callback to trigger its side effects
+                            // (e.g. the isConverted flag in convertToAdg), but
+                            // discard the individual :contains() it returns —
+                            // the merged one is emitted after the selector loop,
+                            // possibly combined with the other deferred
+                            // constraints.
+                            onSpecialAttributeSelector(name, value);
                             continue;
                         }
 
@@ -892,6 +1116,20 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 convertedSelectors.push(HtmlRuleConverter.cloneSelector(selector));
             }
 
+            // Emit the pseudo-classes converted from the deferred special
+            // attribute selectors (ADG→ADG). They are appended at the end of
+            // the complex selector, which is their original position in any
+            // rule that is valid in CoreLibs: special attributes may only
+            // appear on the leaf selector there.
+            if (shouldMergeLengthSelectors) {
+                HtmlRuleConverter.appendSpecialAttributePseudoClasses(
+                    convertedSelectors,
+                    deferredTagContentValues,
+                    deferredWildcardValues,
+                    lengthConstraints,
+                );
+            }
+
             convertedComplexSelectors.push({
                 type: 'ComplexSelector',
                 children: convertedSelectors,
@@ -915,6 +1153,184 @@ export class HtmlRuleConverter extends RuleConverterBase {
         }
 
         return convertedBody;
+    }
+
+    /**
+     * Checks whether a [tag-content] literal can be emitted as a standalone
+     * `:contains()` pseudo-class directly followed by another special
+     * pseudo-class ("chain-safe"):
+     *
+     * - it must not be empty and must not start with a slash — a leading `/`
+     *   makes the argument look like a regular expression to CoreLibs;
+     * - it must not contain quotes, parentheses, brackets, braces,
+     *   backslashes or colons — CoreLibs' special pseudo-class argument
+     *   scanner splits a `:contains()` chain at the next free `:`, and any
+     *   of those characters would swallow the separator, silently merging
+     *   the two pseudo-classes into a single bogus literal argument.
+     *
+     * A literal that is not chain-safe is still valid as a *single*
+     * `:contains()` pseudo-class (CoreLibs takes the whole argument between
+     * `(` and the closing `)` of the sole pseudo-class in the rule), but it
+     * must be folded into a merged regular expression as soon as another
+     * regex-like constraint has to be emitted as well.
+     *
+     * @param value [tag-content] value to check.
+     *
+     * @returns `true` if the literal is chain-safe, otherwise `false`.
+     */
+    private static isChainSafeLiteral(value: string): boolean {
+        return value.length > 0
+            && value[0] !== SLASH
+            && !CHAIN_UNSAFE_LITERAL_PATTERN.test(value);
+    }
+
+    /**
+     * Emits the pseudo-classes converted from the deferred special attribute
+     * selectors ([tag-content], [wildcard], [min-length], [max-length]) of a
+     * single complex selector, honoring the constraints of CoreLibs' HTML
+     * filter:
+     *
+     * - at most one "tag-content" constraint (a literal `:contains()`) and one
+     *   "wildcard" constraint (a regex `:contains()`) are allowed per selector,
+     *   so e.g. `[wildcard="..."]` cannot be chained with
+     *   `[max-length="..."]` as two regex `:contains()` pseudo-classes;
+     * - a literal `:contains()` may be chained in front of a single regex
+     *   `:contains()` only when it is chain-safe, see
+     *   {@link HtmlRuleConverter.isChainSafeLiteral}.
+     *
+     * Combinations which cannot be represented as such a chain — an unsafe
+     * literal plus any regex-like constraint, or several regex-like
+     * constraints (multiple [wildcard] values, `[wildcard]` combined with
+     * `[min/max-length]`, multiple [tag-content] values) — are merged into a
+     * single regular expression instead:
+     * `/^(?=.{min,max}$)(?=<glob>)(?=.*<literal>).*\/s`.
+     *
+     * @param convertedSelectors Converted selectors of the complex selector,
+     * the emitted pseudo-classes are appended to it.
+     * @param tagContentValues Deferred [tag-content] values.
+     * @param wildcardGlobValues Deferred [wildcard] glob values.
+     * @param lengthConstraints Deferred length constraints collected from
+     * [min-length] / [max-length], or `null` if absent.
+     */
+    private static appendSpecialAttributePseudoClasses(
+        convertedSelectors: (SimpleSelector | SelectorCombinator)[],
+        tagContentValues: string[],
+        wildcardGlobValues: string[],
+        lengthConstraints: { min: number | null; max: number | null } | null,
+    ): void {
+        // Nothing was deferred
+        if (
+            tagContentValues.length === 0
+            && wildcardGlobValues.length === 0
+            && lengthConstraints === null
+        ) {
+            return;
+        }
+
+        const literalChainSafe = tagContentValues.length === 1
+            && HtmlRuleConverter.isChainSafeLiteral(tagContentValues[0]);
+
+        // Whether the deferred constraints require a regex `:contains()`
+        // pseudo-class: either several regex-like constraints (multiple
+        // [wildcard] values, or [wildcard] combined with [min/max-length]),
+        // or an unsafe literal which cannot stand in front of another
+        // special pseudo-class.
+        const needsRegexContains = lengthConstraints !== null
+            || wildcardGlobValues.length > 0
+            || tagContentValues.length > 1;
+
+        // Whether the single [tag-content] literal is emitted as a standalone
+        // `:contains()` pseudo-class: always safe when it is the only special
+        // pseudo-class of the selector, and safe right before a single regex
+        // `:contains()` only when chain-safe; otherwise it is folded into the
+        // merged regex below.
+        const emitLiteralStandalone = tagContentValues.length === 1
+            && (literalChainSafe || !needsRegexContains);
+
+        if (emitLiteralStandalone) {
+            convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
+                AdgPseudoClasses.Contains,
+                tagContentValues[0],
+            ));
+        }
+
+        // Literals which were not emitted standalone are folded into the
+        // merged regex as lookaheads
+        const mergedLiterals = emitLiteralStandalone
+            ? tagContentValues.slice(1)
+            : tagContentValues;
+
+        // Count the constraints which still have to be emitted: when exactly
+        // one remains, it keeps its own canonical single-constraint form
+        const remainingConstraints = mergedLiterals.length
+            + wildcardGlobValues.length
+            + (lengthConstraints !== null ? 1 : 0);
+
+        if (remainingConstraints === 0) {
+            // A literal-only selection needs nothing else: even a literal
+            // which is not chain-safe is valid as a single `:contains()`, as
+            // CoreLibs takes the whole argument of the only pseudo-class in
+            // the rule.
+            return;
+        }
+
+        if (
+            remainingConstraints === 1
+            && mergedLiterals.length === 0
+            && lengthConstraints === null
+        ) {
+            // A single [wildcard] constraint keeps its own canonical form
+            convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
+                AdgPseudoClasses.Contains,
+                RegExpUtils.globToRegExp(wildcardGlobValues[0]),
+            ));
+            return;
+        }
+
+        if (
+            remainingConstraints === 1
+            && mergedLiterals.length === 0
+            && wildcardGlobValues.length === 0
+        ) {
+            // A single length constraint keeps its own canonical form.
+            // lengthConstraints is non-null because remainingConstraints
+            // is 1 and neither literals nor globs remain.
+            convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
+                AdgPseudoClasses.Contains,
+                RegExpUtils.getLengthRegexp(
+                    lengthConstraints?.min ?? null,
+                    lengthConstraints?.max ?? null,
+                ),
+            ));
+            return;
+        }
+
+        // All remaining constraints are merged into a single regular
+        // expression, each as a lookahead: length `(?=.{min,max}$)`, glob
+        // `(?=<glob>)`, escaped literal `(?=.*<literal>)`.
+        let mergedRegex = '/^';
+
+        if (lengthConstraints !== null) {
+            mergedRegex += RegExpUtils.getLengthLookahead(
+                lengthConstraints.min,
+                lengthConstraints.max,
+            );
+        }
+
+        for (const glob of wildcardGlobValues) {
+            mergedRegex += `(?=${RegExpUtils.globToRegExpBody(glob)})`;
+        }
+
+        for (const literal of mergedLiterals) {
+            mergedRegex += `(?=.*${RegExpUtils.escapeRegexSpecials(literal)})`;
+        }
+
+        mergedRegex += '.*/s';
+
+        convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
+            AdgPseudoClasses.Contains,
+            mergedRegex,
+        ));
     }
 
     /**

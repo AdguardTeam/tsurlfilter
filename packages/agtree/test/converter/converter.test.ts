@@ -811,6 +811,47 @@ describe('Converter integration tests', () => {
                     expected: ['##div[foo="yay{"][href="yay}"]'],
                     shouldConvert: false,
                 },
+                {
+                    actual: 'example.com##a:remove-attr(href)',
+                    expected: ['example.com#?#a:remove-attr(href)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com##div:remove-class(ads)',
+                    expected: ['example.com#?#div:remove-class(ads)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#@#a:remove-attr(href)',
+                    expected: ['example.com#@?#a:remove-attr(href)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com##a:remove-attr(/^on[a-z]+/)',
+                    expected: ['example.com#?#a:remove-attr(/^on[a-z]+/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com##a:remove-attr(/^data-[0-9]+$/)',
+                    expected: ['example.com#?#a:remove-attr(/^data-[0-9]+$/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com##div:remove-class(/^ad-[0-9]+$/)',
+                    expected: ['example.com#?#div:remove-class(/^ad-[0-9]+$/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com##a:remove-attr(/^data-.{2}$/)',
+                    expected: ['example.com#?#a:remove-attr(/^data-.{2}$/)'],
+                    shouldConvert: true,
+                },
+                // CSS injection rules with these pseudo-classes also get the extended CSS separator
+                {
+                    actual: 'example.com#$#a:remove-attr(href) { color: red }',
+                    expected: ['example.com#$?#a:remove-attr(href) { color: red }'],
+                    shouldConvert: true,
+                },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
@@ -941,6 +982,41 @@ describe('Converter integration tests', () => {
                     expected: [
                         'example.com,~example.net##^div[attr]',
                     ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#a:remove-attr(href)',
+                    expected: ['example.com##a:remove-attr(href)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#div:remove-class(ads)',
+                    expected: ['example.com##div:remove-class(ads)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#@?#a:remove-attr(href)',
+                    expected: ['example.com#@#a:remove-attr(href)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#a:remove-attr(/^on[a-z]+/)',
+                    expected: ['example.com##a:remove-attr(/^on[a-z]+/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#a:remove-attr(/^data-[0-9]+$/)',
+                    expected: ['example.com##a:remove-attr(/^data-[0-9]+$/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#div:remove-class(/^ad-[0-9]+$/)',
+                    expected: ['example.com##div:remove-class(/^ad-[0-9]+$/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#a:remove-attr(/^data-.{2}$/)',
+                    expected: ['example.com##a:remove-attr(/^data-.{2}$/)'],
                     shouldConvert: true,
                 },
             ])("should convert '$actual' to '$expected'", (testData) => {
