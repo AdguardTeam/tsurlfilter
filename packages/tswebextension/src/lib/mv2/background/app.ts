@@ -1,3 +1,4 @@
+// oxlint-disable ag-ts/class-methods-use-this
 /* eslint-disable class-methods-use-this */
 import { LogLevel } from '@adguard/logger';
 

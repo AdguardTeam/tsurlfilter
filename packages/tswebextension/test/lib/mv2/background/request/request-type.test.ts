@@ -1,3 +1,4 @@
+// oxlint-disable ag-compat/guard-for-in
 /* eslint-disable guard-for-in */
 import { describe, expect, it } from 'vitest';
 import { type WebRequest } from 'webextension-polyfill';

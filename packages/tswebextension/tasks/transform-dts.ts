@@ -1,4 +1,6 @@
+// oxlint-disable ag-jsdoc/require-description-complete-sentence
 /* eslint-disable jsdoc/require-description-complete-sentence */
+// oxlint-disable ag-compat/no-console
 /* eslint-disable no-console */
 /**
  * @file Fixes import/export paths in generated `.d.ts` files to conform to NodeNext ESM resolution rules.

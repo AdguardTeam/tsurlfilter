@@ -1,3 +1,4 @@
+// oxlint-disable ag-compat/max-classes-per-file
 /* eslint-disable max-classes-per-file */
 
 import { TimeoutError } from '../errors/timeout-error';

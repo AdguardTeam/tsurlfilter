@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// oxlint-disable ag-compat/guard-for-in
 /* eslint-disable guard-for-in */
 
 import { describe, expect, it } from 'vitest';

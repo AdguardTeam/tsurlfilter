@@ -1,3 +1,4 @@
+// oxlint-disable ag-compat/no-underscore-dangle
 /* eslint-disable @typescript-eslint/naming-convention,no-underscore-dangle */
 import fs from 'node:fs';
 import path, { dirname } from 'node:path';

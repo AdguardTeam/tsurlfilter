@@ -1,3 +1,4 @@
+// oxlint-disable ag-ts/explicit-function-return-type
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { type ExtensionStorage } from './extension-storage';
 

@@ -1,3 +1,4 @@
+// oxlint-disable ag-compat/no-console
 /* eslint-disable no-console */
 import { fileURLToPath } from 'node:url';
 import path from 'path';

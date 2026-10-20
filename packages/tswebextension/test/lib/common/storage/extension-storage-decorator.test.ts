@@ -1,3 +1,4 @@
+// oxlint-disable ag-jsdoc/require-jsdoc
 /* eslint-disable jsdoc/require-jsdoc */
 import {
     beforeAll,
