@@ -1,7 +1,10 @@
 import { type Source } from '@adguard/scriptlets';
 import { type ScriptletData } from '@adguard/tsurlfilter';
 
+import { EXTCSS_PROTOCOL } from '../../common/message-constants';
+
 import { appContext } from './app-context';
+import { extCssInjectedApply, extCssInjectedDispose } from './extcss-apply-fn';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
 
 /**
@@ -79,6 +82,22 @@ export type ExecuteCombinedScriptParams = ExecuteTarget & {
      * Combined script text to be injected.
      */
     scriptText: string;
+};
+
+/**
+ * Parameters for executing the ExtendedCSS engine + rules.
+ */
+export type ExecuteExtCssParams = ExecuteTarget & {
+    /**
+     * ExtendedCSS rule strings to apply.
+     */
+    cssRules: string[];
+
+    /**
+     * Whether to register the CSS-hits `beforeStyleApplied` callback in the
+     * injected func.
+     */
+    collectStats: boolean;
 };
 
 /**
@@ -262,5 +281,90 @@ export class ScriptingApi {
             injectImmediately: true,
             world,
         });
+    }
+
+    /**
+     * Executes a self-contained function in the ISOLATED world of the target
+     * frame via `chrome.scripting.executeScript`.
+     *
+     * @param target Injection target: tab id and frame id.
+     * @param func Self-contained function to serialize and inject.
+     * @param args Arguments passed to the injected function.
+     *
+     * @returns Promise that resolves when the function is executed.
+     */
+    private static async executeIsolatedFunc<Args extends unknown[]>(
+        target: ExecuteTarget,
+        func: (...args: Args) => void,
+        args: Args,
+    ): Promise<void> {
+        await chrome.scripting.executeScript({
+            target: { tabId: target.tabId, frameIds: [target.frameId] },
+            func,
+            args,
+            injectImmediately: true,
+            world: 'ISOLATED',
+        });
+    }
+
+    /**
+     * Injects the pre-bundled ExtendedCSS engine and the matching rule strings
+     * into the target frame and applies them. Runs in the ISOLATED world
+     * (ExtendedCss only needs DOM access; `MutationObserver` in the isolated
+     * world observes the same DOM, including page-JS mutations) and injects
+     * immediately at `onCommitted` to minimize ad flash.
+     *
+     * The `func` is the static, self-contained `extCssInjectedApply` function
+     * whose body contains the inlined `@adguard/extended-css` engine. Inlining
+     * the engine into `func` needs no consumer packaging or configuration
+     * changes and makes the engine + rules a single atomic injection. The
+     * service-worker CSP only forbids runtime code assembly, so a pre-built
+     * `files` injection would satisfy it as well.
+     *
+     * @param params Parameters for executing ExtendedCSS.
+     * @param params.tabId The ID of the tab.
+     * @param params.frameId The ID of the frame.
+     * @param params.cssRules ExtendedCSS rule strings to apply.
+     * @param params.collectStats Whether to register the CSS-hits
+     * `beforeStyleApplied` callback in the injected func.
+     *
+     * @returns Promise that resolves when the engine + rules are injected.
+     */
+    public static async executeExtCss({
+        tabId,
+        frameId,
+        cssRules,
+        collectStats,
+    }: ExecuteExtCssParams): Promise<void> {
+        await ScriptingApi.executeIsolatedFunc(
+            { tabId, frameId },
+            extCssInjectedApply,
+            [cssRules, collectStats, EXTCSS_PROTOCOL],
+        );
+    }
+
+    /**
+     * Disposes the ExtendedCss instance previously retained in the target
+     * frame (if any) by injecting the self-contained
+     * {@link extCssInjectedDispose} function. Called when the matched
+     * ExtendedCSS rule set transitions from non-empty to empty on a
+     * same-document navigation, so the stale instance's MutationObserver and
+     * styles are cleaned up instead of leaking.
+     *
+     * @param params Target parameters.
+     * @param params.tabId The ID of the tab.
+     * @param params.frameId The ID of the frame.
+     *
+     * @returns Promise that resolves when the disposal is executed.
+     */
+    public static async disposeExtCss({
+        tabId,
+        frameId,
+    }: ExecuteTarget): Promise<void> {
+        await ScriptingApi.executeIsolatedFunc(
+            { tabId, frameId },
+            extCssInjectedDispose,
+            [EXTCSS_PROTOCOL],
+        );
     }
 }

@@ -70,6 +70,8 @@ const setupMocks = (
     vi.spyOn(CosmeticApi, 'applyCosmeticRules');
     vi.spyOn(CosmeticApi, 'logScriptRules');
     vi.spyOn(ScriptingApi, 'insertCSS');
+    // ExtendedCSS is injected directly from the background.
+    vi.spyOn(ScriptingApi, 'executeExtCss');
     // TODO (Slava): add tests for executeScriptText. AG-39122
 
     // This method will be used if userScripts API is enabled.
@@ -157,6 +159,9 @@ describe('TabsCosmeticInjector', () => {
             cosmeticResult.CSS.append(createCosmeticRule('##h1', localFilterId));
             cosmeticResult.CSS.append(createCosmeticRule('##h2', customFilterId));
             cosmeticResult.CSS.append(createCosmeticRule('##h3', userFilterId));
+            // An ExtendedCSS rule (non-native pseudo-class) injected directly
+            // from the background via scripting.executeScript.
+            cosmeticResult.CSS.append(createCosmeticRule('##div:contains(ad)', localFilterId));
 
             // Mark our filter as local to correctly handle injecting local rules.
             // IMPORTANT: Mock functions must be set BEFORE calling splitLocalRemoteScriptRules
@@ -195,6 +200,17 @@ describe('TabsCosmeticInjector', () => {
                             areHitsStatsCollected: false,
                         }),
                     },
+                );
+
+                // ExtendedCSS rules are injected directly from the background
+                // via the scripting API.
+                expect(ScriptingApi.executeExtCss).toHaveBeenCalledTimes(1);
+                expect(ScriptingApi.executeExtCss).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        tabId,
+                        frameId,
+                        cssRules: expect.any(Array),
+                    }),
                 );
             }
 
@@ -270,6 +286,12 @@ describe('TabsCosmeticInjector', () => {
             // depending on the way how they are stored in the engine.
             const preparedCosmeticResult = {
                 cssText: CosmeticApi.getCssText(cosmeticResult),
+                // ExtendedCSS rules computed without hits markers.
+                extCssRules: CosmeticApi.getExtCssRules(cosmeticResult, {
+                    areHitsStatsCollected: false,
+                    isNativeHasSupported: true,
+                }),
+                areHitsStatsCollected: false,
                 // Local script rules should be processed separately
                 // because they will be injected with two different calls
                 // to scripting API.
@@ -305,6 +327,7 @@ describe('TabsCosmeticInjector', () => {
             expect(ScriptingApi.insertCSS).not.toBeCalled();
             expect(ScriptingApi.executeScriptFunc).not.toBeCalled();
             expect(ScriptingApi.executeScriptlet).not.toBeCalled();
+            expect(ScriptingApi.executeExtCss).not.toBeCalled();
             expect(UserScriptsApi.executeScripts).not.toBeCalled();
 
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
@@ -327,6 +350,7 @@ describe('TabsCosmeticInjector', () => {
             expect(UserScriptsApi.executeScripts).not.toBeCalled();
             expect(ScriptingApi.executeScriptFunc).not.toBeCalled();
             expect(ScriptingApi.executeScriptlet).not.toBeCalled();
+            expect(ScriptingApi.executeExtCss).not.toBeCalled();
 
             expect(ScriptingApi.insertCSS).not.toBeCalled();
             expect(ScriptingApi.executeScriptFunc).not.toBeCalled();

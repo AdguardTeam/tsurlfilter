@@ -111,6 +111,14 @@ export class CosmeticFrameProcessor {
             remoteRules,
         } = CosmeticFrameProcessor.splitLocalRemoteScriptRules(scriptRules);
 
+        // No allowlist gate is needed here because the CosmeticEngine already
+        // returns an empty CosmeticResult (zero ExtCSS rules) for allowlisted
+        // documents — see getCosmeticOption() → CosmeticOptionNone. With no
+        // rules, getExtCssRules() returns null, so applyExtCssRules() injects
+        // only a disposal call (and skips it when nothing was applied to the
+        // document), and no hit markers are produced regardless of this flag.
+        // areHitsStatsCollected only controls whether markers are ADDED to
+        // rule strings, not which rules are selected.
         const areHitsStatsCollected = appContext.configuration?.settings.collectStats || false;
 
         const preparedCosmeticResult = {
@@ -122,6 +130,19 @@ export class CosmeticFrameProcessor {
                     isNativeHasSupported: true,
                 },
             ),
+            // ExtendedCSS rules are injected directly from the background via
+            // chrome.scripting.executeScript. When CSS-hits stats are enabled,
+            // the rules carry hits markers and the injected func registers a
+            // beforeStyleApplied callback.
+            extCssRules: CosmeticApi.getExtCssRules(
+                cosmeticResult,
+                {
+                    areHitsStatsCollected,
+                    // always true for MV3
+                    isNativeHasSupported: true,
+                },
+            ),
+            areHitsStatsCollected,
             // Local script rules should be processed separately
             // because they will be injected with two different calls
             // to scripting API.

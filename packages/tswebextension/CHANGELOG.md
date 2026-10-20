@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Apply ExtendedCSS rules directly from the MV3 background service worker
+  via `chrome.scripting.executeScript`. The injection payload is a private
+  IIFE bundled in-memory at build time from the public root export of
+  `@adguard/extended-css` — this package owns the payload, the library
+  needs no consumer-specific subpath exports.
+- Performance benchmark and large-rule-set (500 rules) validation for the
+  background-injected ExtendedCSS path.
+
 ### Changed
 
 - Updated `@types/webextension-polyfill` to `0.12.6`, which adds Firefox 153+
@@ -22,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   literal characters of the matched text, unbalanced arguments (e.g.
   `$$script:contains((function(g,b,a,c,e,d)`) are matched as-is, and
   `/regexp/`-looking arguments keep their regexp semantics.
+- ExtendedCSS rules in MV3 are now applied solely by the background
+  injection path — removed from the MV3 content script
+  (`GetCosmeticData` returns `extCssRules: null`, `@adguard/extended-css`
+  instantiation is removed from the content-script bundle). The MV2 path
+  is unchanged.
 
 ### Deprecated
 
@@ -29,6 +42,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Native CSS hit statistics not being collected in MV3: the content script
+  now counts hits for native CSS rules only (via `CssHitsCounter`), gated
+  on the document not being allowlisted; ExtendedCSS rule hits are reported
+  by the background-injected function.
+- Stale ExtendedCSS styles and observers persisting when a frame's ExtCSS
+  rules transition from non-empty to empty: the previously injected
+  instance is now explicitly disposed.
+- Protocol literals (hit-marker prefix, message handler/type,
+  retained-instance key) hardcoded across the MV3 ExtCSS injection path:
+  centralized into `EXTCSS_PROTOCOL` and passed to the injected function
+  as serialized arguments.
 - In MV3, static filters, custom filters and user rules were handed to the
   converter already converted by the extension, so `$badfilter` rules from those
   sources were compared by the converted text instead of the text as written and

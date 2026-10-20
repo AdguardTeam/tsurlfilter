@@ -8,6 +8,14 @@ import cleanup from 'rollup-plugin-cleanup';
 import dts from 'rollup-plugin-dts';
 import externals from 'rollup-plugin-node-externals';
 
+// NOTE: explicit `.ts` extension is required because Rollup's config bundler
+// (loaded via `--configPlugin @rollup/plugin-swc`) resolves exact file paths but
+// does not append the `.ts` extension to extensionless specifiers.
+// eslint-disable-next-line import/extensions -- see NOTE above
+import { inlineCssHitsHelpers } from './tasks/inline-css-hits-helpers.ts';
+// eslint-disable-next-line import/extensions -- see NOTE above
+import { inlineExtCssBundle } from './tasks/inline-extcss-bundle.ts';
+
 const BUILD_DIST = 'dist';
 
 const commonPlugins: Plugin[] = [
@@ -17,6 +25,13 @@ const commonPlugins: Plugin[] = [
     resolve({ preferBuiltins: false }),
     cleanup({ comments: ['srcmaps'] }),
     commonjs(),
+    // Both inliners below MUST run after TypeScript so the type checker never
+    // sees the inlined `applyExtendedCss` / `cssHitsHelpers` alongside the
+    // type-only `declare const`. The two are independent — each replaces its
+    // own marker in `extcss-apply-fn.ts` — so their relative order does not
+    // matter, only that both come after `typescript()`.
+    inlineExtCssBundle(),
+    inlineCssHitsHelpers(),
 ];
 
 /**
