@@ -1,4 +1,4 @@
-import { type ConfigurationMV3Context } from './configuration';
+import { type ConfigurationMV3Context, type PreregisteredScriptsConfig } from './configuration';
 import { sessionDecorator, SessionStorageKey } from './ext-session-storage';
 
 /**
@@ -39,6 +39,38 @@ export class AppContext {
      */
     @sessionDecorator(SessionStorageKey.CosmeticsInjectedOnStartup)
     accessor cosmeticsInjectedOnStartup!: boolean;
+
+    /**
+     * Build-time preregistered script configuration, kept because the stored
+     * configuration context excludes it: preregistration is re-evaluated
+     * when the filtering log toggles debug scriptlets at runtime.
+     */
+    public preregisteredScripts?: PreregisteredScriptsConfig;
+
+    /**
+     * Per-hostname hashes of rules covered by the currently active
+     * preregistered content-script registrations, recovered from their `js`
+     * file lists. Published by `PreregisteredScriptsService` on every
+     * sync/clear; dynamic injection of covered rules is skipped to avoid
+     * double execution. Hostname semantics match the content-script match
+     * patterns exactly: a `www.` alias does not cover the apex. Plain
+     * (non-persisted) field.
+     */
+    public preregisteredScriptRules?: Map<string, Set<string>>;
+
+    /**
+     * Per-hostname hashes of rules covered by preregistered content-script
+     * registrations that existed when the service worker started (before
+     * the first sync of this SW lifetime), recovered from the registrations'
+     * `js` file lists. Chrome clears registrations on install and update,
+     * so the snapshot can only describe registrations persisted from
+     * previous service-worker lifetimes of the current version. Plain
+     * (non-persisted) field: it lives for one service-worker lifetime.
+     *
+     * Used to decide which rules are covered for a pre-existing tab (skip
+     * dynamic injection) and which are not (inject dynamically).
+     */
+    public preregisteredScriptRulesAtBoot?: Map<string, Set<string>>;
 }
 
 export const appContext = new AppContext();

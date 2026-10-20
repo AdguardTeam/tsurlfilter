@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rules with them are recognized as Extended CSS and passed to the Extended CSS
   engine [AdguardBrowserExtension#3538].
 
+- `Engine.isCosmeticRuleAllowlisted()` — a new method checking whether a
+  cosmetic rule is cancelled by an exception, with an
+  `ignoreExceptionUrlConditions` option skipping the `$path`/`$url` checks
+  of exceptions (build-time preregistration discovery).
+- `Engine.getCosmeticResult()` accepts an `ignorePath` option, and
+  `CosmeticRule.match()` — a new `ignorePath` parameter, both skipping the
+  `$path` modifier check for JS/scriptlet rules.
+
 ### Changed
 
 - Escaped regular-expression domains in non-basic `[$domain=...]` rules now

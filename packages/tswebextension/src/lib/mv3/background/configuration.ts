@@ -2,6 +2,8 @@ import { z as zod } from 'zod';
 
 import { basicFilterValidator, configurationValidator, settingsConfigValidator } from '../../common/configuration';
 
+import { normalizeDomain } from './preregistered-scripts/hasher';
+
 /**
  * Custom filter list configuration validator for MV3.
  */
@@ -44,6 +46,34 @@ export const settingsConfigMV3 = settingsConfigValidator.extend({
 export type SettingsConfigMV3 = zod.infer<typeof settingsConfigMV3>;
 
 /**
+ * Build-time preregistered script configuration validator. When provided,
+ * enables persistent content-script registration and skips dynamic
+ * injection of JS and scriptlet rules for the listed domains.
+ */
+export const preregisteredScriptsConfigValidator = zod.object({
+    /**
+     * Domains with build-time preregistered scripts. Each domain's `www.`
+     * alias is derived automatically at runtime.
+     */
+    domains: zod.string().array().transform((domains) => (
+        domains
+            .map(normalizeDomain)
+            .filter((domain) => domain !== '')
+    )),
+
+    /**
+     * Path to the preregistered script artifacts directory.
+     */
+    path: zod.string(),
+});
+
+/**
+ * Preregistered scripts configuration type.
+ * This type is inferred from the {@link preregisteredScriptsConfigValidator} schema.
+ */
+export type PreregisteredScriptsConfig = zod.infer<typeof preregisteredScriptsConfigValidator>;
+
+/**
  * Configuration validator for MV3.
  */
 export const configurationMV3Validator = configurationValidator.extend({
@@ -83,6 +113,13 @@ export const configurationMV3Validator = configurationValidator.extend({
      * List of rules added by user.
      */
     userrules: customFilterMV3Validator.omit({ filterId: true, trusted: true }),
+
+    /**
+     * Build-time preregistered script configuration. When provided,
+     * enables persistent content-script registration and skips dynamic
+     * injection of JS and scriptlet rules for the listed domains.
+     */
+    preregisteredScripts: preregisteredScriptsConfigValidator.optional(),
 });
 
 /**
@@ -97,5 +134,8 @@ export type ConfigurationMV3 = zod.infer<typeof configurationMV3Validator>;
  * It is used to reduce memory consumption when storing configuration data in memory.
  */
 export type ConfigurationMV3Context =
-    & Omit<ConfigurationMV3, 'customFilters' | 'allowlist' | 'userrules' | 'trustedDomains'>
+    & Omit<
+        ConfigurationMV3,
+        'customFilters' | 'allowlist' | 'userrules' | 'trustedDomains' | 'preregisteredScripts'
+    >
     & { customFilters: number[] };

@@ -39,6 +39,8 @@ const entryPoints = {
     cli: 'src/cli/index.ts',
     'mv3-utils': 'src/lib/mv3/utils/index.ts',
     'filters-storage': 'src/lib/common/storage/public-filters.ts',
+    'preregistered-scripts-build-contract': 'src/lib/mv3/background/preregistered-scripts/build-contract.ts',
+    'preregistered-scripts-root-request': 'src/lib/mv3/background/preregistered-scripts/root-request.ts',
 };
 
 const tswebextensionConfig: RollupOptions = {

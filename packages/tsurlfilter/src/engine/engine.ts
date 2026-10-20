@@ -8,6 +8,7 @@ import { RuleStorage } from '../filterlist/rule-storage';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { Request } from '../request';
 import { RequestType } from '../request-type';
+import { type CosmeticRule } from '../rules/cosmetic-rule';
 import { type NetworkRule, type WrittenRuleTextResolver } from '../rules/network-rule';
 import { type IndexedStorageCosmeticRuleParts, type IndexedStorageNetworkRuleParts } from '../rules/rule';
 

@@ -9,6 +9,7 @@ import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../../src/filterlist/string-rule-list';
 import { Request } from '../../../src/request';
 import { RequestType } from '../../../src/request-type';
+import { CosmeticRule } from '../../../src/rules/cosmetic-rule';
 import { type IndexedStorageCosmeticRuleParts } from '../../../src/rules/rule';
 import { collectRuleParts } from '../rule-parts';
 
@@ -700,6 +701,179 @@ describe('Test cosmetic engine - JS rules', () => {
 
             expect(result.JS.specific.length).toBe(0);
             expect(result.JS.generic.length).toBe(0);
+        });
+    });
+
+    describe('match() with ignorePath', () => {
+        it('still cancels a specific rule matching a domain-specific exception', () => {
+            const rule = "example.org#%#//scriptlet('set-cookie', 'name', 'val')";
+            const exceptionRule = "example.org#@%#//scriptlet('set-cookie', 'name', 'val')";
+            const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, [rule, exceptionRule].join('\n'))]);
+
+            const result = cosmeticEngine.match(
+                createRequest('https://example.org'),
+                CosmeticOption.CosmeticOptionAll,
+                true,
+            );
+
+            expect(result.JS.specific.length).toBe(0);
+            expect(result.JS.generic.length).toBe(0);
+        });
+
+        it('still cancels a generic rule matching a domain-specific exception', () => {
+            const rule = "#%#//scriptlet('set-cookie', 'name', 'val')";
+            const exceptionRule = "example.org#@%#//scriptlet('set-cookie', 'name', 'val')";
+            const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, [rule, exceptionRule].join('\n'))]);
+
+            const result = cosmeticEngine.match(
+                createRequest('https://example.org'),
+                CosmeticOption.CosmeticOptionAll,
+                true,
+            );
+
+            expect(result.JS.specific.length).toBe(0);
+            expect(result.JS.generic.length).toBe(0);
+        });
+
+        it('includes a $path-restricted rule regardless of the request path', () => {
+            const content = "//scriptlet('set-cookie', 'name', 'val')";
+            const rule = `[$domain=example.org,path=/only-here]#%#${content}`;
+            const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rule)]);
+
+            const result = cosmeticEngine.match(
+                createRequest('https://example.org/unrelated-path'),
+                CosmeticOption.CosmeticOptionAll,
+                true,
+            );
+
+            expect(result.JS.specific.length).toBe(1);
+            expect(result.JS.specific[0].getContent()).toBe(content);
+        });
+
+        it('still applies the $path check to CSS and element hiding rules', () => {
+            const rules = [
+                '[$domain=example.org,path=/only-here]##.banner',
+                '[$domain=example.org,path=/only-here]#$##ad { display: none; }',
+            ];
+            const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rules.join('\n'))]);
+
+            const result = cosmeticEngine.match(
+                createRequest('https://example.org/unrelated-path'),
+                CosmeticOption.CosmeticOptionAll,
+                true,
+            );
+
+            expect(result.elementHiding.specific.length).toBe(0);
+            expect(result.CSS.specific.length).toBe(0);
+        });
+    });
+
+    describe('isAllowlisted() with ignoreExceptionUrlConditions', () => {
+        const blockingRuleText = "[$domain=example.org,path=/only-here]#%#//scriptlet('set-cookie', 'name', 'val')";
+        const exceptionRuleText = "[$domain=example.org,path=/only-here]#@%#//scriptlet('set-cookie', 'name', 'val')";
+        const jsRuleText = 'example.org#%#window.foo=1';
+        const jsUrlExceptionText = String.raw`[$url=/example\.org\/embed/]#@%#window.foo=1`;
+
+        it('does not cancel the rule by default when the exception path does not match', () => {
+            const blockingRule = new CosmeticRule(blockingRuleText, 1);
+            const cosmeticEngine = createCosmeticEngine([
+                new StringRuleList(1, [blockingRuleText, exceptionRuleText].join('\n')),
+            ]);
+
+            const isAllowlisted = cosmeticEngine.isAllowlisted(
+                createRequest('https://example.org/unrelated-path'),
+                blockingRule,
+            );
+
+            // The exception is scoped to `/only-here`; the request path does
+            // not match, so the rule stays applicable.
+            expect(isAllowlisted).toBe(false);
+        });
+
+        it('cancels the rule when ignoreExceptionUrlConditions skips the exception path check', () => {
+            const blockingRule = new CosmeticRule(blockingRuleText, 1);
+            const cosmeticEngine = createCosmeticEngine([
+                new StringRuleList(1, [blockingRuleText, exceptionRuleText].join('\n')),
+            ]);
+
+            const isAllowlisted = cosmeticEngine.isAllowlisted(
+                createRequest('https://example.org/unrelated-path'),
+                blockingRule,
+                true,
+            );
+
+            // With the exception's $path skipped, the exception applies to
+            // any path of the hostname and cancels the rule.
+            expect(isAllowlisted).toBe(true);
+        });
+
+        it('still requires the domain to match when ignoreExceptionUrlConditions is set', () => {
+            const blockingRule = new CosmeticRule(blockingRuleText, 1);
+            const cosmeticEngine = createCosmeticEngine([
+                new StringRuleList(1, [blockingRuleText, exceptionRuleText].join('\n')),
+            ]);
+
+            const isAllowlisted = cosmeticEngine.isAllowlisted(
+                createRequest('https://other.org/unrelated-path'),
+                blockingRule,
+                true,
+            );
+
+            expect(isAllowlisted).toBe(false);
+        });
+
+        it('does not cancel a JS rule by default when its $url exception does not match the root request', () => {
+            const jsRule = new CosmeticRule(jsRuleText, 1);
+            const cosmeticEngine = createCosmeticEngine([
+                new StringRuleList(1, [jsRuleText, jsUrlExceptionText].join('\n')),
+            ]);
+
+            const isAllowlisted = cosmeticEngine.isAllowlisted(
+                createRequest('https://example.org/'),
+                jsRule,
+            );
+
+            // The exception is scoped to `/embed/` URLs; the root request
+            // does not match it, so the rule stays applicable.
+            expect(isAllowlisted).toBe(false);
+        });
+
+        it('cancels a JS rule when ignoreExceptionUrlConditions is set and a $url exception exists', () => {
+            const jsRule = new CosmeticRule(jsRuleText, 1);
+            const cosmeticEngine = createCosmeticEngine([
+                new StringRuleList(1, [jsRuleText, jsUrlExceptionText].join('\n')),
+            ]);
+
+            const isAllowlisted = cosmeticEngine.isAllowlisted(
+                createRequest('https://example.org/'),
+                jsRule,
+                true,
+            );
+
+            // The `$url` exception cannot be evaluated against the synthetic
+            // root URL, so it is treated as cancelling the rule.
+            expect(isAllowlisted).toBe(true);
+        });
+
+        it('still evaluates the $url exception against the request URL without the flag', () => {
+            const jsRule = new CosmeticRule(jsRuleText, 1);
+            const cosmeticEngine = createCosmeticEngine([
+                new StringRuleList(1, [jsRuleText, jsUrlExceptionText].join('\n')),
+            ]);
+
+            const onEmbed = cosmeticEngine.isAllowlisted(
+                createRequest('https://example.org/embed/xyz'),
+                jsRule,
+            );
+            const onWatch = cosmeticEngine.isAllowlisted(
+                createRequest('https://example.org/watch'),
+                jsRule,
+            );
+
+            // The dynamic path evaluates the URL scope of the exception
+            // precisely: it cancels the rule only on matching URLs.
+            expect(onEmbed).toBe(true);
+            expect(onWatch).toBe(false);
         });
     });
 });

@@ -26,6 +26,9 @@ Table of content:
             - [filtersPath (MV3 only)](#filterspath-mv3-only)
             - [rulesetsPath (MV3 only)](#rulesetspath-mv3-only)
             - [declarativeLogEnabled (MV3 only)](#declarativelogenabled-mv3-only)
+            - [preregisteredScripts (MV3 only)](#preregisteredscripts-mv3-only)
+                - [domains](#domains)
+                - [path](#path)
             - [allowlist](#allowlist)
             - [trustedDomains](#trusteddomains)
             - [userrules (MV2)](#userrules-mv2)
@@ -310,6 +313,63 @@ Path to directory with converted rule sets.
 type: `boolean`
 
 Enables matching declarative rules for filtering log.
+
+#### preregisteredScripts (MV3 only)
+
+type: `{ domains: string[]; path: string }` (optional)
+
+Build-time preregistered script configuration. Registers persistent content
+scripts for `domains` and skips dynamic injection of both JS (`#%#`) and
+scriptlet (`#%#//scriptlet`) rules they cover. Preregistration is disabled
+while debug scriptlets are enabled; toggling via `setDebugScriptlets()`
+re-evaluates preregistration immediately.
+
+##### domains
+
+type: `string[]`
+
+Domains with build-time preregistered scripts. Each domain's `www.` alias
+is derived automatically at runtime.
+
+##### path
+
+type: `string`
+
+Path to the preregistered script artifacts directory (contains
+`manifest.json`, the shared bundle, one function file per scriptlet, one
+file per rule, and the cleanup file — see
+`@adguard/tswebextension/mv3/preregistered-scripts/build-contract`).
+Coverage is reported from the registrations actually active after a sync:
+on sync failure the last successful coverage is kept (the boot snapshot
+before the first sync), and rules in those sets stay excluded from dynamic
+injection; a rule that cannot be confirmed as covered remains on the
+dynamic path. Tabs opened before the first sync are judged against the
+boot snapshot of the registrations that existed when they loaded.
+
+At runtime, each configured hostname (plus its `www.` alias) is matched
+against the engine with `$path` ignored, the matching rules are hashed, and
+a persistent content script is registered with
+`js: [shared bundle, ...scriptlet function files, ...per-rule files, cleanup]`.
+A scriptlet function file carries only the implementations the host's rules
+use; the per-rule file enforces any `$path` condition via `location`; the
+cleanup file runs last, deleting the coordination `window` property before
+page scripts run.
+
+Preregistered executions bypass hit logging; they do appear in the
+filtering log, but the entries reflect the coverage decision, not the
+in-page execution outcome — a preregistered file failing inside the page is
+not observable.
+
+Known limitations:
+
+- `$document`/`$jsinject` exceptions below the root path (e.g.
+  `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for the
+  host: rules registered on `*://youtube.com/*` still execute on `/embed/…`.
+  Tracked in [AG-54564](https://jira.int.agrd.dev/browse/AG-54564).
+- With protection disabled on a site (or in inverted allowlist mode),
+  YouTube embeds on it still run these scriptlets: the registration covers
+  every frame of the host, while the dynamic path would inject nothing
+  there. Tracked in [AG-60054](https://jira.int.agrd.dev/browse/AG-60054).
 
 #### allowlist
 

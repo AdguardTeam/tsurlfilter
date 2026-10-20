@@ -1,0 +1,79 @@
+import {
+    afterEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
+
+import { MANIFEST_SCHEMA_VERSION } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
+import { readManifest } from '../../../../../src/lib/mv3/background/preregistered-scripts/manifest-reader';
+
+const SCRIPTS_PATH = 'filters/preregistered-scripts';
+
+/**
+ * Serves the given body as the manifest fetch response.
+ *
+ * @param body Manifest JSON body to serve, or `null` to simulate a missing
+ * (404) manifest.
+ */
+const stubManifestFetch = (body: unknown | null): void => {
+    const getURL = vi.fn((p: string) => `chrome-extension://test/${p}`);
+    vi.stubGlobal('chrome', { ...chrome, runtime: { ...chrome.runtime, getURL } });
+    vi.stubGlobal('fetch', vi.fn(async () => {
+        if (body === null) {
+            return { ok: false, status: 404 };
+        }
+        return {
+            ok: true,
+            status: 200,
+            json: async (): Promise<unknown> => body,
+        };
+    }));
+};
+
+describe('readManifest', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('returns the manifest as-is when the schema version matches', async () => {
+        const body = {
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: ['0123456789abcdef'],
+            scriptletFiles: { 'set-cookie': 's-set-cookie.js' },
+        };
+        stubManifestFetch(body);
+
+        const manifest = await readManifest(SCRIPTS_PATH);
+
+        // The manifest is the package's own build output: returned as-is,
+        // without normalization.
+        expect(manifest).toEqual(body);
+    });
+
+    it('throws when the manifest is unavailable (404)', async () => {
+        stubManifestFetch(null);
+
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('404');
+    });
+
+    it('throws on manifests written under another schema version', async () => {
+        stubManifestFetch({
+            schemaVersion: MANIFEST_SCHEMA_VERSION + 1,
+            hashes: ['0123456789abcdef'],
+            scriptletFiles: { 'set-cookie': 's-set-cookie.js' },
+        });
+
+        // A manifest with a different version is a broken build: failing
+        // the sync keeps the previous registrations instead of silently
+        // registering mismatched artifacts.
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('schema version');
+    });
+
+    it('throws when the schema version is missing', async () => {
+        stubManifestFetch({ hashes: [], scriptletFiles: {} });
+
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('schema version');
+    });
+});

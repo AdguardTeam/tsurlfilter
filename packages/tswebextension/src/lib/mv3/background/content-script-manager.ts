@@ -69,6 +69,77 @@ export interface ContentScriptDescriptor {
 const NAMESPACE_SEPARATOR = ':';
 
 /**
+ * Maximum number of per-item retries of a failed sync batch executed
+ * concurrently: a batch can hold one entry per registered script, and an
+ * unbounded fan-out of chrome API calls would strain the browser.
+ */
+const RETRY_BATCH_SIZE = 8;
+
+/**
+ * Fills in chrome.scripting's documented defaults for omitted optional
+ * fields, so a `desired` descriptor and a descriptor returned by
+ * `getRegisteredContentScripts()` compare equal when nothing changed.
+ *
+ * @param script Descriptor to normalize.
+ *
+ * @returns Canonical descriptor with all optional fields explicit.
+ */
+const canonicalize = (script: ContentScriptDescriptor): Required<ContentScriptDescriptor> => {
+    return {
+        id: script.id,
+        allFrames: script.allFrames ?? false,
+        matchOriginAsFallback: script.matchOriginAsFallback ?? false,
+        css: [...script.css ?? []],
+        excludeMatches: [...script.excludeMatches ?? []],
+        js: [...script.js ?? []],
+        matches: [...script.matches ?? []],
+        persistAcrossSessions: script.persistAcrossSessions ?? true,
+        runAt: script.runAt ?? 'document_idle',
+        world: script.world ?? 'ISOLATED',
+    };
+};
+
+/**
+ * Result of {@link ContentScriptManager.sync}.
+ */
+export interface SyncScriptsResult {
+    /**
+     * Errors from failed operations (already logged). Empty when everything
+     * succeeded.
+     */
+    errors: PromiseRejectedResult[];
+
+    /**
+     * Original (unprefixed) IDs of desired scripts whose desired state is
+     * not guaranteed after the call: failed registrations (no registration
+     * active), failed updates (stale registration active) and failed
+     * unregistrations (stale registration still active).
+     */
+    failedScriptIds: string[];
+}
+
+/**
+ * A settled sync batch operation together with the items it consisted of.
+ *
+ * @template T Type of the batch items.
+ */
+type SettledBatch<T> = {
+    result: PromiseSettledResult<void>;
+    items: T[];
+};
+
+/**
+ * Settled results of the three batch operations of
+ * {@link ContentScriptManager.sync}, together with the items each
+ * batch consisted of.
+ */
+type SyncBatchResults = {
+    unregister: SettledBatch<string>;
+    register: SettledBatch<ContentScriptDescriptor>;
+    update: SettledBatch<ContentScriptDescriptor>;
+};
+
+/**
  * Manages dynamic content script registration via the chrome.scripting API.
  *
  * This class is not instantiable — all methods are static and accept a
@@ -165,10 +236,10 @@ export class ContentScriptManager {
      * (without namespace prefix).
      *
      * @throws {Error} If the namespace is invalid, or if the internal
-     * {@code get()} call fails.
+     * {@code getRegistered()} call fails.
      */
     private static async getExistingIds(namespace: string): Promise<Set<string>> {
-        const existingScripts = await ContentScriptManager.get(namespace);
+        const existingScripts = await ContentScriptManager.getRegistered(namespace);
         return new Set(existingScripts.map((script) => script.id));
     }
 
@@ -187,7 +258,7 @@ export class ContentScriptManager {
      * @returns Promise that resolves when all new scripts are registered.
      *
      * @throws {Error} If the namespace is invalid, if the internal
-     * {@code get()} call fails, or if
+     * {@code getRegistered()} call fails, or if
      * chrome.scripting.registerContentScripts fails (e.g., invalid match
      * pattern or duplicate script ID).
      */
@@ -206,16 +277,35 @@ export class ContentScriptManager {
             return;
         }
 
-        const prefixedScripts = newScripts.map((script) => ({
+        await ContentScriptManager.registerScripts(namespace, newScripts);
+    }
+
+    /**
+     * Registers scripts known to be missing from the namespace, without an
+     * existence check — used by the sync batches and their per-item
+     * retries, which rely on the sync snapshot instead of re-listing the
+     * registrations for every item. A no-op for an empty list.
+     *
+     * @param namespace Namespace string used to prefix script IDs.
+     * @param scripts Scripts to register.
+     *
+     * @throws If chrome.scripting.registerContentScripts fails.
+     */
+    private static async registerScripts(namespace: string, scripts: ContentScriptDescriptor[]): Promise<void> {
+        if (scripts.length === 0) {
+            return;
+        }
+
+        const prefixedScripts = scripts.map((script) => ({
             ...script,
             id: ContentScriptManager.makeScriptId(namespace, script.id),
         }));
 
         try {
             await chrome.scripting.registerContentScripts(prefixedScripts);
-            logger.debug(`[tsweb.ContentScriptManager.register]: Registered ${prefixedScripts.length} script(s) in "${namespace}"`);
+            logger.debug(`[tsweb.ContentScriptManager.registerScripts]: Registered ${prefixedScripts.length} script(s) in "${namespace}"`);
         } catch (e) {
-            logger.error(`[tsweb.ContentScriptManager.register]: Failed in "${namespace}": ${newScripts.map((s) => s.id).join(', ')}`, e);
+            logger.error(`[tsweb.ContentScriptManager.registerScripts]: Failed in "${namespace}": ${scripts.map((s) => s.id).join(', ')}`, e);
             throw e;
         }
     }
@@ -236,7 +326,7 @@ export class ContentScriptManager {
      * unregistered.
      *
      * @throws {Error} If the namespace is invalid, if the internal
-     * {@code get()} call fails, or if
+     * {@code getRegistered()} call fails, or if
      * chrome.scripting.unregisterContentScripts fails.
      */
     public static async unregister(namespace: string, scriptIds: string[]): Promise<void> {
@@ -254,13 +344,32 @@ export class ContentScriptManager {
             return;
         }
 
-        const prefixedScriptIds = existingScriptIds.map((id) => ContentScriptManager.makeScriptId(namespace, id));
+        await ContentScriptManager.unregisterScripts(namespace, existingScriptIds);
+    }
+
+    /**
+     * Unregisters scripts known to be registered, without an existence
+     * check — used by the sync batches and their per-item retries, which
+     * rely on the sync snapshot instead of re-listing the registrations
+     * for every item. A no-op for an empty list.
+     *
+     * @param namespace Namespace string used to prefix script IDs.
+     * @param scriptIds Original (consumer-provided) script IDs.
+     *
+     * @throws If chrome.scripting.unregisterContentScripts fails.
+     */
+    private static async unregisterScripts(namespace: string, scriptIds: string[]): Promise<void> {
+        if (scriptIds.length === 0) {
+            return;
+        }
+
+        const prefixedScriptIds = scriptIds.map((id) => ContentScriptManager.makeScriptId(namespace, id));
 
         try {
             await chrome.scripting.unregisterContentScripts({ ids: prefixedScriptIds });
-            logger.debug(`[tsweb.ContentScriptManager.unregister]: Unregistered ${prefixedScriptIds.length} script(s) from "${namespace}"`);
+            logger.debug(`[tsweb.ContentScriptManager.unregisterScripts]: Unregistered ${prefixedScriptIds.length} script(s) from "${namespace}"`);
         } catch (e) {
-            logger.error(`[tsweb.ContentScriptManager.unregister]: Failed in "${namespace}": ${existingScriptIds.join(', ')}`, e);
+            logger.error(`[tsweb.ContentScriptManager.unregisterScripts]: Failed in "${namespace}": ${scriptIds.join(', ')}`, e);
             throw e;
         }
     }
@@ -268,14 +377,15 @@ export class ContentScriptManager {
     /**
      * Unregisters all content scripts registered under the given namespace.
      *
-     * Delegates to the internal {@code get()} helper to retrieve all
-     * currently registered script IDs, then to
+     * Delegates to the internal {@code getRegistered()} helper to retrieve
+     * all currently registered script IDs, then to
      * {@link ContentScriptManager.unregister} to remove them. If no
      * scripts are registered under the namespace, the method returns
      * immediately without calling the chrome API.
      *
      * **Snapshot semantics**: The set of script IDs to unregister is a
-     * snapshot taken at the point the internal {@code get()} helper is called.
+     * snapshot taken at the point the internal {@code getRegistered()}
+     * helper is called.
      * Concurrent registrations that occur after that snapshot will not be
      * affected by this call.
      *
@@ -288,13 +398,13 @@ export class ContentScriptManager {
      * @returns Promise that resolves when all scripts are unregistered.
      *
      * @throws {Error} If the namespace is invalid, or if any delegated
-     * internal {@code get()} call or
+     * internal {@code getRegistered()} call or
      * {@link ContentScriptManager.unregister} call fails.
      */
     public static async clear(namespace: string): Promise<void> {
         ContentScriptManager.validateNamespace(namespace);
 
-        const allScripts = await ContentScriptManager.get(namespace);
+        const allScripts = await ContentScriptManager.getRegistered(namespace);
         if (allScripts.length === 0) {
             return;
         }
@@ -311,22 +421,20 @@ export class ContentScriptManager {
     }
 
     /**
-     * Retrieves all content scripts currently registered under the given
-     * namespace.
-     *
-     * Queries the chrome.scripting API and filters results by namespace
-     * prefix. Returned script descriptors have their IDs stripped of the
-     * namespace prefix (e.g., `"stealth:gpc"` → `"gpc"`).
+     * Returns the full descriptors of all content scripts currently
+     * registered under the given namespace, IDs stripped of the namespace
+     * prefix. The descriptors include the `js` file lists, which some
+     * consumers need (e.g. to recover per-rule hashes from persisted
+     * registrations).
      *
      * @param namespace Namespace string used to prefix script IDs.
      *
-     * @returns Promise that resolves with an array of script descriptors
-     * with their namespace prefix stripped from IDs.
+     * @returns Promise that resolves with the registered script descriptors.
      *
      * @throws {Error} If the namespace is invalid, or if
      * chrome.scripting.getRegisteredContentScripts fails.
      */
-    private static async get(namespace: string): Promise<ContentScriptDescriptor[]> {
+    public static async getRegistered(namespace: string): Promise<ContentScriptDescriptor[]> {
         ContentScriptManager.validateNamespace(namespace);
 
         try {
@@ -339,7 +447,7 @@ export class ContentScriptManager {
                     id: ContentScriptManager.stripNamespacePrefix(namespace, script.id),
                 }));
         } catch (e) {
-            logger.error(`[tsweb.ContentScriptManager.get]: Failed in "${namespace}"`, e);
+            logger.error(`[tsweb.ContentScriptManager.getRegistered]: Failed in "${namespace}"`, e);
             throw e;
         }
     }
@@ -357,7 +465,7 @@ export class ContentScriptManager {
      * for unchanged scripts.
      *
      * **Snapshot semantics**: The current state is a snapshot taken at the
-     * point the internal {@code get()} helper is called. Concurrent
+     * point the internal {@code getRegistered()} helper is called. Concurrent
      * registrations that occur after that snapshot will not be affected.
      *
      * **Note**: This method treats the namespace as owned — it will
@@ -365,29 +473,29 @@ export class ContentScriptManager {
      * scripts registered outside this manager. See the class-level
      * "Namespace ownership" note for details.
      *
-     * **Partial failure**: Errors from individual operations (unregister,
-     * register, update) are collected and returned — they are NOT thrown.
-     * Callers should inspect the return value to detect partial failures.
+     * **Batch failure**: the chrome API rejects a batched call as a unit
+     * (one bad entry fails them all), so a failed batch is retried per
+     * item; only items whose retry also fails land in
+     * {@link SyncScriptsResult.failedScriptIds}.
      *
      * @param namespace Namespace string used to prefix script IDs.
      * @param desiredScripts The desired set of content scripts.
      *
-     * @returns Promise that resolves with an array of rejected results if
-     * any operations failed, or an empty array if all succeeded.
+     * @returns Promise that resolves with the per-script sync result.
      *
      * @throws {Error} If the namespace is invalid, or if the internal
-     * {@code get()} call fails.
+     * {@code getRegistered()} call fails.
      */
     public static async sync(
         namespace: string,
         desiredScripts: ContentScriptDescriptor[],
-    ): Promise<PromiseRejectedResult[]> {
+    ): Promise<SyncScriptsResult> {
         ContentScriptManager.validateNamespace(namespace);
 
         const toRegisterScripts: ContentScriptDescriptor[] = [];
         const toUpdateScripts: ContentScriptDescriptor[] = [];
 
-        const existingScripts = await ContentScriptManager.get(namespace);
+        const existingScripts = await ContentScriptManager.getRegistered(namespace);
         const existingMap = new Map<string, ContentScriptDescriptor>(
             existingScripts.map((script) => [script.id, script]),
         );
@@ -398,7 +506,7 @@ export class ContentScriptManager {
 
             if (!existing) {
                 toRegisterScripts.push(script);
-            } else if (!isEqual(script, existing)) {
+            } else if (!isEqual(canonicalize(script), canonicalize(existing))) {
                 toUpdateScripts.push(script);
             }
 
@@ -407,23 +515,116 @@ export class ContentScriptManager {
 
         const toRemoveIds = Array.from(existingMap.keys());
 
-        const result = await Promise.allSettled([
-            ContentScriptManager.unregister(namespace, toRemoveIds),
-            ContentScriptManager.register(namespace, toRegisterScripts),
+        const [unregisterResult, registerResult, updateResult] = await Promise.allSettled([
+            ContentScriptManager.unregisterScripts(namespace, toRemoveIds),
+            ContentScriptManager.registerScripts(namespace, toRegisterScripts),
             ContentScriptManager.update(namespace, toUpdateScripts),
         ]);
 
-        const errors = result.filter((r) => r.status === 'rejected');
+        const { errors, failedScriptIds } = await ContentScriptManager.retryFailedBatches(namespace, {
+            unregister: { result: unregisterResult, items: toRemoveIds },
+            register: { result: registerResult, items: toRegisterScripts },
+            update: { result: updateResult, items: toUpdateScripts },
+        });
+
         if (errors.length > 0) {
-            const reasons = errors.map((e) => {
-                const { reason } = e as PromiseRejectedResult;
+            const reasons = errors.map(({ reason }) => {
                 return reason instanceof Error ? `${reason.message}\n${reason.stack}` : String(reason);
             });
 
             logger.error(`[tsweb.ContentScriptManager.sync]: ${errors.length} operation(s) failed:\n${reasons.join('\n---\n')}`);
         }
 
-        return errors;
+        return { errors, failedScriptIds };
+    }
+
+    /**
+     * Processes the settled batch operations of a sync: retries each
+     * rejected batch per item to isolate the failures to the offending
+     * scripts. Retries call the chrome API directly with the IDs known
+     * from the sync snapshot — a fresh existence check per item would
+     * multiply the full registration listing by the batch size.
+     *
+     * @param namespace Namespace string used to prefix script IDs.
+     * @param batches Settled results together with the items each batch
+     * consisted of.
+     *
+     * @returns Batch errors and the IDs of items whose individual retry
+     * also failed.
+     */
+    private static async retryFailedBatches(
+        namespace: string,
+        batches: SyncBatchResults,
+    ): Promise<SyncScriptsResult> {
+        const { unregister, register, update } = batches;
+
+        const results = await Promise.all([
+            ContentScriptManager.retryFailedBatch(
+                unregister,
+                (id) => ContentScriptManager.unregisterScripts(namespace, [id]),
+                (id) => id,
+            ),
+            ContentScriptManager.retryFailedBatch(
+                register,
+                (script) => ContentScriptManager.registerScripts(namespace, [script]),
+                (script) => script.id,
+            ),
+            ContentScriptManager.retryFailedBatch(
+                update,
+                (script) => ContentScriptManager.update(namespace, [script]),
+                (script) => script.id,
+            ),
+        ]);
+
+        return {
+            errors: results.flatMap((result) => result.errors),
+            failedScriptIds: results.flatMap((result) => result.failedIds),
+        };
+    }
+
+    /**
+     * Retries a rejected batch per item in chunks of
+     * {@link RETRY_BATCH_SIZE} — one chrome API call per item is cheap,
+     * but an unbounded concurrent fan-out is not. A batch rejection is
+     * recorded as an error only when its per-item retry also failed: a
+     * fully healed batch is not an error.
+     *
+     * @param batch Settled batch result together with the items it
+     * consisted of.
+     * @param operation Operation to retry for a single item.
+     * @param getId Extracts the script ID from an item.
+     *
+     * @returns Batch errors and the IDs of items whose individual retry
+     * was rejected.
+     */
+    private static async retryFailedBatch<T>(
+        batch: SettledBatch<T>,
+        operation: (item: T) => Promise<void>,
+        getId: (item: T) => string,
+    ): Promise<{ errors: PromiseRejectedResult[]; failedIds: string[] }> {
+        if (batch.result.status !== 'rejected') {
+            return { errors: [], failedIds: [] };
+        }
+
+        const failedIds: string[] = [];
+
+        for (let i = 0; i < batch.items.length; i += RETRY_BATCH_SIZE) {
+            const chunk = batch.items.slice(i, i + RETRY_BATCH_SIZE);
+
+            // eslint-disable-next-line no-await-in-loop
+            const retries = await Promise.allSettled(chunk.map((item) => operation(item)));
+
+            retries.forEach((retry, index) => {
+                if (retry.status === 'rejected') {
+                    failedIds.push(getId(chunk[index]));
+                }
+            });
+        }
+
+        return {
+            errors: failedIds.length > 0 ? [batch.result] : [],
+            failedIds,
+        };
     }
 
     /**
@@ -484,7 +685,7 @@ export class ContentScriptManager {
      * any operations failed, or an empty array if all succeeded.
      *
      * @throws {Error} If the namespace is invalid, or if the internal
-     * {@code get()} call fails.
+     * {@code getRegistered()} call fails.
      */
     public static async upsert(
         namespace: string,
@@ -525,10 +726,11 @@ export class ContentScriptManager {
 
         const results = await Promise.allSettled(operations);
 
-        const errors = results.filter((r) => r.status === 'rejected');
+        const errors = results.filter(
+            (r): r is PromiseRejectedResult => r.status === 'rejected',
+        );
         if (errors.length > 0) {
-            const reasons = errors.map((e) => {
-                const { reason } = e as PromiseRejectedResult;
+            const reasons = errors.map(({ reason }) => {
                 return reason instanceof Error ? `${reason.message}\n${reason.stack}` : String(reason);
             });
 

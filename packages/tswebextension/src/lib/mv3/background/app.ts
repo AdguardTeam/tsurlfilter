@@ -23,13 +23,14 @@ import { AllowlistApi, allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
 import { assistant, Assistant } from './assistant';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
-import { type ContentScriptDescriptor, ContentScriptManager } from './content-script-manager';
+import { type ContentScriptDescriptor, ContentScriptManager, type SyncScriptsResult } from './content-script-manager';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { engineApi } from './engine-api';
 import { extSessionStorage } from './ext-session-storage';
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
 import { MessagesApi } from './messages-api';
+import { PreregisteredScriptsService } from './preregistered-scripts/preregistered-scripts-service';
 import { RequestEvents } from './request/events/request-events';
 import { RulesetsLoaderApi } from './rulesets-loader-api';
 import { CspService } from './services/csp-service';
@@ -60,6 +61,7 @@ export type {
     ConfigurationResult,
     ConversionResult,
     FailedEnableRulesetsError,
+    SyncScriptsResult,
 };
 
 /**
@@ -305,6 +307,11 @@ export class TsWebExtension implements AppInterface<
         // otherwise, it may try to log applying of removed rules. AG-36068.
         declarativeFilteringLog.stop();
 
+        // Tear down preregistration before the engine is stopped, so an
+        // in-flight sync can finish against a live engine; otherwise
+        // persistAcrossSessions registrations would keep firing after stop.
+        await PreregisteredScriptsService.stop();
+
         await TsWebExtension.removeAllFilteringRules();
 
         // Stop handle request events.
@@ -506,6 +513,17 @@ export class TsWebExtension implements AppInterface<
 
         documentBlockingService.configure(config);
 
+        // Debug needs verbose scriptlets, which only dynamic injection
+        // can build — disable preregistration entirely. Keep the
+        // configuration itself: the stored context drops it, and
+        // setDebugScriptlets() re-evaluates the gate at runtime.
+        const { filteringEnabled, debugScriptlets } = configuration.settings;
+        appContext.preregisteredScripts = configuration.preregisteredScripts;
+        await PreregisteredScriptsService.init(
+            filteringEnabled && !debugScriptlets,
+            configuration.preregisteredScripts,
+        );
+
         logger.trace('[tsweb.TsWebExtension.configure]: end');
 
         return res;
@@ -530,12 +548,12 @@ export class TsWebExtension implements AppInterface<
      * (Manifest V3). Consumers that branch on manifest version should
      * guard calls to this method accordingly.
      *
-     * Delegates to {@link ContentScriptManager.sync}. The operation is
-     * **not atomic** — unregister, register, and update are executed as
+     * Delegates to {@link ContentScriptManager.sync}. The operation
+     * is **not atomic** — unregister, register, and update are executed as
      * independent steps via `Promise.allSettled`. Partial failures are
-     * returned as an array of {@link PromiseRejectedResult} rather than
-     * thrown; callers should inspect the return value to detect and
-     * handle incomplete synchronization.
+     * reported in the result (`errors` plus the IDs whose desired state is
+     * not guaranteed) rather than thrown; callers should inspect the return
+     * value to detect and handle incomplete synchronization.
      *
      * The namespace implies ownership of all scripts matching its prefix;
      * scripts registered outside this manager under the same prefix will
@@ -544,13 +562,14 @@ export class TsWebExtension implements AppInterface<
      * @param namespace Namespace string used to prefix script IDs.
      * @param descriptors The desired set of content scripts.
      *
-     * @returns Promise that resolves with an array of rejected results if
-     * any operations failed, or an empty array if all succeeded.
+     * @returns Promise that resolves with the per-script sync result:
+     * batch errors and the IDs of scripts whose desired state is not
+     * guaranteed after the call.
      */
     public static syncContentScripts(
         namespace: string,
         descriptors: ContentScriptDescriptor[],
-    ): Promise<PromiseRejectedResult[]> {
+    ): Promise<SyncScriptsResult> {
         return ContentScriptManager.sync(namespace, descriptors);
     }
 
@@ -831,6 +850,11 @@ export class TsWebExtension implements AppInterface<
     /**
      * Sets the debug scriptlets state.
      *
+     * Preregistration is re-evaluated immediately: verbose scriptlets exist
+     * only on the dynamic injection path, while the `configure()` gate cannot
+     * see this runtime toggle — in the MV3 consumer `configure()` always
+     * carries `debugScriptlets: false`.
+     *
      * @param debug Debug filtering state.
      *
      * @throws Error if {@link configuration} not set.
@@ -840,6 +864,9 @@ export class TsWebExtension implements AppInterface<
             throw new Error('Configuration not set');
         }
         this.configuration.settings.debugScriptlets = debug;
+
+        const { filteringEnabled } = this.configuration.settings;
+        PreregisteredScriptsService.reapplyGate(filteringEnabled && !debug);
     }
 
     /**

@@ -4,12 +4,13 @@ import { BACKGROUND_TAB_ID } from '../../common/constants';
 import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
-import { getDomain, isExtensionUrl } from '../../common/utils/url';
-import { type PreparedCosmeticResultMV3 } from '../tabs/frame';
+import { getDomain, isExtensionUrl, isHttpRequest } from '../../common/utils/url';
+import { type FrameMV3, type PreparedCosmeticResultMV3 } from '../tabs/frame';
 import { tabsApi } from '../tabs/tabs-api';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
+import { computeRuleHashCached } from './preregistered-scripts/hasher';
 import { ScriptingApi } from './scripting-api';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { UserScriptsApi } from './user-scripts-api';
@@ -37,10 +38,178 @@ type LogJsRulesParamsMv3 = LogJsRulesParams & {
 };
 
 /**
+ * Parameters of {@link CosmeticApi.applyCosmeticRules}.
+ */
+interface ApplyCosmeticRulesParams {
+    /**
+     * Tab id.
+     */
+    tabId: number;
+
+    /**
+     * Frame id.
+     */
+    frameId: number;
+
+    /**
+     * Whether to apply CSS. We do not apply CSS on onResponseStarted, since
+     * it might be too early. Instead, we wait until the DOM is ready on
+     * onCommitted and apply it then.
+     */
+    shouldApplyCss: boolean;
+
+    /**
+     * Whether the document was loaded before the current service worker
+     * started (e.g. tabs found on browser startup). Such pages could only
+     * receive the preregistered bundle from registrations persisted across
+     * the SW restart, so only those registrations' rules are skipped from
+     * dynamic injection. Defaults to false.
+     */
+    preExistingDocument?: boolean;
+}
+
+/**
+ * Rules whose hash failure has already been logged. Hashing failures are
+ * deterministic and this filter runs per frame, so without the set one
+ * broken rule would re-log on every frame of every covered host.
+ */
+const loggedHashFailures = new WeakSet<CosmeticRule>();
+
+/**
  * Cosmetic api class.
  * Used to prepare and inject javascript and css into pages.
  */
 export class CosmeticApi extends CosmeticApiCommon {
+    /**
+     * Resolves the hostname whose preregistered coverage applies to a frame.
+     * Opaque frames (`about:blank`, srcdoc) have no own host: their coverage
+     * comes from the nearest HTTP(S) ancestor, mirroring the
+     * `matchOriginAsFallback: true` semantics of preregistered
+     * registrations.
+     *
+     * @param tabId Tab id.
+     * @param frameContext Frame context to resolve the host for.
+     *
+     * @returns Lower-cased hostname or `null` when no HTTP ancestor exists.
+     */
+    private static resolveCoverageHost(tabId: number, frameContext: FrameMV3): string | null {
+        const visited = new Set<number>();
+        let current: FrameMV3 | undefined = frameContext;
+
+        while (current) {
+            if (isHttpRequest(current.url)) {
+                try {
+                    const { hostname } = new URL(current.url);
+                    return hostname ? hostname.toLowerCase() : null;
+                } catch {
+                    return null;
+                }
+            }
+
+            // Guard against broken parent chains (partially recorded frame
+            // contexts) looping forever.
+            if (visited.has(current.frameId)) {
+                return null;
+            }
+            visited.add(current.frameId);
+
+            current = current.parentFrameId >= 0
+                ? tabsApi.getFrameContext(tabId, current.parentFrameId)
+                : undefined;
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the hashes of preregistered rules covered by the registrations
+     * that apply to the frame — those dynamic injection must skip.
+     *
+     * @param tabId Tab id.
+     * @param frameContext Frame context.
+     * @param preExistingDocument Whether the document loaded before the
+     * current service worker started: such a document is judged only against
+     * the rules from registrations persisted at boot, since a registration
+     * updated since then may carry rules the page never received.
+     *
+     * @returns Covered rule hashes or `undefined` when there is no coverage.
+     */
+    private static getPreregisteredCoveredRules(
+        tabId: number,
+        frameContext: FrameMV3,
+        preExistingDocument = false,
+    ): ReadonlySet<string> | undefined {
+        const coveredRules = preExistingDocument
+            ? appContext.preregisteredScriptRulesAtBoot
+            : appContext.preregisteredScriptRules;
+
+        if (!coveredRules || coveredRules.size === 0) {
+            return undefined;
+        }
+
+        const host = CosmeticApi.resolveCoverageHost(tabId, frameContext);
+        if (!host) {
+            return undefined;
+        }
+
+        return coveredRules.get(host);
+    }
+
+    /**
+     * Filters out the rules covered by preregistered content scripts, keeping
+     * those dynamic injection must still deliver.
+     *
+     * Rules that fail to hash keep the dynamic injection path — their
+     * coverage cannot be established. Split coverage can reorder same-domain
+     * rules relative to each other (bundle runs at document_start, dynamic
+     * injection later) — accepted: rule execution order is not a contract
+     * anywhere on the dynamic path.
+     *
+     * In a non-HTTP frame (`about:blank`, srcdoc, blob:) `$path`-qualified
+     * rules always stay on the dynamic path: the frame receives them by
+     * copying the nearest HTTP ancestor's result (where the `$path`
+     * condition was evaluated against the ancestor's URL), while the
+     * per-rule guard in the preregistered file cannot evaluate that URL from
+     * the frame and never executes them there. Treating them as covered
+     * would lose the rule on both paths.
+     *
+     * @param rawRules Candidate rules to filter.
+     * @param coveredRules Hashes of rules covered by preregistered registrations.
+     * @param frameUrl Frame URL, used for logging and to detect non-HTTP
+     * frames.
+     *
+     * @returns Rules not covered by preregistered content scripts.
+     */
+    private static async filterUncoveredRules(
+        rawRules: CosmeticRule[],
+        coveredRules: ReadonlySet<string>,
+        frameUrl: string,
+    ): Promise<CosmeticRule[]> {
+        const isHttpFrame = isHttpRequest(frameUrl);
+
+        const results = await Promise.all(rawRules.map(async (rule) => {
+            // The preregistered per-rule guard only sees the frame's own
+            // `location`, so in a non-HTTP frame it never executes
+            // `$path`-qualified rules — there is no double execution to avoid.
+            if (!isHttpFrame && rule.pathModifier) {
+                return rule;
+            }
+
+            try {
+                return coveredRules.has(await computeRuleHashCached(rule)) ? null : rule;
+            } catch (e) {
+                if (!loggedHashFailures.has(rule)) {
+                    loggedHashFailures.add(rule);
+                    // eslint-disable-next-line max-len
+                    logger.error(`[tsweb.CosmeticApi.filterUncoveredRules]: Failed to hash a rule for "${frameUrl}", keeping dynamic injection`, e);
+                }
+                return rule;
+            }
+        }));
+
+        return results.filter((rule): rule is CosmeticRule => rule !== null);
+    }
+
     /**
      * This is STEP 3: All previously matched script rules are processed and filtered:
      * Scriptlet and JS rules from pre-built filters (previously collected, pre-built and passed to the engine)
@@ -492,19 +661,20 @@ export class CosmeticApi extends CosmeticApiCommon {
     /**
      * Applies cosmetic rules to the specified tab and frame.
      *
-     * @param tabId Tab id.
-     * @param frameId Frame id.
-     * @param shouldApplyCss We are not applying CSS on onResponseStarted, since
-     * it might be too early. Instead, we wait until the DOM is ready on
-     * onCommitted and apply them then.
+     * @param params Parameters of the call, see {@link ApplyCosmeticRulesParams}.
      *
      * @returns A promise that resolves when the cosmetic rules are applied.
      */
     public static async applyCosmeticRules(
-        tabId: number,
-        frameId: number,
-        shouldApplyCss: boolean,
+        params: ApplyCosmeticRulesParams,
     ): Promise<PromiseSettledResult<void>[]> {
+        const {
+            tabId,
+            frameId,
+            shouldApplyCss,
+            preExistingDocument = false,
+        } = params;
+
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         if (!frameContext || !frameContext.preparedCosmeticResult) {
@@ -512,19 +682,61 @@ export class CosmeticApi extends CosmeticApiCommon {
             return [];
         }
 
-        const tasks = [
-            CosmeticApi.applyLocalCosmeticRules(
-                tabId,
-                frameId,
-                frameContext.preparedCosmeticResult.localRules,
+        const tasks: Promise<void>[] = [];
+
+        // Skip dynamic injection of the rules covered by preregistered
+        // content scripts — injecting them again would cause
+        // double execution. Rules missing from the covered set (degraded at
+        // sync time, or added to the registration after a pre-existing page
+        // loaded) still go through the dynamic path. `remoteRules` below
+        // doesn't need this guard: it only ever contains custom/user filter
+        // rules, which preregistered scripts (local filters only) never cover.
+        const coveredRules = CosmeticApi.getPreregisteredCoveredRules(tabId, frameContext, preExistingDocument);
+
+        const { localRules } = frameContext.preparedCosmeticResult;
+
+        if (!coveredRules?.size) {
+            tasks.push(
+                CosmeticApi.applyLocalCosmeticRules(
+                    tabId,
+                    frameId,
+                    localRules,
+                    frameContext.url,
+                ),
+            );
+        } else {
+            const uncoveredRules = await CosmeticApi.filterUncoveredRules(
+                localRules.rawRules,
+                coveredRules,
                 frameContext.url,
-            ),
+            );
+
+            if (uncoveredRules.length > 0) {
+                const rulesToApply = uncoveredRules.length === localRules.rawRules.length
+                    ? localRules
+                    : {
+                        ...CosmeticApi.getScriptsAndScriptletsData(uncoveredRules),
+                        rawRules: uncoveredRules,
+                    };
+
+                tasks.push(
+                    CosmeticApi.applyLocalCosmeticRules(
+                        tabId,
+                        frameId,
+                        rulesToApply,
+                        frameContext.url,
+                    ),
+                );
+            }
+        }
+
+        tasks.push(
             CosmeticApi.applyRemoteCosmeticRules(
                 tabId,
                 frameId,
                 frameContext.preparedCosmeticResult.remoteRules,
             ),
-        ];
+        );
 
         if (shouldApplyCss) {
             tasks.push(
