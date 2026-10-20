@@ -694,4 +694,56 @@ describe('CspRulesResolver.resolve', () => {
             unsupportedExceptions: [],
         });
     });
+
+    it('cancels a blocker narrowed by $domain with a wider exception', () => {
+        const rules = createRules(
+            "|https://example.com/path|$csp=script-src 'none',domain=foo.com",
+            "@@|https://example.com/path|$csp=script-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('cancels a blocker narrowed by $header with a wider exception', () => {
+        const rules = createRules(
+            "||example.com/path$csp=script-src 'none',header=set-cookie",
+            "@@||example.com/path$csp=script-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('cancels a blocker whose $header differs in case only', () => {
+        const rules = createRules(
+            "||example.com/path$csp=script-src 'none',header=set-cookie",
+            "@@||example.com/path$csp=script-src 'none',header=Set-Cookie",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('keeps a blocker when the exception is narrower', () => {
+        const rules = createRules(
+            "||example.com/path$csp=script-src 'none'",
+            "@@||example.com/path$csp=script-src 'none',domain=foo.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
 });

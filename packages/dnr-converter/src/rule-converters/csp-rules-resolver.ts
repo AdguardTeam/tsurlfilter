@@ -1,5 +1,6 @@
 import { DomainUtils } from '@adguard/agtree';
 
+import { type RuleCondition } from '../declarative-rule/rule-condition';
 import { OPTION_NAMES } from '../rule/option-names';
 import { type Rule } from '../rule/rule';
 import { RuleDeclarativeValidator } from '../rule/rule-validator';
@@ -36,16 +37,93 @@ type CspPairResult = {
 /**
  * Resolves CSP exceptions before rules are converted to DNR.
  */
+/**
+ * Compares one DNR condition field of a CSP exception and a blocking rule.
+ *
+ * A comparator answers whether the exception is not narrower than the blocking
+ * rule in this field and must fail closed: an unsupported value must never be
+ * reported as covered.
+ */
+type ConditionFieldCovers = (
+    exceptionCondition: RuleCondition,
+    blockingCondition: RuleCondition,
+) => boolean;
+
+/**
+ * Condition fields which describe the URL identity of a rule.
+ */
+const URL_CONDITION_FIELDS: readonly (keyof RuleCondition)[] = [
+    'urlFilter',
+    'regexFilter',
+];
+
+/**
+ * Resolves CSP exceptions before rules are converted to DNR.
+ */
 export class CspRulesResolver {
     /**
-     * Condition fields which are compared by coverage instead of equality.
+     * Comparators for every DNR condition field.
+     *
+     * The mapped type keeps the table exhaustive: a field added to
+     * {@link RuleCondition} without a comparator breaks the build, so a new
+     * condition field cannot be silently ignored by the resolver.
+     *
+     * Fields of one pair (`initiatorDomains`/`excludedInitiatorDomains` and so
+     * on) share a comparator which reads both of them.
      */
-    private static readonly COVERAGE_CONDITION_FIELDS = [
-        'initiatorDomains',
-        'excludedInitiatorDomains',
-        'excludedRequestDomains',
-        'responseHeaders',
-    ] as const;
+    private static readonly CONDITION_COVERAGE: {
+        readonly [K in keyof RuleCondition]-?: ConditionFieldCovers;
+    } = {
+            urlFilter: CspRulesResolver.createEqualityComparator(['urlFilter', 'regexFilter']),
+            regexFilter: CspRulesResolver.createEqualityComparator(['urlFilter', 'regexFilter']),
+            domainType: CspRulesResolver.createEqualityComparator(['domainType']),
+            initiatorDomains: (exceptionCondition, blockingCondition) => (
+                CspRulesResolver.coversInitiatorDomains(
+                    exceptionCondition.initiatorDomains,
+                    blockingCondition.initiatorDomains,
+                )
+            ),
+            excludedInitiatorDomains: (exceptionCondition, blockingCondition) => (
+                CspRulesResolver.coversExcludedDomains(
+                    exceptionCondition.excludedInitiatorDomains,
+                    blockingCondition.excludedInitiatorDomains,
+                )
+            ),
+            requestDomains: CspRulesResolver.createEqualityComparator(['requestDomains']),
+            excludedRequestDomains: (exceptionCondition, blockingCondition) => (
+                CspRulesResolver.coversExcludedDomains(
+                    exceptionCondition.excludedRequestDomains,
+                    blockingCondition.excludedRequestDomains,
+                )
+            ),
+            responseHeaders: (exceptionCondition, blockingCondition) => (
+                CspRulesResolver.coversResponseHeaders(
+                    exceptionCondition.responseHeaders,
+                    blockingCondition.responseHeaders,
+                )
+            ),
+            excludedResponseHeaders: CspRulesResolver.createEqualityComparator(['excludedResponseHeaders']),
+            tabIds: CspRulesResolver.createEqualityComparator(['tabIds']),
+            excludedTabIds: CspRulesResolver.createEqualityComparator(['excludedTabIds']),
+            requestMethods: CspRulesResolver.createEqualityComparator(['requestMethods']),
+            excludedRequestMethods: CspRulesResolver.createEqualityComparator(['excludedRequestMethods']),
+            resourceTypes: CspRulesResolver.createEqualityComparator(['resourceTypes']),
+            excludedResourceTypes: CspRulesResolver.createEqualityComparator(['excludedResourceTypes']),
+            isUrlFilterCaseSensitive: CspRulesResolver.createEqualityComparator(['isUrlFilterCaseSensitive']),
+        };
+
+    /**
+     * All condition fields compared by the resolver.
+     */
+    private static readonly CONDITION_FIELDS = Object.keys(
+        CspRulesResolver.CONDITION_COVERAGE,
+    ) as (keyof RuleCondition)[];
+
+    /**
+     * Condition fields compared by the non-URL coverage check.
+     */
+    private static readonly NON_URL_CONDITION_FIELDS = CspRulesResolver.CONDITION_FIELDS
+        .filter((field) => !URL_CONDITION_FIELDS.includes(field));
 
     /**
      * Canonicalizes a value for order-independent comparison.
@@ -73,15 +151,22 @@ export class CspRulesResolver {
     }
 
     /**
-     * Creates a stable key for the DNR condition of a source rule.
+     * Creates a comparator which requires the given condition fields to be equal.
      *
-     * @param rule Source rule.
+     * @param fields Condition fields to compare.
      *
-     * @returns Stable condition key.
+     * @returns Comparator of the given fields.
      */
-    private static getConditionKey(rule: Rule): string {
-        const condition = RegularRuleConverter.getCondition(rule);
-        return JSON.stringify(CspRulesResolver.canonicalize(condition));
+    private static createEqualityComparator(
+        fields: readonly (keyof RuleCondition)[],
+    ): ConditionFieldCovers {
+        return (exceptionCondition, blockingCondition) => {
+            const exceptionValues = fields.map((field) => exceptionCondition[field]);
+            const blockingValues = fields.map((field) => blockingCondition[field]);
+
+            return JSON.stringify(CspRulesResolver.canonicalize(exceptionValues))
+                === JSON.stringify(CspRulesResolver.canonicalize(blockingValues));
+        };
     }
 
     /**
@@ -129,31 +214,20 @@ export class CspRulesResolver {
     }
 
     /**
-     * Checks whether an exception has the same DNR condition as a blocking CSP rule.
+     * Checks whether an exception has the same URL identity and is not narrower
+     * than a blocking CSP rule in any other condition.
      *
      * @param exceptionRule CSP exception rule.
      * @param blockingRule Blocking CSP rule.
      *
-     * @returns `true` if both rules have the same DNR condition.
+     * @returns `true` if the exception covers the blocking rule's condition.
      */
     private static hasSameCondition(exceptionRule: Rule, blockingRule: Rule): boolean {
-        return CspRulesResolver.getConditionKey(exceptionRule)
-            === CspRulesResolver.getConditionKey(blockingRule);
-    }
-
-    /**
-     * Creates a DNR condition without URL pattern fields.
-     *
-     * @param rule Source rule.
-     *
-     * @returns Condition without URL pattern fields.
-     */
-    private static getConditionWithoutUrl(rule: Rule): Record<string, unknown> {
-        const condition: Record<string, unknown> = { ...RegularRuleConverter.getCondition(rule) };
-        delete condition.urlFilter;
-        delete condition.regexFilter;
-
-        return condition;
+        return CspRulesResolver.checkConditionCoverage(
+            exceptionRule,
+            blockingRule,
+            CspRulesResolver.CONDITION_FIELDS,
+        );
     }
 
     /**
@@ -168,56 +242,34 @@ export class CspRulesResolver {
      * @returns `true` if the exception is not narrower than the blocking rule.
      */
     private static coversNonUrlConditions(exceptionRule: Rule, blockingRule: Rule): boolean {
-        const exceptionFields = CspRulesResolver.splitCoverageFields(
-            CspRulesResolver.getConditionWithoutUrl(exceptionRule),
+        return CspRulesResolver.checkConditionCoverage(
+            exceptionRule,
+            blockingRule,
+            CspRulesResolver.NON_URL_CONDITION_FIELDS,
         );
-        const blockingFields = CspRulesResolver.splitCoverageFields(
-            CspRulesResolver.getConditionWithoutUrl(blockingRule),
-        );
-
-        if (JSON.stringify(CspRulesResolver.canonicalize(exceptionFields.rest))
-            !== JSON.stringify(CspRulesResolver.canonicalize(blockingFields.rest))) {
-            return false;
-        }
-
-        return CspRulesResolver.coversInitiatorDomains(
-            exceptionFields.coverage.initiatorDomains,
-            blockingFields.coverage.initiatorDomains,
-        )
-            && CspRulesResolver.coversExcludedDomains(
-                exceptionFields.coverage.excludedInitiatorDomains,
-                blockingFields.coverage.excludedInitiatorDomains,
-            )
-            && CspRulesResolver.coversExcludedDomains(
-                exceptionFields.coverage.excludedRequestDomains,
-                blockingFields.coverage.excludedRequestDomains,
-            )
-            && CspRulesResolver.coversResponseHeaders(
-                exceptionFields.coverage.responseHeaders,
-                blockingFields.coverage.responseHeaders,
-            );
     }
 
     /**
-     * Splits a condition into fields compared by coverage and the rest.
+     * Checks whether an exception covers the given condition fields of a
+     * blocking rule.
      *
-     * @param condition Condition to split.
+     * @param exceptionRule CSP exception rule.
+     * @param blockingRule Blocking CSP rule.
+     * @param fields Condition fields to compare.
      *
-     * @returns Fields compared by coverage and the remaining fields.
+     * @returns `true` if the exception is not narrower in any of the fields.
      */
-    private static splitCoverageFields(condition: Record<string, unknown>): {
-        coverage: Record<string, unknown>;
-        rest: Record<string, unknown>;
-    } {
-        const rest: Record<string, unknown> = { ...condition };
-        const coverage: Record<string, unknown> = {};
+    private static checkConditionCoverage(
+        exceptionRule: Rule,
+        blockingRule: Rule,
+        fields: readonly (keyof RuleCondition)[],
+    ): boolean {
+        const exceptionCondition = RegularRuleConverter.getCondition(exceptionRule);
+        const blockingCondition = RegularRuleConverter.getCondition(blockingRule);
 
-        CspRulesResolver.COVERAGE_CONDITION_FIELDS.forEach((field) => {
-            coverage[field] = rest[field];
-            delete rest[field];
-        });
-
-        return { coverage, rest };
+        return fields.every((field) => (
+            CspRulesResolver.CONDITION_COVERAGE[field](exceptionCondition, blockingCondition)
+        ));
     }
 
     /**
