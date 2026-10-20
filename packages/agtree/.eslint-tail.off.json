@@ -15,6 +15,7 @@
  "@typescript-eslint/indent": "off",
  "@typescript-eslint/explicit-member-accessibility": "off",
  "@typescript-eslint/consistent-type-imports": "off",
+ "@typescript-eslint/consistent-type-exports": "off",
  "import/prefer-default-export": "off",
  "import-newlines/enforce": "off",
  "import/no-extraneous-dependencies": "off",
