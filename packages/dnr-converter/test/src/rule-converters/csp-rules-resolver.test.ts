@@ -537,7 +537,7 @@ describe('CspRulesResolver.resolve', () => {
         });
     });
 
-    it('applies a domain exclusion per pair while an unsafe unrelated blocker stays untouched', () => {
+    it('applies a domain exclusion to every blocker the exception covers', () => {
         const rules = createRules(
             "$csp=script-src 'none'",
             "$csp=script-src 'none',script",
@@ -546,7 +546,10 @@ describe('CspRulesResolver.resolve', () => {
 
         expect(CspRulesResolver.resolve(rules)).toEqual({
             rules: [rules[0], rules[1]],
-            excludedRequestDomains: new Map([[rules[0], ['example.com']]]),
+            excludedRequestDomains: new Map([
+                [rules[0], ['example.com']],
+                [rules[1], ['example.com']],
+            ]),
             unsupportedExceptions: [],
         });
     });
@@ -744,6 +747,110 @@ describe('CspRulesResolver.resolve', () => {
             rules: [rules[0]],
             excludedRequestDomains: new Map(),
             unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('cancels a $third-party blocker with an exception without party restriction', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',third-party",
+            '@@||example.com^$csp',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('cancels a resource-type blocker with an exception without type restriction', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',subdocument",
+            '@@||example.com^$csp',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('cancels a method blocker with an exception without method restriction', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',method=post",
+            '@@||example.com^$csp',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('cancels a $match-case blocker with a case-insensitive exception', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',match-case",
+            '@@||example.com^$csp',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('keeps a blocker when the exception adds a party restriction', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none'",
+            '@@||example.com^$csp,third-party',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('keeps a subdocument blocker when the exception excludes subdocuments', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',subdocument",
+            '@@||example.com^$csp,~subdocument',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('keeps a blocker when the exception excludes more resource types', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',~subdocument",
+            '@@||example.com^$csp,~subdocument,~script',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('cancels an excluded-resource-type blocker with an unrestricted exception', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',~subdocument",
+            '@@||example.com^$csp',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
         });
     });
 });
