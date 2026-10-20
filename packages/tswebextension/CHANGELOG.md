@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- HTML filtering `:contains()` arguments are now handled with CoreLibs
+  semantics (via [@adguard/tsurlfilter]): wrapping quotes of any kind are
+  literal characters of the matched text, unbalanced arguments (e.g.
+  `$$script:contains((function(g,b,a,c,e,d)`) are matched as-is, and
+  `/regexp/`-looking arguments keep their regexp semantics.
 - Migrated to the refactored `@adguard/agtree` API: rule parsing uses
   `RuleParserPipeline` and the removed `CssTokenStream.hasNativeCssPseudoClass`
   is replaced by the `hasNativeCssPseudoClass` utility.

@@ -6,6 +6,7 @@ import { RuleParserPipeline } from '../../ast-builder/rule-parser';
 import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';
 import { createNetworkRuleNode } from '../../ast-utils/network-rules';
 import { isUboResponseHeaderRemovalRuleBody } from '../../common/ubo-html-filtering-body-common';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
     type AnyRule,
@@ -69,11 +70,26 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
         if (rule.body.type === 'Raw') {
             // Re-parse the full rule to get the parsed body
             const pipeline = new RuleParserPipeline();
-            const parsedRule = pipeline.parse(
-                `##^${rule.body.value}`,
-                { parseHtmlFilteringRuleBodies: true },
-            ) as HtmlFilteringRule;
-            body = parsedRule.body as HtmlFilteringRuleBody;
+            try {
+                const parsedRule = pipeline.parse(
+                    `##^${rule.body.value}`,
+                    { parseHtmlFilteringRuleBodies: true },
+                ) as HtmlFilteringRule;
+                body = parsedRule.body as HtmlFilteringRuleBody;
+            } catch (error) {
+                // Tolerant fallback: a parse error does not necessarily mean
+                // that this is not a uBO responseheader(...) rule — the token
+                // stream checks the whole body's balance before the function
+                // name, so malformed responseheader(...) bodies can throw here
+                // too. Hand the rule to the main HTML filtering rule converter
+                // for further handling instead: it keeps rules with special
+                // selectors as-is, and throws for genuinely invalid rules.
+                if (error instanceof AdblockSyntaxError) {
+                    return createNodeConversionResult([rule], false);
+                }
+
+                throw error;
+            }
         } else {
             body = rule.body as HtmlFilteringRuleBody;
         }

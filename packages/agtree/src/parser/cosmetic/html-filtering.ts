@@ -13,9 +13,33 @@ import { cssIdentSequenceLength } from '../../css/tokenizer/css-token-mapping';
 import { isCssWhitespace } from '../../css/tokenizer/css-token-utils';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { TokenType } from '../../tokenizer/token-types';
+import { SPECIAL_PSEUDO_CLASS_NAMES } from '../../utils/special-pseudo-classes';
 import type { ParserContext } from '../context';
 import { regionEquals, selectorListDataOffset, tokenStart } from '../context';
-import { SelectorListParser } from '../css/selector-list';
+import {
+    CHILD_FIELD_0,
+    CHILD_FIELD_1,
+    CHILD_FIELD_2,
+    CHILD_FIELD_3,
+    CHILD_FIELD_4,
+    CHILD_FIELD_5,
+    CHILD_FIELD_6,
+    CHILD_FIELD_7,
+    CHILD_FIELD_KIND,
+    CHILD_FIELD_SOURCE_END,
+    CHILD_FIELD_SOURCE_START,
+    ChildKind,
+    COMBINATOR_DESCENDANT,
+    COMPLEX_FIELD_CHILD_COUNT,
+    COMPLEX_FIELD_SOURCE_END,
+    COMPLEX_STRIDE,
+    DEFAULT_MAX_CHILDREN,
+    DEFAULT_MAX_COMPLEX,
+    NO_VALUE,
+    SelectorListParser,
+    SL_HEADER_SIZE,
+} from '../css/selector-list';
+import { handleCombinator } from '../css/selector-list/combinator';
 import type { CosmeticBodyParser } from '../types';
 
 import {
@@ -39,6 +63,32 @@ import { parseCommonCosmeticHeader } from './cosmetic-common';
  * String constant for responseheader function name comparison.
  */
 const RESPONSEHEADER = 'responseheader';
+
+/**
+ * Special pseudo-class marker found in a raw HTML filtering rule body,
+ * e.g. `:contains(` — see {@link SPECIAL_PSEUDO_CLASS_NAMES}.
+ */
+interface SpecialPseudoClassMarker {
+    /**
+     * Token index of the leading colon of the special pseudo-class marker.
+     */
+    markerTi: number;
+
+    /**
+     * Source start offset of the pseudo-class name.
+     */
+    nameStart: number;
+
+    /**
+     * Source end offset of the pseudo-class name.
+     */
+    nameEnd: number;
+
+    /**
+     * Token index of the opening parenthesis of the special pseudo-class marker.
+     */
+    openParenTi: number;
+}
 
 /**
  * Skip whitespace and line-break tokens forward.
@@ -193,25 +243,302 @@ export class AdgHtmlFilteringParser implements CosmeticBodyParser {
     /**
      * Parse an ADG HTML filtering rule.
      *
+     * Bodies that are not syntactically correct CSS selector lists, but are
+     * still accepted by AdGuard products (CoreLibs), are parsed leniently:
+     * a special pseudo-class with a raw-text argument
+     * (`:contains`, `:-abp-contains`, `:has-text`) may have an unbalanced
+     * or unterminated argument, e.g. `script:contains((function(g,b,a,c,e,d)`,
+     * which CoreLibs accepts — see {@link SPECIAL_PSEUDO_CLASS_NAMES}.
+     *
      * @param ctx Parser context.
      * @param classified Packed classifier result.
      * @param startTi Inclusive token index where the rule starts. Defaults to 0.
      * @param endTi Exclusive token index where the rule ends. Defaults to `ctx.tokenCount`.
+     *
+     * @throws {AdblockSyntaxError} If the body is syntactically incorrect and
+     * cannot be parsed leniently either.
      */
     public static parse(ctx: ParserContext, classified: number, startTi = 0, endTi = ctx.tokenCount): void {
         parseCommonCosmeticHeader(ctx, classified, 'ADG HTML filtering rule', startTi, endTi);
         ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ADG_HTML_FILTERING << CR_SEP_KIND_SHIFT;
 
         const bodyStartTi = ctx.data[CR_BODY_START_TI];
-        SelectorListParser.parse(
-            ctx,
-            bodyStartTi,
-            endTi,
-            selectorListDataOffset(ctx),
-            undefined,
-            undefined,
-            true, // isAdg
-        );
+
+        try {
+            SelectorListParser.parse(
+                ctx,
+                bodyStartTi,
+                endTi,
+                selectorListDataOffset(ctx),
+                undefined,
+                undefined,
+                true, // isAdg
+            );
+        } catch (error) {
+            // Tolerant fallback, mirroring CoreLibs: special pseudo-classes
+            // with a raw-text argument accept arguments with unbalanced
+            // parentheses or unterminated strings. Such bodies do not parse
+            // as CSS selector lists, so we retry leniently here, taking the
+            // argument as-is. If the body cannot be parsed leniently either,
+            // the original error is rethrown.
+            if (!(error instanceof AdblockSyntaxError)) {
+                throw error;
+            }
+
+            if (!AdgHtmlFilteringParser.tryParseLenientSpecialPseudoClassArgument(ctx, bodyStartTi, endTi)) {
+                throw error;
+            }
+        }
+    }
+
+    /**
+     * Leniently parses a body whose last special pseudo-class has a
+     * raw-text argument (unbalanced parentheses, unterminated string,
+     * etc.), mirroring the CoreLibs behavior: the part of the body before
+     * that pseudo-class is parsed as a regular selector list, and the
+     * pseudo-class itself is written with the raw argument — the text
+     * between the opening parenthesis of the pseudo-class and the last
+     * closing parenthesis of the body.
+     *
+     * The structural selector list data in `ctx.data` is rewritten from
+     * scratch: the prefix selector list is parsed first, then the
+     * pseudo-class (and the descendant combinator in front of it, if any)
+     * is appended to the last complex selector.
+     *
+     * @param ctx Parser context.
+     * @param startTi Inclusive token index where the body starts.
+     * @param endTi Exclusive token index where the body ends.
+     *
+     * @returns `true` if the body was parsed leniently, `false` if it cannot
+     * be parsed leniently (no special pseudo-class marker, argument not
+     * closed by the last `)` of the body, or unparsable selector part
+     * before it).
+     */
+    private static tryParseLenientSpecialPseudoClassArgument(
+        ctx: ParserContext,
+        startTi: number,
+        endTi: number,
+    ): boolean {
+        const { types, ends, data } = ctx;
+
+        // CoreLibs requires the argument to be closed by the last `)` of the
+        // body, so trailing whitespace is not a part of the argument
+        let lastTi = endTi;
+        while (lastTi > startTi && isCssWhitespace(types[lastTi - 1])) {
+            lastTi -= 1;
+        }
+
+        if (lastTi <= startTi || types[lastTi - 1] !== TokenType.CloseParen) {
+            return false;
+        }
+
+        // Find the last special pseudo-class marker outside of quoted text
+        const marker = AdgHtmlFilteringParser.findLastSpecialPseudoClassMarker(ctx, startTi, lastTi);
+
+        if (marker === null) {
+            return false;
+        }
+
+        // The raw argument: everything between the opening parenthesis of
+        // the pseudo-class and the last closing parenthesis of the body
+        const argStart = ends[marker.openParenTi];
+        const argEnd = ends[lastTi - 1] - 1;
+
+        // CoreLibs rejects empty arguments
+        if (argEnd <= argStart) {
+            return false;
+        }
+
+        const dataOffset = selectorListDataOffset(ctx);
+
+        // The part of the body before the special pseudo-class must be a
+        // valid selector list; anything else (e.g. unbalanced brackets)
+        // cannot be parsed leniently
+        try {
+            SelectorListParser.parse(
+                ctx,
+                startTi,
+                marker.markerTi,
+                dataOffset,
+                undefined,
+                undefined,
+                true, // isAdg
+            );
+        } catch {
+            return false;
+        }
+
+        const complexCount = SelectorListParser.complexCount(data, dataOffset);
+        if (complexCount === 0) {
+            return false;
+        }
+
+        // The pseudo-class extends the last compound selector of the last
+        // complex selector, e.g. `script` in `script:contains(...)`
+        const complexIdx = complexCount - 1;
+        const complexBase = dataOffset + SL_HEADER_SIZE + complexIdx * COMPLEX_STRIDE;
+        const childCount = data[complexBase + COMPLEX_FIELD_CHILD_COUNT];
+        let childIdx = SelectorListParser.childStartIndex(data, dataOffset, complexIdx) + childCount;
+        let appendedChildren = 0;
+
+        // If the pseudo-class is preceded by whitespace, the whitespace is a
+        // descendant combinator, e.g. `div :has-text(...)`. The prefix parser
+        // drops a trailing descendant space, so the combinator must be
+        // restored explicitly — otherwise the appended pseudo-class would be
+        // glued to the last compound selector, turning `div :has-text(...)`
+        // into `div:contains(...)` with different matching semantics (the
+        // whole `div` would match instead of the matching descendant)
+        if (marker.markerTi > startTi && isCssWhitespace(types[marker.markerTi - 1])) {
+            if (childIdx >= DEFAULT_MAX_CHILDREN) {
+                return false;
+            }
+
+            const wsTi = marker.markerTi - 1;
+            handleCombinator(
+                ctx,
+                wsTi,
+                dataOffset,
+                DEFAULT_MAX_COMPLEX,
+                childIdx,
+                COMBINATOR_DESCENDANT,
+                tokenStart(ctx, wsTi),
+                ends[wsTi],
+            );
+
+            childIdx += 1;
+            appendedChildren += 1;
+        }
+
+        if (childIdx >= DEFAULT_MAX_CHILDREN) {
+            return false;
+        }
+
+        // Write the special pseudo-class child record with the raw argument
+        const base = SelectorListParser.childBase(dataOffset, DEFAULT_MAX_COMPLEX, childIdx);
+
+        data[base + CHILD_FIELD_KIND] = ChildKind.PseudoClassSelector;
+        data[base + CHILD_FIELD_SOURCE_START] = tokenStart(ctx, marker.markerTi);
+        data[base + CHILD_FIELD_SOURCE_END] = ends[lastTi - 1];
+        data[base + CHILD_FIELD_0] = marker.nameStart;
+        data[base + CHILD_FIELD_1] = marker.nameEnd;
+        data[base + CHILD_FIELD_2] = argStart;
+        data[base + CHILD_FIELD_3] = argEnd;
+        data[base + CHILD_FIELD_4] = NO_VALUE;
+        data[base + CHILD_FIELD_5] = NO_VALUE;
+        data[base + CHILD_FIELD_6] = NO_VALUE;
+        data[base + CHILD_FIELD_7] = NO_VALUE;
+
+        appendedChildren += 1;
+
+        // The appended pseudo-class (and the restored combinator, if any)
+        // extends the last complex selector, so the parent ranges must be
+        // extended to cover it — otherwise slicing the complex selector
+        // range would omit the pseudo-class
+        data[complexBase + COMPLEX_FIELD_CHILD_COUNT] = childCount + appendedChildren;
+        data[complexBase + COMPLEX_FIELD_SOURCE_END] = ends[lastTi - 1];
+
+        return true;
+    }
+
+    /**
+     * Finds the last special pseudo-class marker (e.g. `:contains(`) in a
+     * raw HTML filtering rule body, skipping over quoted text, where
+     * marker-like substrings may occur as plain text of an argument or an
+     * attribute value, e.g. the `:has-text(` in `[data-x=":has-text(foo"]`.
+     *
+     * Quote handling:
+     * - both single and double quotes toggle the quoted state;
+     * - an escaped quote (`\"`) is an `Escaped` token, so it does not toggle
+     *   the quoted state;
+     * - a doubled quote (`""`) inside a quoted section is treated as an
+     *   escaped quote (AdGuard escaping convention for `[tag-content]` values).
+     *
+     * @param ctx Parser context.
+     * @param startTi Inclusive token index to start scanning from.
+     * @param endTi Exclusive token index to stop scanning at.
+     *
+     * @returns Last special pseudo-class marker, or `null` if none found.
+     */
+    private static findLastSpecialPseudoClassMarker(
+        ctx: ParserContext,
+        startTi: number,
+        endTi: number,
+    ): SpecialPseudoClassMarker | null {
+        const {
+            types, ends, source, sourceStart,
+        } = ctx;
+
+        let lastMarker: SpecialPseudoClassMarker | null = null;
+        let quote: TokenType.Quote | TokenType.Apostrophe | 0 = 0;
+
+        for (let ti = startTi; ti < endTi; ti += 1) {
+            const tt = types[ti];
+
+            if (quote !== 0) {
+                // A doubled quote is an escaped quote
+                // (AdGuard escaping convention for [tag-content] values)
+                if (tt === quote) {
+                    if (ti + 1 < endTi && types[ti + 1] === quote) {
+                        ti += 1;
+                        continue;
+                    }
+
+                    // Closing quote
+                    quote = 0;
+                }
+
+                continue;
+            }
+
+            if (tt === TokenType.Quote || tt === TokenType.Apostrophe) {
+                quote = tt;
+                continue;
+            }
+
+            if (tt !== TokenType.Colon) {
+                continue;
+            }
+
+            // Check whether the colon starts a special pseudo-class marker
+            const nameTi = ti + 1;
+            if (nameTi >= endTi) {
+                continue;
+            }
+
+            const nameLen = cssIdentSequenceLength(types, nameTi, endTi, source, ends, sourceStart);
+            if (nameLen === 0) {
+                continue;
+            }
+
+            const nameStart = tokenStart(ctx, nameTi);
+            const nameEnd = ends[nameTi + nameLen - 1];
+
+            let isSpecial = false;
+            for (const specialName of SPECIAL_PSEUDO_CLASS_NAMES) {
+                if (regionEquals(source, nameStart, nameEnd, specialName)) {
+                    isSpecial = true;
+                    break;
+                }
+            }
+
+            if (!isSpecial) {
+                continue;
+            }
+
+            const openParenTi = nameTi + nameLen;
+            if (openParenTi >= endTi || types[openParenTi] !== TokenType.OpenParen) {
+                continue;
+            }
+
+            lastMarker = {
+                markerTi: ti,
+                nameStart,
+                nameEnd,
+                openParenTi,
+            };
+        }
+
+        return lastMarker;
     }
 }
 
