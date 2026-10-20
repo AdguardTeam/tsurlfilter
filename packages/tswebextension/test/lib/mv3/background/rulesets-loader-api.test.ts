@@ -621,3 +621,55 @@ describe('TsWebExtension.loadStaticRulesets', () => {
         expect(staticRulesets.map((ruleset) => ruleset.getId())).toEqual([RULESET_ID, LARGE_RULESET_ID]);
     });
 });
+
+describe('TsWebExtension.unloadContentOfUnusedRulesets', () => {
+    /**
+     * Creates and caches the rule sets of the small and the large filter, as
+     * after a configuration which created both of them.
+     *
+     * @returns Cached rule sets, in the same order.
+     */
+    const cacheTwoRulesets = async (): Promise<IRulesetWithSourceMap[]> => {
+        const largeRules = getLargeFilterRules(3000);
+        serveRulesets({
+            [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES),
+            [LARGE_RULESET_ID]: await buildRulesetFile(LARGE_FILTER_ID, largeRules),
+        });
+
+        const rulesetsLoaderApi = new RulesetsLoaderApi(rulesetsPath);
+
+        return Promise.all([
+            rulesetsLoaderApi.createRuleset(RULESET_ID, [createSmallFilter()]),
+            rulesetsLoaderApi.createRuleset(
+                LARGE_RULESET_ID,
+                [new Filter(LARGE_FILTER_ID, largeRules.join('\n'))],
+            ),
+        ]);
+    };
+
+    it('keeps content of rule sets passed to the enabled filtering log', async () => {
+        const [ruleset, disabledRuleset] = await cacheTwoRulesets();
+        const unloadSpy = vi.spyOn(ruleset, 'unloadContent');
+        const disabledUnloadSpy = vi.spyOn(disabledRuleset, 'unloadContent');
+
+        // Only the first rule set reaches the filtering log, the second one
+        // belongs to a filter disabled in the new configuration.
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        TsWebExtension['unloadContentOfUnusedRulesets']([ruleset], true);
+
+        expect(unloadSpy).not.toHaveBeenCalled();
+        expect(disabledUnloadSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('unloads content of all rule sets when the filtering log is disabled', async () => {
+        const [ruleset, disabledRuleset] = await cacheTwoRulesets();
+        const unloadSpy = vi.spyOn(ruleset, 'unloadContent');
+        const disabledUnloadSpy = vi.spyOn(disabledRuleset, 'unloadContent');
+
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        TsWebExtension['unloadContentOfUnusedRulesets']([ruleset], false);
+
+        expect(unloadSpy).toHaveBeenCalledTimes(1);
+        expect(disabledUnloadSpy).toHaveBeenCalledTimes(1);
+    });
+});

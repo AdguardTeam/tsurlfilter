@@ -11,10 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **BREAKING:** `ConfigurationResult.staticFilters` no longer contains rule
-  sets of disabled static filters: they are created later, when their filters
-  are enabled, which keeps the startup critical path short. Consumers that
-  need counters of disabled filters can read them from the rule set metadata.
+- **BREAKING:** `ConfigurationResult.staticFilters` no longer contains
+  rulesets of disabled static filters: they are created later, when their
+  filters are enabled, which keeps the startup critical path short. Consumers
+  that need counters of disabled filters can read them from the ruleset
+  metadata.
 - Updated `@types/webextension-polyfill` to `0.12.6`, which adds Firefox 153+
   `documentId`/`parentDocumentId` support to webNavigation types and renames
   `WebRequest.BlockingResponseOrPromise` to `BlockingResponseOrPromiseOrVoid`;

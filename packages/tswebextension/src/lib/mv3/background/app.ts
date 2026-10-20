@@ -485,21 +485,9 @@ export class TsWebExtension implements AppInterface<
             // metadata on subsequent configure() calls.
             // See: https://bit.int.agrd.dev/projects/ADGUARD-FILTERS/repos/tsurlfilter/pull-requests/1648/overview
 
-            // If declarative log is disabled, also unload content
-            // (sourceMap, declarativeRules, filterList) from all rulesets
-            // since it is only needed for the filtering log.
-            if (!configuration.declarativeLogEnabled) {
-                for (const ruleset of rulesets) {
-                    ruleset.unloadContent();
-                }
-            }
-
-            // Cached rule sets of disabled filters are not part of `rulesets`
-            // anymore, but they may still hold content loaded for the filtering
-            // log; unload it as well. Rule sets passed to the filtering log
-            // keep their content.
-            RulesetsLoaderApi.unloadContentOfDisabledRulesets(
-                new Set(rulesets.map((ruleset) => ruleset.getId())),
+            TsWebExtension.unloadContentOfUnusedRulesets(
+                rulesets,
+                configuration.declarativeLogEnabled,
             );
 
             res.staticFilters = staticRulesets;
@@ -813,6 +801,39 @@ export class TsWebExtension implements AppInterface<
 
             return [];
         }
+    }
+
+    /**
+     * Unloads content (`sourceMap`, `declarativeRules`, `filterList`) of rule
+     * sets which are not in use anymore.
+     *
+     * Content is needed only for the declarative filtering log, so it is
+     * dropped when the log is disabled. Rule sets of disabled filters are not
+     * created during configuration (AG-57686), so they are not part of the
+     * rule sets passed to the log anymore, but their cached content may still
+     * be loaded from a previous configuration; it is unloaded as well.
+     *
+     * @param rulesets Rule sets passed to the declarative filtering log.
+     * @param declarativeLogEnabled Whether the declarative filtering log is
+     * enabled.
+     */
+    private static unloadContentOfUnusedRulesets(
+        rulesets: IRulesetWithSourceMap[],
+        declarativeLogEnabled: boolean,
+    ): void {
+        // Rule sets passed to the filtering log keep their content only while
+        // the log is enabled.
+        if (!declarativeLogEnabled) {
+            for (const ruleset of rulesets) {
+                ruleset.unloadContent();
+            }
+        }
+
+        // Cached rule sets which are not passed to the filtering log are not
+        // read by anything anymore, so they release their content.
+        RulesetsLoaderApi.unloadContentOfDisabledRulesets(
+            new Set(rulesets.map((ruleset) => ruleset.getId())),
+        );
     }
 
     /**
