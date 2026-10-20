@@ -193,7 +193,7 @@ export async function lintMigrated(args) {
     const packageRequire = createRequire(path.join(process.cwd(), 'package.json'));
     let lintCli;
     try {
-        lintCli = packageRequire.resolve('@agcodeguidelines/oxlint-config/dist/lint-cli.js');
+        lintCli = packageRequire.resolve('@agcodeguidelines/oxlint-config/lint-cli');
     } catch {
         lintCli = undefined;
     }
