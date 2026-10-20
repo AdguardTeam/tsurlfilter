@@ -17,6 +17,7 @@
     "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
     "scripts": {
         "lint": "lerna run lint",
+        "lint:code:fast": "lerna run lint:code --concurrency 4",
         "lint:config": "node --test tests/oxlint.test.mjs",
         "bench": "lerna run bench",
         "clean": "node scripts/cleanup.mjs",
