@@ -31,7 +31,10 @@ export function createSyntaxConfig(config = {}) {
         }
         return resolved.target;
     });
-    const rules = Object.fromEntries(Object.keys(preset.rules).map((rule) => [rule, 'off']));
+    // Emit only rules that can report. Oxlint rules default off, and every
+    // preset entry here would be off, so shipping them only costs config
+    // parse and transfer per invocation without changing any diagnostic.
+    const rules = {};
     ownedRules.forEach((source, index) => {
         const setting = config.rules?.[source] ?? 'off';
         const values = Array.isArray(setting) ? setting : [setting];
@@ -42,14 +45,22 @@ export function createSyntaxConfig(config = {}) {
         if (values.length !== 1) {
             throw new Error(`Unverified options for ${source}; retain ESLint ownership`);
         }
+        if (!targets[index].startsWith('ag-compat/')) {
+            throw new Error(`Unverified provider for ${source}; only ag-compat is loaded`);
+        }
         rules[targets[index]] = severity;
     });
     return {
         ...preset,
-        jsPlugins: preset.jsPlugins.map((plugin) => ({
-            ...plugin,
-            specifier: require.resolve(plugin.specifier),
-        })),
+        // Only ag-compat owns enabled rules (the three verified syntax
+        // rules); the other providers load ~100ms of JS startup each for
+        // zero diagnostics. This is what finalizeProviders emits.
+        jsPlugins: preset.jsPlugins
+            .filter((plugin) => (typeof plugin === 'string' ? plugin : plugin.name) === 'ag-compat')
+            .map((plugin) => ({
+                ...plugin,
+                specifier: require.resolve(plugin.specifier),
+            })),
         rules,
         overrides: [],
     };
