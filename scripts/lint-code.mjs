@@ -185,11 +185,27 @@ export async function lintMigrated(args) {
         ? args[args.indexOf('--ignore-path') + 1]
         : undefined;
     const tailRun = tail.lintFiles(targets);
+    // Route the migrated pass through the resource-aware CLI when the
+    // installed SDK provides it, so result caching matches the hybrid
+    // warm lane; otherwise fall back to the raw engine invocation.
+    // Formal T7 showed the uncached migrated warm lane losing to the
+    // cached hybrid; the cache gate restores the win on both lanes.
+    const packageRequire = createRequire(path.join(process.cwd(), 'package.json'));
+    let lintCli;
+    try {
+        lintCli = packageRequire.resolve('@agcodeguidelines/oxlint-config/dist/lint-cli.js');
+    } catch {
+        lintCli = undefined;
+    }
+    const oxlintEntry = lintCli ?? oxlint;
+    const oxlintArgs = lintCli
+        ? ['--cache', '--config', migratedConfig, ...targets]
+        : ['--config', migratedConfig,
+            ...(ignorePath ? ['--ignore-path', ignorePath] : []),
+            ...targets];
     const oxlintRun = new Promise((resolve, reject) => {
         const run = spawnSync(process.execPath, [
-            oxlint, '--config', migratedConfig,
-            ...(ignorePath ? ['--ignore-path', ignorePath] : []),
-            ...targets,
+            oxlintEntry, ...oxlintArgs,
         ], { cwd: process.cwd(), stdio: 'inherit' });
         if (run.error) {
             reject(run.error);
