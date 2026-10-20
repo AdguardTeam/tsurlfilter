@@ -8,12 +8,6 @@ module.exports = { rules: {
     "jsdoc/require-returns-type": [
         "off"
     ],
-    "@typescript-eslint/consistent-type-exports": [
-        "error",
-        {
-            "fixMixedExportsWithInlineTypeSpecifier": true
-        }
-    ],
     "jsdoc/no-undefined-types": [
         "warn"
     ],

@@ -202,6 +202,12 @@
       "fixStyle": "inline-type-imports"
      }
     ],
+    "typescript/consistent-type-exports": [
+     "error",
+     {
+      "fixMixedExportsWithInlineTypeSpecifier": true
+     }
+    ],
     "ag-jsdoc/check-access": [
      "warn"
     ],
@@ -1732,6 +1738,12 @@
      {
       "prefer": "type-imports",
       "fixStyle": "inline-type-imports"
+     }
+    ],
+    "typescript/consistent-type-exports": [
+     "error",
+     {
+      "fixMixedExportsWithInlineTypeSpecifier": true
      }
     ],
     "ag-jsdoc/check-access": [
