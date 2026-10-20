@@ -1,4 +1,7 @@
-/* eslint-disable jsdoc/require-file-overview */
+/**
+ * @file
+ * Rollup configuration for Adguard API library.
+ */
 import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
 import swc from '@rollup/plugin-swc';

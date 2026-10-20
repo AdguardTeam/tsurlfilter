@@ -1,4 +1,7 @@
-/* eslint-disable jsdoc/require-file-overview */
+/**
+ * @file
+ * ESLint package configuration for Adguard API library.
+ */
 const path = require('path');
 
 module.exports = {
