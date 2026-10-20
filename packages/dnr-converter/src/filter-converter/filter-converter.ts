@@ -101,7 +101,6 @@
 
 import { getModifierAliases } from '@adguard/agtree';
 
-import { type DeclarativeRule } from '../declarative-rule';
 import {
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRulesError,
@@ -167,10 +166,24 @@ export class FilterConverter {
      * cannot drift from it.
      */
     private static readonly CSP_RAW_MODIFIER_NAMES = [
-        `$${OPTION_NAMES.CSP}`,
-        `$${OPTION_NAMES.BADFILTER}`,
-        ...getModifierAliases(OPTION_NAMES.CSP).map((name) => `$${name}`),
+        OPTION_NAMES.CSP,
+        OPTION_NAMES.BADFILTER,
+        ...getModifierAliases(OPTION_NAMES.CSP),
     ];
+
+    /**
+     * Matches a CSP-related modifier anywhere in a modifier list.
+     *
+     * A modifier name is looked up right after `$` or `,`, spaces are allowed
+     * after the separator, and the name must be complete: `$csp` and `,csp=`
+     * match, while `$cspreport` does not. The first modifier of a list follows
+     * `$`, so a rule where `csp` is not the first modifier is found as well.
+     */
+    private static readonly CSP_RELATED_MODIFIER_REGEXP = new RegExp(
+        `(?:^|[$,])[ \\t]*(?:${FilterConverter.CSP_RAW_MODIFIER_NAMES
+            .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+            .join('|')})(?![\\w-])`,
+    );
 
     /**
      * Returns the rule set ID for a given filter ID.
@@ -274,8 +287,10 @@ export class FilterConverter {
     /**
      * Converts CSP rules from all provided filters into one ruleset.
      *
-     * Only lines which may contain `$csp` or `$badfilter` rules are parsed,
-     * so the cost does not depend on the filter list size.
+     * Only candidate lines are parsed: a line must contain `csp`, `badfilter`
+     * or a `csp` alias as a modifier. The whole text is still split into lines,
+     * so the cost grows with the list size, while parsing stays proportional to
+     * the number of candidate lines.
      *
      * @param filters Source filters.
      * @param resourcesPath Path to web-accessible resources.
@@ -354,7 +369,7 @@ export class FilterConverter {
      * @returns `true` if the text should be parsed by the CSP pass.
      */
     private static isCspRelatedText(text: string): boolean {
-        return FilterConverter.CSP_RAW_MODIFIER_NAMES.some((name) => text.includes(name));
+        return FilterConverter.CSP_RELATED_MODIFIER_REGEXP.test(text);
     }
 
     /**
@@ -645,7 +660,6 @@ export class FilterConverter {
         const safeRulesCount = declarativeRules.length - unsafeRulesCount;
 
         const regexRulesCount = declarativeRules.filter((r) => RulesConverter.isRegexRule(r)).length;
-        const unsafeRulesFromMetadata: DeclarativeRule[] = [];
 
         const ruleset = new RulesetWithSourceMap(
             rulesetId,
@@ -655,7 +669,7 @@ export class FilterConverter {
             rulesetContent,
             badFilterRules,
             rulesHashMap,
-            unsafeRulesFromMetadata,
+            [],
         );
 
         return {

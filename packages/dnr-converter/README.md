@@ -320,8 +320,10 @@ const [regular] = await converter.convert(filters, {
 const csp = await converter.convertCspRules(filters, '/web-accessible-resources');
 ```
 
-Only lines mentioning `$csp`, `$badfilter`, or a `$csp` alias are parsed, so the
-pass cost does not depend on the list size. Exceptions that cannot be applied —
+Only candidate lines are parsed: a line must contain `csp`, `badfilter` or a
+`csp` alias as a modifier, so `csp` does not have to be the first modifier. The
+whole text is still split into lines, so the cost grows with the list size, while
+parsing stays proportional to the number of candidates. Exceptions that cannot be applied —
 for example path-level subtraction — are reported as conversion errors and
 leave the blocking rule active.
 

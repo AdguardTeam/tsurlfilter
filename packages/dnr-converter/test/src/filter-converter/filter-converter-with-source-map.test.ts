@@ -62,6 +62,30 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(errors).toHaveLength(0);
         });
 
+        it('converts a CSP rule where csp is not the first modifier', async () => {
+            const filter = createFilter([
+                "*$document,csp=script-src-attr 'none'",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('converts a CSP alias rule where the alias is not the first modifier', async () => {
+            const filter = createFilter([
+                '*$document,inline-script',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(errors).toHaveLength(0);
+        });
+
         it('removes a CSP rule negated by a $badfilter rule', async () => {
             const filter = createFilter([
                 "||example.com^$csp=script-src 'none'",
