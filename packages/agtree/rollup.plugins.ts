@@ -7,8 +7,7 @@ import { type Plugin } from 'rollup';
 
 import * as data from './src/compatibility-tables/compatibility-table-data';
 
-// eslint-disable-next-line @typescript-eslint/naming-convention,no-underscore-dangle
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * A Rollup plugin that replaces imports of `compatibility-table-data.ts`
@@ -29,7 +28,7 @@ export function compatibilityTablePlugin(): Plugin {
          * @returns Transformed code or null if no transformation is applied.
          */
         transform(_: string, id: string) {
-            const targetPath = path.resolve(__dirname, 'src', 'compatibility-tables', 'compatibility-table-data.ts');
+            const targetPath = path.resolve(dirname, 'src', 'compatibility-tables', 'compatibility-table-data.ts');
 
             if (id === targetPath) {
                 const transformedCode = `

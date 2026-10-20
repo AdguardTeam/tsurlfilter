@@ -12,10 +12,9 @@ import externals from 'rollup-plugin-node-externals';
 
 import { compatibilityTablePlugin } from './rollup.plugins';
 
-// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const dirname = path.dirname(new URL(import.meta.url).pathname);
 
-const ROOT_DIR = __dirname;
+const ROOT_DIR = dirname;
 const BASE_NAME = 'AGTree';
 const PKG_FILE_NAME = 'package.json';
 
