@@ -12,7 +12,7 @@ import {
 } from 'vitest';
 
 import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../../src/lib/common/message-constants';
-import { extCssInjectedApply, extCssInjectedDispose } from '../../../../src/lib/mv3/background/extcss-apply-fn';
+import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-apply-fn';
 
 // Single file-level cleanup. The jsdom `window` is shared across
 // every test in this file, so a retained `window['__adguardExtCss']` instance
@@ -160,6 +160,40 @@ describe('extCssInjectedApply — navigation cleanup (AC2)', () => {
     });
 });
 
+/**
+ * Stubs `window.MutationObserver` so that its first construction throws.
+ *
+ * The engine creates its style-protection and document observers after the
+ * rules were applied, so a throwing constructor fails the apply synchronously
+ * — after the styles were set, but before the instance is returned. Only the
+ * FIRST construction throws, so a restore apply still succeeds.
+ */
+function stubOneShotThrowingMutationObserver(): void {
+    const RealMutationObserver = window.MutationObserver;
+    let observerConstructions = 0;
+
+    /**
+     * MutationObserver stub that throws on its first construction only.
+     */
+    class OneShotThrowingMutationObserver extends RealMutationObserver {
+        /**
+         * Throws on the first construction, then delegates to the real
+         * observer so the restore path can succeed.
+         *
+         * @param callback Mutation callback.
+         */
+        constructor(callback: MutationCallback) {
+            observerConstructions += 1;
+            if (observerConstructions === 1) {
+                throw new Error('simulated apply failure');
+            }
+            super(callback);
+        }
+    }
+
+    vi.stubGlobal('MutationObserver', OneShotThrowingMutationObserver);
+}
+
 describe('extCssInjectedApply — atomic re-apply', () => {
     it('restores the previous filtering when the new apply throws', () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
@@ -173,35 +207,8 @@ describe('extCssInjectedApply — atomic re-apply', () => {
         // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
         expect(w.__adguardExtCss).toBeTruthy();
 
-        // Force the next apply to throw deterministically. The engine creates
-        // its document MutationObserver at the end of apply() (observeDocument),
-        // so a throwing constructor fails the apply synchronously, after rule
-        // matching but before the instance is returned. Only the FIRST
-        // construction throws, so the restore path (which builds a fresh
-        // instance from the retained rule strings) still succeeds.
-        const RealMutationObserver = window.MutationObserver;
-        let observerConstructions = 0;
-
-        /**
-         * MutationObserver stub that throws on its first construction only.
-         */
-        class OneShotThrowingMutationObserver extends RealMutationObserver {
-            /**
-             * Throws on the first construction, then delegates to the real
-             * observer so the restore path can succeed.
-             *
-             * @param callback Mutation callback.
-             */
-            constructor(callback: MutationCallback) {
-                observerConstructions += 1;
-                if (observerConstructions === 1) {
-                    throw new Error('simulated apply failure');
-                }
-                super(callback);
-            }
-        }
-
-        vi.stubGlobal('MutationObserver', OneShotThrowingMutationObserver);
+        // Force the next apply to throw deterministically.
+        stubOneShotThrowingMutationObserver();
 
         try {
             expect(() => extCssInjectedApply(
@@ -217,6 +224,36 @@ describe('extCssInjectedApply — atomic re-apply', () => {
         // rule strings are re-applied on a fresh instance.
         // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
         expect(w.__adguardExtCss).toBeTruthy();
+        expect(ad.style.getPropertyValue('display')).toBe('none');
+        expect(ad.style.getPropertyPriority('display')).toBe('important');
+    });
+
+    it('reverts the failed apply\'s styles before restoring the previous rule set', () => {
+        document.body.innerHTML = '<div class="ad">ad</div>';
+
+        extCssInjectedApply(['.ad { display: none !important; }'], false, EXTCSS_PROTOCOL);
+
+        const ad = document.querySelector('.ad') as HTMLElement;
+        expect(ad.style.getPropertyValue('display')).toBe('none');
+
+        // The failing apply matches `.ad` and sets `visibility: hidden` before
+        // the observer construction throws.
+        stubOneShotThrowingMutationObserver();
+
+        try {
+            expect(() => extCssInjectedApply(
+                ['.ad { visibility: hidden !important; }'],
+                false,
+                EXTCSS_PROTOCOL,
+            )).toThrow('simulated apply failure');
+        } finally {
+            vi.unstubAllGlobals();
+        }
+
+        // The failed instance is disposed by the inject source, so its style is
+        // reverted instead of becoming the restored instance's `originalStyle`
+        // snapshot.
+        expect(ad.style.getPropertyValue('visibility')).toBe('');
         expect(ad.style.getPropertyValue('display')).toBe('none');
         expect(ad.style.getPropertyPriority('display')).toBe('important');
     });
@@ -240,7 +277,9 @@ describe('extCssInjectedApply — atomic re-apply', () => {
         expect(ad.style.getPropertyValue('visibility')).toBe('hidden');
 
         // Disposing the new instance must not resurrect the old style.
-        extCssInjectedDispose(EXTCSS_PROTOCOL);
+        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
+        const retained = (window as unknown as { __adguardExtCss?: { dispose(): void } | null }).__adguardExtCss;
+        retained?.dispose();
 
         expect(ad.style.getPropertyValue('display')).toBe('');
         expect(ad.style.getPropertyValue('visibility')).toBe('');
@@ -378,13 +417,15 @@ describe('extCssInjectedApply — CSS hits stats', () => {
 
         // A non-default protocol: the injected function must use THESE values
         // (proving nothing is read from module scope or duplicated literals).
-        const customProtocol: ExtCssProtocol = {
+        // The type narrows these fields to the shared literals, so the object is
+        // cast: this test checks the RUNTIME contract of the argument.
+        const customProtocol = {
             markerPrefix: 'custommarker',
             handlerName: 'customHandler',
             messageType: 'customCssHitsType',
             // eslint-disable-next-line no-underscore-dangle -- deliberate test marker key
             instanceKey: '__customExtCss',
-        };
+        } as unknown as ExtCssProtocol;
         const customMarkerRule = '.ad:has(.child) { display: none !important; '
             + 'content: \'custommarker1%3B2\' !important; }';
 
@@ -510,71 +551,5 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         const msg = sendMessageSpy.mock.calls[0][0] as any;
         // The serialized element must escape the " in the data-x value.
         expect(msg.payload[0].element).toBe('<div data-x="a\\"b" class="ad">');
-    });
-});
-
-describe('extCssInjectedDispose — empty transition disposal', () => {
-    it('disposes the previous instance (styles reverted, key cleared)', () => {
-        // First injection: rule hides `.ad:has(.child)`.
-        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
-        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
-        const ad = document.querySelector('.ad') as HTMLElement;
-        expect(ad.style.getPropertyValue('display')).toBe('none');
-
-        // The rule set transitioned from non-empty to empty on a same-document
-        // navigation — the background injects extCssInjectedDispose. The retained
-        // instance must be disposed: its styles are reverted synchronously.
-        extCssInjectedDispose(EXTCSS_PROTOCOL);
-
-        // Old instance's styles reverted → `.ad` is visible again.
-        expect(ad.style.getPropertyValue('display')).toBe('');
-        // The retained-instance key is cleared.
-        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
-        expect((window as unknown as { __adguardExtCss?: unknown }).__adguardExtCss).toBeNull();
-    });
-
-    it('stops the old observer — newly added matching nodes are NOT hidden', async () => {
-        document.body.innerHTML = '';
-        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
-
-        extCssInjectedDispose(EXTCSS_PROTOCOL);
-
-        // Append a matching element after disposal: the (disconnected)
-        // MutationObserver must not hide it.
-        const ad = document.createElement('div');
-        ad.className = 'ad';
-        ad.innerHTML = '<span class="child">ad</span>';
-        document.body.appendChild(ad);
-
-        // Give any (disposed) observer a chance to run.
-        await new Promise((resolve) => { setTimeout(resolve, 250); });
-        expect((ad as HTMLElement).style.getPropertyValue('display')).toBe('');
-    });
-
-    it('is a no-op when no instance is retained', () => {
-        // Must not throw when the window key was never set.
-        expect(() => extCssInjectedDispose(EXTCSS_PROTOCOL)).not.toThrow();
-    });
-
-    it('tolerates a retained instance whose dispose() throws', () => {
-        const w = window as unknown as Record<string, unknown>;
-        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
-        w.__adguardExtCss = {
-            dispose(): void {
-                throw new Error('dispose failed');
-            },
-        };
-
-        expect(() => extCssInjectedDispose(EXTCSS_PROTOCOL)).not.toThrow();
-        // The key is cleared even when dispose() threw.
-        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
-        expect(w.__adguardExtCss).toBeNull();
-    });
-
-    it('is self-contained — the instance key arrives via the protocol argument', () => {
-        const src = String(extCssInjectedDispose);
-        expect(src).toContain('protocol.instanceKey');
-        expect(src).not.toContain('__adguardExtCss');
-        expect(src).not.toContain('EXTCSS_PROTOCOL');
     });
 });

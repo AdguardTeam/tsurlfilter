@@ -5,6 +5,11 @@ import { fileURLToPath } from 'node:url';
 import { type NormalizedOutputOptions, type OutputBundle, type Plugin } from 'rollup';
 import ts from 'typescript';
 
+// NOTE: explicit `.ts` extension is required because Rollup's config bundler
+// resolves exact file paths but does not append the `.ts` extension.
+// eslint-disable-next-line import/extensions -- see NOTE above
+import { assertNoMarkerInBundle } from './marker-integrity.ts';
+
 // NOTE: do NOT use `new URL(rel, import.meta.url)` here — Vite's dev-server
 // transform rewrites that pattern to an `http://localhost` URL under Vitest,
 // breaking `fileURLToPath`. This module is imported directly by the builder
@@ -67,6 +72,14 @@ export const inlineCssHitsHelpers = (): Plugin => {
     return {
         name: 'inline-css-hits-helpers',
 
+        // Watch mode (`pnpm start`) re-runs this hook on every rebuild: drop
+        // the transpiled cache and register the helpers source, otherwise the
+        // first transpiled copy is inlined for the whole session.
+        buildStart(): void {
+            helpers = undefined;
+            this.addWatchFile(HELPERS_PATH);
+        },
+
         transform(code: string, id: string): string | null {
             // The marker call is the contract — no hardcoded owner-module path,
             // so renames/moves don't touch this task. Test files are excluded:
@@ -87,14 +100,7 @@ export const inlineCssHitsHelpers = (): Plugin => {
         // Production-build integrity net: fails the build on an un-inlined
         // marker. Vite dev servers (Vitest) never call this hook.
         generateBundle(_options: NormalizedOutputOptions, bundle: OutputBundle): void {
-            for (const [fileName, item] of Object.entries(bundle)) {
-                if (item.type === 'chunk' && item.code.includes(MARKER_NAME)) {
-                    throw new Error(
-                        `[inline-css-hits-helpers] Un-inlined ${MARKER_NAME} marker in ${fileName}: `
-                        + 'the module containing the marker call was not transformed.',
-                    );
-                }
-            }
+            assertNoMarkerInBundle('inline-css-hits-helpers', MARKER_NAME, bundle);
         },
     };
 };

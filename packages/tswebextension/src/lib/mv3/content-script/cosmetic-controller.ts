@@ -1,5 +1,6 @@
 import { CssHitsCounter } from '../../common/content-script/css-hits-counter';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
+import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
 import { MessageType } from '../../common/message-constants';
 import { validateSelectors } from '../../common/utils/selector-validator';
 import { HIDING_STYLE } from '../../mv2/common/hidden-style';
@@ -64,7 +65,10 @@ export class CosmeticController {
      * such pages.
      */
     private static async process(): Promise<void> {
-        const res = await sendAppMessage({
+        // `sendAppMessage` returns `any`; annotate the awaited response so the
+        // cosmetic-data fields below are checked against the background
+        // contract.
+        const res: ContentScriptCosmeticData | undefined = await sendAppMessage({
             type: MessageType.GetCosmeticData,
             payload: {
                 documentUrl: window.location.href,

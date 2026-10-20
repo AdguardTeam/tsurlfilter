@@ -197,30 +197,3 @@ export const extCssInjectedApply = (
         throw e;
     }
 };
-
-/**
- * Self-contained ExtendedCSS disposal function injected into pages via
- * `chrome.scripting.executeScript({ func, args })` when the rule set
- * transitions from non-empty to empty (or null) on a same-document
- * navigation. Disposes the previously retained ExtendedCss instance (if
- * any): disconnects its MutationObserver and reverts its styles, so stale
- * observers and styles do not leak.
- *
- * Like {@link extCssInjectedApply}, it MUST NOT reference any outer-scope
- * identifier; the instance key arrives via the `protocol` argument.
- *
- * @param protocol Serialized protocol values (see `EXTCSS_PROTOCOL`); only
- * `instanceKey` is used.
- */
-export const extCssInjectedDispose = (protocol: ExtCssProtocol): void => {
-    const w = window as unknown as Record<string, { dispose(): void } | null | undefined>;
-    const previous = w[protocol.instanceKey];
-    if (previous) {
-        try {
-            previous.dispose();
-        } catch {
-            // Ignore disposal errors; the key is cleared regardless.
-        }
-        w[protocol.instanceKey] = null;
-    }
-};

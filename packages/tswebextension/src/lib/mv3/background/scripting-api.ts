@@ -4,7 +4,7 @@ import { type ScriptletData } from '@adguard/tsurlfilter';
 import { EXTCSS_PROTOCOL } from '../../common/message-constants';
 
 import { appContext } from './app-context';
-import { extCssInjectedApply, extCssInjectedDispose } from './extcss-apply-fn';
+import { extCssInjectedApply } from './extcss-apply-fn';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
 
 /**
@@ -340,31 +340,6 @@ export class ScriptingApi {
             { tabId, frameId },
             extCssInjectedApply,
             [cssRules, collectStats, EXTCSS_PROTOCOL],
-        );
-    }
-
-    /**
-     * Disposes the ExtendedCss instance previously retained in the target
-     * frame (if any) by injecting the self-contained
-     * {@link extCssInjectedDispose} function. Called when the matched
-     * ExtendedCSS rule set transitions from non-empty to empty on a
-     * same-document navigation, so the stale instance's MutationObserver and
-     * styles are cleaned up instead of leaking.
-     *
-     * @param params Target parameters.
-     * @param params.tabId The ID of the tab.
-     * @param params.frameId The ID of the frame.
-     *
-     * @returns Promise that resolves when the disposal is executed.
-     */
-    public static async disposeExtCss({
-        tabId,
-        frameId,
-    }: ExecuteTarget): Promise<void> {
-        await ScriptingApi.executeIsolatedFunc(
-            { tabId, frameId },
-            extCssInjectedDispose,
-            [EXTCSS_PROTOCOL],
         );
     }
 }

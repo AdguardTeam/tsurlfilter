@@ -428,17 +428,15 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Injects ExtendedCSS rules into the specified tab and frame directly from
      * the background via the Scripting API.
      *
-     * When there are no matching rules (empty or null), a disposal function
-     * is injected instead: the rule set may have transitioned from non-empty
-     * to empty on a same-document (SPA) navigation, and the previously
-     * retained ExtendedCss instance's observer and styles must be cleaned
-     * up. The disposal is skipped when nothing was applied to the current
-     * document (see {@link FrameMV3.extCssApplied}), so a committed frame
-     * does not pay a guaranteed no-op cross-process call. Errors are caught
-     * and logged, so restricted pages must not disrupt the extension. When
-     * `areHitsStatsCollected` is true, the rules carry hits markers and the
-     * injected func registers a `beforeStyleApplied` callback that reports
-     * hits back to the background.
+     * Nothing is injected when there are no matching rules (empty or null):
+     * the frame context is created for the current document, so no instance
+     * from a previous document can still be retained in the page — the
+     * isolated world is recreated on every navigation.
+     *
+     * Errors are caught and logged, so restricted pages must not disrupt the
+     * extension. When `areHitsStatsCollected` is true, the rules carry hits
+     * markers and the injected func registers a `beforeStyleApplied` callback
+     * that reports hits back to the background.
      *
      * @param frameContext Frame context with the prepared ExtCSS rules.
      *
@@ -453,37 +451,19 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const { extCssRules, areHitsStatsCollected } = preparedCosmeticResult;
 
+        if (!extCssRules || extCssRules.length === 0) {
+            return;
+        }
+
         try {
-            if (!extCssRules || extCssRules.length === 0) {
-                // Nothing was injected into this document, so the disposal
-                // would be a guaranteed no-op cross-process call.
-                if (!frameContext.extCssApplied) {
-                    return;
-                }
-
-                // Dispose the previously retained instance — the rule set
-                // transitioned from non-empty to empty on a same-document
-                // navigation.
-                await ScriptingApi.disposeExtCss({ tabId, frameId });
-
-                // Nothing is retained in the document anymore, so a subsequent
-                // empty commit must not dispose again.
-                frameContext.extCssApplied = false;
-
-                return;
-            }
-
             await ScriptingApi.executeExtCss({
                 tabId,
                 frameId,
                 cssRules: extCssRules,
                 collectStats: areHitsStatsCollected,
             });
-
-            // The instance is now retained in the document's isolated world.
-            frameContext.extCssApplied = true;
         } catch (e) {
-            logger.debug(`[tsweb.CosmeticApi.applyExtCssRules]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
+            logger.info(`[tsweb.CosmeticApi.applyExtCssRules]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
         }
     }
 

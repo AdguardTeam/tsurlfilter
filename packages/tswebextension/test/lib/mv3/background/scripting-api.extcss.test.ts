@@ -7,7 +7,6 @@ import {
 } from 'vitest';
 
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
-import { extCssInjectedDispose } from '../../../../src/lib/mv3/background/extcss-apply-fn';
 import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
 
 describe('ScriptingApi.executeExtCss', () => {
@@ -89,25 +88,6 @@ describe('ScriptingApi.executeExtCss', () => {
             handlerName: 'tsWebExtension',
             messageType: 'saveCssHitsStats',
             instanceKey: '__adguardExtCss',
-        });
-    });
-});
-
-describe('ScriptingApi.disposeExtCss', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
-    it('calls executeScript with the dispose func, protocol arg, ISOLATED world, injectImmediately', async () => {
-        await ScriptingApi.disposeExtCss({ tabId: 1, frameId: 0 });
-
-        expect(chrome.scripting.executeScript).toHaveBeenCalledTimes(1);
-        expect(chrome.scripting.executeScript).toHaveBeenCalledWith({
-            target: { tabId: 1, frameIds: [0] },
-            func: extCssInjectedDispose,
-            args: [EXTCSS_PROTOCOL],
-            injectImmediately: true,
-            world: 'ISOLATED',
         });
     });
 });

@@ -19,8 +19,7 @@ export type PreparedCosmeticResultMV3 = PreparedCosmeticResultCommon & {
     /**
      * ExtendedCSS rule strings (`selector { style }`) to inject directly from
      * the background via `chrome.scripting.executeScript`. `null` when there
-     * are no matching ExtCSS rules, in which case a disposal function is
-     * injected instead to clean up any previously retained instance.
+     * are no matching ExtCSS rules, in which case nothing is injected.
      */
     extCssRules: string[] | null;
 
@@ -78,15 +77,4 @@ export class FrameMV3 extends FrameCommon {
      * and may not be available immediately, but it should be available.
      */
     public preparedCosmeticResult?: PreparedCosmeticResultMV3;
-
-    /**
-     * Whether an ExtendedCSS instance was injected into the current document's
-     * isolated world by the background.
-     *
-     * Needed to avoid a guaranteed no-op cross-process `disposeExtCss` call
-     * for every committed frame of every navigation: the disposal is injected
-     * only if something was actually applied to this document. The flag is
-     * reset naturally, because the frame context is recreated on navigation.
-     */
-    public extCssApplied = false;
 }

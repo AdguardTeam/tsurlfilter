@@ -29,36 +29,37 @@ export enum MessageType {
 
 /**
  * Literal values crossing the `chrome.scripting.executeScript({ func, args })`
- * injection boundary into the self-contained ExtendedCss functions
- * (`extCssInjectedApply` / `extCssInjectedDispose`).
+ * injection boundary into the self-contained ExtendedCss function
+ * (`extCssInjectedApply`).
  *
- * The injected functions are serialized via `toString()` and re-evaluated in
- * the page's ISOLATED world, so they MUST NOT reference module-scope
- * identifiers: every literal they need arrives inside this plain,
+ * The injected function is serialized via `toString()` and re-evaluated in
+ * the page's ISOLATED world, so it MUST NOT reference module-scope
+ * identifiers: every literal it needs arrives inside this plain,
  * JSON-serializable argument object. This keeps the shared constants below
  * the single source of truth — no duplicated protocol literals in the
- * injected function sources.
+ * injected function sources. The fields are typed with the shared literal
+ * types, so a typo in {@link EXTCSS_PROTOCOL} fails the type check instead of
+ * the runtime message validation.
  */
 export type ExtCssProtocol = {
     /**
      * CSS hits marker value prefix read from rule `content` declarations.
      */
-    markerPrefix: string;
+    markerPrefix: typeof CSS_HITS_MARKER_PREFIX;
 
     /**
      * Message handler name used when reporting CSS hits to the background.
      */
-    handlerName: string;
+    handlerName: typeof MESSAGE_HANDLER_NAME;
 
     /**
      * Message type used when reporting CSS hits to the background.
      */
-    messageType: string;
+    messageType: MessageType;
 
     /**
      * `window` key under which the applied ExtendedCss instance is retained
-     * between injections so it can be disposed on re-injection or on
-     * transition to an empty rule set.
+     * between injections so it can be disposed before a re-apply.
      */
     instanceKey: string;
 };

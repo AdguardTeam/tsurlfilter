@@ -38,13 +38,11 @@ const makePrepared = (extCssRules: string[] | null): PreparedCosmeticResultMV3 =
 
 const makeFrameContext = (
     preparedCosmeticResult: PreparedCosmeticResultMV3,
-    extCssApplied = false,
 ): FrameMV3 => ({
     url: 'https://example.com/',
     tabId: 1,
     frameId: 0,
     preparedCosmeticResult,
-    extCssApplied,
 } as FrameMV3);
 
 describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
@@ -52,7 +50,6 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         vi.restoreAllMocks();
         vi.mocked(tabsApi.getFrameContext).mockReset();
         vi.spyOn(ScriptingApi, 'executeExtCss').mockResolvedValue();
-        vi.spyOn(ScriptingApi, 'disposeExtCss').mockResolvedValue();
         vi.spyOn(ScriptingApi, 'insertCSS').mockResolvedValue();
     });
 
@@ -75,19 +72,6 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         });
     });
 
-    it('injects disposeExtCss (not executeExtCss) when the rule set is empty', async () => {
-        // Non-empty → empty transition on a same-document navigation: the
-        // previously retained instance must be disposed so its observer and
-        // styles do not leak.
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared([]), true));
-
-        await CosmeticApi.applyCosmeticRules(1, 0, true);
-
-        expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
-        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledTimes(1);
-        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledWith({ tabId: 1, frameId: 0 });
-    });
-
     it('forwards areHitsStatsCollected from the prepared result to executeExtCss', async () => {
         const rules = ['div:has(.ad) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(
@@ -104,94 +88,20 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         });
     });
 
-    it('injects disposeExtCss (not executeExtCss) when extCssRules is null', async () => {
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(null), true));
+    it('does not inject ExtCSS when the rule set is empty', async () => {
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared([])));
 
         await CosmeticApi.applyCosmeticRules(1, 0, true);
 
         expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
-        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledTimes(1);
-        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledWith({ tabId: 1, frameId: 0 });
     });
 
-    it('does not inject disposeExtCss when nothing was applied to the document', async () => {
-        // The background is stateless about the page, so without the
-        // per-document flag every committed frame would pay a guaranteed
-        // no-op cross-process executeScript.
+    it('does not inject ExtCSS when extCssRules is null', async () => {
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(null)));
 
         await CosmeticApi.applyCosmeticRules(1, 0, true);
 
         expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
-        expect(ScriptingApi.disposeExtCss).not.toHaveBeenCalled();
-    });
-
-    it('marks the frame as applied after injection and disposes on a later empty rule set', async () => {
-        const rules = ['div:has(.ad) { display: none !important; }'];
-        const frameContext = makeFrameContext(makePrepared(rules));
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
-
-        await CosmeticApi.applyCosmeticRules(1, 0, true);
-
-        expect(ScriptingApi.disposeExtCss).not.toHaveBeenCalled();
-        expect(frameContext.extCssApplied).toBe(true);
-
-        // Same document (SPA navigation): the rule set becomes empty.
-        frameContext.preparedCosmeticResult = makePrepared(null);
-        await CosmeticApi.applyCosmeticRules(1, 0, true);
-
-        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledTimes(1);
-        expect(frameContext.extCssApplied).toBe(false);
-    });
-
-    it('does not dispose after a failed injection because nothing was applied', async () => {
-        const rules = ['div:has(.ad) { display: none !important; }'];
-        const frameContext = makeFrameContext(makePrepared(rules));
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
-        vi.mocked(ScriptingApi.executeExtCss).mockRejectedValue(new Error('Cannot access contents of the page'));
-
-        await CosmeticApi.applyCosmeticRules(1, 0, true);
-
-        expect(frameContext.extCssApplied).toBe(false);
-
-        frameContext.preparedCosmeticResult = makePrepared(null);
-        await CosmeticApi.applyCosmeticRules(1, 0, true);
-
-        expect(ScriptingApi.disposeExtCss).not.toHaveBeenCalled();
-    });
-
-    it('disposes at most once for repeated empty commits in the same document', async () => {
-        const frameContext = makeFrameContext(makePrepared([]), true);
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
-
-        await CosmeticApi.applyCosmeticRules(1, 0, true);
-        await CosmeticApi.applyCosmeticRules(1, 0, true);
-
-        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledTimes(1);
-    });
-
-    it('does not inject anything on onResponseStarted (shouldApplyCss=false), even for disposal', async () => {
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(null), true));
-
-        await CosmeticApi.applyCosmeticRules(1, 0, false);
-
-        expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
-        expect(ScriptingApi.disposeExtCss).not.toHaveBeenCalled();
-    });
-
-    it('logs disposeExtCss failures at debug level without throwing', async () => {
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(null), true));
-        const disposalError = new Error('Cannot access contents of the page');
-        vi.mocked(ScriptingApi.disposeExtCss).mockRejectedValue(disposalError);
-        const debugSpy = vi.spyOn(logger, 'debug');
-
-        // Must not throw: applyExtCssRules catches internally.
-        await CosmeticApi.applyCosmeticRules(1, 0, true);
-
-        expect(debugSpy).toHaveBeenCalledWith(
-            expect.stringContaining('[tsweb.CosmeticApi.applyExtCssRules]'),
-            disposalError,
-        );
     });
 
     it('does not inject ExtCSS on onResponseStarted (shouldApplyCss=false)', async () => {
@@ -203,12 +113,12 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
     });
 
-    it('logs scripting-path ExtCSS failures at debug level with no retry or fallback', async () => {
+    it('logs scripting-path ExtCSS failures at info level with no retry or fallback', async () => {
         const rules = ['div:has(.ad) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
         const injectionError = new Error('Cannot access contents of the page');
         vi.mocked(ScriptingApi.executeExtCss).mockRejectedValue(injectionError);
-        const debugSpy = vi.spyOn(logger, 'debug');
+        const infoSpy = vi.spyOn(logger, 'info');
 
         // Must not throw: applyExtCssRules catches internally and applyCosmeticRules
         // uses Promise.allSettled, so no unhandled rejection reaches the worker.
@@ -218,11 +128,12 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         expect(ScriptingApi.executeExtCss).toHaveBeenCalledTimes(1);
         expect(result).toEqual(expect.any(Array));
 
-        // Logged once at debug level with the context-tagged message and the error.
+        // Logged once at info level — the same level as the other injection
+        // failures in this class — with the context-tagged message and the error.
         const expectedMessage = '[tsweb.CosmeticApi.applyExtCssRules]:'
             + ' error occurred during injection into tabId 1 and frameId 0 ';
-        expect(debugSpy).toHaveBeenCalledTimes(1);
-        expect(debugSpy).toHaveBeenCalledWith(
+        expect(infoSpy).toHaveBeenCalledTimes(1);
+        expect(infoSpy).toHaveBeenCalledWith(
             expect.stringContaining(expectedMessage),
             injectionError,
         );

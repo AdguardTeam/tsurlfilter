@@ -14,6 +14,11 @@ import {
 import { minify } from 'terser';
 import ts from 'typescript';
 
+// NOTE: explicit `.ts` extension is required because Rollup's config bundler
+// resolves exact file paths but does not append the `.ts` extension.
+// eslint-disable-next-line import/extensions -- see NOTE above
+import { assertNoMarkerInBundle } from './marker-integrity.ts';
+
 // Entry point of the private injection payload: imports only the public root
 // export of `@adguard/extended-css` — the consumer (this package) owns the
 // IIFE, the library needs no consumer-specific subpaths. The path is declared
@@ -124,7 +129,12 @@ let bundlePromise: Promise<string> | undefined;
  */
 export const getExtCssBundle = (): Promise<string> => {
     if (bundlePromise === undefined) {
-        bundlePromise = buildExtCssBundle();
+        bundlePromise = buildExtCssBundle().catch((e: unknown) => {
+            // Do not cache a rejection: watch mode and repeated runs must be
+            // able to rebuild the payload after a transient failure.
+            bundlePromise = undefined;
+            throw e;
+        });
     }
     return bundlePromise;
 };
@@ -141,7 +151,10 @@ export const inlineExtCssBundle = (): Plugin => ({
 
     // Warm the cache so the async nested build overlaps with the rest of
     // the pipeline; Vite dev servers (Vitest) also await async buildStart hooks.
+    // The entry source is a watch dependency, so a change to the injected
+    // payload rebuilds the bundle in watch mode.
     async buildStart(): Promise<void> {
+        this.addWatchFile(EXT_CSS_INJECT_SRC);
         await getExtCssBundle();
     },
 
@@ -162,13 +175,6 @@ export const inlineExtCssBundle = (): Plugin => ({
     // Production-build integrity net: fails the build on an un-inlined
     // marker. Vite dev servers (Vitest) never call this hook.
     generateBundle(_options: NormalizedOutputOptions, bundle: OutputBundle): void {
-        for (const [fileName, item] of Object.entries(bundle)) {
-            if (item.type === 'chunk' && item.code.includes(MARKER_NAME)) {
-                throw new Error(
-                    `[inline-extcss-bundle] Un-inlined ${MARKER_NAME} marker in ${fileName}: `
-                    + 'the module containing the marker call was not transformed.',
-                );
-            }
-        }
+        assertNoMarkerInBundle('inline-extcss-bundle', MARKER_NAME, bundle);
     },
 });

@@ -22,6 +22,9 @@ import { type ExtCssConfiguration, ExtendedCss, type IAffectedElement } from '@a
  *
  * @returns The applied ExtendedCss instance (retained by the caller for
  * later disposal).
+ *
+ * @throws The original `init()`/`apply()` error, after the partially applied
+ * instance is disposed.
  */
 const applyExtendedCss = (
     cssRules: string[],
@@ -33,8 +36,23 @@ const applyExtendedCss = (
     };
 
     const extendedCss = new ExtendedCss(configuration);
-    extendedCss.init();
-    extendedCss.apply();
+
+    try {
+        extendedCss.init();
+        extendedCss.apply();
+    } catch (e) {
+        // `apply()` can throw after some styles were already set (e.g. when the
+        // document observer cannot be created). The caller never receives the
+        // instance in that case, so it cannot dispose it: revert the partial
+        // apply here, otherwise those styles stay on the page and become the
+        // `originalStyle` snapshot of the instance restored by the caller.
+        try {
+            extendedCss.dispose();
+        } catch {
+            // Ignore disposal errors; the original apply error is what matters.
+        }
+        throw e;
+    }
 
     return extendedCss;
 };

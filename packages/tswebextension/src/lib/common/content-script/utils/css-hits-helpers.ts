@@ -57,7 +57,10 @@ function parseInfo(content: string, attributeMarker: string): RuleInfoBasic | nu
         filterIdAndRuleText = decodeURIComponent(content);
     } catch {
         // A malformed percent-escape must not break cosmetic application:
-        // treat such content as non-matching.
+        // treat such content as non-matching. This guard covers both paths that
+        // use the helper — MV2's `ElementUtils` (runtime import) and MV3's
+        // background-injected `extCssInjectedApply` (build-time inlined) — so
+        // MV2 no longer propagates `URIError` from `decodeURIComponent` here.
         return null;
     }
     // 'content' value may include open and close quotes.
