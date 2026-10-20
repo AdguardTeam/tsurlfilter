@@ -11,7 +11,7 @@ import {
 } from 'vitest';
 
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
-import { applyExtCss } from '../../../../src/lib/mv3/background/extcss-apply-fn';
+import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-apply-fn';
 
 // Large rule set: "hundreds of ExtCSS rules". 500 is well above
 // "hundreds" and exercises the args serialization path heavily.
@@ -27,7 +27,7 @@ const SAFE_PAYLOAD_BYTES = 1024 * 1024;
 // Shared jsdom cleanup (same pattern as extcss-apply-fn.test.ts): dispose the
 // retained instance and reset the DOM between tests.
 afterEach(() => {
-    // eslint-disable-next-line no-underscore-dangle -- marker key inlined into applyExtCss
+    // eslint-disable-next-line no-underscore-dangle -- marker key inlined into extCssInjectedApply
     const handle = (window as unknown as { __adguardExtCss?: { dispose(): void } | null }).__adguardExtCss;
     if (handle) {
         try {
@@ -36,7 +36,7 @@ afterEach(() => {
             // ignore
         }
     }
-    // eslint-disable-next-line no-underscore-dangle -- marker key inlined into applyExtCss
+    // eslint-disable-next-line no-underscore-dangle -- marker key inlined into extCssInjectedApply
     (window as unknown as { __adguardExtCss?: null }).__adguardExtCss = null;
     document.body.innerHTML = '';
 });
@@ -67,7 +67,7 @@ function buildLargeRuleset(): {
     return { rules, sampleSelectors };
 }
 
-describe('applyExtCss — large rule set', () => {
+describe('extCssInjectedApply — large rule set', () => {
     beforeEach(() => {
         document.body.innerHTML = '';
     });
@@ -83,7 +83,7 @@ describe('applyExtCss — large rule set', () => {
             document.body.appendChild(el);
         }
 
-        applyExtCss(rules, false, EXTCSS_PROTOCOL);
+        extCssInjectedApply(rules, false, EXTCSS_PROTOCOL);
 
         for (const cls of sampleSelectors) {
             const el = document.querySelector(`.${cls}`) as HTMLElement;
@@ -96,7 +96,7 @@ describe('applyExtCss — large rule set', () => {
         const { rules } = buildLargeRuleset();
 
         // func payload: exactly what Chrome serializes via Function.toString().
-        const funcBytes = Buffer.byteLength(String(applyExtCss), 'utf8');
+        const funcBytes = Buffer.byteLength(String(extCssInjectedApply), 'utf8');
         // args payload: cssRules (array of strings) + collectStats (boolean)
         // + protocol (small literal object).
         const argsBytes = Buffer.byteLength(

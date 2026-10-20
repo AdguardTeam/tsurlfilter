@@ -4,7 +4,7 @@ import { type ScriptletData } from '@adguard/tsurlfilter';
 import { EXTCSS_PROTOCOL } from '../../common/message-constants';
 
 import { appContext } from './app-context';
-import { applyExtCss, disposeExtCss } from './extcss-apply-fn';
+import { extCssInjectedApply, extCssInjectedDispose } from './extcss-apply-fn';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
 
 /**
@@ -284,16 +284,42 @@ export class ScriptingApi {
     }
 
     /**
+     * Executes a self-contained function in the ISOLATED world of the target
+     * frame via `chrome.scripting.executeScript`.
+     *
+     * @param target Injection target: tab id and frame id.
+     * @param func Self-contained function to serialize and inject.
+     * @param args Arguments passed to the injected function.
+     *
+     * @returns Promise that resolves when the function is executed.
+     */
+    private static async executeIsolatedFunc<Args extends unknown[]>(
+        target: ExecuteTarget,
+        func: (...args: Args) => void,
+        args: Args,
+    ): Promise<void> {
+        await chrome.scripting.executeScript({
+            target: { tabId: target.tabId, frameIds: [target.frameId] },
+            func,
+            args,
+            injectImmediately: true,
+            world: 'ISOLATED',
+        });
+    }
+
+    /**
      * Injects the pre-bundled ExtendedCSS engine and the matching rule strings
      * into the target frame and applies them. Runs in the ISOLATED world
      * (ExtendedCss only needs DOM access; `MutationObserver` in the isolated
      * world observes the same DOM, including page-JS mutations) and injects
      * immediately at `onCommitted` to minimize ad flash.
      *
-     * The `func` is the static, self-contained `applyExtCss` function whose
-     * body contains the inlined `@adguard/extended-css` engine,
-     * so it survives `executeScript` serialization and satisfies the MV3
-     * service-worker CSP (no `eval`/`new Function`).
+     * The `func` is the static, self-contained `extCssInjectedApply` function
+     * whose body contains the inlined `@adguard/extended-css` engine. Inlining
+     * the engine into `func` needs no consumer packaging or configuration
+     * changes and makes the engine + rules a single atomic injection. The
+     * service-worker CSP only forbids runtime code assembly, so a pre-built
+     * `files` injection would satisfy it as well.
      *
      * @param params Parameters for executing ExtendedCSS.
      * @param params.tabId The ID of the tab.
@@ -310,22 +336,20 @@ export class ScriptingApi {
         cssRules,
         collectStats,
     }: ExecuteExtCssParams): Promise<void> {
-        await chrome.scripting.executeScript({
-            target: { tabId, frameIds: [frameId] },
-            func: applyExtCss,
-            args: [cssRules, collectStats, EXTCSS_PROTOCOL],
-            injectImmediately: true,
-            world: 'ISOLATED',
-        });
+        await ScriptingApi.executeIsolatedFunc(
+            { tabId, frameId },
+            extCssInjectedApply,
+            [cssRules, collectStats, EXTCSS_PROTOCOL],
+        );
     }
 
     /**
      * Disposes the ExtendedCss instance previously retained in the target
-     * frame (if any) by injecting the self-contained {@link disposeExtCss}
-     * function. Called when the matched ExtendedCSS rule set transitions
-     * from non-empty to empty on a same-document navigation, so the stale
-     * instance's MutationObserver and styles are cleaned up instead of
-     * leaking.
+     * frame (if any) by injecting the self-contained
+     * {@link extCssInjectedDispose} function. Called when the matched
+     * ExtendedCSS rule set transitions from non-empty to empty on a
+     * same-document navigation, so the stale instance's MutationObserver and
+     * styles are cleaned up instead of leaking.
      *
      * @param params Target parameters.
      * @param params.tabId The ID of the tab.
@@ -337,12 +361,10 @@ export class ScriptingApi {
         tabId,
         frameId,
     }: ExecuteTarget): Promise<void> {
-        await chrome.scripting.executeScript({
-            target: { tabId, frameIds: [frameId] },
-            func: disposeExtCss,
-            args: [EXTCSS_PROTOCOL],
-            injectImmediately: true,
-            world: 'ISOLATED',
-        });
+        await ScriptingApi.executeIsolatedFunc(
+            { tabId, frameId },
+            extCssInjectedDispose,
+            [EXTCSS_PROTOCOL],
+        );
     }
 }

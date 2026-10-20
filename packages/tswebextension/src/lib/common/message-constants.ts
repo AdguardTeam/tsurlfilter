@@ -30,7 +30,7 @@ export enum MessageType {
 /**
  * Literal values crossing the `chrome.scripting.executeScript({ func, args })`
  * injection boundary into the self-contained ExtendedCss functions
- * (`applyExtCss` / `disposeExtCss`).
+ * (`extCssInjectedApply` / `extCssInjectedDispose`).
  *
  * The injected functions are serialized via `toString()` and re-evaluated in
  * the page's ISOLATED world, so they MUST NOT reference module-scope

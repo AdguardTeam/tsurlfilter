@@ -14,6 +14,7 @@ import {
 import { type IAffectedElement } from '@adguard/extended-css';
 
 import applyExtendedCss from '../../../../src/lib/mv3/background/extcss-inject-src';
+import { inlineCssHitsHelpers } from '../../../../tasks/inline-css-hits-helpers';
 import { getExtCssBundle, inlineExtCssBundle } from '../../../../tasks/inline-extcss-bundle';
 
 // `vi.mock` factories are hoisted above top-level `const` declarations, so the
@@ -188,5 +189,58 @@ describe('inline-extcss-bundle builder', () => {
         expect(() => generateBundle({}, {
             'background.js': { type: 'chunk', code: 'var a = 1;' },
         })).not.toThrow();
+    });
+});
+
+describe('inline-css-hits-helpers builder', () => {
+    it('fails the production build if the marker survives into an emitted chunk', () => {
+        const plugin = inlineCssHitsHelpers();
+        const generateBundle = plugin.generateBundle as unknown as (
+            options: unknown,
+            bundle: Record<string, { type: string; code?: string }>,
+        ) => void;
+
+        expect(() => generateBundle({}, {
+            'background.js': { type: 'chunk', code: 'var a = 1; __INLINE_CSS_HITS_HELPERS__();' },
+        })).toThrow(/Un-inlined __INLINE_CSS_HITS_HELPERS__ marker/);
+
+        expect(() => generateBundle({}, {
+            'background.js': { type: 'chunk', code: 'var a = 1;' },
+        })).not.toThrow();
+    });
+
+    it('inlines the marker in any non-test module (the marker call is the contract)', () => {
+        const plugin = inlineCssHitsHelpers();
+        const transform = plugin.transform as unknown as (
+            code: string,
+            id: string,
+        ) => string | null;
+
+        // Deliberately NOT the current owner path: a rename/move of the module
+        // containing the marker call must not silently disable inlining.
+        const inlined = transform(
+            'function applyExtCss() { __INLINE_CSS_HITS_HELPERS__(); }',
+            '/pkg/src/lib/mv3/background/renamed-owner.ts',
+        );
+
+        expect(inlined).not.toBeNull();
+        expect(inlined).not.toMatch(/__INLINE_CSS_HITS_HELPERS__\s*\(\s*\)\s*;/);
+        // The transpiled helpers object is spliced in place of the marker.
+        expect(inlined).toContain('cssHitsHelpers');
+    });
+
+    it('leaves the marker literal in test modules untouched', () => {
+        const plugin = inlineCssHitsHelpers();
+        const transform = plugin.transform as unknown as (
+            code: string,
+            id: string,
+        ) => string | null;
+
+        // Test files embed the marker literal in assertions; rewriting it
+        // would break the very checks that pin the inlining contract.
+        expect(transform(
+            'expect(src).not.toMatch(/__INLINE_CSS_HITS_HELPERS__\\(\\)/);',
+            '/pkg/test/lib/mv3/background/extcss-apply-fn.test.ts',
+        )).toBeNull();
     });
 });

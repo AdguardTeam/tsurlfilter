@@ -111,4 +111,43 @@ describe('CosmeticApi.getContentScriptData (MV3) — native CSS hits stats flag'
 
         expect(result.areHitsStatsCollected).toBe(false);
     });
+
+    it('returns areHitsStatsCollected: true when collectStats is on and the tab context does not exist yet', () => {
+        // Startup race: the tab context may not be created yet, while the app
+        // is already started. A `false` here would be treated as final by the
+        // content script's retry loop, so it would never create its counter.
+        appContextMock.configuration.settings.collectStats = true;
+        getTabContextMock.mockReturnValue(undefined);
+
+        const result = CosmeticApi.getContentScriptData('https://example.com/', 1, 0);
+
+        expect(result.isAppStarted).toBe(true);
+        expect(result.areHitsStatsCollected).toBe(true);
+        // The early return path is taken: no cosmetic matching is performed.
+        expect(result.nativeCssSelectors).toBeNull();
+        expect(matchCosmeticMock).not.toHaveBeenCalled();
+    });
+
+    it('returns areHitsStatsCollected: true when collectStats is on and the tab context has no url yet', () => {
+        appContextMock.configuration.settings.collectStats = true;
+        getTabContextMock.mockReturnValue({
+            info: {},
+            mainFrameRule: null,
+        });
+
+        const result = CosmeticApi.getContentScriptData('https://example.com/', 1, 0);
+
+        expect(result.isAppStarted).toBe(true);
+        expect(result.areHitsStatsCollected).toBe(true);
+    });
+
+    it('returns areHitsStatsCollected: false when collectStats is off and the tab context does not exist yet', () => {
+        appContextMock.configuration.settings.collectStats = false;
+        getTabContextMock.mockReturnValue(undefined);
+
+        const result = CosmeticApi.getContentScriptData('https://example.com/', 1, 0);
+
+        expect(result.isAppStarted).toBe(true);
+        expect(result.areHitsStatsCollected).toBe(false);
+    });
 });

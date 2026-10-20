@@ -1,12 +1,15 @@
-import type { ExtendedCss, IAffectedElement } from '@adguard/extended-css';
+import { type ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
 
+import type { cssHitsHelpers as cssHitsHelpersImpl } from '../../common/content-script/utils/css-hits-helpers';
 import { type ExtCssProtocol } from '../../common/message-constants';
+
+import type applyExtendedCssImpl from './extcss-inject-src';
 
 // Type-only decls for symbols supplied by build-time inlining (see the
 // inlineExtCssBundle plugin). Erased at runtime; they exist only so the source
 // type-checks before the inliner swaps in the real definitions. The
-// `import type` above is likewise erased — it provides the real library
-// types instead of hand-rolled mirrors, without affecting `toString()`
+// `import type` declarations above are likewise erased — they provide the real
+// module types instead of hand-rolled mirrors, without affecting `toString()`
 // serialization.
 // eslint-disable-next-line @typescript-eslint/naming-convention -- build-time marker, replaced by the inliner
 declare function __INLINE_EXTCSS_BUNDLE__(): void;
@@ -25,22 +28,13 @@ declare function __INLINE_CSS_HITS_HELPERS__(): void;
  * Inlined by `__INLINE_CSS_HITS_HELPERS__()` at build time. Type-only decl so
  * the source type-checks before the inliner swaps in the real object.
  */
-declare const cssHitsHelpers: {
-    parseExtendedStyleInfo: (
-        content: string,
-        marker: string,
-    ) => { filterId: number; ruleIndex: number } | null;
-    elementToString: (element: Element) => string;
-};
+declare const cssHitsHelpers: typeof cssHitsHelpersImpl;
 
 /**
  * The apply IIFE entry: returns the applied ExtendedCss instance, accepts an
  * optional beforeStyleApplied callback (for CSS-hits stats).
  */
-declare const applyExtendedCss: (
-    cssRules: string[],
-    beforeStyleApplied?: (el: IAffectedElement) => IAffectedElement,
-) => ExtendedCss;
+declare const applyExtendedCss: typeof applyExtendedCssImpl;
 
 /**
  * Self-contained ExtendedCSS apply function injected into pages via
@@ -56,7 +50,7 @@ declare const applyExtendedCss: (
  * literal (message handler name, message type, marker prefix, instance key)
  * arrives via the `protocol` argument — the shared `EXTCSS_PROTOCOL`
  * constant is the single source of truth. Self-containment is pinned by the
- * `String(applyExtCss)` unit tests.
+ * `String(extCssInjectedApply)` unit tests.
  *
  * @param cssRules ExtendedCSS rule strings to apply to the current document.
  * @param collectStats When true, register a CSS-hits `beforeStyleApplied`
@@ -64,8 +58,11 @@ declare const applyExtendedCss: (
  * @param protocol Serialized protocol values (see `EXTCSS_PROTOCOL`). A
  * required argument (not a module-scope default) so the serialized body has
  * zero free identifiers.
+ *
+ * @throws The error that made the new apply fail, after the previous rule
+ * strings have been re-applied so the page stays protected.
  */
-export const applyExtCss = (
+export const extCssInjectedApply = (
     cssRules: string[],
     collectStats: boolean,
     protocol: ExtCssProtocol,
@@ -80,22 +77,14 @@ export const applyExtCss = (
     // serialization for `chrome.scripting.executeScript({ func })`).
     __INLINE_CSS_HITS_HELPERS__();
 
-    const w = window as unknown as Record<string, ExtendedCss | null | undefined>;
+    /**
+     * Retained ExtendedCss instance together with the rule strings it was
+     * built from. The rule strings are kept so a failed re-apply can rebuild
+     * the previous instance instead of leaving the page unprotected.
+     */
+    type RetainedExtCss = ExtendedCss & { cssRules?: string[] };
 
-    // Dispose the previous instance before applying a new one. dispose()
-    // disconnects the prior MutationObserver and reverts styles, preventing
-    // stale observer/style leaks on same-document (SPA) re-injections (full
-    // page loads tear down the world, so this only matters then). The key
-    // arrives via `protocol` — a module-scope const would be an unresolved
-    // free identifier in the page's ISOLATED world.
-    const previous = w[protocol.instanceKey];
-    if (previous) {
-        try {
-            previous.dispose();
-        } catch {
-            // Ignore disposal errors; the new instance is applied regardless.
-        }
-    }
+    const w = window as unknown as Record<string, RetainedExtCss | null | undefined>;
 
     /**
      * CSS-hits callback. Uses the inlined `cssHitsHelpers` (defined above by
@@ -164,10 +153,49 @@ export const applyExtCss = (
         return el;
     };
 
-    // Retain the new instance so the next call can dispose it.
-    w[protocol.instanceKey] = collectStats
-        ? applyExtendedCss(cssRules, beforeStyleApplied)
-        : applyExtendedCss(cssRules);
+    // Dispose the previous instance BEFORE applying a new one: dispose()
+    // reverts its elements to their pre-ExtCSS `cssText`, so the new instance
+    // snapshots clean `originalStyle` values (a disposal after the apply would
+    // otherwise resurrect the previous instance's inline styles later). Its
+    // rule strings are kept aside and re-applied if the new apply throws, so a
+    // failed apply never leaves the page without ExtendedCSS filtering until
+    // the next navigation. The key arrives via `protocol` — a module-scope
+    // const would be an unresolved free identifier in the page's ISOLATED
+    // world.
+    const previous = w[protocol.instanceKey];
+    const previousRules = previous?.cssRules;
+
+    if (previous) {
+        try {
+            previous.dispose();
+        } catch {
+            // Ignore disposal errors; the new instance is applied regardless.
+        }
+    }
+
+    try {
+        // Retain the new instance, and the rule strings it was built from, so
+        // the next call can dispose it and restore it on failure.
+        const next: RetainedExtCss = collectStats
+            ? applyExtendedCss(cssRules, beforeStyleApplied)
+            : applyExtendedCss(cssRules);
+        next.cssRules = cssRules;
+        w[protocol.instanceKey] = next;
+    } catch (e) {
+        // Rebuild the previous instance from its retained rule strings. No
+        // `beforeStyleApplied` callback is registered on the restored instance
+        // to avoid reporting the same hits twice.
+        if (previousRules && previousRules.length > 0) {
+            try {
+                const restored: RetainedExtCss = applyExtendedCss(previousRules);
+                restored.cssRules = previousRules;
+                w[protocol.instanceKey] = restored;
+            } catch {
+                // Nothing else can be done in the page context.
+            }
+        }
+        throw e;
+    }
 };
 
 /**
@@ -178,13 +206,13 @@ export const applyExtCss = (
  * any): disconnects its MutationObserver and reverts its styles, so stale
  * observers and styles do not leak.
  *
- * Like {@link applyExtCss}, it MUST NOT reference any outer-scope identifier;
- * the instance key arrives via the `protocol` argument.
+ * Like {@link extCssInjectedApply}, it MUST NOT reference any outer-scope
+ * identifier; the instance key arrives via the `protocol` argument.
  *
  * @param protocol Serialized protocol values (see `EXTCSS_PROTOCOL`); only
  * `instanceKey` is used.
  */
-export const disposeExtCss = (protocol: ExtCssProtocol): void => {
+export const extCssInjectedDispose = (protocol: ExtCssProtocol): void => {
     const w = window as unknown as Record<string, { dispose(): void } | null | undefined>;
     const previous = w[protocol.instanceKey];
     if (previous) {

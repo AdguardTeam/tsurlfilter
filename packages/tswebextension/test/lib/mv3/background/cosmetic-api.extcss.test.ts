@@ -10,9 +10,9 @@ import {
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
-import { applyExtCss } from '../../../../src/lib/mv3/background/extcss-apply-fn';
+import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-apply-fn';
 import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
-import { type PreparedCosmeticResultMV3 } from '../../../../src/lib/mv3/tabs/frame';
+import { type FrameMV3, type PreparedCosmeticResultMV3 } from '../../../../src/lib/mv3/tabs/frame';
 import { tabsApi } from '../../../../src/lib/mv3/tabs/tabs-api';
 
 vi.mock('../../../../src/lib/mv3/tabs/tabs-api', () => ({
@@ -36,6 +36,17 @@ const makePrepared = (extCssRules: string[] | null): PreparedCosmeticResultMV3 =
     },
 });
 
+const makeFrameContext = (
+    preparedCosmeticResult: PreparedCosmeticResultMV3,
+    extCssApplied = false,
+): FrameMV3 => ({
+    url: 'https://example.com/',
+    tabId: 1,
+    frameId: 0,
+    preparedCosmeticResult,
+    extCssApplied,
+} as FrameMV3);
+
 describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
@@ -51,10 +62,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
 
     it('injects ExtCSS via executeExtCss when rules exist', async () => {
         const rules = ['div:has(.ad) { display: none !important; }'];
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
-            url: 'https://example.com/',
-            preparedCosmeticResult: makePrepared(rules),
-        } as any);
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
 
         await CosmeticApi.applyCosmeticRules(1, 0, true);
 
@@ -71,10 +79,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         // Non-empty → empty transition on a same-document navigation: the
         // previously retained instance must be disposed so its observer and
         // styles do not leak.
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
-            url: 'https://example.com/',
-            preparedCosmeticResult: makePrepared([]),
-        } as any);
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared([]), true));
 
         await CosmeticApi.applyCosmeticRules(1, 0, true);
 
@@ -85,10 +90,9 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
 
     it('forwards areHitsStatsCollected from the prepared result to executeExtCss', async () => {
         const rules = ['div:has(.ad) { display: none !important; }'];
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
-            url: 'https://example.com/',
-            preparedCosmeticResult: { ...makePrepared(rules), areHitsStatsCollected: true },
-        } as any);
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(
+            { ...makePrepared(rules), areHitsStatsCollected: true },
+        ));
 
         await CosmeticApi.applyCosmeticRules(1, 0, true);
 
@@ -101,10 +105,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
     });
 
     it('injects disposeExtCss (not executeExtCss) when extCssRules is null', async () => {
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
-            url: 'https://example.com/',
-            preparedCosmeticResult: makePrepared(null),
-        } as any);
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(null), true));
 
         await CosmeticApi.applyCosmeticRules(1, 0, true);
 
@@ -113,11 +114,64 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         expect(ScriptingApi.disposeExtCss).toHaveBeenCalledWith({ tabId: 1, frameId: 0 });
     });
 
+    it('does not inject disposeExtCss when nothing was applied to the document', async () => {
+        // The background is stateless about the page, so without the
+        // per-document flag every committed frame would pay a guaranteed
+        // no-op cross-process executeScript.
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(null)));
+
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
+        expect(ScriptingApi.disposeExtCss).not.toHaveBeenCalled();
+    });
+
+    it('marks the frame as applied after injection and disposes on a later empty rule set', async () => {
+        const rules = ['div:has(.ad) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        expect(ScriptingApi.disposeExtCss).not.toHaveBeenCalled();
+        expect(frameContext.extCssApplied).toBe(true);
+
+        // Same document (SPA navigation): the rule set becomes empty.
+        frameContext.preparedCosmeticResult = makePrepared(null);
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledTimes(1);
+        expect(frameContext.extCssApplied).toBe(false);
+    });
+
+    it('does not dispose after a failed injection because nothing was applied', async () => {
+        const rules = ['div:has(.ad) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        vi.mocked(ScriptingApi.executeExtCss).mockRejectedValue(new Error('Cannot access contents of the page'));
+
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        expect(frameContext.extCssApplied).toBe(false);
+
+        frameContext.preparedCosmeticResult = makePrepared(null);
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        expect(ScriptingApi.disposeExtCss).not.toHaveBeenCalled();
+    });
+
+    it('disposes at most once for repeated empty commits in the same document', async () => {
+        const frameContext = makeFrameContext(makePrepared([]), true);
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledTimes(1);
+    });
+
     it('does not inject anything on onResponseStarted (shouldApplyCss=false), even for disposal', async () => {
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
-            url: 'https://example.com/',
-            preparedCosmeticResult: makePrepared(null),
-        } as any);
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(null), true));
 
         await CosmeticApi.applyCosmeticRules(1, 0, false);
 
@@ -126,10 +180,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
     });
 
     it('logs disposeExtCss failures at debug level without throwing', async () => {
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
-            url: 'https://example.com/',
-            preparedCosmeticResult: makePrepared(null),
-        } as any);
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(null), true));
         const disposalError = new Error('Cannot access contents of the page');
         vi.mocked(ScriptingApi.disposeExtCss).mockRejectedValue(disposalError);
         const debugSpy = vi.spyOn(logger, 'debug');
@@ -145,10 +196,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
 
     it('does not inject ExtCSS on onResponseStarted (shouldApplyCss=false)', async () => {
         const rules = ['div:has(.ad) { display: none !important; }'];
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
-            url: 'https://example.com/',
-            preparedCosmeticResult: makePrepared(rules),
-        } as any);
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
 
         await CosmeticApi.applyCosmeticRules(1, 0, false);
 
@@ -157,10 +205,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
 
     it('logs scripting-path ExtCSS failures at debug level with no retry or fallback', async () => {
         const rules = ['div:has(.ad) { display: none !important; }'];
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
-            url: 'https://example.com/',
-            preparedCosmeticResult: makePrepared(rules),
-        } as any);
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
         const injectionError = new Error('Cannot access contents of the page');
         vi.mocked(ScriptingApi.executeExtCss).mockRejectedValue(injectionError);
         const debugSpy = vi.spyOn(logger, 'debug');
@@ -200,17 +245,15 @@ describe('CosmeticApi.applyCosmeticRules — end-to-end in jsdom', () => {
     it('the injected func hides a matching :has() element when executed', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        // Drive the real inlined `applyExtCss` through the injection call shape
-        // that `executeExtCss` would hand to `chrome.scripting.executeScript`.
+        // Drive the real inlined `extCssInjectedApply` through the injection
+        // call shape that `executeExtCss` would hand to
+        // `chrome.scripting.executeScript`.
         vi.spyOn(ScriptingApi, 'executeExtCss').mockImplementation(async (params) => {
-            applyExtCss(params.cssRules, params.collectStats, EXTCSS_PROTOCOL);
+            extCssInjectedApply(params.cssRules, params.collectStats, EXTCSS_PROTOCOL);
         });
 
         const rules = ['.ad:has(.child) { display: none !important; }'];
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
-            url: 'https://example.com/',
-            preparedCosmeticResult: makePrepared(rules),
-        } as any);
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
 
         await CosmeticApi.applyCosmeticRules(1, 0, true);
 

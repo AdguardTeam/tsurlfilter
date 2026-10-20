@@ -5,7 +5,7 @@ import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParam
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl } from '../../common/utils/url';
-import { type PreparedCosmeticResultMV3 } from '../tabs/frame';
+import { type FrameMV3, type PreparedCosmeticResultMV3 } from '../tabs/frame';
 import { tabsApi } from '../tabs/tabs-api';
 
 import { appContext } from './app-context';
@@ -206,17 +206,28 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         data.isAppStarted = isAppStarted;
 
+        // The content script needs this flag to decide whether to create its
+        // native-only CssHitsCounter (it reads the `--adguard-hit` markers
+        // the background adds to native CSS when statistics are enabled).
+        const areHitsStatsCollected = appContext.configuration?.settings.collectStats || false;
+
+        // Compute the flag before the tab context check to avoid a startup
+        // race: while the tab context does not exist yet, the response already
+        // carries `isAppStarted: true`, and a `false` here would be treated as
+        // final by the content script's retry loop, so it would never create
+        // the counter for this document. The allowlist cannot be evaluated
+        // without the tab context, so the counter may be created on an
+        // allowlisted page; it produces no hits there because no markers are
+        // emitted for such pages.
+        data.areHitsStatsCollected = areHitsStatsCollected;
+
         const tabContext = tabsApi.getTabContext(tabId);
 
         if (!tabContext?.info.url) {
             return data;
         }
 
-        // The content script needs this flag to decide whether to create its
-        // native-only CssHitsCounter (it reads the `--adguard-hit` markers
-        // the background adds to native CSS when statistics are enabled).
         // Do not collect hits stats if the website is allowlisted.
-        const areHitsStatsCollected = appContext.configuration?.settings.collectStats || false;
         const isDocumentAllowlisted = !!tabContext.mainFrameRule
             && tabContext.mainFrameRule.isFilteringDisabled();
         data.areHitsStatsCollected = areHitsStatsCollected && !isDocumentAllowlisted;
@@ -421,30 +432,44 @@ export class CosmeticApi extends CosmeticApiCommon {
      * is injected instead: the rule set may have transitioned from non-empty
      * to empty on a same-document (SPA) navigation, and the previously
      * retained ExtendedCss instance's observer and styles must be cleaned
-     * up. Errors are caught and logged, so restricted pages must not disrupt
-     * the extension. When `areHitsStatsCollected` is true, the rules
-     * carry hits markers and the injected func registers a
-     * `beforeStyleApplied` callback that reports hits back to the background.
+     * up. The disposal is skipped when nothing was applied to the current
+     * document (see {@link FrameMV3.extCssApplied}), so a committed frame
+     * does not pay a guaranteed no-op cross-process call. Errors are caught
+     * and logged, so restricted pages must not disrupt the extension. When
+     * `areHitsStatsCollected` is true, the rules carry hits markers and the
+     * injected func registers a `beforeStyleApplied` callback that reports
+     * hits back to the background.
      *
-     * @param tabId Tab id.
-     * @param frameId Frame id.
-     * @param extCssRules ExtendedCSS rule strings, or null when none match.
-     * @param areHitsStatsCollected Whether CSS hits stats collection is enabled.
+     * @param frameContext Frame context with the prepared ExtCSS rules.
      *
      * @returns A promise that resolves when the rules are injected.
      */
-    private static async applyExtCssRules(
-        tabId: number,
-        frameId: number,
-        extCssRules: string[] | null,
-        areHitsStatsCollected: boolean,
-    ): Promise<void> {
+    private static async applyExtCssRules(frameContext: FrameMV3): Promise<void> {
+        const { tabId, frameId, preparedCosmeticResult } = frameContext;
+
+        if (!preparedCosmeticResult) {
+            return;
+        }
+
+        const { extCssRules, areHitsStatsCollected } = preparedCosmeticResult;
+
         try {
             if (!extCssRules || extCssRules.length === 0) {
-                // Dispose any previously retained instance — the rule set
+                // Nothing was injected into this document, so the disposal
+                // would be a guaranteed no-op cross-process call.
+                if (!frameContext.extCssApplied) {
+                    return;
+                }
+
+                // Dispose the previously retained instance — the rule set
                 // transitioned from non-empty to empty on a same-document
                 // navigation.
                 await ScriptingApi.disposeExtCss({ tabId, frameId });
+
+                // Nothing is retained in the document anymore, so a subsequent
+                // empty commit must not dispose again.
+                frameContext.extCssApplied = false;
+
                 return;
             }
 
@@ -454,6 +479,9 @@ export class CosmeticApi extends CosmeticApiCommon {
                 cssRules: extCssRules,
                 collectStats: areHitsStatsCollected,
             });
+
+            // The instance is now retained in the document's isolated world.
+            frameContext.extCssApplied = true;
         } catch (e) {
             logger.debug(`[tsweb.CosmeticApi.applyExtCssRules]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
         }
@@ -566,12 +594,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         if (shouldApplyCss) {
             tasks.push(
                 CosmeticApi.applyCss(tabId, frameId, frameContext.preparedCosmeticResult.cssText),
-                CosmeticApi.applyExtCssRules(
-                    tabId,
-                    frameId,
-                    frameContext.preparedCosmeticResult.extCssRules,
-                    frameContext.preparedCosmeticResult.areHitsStatsCollected,
-                ),
+                CosmeticApi.applyExtCssRules(frameContext),
             );
         }
 

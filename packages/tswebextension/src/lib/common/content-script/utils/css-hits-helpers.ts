@@ -5,7 +5,7 @@ import { type RuleInfoBasic } from '../../rule-info';
  *
  * Used by:
  * - MV2 content-script `ElementUtils` (runtime import — regular ESM).
- * - MV3 background-injected `applyExtCss` (build-time inlined via the
+ * - MV3 background-injected `extCssInjectedApply` (build-time inlined via the
  *   `inlineCssHitsHelpers` Rollup plugin; see
  *   `tasks/inline-css-hits-helpers.ts`).
  *
@@ -52,7 +52,14 @@ function parseInfo(content: string, attributeMarker: string): RuleInfoBasic | nu
         return null;
     }
 
-    let filterIdAndRuleText = decodeURIComponent(content);
+    let filterIdAndRuleText: string;
+    try {
+        filterIdAndRuleText = decodeURIComponent(content);
+    } catch {
+        // A malformed percent-escape must not break cosmetic application:
+        // treat such content as non-matching.
+        return null;
+    }
     // 'content' value may include open and close quotes.
     filterIdAndRuleText = removeQuotes(filterIdAndRuleText);
     // Remove prefix.
@@ -134,7 +141,7 @@ function elementToString(element: Element): string {
  *
  * Exported for MV2 runtime import. For MV3, the entire module body (all
  * function declarations plus this object literal) is transpiled to plain
- * JavaScript and inlined inside `applyExtCss` by the
+ * JavaScript and inlined inside `extCssInjectedApply` by the
  * `inlineCssHitsHelpers` Rollup plugin.
  */
 const cssHitsHelpers = {

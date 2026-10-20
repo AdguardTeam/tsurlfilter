@@ -12,7 +12,7 @@ import {
 } from 'vitest';
 
 import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../../src/lib/common/message-constants';
-import { applyExtCss, disposeExtCss } from '../../../../src/lib/mv3/background/extcss-apply-fn';
+import { extCssInjectedApply, extCssInjectedDispose } from '../../../../src/lib/mv3/background/extcss-apply-fn';
 
 // Single file-level cleanup. The jsdom `window` is shared across
 // every test in this file, so a retained `window['__adguardExtCss']` instance
@@ -34,11 +34,11 @@ afterEach(() => {
     document.body.innerHTML = '';
 });
 
-describe('applyExtCss (inlined bundle)', () => {
+describe('extCssInjectedApply (inlined bundle)', () => {
     it('hides a matching :has() element after being called', () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        applyExtCss(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
@@ -51,7 +51,7 @@ describe('applyExtCss (inlined bundle)', () => {
         // the inlined payload calls `apply()` without `init()`.
         document.body.innerHTML = '<div class="ad">adsbygoogle</div>';
 
-        applyExtCss(['.ad:contains(adsbygoogle) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        extCssInjectedApply(['.ad:contains(adsbygoogle) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
@@ -61,7 +61,7 @@ describe('applyExtCss (inlined bundle)', () => {
     it('does not hide non-matching elements', () => {
         document.body.innerHTML = '<div class="ad"><span class="other">ad</span></div>';
 
-        applyExtCss(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('');
@@ -71,17 +71,17 @@ describe('applyExtCss (inlined bundle)', () => {
         // The inlined IIFE assigns `applyExtendedCss`; ensure the engine code
         // is embedded in the function source so it survives executeScript
         // serialization (closure variables would not).
-        expect(String(applyExtCss)).toContain('applyExtendedCss');
+        expect(String(extCssInjectedApply)).toContain('applyExtendedCss');
     });
 
     it('is self-contained — the instance key arrives via the protocol argument', () => {
-        // applyExtCss is serialized via Function.toString() and re-executed in the
+        // extCssInjectedApply is serialized via Function.toString() and re-executed in the
         // page's ISOLATED world by executeScript({ func }). Any module-scope
         // identifier referenced in the body becomes a free identifier there
         // (ReferenceError, or `undefined`), so the retain/dispose key MUST
         // arrive via the serialized `protocol` argument — not as a body
         // literal duplicated across call sites, and not as a module-scope ref.
-        const src = String(applyExtCss);
+        const src = String(extCssInjectedApply);
         expect(src).toContain('protocol.instanceKey');
         expect(src).not.toContain('__adguardExtCss');
         expect(src).not.toContain('EXTCSS_INSTANCE_KEY');
@@ -94,9 +94,9 @@ describe('applyExtCss (inlined bundle)', () => {
     // be substituted with the matched marker text, corrupting the inlined
     // engine and breaking regex-dependent pseudo-classes.
     it('preserves raw `$&` in the inlined engine source', () => {
-        expect(String(applyExtCss)).toContain('$&');
+        expect(String(extCssInjectedApply)).toContain('$&');
         // The marker call must not survive inlining.
-        expect(String(applyExtCss)).not.toContain('__INLINE_EXTCSS_BUNDLE__');
+        expect(String(extCssInjectedApply)).not.toContain('__INLINE_EXTCSS_BUNDLE__');
     });
 
     it('hides a matching :matches-css() element (exercises escapeRegExp)', () => {
@@ -108,7 +108,11 @@ describe('applyExtCss (inlined bundle)', () => {
         // escaped value becomes garbage and the regex no longer matches.
         document.body.innerHTML = '<div class="ad" style="color: red">ad</div>';
 
-        applyExtCss(['.ad:matches-css(color: rgb(255, 0, 0)) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        extCssInjectedApply(
+            ['.ad:matches-css(color: rgb(255, 0, 0)) { display: none !important; }'],
+            false,
+            EXTCSS_PROTOCOL,
+        );
 
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
@@ -116,18 +120,18 @@ describe('applyExtCss (inlined bundle)', () => {
     });
 });
 
-describe('applyExtCss — navigation cleanup (AC2)', () => {
+describe('extCssInjectedApply — navigation cleanup (AC2)', () => {
     it('disposes the previous instance on re-apply (old styles reverted, old observer stopped)', async () => {
         // First injection: rule A hides `.ad:has(.child)`.
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
-        applyExtCss(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
 
         // Second injection (simulates the next onCommitted re-injection with a
         // different rule set for the new URL). The previous instance must be
         // disposed: its styles are reverted synchronously by dispose().
-        applyExtCss(['.other:has(.x) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        extCssInjectedApply(['.other:has(.x) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         // Old instance's styles reverted → `.ad` is visible again.
         expect(ad.style.getPropertyValue('display')).toBe('');
@@ -156,10 +160,97 @@ describe('applyExtCss — navigation cleanup (AC2)', () => {
     });
 });
 
-describe('applyExtCss — continuous observation (AC1)', () => {
-    it('hides a matching element added dynamically after applyExtCss', async () => {
+describe('extCssInjectedApply — atomic re-apply', () => {
+    it('restores the previous filtering when the new apply throws', () => {
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+
+        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+
+        const ad = document.querySelector('.ad') as HTMLElement;
+        expect(ad.style.getPropertyValue('display')).toBe('none');
+
+        const w = window as unknown as Record<string, unknown>;
+        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
+        expect(w.__adguardExtCss).toBeTruthy();
+
+        // Force the next apply to throw deterministically. The engine creates
+        // its document MutationObserver at the end of apply() (observeDocument),
+        // so a throwing constructor fails the apply synchronously, after rule
+        // matching but before the instance is returned. Only the FIRST
+        // construction throws, so the restore path (which builds a fresh
+        // instance from the retained rule strings) still succeeds.
+        const RealMutationObserver = window.MutationObserver;
+        let observerConstructions = 0;
+
+        /**
+         * MutationObserver stub that throws on its first construction only.
+         */
+        class OneShotThrowingMutationObserver extends RealMutationObserver {
+            /**
+             * Throws on the first construction, then delegates to the real
+             * observer so the restore path can succeed.
+             *
+             * @param callback Mutation callback.
+             */
+            constructor(callback: MutationCallback) {
+                observerConstructions += 1;
+                if (observerConstructions === 1) {
+                    throw new Error('simulated apply failure');
+                }
+                super(callback);
+            }
+        }
+
+        vi.stubGlobal('MutationObserver', OneShotThrowingMutationObserver);
+
+        try {
+            expect(() => extCssInjectedApply(
+                ['.never-matches { display: none !important; }'],
+                false,
+                EXTCSS_PROTOCOL,
+            )).toThrow('simulated apply failure');
+        } finally {
+            vi.unstubAllGlobals();
+        }
+
+        // The failed apply must NOT leave the page unprotected: the previous
+        // rule strings are re-applied on a fresh instance.
+        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
+        expect(w.__adguardExtCss).toBeTruthy();
+        expect(ad.style.getPropertyValue('display')).toBe('none');
+        expect(ad.style.getPropertyPriority('display')).toBe('important');
+    });
+
+    it('snapshots clean original styles across a re-apply (no stale styles after disposal)', () => {
+        document.body.innerHTML = '<div class="ad">ad</div>';
+
+        // First injection: `.ad` is hidden.
+        extCssInjectedApply(['.ad { display: none !important; }'], false, EXTCSS_PROTOCOL);
+
+        const ad = document.querySelector('.ad') as HTMLElement;
+        expect(ad.style.getPropertyValue('display')).toBe('none');
+
+        // Second injection matches the same element with a different property.
+        extCssInjectedApply(['.ad { visibility: hidden !important; }'], false, EXTCSS_PROTOCOL);
+
+        // The previous instance is disposed BEFORE the new one applies, so the
+        // new instance snapshots the element's clean `cssText`: the old style
+        // is gone and only the new style is set.
+        expect(ad.style.getPropertyValue('display')).toBe('');
+        expect(ad.style.getPropertyValue('visibility')).toBe('hidden');
+
+        // Disposing the new instance must not resurrect the old style.
+        extCssInjectedDispose(EXTCSS_PROTOCOL);
+
+        expect(ad.style.getPropertyValue('display')).toBe('');
+        expect(ad.style.getPropertyValue('visibility')).toBe('');
+    });
+});
+
+describe('extCssInjectedApply — continuous observation (AC1)', () => {
+    it('hides a matching element added dynamically after extCssInjectedApply', async () => {
         document.body.innerHTML = '';
-        applyExtCss(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         // Append a matching element after the call.
         const ad = document.createElement('div');
@@ -175,7 +266,7 @@ describe('applyExtCss — continuous observation (AC1)', () => {
     });
 });
 
-describe('applyExtCss — CSS hits stats', () => {
+describe('extCssInjectedApply — CSS hits stats', () => {
     // Rule built with a hits marker: the content value encodes
     // adguard{filterId}%3B{ruleIndex} (the %3B is the URI-encoded ';'
     // separator produced by buildStyleSheetsWithHits).
@@ -196,7 +287,7 @@ describe('applyExtCss — CSS hits stats', () => {
     it('sends a SaveCssHitsStats message when collectStats is on and a rule carries a marker', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        applyExtCss([MARKER_RULE], true, EXTCSS_PROTOCOL);
+        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         // Flush microtasks so the deferred sendMessage (via Promise.resolve().then(...))
         // is recorded by the spy.
@@ -215,7 +306,7 @@ describe('applyExtCss — CSS hits stats', () => {
     });
 
     it('uses .catch() — not try/catch — to swallow the async sendMessage rejection', () => {
-        const src = String(applyExtCss);
+        const src = String(extCssInjectedApply);
         // The fire-and-forget reporter MUST attach .catch(); a synchronous
         // try/catch cannot catch the async rejection from sendMessage in MV3.
         expect(src).toContain('Promise.resolve(');
@@ -238,7 +329,7 @@ describe('applyExtCss — CSS hits stats', () => {
 
         try {
             // Must not throw synchronously; an uncaught throw would fail here.
-            applyExtCss([MARKER_RULE], true, EXTCSS_PROTOCOL);
+            extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
             // Flush microtasks so the rejected sendMessage promise settles and
             // the .catch() handler runs.
@@ -254,13 +345,13 @@ describe('applyExtCss — CSS hits stats', () => {
     it('registers no beforeStyleApplied and sends no message when collectStats is off', () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        applyExtCss(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         expect(sendMessageSpy).not.toHaveBeenCalled();
     });
 
     it('is self-contained — protocol literals arrive via the protocol argument', () => {
-        const src = String(applyExtCss);
+        const src = String(extCssInjectedApply);
         // The hit-bridge protocol values (marker prefix, handler name, message
         // type) MUST arrive via the serialized `protocol` argument — the
         // shared `EXTCSS_PROTOCOL` constant is the single source of truth, so
@@ -298,7 +389,7 @@ describe('applyExtCss — CSS hits stats', () => {
             + 'content: \'custommarker1%3B2\' !important; }';
 
         try {
-            applyExtCss([customMarkerRule], true, customProtocol);
+            extCssInjectedApply([customMarkerRule], true, customProtocol);
 
             // Flush microtasks so the deferred sendMessage is recorded by the spy.
             await new Promise((resolve) => { setTimeout(resolve, 0); });
@@ -335,7 +426,7 @@ describe('applyExtCss — CSS hits stats', () => {
     });
 
     it('inlines the CSS-hits helpers (shared with MV2 ElementUtils) with no external refs', () => {
-        const src = String(applyExtCss);
+        const src = String(extCssInjectedApply);
 
         // The inlined helpers must define cssHitsHelpers locally so the
         // beforeStyleApplied callback can call parseExtendedStyleInfo() and
@@ -366,7 +457,7 @@ describe('applyExtCss — CSS hits stats', () => {
     it('exercises the real beforeStyleApplied IAffectedElement contract { node, rules }', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        applyExtCss([MARKER_RULE], true, EXTCSS_PROTOCOL);
+        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         // Flush microtasks so the deferred sendMessage is recorded by the spy.
         await new Promise((resolve) => { setTimeout(resolve, 0); });
@@ -388,7 +479,7 @@ describe('applyExtCss — CSS hits stats', () => {
     it('does not send duplicate hits (dedup via content clearing)', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        applyExtCss([MARKER_RULE], true, EXTCSS_PROTOCOL);
+        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         // Flush microtasks so the deferred sendMessage is recorded by the spy.
         await new Promise((resolve) => { setTimeout(resolve, 0); });
@@ -410,7 +501,7 @@ describe('applyExtCss — CSS hits stats', () => {
         // Single-quoted HTML attribute value containing a literal "
         document.body.innerHTML = '<div data-x=\'a"b\' class="ad"><span class="child">ad</span></div>';
 
-        applyExtCss([MARKER_RULE], true, EXTCSS_PROTOCOL);
+        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         // Flush microtasks so the deferred sendMessage is recorded by the spy.
         await new Promise((resolve) => { setTimeout(resolve, 0); });
@@ -422,18 +513,18 @@ describe('applyExtCss — CSS hits stats', () => {
     });
 });
 
-describe('disposeExtCss — empty transition disposal', () => {
+describe('extCssInjectedDispose — empty transition disposal', () => {
     it('disposes the previous instance (styles reverted, key cleared)', () => {
         // First injection: rule hides `.ad:has(.child)`.
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
-        applyExtCss(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
 
         // The rule set transitioned from non-empty to empty on a same-document
-        // navigation — the background injects disposeExtCss. The retained
+        // navigation — the background injects extCssInjectedDispose. The retained
         // instance must be disposed: its styles are reverted synchronously.
-        disposeExtCss(EXTCSS_PROTOCOL);
+        extCssInjectedDispose(EXTCSS_PROTOCOL);
 
         // Old instance's styles reverted → `.ad` is visible again.
         expect(ad.style.getPropertyValue('display')).toBe('');
@@ -444,9 +535,9 @@ describe('disposeExtCss — empty transition disposal', () => {
 
     it('stops the old observer — newly added matching nodes are NOT hidden', async () => {
         document.body.innerHTML = '';
-        applyExtCss(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
-        disposeExtCss(EXTCSS_PROTOCOL);
+        extCssInjectedDispose(EXTCSS_PROTOCOL);
 
         // Append a matching element after disposal: the (disconnected)
         // MutationObserver must not hide it.
@@ -462,7 +553,7 @@ describe('disposeExtCss — empty transition disposal', () => {
 
     it('is a no-op when no instance is retained', () => {
         // Must not throw when the window key was never set.
-        expect(() => disposeExtCss(EXTCSS_PROTOCOL)).not.toThrow();
+        expect(() => extCssInjectedDispose(EXTCSS_PROTOCOL)).not.toThrow();
     });
 
     it('tolerates a retained instance whose dispose() throws', () => {
@@ -474,14 +565,14 @@ describe('disposeExtCss — empty transition disposal', () => {
             },
         };
 
-        expect(() => disposeExtCss(EXTCSS_PROTOCOL)).not.toThrow();
+        expect(() => extCssInjectedDispose(EXTCSS_PROTOCOL)).not.toThrow();
         // The key is cleared even when dispose() threw.
         // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
         expect(w.__adguardExtCss).toBeNull();
     });
 
     it('is self-contained — the instance key arrives via the protocol argument', () => {
-        const src = String(disposeExtCss);
+        const src = String(extCssInjectedDispose);
         expect(src).toContain('protocol.instanceKey');
         expect(src).not.toContain('__adguardExtCss');
         expect(src).not.toContain('EXTCSS_PROTOCOL');

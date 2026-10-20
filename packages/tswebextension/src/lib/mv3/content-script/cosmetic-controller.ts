@@ -88,8 +88,9 @@ export class CosmeticController {
         if (res) {
             // Native-only CSS hits counting: reads the `--adguard-hit`
             // custom property from computed styles. Extended-CSS-rule hits
-            // are reported separately by the background-injected `applyExtCss`
-            // callback, so this counter reads ONLY native CSS markers.
+            // are reported separately by the background-injected
+            // `extCssInjectedApply` callback, so this counter reads ONLY
+            // native CSS markers.
             // Created at most once per document — repeated `process()` runs
             // (e.g. after retries or re-init) must not duplicate the counter
             // and its MutationObserver.

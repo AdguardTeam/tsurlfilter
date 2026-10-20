@@ -1,6 +1,6 @@
 import { type IAffectedElement } from '@adguard/extended-css';
 
-import { CSS_HITS_MARKER_PREFIX, SEMICOLON } from '../constants';
+import { CSS_HITS_MARKER_PREFIX, CSS_HITS_MARKER_PROPERTY, SEMICOLON } from '../constants';
 import { type RuleInfoBasic } from '../rule-info';
 
 import { HitsStorage } from './hits-storage';
@@ -90,8 +90,10 @@ export class CssHitsCounter {
 
     /**
      * Custom property carrying the marker (see `CosmeticApiCommon`).
+     *
+     * Alias of the shared {@link CSS_HITS_MARKER_PROPERTY} constant.
      */
-    private static readonly MARKER_PROPERTY_NAME = '--adguard-hit';
+    private static readonly MARKER_PROPERTY_NAME = CSS_HITS_MARKER_PROPERTY;
 
     /**
      * We delay countAllCssHits function if it was called too frequently from mutationObserver.

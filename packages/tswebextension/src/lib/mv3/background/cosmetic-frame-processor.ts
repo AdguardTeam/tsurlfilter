@@ -115,7 +115,8 @@ export class CosmeticFrameProcessor {
         // returns an empty CosmeticResult (zero ExtCSS rules) for allowlisted
         // documents — see getCosmeticOption() → CosmeticOptionNone. With no
         // rules, getExtCssRules() returns null, so applyExtCssRules() injects
-        // nothing and no hit markers are produced regardless of this flag.
+        // only a disposal call (and skips it when nothing was applied to the
+        // document), and no hit markers are produced regardless of this flag.
         // areHitsStatsCollected only controls whether markers are ADDED to
         // rule strings, not which rules are selected.
         const areHitsStatsCollected = appContext.configuration?.settings.collectStats || false;

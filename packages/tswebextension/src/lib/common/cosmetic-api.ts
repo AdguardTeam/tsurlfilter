@@ -1,7 +1,12 @@
 import { CosmeticRuleType } from '@adguard/agtree';
 import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
-import { CSS_HITS_MARKER_PREFIX, LF, SEMICOLON } from './constants';
+import {
+    CSS_HITS_MARKER_PREFIX,
+    CSS_HITS_MARKER_PROPERTY,
+    LF,
+    SEMICOLON,
+} from './constants';
 import { defaultFilteringLog, FilteringEventType } from './filtering-log';
 import { type ContentType } from './request-type';
 import { CssCapabilities } from './utils/css-capabilities';
@@ -149,12 +154,13 @@ export class CosmeticApiCommon {
     protected static readonly ELEMHIDE_BLOCK_END = ' }';
 
     /**
-     * `@property` registration for `--adguard-hit`. Emitted once at the top
-     * of every stylesheet built with hit markers so the property is
-     * non-inheriting and initializes to an empty string on every element.
+     * `@property` registration for the {@link CSS_HITS_MARKER_PROPERTY}
+     * custom property. Emitted once at the top of every stylesheet built with
+     * hit markers so the property is non-inheriting and initializes to an
+     * empty string on every element.
      */
     // eslint-disable-next-line max-len
-    protected static readonly PROPERTY_RULE = "@property --adguard-hit { syntax: '*'; inherits: false; initial-value: ''; }";
+    protected static readonly PROPERTY_RULE = `@property ${CSS_HITS_MARKER_PROPERTY} { syntax: '*'; inherits: false; initial-value: ''; }`;
 
     /**
      * Regular expression used by the legacy ExtendedCss marker to detect
@@ -177,7 +183,7 @@ export class CosmeticApiCommon {
      */
     protected static readonly NATIVE_MARKER: HitMarkerStrategy = {
         preamble: CosmeticApiCommon.PROPERTY_RULE,
-        markerDeclStart: ` --adguard-hit: '${CSS_HITS_MARKER_PREFIX}`,
+        markerDeclStart: ` ${CSS_HITS_MARKER_PROPERTY}: '${CSS_HITS_MARKER_PREFIX}`,
         markerDeclEnd: "' !important;",
         skipInject: (): boolean => false,
     };
