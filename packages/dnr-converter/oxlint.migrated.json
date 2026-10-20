@@ -79,6 +79,12 @@
       "fixStyle": "inline-type-imports"
      }
     ],
+    "typescript/consistent-type-exports": [
+     "error",
+     {
+      "fixMixedExportsWithInlineTypeSpecifier": true
+     }
+    ],
     "ag-newlines/enforce": [
      "error",
      3,
@@ -1799,6 +1805,12 @@
      {
       "prefer": "type-imports",
       "fixStyle": "inline-type-imports"
+     }
+    ],
+    "typescript/consistent-type-exports": [
+     "error",
+     {
+      "fixMixedExportsWithInlineTypeSpecifier": true
      }
     ],
     "ag-newlines/enforce": [
