@@ -29,6 +29,7 @@
  "jsdoc/tag-lines": "off",
  "jsdoc/sort-tags": "off",
  "@typescript-eslint/consistent-type-imports": "off",
+ "@typescript-eslint/consistent-type-exports": "off",
  "jsdoc/check-access": "off",
  "jsdoc/check-alignment": "off",
  "jsdoc/check-examples": "off",

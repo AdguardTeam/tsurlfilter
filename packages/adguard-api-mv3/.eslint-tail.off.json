@@ -20,6 +20,7 @@
  "import/no-cycle": "off",
  "import/export": "off",
  "@typescript-eslint/consistent-type-imports": "off",
+ "@typescript-eslint/consistent-type-exports": "off",
  "jsdoc/tag-lines": "off",
  "jsdoc/require-throws": "off",
  "jsdoc/check-tag-names": "off",

@@ -11,12 +11,6 @@ module.exports = { rules: {
     "jsdoc/require-returns-type": [
         "off"
     ],
-    "@typescript-eslint/consistent-type-exports": [
-        "error",
-        {
-            "fixMixedExportsWithInlineTypeSpecifier": true
-        }
-    ],
     "jsdoc/require-property-type": [
         "warn"
     ],
