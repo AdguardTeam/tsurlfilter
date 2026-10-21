@@ -57,4 +57,37 @@ describe('CspRulesManager', () => {
         expect(result.errors).toHaveLength(1);
         expect(result.dynamicErrors).toHaveLength(0);
     });
+
+    it('reports a parse error of a dynamic CSP rule as a dynamic error', async () => {
+        const dynamicFilter = createFilter([
+            "||example.com^$csp=script-src 'none',removeparam=x",
+        ], 10_000);
+
+        const result = await CspRulesManager.build([], [dynamicFilter]);
+
+        expect(result.errors).toHaveLength(1);
+        expect(result.dynamicErrors).toEqual(result.errors);
+    });
+
+    it('reports a parse error of a dynamic $badfilter rule as a dynamic error', async () => {
+        const dynamicFilter = createFilter([
+            '||example.com^$badfilter,unknown',
+        ], 10_000);
+
+        const result = await CspRulesManager.build([], [dynamicFilter]);
+
+        expect(result.errors).toHaveLength(1);
+        expect(result.dynamicErrors).toEqual(result.errors);
+    });
+
+    it('keeps parse errors of static CSP rules out of dynamic errors', async () => {
+        const staticFilter = createFilter([
+            "||example.com^$csp=script-src 'none',removeparam=x",
+        ], 1);
+
+        const result = await CspRulesManager.build([staticFilter], []);
+
+        expect(result.errors).toHaveLength(1);
+        expect(result.dynamicErrors).toHaveLength(0);
+    });
 });

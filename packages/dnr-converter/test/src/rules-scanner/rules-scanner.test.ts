@@ -12,6 +12,7 @@ import { RuleCategory } from '@adguard/agtree';
 import { FilterListParser } from '@adguard/agtree/parser';
 
 import { MaxScannedRulesError } from '../../../src/errors/limitation-errors/max-scanned-rules-error';
+import { RuleScanError } from '../../../src/errors/scan-errors';
 import { type IFilter } from '../../../src/filter/types';
 import { OPTION_NAMES } from '../../../src/rule/option-names';
 import { Rule } from '../../../src/rule/rule';
@@ -209,16 +210,18 @@ describe('RulesScanner', () => {
 
             const result = await RulesScanner.scanFilters([filter]);
 
-            expect(result).toEqual({
-                errors: [new Error(
-                    `[ParseError] Invalid rule syntax: filter id - 1, line index - 0, line - ${filterRule}`,
-                )],
-                filters: [{
-                    id: 1,
-                    rules: [],
-                    badFilterRules: [],
-                }],
-            });
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors[0]).toBeInstanceOf(RuleScanError);
+            expect(result.errors[0].message).toBe(
+                `[ParseError] Invalid rule syntax: filter id - 1, line index - 0, line - ${filterRule}`,
+            );
+            expect((result.errors[0] as RuleScanError).filterId).toBe(1);
+            expect((result.errors[0] as RuleScanError).lineIndex).toBe(0);
+            expect(result.filters).toEqual([{
+                id: 1,
+                rules: [],
+                badFilterRules: [],
+            }]);
         });
 
         it('should handle Rule creation errors', async () => {
@@ -237,14 +240,15 @@ describe('RulesScanner', () => {
             });
 
             const result = await RulesScanner.scanFilters([filter]);
-            expect(result).toEqual({
-                errors: [new Error('Rule creation failed')],
-                filters: [{
-                    id: 1,
-                    rules: [],
-                    badFilterRules: [],
-                }],
-            });
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors[0]).toBeInstanceOf(RuleScanError);
+            expect(result.errors[0].message).toBe('Rule creation failed');
+            expect((result.errors[0] as RuleScanError).filterId).toBe(1);
+            expect(result.filters).toEqual([{
+                id: 1,
+                rules: [],
+                badFilterRules: [],
+            }]);
         });
 
         it('should skip errors of lines matched by the error line selector', async () => {
@@ -324,7 +328,8 @@ describe('RulesScanner', () => {
                 (line) => line !== filterRule,
             );
 
-            expect(result.errors).toEqual([new Error('Rule creation failed')]);
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors[0].message).toBe('Rule creation failed');
         });
 
         it('should handle unknown errors during Rule creation', async () => {
@@ -345,17 +350,17 @@ describe('RulesScanner', () => {
 
             const result = await RulesScanner.scanFilters([filter]);
 
-            expect(result).toEqual({
-                errors: [new Error(
-                    // eslint-disable-next-line max-len
-                    `Unknown error during creating network rule from raw string: filter id - 1, line index - 0, line - ${filterRule}`,
-                )],
-                filters: [{
-                    id: 1,
-                    rules: [],
-                    badFilterRules: [],
-                }],
-            });
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors[0]).toBeInstanceOf(RuleScanError);
+            expect(result.errors[0].message).toBe(
+                // eslint-disable-next-line max-len
+                `Unknown error during creating network rule from raw string: filter id - 1, line index - 0, line - ${filterRule}`,
+            );
+            expect(result.filters).toEqual([{
+                id: 1,
+                rules: [],
+                badFilterRules: [],
+            }]);
         });
 
         it('should respect maximum number of scanned rules limit', async () => {

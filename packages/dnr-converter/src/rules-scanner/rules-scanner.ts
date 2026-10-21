@@ -2,6 +2,7 @@ import { RuleCategory } from '@adguard/agtree';
 import { FilterListParser, type ParserOptions } from '@adguard/agtree/parser';
 
 import { MaxScannedRulesError } from '../errors/limitation-errors';
+import { RuleScanError } from '../errors/scan-errors';
 import { type IFilter } from '../filter/types';
 import { OPTION_NAMES } from '../rule/option-names';
 import { Rule } from '../rule/rule';
@@ -288,7 +289,7 @@ export class RulesScanner {
                 const msg = `[${name}] ${message}: filter id - ${filterId}, `
                     + `line index - ${index}, line - ${raw}`;
 
-                result.errors.push(new Error(msg));
+                result.errors.push(new RuleScanError(msg, filterId, index));
                 continue;
             }
 
@@ -331,15 +332,13 @@ export class RulesScanner {
         filterId: number,
         index: number,
         raw: string,
-    ): Error {
-        if (error instanceof Error) {
-            return error;
-        }
+    ): RuleScanError {
+        const message = error instanceof Error
+            ? error.message
+            : 'Unknown error during creating network rule from raw string: '
+                + `filter id - ${filterId}, line index - ${index}, line - ${raw}`;
 
-        return new Error(
-            'Unknown error during creating network rule from raw string: '
-            + `filter id - ${filterId}, line index - ${index}, line - ${raw}`,
-        );
+        return new RuleScanError(message, filterId, index, error);
     }
 
     /**

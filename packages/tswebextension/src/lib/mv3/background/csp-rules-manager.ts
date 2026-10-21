@@ -5,6 +5,7 @@ import {
     type IFilter,
     type IRulesetWithSourceMap,
     isConversionError,
+    isRuleScanError,
 } from '@adguard/dnr-converter';
 
 /**
@@ -26,6 +27,9 @@ export type CspRulesResult = Omit<ConversionResult<IRulesetWithSourceMap>, 'limi
 
     /**
      * CSP conversion errors originating from dynamic filters.
+     *
+     * Both kinds of errors are included: a conversion error carries the rule,
+     * while a scan error of a rule which failed to parse carries the filter id.
      */
     dynamicErrors: ConversionResult<IRulesetWithSourceMap>['errors'];
 };
@@ -88,9 +92,13 @@ export class CspRulesManager {
             ...conversionResult,
             staticRules,
             dynamicRules,
-            dynamicErrors: conversionResult.errors.filter((error) => (
-                isConversionError(error) && dynamicFilterIds.has(error.rule.filterListId)
-            )),
+            dynamicErrors: conversionResult.errors.filter((error) => {
+                if (isConversionError(error)) {
+                    return dynamicFilterIds.has(error.rule.filterListId);
+                }
+
+                return isRuleScanError(error) && dynamicFilterIds.has(error.filterId);
+            }),
         };
     }
 }
