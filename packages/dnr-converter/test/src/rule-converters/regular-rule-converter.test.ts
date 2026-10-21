@@ -992,7 +992,7 @@ describe('RuleConverter', () => {
                 isRegexRule: false,
             });
             const condition = RegularRuleConverter.getCondition(rule);
-            expect(condition.urlFilter).toBe('asciiPrepared(example.com/path)');
+            expect(condition.urlFilter).toBe('asciiPrepared(example.com)/path');
         });
 
         it('percent-encodes a non-ASCII suffix in urlFilter', () => {
@@ -1002,6 +1002,51 @@ describe('RuleConverter', () => {
             });
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.urlFilter).toBe('||asciiPrepared(example.com)/%D0%BF%D1%83%D1%82%D1%8C');
+        });
+
+        it('percent-encodes a non-ASCII path in an unanchored pattern', () => {
+            const rule = createRuleMock({
+                pattern: 'example.com/путь',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('asciiPrepared(example.com)/%D0%BF%D1%83%D1%82%D1%8C');
+        });
+
+        it('converts a non-ASCII hostname in an unanchored pattern to punycode', () => {
+            const rule = createRuleMock({
+                pattern: 'пример.рф^',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('asciiPrepared(пример.рф)^');
+        });
+
+        it('converts a non-ASCII hostname after a wildcard subdomain to punycode', () => {
+            const rule = createRuleMock({
+                pattern: '||*.пример.рф^',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('*.asciiPrepared(пример.рф)^');
+        });
+
+        it('converts a non-ASCII hostname after a scheme to punycode', () => {
+            const rule = createRuleMock({
+                pattern: '|https://пример.рф/путь|',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('|https://asciiPrepared(пример.рф)/%D0%BF%D1%83%D1%82%D1%8C|');
+        });
+
+        it('percent-encodes a non-ASCII leading segment without a dot', () => {
+            const rule = createRuleMock({
+                pattern: 'путь^',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('%D0%BF%D1%83%D1%82%D1%8C^');
         });
 
         it('percent-encodes a non-ASCII param name in the $removeparam regexp', () => {
@@ -1035,7 +1080,7 @@ describe('RuleConverter', () => {
                 isRegexRule: false,
             });
             const condition = RegularRuleConverter.getCondition(rule);
-            expect(condition.urlFilter).toBe('asciiPrepared(*example.com/path)');
+            expect(condition.urlFilter).toBe('*asciiPrepared(example.com)/path');
         });
 
         it('correctly specifies regexFilter', () => {

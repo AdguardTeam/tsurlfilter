@@ -224,24 +224,35 @@ export class RegularRuleConverter {
      * percent-encoded: this is how DNR matches it against a request URL. An
      * explicit port belongs to the rest of the pattern, not to the hostname.
      *
+     * The hostname is the leading part of the pattern after an optional domain
+     * anchor, scheme and `*`/`*.` wildcard. A leading part without a dot is
+     * percent-encoded as a path fragment, unless the pattern is anchored to a
+     * domain or a scheme, where the hostname is guaranteed.
+     *
      * @param pattern URL filter pattern.
      *
      * @returns URL filter pattern with non-ASCII characters converted.
      */
     private static prepareUrlFilter(pattern: string): string {
-        if (!pattern.startsWith('||')) {
-            return prepareASCII(pattern);
-        }
+        const domainAnchor = pattern.startsWith('||') ? '||' : '';
+        let rest = pattern.substring(domainAnchor.length);
 
-        const hostAndSuffix = pattern.substring(2);
-        const hostnameEndIndex = hostAndSuffix.search(/[\^/*|?:]/);
-        if (hostnameEndIndex === -1) {
-            return `||${prepareASCII(hostAndSuffix)}`;
-        }
+        const schemeMatch = /^\|?[a-z][a-z0-9+.-]*:\/\//i.exec(rest);
+        const scheme = schemeMatch ? schemeMatch[0] : '';
+        rest = rest.substring(scheme.length);
 
-        const hostname = hostAndSuffix.substring(0, hostnameEndIndex);
-        const suffix = hostAndSuffix.substring(hostnameEndIndex);
-        return `||${prepareASCII(hostname)}${encodeNonAscii(suffix)}`;
+        const wildcardMatch = /^\*\.?/.exec(rest);
+        const wildcard = wildcardMatch ? wildcardMatch[0] : '';
+        rest = rest.substring(wildcard.length);
+
+        const hostnameEndIndex = rest.search(/[\^/*|?:]/);
+        const hostname = hostnameEndIndex === -1 ? rest : rest.substring(0, hostnameEndIndex);
+        const suffix = hostnameEndIndex === -1 ? '' : rest.substring(hostnameEndIndex);
+
+        const isHostname = domainAnchor !== '' || scheme !== '' || hostname.includes('.');
+        const preparedHostname = isHostname ? prepareASCII(hostname) : encodeNonAscii(hostname);
+
+        return `${domainAnchor}${scheme}${wildcard}${preparedHostname}${encodeNonAscii(suffix)}`;
     }
 
     /**

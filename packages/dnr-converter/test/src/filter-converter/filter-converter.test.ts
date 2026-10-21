@@ -91,6 +91,34 @@ describe('FilterConverter', () => {
                 .toBe('||example.com/%D0%BF%D1%83%D1%82%D1%8C');
         });
 
+        it('converts a non-ASCII path of an unanchored pattern to percent-encoding', async () => {
+            const filter = createFilter(['example.com/путь']);
+            const [{ ruleset }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.urlFilter)
+                .toBe('example.com/%D0%BF%D1%83%D1%82%D1%8C');
+        });
+
+        it('converts a non-ASCII hostname of an unanchored pattern to punycode', async () => {
+            const filter = createFilter(['пример.рф^']);
+            const [{ ruleset }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.urlFilter).toBe('xn--e1afmkfd.xn--p1ai^');
+        });
+
+        it('converts a non-ASCII hostname of a wildcard subdomain to punycode', async () => {
+            const filter = createFilter(['||*.пример.рф^']);
+            const [{ ruleset }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.urlFilter).toBe('*.xn--e1afmkfd.xn--p1ai^');
+        });
+
         it('converts value-less $removeparam into a strip-all-query redirect, not a block', async () => {
             const filter = createFilter(['||example.org^$removeparam']);
             const [{ ruleset, errors }] = await converter.convert([filter]);
