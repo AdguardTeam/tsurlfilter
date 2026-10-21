@@ -2,6 +2,7 @@
 export {
     type ConversionError,
     EmptyResourcesError,
+    UnexpectedConversionError,
     UnsupportedModifierError,
     UnsupportedRegexpError,
     InvalidDeclarativeRuleError,
