@@ -59,6 +59,12 @@ type ConfigurationResult = {
          */
         limitations: LimitationError[];
     };
+    /**
+     * Rebuilt CSP rules result.
+     *
+     * `errors` collects conversion errors of CSP rules, including errors of
+     * rules from built-in filters, which are reported nowhere else.
+     */
     cspRules?: Pick<CspRulesResult, 'errors'>;
     /**
      * Dynamic rules conversion result.

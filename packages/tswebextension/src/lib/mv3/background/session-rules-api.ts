@@ -123,6 +123,11 @@ export class SessionRulesApi {
      * do not fit into the browser quotas are omitted and reported as
      * limitations.
      *
+     * Rebuilt CSP rules replace only the CSP rules stored in the rule set
+     * metadata, so rule sets must be built with `exclude-unsafe-rules`:
+     * otherwise the static copy of a CSP rule stays in the rule set and a
+     * `$csp` exception has no effect.
+     *
      * @param enabledStaticRulesets List of enabled static rule sets.
      * @param declarativeRulesToCancel List of declarative rules to cancel
      * (collected from dynamic rules).

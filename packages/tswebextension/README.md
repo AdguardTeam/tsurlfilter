@@ -579,10 +579,18 @@ that **must be checked**:
 - **`dynamicRules.errors`**: Array of conversion errors that occurred
   during dynamic rules conversion (custom filters, user rules,
   allowlist).
+- **`cspRules.errors`**: Array of conversion errors of rebuilt CSP rules,
+  including errors of rules from built-in filters. This is the only place
+  where they are reported.
 - **`limitations`**: Array of limitation errors for dynamic rules omitted
   due to the browser quotas: regular conversion and rebuilt CSP rules.
 - **`sessionRules.limitations`**: Array of limitation errors for session
   rules omitted due to the browser quotas.
+
+Rebuilt CSP rules replace only the CSP rules stored in the rule set metadata,
+so rule sets must be built with `exclude-unsafe-rules` (see
+`@adguard/dnr-rulesets`). Otherwise the static copy of a CSP rule stays in the
+rule set and a `$csp` exception has no effect.
 
 Dynamic rules counters (`dynamicRules.counts`) are final: rebuilt CSP
 rules are already included.
