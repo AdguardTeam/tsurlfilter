@@ -7,7 +7,10 @@ import {
 } from 'vitest';
 
 import { MANIFEST_SCHEMA_VERSION } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
-import { readManifest } from '../../../../../src/lib/mv3/background/preregistered-scripts/manifest-reader';
+import {
+    clearManifestCache,
+    readManifest,
+} from '../../../../../src/lib/mv3/background/preregistered-scripts/manifest-reader';
 
 const SCRIPTS_PATH = 'filters/preregistered-scripts';
 
@@ -35,6 +38,7 @@ const stubManifestFetch = (body: unknown | null): void => {
 describe('readManifest', () => {
     afterEach(() => {
         vi.unstubAllGlobals();
+        clearManifestCache();
     });
 
     it('returns the manifest as-is when the schema version matches', async () => {
@@ -75,5 +79,53 @@ describe('readManifest', () => {
         stubManifestFetch({ hashes: [], scriptletFiles: {} });
 
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('schema version');
+    });
+
+    it('passes an abort signal to fetch, so a hung request cannot stall the sync', async () => {
+        stubManifestFetch({
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: [],
+            scriptletFiles: {},
+        });
+
+        await readManifest(SCRIPTS_PATH);
+
+        const [, init] = vi.mocked(fetch).mock.calls[0];
+        expect(init?.signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('rejects when the fetch is aborted', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => {
+            throw new DOMException('The operation was aborted.', 'AbortError');
+        }));
+
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow();
+    });
+
+    it('parses the manifest once per scripts path', async () => {
+        stubManifestFetch({
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: [],
+            scriptletFiles: {},
+        });
+
+        await readManifest(SCRIPTS_PATH);
+        await readManifest(SCRIPTS_PATH);
+
+        expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not cache a failed read', async () => {
+        stubManifestFetch(null);
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('404');
+
+        const body = {
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: [],
+            scriptletFiles: {},
+        };
+        stubManifestFetch(body);
+
+        await expect(readManifest(SCRIPTS_PATH)).resolves.toEqual(body);
     });
 });

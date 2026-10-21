@@ -14,7 +14,7 @@ import {
 } from './hasher';
 import { getHostnameScriptRules } from './hostname-rule-resolver';
 import { readManifest } from './manifest-reader';
-import { readActiveRegistrations, snapshotBootRegistrations } from './registrations-reader';
+import { deriveCoverage, readActiveRegistrations, snapshotBootRegistrations } from './registrations-reader';
 
 /**
  * Namespace for content script registration. Must be stable across sessions.
@@ -56,14 +56,20 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  * - Documents are judged against the latest reported coverage, not the
  *   registrations they received at `document_start`: after a mid-lifetime
  *   sync, pages loaded before it may skip rules the sync added (missed
- *   execution) or re-run rules it removed (harmless — scriptlets are
+ *   execution) or re-run removed scriptlets (harmless — scriptlets are
  *   idempotent, and the dynamic path does not consult the coordination
- *   set, which `cleanup` deletes before page scripts run). Pre-existing
- *   tabs are judged against the boot snapshot.
+ *   set, which `cleanup` deletes before page scripts run). Re-running a
+ *   removed `#%#` JS rule is not harmless — see Known limitations.
+ *   Pre-existing tabs are judged against the boot snapshot.
  *
  * Known limitations:
  * - Scriptlet executions are deduped by rule hash, unlike the dynamic
  *   path — both paths rely on scriptlets being idempotent.
+ * - A page that started before a sync removed a `#%#` JS rule can execute
+ *   it twice: the preregistered file already ran it, and the dynamic path
+ *   runs it again because the coordination set dedupes only within one
+ *   registration execution and `cleanup` deletes it before page scripts
+ *   run. Arbitrary JS is not idempotent.
  * - `$url`-modified rules are never preregistered (the engine is queried
  *   per hostname root) and stay on the dynamic injection path.
  * - `$document`/`$jsinject` exceptions below the root path (e.g.
@@ -152,6 +158,7 @@ export class PreregisteredScriptsService {
     private static async clearRegistrations(): Promise<void> {
         try {
             await ContentScriptManager.clear(PREREGISTERED_SCRIPTS_NAMESPACE);
+            appContext.preregisteredScriptsKey = undefined;
             appContext.preregisteredScriptRules = new Map();
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.clearRegistrations]: Failed to clear preregistered scripts', e);
@@ -228,9 +235,10 @@ export class PreregisteredScriptsService {
      * rejects when clearing fails.
      */
     private static clear(): Promise<void> {
-        return PreregisteredScriptsService.enqueue(
-            () => ContentScriptManager.clear(PREREGISTERED_SCRIPTS_NAMESPACE),
-        );
+        return PreregisteredScriptsService.enqueue(async () => {
+            await ContentScriptManager.clear(PREREGISTERED_SCRIPTS_NAMESPACE);
+            appContext.preregisteredScriptsKey = undefined;
+        });
     }
 
     /**
@@ -247,6 +255,18 @@ export class PreregisteredScriptsService {
         return appContext.preregisteredScriptRules
             ?? appContext.preregisteredScriptRulesAtBoot
             ?? new Map();
+    }
+
+    /**
+     * Builds a stable key for a descriptor set; the registry order is
+     * irrelevant, so the descriptors are sorted by id.
+     *
+     * @param scripts Content-script descriptors.
+     *
+     * @returns Serializable descriptor-set key.
+     */
+    private static getScriptsKey(scripts: ContentScriptDescriptor[]): string {
+        return JSON.stringify([...scripts].sort((a, b) => a.id.localeCompare(b.id)));
     }
 
     /**
@@ -307,11 +327,11 @@ export class PreregisteredScriptsService {
     ): Promise<Map<string, Set<string>>> {
         const hostnames = expandHostnames(domains);
 
-        // Sync attempt. A failure here leaves the previous registrations
-        // active, so the last published coverage still describes them.
-        try {
-            let scripts: ContentScriptDescriptor[] = [];
+        // A failure here leaves the previous registrations active, so the
+        // last published coverage still describes them.
+        let scripts: ContentScriptDescriptor[] = [];
 
+        try {
             if (preregistrationEnabled && hostnames.length > 0) {
                 const manifest = await readManifest(scriptsPath);
                 scripts = await PreregisteredScriptsService.buildDomainScripts(
@@ -321,7 +341,20 @@ export class PreregisteredScriptsService {
                 );
             }
 
-            await ContentScriptManager.sync(PREREGISTERED_SCRIPTS_NAMESPACE, scripts);
+            const scriptsKey = PreregisteredScriptsService.getScriptsKey(scripts);
+
+            if (scriptsKey === appContext.preregisteredScriptsKey) {
+                logger.debug('[tsweb.PreregisteredScriptsService.doSync]: Descriptors unchanged, skipping the sync');
+            } else {
+                const { errors } = await ContentScriptManager.sync(
+                    PREREGISTERED_SCRIPTS_NAMESPACE,
+                    scripts,
+                );
+
+                appContext.preregisteredScriptsKey = errors.length === 0
+                    ? scriptsKey
+                    : undefined;
+            }
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.doSync]: Sync failed, keeping the previous coverage', e);
 
@@ -332,15 +365,16 @@ export class PreregisteredScriptsService {
         }
 
         // Report exactly what is registered, not what the sync attempted:
-        // failed updates leave the previous registration active, and the
-        // boot snapshot only describes pre-existing documents.
-        // A read failure is different from a sync failure — the
-        // registrations were already replaced, so the last published
-        // coverage no longer matches what is active. Fail safe to empty
-        // coverage: dynamic injection then re-runs everything, which is
-        // harmless, instead of suppressing rules that have no registration.
+        // after a partial failure the browser still holds the previous
+        // registration, so the built descriptors may not describe the
+        // active set. A read failure means the registrations were already
+        // replaced, so fail safe to empty coverage: dynamic injection then
+        // re-runs everything instead of suppressing rules that have no
+        // registration.
         try {
-            const coveredRules = await readActiveRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE);
+            const coveredRules = appContext.preregisteredScriptsKey === undefined
+                ? await readActiveRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE)
+                : deriveCoverage(scripts);
             appContext.preregisteredScriptRules = coveredRules;
 
             logger.info(`[tsweb.PreregisteredScriptsService.doSync]: Synced preregistered scripts: ${coveredRules.size}/${hostnames.length} hostnames covered`);

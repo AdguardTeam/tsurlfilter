@@ -9,7 +9,6 @@ import {
     getRuleFilename,
     getRuleHashFromFilePath,
     hashString,
-    normalizeDomain,
     SHARED_BUNDLE_FILENAME,
 } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
 
@@ -224,48 +223,5 @@ describe('getRuleHashFromFilePath', () => {
         expect(getRuleHashFromFilePath('dir/deadbeefdeadbeef0.js')).toBeNull();
         expect(getRuleHashFromFilePath('dir/DEADBEEFDEADBEEF.js')).toBeNull();
         expect(getRuleHashFromFilePath('dir/zzzzzzzzzzzzzzzz.js')).toBeNull();
-    });
-});
-
-describe('normalizeDomain', () => {
-    it('lower-cases the domain', () => {
-        expect(normalizeDomain('YouTube.com')).toBe('youtube.com');
-    });
-
-    it('trims surrounding whitespace', () => {
-        expect(normalizeDomain('  youtube.com  ')).toBe('youtube.com');
-    });
-
-    it('strips leading and trailing dots', () => {
-        expect(normalizeDomain('.youtube.com.')).toBe('youtube.com');
-    });
-
-    it('keeps a leading www prefix (apex and www are distinct hosts)', () => {
-        expect(normalizeDomain('www.youtube.com')).toBe('www.youtube.com');
-    });
-
-    it('combines all normalizations at once', () => {
-        expect(normalizeDomain('  .WWW.YouTube.Com. ')).toBe('www.youtube.com');
-    });
-
-    it('leaves an already-normalized domain unchanged', () => {
-        expect(normalizeDomain('youtube.com')).toBe('youtube.com');
-    });
-
-    it('canonicalizes a non-ASCII domain to punycode', () => {
-        // A raw IDN key would never match a browser-reported (punycode) hostname.
-        expect(normalizeDomain('пример.рф')).toBe('xn--e1afmkfd.xn--p1ai');
-    });
-
-    it('canonicalizes a non-ASCII www alias', () => {
-        expect(normalizeDomain('WWW.Пример.РФ')).toBe('www.xn--e1afmkfd.xn--p1ai');
-    });
-
-    it('leaves an already-punycoded domain unchanged', () => {
-        expect(normalizeDomain('xn--e1afmkfd.xn--p1ai')).toBe('xn--e1afmkfd.xn--p1ai');
-    });
-
-    it('falls back to best-effort normalization for an unparseable domain', () => {
-        expect(normalizeDomain('  not a domain  ')).toBe('not a domain');
     });
 });

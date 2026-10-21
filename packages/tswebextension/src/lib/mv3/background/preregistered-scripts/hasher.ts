@@ -1,5 +1,7 @@
 import { type CosmeticRule } from '@adguard/tsurlfilter';
 
+import { normalizeDomain } from '../../../common/utils/url';
+
 /**
  * Coordination key: the `window` property name shared by the shared bundle,
  * per-rule files and the cleanup file.
@@ -215,28 +217,6 @@ export const computeRuleHashCached = (rule: CosmeticRule): Promise<string> => {
     }
 
     return cached;
-};
-
-/**
- * Normalizes a domain string for comparison: trims whitespace, lower-cases
- * it, strips leading/trailing dots and canonicalizes non-ASCII hosts to
- * punycode — the form browsers report in `URL.hostname`. The `www.` prefix
- * is NOT stripped: content-script match patterns are exact-host, so apex
- * and `www.` are distinct registrations.
- *
- * @param domain Raw domain string.
- *
- * @returns Normalized domain string.
- */
-export const normalizeDomain = (domain: string): string => {
-    const normalized = domain.trim().toLowerCase().replace(/^\.+|\.+$/g, '');
-
-    try {
-        return new URL(`http://${normalized}`).hostname;
-    } catch {
-        // Not a parseable host.
-        return normalized;
-    }
 };
 
 /**

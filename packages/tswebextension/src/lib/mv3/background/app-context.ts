@@ -71,6 +71,13 @@ export class AppContext {
      * dynamic injection) and which are not (inject dynamically).
      */
     public preregisteredScriptRulesAtBoot?: Map<string, Set<string>>;
+
+    /**
+     * Descriptor-set key of the last successful preregistered sync: when
+     * the next sync builds the same set, the browser-side diff and
+     * scripting calls are skipped. Plain (non-persisted) field.
+     */
+    public preregisteredScriptsKey?: string;
 }
 
 export const appContext = new AppContext();

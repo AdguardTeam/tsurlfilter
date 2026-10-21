@@ -1,6 +1,26 @@
 import { MANIFEST_FILENAME, MANIFEST_SCHEMA_VERSION, type PreregisteredScriptsManifest } from './hasher';
 
 /**
+ * Timeout for fetching the build-time manifest. It is a local package file,
+ * so a hanging request means the worker is stuck, not slow.
+ */
+const MANIFEST_FETCH_TIMEOUT_MS = 5000;
+
+/**
+ * Parsed manifests per scripts path. Artifacts are immutable for the
+ * lifetime of an extension version, so a service worker can reuse the
+ * parsed manifest across syncs instead of refetching it.
+ */
+const manifestCache = new Map<string, PreregisteredScriptsManifest>();
+
+/**
+ * Clears the parsed manifest cache. Intended for tests.
+ */
+export const clearManifestCache = (): void => {
+    manifestCache.clear();
+};
+
+/**
  * Fetches the build-time manifest shipped next to the artifacts. It lists
  * the rule hashes with matching generated files and the scriptlet name →
  * function-file map.
@@ -15,12 +35,17 @@ import { MANIFEST_FILENAME, MANIFEST_SCHEMA_VERSION, type PreregisteredScriptsMa
  *
  * @returns Parsed manifest.
  *
- * @throws If the manifest cannot be fetched or has an unexpected schema
- * version.
+ * @throws If the manifest cannot be fetched, the fetch times out, or the
+ * manifest has an unexpected schema version.
  */
 export const readManifest = async (scriptsPath: string): Promise<PreregisteredScriptsManifest> => {
+    const cached = manifestCache.get(scriptsPath);
+    if (cached) {
+        return cached;
+    }
+
     const url = chrome.runtime.getURL(`${scriptsPath}/${MANIFEST_FILENAME}`);
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(MANIFEST_FETCH_TIMEOUT_MS) });
 
     if (!response.ok) {
         throw new Error(`Failed to fetch the manifest at ${url} (status ${response.status})`);
@@ -31,6 +56,8 @@ export const readManifest = async (scriptsPath: string): Promise<PreregisteredSc
     if (manifest.schemaVersion !== MANIFEST_SCHEMA_VERSION) {
         throw new Error(`Unsupported manifest schema version ${manifest.schemaVersion} at ${url}`);
     }
+
+    manifestCache.set(scriptsPath, manifest);
 
     return manifest;
 };

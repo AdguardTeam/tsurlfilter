@@ -1,8 +1,35 @@
 import { logger } from '../../../common/utils/logger';
 import { appContext } from '../app-context';
-import { ContentScriptManager } from '../content-script-manager';
+import { type ContentScriptDescriptor, ContentScriptManager } from '../content-script-manager';
 
 import { getRuleHashFromFilePath } from './hasher';
+
+/**
+ * Derives the covered rule hashes per hostname from content-script
+ * descriptors, ignoring non-rule files (shared bundle, per-function
+ * `s-*.js`, cleanup).
+ *
+ * @param descriptors Content-script descriptors.
+ *
+ * @returns Hostname → covered hashes map.
+ */
+export const deriveCoverage = (
+    descriptors: ContentScriptDescriptor[],
+): Map<string, Set<string>> => {
+    const coverage = new Map<string, Set<string>>();
+    for (const descriptor of descriptors) {
+        const hashes = new Set<string>();
+        for (const filePath of descriptor.js ?? []) {
+            const hash = getRuleHashFromFilePath(filePath);
+            if (hash) {
+                hashes.add(hash);
+            }
+        }
+        coverage.set(descriptor.id, hashes);
+    }
+
+    return coverage;
+};
 
 /**
  * Reads the currently active registrations of the given namespace and
@@ -24,19 +51,7 @@ import { getRuleHashFromFilePath } from './hasher';
 export const readActiveRegistrations = async (namespace: string): Promise<Map<string, Set<string>>> => {
     const descriptors = await ContentScriptManager.getRegistered(namespace);
 
-    const coverage = new Map<string, Set<string>>();
-    for (const descriptor of descriptors) {
-        const hashes = new Set<string>();
-        for (const filePath of descriptor.js ?? []) {
-            const hash = getRuleHashFromFilePath(filePath);
-            if (hash) {
-                hashes.add(hash);
-            }
-        }
-        coverage.set(descriptor.id, hashes);
-    }
-
-    return coverage;
+    return deriveCoverage(descriptors);
 };
 
 /**

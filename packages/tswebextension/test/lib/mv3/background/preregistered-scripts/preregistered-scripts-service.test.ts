@@ -23,6 +23,7 @@ import {
     MANIFEST_SCHEMA_VERSION,
     SHARED_BUNDLE_FILENAME,
 } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
+import { clearManifestCache } from '../../../../../src/lib/mv3/background/preregistered-scripts/manifest-reader';
 import {
     PreregisteredScriptsService,
 } from '../../../../../src/lib/mv3/background/preregistered-scripts/preregistered-scripts-service';
@@ -241,9 +242,11 @@ describe('PreregisteredScriptsService', () => {
     afterEach(() => {
         vi.clearAllMocks();
         vi.unstubAllGlobals();
+        clearManifestCache();
         appContext.preregisteredScriptRulesAtBoot = undefined;
         appContext.preregisteredScriptRules = undefined;
         appContext.preregisteredScripts = undefined;
+        appContext.preregisteredScriptsKey = undefined;
         registryState.descriptors = [];
         // `clearAllMocks` clears calls but not implementations, so the
         // custom implementations and queued one-shot results of a test
@@ -795,13 +798,19 @@ describe('PreregisteredScriptsService', () => {
             await setupRulesWithManifest({ 'youtube.com': [rule] });
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            // The registrations were already replaced by the sync; reading
-            // them back fails. Publishing last-known coverage would suppress
-            // dynamic injection for rules with no active registration, so
-            // the service fails safe to empty coverage.
+            // Disabling the feature changes the descriptor set, so the sync
+            // runs; it fails partially and the read-back fails too. The
+            // registrations were already replaced, so publishing
+            // last-known coverage would suppress dynamic injection for
+            // rules with no active registration — the service fails safe to
+            // empty coverage.
+            vi.mocked(ContentScriptManager.sync).mockResolvedValueOnce({
+                errors: [{ status: 'rejected', reason: new Error('update failed') }],
+                failedScriptIds: ['youtube.com'],
+            });
             vi.mocked(ContentScriptManager.getRegistered).mockRejectedValueOnce(new Error('read failed'));
 
-            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            const result = await PreregisteredScriptsService.sync(false, ['youtube.com'], SCRIPTS_PATH);
 
             expect(result).toEqual(new Map());
         });
@@ -816,16 +825,21 @@ describe('PreregisteredScriptsService', () => {
             // First sync succeeds and publishes its coverage.
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            // Second sync replaces the registrations, but reading them back
+            // Second sync (feature disabled — a different descriptor set)
+            // replaces the registrations partially, and reading them back
             // fails: empty coverage is published.
+            vi.mocked(ContentScriptManager.sync).mockResolvedValueOnce({
+                errors: [{ status: 'rejected', reason: new Error('update failed') }],
+                failedScriptIds: ['youtube.com'],
+            });
             vi.mocked(ContentScriptManager.getRegistered).mockRejectedValueOnce(new Error('read failed'));
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            await PreregisteredScriptsService.sync(false, ['youtube.com'], SCRIPTS_PATH);
 
             // Third sync fails: neither the pre-mutation coverage nor the
             // boot snapshot describes the active registrations anymore, so
             // neither may be republished.
             vi.mocked(ContentScriptManager.sync).mockRejectedValueOnce(new Error('invalid namespace'));
-            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            const result = await PreregisteredScriptsService.sync(false, ['youtube.com'], SCRIPTS_PATH);
 
             expect(result).toEqual(new Map());
             expect(appContext.preregisteredScriptRules).toEqual(new Map());
@@ -859,11 +873,47 @@ describe('PreregisteredScriptsService', () => {
 
             await Promise.all([
                 PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH),
-                PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH),
+                // A different domain with no rules builds an empty descriptor
+                // set: unlike a repeated identical sync, it is not skipped.
+                PreregisteredScriptsService.sync(true, ['example.com'], SCRIPTS_PATH),
             ]);
 
             // Second sync must not start before the first one finished.
             expect(order).toEqual(['start', 'end', 'start', 'end']);
+        });
+    });
+
+    describe('sync — caching', () => {
+        it('fetches the manifest once across syncs for the same path', async () => {
+            await setupRulesWithManifest({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+        });
+
+        it('skips the browser sync when the descriptor set is unchanged', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            await setupRulesWithManifest({ 'youtube.com': [rule] });
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(ContentScriptManager.sync).toHaveBeenCalledTimes(1);
+            expect(result).toEqual(
+                new Map([['youtube.com', new Set([await computeRuleHash(rule)])]]),
+            );
+        });
+
+        it('syncs again after a stop even when the descriptor set is unchanged', async () => {
+            await setupRulesWithManifest({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            await PreregisteredScriptsService.stop();
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(ContentScriptManager.sync).toHaveBeenCalledTimes(2);
         });
     });
 
@@ -892,9 +942,9 @@ describe('PreregisteredScriptsService', () => {
             // Snapshot is taken once per service-worker lifetime, and
             // recovers per-host rule hashes from the registrations' file
             // lists — shared bundle, per-function and cleanup files are not
-            // rule files and must be ignored. Each sync additionally reads
-            // the active registrations once for its coverage report.
-            expect(ContentScriptManager.getRegistered).toHaveBeenCalledTimes(3);
+            // rule files and must be ignored. Coverage on a successful sync
+            // is derived from the built descriptors, without a second read.
+            expect(ContentScriptManager.getRegistered).toHaveBeenCalledTimes(1);
             expect(appContext.preregisteredScriptRulesAtBoot).toEqual(
                 new Map([['youtube.com', new Set([hash])]]),
             );
@@ -1003,9 +1053,9 @@ describe('PreregisteredScriptsService', () => {
 
             await PreregisteredScriptsService.init(true, { domains: ['youtube.com'], path: SCRIPTS_PATH });
 
-            // Two reads per init (boot snapshot + post-sync coverage), the
-            // first of which rejected in the first init.
-            expect(ContentScriptManager.getRegistered).toHaveBeenCalledTimes(4);
+            // One boot snapshot per init; coverage on success comes from the
+            // descriptors, so no post-sync reads are made.
+            expect(ContentScriptManager.getRegistered).toHaveBeenCalledTimes(2);
             expect(appContext.preregisteredScriptRulesAtBoot).toEqual(
                 new Map([['youtube.com', new Set(['0123456789abcdef'])]]),
             );

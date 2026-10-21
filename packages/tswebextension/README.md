@@ -355,6 +355,12 @@ use; the per-rule file enforces any `$path` condition via `location`; the
 cleanup file runs last, deleting the coordination `window` property before
 page scripts run.
 
+The synthetic root request used by both the build-time collector and the
+runtime sync is shared through
+`@adguard/tswebextension/mv3/preregistered-scripts/root-request`
+(`getPreregisteredRootUrl`, `createPreregisteredRootRequest`), so both sides
+query the engine with the same URL.
+
 Preregistered executions bypass hit logging; they do appear in the
 filtering log, but the entries reflect the coverage decision, not the
 in-page execution outcome — a preregistered file failing inside the page is
@@ -370,6 +376,11 @@ Known limitations:
   YouTube embeds on it still run these scriptlets: the registration covers
   every frame of the host, while the dynamic path would inject nothing
   there. Tracked in [AG-60054](https://jira.int.agrd.dev/browse/AG-60054).
+- A page that started before a sync removed a `#%#` JS rule can execute it
+  twice: the preregistered file already ran it, and the dynamic path runs
+  it again because the coordination set only dedupes within one
+  registration execution and `cleanup` deletes it before page scripts run.
+  Re-executing a scriptlet is harmless; arbitrary JS is not idempotent.
 
 #### allowlist
 

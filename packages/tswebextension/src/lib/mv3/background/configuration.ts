@@ -1,8 +1,14 @@
 import { z as zod } from 'zod';
 
 import { basicFilterValidator, configurationValidator, settingsConfigValidator } from '../../common/configuration';
+import { isPlainHostname, normalizeDomain } from '../../common/utils/url';
 
-import { normalizeDomain } from './preregistered-scripts/hasher';
+/**
+ * Rejects values that cannot be a plain hostname before normalization:
+ * wildcards, schemes, ports and paths. IDN labels are allowed here and
+ * checked after normalization.
+ */
+const PLAIN_HOSTNAME_SHAPE_REGEX = /^[^\s*/:]+$/;
 
 /**
  * Custom filter list configuration validator for MV3.
@@ -55,11 +61,21 @@ export const preregisteredScriptsConfigValidator = zod.object({
      * Domains with build-time preregistered scripts. Each domain's `www.`
      * alias is derived automatically at runtime.
      */
-    domains: zod.string().array().transform((domains) => (
-        domains
-            .map(normalizeDomain)
-            .filter((domain) => domain !== '')
-    )),
+    domains: zod.string()
+        .refine(
+            (domain) => PLAIN_HOSTNAME_SHAPE_REGEX.test(domain.trim()),
+            'Expected a plain hostname without a scheme, path, port or wildcard',
+        )
+        .array()
+        .transform((domains) => (
+            domains
+                .map(normalizeDomain)
+                .filter((domain) => domain !== '')
+        ))
+        .refine(
+            (domains) => domains.every(isPlainHostname),
+            'Expected a valid hostname',
+        ),
 
     /**
      * Path to the preregistered script artifacts directory.
