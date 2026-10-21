@@ -729,6 +729,35 @@ example 7
       ]
     },
     "priority": 151
+  },
+  {
+    "id": 1097103048,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "remove",
+          "header": "Set-Cookie"
+        }
+      ],
+      "requestHeaders": [
+        {
+          "operation": "remove",
+          "header": "Cookie"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "*",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "requestDomains": [
+        "example.org",
+        "example.com"
+      ]
+    },
+    "priority": 151
   }
 ]
 ```
@@ -755,6 +784,23 @@ example 8
       ],
       "resourceTypes": [
         "main_frame"
+      ]
+    },
+    "priority": 251
+  },
+  {
+    "id": 360225795,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "requestDomains": [
+        "example.org",
+        "example.com"
       ]
     },
     "priority": 251
@@ -3179,6 +3225,29 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
       ]
     },
     "priority": 151
+  },
+  {
+    "id": 553919359,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Permissions-Policy",
+          "value": "oversized-images=()\\, sync-script=()\\, unsized-media=()"
+        }
+      ]
+    },
+    "condition": {
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "requestDomains": [
+        "example.org",
+        "example.com"
+      ]
+    },
+    "priority": 151
   }
 ]
 ```
@@ -3906,6 +3975,27 @@ $removeheader=location,domain=example.com
         "webtransport",
         "webbundle",
         "other"
+      ]
+    },
+    "priority": 201
+  },
+  {
+    "id": 1434543935,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "header": "location",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "requestDomains": [
+        "example.com"
       ]
     },
     "priority": 201

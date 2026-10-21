@@ -238,6 +238,26 @@ describe('FilterConverter (withSourceMap: true)', () => {
             // No rules to disable since the dynamic filter doesn't negate the static one
             expect(result).toStrictEqual([]);
         });
+
+        it('disables both declarative rules produced for a $domain rule', async () => {
+            const staticFilter = createFilter(
+                ["*$document,csp=script-src-attr 'none',domain=example.com"],
+                10,
+            );
+            const [{ ruleset: staticRuleset }] = await converter.convert([staticFilter], withSourceMapOptions);
+
+            const dynamicFilter = createFilter(
+                ["*$document,csp=script-src-attr 'none',domain=example.com,badfilter"],
+                20,
+            );
+            const [{ ruleset: dynamicRuleset }] = await converter.convert([dynamicFilter], withSourceMapOptions);
+
+            const result = await converter.computeRulesToDisable([dynamicRuleset], [staticRuleset]);
+
+            expect(result).toHaveLength(1);
+            expect(result[0].rulesetId).toBe(staticRuleset.getId());
+            expect(result[0].disableRuleIds).toHaveLength(2);
+        });
     });
 
     describe('respects limitations', () => {

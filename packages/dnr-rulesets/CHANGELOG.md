@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed rules with `$domain` not matching document navigations started by the
+  browser (new tab page, address bar, bookmark, reload). The MV3 rulesets now
+  contain an additional `main_frame` rule with `requestDomains` for such rules,
+  so `$csp`, `$removeheader`, `$removeparam` and allowlist rules with `$domain`
+  work on the first page load.
 - Fixed `dnr-rulesets load` failing to copy packaged assets and returning a
   successful exit status after copy errors.
 

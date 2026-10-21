@@ -24,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- In MV3, `$domain` did not match the target hostname of a document request.
+  A document request started by the browser (new tab page, address bar,
+  bookmark, reload) has no initiator, so a rule such as
+  `*$document,csp=script-src-attr 'none',domain=example.com` did not work on the
+  first page load. The conversion now adds a `main_frame` rule with
+  `requestDomains` for such rules.
 - In MV3, static filters, custom filters and user rules were handed to the
   converter already converted by the extension, so `$badfilter` rules from those
   sources were compared by the converted text instead of the text as written and
