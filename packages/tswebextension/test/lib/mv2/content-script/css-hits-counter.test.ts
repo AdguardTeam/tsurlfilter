@@ -10,7 +10,10 @@ import {
 } from 'vitest';
 
 import { CssHitsCounter } from '../../../../src/lib';
-import { PendingProbesCollector } from '../../../../src/lib/common/content-script/pending-probes-collector';
+import {
+    type PendingProbe,
+    PendingProbesCollector,
+} from '../../../../src/lib/common/content-script/pending-probes-collector';
 import { mockMutationObserver, MutationObserverMock } from '../../../helpers/mutation-observer';
 
 describe('CssHitsCounter', () => {
@@ -23,6 +26,59 @@ describe('CssHitsCounter', () => {
             <div id="hiddenDiv2" style="display: none !important; --adguard-hit:'adguard2%3B2' !important;"></div>
          </div>
         `;
+
+    /**
+     * Creates a collector mock whose subscription callback can be invoked
+     * directly by tests.
+     *
+     * @param isObserving Whether the mock collector is observing.
+     *
+     * @returns The collector and a function delivering probes to it.
+     */
+    const createProbesCollector = (isObserving = true): {
+        collector: PendingProbesCollector;
+        deliver: (probes: PendingProbe[]) => void;
+    } => {
+        let onProbesCollected: ((probes: PendingProbe[]) => void) | null = null;
+
+        const collector = {
+            isObserving,
+            takePendingProbes: (): PendingProbe[] => [],
+            setOnProbesCollected: (callback: ((probes: PendingProbe[]) => void) | null): void => {
+                onProbesCollected = callback;
+            },
+            setOnObservationEnded: (): void => {},
+            stop: vi.fn(),
+        } as unknown as PendingProbesCollector;
+
+        return {
+            collector,
+            deliver: (probes: PendingProbe[]): void => {
+                onProbesCollected?.(probes);
+            },
+        };
+    };
+
+    /**
+     * Temporarily removes the fixture elements with inline markers, so the
+     * full scan does not report a hit in tests that exercise retries.
+     *
+     * @returns Function restoring the removed elements.
+     */
+    const removeFixtureMarkerElements = (): (() => void) => {
+        const elements = ['hiddenDiv1', 'hiddenDiv2']
+            .map((id) => document.getElementById(id))
+            .filter((element): element is HTMLElement => element !== null)
+            .map((element) => ({ element, parent: element.parentElement }));
+
+        elements.forEach(({ element }) => element.remove());
+
+        return () => {
+            elements.forEach(({ element, parent }) => {
+                parent?.appendChild(element);
+            });
+        };
+    };
 
     it('checks class parameters', () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -232,6 +288,265 @@ describe('CssHitsCounter', () => {
         container.remove();
     });
 
+    it('measures a bait removed before its container in the same chunk', () => {
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.nested-bait',
+            "{ display: none !important; --adguard-hit: 'adguard18%3B18' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        const container = document.createElement('div');
+        const bait = document.createElement('div');
+        bait.className = 'nested-bait';
+        container.appendChild(bait);
+        document.body.appendChild(container);
+
+        // Both elements are removed before the pending probes are processed:
+        // the bait first, then its container. Dependency ordering restores
+        // the container before the bait.
+        bait.remove();
+        container.remove();
+
+        const onCssHitsFound = vi.fn();
+        const counter = new CssHitsCounter(onCssHitsFound, {
+            pendingProbes: [
+                {
+                    element: bait,
+                    target: container,
+                    previousSibling: null,
+                    nextSibling: null,
+                },
+                {
+                    element: container,
+                    target: document.body,
+                    previousSibling: null,
+                    nextSibling: null,
+                },
+            ],
+        });
+
+        const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+        expect(flat).toContainEqual(expect.objectContaining({ filterId: 18, ruleIndex: 18 }));
+        expect(bait.parentNode).toBeNull();
+        expect(container.parentNode).toBeNull();
+
+        counter.stop();
+        style.remove();
+    });
+
+    it('measures a bait whose container was removed first', () => {
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.mirror-bait',
+            "{ display: none !important; --adguard-hit: 'adguard21%3B21' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        const container = document.createElement('div');
+        const bait = document.createElement('div');
+        bait.className = 'mirror-bait';
+        container.appendChild(bait);
+        document.body.appendChild(container);
+
+        bait.remove();
+        container.remove();
+
+        const onCssHitsFound = vi.fn();
+        const counter = new CssHitsCounter(onCssHitsFound, {
+            pendingProbes: [
+                {
+                    element: container,
+                    target: document.body,
+                    previousSibling: null,
+                    nextSibling: null,
+                },
+                {
+                    element: bait,
+                    target: container,
+                    previousSibling: null,
+                    nextSibling: null,
+                },
+            ],
+        });
+
+        const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+        expect(flat).toContainEqual(expect.objectContaining({ filterId: 21, ruleIndex: 21 }));
+        expect(bait.parentNode).toBeNull();
+        expect(container.parentNode).toBeNull();
+
+        counter.stop();
+        style.remove();
+    });
+
+    it('keeps a container and its bait together across the batch boundary', () => {
+        vi.useFakeTimers();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.boundary-bait',
+            "{ display: none !important; --adguard-hit: 'adguard22%3B22' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        const container = document.createElement('div');
+        const bait = document.createElement('div');
+        bait.className = 'boundary-bait';
+        container.appendChild(bait);
+        document.body.appendChild(container);
+
+        bait.remove();
+        container.remove();
+
+        // 24 independent probes before the pair would push the container
+        // into the next chunk without dependency grouping.
+        const fillers = Array.from({ length: 24 }, () => document.createElement('div'));
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, {
+                pendingProbes: [
+                    ...fillers.map((element) => ({
+                        element,
+                        target: document.body,
+                        previousSibling: null,
+                        nextSibling: null,
+                    })),
+                    {
+                        element: bait,
+                        target: container,
+                        previousSibling: null,
+                        nextSibling: null,
+                    },
+                    {
+                        element: container,
+                        target: document.body,
+                        previousSibling: null,
+                        nextSibling: null,
+                    },
+                ],
+            });
+
+            vi.advanceTimersByTime(200);
+
+            const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(flat).toContainEqual(expect.objectContaining({ filterId: 22, ruleIndex: 22 }));
+            expect(bait.parentNode).toBeNull();
+            expect(container.parentNode).toBeNull();
+
+            counter.stop();
+        } finally {
+            vi.useRealTimers();
+            style.remove();
+        }
+    });
+
+    it('limits the number of elements restored in one task for a large dependent group', () => {
+        const container = document.createElement('div');
+        const children = Array.from({ length: 200 }, () => document.createElement('div'));
+        children.forEach((child) => container.appendChild(child));
+        document.body.appendChild(container);
+        children.forEach((child) => child.remove());
+        container.remove();
+
+        const bodyAppendSpy = vi.spyOn(document.body, 'appendChild');
+        const containerAppendSpy = vi.spyOn(container, 'appendChild');
+
+        const onCssHitsFound = vi.fn();
+        const counter = new CssHitsCounter(onCssHitsFound, {
+            pendingProbes: [
+                ...children.map((element) => ({
+                    element,
+                    target: container,
+                    previousSibling: null,
+                    nextSibling: null,
+                })),
+                {
+                    element: container,
+                    target: document.body,
+                    previousSibling: null,
+                    nextSibling: null,
+                },
+            ],
+        });
+
+        // The first task restores the container and at most 24 children.
+        expect(bodyAppendSpy.mock.calls.length + containerAppendSpy.mock.calls.length)
+            .toBeLessThanOrEqual(25);
+        expect(containerAppendSpy.mock.calls.length).toBeLessThanOrEqual(24);
+
+        bodyAppendSpy.mockRestore();
+        containerAppendSpy.mockRestore();
+        counter.stop();
+    });
+
+    it('restores a counted container when a bait was removed from it', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            "div.counted-container { display: none !important; --adguard-hit: 'adguard23%3B23' !important; }",
+            "div.counted-bait { display: none !important; --adguard-hit: 'adguard24%3B24' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        try {
+            const { collector, deliver } = createProbesCollector();
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, { pendingProbesCollector: collector });
+
+            const container = document.createElement('div');
+            container.className = 'counted-container';
+
+            // The page adds and removes the matching container in one task;
+            // the counter's observer re-inserts and counts it.
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [container],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            const containerHits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 23);
+            expect(containerHits).toHaveLength(1);
+
+            // The bait was removed from the container before the container
+            // was removed; both are reported by the collector.
+            const bait = document.createElement('div');
+            bait.className = 'counted-bait';
+            deliver([
+                {
+                    element: bait,
+                    target: container,
+                    previousSibling: null,
+                    nextSibling: null,
+                },
+                {
+                    element: container,
+                    target: document.body,
+                    previousSibling: null,
+                    nextSibling: null,
+                },
+            ]);
+
+            vi.advanceTimersByTime(1000);
+
+            const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(flat).toContainEqual(expect.objectContaining({ filterId: 24, ruleIndex: 24 }));
+            expect(bait.parentNode).toBeNull();
+            expect(container.parentNode).toBeNull();
+
+            counter.stop();
+        } finally {
+            restoreMutationObserver();
+            vi.useRealTimers();
+            style.remove();
+        }
+    });
+
     it('observes mutations during loading and scans the page only after interactive', () => {
         const restoreMutationObserver = mockMutationObserver();
         let readyState = 'loading';
@@ -289,11 +604,97 @@ describe('CssHitsCounter', () => {
         }
     });
 
+    it('does not start its own observer during loading when a collector is provided', () => {
+        const restoreMutationObserver = mockMutationObserver();
+        let readyState = 'loading';
+        Object.defineProperty(document, 'readyState', {
+            configurable: true,
+            get: () => readyState,
+        });
+
+        try {
+            const { collector } = createProbesCollector();
+            const counter = new CssHitsCounter(vi.fn(), { pendingProbesCollector: collector });
+
+            // The collector covers the loading window; the counter must not
+            // scan every mutation in parallel.
+            expect(MutationObserverMock.instances).toHaveLength(0);
+
+            readyState = 'interactive';
+            document.dispatchEvent(new Event('readystatechange'));
+
+            // At interactive the counter starts its own observer for the
+            // regular mutation counting.
+            expect(MutationObserverMock.instances).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            delete (document as unknown as { readyState?: string }).readyState;
+            restoreMutationObserver();
+        }
+    });
+
+    it('starts its own observer when the collector is already stopped', () => {
+        const restoreMutationObserver = mockMutationObserver();
+        const readyState = 'loading';
+        Object.defineProperty(document, 'readyState', {
+            configurable: true,
+            get: () => readyState,
+        });
+
+        try {
+            const { collector } = createProbesCollector(false);
+            const counter = new CssHitsCounter(vi.fn(), { pendingProbesCollector: collector });
+
+            // The stopped collector does not cover the loading window.
+            expect(MutationObserverMock.instances).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            delete (document as unknown as { readyState?: string }).readyState;
+            restoreMutationObserver();
+        }
+    });
+
+    it('starts its own observer when the collector times out while loading', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+        const readyState = 'loading';
+        Object.defineProperty(document, 'readyState', {
+            configurable: true,
+            get: () => readyState,
+        });
+
+        try {
+            const collector = new PendingProbesCollector();
+            collector.start();
+            expect(MutationObserverMock.instances).toHaveLength(1);
+
+            const counter = new CssHitsCounter(vi.fn(), { pendingProbesCollector: collector });
+
+            // Deferred while the collector is observing.
+            expect(MutationObserverMock.instances).toHaveLength(1);
+
+            vi.advanceTimersByTime(30000);
+
+            // The collector stopped, so the counter covers the rest of the
+            // loading window.
+            expect(MutationObserverMock.instances).toHaveLength(2);
+
+            counter.stop();
+        } finally {
+            delete (document as unknown as { readyState?: string }).readyState;
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
     it('retries pending probes until the marker is applied', () => {
         vi.useFakeTimers();
 
         const bait = document.createElement('div');
         bait.className = 'late-bait';
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
 
         try {
             const onCssHitsFound = vi.fn();
@@ -324,7 +725,119 @@ describe('CssHitsCounter', () => {
             counter.stop();
             style.remove();
         } finally {
+            restoreFixtureMarkers();
             vi.useRealTimers();
+        }
+    });
+
+    it('does not retry unmatched probes after a hit proves the styles are applied', () => {
+        vi.useFakeTimers();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.marker-hit-bait',
+            "{ display: none !important; --adguard-hit: 'adguard19%3B19' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        try {
+            const matchedBait = document.createElement('div');
+            matchedBait.className = 'marker-hit-bait';
+            const unmatchedBait = document.createElement('div');
+
+            const appendChildSpy = vi.spyOn(document.body, 'appendChild');
+
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, {
+                pendingProbes: [
+                    {
+                        element: matchedBait,
+                        target: document.body,
+                        previousSibling: null,
+                        nextSibling: null,
+                    },
+                    {
+                        element: unmatchedBait,
+                        target: document.body,
+                        previousSibling: null,
+                        nextSibling: null,
+                    },
+                ],
+            });
+
+            const getUnmatchedInsertions = (): number => appendChildSpy.mock.calls
+                .filter(([node]) => node === unmatchedBait)
+                .length;
+
+            const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(flat).toContainEqual(expect.objectContaining({ filterId: 19, ruleIndex: 19 }));
+
+            // The unmatched probe was checked once. The hit proves that the
+            // marker styles are applied, so it must not be retried.
+            expect(getUnmatchedInsertions()).toBe(1);
+            vi.advanceTimersByTime(1000);
+            expect(getUnmatchedInsertions()).toBe(1);
+
+            appendChildSpy.mockRestore();
+            counter.stop();
+        } finally {
+            restoreFixtureMarkers();
+            vi.useRealTimers();
+            style.remove();
+        }
+    });
+
+    it('does not retry unmatched probes when the full scan found a hit', () => {
+        vi.useFakeTimers();
+
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.full-scan-hit',
+            "{ display: none !important; --adguard-hit: 'adguard20%3B20' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        const hidden = document.createElement('div');
+        hidden.className = 'full-scan-hit';
+        document.body.appendChild(hidden);
+
+        try {
+            const unmatchedBait = document.createElement('div');
+            const appendChildSpy = vi.spyOn(document.body, 'appendChild');
+
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, {
+                pendingProbes: [{
+                    element: unmatchedBait,
+                    target: document.body,
+                    previousSibling: null,
+                    nextSibling: null,
+                }],
+            });
+
+            const getUnmatchedInsertions = (): number => appendChildSpy.mock.calls
+                .filter(([node]) => node === unmatchedBait)
+                .length;
+
+            // The full scan reports the attached element and proves that the
+            // marker styles are applied.
+            vi.advanceTimersByTime(1000);
+            const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(flat).toContainEqual(expect.objectContaining({ filterId: 20, ruleIndex: 20 }));
+
+            // The unmatched probe was checked once and not retried.
+            expect(getUnmatchedInsertions()).toBe(1);
+
+            appendChildSpy.mockRestore();
+            counter.stop();
+        } finally {
+            restoreFixtureMarkers();
+            vi.useRealTimers();
+            style.remove();
+            hidden.remove();
         }
     });
 
@@ -334,8 +847,10 @@ describe('CssHitsCounter', () => {
         // This probe never matches any rule and consumes its retry budget.
         const staleBait = document.createElement('div');
         staleBait.className = 'never-hidden';
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
 
         try {
+            const { collector, deliver } = createProbesCollector();
             const onCssHitsFound = vi.fn();
             const counter = new CssHitsCounter(onCssHitsFound, {
                 pendingProbes: [{
@@ -344,6 +859,7 @@ describe('CssHitsCounter', () => {
                     previousSibling: null,
                     nextSibling: null,
                 }],
+                pendingProbesCollector: collector,
             });
 
             // Spend four attempts of the stale probe's budget; a retry is
@@ -354,7 +870,7 @@ describe('CssHitsCounter', () => {
             // share the stale probe's remaining attempts.
             const lateBait = document.createElement('div');
             lateBait.className = 'late-streamed-bait';
-            counter.addPendingProbes([{
+            deliver([{
                 element: lateBait,
                 target: document.body,
                 previousSibling: null,
@@ -381,6 +897,7 @@ describe('CssHitsCounter', () => {
             counter.stop();
             style.remove();
         } finally {
+            restoreFixtureMarkers();
             vi.useRealTimers();
         }
     });
@@ -396,10 +913,11 @@ describe('CssHitsCounter', () => {
             const bait = document.createElement('div');
             bait.className = 'added-bait';
 
+            const { collector, deliver } = createProbesCollector();
             const onCssHitsFound = vi.fn();
-            const counter = new CssHitsCounter(onCssHitsFound);
+            const counter = new CssHitsCounter(onCssHitsFound, { pendingProbesCollector: collector });
 
-            counter.addPendingProbes([{
+            deliver([{
                 element: bait,
                 target: document.body,
                 previousSibling: null,
@@ -579,6 +1097,9 @@ describe('CssHitsCounter', () => {
         const customElement = document.createElement('my-widget');
         withCustomElement.appendChild(customElement);
 
+        const appendChildSpy = vi.spyOn(document.body, 'appendChild');
+        const insertBeforeSpy = vi.spyOn(document.body, 'insertBefore');
+
         const onCssHitsFound = vi.fn();
         const counter = new CssHitsCounter(onCssHitsFound, {
             pendingProbes: [
@@ -598,12 +1119,18 @@ describe('CssHitsCounter', () => {
         });
 
         // Re-inserting the subtrees would reload the frame and run the
-        // custom element callbacks.
+        // custom element callbacks. The probes must not be restored at all;
+        // checking `parentNode` alone would also pass after a restore and a
+        // removal in the same pass.
+        expect(appendChildSpy).not.toHaveBeenCalled();
+        expect(insertBeforeSpy).not.toHaveBeenCalled();
         expect(withIframe.parentNode).toBeNull();
         expect(iframe.parentNode).toBe(withIframe);
         expect(withCustomElement.parentNode).toBeNull();
         expect(customElement.parentNode).toBe(withCustomElement);
 
+        appendChildSpy.mockRestore();
+        insertBeforeSpy.mockRestore();
         counter.stop();
     });
 
@@ -644,8 +1171,12 @@ describe('CssHitsCounter', () => {
 
         try {
             const bait = document.createElement('div');
+            const { collector, deliver } = createProbesCollector();
             const onCssHitsFound = vi.fn();
-            const counter = new CssHitsCounter(onCssHitsFound);
+            const counter = new CssHitsCounter(onCssHitsFound, { pendingProbesCollector: collector });
+
+            const appendChildSpy = vi.spyOn(document.body, 'appendChild');
+            const insertBeforeSpy = vi.spyOn(document.body, 'insertBefore');
 
             // ExtendedCss reports the hit and removes the element itself.
             counter.countAffectedByExtendedCss({
@@ -653,7 +1184,7 @@ describe('CssHitsCounter', () => {
                 rules: [{ style: { remove: 'true' } }],
             });
 
-            counter.addPendingProbes([{
+            deliver([{
                 element: bait,
                 target: document.body,
                 previousSibling: null,
@@ -662,8 +1193,13 @@ describe('CssHitsCounter', () => {
 
             vi.advanceTimersByTime(1000);
 
+            // The probe must never be restored.
+            expect(appendChildSpy).not.toHaveBeenCalled();
+            expect(insertBeforeSpy).not.toHaveBeenCalled();
             expect(bait.parentNode).toBeNull();
 
+            appendChildSpy.mockRestore();
+            insertBeforeSpy.mockRestore();
             counter.stop();
         } finally {
             vi.useRealTimers();
@@ -727,8 +1263,9 @@ describe('CssHitsCounter', () => {
         document.head.appendChild(style);
 
         try {
+            const { collector, deliver } = createProbesCollector();
             const onCssHitsFound = vi.fn();
-            const counter = new CssHitsCounter(onCssHitsFound);
+            const counter = new CssHitsCounter(onCssHitsFound, { pendingProbesCollector: collector });
             const bait = document.createElement('div');
             bait.className = 'counted-bait';
 
@@ -747,7 +1284,7 @@ describe('CssHitsCounter', () => {
 
             // The collector reports the same element later: it must not be
             // inserted again.
-            counter.addPendingProbes([{
+            deliver([{
                 element: bait,
                 target: document.body,
                 previousSibling: null,
@@ -770,10 +1307,12 @@ describe('CssHitsCounter', () => {
     it('still retries a probe that the mutation observer could not count', () => {
         vi.useFakeTimers();
         const restoreMutationObserver = mockMutationObserver();
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
 
         try {
+            const { collector, deliver } = createProbesCollector();
             const onCssHitsFound = vi.fn();
-            const counter = new CssHitsCounter(onCssHitsFound);
+            const counter = new CssHitsCounter(onCssHitsFound, { pendingProbesCollector: collector });
             const bait = document.createElement('div');
             bait.className = 'late-counted-bait';
 
@@ -793,7 +1332,7 @@ describe('CssHitsCounter', () => {
 
             // The collector reports the same element later: it must still be
             // retried, so the hit is not lost when the styles arrive.
-            counter.addPendingProbes([{
+            deliver([{
                 element: bait,
                 target: document.body,
                 previousSibling: null,
@@ -819,6 +1358,7 @@ describe('CssHitsCounter', () => {
             counter.stop();
             style.remove();
         } finally {
+            restoreFixtureMarkers();
             restoreMutationObserver();
             vi.useRealTimers();
         }

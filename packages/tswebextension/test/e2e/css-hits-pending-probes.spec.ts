@@ -160,6 +160,45 @@ describe('CSS hits counter: short-lived probes (AG-48018)', () => {
         expect(bait.parentNode).toBeNull();
     });
 
+    test('counts a bait whose counted container was removed in the same task', async () => {
+        const collector = createCollector();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            "@property --adguard-hit { syntax: '*'; inherits: false; initial-value: ''; }",
+            "div.counted-container { display: none !important; --adguard-hit: 'adguard23%3B23' !important; }",
+            "div.counted-bait { display: none !important; --adguard-hit: 'adguard24%3B24' !important; }",
+        ].join('\n');
+        document.head.appendChild(style);
+        styles.push(style);
+
+        const hits: Array<{ filterId: number; ruleIndex: number }> = [];
+        createCounter((stats) => {
+            stats.forEach((stat) => hits.push(stat));
+        }, {
+            pendingProbesCollector: collector,
+        });
+
+        // The counter and collector already exist. In one task the page adds
+        // a matching container, removes the bait, and removes the container.
+        const container = trackElement(document.createElement('div'));
+        container.className = 'counted-container';
+        const bait = trackElement(document.createElement('div'));
+        bait.className = 'counted-bait';
+        container.appendChild(bait);
+        document.body.appendChild(container);
+        bait.remove();
+        container.remove();
+
+        await new Promise<void>((resolve) => {
+            setTimeout(resolve, 50);
+        });
+
+        expect(hits).toContainEqual(expect.objectContaining({ filterId: 24, ruleIndex: 24 }));
+        expect(bait.parentNode).toBeNull();
+        expect(container.parentNode).toBeNull();
+    });
+
     test('does not remove or move attached elements', () => {
         addMarkerStyle();
 

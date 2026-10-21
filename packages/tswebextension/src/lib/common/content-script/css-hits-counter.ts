@@ -17,6 +17,9 @@ const DEFAULT_ELEMENT_TO_STRING = true;
 
 /**
  * CssHitsCounter options.
+ *
+ * The pending-probes options are internal: they are used by the bundled
+ * cosmetic controllers, and their types are not exported from the package.
  */
 interface CssHitsCounterOptions {
     /**
@@ -155,6 +158,16 @@ export class CssHitsCounter {
     private pendingProbeAttempts = new WeakMap<PendingProbe, number>();
 
     /**
+     * Whether a native marker hit has already been observed.
+     *
+     * The marker styles are injected as a whole, so once any element produced
+     * a hit, a probe that did not match on its first attempt will not match on
+     * a retry either. Retrying it would only keep detached subtrees alive and
+     * delay the probes that follow in the queue.
+     */
+    private markerStylesApplied = false;
+
+    /**
      * Timer for the next attempt to count {@link pendingProbes}.
      */
     private pendingProbesTimeoutId: number | null = null;
@@ -178,10 +191,11 @@ export class CssHitsCounter {
     private readonly boundStartCounter = this.startCounter.bind(this);
 
     /**
-     * Attaches the mutation observer immediately while the document is still
-     * loading, so elements added and removed before the document becomes
-     * interactive are not missed. The full DOM scan is performed once the
-     * document is interactive or complete.
+     * Attaches the mutation observer while the document is still loading when
+     * no pending probes collector is provided, so elements added and removed
+     * before the document becomes interactive are not missed. With a
+     * collector, the collector already covers that window, so the counter's
+     * own observer starts at `interactive`, together with the full DOM scan.
      *
      * @param callback Which receives {@link ICountedElement} and handles counted css hits.
      * @param options CssHitsCounter options.
@@ -193,7 +207,9 @@ export class CssHitsCounter {
                 this.elementToString = elementToString;
             }
             if (pendingProbes && pendingProbes.length > 0) {
-                this.pendingProbes = pendingProbes;
+                // Copy the array: the counter adds probes to its own queue,
+                // so the caller's array must not change.
+                this.pendingProbes = [...pendingProbes];
             }
             if (pendingProbesCollector) {
                 this.pendingProbesCollector = pendingProbesCollector;
@@ -206,6 +222,15 @@ export class CssHitsCounter {
                 pendingProbesCollector.setOnProbesCollected((probes) => {
                     this.addPendingProbes(probes);
                 });
+
+                pendingProbesCollector.setOnObservationEnded(() => {
+                    // The collector stopped before the document became
+                    // interactive: it no longer covers the loading window, so
+                    // the counter must start its own observer.
+                    if (!this.stopped && !this.observer) {
+                        this.countCssHitsForMutations();
+                    }
+                });
             }
         }
 
@@ -215,10 +240,16 @@ export class CssHitsCounter {
             || document.readyState === 'interactive') {
             this.countCssHits();
         } else {
-            // Start observing immediately during the document loading.
-            // Waiting for `readystatechange` misses elements that are added
-            // and removed before the document becomes interactive.
-            this.countCssHitsForMutations();
+            // Start observing immediately during the document loading when
+            // no active collector covers that window: waiting for
+            // `readystatechange` misses elements that are added and removed
+            // before the document becomes interactive. With an active
+            // collector, the counter's own observer starts at `interactive`
+            // to avoid walking every mutation twice while the page is
+            // parsing.
+            if (!this.pendingProbesCollector?.isObserving) {
+                this.countCssHitsForMutations();
+            }
             document.addEventListener('readystatechange', this.boundStartCounter);
         }
 
@@ -262,7 +293,7 @@ export class CssHitsCounter {
      *
      * @param probes Probes collected by {@link PendingProbesCollector}.
      */
-    public addPendingProbes(probes: PendingProbe[]): void {
+    private addPendingProbes(probes: PendingProbe[]): void {
         if (this.stopped || probes.length === 0) {
             return;
         }
@@ -352,8 +383,13 @@ export class CssHitsCounter {
 
         if (document.readyState === 'interactive'
             || document.readyState === 'complete') {
-            // The observer is already attached during loading; here we only
-            // perform the full scan after the document has been parsed.
+            // Without a collector the observer is already attached during
+            // loading. With a collector it starts now, together with the full
+            // scan after the document has been parsed.
+            if (!this.observer) {
+                this.countCssHitsForMutations();
+            }
+
             this.countAllCssHits();
 
             document.removeEventListener('readystatechange', this.boundStartCounter);
@@ -479,6 +515,10 @@ export class CssHitsCounter {
             if (!cssHitData) {
                 continue;
             }
+
+            // A marker proves that the injected styles are already applied,
+            // regardless of whether this element was counted before.
+            this.markerStylesApplied = true;
 
             const { filterId, ruleIndex } = cssHitData;
             const ruleAndFilterString = filterId + SEMICOLON + ruleIndex;
@@ -645,6 +685,216 @@ export class CssHitsCounter {
     }
 
     /**
+     * Orders pending probes for processing.
+     *
+     * A probe whose target is another probe's element (or is inside it) must
+     * be processed after that probe: the ancestor has to be restored to the
+     * document before the descendant can be measured in its original parent.
+     * Dependent probes are grouped and kept in the same chunk, because
+     * restored probes are removed at the end of a chunk.
+     *
+     * @param probes Pending probes in removal order.
+     *
+     * @returns Chunks of probes in processing order.
+     */
+    private static orderPendingProbes(probes: PendingProbe[]): PendingProbe[][] {
+        const probeByElement = new Map<Element, PendingProbe>();
+        probes.forEach((probe) => {
+            probeByElement.set(probe.element, probe);
+        });
+
+        const dependencyByProbe = new Map<PendingProbe, PendingProbe | null>();
+        const getDependency = (probe: PendingProbe): PendingProbe | null => {
+            if (dependencyByProbe.has(probe)) {
+                return dependencyByProbe.get(probe) ?? null;
+            }
+
+            let dependency: PendingProbe | null = null;
+            let current: Node | null = probe.target;
+            while (current) {
+                if (current instanceof Element) {
+                    const candidate = probeByElement.get(current);
+                    if (candidate && candidate !== probe) {
+                        dependency = candidate;
+                        break;
+                    }
+                }
+
+                current = current.parentNode;
+            }
+
+            dependencyByProbe.set(probe, dependency);
+            return dependency;
+        };
+
+        const rootByProbe = new Map<PendingProbe, PendingProbe>();
+        const getRoot = (probe: PendingProbe, visiting: Set<PendingProbe>): PendingProbe => {
+            const cached = rootByProbe.get(probe);
+            if (cached) {
+                return cached;
+            }
+
+            if (visiting.has(probe)) {
+                return probe;
+            }
+
+            visiting.add(probe);
+            const dependency = getDependency(probe);
+            const root = dependency ? getRoot(dependency, visiting) : probe;
+            visiting.delete(probe);
+
+            rootByProbe.set(probe, root);
+            return root;
+        };
+
+        const depthByProbe = new Map<PendingProbe, number>();
+        const getDepth = (probe: PendingProbe, visiting: Set<PendingProbe>): number => {
+            const cached = depthByProbe.get(probe);
+            if (cached !== undefined) {
+                return cached;
+            }
+
+            if (visiting.has(probe)) {
+                return 0;
+            }
+
+            visiting.add(probe);
+            const dependency = getDependency(probe);
+            const depth = dependency ? getDepth(dependency, visiting) + 1 : 0;
+            visiting.delete(probe);
+
+            depthByProbe.set(probe, depth);
+            return depth;
+        };
+
+        const indexByProbe = new Map<PendingProbe, number>();
+        probes.forEach((probe, index) => {
+            indexByProbe.set(probe, index);
+            getDepth(probe, new Set());
+        });
+
+        const groups = new Map<PendingProbe, PendingProbe[]>();
+        const groupOrder: PendingProbe[] = [];
+        probes.forEach((probe) => {
+            const root = getRoot(probe, new Set());
+            let group = groups.get(root);
+            if (!group) {
+                group = [];
+                groups.set(root, group);
+                groupOrder.push(root);
+            }
+
+            group.push(probe);
+        });
+
+        // Process dependent groups first, so a large batch of independent
+        // probes cannot delay a container/bait pair indefinitely.
+        const orderedGroups = [
+            ...groupOrder.filter((root) => (groups.get(root)?.length ?? 0) > 1),
+            ...groupOrder.filter((root) => (groups.get(root)?.length ?? 0) <= 1),
+        ];
+
+        const getAncestors = (probe: PendingProbe): PendingProbe[] => {
+            const ancestors: PendingProbe[] = [];
+            const seen = new Set<PendingProbe>();
+            let dependency = getDependency(probe);
+            while (dependency && !seen.has(dependency)) {
+                ancestors.unshift(dependency);
+                seen.add(dependency);
+                dependency = getDependency(dependency);
+            }
+
+            return ancestors;
+        };
+
+        /**
+         * Splits a dependent group into chunks that fit the batch size.
+         *
+         * The group is sorted by depth, so each chunk keeps the ancestors of
+         * its probes. Ancestors processed in a previous chunk are added again
+         * to the next chunk, because restored probes are removed at the end
+         * of a chunk.
+         *
+         * @param group Dependent probes sorted by depth.
+         *
+         * @returns Chunks of probes.
+         */
+        const splitDependentGroup = (group: PendingProbe[]): PendingProbe[][] => {
+            const groupChunks: PendingProbe[][] = [];
+            let groupChunk: PendingProbe[] = [];
+            let groupChunkSet = new Set<PendingProbe>();
+
+            group.forEach((probe) => {
+                const ancestors = getAncestors(probe);
+                let missingAncestors = ancestors.filter((ancestor) => !groupChunkSet.has(ancestor));
+
+                if (groupChunk.length > 0
+                    && groupChunk.length + missingAncestors.length + 1
+                        > CssHitsCounter.CSS_HITS_BATCH_SIZE) {
+                    groupChunks.push(groupChunk);
+                    groupChunk = [];
+                    groupChunkSet = new Set();
+                    missingAncestors = ancestors;
+                }
+
+                missingAncestors.forEach((ancestor) => {
+                    groupChunk.push(ancestor);
+                    groupChunkSet.add(ancestor);
+                });
+
+                groupChunk.push(probe);
+                groupChunkSet.add(probe);
+            });
+
+            if (groupChunk.length > 0) {
+                groupChunks.push(groupChunk);
+            }
+
+            return groupChunks;
+        };
+
+        const chunks: PendingProbe[][] = [];
+        let chunk: PendingProbe[] = [];
+
+        orderedGroups.forEach((root) => {
+            const group = groups.get(root)!;
+            group.sort((a, b) => (depthByProbe.get(a)! - depthByProbe.get(b)!)
+                || ((indexByProbe.get(a) ?? 0) - (indexByProbe.get(b) ?? 0)));
+
+            // A dependent group larger than the batch size is split into
+            // chunks that keep the ancestors of every probe in the chunk.
+            if (group.length > CssHitsCounter.CSS_HITS_BATCH_SIZE) {
+                if (chunk.length > 0) {
+                    chunks.push(chunk);
+                    chunk = [];
+                }
+
+                chunks.push(...splitDependentGroup(group));
+                return;
+            }
+
+            if (chunk.length > 0
+                && chunk.length + group.length > CssHitsCounter.CSS_HITS_BATCH_SIZE) {
+                chunks.push(chunk);
+                chunk = [];
+            }
+
+            chunk.push(...group);
+
+            if (chunk.length >= CssHitsCounter.CSS_HITS_BATCH_SIZE) {
+                chunks.push(chunk);
+                chunk = [];
+            }
+        });
+
+        if (chunk.length > 0) {
+            chunks.push(chunk);
+        }
+
+        return chunks;
+    }
+
+    /**
      * Counts probes collected before and after the counter initialization.
      *
      * Each probe is temporarily reinserted into the document, so that the
@@ -653,10 +903,18 @@ export class CssHitsCounter {
      * are processed in small chunks, so a large queue does not block the page
      * in one task; nothing stays in the document between chunks.
      *
+     * Probes are ordered by dependency: a probe removed from another probe's
+     * element is processed after that element is restored, and dependent
+     * probes are kept in the same chunk. Without this, a bait removed before
+     * its container would be measured with a detached target, and a container
+     * removed before its bait would be removed again before the bait is
+     * processed.
+     *
      * Probes that did not match any rule are retried a few times, since the
      * marker styles may be injected slightly after the cosmetic data is
-     * received. A probe is not retried when its subtree already produced a
-     * hit: the styles are known to be applied then.
+     * received. Once any hit is observed, the styles are known to be applied,
+     * so unmatched probes are not retried; a probe is also not retried when
+     * its own subtree already produced a hit.
      *
      * Only native stylesheet markers are detected this way: ExtendedCss
      * rules are reported when ExtendedCss itself applies them to an element.
@@ -666,10 +924,28 @@ export class CssHitsCounter {
             return;
         }
 
-        const probes = this.pendingProbes.splice(0, CssHitsCounter.CSS_HITS_BATCH_SIZE);
-        // Probes that did not fit into this chunk, if any.
-        const remainingProbes = this.pendingProbes;
+        const allProbes = this.pendingProbes;
         this.pendingProbes = [];
+
+        const chunks = CssHitsCounter.orderPendingProbes(allProbes);
+        const probes = chunks[0] ?? [];
+        // Probes that did not fit into this chunk, if any.
+        const remainingProbes = chunks.slice(1).flat();
+
+        // Elements that another probe in this chunk was removed from. A
+        // counted probe that is such an ancestor must be restored again,
+        // otherwise the dependent probe cannot be measured in its original
+        // parent.
+        const ancestorElements = new Set<Element>();
+        probes.forEach(({ target }) => {
+            let node: Node | null = target;
+            while (node) {
+                if (node instanceof Element) {
+                    ancestorElements.add(node);
+                }
+                node = node.parentNode;
+            }
+        });
 
         const elementsToCount: Element[] = [];
         const restoredProbeElements: Element[] = [];
@@ -692,8 +968,9 @@ export class CssHitsCounter {
                 const { element } = probe;
 
                 // The mutation observer already re-inserted and counted the
-                // element, so it must not be put back again.
-                if (this.countedProbes.has(element)) {
+                // element, so it must not be put back again unless another
+                // probe in this chunk depends on it.
+                if (this.countedProbes.has(element) && !ancestorElements.has(element)) {
                     settledProbes.add(probe);
                     continue;
                 }
@@ -798,6 +1075,12 @@ export class CssHitsCounter {
                 continue;
             }
 
+            // The marker styles are already known to be applied: this probe
+            // did not match, and a retry would not change that.
+            if (this.markerStylesApplied) {
+                continue;
+            }
+
             const attempts = (this.pendingProbeAttempts.get(probe) ?? 0) + 1;
             this.pendingProbeAttempts.set(probe, attempts);
 
@@ -812,11 +1095,15 @@ export class CssHitsCounter {
             ? [...retryProbes, ...remainingProbes]
             : retryProbes;
 
-        if (queuedProbes.length === 0 || this.stopped) {
+        // A probe can appear in several dependent chunks as an ancestor; the
+        // next pass re-splits the group, so keep a single queue entry.
+        const uniqueQueuedProbes = [...new Set(queuedProbes)];
+
+        if (uniqueQueuedProbes.length === 0 || this.stopped) {
             return;
         }
 
-        this.pendingProbes = queuedProbes;
+        this.pendingProbes = uniqueQueuedProbes;
 
         // Only the retried probes need to wait for the marker styles; the
         // next chunk of fresh probes can be processed right away.
@@ -846,34 +1133,22 @@ export class CssHitsCounter {
     }
 
     /**
-     * Chooses a connected node where a detached probe can be temporarily
-     * restored before `getComputedStyle` is called.
+     * Returns the node where a detached probe can be temporarily restored
+     * before `getComputedStyle` is called.
      *
-     * Walks up from the original mutation target to find the nearest node
-     * still connected to the document. Preserving the cascade context
-     * (descendant selectors, `:nth-child`, etc.) matters here: measuring a
-     * probe in a different tree position could report a hit for a rule that
-     * does not actually match the element, or miss a context-dependent rule.
-     * When no ancestor is connected anymore, the probe cannot be measured in
-     * its original context and is not restored at all.
+     * The probe must be measured in its original cascade context: restoring it
+     * in a different tree position could report a hit for a rule that does not
+     * actually match the element, or miss a context-dependent rule. Therefore
+     * the original mutation target is used only if it is still a connected
+     * element. `isConnected` is inherited, so a detached target has no
+     * connected ancestor either.
      *
      * @param target Original mutation target.
      *
-     * @returns Node where the probe can be safely appended, or `null` if no
-     * connected ancestor remains.
+     * @returns The target if it is a connected element, otherwise `null`.
      */
     private static getProbeRestoreTarget(target: Node): Node | null {
-        let current: Node | null = target;
-
-        while (current) {
-            if (current instanceof Element && current.isConnected) {
-                return current;
-            }
-
-            current = current.parentNode;
-        }
-
-        return null;
+        return target instanceof Element && target.isConnected ? target : null;
     }
 
     /**

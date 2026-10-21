@@ -163,6 +163,39 @@ describe('PendingProbesCollector', () => {
         collector.stop();
     });
 
+    it('collects a bait removed in the same task its container was appended', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const container = document.createElement('div');
+        const bait = document.createElement('div');
+        container.appendChild(bait);
+        document.body.appendChild(container);
+
+        // Both mutations happen before the observer callback: the container
+        // is appended and the bait is removed in the same task.
+        bait.remove();
+        MutationObserverMock.last!.trigger([
+            createMutationRecord({
+                addedNodes: [container],
+                target: document.body,
+            }),
+            createMutationRecord({
+                removedNodes: [bait],
+                target: container,
+            }),
+        ]);
+
+        const probes = collector.takePendingProbes();
+
+        expect(probes).toHaveLength(1);
+        expect(probes[0].element).toBe(bait);
+        expect(probes[0].target).toBe(container);
+
+        container.remove();
+        collector.stop();
+    });
+
     it('ignores script tags and duplicate elements', () => {
         const collector = new PendingProbesCollector();
         collector.start();
@@ -353,7 +386,7 @@ describe('PendingProbesCollector', () => {
         collector.stop();
     });
 
-    it('allows a dropped element to be collected after the queue is drained', () => {
+    it('allows a dropped element to be collected when it is added and removed again', () => {
         const collector = new PendingProbesCollector();
         collector.start();
 
@@ -371,8 +404,16 @@ describe('PendingProbesCollector', () => {
         // The last element is dropped by the cap.
         expect(collector.takePendingProbes()).toHaveLength(maxPendingProbes);
 
-        // The queue is drained, so the dropped node can be collected now.
+        // The queue is drained; the page adds the dropped element again and
+        // removes it, so it can be collected now.
         const droppedElement = elements[maxPendingProbes];
+        document.body.appendChild(droppedElement);
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [droppedElement],
+            target: document.body,
+        })]);
+
+        droppedElement.remove();
         MutationObserverMock.last!.trigger([createMutationRecord({
             removedNodes: [droppedElement],
             target: document.body,

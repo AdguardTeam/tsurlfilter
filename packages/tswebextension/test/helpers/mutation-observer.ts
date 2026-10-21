@@ -61,6 +61,8 @@ export class MutationObserverMock {
      */
     public disconnect(): void {
         this.disconnected = true;
+        // A real `disconnect()` drops the record queue as well.
+        this.queuedRecords = [];
     }
 
     /**

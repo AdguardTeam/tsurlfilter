@@ -157,13 +157,14 @@ export class PendingProbesCollector {
     /**
      * Maximum number of elements kept for the counter.
      *
-     * The queue is only used during the short window between the document
-     * start and the counter initialization, but pathological pages can mutate
-     * faster than we initialize. When the queue is full, new elements are
-     * dropped: baits are usually created by a script in `<head>`, so the
-     * earliest probes are the valuable ones, while later churn is more likely
-     * to be unrelated. Dropped elements can still be collected later, after
-     * the queue is drained.
+     * The queue is used from the document start and keeps receiving probes
+     * after the counter initialization, while the collector stays alive.
+     * Pathological pages can mutate faster than the counter drains the queue.
+     * When the queue is full, new elements are dropped: baits are usually
+     * created by a script in `<head>`, so the earliest probes are the valuable
+     * ones, while later churn is more likely to be unrelated. Dropped elements
+     * are not marked as seen, so if the page adds and removes one again after
+     * the queue is drained, it can still be collected.
      */
     private static readonly MAX_PENDING_PROBES = 500;
 
@@ -188,12 +189,13 @@ export class PendingProbesCollector {
     private pendingProbes: PendingProbe[] = [];
 
     /**
-     * Elements added during the observation window, including descendants of
-     * appended subtrees.
+     * Roots of subtrees appended during the observation window.
      *
-     * Used to detect elements that were added and then removed in a later
-     * task: such elements are attached when the mutation callback for their
-     * addition runs, so they are collected on removal.
+     * Used to detect elements that were added and then removed later: the
+     * removal callback checks the removed element and the node it was removed
+     * from against this set, walking up the still-linked ancestor chain. Only
+     * roots are stored, because a mutation record reports only the root of an
+     * appended subtree.
      */
     private addedElements = new WeakSet<Element>();
 
@@ -211,6 +213,21 @@ export class PendingProbesCollector {
      * Callback receiving newly collected probes.
      */
     private onProbesCollected: ((probes: PendingProbe[]) => void) | null = null;
+
+    /**
+     * Callback invoked when observation ends without an explicit stop, e.g.
+     * after {@link MAX_OBSERVATION_TIME_MS}.
+     */
+    private onObservationEnded: (() => void) | null = null;
+
+    /**
+     * Whether the collector is currently observing the DOM.
+     *
+     * @returns True if the collector is observing.
+     */
+    public get isObserving(): boolean {
+        return this.observer !== null;
+    }
 
     /**
      * Starts DOM observation.
@@ -265,6 +282,19 @@ export class PendingProbesCollector {
     }
 
     /**
+     * Sets a callback invoked when observation ends without an explicit stop.
+     *
+     * The counter uses it to start its own observer if the collector times
+     * out while the document is still loading.
+     *
+     * @param callback Callback invoked when observation ends, or `null` to
+     * unsubscribe.
+     */
+    public setOnObservationEnded(callback: (() => void) | null): void {
+        this.onObservationEnded = callback;
+    }
+
+    /**
      * Returns collected probes and keeps observing.
      *
      * Mutation records that have not been delivered yet are processed before
@@ -287,6 +317,8 @@ export class PendingProbesCollector {
      */
     public stop(): void {
         this.onProbesCollected = null;
+        // An explicit stop must not make the counter start its observer.
+        this.onObservationEnded = null;
         this.disconnect();
         this.pendingProbes = [];
     }
@@ -310,6 +342,11 @@ export class PendingProbesCollector {
         // probes collected so far are stale and would otherwise live for the
         // page lifetime.
         this.pendingProbes = [];
+
+        // Notify the subscriber, e.g. so the counter can start its own
+        // observer if the collector times out while the document is still
+        // loading. An explicit stop() clears the callback first.
+        this.onObservationEnded?.();
     }
 
     /**
@@ -357,12 +394,11 @@ export class PendingProbesCollector {
                     continue;
                 }
 
-                // A mutation record reports only the root of an appended
-                // subtree: its descendants do not get their own addition
-                // records. Register the whole subtree, so a bait created
-                // inside a container before the container was appended is
-                // recognized when it is removed later.
-                this.registerAddedSubtree(element);
+                // Remember only the appended root: a mutation record reports
+                // just the root of an appended subtree. Descendants are
+                // resolved lazily on removal by walking up from the removal
+                // target, so no subtree scan is needed here.
+                this.addedElements.add(element);
             }
 
             const { removedNodes } = mutationRecord;
@@ -373,8 +409,9 @@ export class PendingProbesCollector {
                 }
 
                 // The element was added during the observation window and
-                // removed later, so its addition callback saw it attached.
-                if (this.addedElements.has(node) && !node.parentNode) {
+                // removed later.
+                if (!node.parentNode
+                    && this.wasAddedDuringObservation(node, mutationRecord.target)) {
                     hasNewProbes = this.collectProbe(node, mutationRecord) || hasNewProbes;
                 }
             }
@@ -390,25 +427,39 @@ export class PendingProbesCollector {
     }
 
     /**
-     * Registers an appended element and all its descendants as added during
-     * the observation window.
+     * Checks whether an element was added during the observation window.
      *
-     * A mutation record reports only the root of an appended subtree, so
-     * descendants of a container inserted in one operation (e.g. a pre-built
-     * subtree appended to the document) do not get their own addition
-     * records. Without registering them, a bait created inside such a
-     * container and removed later would not be recognized as added during the
-     * observation and would be dropped on removal.
+     * A mutation record reports only the root of an appended subtree, so a
+     * removed descendant has no addition record of its own. It was still
+     * added during the window if it was reported as added itself, or if the
+     * node it was removed from (or one of its ancestors) was appended during
+     * the window: in that case the element came with that subtree, or was
+     * added later and has its own addition record.
      *
-     * @param element Appended element.
+     * The ancestor chain is still linked for a detached subtree, so this also
+     * covers an element removed in the same task its container was appended
+     * in, before the observer callback runs.
+     *
+     * @param node Removed element.
+     * @param target Node the element was removed from.
+     *
+     * @returns True if the element was added during the observation.
      */
-    private registerAddedSubtree(element: Element): void {
-        this.addedElements.add(element);
-
-        const descendants = element.querySelectorAll('*');
-        for (let i = 0; i < descendants.length; i += 1) {
-            this.addedElements.add(descendants[i]);
+    private wasAddedDuringObservation(node: Element, target: Node): boolean {
+        if (this.addedElements.has(node)) {
+            return true;
         }
+
+        let current: Node | null = target;
+        while (current) {
+            if (current instanceof Element && this.addedElements.has(current)) {
+                return true;
+            }
+
+            current = current.parentNode;
+        }
+
+        return false;
     }
 
     /**
@@ -436,7 +487,8 @@ export class PendingProbesCollector {
 
         if (this.pendingProbes.length >= PendingProbesCollector.MAX_PENDING_PROBES) {
             // Keep the earliest probes. The element is not marked as seen, so
-            // it can still be collected later, after the queue is drained.
+            // if the page adds and removes it again after the queue is
+            // drained, it can still be collected.
             return false;
         }
 
