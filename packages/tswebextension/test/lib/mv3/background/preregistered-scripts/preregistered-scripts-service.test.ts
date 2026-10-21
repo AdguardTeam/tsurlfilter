@@ -923,6 +923,62 @@ describe('PreregisteredScriptsService', () => {
             );
         });
 
+        it('does not re-register after a stop enqueued during the boot snapshot', async () => {
+            await setupRulesWithManifest({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
+
+            const order: string[] = [];
+            let releaseSnapshot = (): void => {};
+            const snapshotGate = new Promise<void>((resolve) => {
+                releaseSnapshot = resolve;
+            });
+            let markSnapshotStarted = (): void => {};
+            const snapshotStarted = new Promise<void>((resolve) => {
+                markSnapshotStarted = resolve;
+            });
+
+            vi.mocked(ContentScriptManager.getRegistered).mockImplementationOnce(async () => {
+                order.push('snapshot');
+                markSnapshotStarted();
+                await snapshotGate;
+                return [];
+            });
+            vi.mocked(ContentScriptManager.sync).mockImplementation(async (
+                _namespace,
+                scripts,
+            ) => {
+                order.push('sync');
+                registryState.descriptors = scripts;
+                return { errors: [], failedScriptIds: [] };
+            });
+            vi.mocked(ContentScriptManager.clear).mockImplementation(async () => {
+                order.push('clear');
+                registryState.descriptors = [];
+            });
+
+            const initPromise = PreregisteredScriptsService.init(
+                true,
+                { domains: ['youtube.com'], path: SCRIPTS_PATH },
+            );
+            await snapshotStarted;
+
+            // stop() is enqueued while init is still inside its snapshot slot.
+            const stopPromise = PreregisteredScriptsService.stop();
+            await new Promise((resolve) => {
+                setTimeout(resolve, 0);
+            });
+
+            releaseSnapshot();
+            await initPromise;
+            await stopPromise;
+
+            // Snapshot and sync share one queue slot, so the clear runs last:
+            // the app stays stopped instead of being re-registered by the
+            // init that was already in flight.
+            expect(order).toEqual(['snapshot', 'sync', 'clear']);
+            expect(appContext.preregisteredScriptRules).toEqual(new Map());
+            expect(appContext.preregisteredScriptRulesAtBoot).toBeUndefined();
+        });
+
         it('leaves the boot snapshot unset when listing registrations fails, so the next init retries', async () => {
             const rule = mockScriptletRule('set-cookie', []);
             await setupRulesWithManifest({ 'youtube.com': [rule] });

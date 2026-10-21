@@ -84,36 +84,46 @@ export class PreregisteredScriptsService {
     private static syncQueue: Promise<unknown> = Promise.resolve();
 
     /**
-     * Initializes the feature for the current configuration: snapshots the
-     * persisted registrations once per service-worker lifetime (used to
-     * decide dynamic injection for pre-existing tabs), then syncs them — or
-     * clears all when the feature is not configured, since persisted
-     * registrations would otherwise keep firing across browser sessions.
-     * Both operations publish the resulting coverage into {@link appContext}.
+     * Applies the configuration: snapshots the boot registrations once per
+     * service-worker lifetime, then syncs them — or clears them when the
+     * feature is not configured.
      *
-     * @param preregistrationEnabled Whether preregistration should be active
-     * (the caller composes it from `filteringEnabled && !debugScriptlets`).
-     * @param preregisteredScripts Build-time preregistered script
-     * configuration, or `undefined` when the feature is not configured.
+     * Snapshot and mutation share one queue slot, so a concurrent init/stop
+     * cannot interleave as `snapshot(A) -> clear(B) -> sync(A)`.
+     *
+     * @param preregistrationEnabled Whether preregistration should be active.
+     * @param preregisteredScripts Build-time configuration, `undefined` when
+     * the feature is not configured.
      */
     public static async init(
         preregistrationEnabled: boolean,
         preregisteredScripts?: PreregisteredScriptsConfig,
     ): Promise<void> {
-        // Snapshot before sync/clear mutates the registrations — through the
-        // queue, so a concurrent init cannot read the pre-sync state after
-        // the registrations were already replaced — so pre-existing tabs are
-        // judged against the registrations that existed when their pages
-        // loaded, not against the ones this service worker installs. Failure
-        // handling: see snapshotBootRegistrations().
-        await PreregisteredScriptsService.enqueue(async () => {
-            if (appContext.preregisteredScriptRulesAtBoot === undefined) {
-                await snapshotBootRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE);
-            }
-        });
+        await PreregisteredScriptsService.enqueue(() => (
+            PreregisteredScriptsService.applyConfiguration(
+                preregistrationEnabled,
+                preregisteredScripts,
+            )
+        ));
+    }
+
+    /**
+     * Applies the configuration inside an already-held queue slot. Calls
+     * `doSync()`/`clear` directly: the public `sync()`/`clear()` enqueue
+     * themselves and would wait for the current slot.
+     *
+     * @param preregistrationEnabled Whether preregistration should be active.
+     * @param preregisteredScripts Build-time configuration, `undefined` when
+     * the feature is not configured.
+     */
+    private static async applyConfiguration(
+        preregistrationEnabled: boolean,
+        preregisteredScripts?: PreregisteredScriptsConfig,
+    ): Promise<void> {
+        await PreregisteredScriptsService.snapshotBootRegistrationsOnce();
 
         if (preregisteredScripts) {
-            await PreregisteredScriptsService.sync(
+            await PreregisteredScriptsService.doSync(
                 preregistrationEnabled,
                 preregisteredScripts.domains,
                 preregisteredScripts.path,
@@ -122,15 +132,29 @@ export class PreregisteredScriptsService {
             return;
         }
 
+        await PreregisteredScriptsService.clearRegistrations();
+    }
+
+    /**
+     * Snapshots the persisted registrations once per service-worker
+     * lifetime; a failed snapshot is not cached, so the next init retries.
+     */
+    private static async snapshotBootRegistrationsOnce(): Promise<void> {
+        if (appContext.preregisteredScriptRulesAtBoot === undefined) {
+            await snapshotBootRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE);
+        }
+    }
+
+    /**
+     * Clears the registrations and publishes the resulting coverage: empty
+     * after success, the fallback (still-active registrations) after failure.
+     */
+    private static async clearRegistrations(): Promise<void> {
         try {
-            await PreregisteredScriptsService.clear();
-            // A successful clear invalidates the published coverage: a later
-            // failed sync would otherwise republish stale covered hashes and
-            // suppress dynamic injection for rules with no active
-            // registration.
+            await ContentScriptManager.clear(PREREGISTERED_SCRIPTS_NAMESPACE);
             appContext.preregisteredScriptRules = new Map();
         } catch (e) {
-            logger.error('[tsweb.PreregisteredScriptsService.init]: Failed to clear preregistered scripts', e);
+            logger.error('[tsweb.PreregisteredScriptsService.clearRegistrations]: Failed to clear preregistered scripts', e);
             appContext.preregisteredScriptRules = PreregisteredScriptsService.getFallbackCoverage();
         }
     }
