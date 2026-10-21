@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Support of uBlock Origin `:remove-attr()` and `:remove-class()` pseudo-classes:
+  rules with them are recognized as Extended CSS and passed to the Extended CSS
+  engine [AdguardBrowserExtension#3538].
+
 ### Changed
 
 - Escaped regular-expression domains in non-basic `[$domain=...]` rules now
@@ -46,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.4...HEAD
 [#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
+[AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
 [AdguardBrowserExtension#3605]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3605
 
 ## [6.0.4] - 2026-10-15
