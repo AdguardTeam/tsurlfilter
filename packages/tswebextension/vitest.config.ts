@@ -36,10 +36,15 @@ const createProjectForManifestVersion = (
             // Browser e2e specs are run via `pnpm test:e2e` (vitest --project browser).
             '**/test/e2e/**',
         ],
+        // The ExtCSS benchmark lives in the MV3 test tree and is run by
+        // `pnpm bench`; it must not be collected by the MV2 project.
+        benchmark: manifestVersion === ManifestVersionEnv.Third
+            ? { include: ['test/**/*.bench.ts'] }
+            : undefined,
     },
     // The ExtCSS and CSS-hits inlining plugins are only needed for the MV3
-    // project, where the `applyExtCss` function (and its tests) live. They
-    // are no-ops for MV2.
+    // project, where the `extCssInjectedApply` function (and its tests) live.
+    // They are no-ops for MV2.
     plugins: manifestVersion === ManifestVersionEnv.Third
         ? [inlineExtCssBundle(), inlineCssHitsHelpers()]
         : [],

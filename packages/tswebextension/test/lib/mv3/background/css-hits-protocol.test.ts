@@ -14,6 +14,7 @@ import {
 import { ElementUtils } from '../../../../src/lib/common/content-script/utils/element-utils';
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
 import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-apply-fn';
+import { resetExtCssState } from '../helpers';
 
 /**
  * Shared protocol contract test: asserts the MV3 injected `beforeStyleApplied`
@@ -52,22 +53,11 @@ describe('CSS-hits marker protocol: MV2 vs MV3 contract', () => {
     });
 
     // Single file-level cleanup. The jsdom `window` is shared across
-    // every test in this file, so a retained `window['__adguardExtCss']` instance
-    // (and its MutationObserver) would leak into the next test.
+    // every test in this file, so a retained ExtendedCss instance (and its
+    // MutationObserver) would leak into the next test.
     afterEach(() => {
         sendMessageSpy.mockRestore();
-        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
-        const handle = (window as unknown as { __adguardExtCss?: { dispose(): void } | null }).__adguardExtCss;
-        if (handle) {
-            try {
-                handle.dispose();
-            } catch {
-                // ignore
-            }
-        }
-        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
-        (window as unknown as { __adguardExtCss?: null }).__adguardExtCss = null;
-        document.body.innerHTML = '';
+        resetExtCssState();
     });
 
     // Flush microtasks so the deferred sendMessage (via Promise.resolve().then(...))

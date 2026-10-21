@@ -4,6 +4,7 @@ import { CSS_HITS_MARKER_PREFIX, CSS_HITS_MARKER_PROPERTY, SEMICOLON } from '../
 import { type RuleInfoBasic } from '../rule-info';
 
 import { HitsStorage } from './hits-storage';
+import { cssHitsHelpers } from './utils/css-hits-helpers';
 import { ElementUtils } from './utils/element-utils';
 
 /**
@@ -124,9 +125,9 @@ export class CssHitsCounter {
     }
 
     /**
-     * ExtendedCss callback: reads the legacy `content:` marker from the
-     * parsed rule object, reports a hit, and clears the marker so it
-     * never reaches the DOM.
+     * ExtendedCss callback: collects the legacy `content:` markers of the
+     * affected element's rules, reports the hits, and clears the markers so
+     * they never reach the DOM.
      *
      * The ExtendedCss path was *not* affected by AG-265 — its rules are
      * applied imperatively, never inserted as a stylesheet, so the
@@ -143,36 +144,11 @@ export class CssHitsCounter {
      */
     public countAffectedByExtendedCss(affectedEl: IAffectedElement): IAffectedElement {
         if (affectedEl && affectedEl.rules && affectedEl.rules.length > 0) {
-            const result = [];
-
-            for (const rule of affectedEl.rules) {
-                if (rule.style && rule.style.content) {
-                    const ruleInfo = ElementUtils.parseExtendedStyleInfo(
-                        rule.style.content,
-                        CssHitsCounter.MARKER_PREFIX,
-                    );
-                    if (ruleInfo === null) {
-                        continue;
-                    }
-
-                    const { filterId, ruleIndex } = ruleInfo;
-                    if (filterId !== undefined && ruleIndex !== undefined) {
-                        const element = this.elementToString
-                            ? ElementUtils.elementToString(affectedEl.node)
-                            : affectedEl.node;
-
-                        result.push({
-                            filterId,
-                            ruleIndex,
-                            element,
-                        });
-
-                        // clear style content to avoid duplicate counting and
-                        // to prevent the marker text from being painted.
-                        rule.style.content = '';
-                    }
-                }
-            }
+            const result = cssHitsHelpers.collectExtendedCssHits(
+                affectedEl,
+                CssHitsCounter.MARKER_PREFIX,
+                this.elementToString,
+            );
 
             this.onCssHitsFoundCallback(result);
         }

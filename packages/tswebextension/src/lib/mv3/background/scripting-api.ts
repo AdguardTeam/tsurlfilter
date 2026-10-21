@@ -284,30 +284,6 @@ export class ScriptingApi {
     }
 
     /**
-     * Executes a self-contained function in the ISOLATED world of the target
-     * frame via `chrome.scripting.executeScript`.
-     *
-     * @param target Injection target: tab id and frame id.
-     * @param func Self-contained function to serialize and inject.
-     * @param args Arguments passed to the injected function.
-     *
-     * @returns Promise that resolves when the function is executed.
-     */
-    private static async executeIsolatedFunc<Args extends unknown[]>(
-        target: ExecuteTarget,
-        func: (...args: Args) => void,
-        args: Args,
-    ): Promise<void> {
-        await chrome.scripting.executeScript({
-            target: { tabId: target.tabId, frameIds: [target.frameId] },
-            func,
-            args,
-            injectImmediately: true,
-            world: 'ISOLATED',
-        });
-    }
-
-    /**
      * Injects the pre-bundled ExtendedCSS engine and the matching rule strings
      * into the target frame and applies them. Runs in the ISOLATED world
      * (ExtendedCss only needs DOM access; `MutationObserver` in the isolated
@@ -336,10 +312,12 @@ export class ScriptingApi {
         cssRules,
         collectStats,
     }: ExecuteExtCssParams): Promise<void> {
-        await ScriptingApi.executeIsolatedFunc(
-            { tabId, frameId },
-            extCssInjectedApply,
-            [cssRules, collectStats, EXTCSS_PROTOCOL],
-        );
+        await chrome.scripting.executeScript({
+            target: { tabId, frameIds: [frameId] },
+            func: extCssInjectedApply,
+            args: [cssRules, collectStats, EXTCSS_PROTOCOL],
+            injectImmediately: true,
+            world: 'ISOLATED',
+        });
     }
 }

@@ -85,6 +85,7 @@
         "update:companiesdb": "tsx tasks/update-companiesdb.ts",
         "start": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc -w",
         "test": "vitest run",
+        "bench": "vitest bench --run --project \"mv3*\" --reporter=default --reporter=json --outputFile.json=.vitest/bench/tswebextension.json",
         "test:ci": "vitest run --no-cache --reporter default --reporter junit --outputFile=./tests-reports/tswebextension.xml",
         "test:mv2": "vitest run --project mv2",
         "test:mv3": "vitest run --project mv3",

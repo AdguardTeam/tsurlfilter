@@ -113,6 +113,23 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
     });
 
+    it('does not await the ExtCSS injection (startup must not block on it)', async () => {
+        const rules = ['div:has(.ad) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
+
+        // Never settle, like a slow executeScript in a busy open tab: awaiting
+        // it used to delay `processOpenTabs` and therefore `isAppStarted`.
+        let resolveInjection: () => void = () => {};
+        vi.mocked(ScriptingApi.executeExtCss).mockImplementation(() => new Promise<void>((resolve) => {
+            resolveInjection = resolve;
+        }));
+
+        await expect(CosmeticApi.applyCosmeticRules(1, 0, true)).resolves.toEqual(expect.any(Array));
+
+        // Release the pending injection so it cannot outlive the test.
+        resolveInjection();
+    });
+
     it('logs scripting-path ExtCSS failures at info level with no retry or fallback', async () => {
         const rules = ['div:has(.ad) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
@@ -120,8 +137,8 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         vi.mocked(ScriptingApi.executeExtCss).mockRejectedValue(injectionError);
         const infoSpy = vi.spyOn(logger, 'info');
 
-        // Must not throw: applyExtCssRules catches internally and applyCosmeticRules
-        // uses Promise.allSettled, so no unhandled rejection reaches the worker.
+        // Must not throw: applyExtCssRules catches internally and the ExtCSS
+        // task is not awaited, so no unhandled rejection reaches the worker.
         const result = await CosmeticApi.applyCosmeticRules(1, 0, true);
 
         // Single attempt — no retry loop.
@@ -132,7 +149,9 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         // failures in this class — with the context-tagged message and the error.
         const expectedMessage = '[tsweb.CosmeticApi.applyExtCssRules]:'
             + ' error occurred during injection into tabId 1 and frameId 0 ';
-        expect(infoSpy).toHaveBeenCalledTimes(1);
+        await vi.waitFor(() => {
+            expect(infoSpy).toHaveBeenCalledTimes(1);
+        });
         expect(infoSpy).toHaveBeenCalledWith(
             expect.stringContaining(expectedMessage),
             injectionError,

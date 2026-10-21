@@ -118,9 +118,18 @@ export const buildExtCssBundle = async (): Promise<string> => {
     }
 };
 
-// Singleton: the nested build runs at most once per process; the result is
-// shared by every plugin instance (build config, Vitest projects).
+// Singleton: the nested build runs once per build; the result is shared by
+// every plugin instance (build config, Vitest projects) until `buildStart`
+// drops it in watch mode.
 let bundlePromise: Promise<string> | undefined;
+
+/**
+ * Drops the cached ExtendedCss IIFE so the next {@link getExtCssBundle} call
+ * rebuilds it. Used by {@link inlineExtCssBundle} on every (re)build.
+ */
+export const resetExtCssBundle = (): void => {
+    bundlePromise = undefined;
+};
 
 /**
  * Returns the cached ExtendedCss injection IIFE, building it on first use.
@@ -151,9 +160,11 @@ export const inlineExtCssBundle = (): Plugin => ({
 
     // Warm the cache so the async nested build overlaps with the rest of
     // the pipeline; Vite dev servers (Vitest) also await async buildStart hooks.
-    // The entry source is a watch dependency, so a change to the injected
-    // payload rebuilds the bundle in watch mode.
+    // Every (re)build drops the cached payload first: watch mode re-runs this
+    // hook, so a change to the inject entry must rebuild the IIFE instead of
+    // keeping the first one inlined for the whole session.
     async buildStart(): Promise<void> {
+        resetExtCssBundle();
         this.addWatchFile(EXT_CSS_INJECT_SRC);
         await getExtCssBundle();
     },
@@ -165,6 +176,12 @@ export const inlineExtCssBundle = (): Plugin => ({
         if (id.includes('.test.ts') || !MARKER_PATTERN.test(code)) {
             return null;
         }
+
+        // Associate the inject entry with THIS module: `buildStart` alone only
+        // drops the cache, while Rollup/Vite keeps serving the cached
+        // transform result of a module whose own source did not change, so
+        // the previous payload would stay inlined until the watcher restarts.
+        this.addWatchFile(EXT_CSS_INJECT_SRC);
 
         // Await the cache here too, so pipelines that skip buildStart still work.
         const source = await getExtCssBundle();

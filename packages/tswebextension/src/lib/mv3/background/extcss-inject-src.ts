@@ -5,7 +5,7 @@ import { type ExtCssConfiguration, ExtendedCss, type IAffectedElement } from '@a
  *
  * Bundled by `tasks/inline-extcss-bundle.ts` into a minified in-memory IIFE
  * exposing `applyExtendedCss` as a function-scoped `var`, then inlined into
- * the body of `applyExtCss` (`extcss-apply-fn.ts`). It imports ONLY the
+ * the body of `extCssInjectedApply` (`extcss-apply-fn.ts`). It imports ONLY the
  * public root export of `@adguard/extended-css` — the library stays a
  * generic DOM-selection engine while this consumer owns its injection
  * payload. Uses a default export so Rollup assigns the function itself to

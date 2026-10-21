@@ -54,7 +54,10 @@ declare const applyExtendedCss: typeof applyExtendedCssImpl;
  *
  * @param cssRules ExtendedCSS rule strings to apply to the current document.
  * @param collectStats When true, register a CSS-hits `beforeStyleApplied`
- * callback (else nothing is registered and no overhead is incurred).
+ * callback (else nothing is registered and no overhead is incurred). The
+ * callback is registered only for the first injection into a document; a
+ * re-apply reuses the rule strings with fresh markers, so reporting them again
+ * would duplicate the hits.
  * @param protocol Serialized protocol values (see `EXTCSS_PROTOCOL`). A
  * required argument (not a module-scope default) so the serialized body has
  * zero free identifiers.
@@ -70,11 +73,11 @@ export const extCssInjectedApply = (
     __INLINE_EXTCSS_BUNDLE__();
 
     // Inlined CSS-hits helpers — the SAME source used by MV2's
-    // `ElementUtils`. Defines a local `cssHitsHelpers` object with
-    // `parseExtendedStyleInfo()` and `elementToString()` so the
-    // `beforeStyleApplied` callback below can use them without any
-    // module-scope references (which would not survive toString()-based
-    // serialization for `chrome.scripting.executeScript({ func })`).
+    // `ElementUtils` and `CssHitsCounter`. Defines a local `cssHitsHelpers`
+    // object with `collectExtendedCssHits()` so the `beforeStyleApplied`
+    // callback below can use it without any module-scope references (which
+    // would not survive toString()-based serialization for
+    // `chrome.scripting.executeScript({ func })`).
     __INLINE_CSS_HITS_HELPERS__();
 
     /**
@@ -88,49 +91,17 @@ export const extCssInjectedApply = (
 
     /**
      * CSS-hits callback. Uses the inlined `cssHitsHelpers` (defined above by
-     * the build-time helpers inliner) — the SAME source as MV2's
-     * `ElementUtils` — so both manifest versions share one implementation of
-     * marker parsing and element serialization. The contract test
-     * (test/lib/mv3/background/css-hits-protocol.test.ts) pins both paths to
-     * identical outputs.
+     * the build-time helpers inliner) — the SAME source that MV2's
+     * `CssHitsCounter` uses — so both manifest versions collect hits one way.
+     * The contract test (test/lib/mv3/background/css-hits-protocol.test.ts)
+     * pins both paths to identical outputs.
      *
      * @param el The affected element whose style is about to be applied.
      *
      * @returns The same element (with the hit marker content cleared).
      */
     const beforeStyleApplied = (el: IAffectedElement): IAffectedElement => {
-        const PREFIX = protocol.markerPrefix;
-        const hits: { filterId: number; ruleIndex: number; element: string }[] = [];
-
-        if (el && el.rules) {
-            for (const rule of el.rules) {
-                const content = rule && rule.style && rule.style.content;
-                if (!content || content.indexOf(PREFIX) < 0) {
-                    continue;
-                }
-
-                const ruleInfo = cssHitsHelpers.parseExtendedStyleInfo(content, PREFIX);
-                if (!ruleInfo) {
-                    continue;
-                }
-
-                const { filterId, ruleIndex } = ruleInfo;
-
-                // Serialize element: build `<tagname attrs>` with a single
-                // trailing '>'. Fall back to '<div>' when the node is missing
-                // (mirrors the original inline implementation's fallback).
-                const { node } = el;
-                const elementStr = node
-                    ? cssHitsHelpers.elementToString(node)
-                    : '<div>';
-
-                hits.push({ filterId, ruleIndex, element: elementStr });
-                // Clear to avoid duplicate counting on re-style.
-                if (rule.style) {
-                    rule.style.content = '';
-                }
-            }
-        }
+        const hits = cssHitsHelpers.collectExtendedCssHits(el, protocol.markerPrefix, true);
 
         if (hits.length > 0) {
             // Defer the call into a microtask so a synchronous throw
@@ -174,9 +145,17 @@ export const extCssInjectedApply = (
     }
 
     try {
+        // A second injection into the same document re-applies rule strings
+        // that carry fresh hit markers, so every already reported hit would be
+        // reported again. This happens on startup: `onCommitted` is already
+        // registered while `processOpenTabs` runs, so a tab that commits
+        // during that pass gets ExtCSS from both. Register the callback only
+        // for the first injection into the document.
+        const collectHits = collectStats && !previous;
+
         // Retain the new instance, and the rule strings it was built from, so
         // the next call can dispose it and restore it on failure.
-        const next: RetainedExtCss = collectStats
+        const next: RetainedExtCss = collectHits
             ? applyExtendedCss(cssRules, beforeStyleApplied)
             : applyExtendedCss(cssRules);
         next.cssRules = cssRules;

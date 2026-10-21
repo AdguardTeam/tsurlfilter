@@ -13,25 +13,13 @@ import {
 
 import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../../src/lib/common/message-constants';
 import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-apply-fn';
+import { resetExtCssState } from '../helpers';
 
-// Single file-level cleanup. The jsdom `window` is shared across
-// every test in this file, so a retained `window['__adguardExtCss']` instance
-// (and its MutationObserver) would leak into the next test. Dispose it and
-// reset the DOM here for every test, instead of repeating the teardown per
-// describe block.
+// Single file-level cleanup. The jsdom `window` is shared across every test in
+// this file, so a retained ExtendedCss instance (and its MutationObserver)
+// would leak into the next test.
 afterEach(() => {
-    // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
-    const handle = (window as unknown as { __adguardExtCss?: { dispose(): void } | null }).__adguardExtCss;
-    if (handle) {
-        try {
-            handle.dispose();
-        } catch {
-            // ignore
-        }
-    }
-    // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
-    (window as unknown as { __adguardExtCss?: null }).__adguardExtCss = null;
-    document.body.innerHTML = '';
+    resetExtCssState();
 });
 
 describe('extCssInjectedApply (inlined bundle)', () => {
@@ -45,10 +33,11 @@ describe('extCssInjectedApply (inlined bundle)', () => {
         expect(ad.style.getPropertyPriority('display')).toBe('important');
     });
 
-    it('hides a matching :contains() element (exercises init())', () => {
-        // `:contains()` requires the `init()` lifecycle step (it snapshots the
-        // native `Node.prototype.textContent` getter), so this test fails if
-        // the inlined payload calls `apply()` without `init()`.
+    it('hides a matching :contains() element', () => {
+        // `:contains()` reads the page's `textContent` getter. Removing
+        // `init()` does NOT fail this test — jsdom does not mock that getter —
+        // so the `init()` call in `extcss-inject-src.ts` is pinned by the
+        // builder test "calls init() before apply()" instead.
         document.body.innerHTML = '<div class="ad">adsbygoogle</div>';
 
         extCssInjectedApply(['.ad:contains(adsbygoogle) { display: none !important; }'], false, EXTCSS_PROTOCOL);
@@ -120,7 +109,7 @@ describe('extCssInjectedApply (inlined bundle)', () => {
     });
 });
 
-describe('extCssInjectedApply — navigation cleanup (AC2)', () => {
+describe('extCssInjectedApply — re-apply in the same document', () => {
     it('disposes the previous instance on re-apply (old styles reverted, old observer stopped)', async () => {
         // First injection: rule A hides `.ad:has(.child)`.
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
@@ -128,9 +117,11 @@ describe('extCssInjectedApply — navigation cleanup (AC2)', () => {
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
 
-        // Second injection (simulates the next onCommitted re-injection with a
-        // different rule set for the new URL). The previous instance must be
-        // disposed: its styles are reverted synchronously by dispose().
+        // Second injection into the SAME document, with a different rule set.
+        // A navigation is not modelled here: it creates a new document and a
+        // new isolated world, so it cannot hit this path. The previous
+        // instance must be disposed: its styles are reverted synchronously by
+        // dispose().
         extCssInjectedApply(['.other:has(.x) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         // Old instance's styles reverted → `.ad` is visible again.
@@ -286,7 +277,7 @@ describe('extCssInjectedApply — atomic re-apply', () => {
     });
 });
 
-describe('extCssInjectedApply — continuous observation (AC1)', () => {
+describe('extCssInjectedApply — continuous observation', () => {
     it('hides a matching element added dynamically after extCssInjectedApply', async () => {
         document.body.innerHTML = '';
         extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
@@ -531,6 +522,24 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         // If the dedup guard fails (content not cleared), the observer
         // would re-send the hit on its next pass.
         await new Promise((resolve) => { setTimeout(resolve, 300); });
+        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not report the hits again when the same document is re-injected', async () => {
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+
+        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
+        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+
+        // A second injection into the same document — e.g. `onCommitted`
+        // firing while `processOpenTabs` is still running — receives the same
+        // marker-carrying rule strings. The new instance must not register the
+        // hits callback, otherwise the hit above is reported twice.
+        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
         expect(sendMessageSpy).toHaveBeenCalledTimes(1);
     });
 

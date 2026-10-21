@@ -191,6 +191,71 @@ describe('CosmeticFrameProcessor', () => {
         });
     });
 
+    describe('handleSubFrameWithoutUrl', () => {
+        it('inherits the rules of the nearest HTTP parent frame', () => {
+            const parentFrame = {
+                tabId: 1,
+                frameId: 1,
+                url: 'https://parent.example.com/',
+                preparedCosmeticResult: { extCssRules: ['div:has(.ad)'] },
+            };
+            vi.mocked(tabsApi.getByDocumentId).mockReturnValue(parentFrame as any);
+
+            CosmeticFrameProcessor.handleSubFrameWithoutUrl({
+                tabId: 1,
+                frameId: 2,
+                mainFrameUrl: 'https://example.com/',
+                parentDocumentId: 'parent-document',
+            });
+
+            expect(vi.mocked(tabsApi.updateFrameContext)).toHaveBeenCalledWith(1, 2, {
+                preparedCosmeticResult: parentFrame.preparedCosmeticResult,
+                mainFrameUrl: 'https://example.com/',
+            });
+        });
+
+        it('falls back to the main frame when the parent context is already pruned', () => {
+            // `deleteFrameContext` drops non-main frames after
+            // FRAME_DELETION_TIMEOUT_MS, while the page can still create
+            // about:blank or srcdoc frames.
+            vi.mocked(tabsApi.getByDocumentId).mockReturnValue(undefined);
+            const mainFrame = {
+                tabId: 1,
+                frameId: MAIN_FRAME_ID,
+                url: 'https://example.com/',
+                preparedCosmeticResult: { extCssRules: ['div:has(.ad)'] },
+            };
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue(mainFrame as any);
+
+            CosmeticFrameProcessor.handleSubFrameWithoutUrl({
+                tabId: 1,
+                frameId: 2,
+                mainFrameUrl: 'https://example.com/',
+                parentDocumentId: 'pruned-parent-document',
+            });
+
+            expect(vi.mocked(tabsApi.getFrameContext)).toHaveBeenCalledWith(1, MAIN_FRAME_ID);
+            expect(vi.mocked(tabsApi.updateFrameContext)).toHaveBeenCalledWith(1, 2, {
+                preparedCosmeticResult: mainFrame.preparedCosmeticResult,
+                mainFrameUrl: 'https://example.com/',
+            });
+        });
+
+        it('leaves the frame without rules when neither parent nor main frame has any', () => {
+            vi.mocked(tabsApi.getByDocumentId).mockReturnValue(undefined);
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
+
+            CosmeticFrameProcessor.handleSubFrameWithoutUrl({
+                tabId: 1,
+                frameId: 2,
+                mainFrameUrl: 'https://example.com/',
+                parentDocumentId: 'pruned-parent-document',
+            });
+
+            expect(vi.mocked(tabsApi.updateFrameContext)).not.toHaveBeenCalled();
+        });
+    });
+
     describe('handleFrame resets blocked count for non-HTTP pages', () => {
         it('should reset blocked request count for non-HTTP main frame URLs (e.g. chrome://newtab)', () => {
             CosmeticFrameProcessor.handleFrame({

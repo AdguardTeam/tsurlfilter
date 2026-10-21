@@ -543,7 +543,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * it might be too early. Instead, we wait until the DOM is ready on
      * onCommitted and apply them then.
      *
-     * @returns A promise that resolves when the cosmetic rules are applied.
+     * @returns A promise that resolves when the cosmetic rules are applied. The
+     * ExtendedCSS injection is deliberately left floating, so it may still be
+     * in flight when the promise resolves.
      */
     public static async applyCosmeticRules(
         tabId: number,
@@ -574,8 +576,18 @@ export class CosmeticApi extends CosmeticApiCommon {
         if (shouldApplyCss) {
             tasks.push(
                 CosmeticApi.applyCss(tabId, frameId, frameContext.preparedCosmeticResult.cssText),
-                CosmeticApi.applyExtCssRules(frameContext),
             );
+
+            // Deliberately not awaited: the ExtCSS payload is ~50 KB and has
+            // to be compiled and executed in every matched frame, while
+            // `processOpenTabs` awaits this method before `isAppStarted` is
+            // set, so awaiting it delays startup for every open tab. The
+            // injection still starts immediately (`injectImmediately: true`).
+            // `applyExtCssRules` catches and logs its own errors, so this
+            // catch only guards against an unhandled rejection.
+            CosmeticApi.applyExtCssRules(frameContext).catch((e: unknown) => {
+                logger.error(`[tsweb.CosmeticApi.applyCosmeticRules]: unhandled ExtCSS injection rejection for tabId ${tabId} and frameId ${frameId} `, e);
+            });
         }
 
         return Promise.allSettled(tasks);

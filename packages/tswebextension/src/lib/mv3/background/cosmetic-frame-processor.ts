@@ -114,9 +114,8 @@ export class CosmeticFrameProcessor {
         // No allowlist gate is needed here because the CosmeticEngine already
         // returns an empty CosmeticResult (zero ExtCSS rules) for allowlisted
         // documents — see getCosmeticOption() → CosmeticOptionNone. With no
-        // rules, getExtCssRules() returns null, so applyExtCssRules() injects
-        // only a disposal call (and skips it when nothing was applied to the
-        // document), and no hit markers are produced regardless of this flag.
+        // rules, getExtCssRules() returns null and applyExtCssRules() injects
+        // nothing, so no hit markers are produced regardless of this flag.
         // areHitsStatsCollected only controls whether markers are ADDED to
         // rule strings, not which rules are selected.
         const areHitsStatsCollected = appContext.configuration?.settings.collectStats || false;
@@ -187,6 +186,23 @@ export class CosmeticFrameProcessor {
         if (parentFrame) {
             tabsApi.updateFrameContext(tabId, frameId, {
                 preparedCosmeticResult: parentFrame.preparedCosmeticResult,
+                mainFrameUrl,
+            });
+            return;
+        }
+
+        // The parent's context may already be pruned: `deleteFrameContext`
+        // drops non-main frames once `FRAME_DELETION_TIMEOUT_MS` has passed,
+        // while the page can still create about:blank or srcdoc frames. Such a
+        // frame inherits the main frame's rules — this is what the content
+        // script path does for local frames, see `createFrameMatchQuery` — so
+        // fall back to the main frame instead of leaving the frame without
+        // cosmetic rules.
+        const mainFrame = tabsApi.getFrameContext(tabId, MAIN_FRAME_ID);
+
+        if (mainFrame?.preparedCosmeticResult) {
+            tabsApi.updateFrameContext(tabId, frameId, {
+                preparedCosmeticResult: mainFrame.preparedCosmeticResult,
                 mainFrameUrl,
             });
         }

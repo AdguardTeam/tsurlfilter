@@ -38,8 +38,9 @@ const MARKER_NAME = '__INLINE_CSS_HITS_HELPERS__';
 /**
  * Transpiles the helpers module to self-contained JS — no imports, no exports.
  * The only import (`RuleInfoBasic`) is type-only and already erased, so the
- * result has no free identifiers and can be inlined into `applyExtCss`,
- * whose body is serialized via `toString()` for `executeScript`.
+ * result has no free identifiers and can be inlined into
+ * `extCssInjectedApply`, whose body is serialized via `toString()` for
+ * `executeScript`.
  *
  * @returns Transpiled JavaScript source.
  */
@@ -49,9 +50,9 @@ function buildHelpersSource(): string {
             target: ts.ScriptTarget.ES2022,
             module: ts.ModuleKind.ES2022,
             // Strip comments: the transpiled source is inlined into the
-            // injected `applyExtCss` body, so every byte counts — and stray
-            // comment text (e.g. `'adguard'` examples) must not pollute the
-            // self-containment contract of the serialized function.
+            // injected `extCssInjectedApply` body, so every byte counts — and
+            // stray comment text (e.g. `'adguard'` examples) must not pollute
+            // the self-containment contract of the serialized function.
             removeComments: true,
         },
     });
@@ -59,10 +60,10 @@ function buildHelpersSource(): string {
 }
 
 /**
- * Inlines the CSS-hits helpers into the `applyExtCss` function body, replacing
- * the `__INLINE_CSS_HITS_HELPERS__()` marker. This lets MV2 (runtime import)
- * and MV3 (build-time inline) share one source file. Must run after TypeScript
- * compilation so the type checker never sees the inlined code.
+ * Inlines the CSS-hits helpers into the `extCssInjectedApply` function body,
+ * replacing the `__INLINE_CSS_HITS_HELPERS__()` marker. This lets MV2 (runtime
+ * import) and MV3 (build-time inline) share one source file. Must run after
+ * TypeScript compilation so the type checker never sees the inlined code.
  *
  * @returns Rollup/Vite plugin.
  */
@@ -87,6 +88,13 @@ export const inlineCssHitsHelpers = (): Plugin => {
             if (id.includes('.test.ts') || !MARKER_PATTERN.test(code)) {
                 return null;
             }
+
+            // Associate the helpers source with THIS module: `buildStart`
+            // alone only clears the cache, while Rollup/Vite keeps serving the
+            // cached transform result of a module whose own source did not
+            // change, so the previous payload would stay inlined for the rest
+            // of the watch session.
+            this.addWatchFile(HELPERS_PATH);
 
             if (helpers === undefined) {
                 helpers = buildHelpersSource();

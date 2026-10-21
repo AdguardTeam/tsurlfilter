@@ -55,14 +55,21 @@ export type ExtCssProtocol = {
     /**
      * Message type used when reporting CSS hits to the background.
      */
-    messageType: MessageType;
+    messageType: typeof MessageType.SaveCssHitsStats;
 
     /**
      * `window` key under which the applied ExtendedCss instance is retained
      * between injections so it can be disposed before a re-apply.
      */
-    instanceKey: string;
+    instanceKey: typeof EXTCSS_INSTANCE_KEY;
 };
+
+/**
+ * Canonical `window` key under which the injected function retains the applied
+ * ExtendedCss instance. Typed as a literal so a typo in
+ * {@link EXTCSS_PROTOCOL} fails the type check.
+ */
+const EXTCSS_INSTANCE_KEY = '__adguardExtCss' as const;
 
 /**
  * Canonical {@link ExtCssProtocol} values passed by `ScriptingApi` as
@@ -72,6 +79,5 @@ export const EXTCSS_PROTOCOL: ExtCssProtocol = {
     markerPrefix: CSS_HITS_MARKER_PREFIX,
     handlerName: MESSAGE_HANDLER_NAME,
     messageType: MessageType.SaveCssHitsStats,
-    // eslint-disable-next-line no-underscore-dangle -- deliberate marker key
-    instanceKey: '__adguardExtCss',
+    instanceKey: EXTCSS_INSTANCE_KEY,
 };

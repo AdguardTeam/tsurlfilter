@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 
-import { type rollup as realRollup } from 'rollup';
+import { type Plugin, type rollup as realRollup } from 'rollup';
 import {
     beforeEach,
     describe,
@@ -204,6 +204,31 @@ describe('inline-extcss-bundle builder', () => {
     });
 });
 
+/**
+ * Runs a plugin's `transform` hook with a minimal plugin context, so hooks that
+ * call `this.addWatchFile()` also work when invoked outside a real Rollup or
+ * Vite build.
+ *
+ * @param plugin Plugin whose `transform` hook is called.
+ * @param code Module code to transform.
+ * @param id Module id.
+ *
+ * @returns Transformed code, or `null` when the plugin left the module as is.
+ */
+const runTransform = async (
+    plugin: Plugin,
+    code: string,
+    id: string,
+): Promise<string | null> => {
+    const transform = plugin.transform as unknown as (
+        this: { addWatchFile(file: string): void },
+        code: string,
+        id: string,
+    ) => string | null | Promise<string | null>;
+
+    return transform.call({ addWatchFile: (): void => {} }, code, id);
+};
+
 describe('inline-css-hits-helpers builder', () => {
     it('fails the production build if the marker survives into an emitted chunk', () => {
         const plugin = inlineCssHitsHelpers();
@@ -221,17 +246,14 @@ describe('inline-css-hits-helpers builder', () => {
         })).not.toThrow();
     });
 
-    it('inlines the marker in any non-test module (the marker call is the contract)', () => {
+    it('inlines the marker in any non-test module (the marker call is the contract)', async () => {
         const plugin = inlineCssHitsHelpers();
-        const transform = plugin.transform as unknown as (
-            code: string,
-            id: string,
-        ) => string | null;
 
         // Deliberately NOT the current owner path: a rename/move of the module
         // containing the marker call must not silently disable inlining.
-        const inlined = transform(
-            'function applyExtCss() { __INLINE_CSS_HITS_HELPERS__(); }',
+        const inlined = await runTransform(
+            plugin,
+            'function extCssInjectedApply() { __INLINE_CSS_HITS_HELPERS__(); }',
             '/pkg/src/lib/mv3/background/renamed-owner.ts',
         );
 
@@ -241,16 +263,13 @@ describe('inline-css-hits-helpers builder', () => {
         expect(inlined).toContain('cssHitsHelpers');
     });
 
-    it('leaves the marker literal in test modules untouched', () => {
+    it('leaves the marker literal in test modules untouched', async () => {
         const plugin = inlineCssHitsHelpers();
-        const transform = plugin.transform as unknown as (
-            code: string,
-            id: string,
-        ) => string | null;
 
         // Test files embed the marker literal in assertions; rewriting it
         // would break the very checks that pin the inlining contract.
-        expect(transform(
+        expect(await runTransform(
+            plugin,
             'expect(src).not.toMatch(/__INLINE_CSS_HITS_HELPERS__\\(\\)/);',
             '/pkg/test/lib/mv3/background/extcss-apply-fn.test.ts',
         )).toBeNull();

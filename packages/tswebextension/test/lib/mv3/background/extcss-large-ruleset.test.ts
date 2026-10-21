@@ -12,6 +12,7 @@ import {
 
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
 import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-apply-fn';
+import { resetExtCssState } from '../helpers';
 
 // Large rule set: "hundreds of ExtCSS rules". 500 is well above
 // "hundreds" and exercises the args serialization path heavily.
@@ -24,21 +25,10 @@ const LARGE_RULESET_SIZE = 500;
 // measured size is printed by the test for the record.
 const SAFE_PAYLOAD_BYTES = 1024 * 1024;
 
-// Shared jsdom cleanup (same pattern as extcss-apply-fn.test.ts): dispose the
-// retained instance and reset the DOM between tests.
+// Shared jsdom cleanup: dispose the retained instance and reset the DOM
+// between tests.
 afterEach(() => {
-    // eslint-disable-next-line no-underscore-dangle -- marker key inlined into extCssInjectedApply
-    const handle = (window as unknown as { __adguardExtCss?: { dispose(): void } | null }).__adguardExtCss;
-    if (handle) {
-        try {
-            handle.dispose();
-        } catch {
-            // ignore
-        }
-    }
-    // eslint-disable-next-line no-underscore-dangle -- marker key inlined into extCssInjectedApply
-    (window as unknown as { __adguardExtCss?: null }).__adguardExtCss = null;
-    document.body.innerHTML = '';
+    resetExtCssState();
 });
 
 /**
