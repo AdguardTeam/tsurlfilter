@@ -276,6 +276,58 @@ describe('CspRulesResolver.resolve', () => {
         });
     });
 
+    it('cancels a blocker whose $domain differs in case only', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=foo.com",
+            "@@||example.com^$csp=script-src 'none',domain=FOO.COM",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('cancels a blocker whose uppercase $domain differs in case only', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=FOO.COM",
+            "@@||example.com^$csp=script-src 'none',domain=foo.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('reports a narrower $domain exception written in a different case', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=foo.com",
+            "@@||example.com^$csp=script-src 'none',domain=SUB.FOO.COM",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('cancels a blocker whose $to differs in case only', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',to=cdn.example.com",
+            "@@||example.com^$csp=script-src 'none',to=CDN.EXAMPLE.COM",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
     it('lets an unrestricted exception cancel a blocker restricted by $domain', () => {
         const rules = createRules(
             "||example.com^$csp=script-src 'none',domain=foo.com",
@@ -598,6 +650,19 @@ describe('CspRulesResolver.resolve', () => {
         const rules = createRules(
             "$csp=script-src 'none',denyallow=example.com",
             "@@$csp=script-src 'none',denyallow=sub.example.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('cancels a global blocker whose $denyallow differs in case only', () => {
+        const rules = createRules(
+            "$csp=script-src 'none',denyallow=example.com",
+            "@@$csp=script-src 'none',denyallow=EXAMPLE.COM",
         );
 
         expect(CspRulesResolver.resolve(rules)).toEqual({

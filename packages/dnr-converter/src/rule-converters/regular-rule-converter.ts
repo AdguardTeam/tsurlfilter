@@ -264,9 +264,13 @@ export class RegularRuleConverter {
      * dropped; wildcard TLD domains (e.g. `example.*`) are expanded to the
      * popular TLD list.
      *
+     * Domains are lowercased: a host in a URL is always lowercased, so the case
+     * written in a modifier carries no meaning, while the condition arrays are
+     * also compared with each other by the CSP resolver.
+     *
      * @param domains Domains from network rule modifier.
      *
-     * @returns ASCII-only unique domains supported by DNR.
+     * @returns Lowercased ASCII-only unique domains supported by DNR.
      */
     private static prepareDeclarativeDomains(domains: string[] | null | undefined): string[] {
         const expandedDomains = domains?.flatMap((domain) => {
@@ -285,7 +289,7 @@ export class RegularRuleConverter {
             return [domain];
         }) ?? [];
 
-        return [...new Set(toASCII(expandedDomains))];
+        return [...new Set(toASCII(expandedDomains).map((domain) => domain.toLowerCase()))];
     }
 
     /**

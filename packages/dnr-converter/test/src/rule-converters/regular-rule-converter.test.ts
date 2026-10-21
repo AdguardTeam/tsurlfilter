@@ -1175,6 +1175,20 @@ describe('RuleConverter', () => {
             expect(condition.excludedRequestDomains).toEqual(['example.com']);
         });
 
+        it('lowercases every domain condition', () => {
+            const rule = createRuleMock({
+                permittedDomains: ['Example.COM', 'Sub.Example.COM'],
+                restrictedDomains: ['Excluded.Example'],
+                permittedToDomains: ['Target.Example'],
+                denyAllowDomains: ['DenyAllow.Example'],
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.initiatorDomains).toEqual(['example.com', 'sub.example.com']);
+            expect(condition.excludedInitiatorDomains).toEqual(['excluded.example']);
+            expect(condition.requestDomains).toEqual(['target.example']);
+            expect(condition.excludedRequestDomains).toEqual(['denyallow.example']);
+        });
+
         it('should skip excludedResourceTypes if restricted resource types are empty', () => {
             const rule = createRuleMock();
             const condition = RegularRuleConverter.getCondition(rule);
