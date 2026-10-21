@@ -138,16 +138,41 @@ export class PreregisteredScriptsService {
             return;
         }
 
+        if (PreregisteredScriptsService.isNamespaceEmpty()) {
+            appContext.preregisteredScriptRules = new Map();
+
+            return;
+        }
+
         await PreregisteredScriptsService.clearRegistrations();
     }
 
     /**
+     * Returns true when this service worker has neither seen persisted
+     * registrations at boot nor registered any script itself, so clearing
+     * the namespace would only list an empty registry.
+     *
+     * @returns True when the namespace is known to be empty.
+     */
+    private static isNamespaceEmpty(): boolean {
+        return appContext.preregisteredScriptRulesAtBoot?.size === 0
+            && !appContext.preregisteredScriptsRegistered;
+    }
+
+    /**
      * Snapshots the persisted registrations once per service-worker
-     * lifetime; a failed snapshot is not cached, so the next init retries.
+     * lifetime. A failed read fails open with an empty snapshot: the init
+     * that follows mutates the registrations, so a later retry would judge
+     * pre-existing tabs against rules they never received.
      */
     private static async snapshotBootRegistrationsOnce(): Promise<void> {
-        if (appContext.preregisteredScriptRulesAtBoot === undefined) {
-            await snapshotBootRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE);
+        if (appContext.preregisteredScriptRulesAtBoot !== undefined) {
+            return;
+        }
+
+        const succeeded = await snapshotBootRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE);
+        if (!succeeded) {
+            appContext.preregisteredScriptRulesAtBoot = new Map();
         }
     }
 
@@ -159,6 +184,7 @@ export class PreregisteredScriptsService {
         try {
             await ContentScriptManager.clear(PREREGISTERED_SCRIPTS_NAMESPACE);
             appContext.preregisteredScriptsKey = undefined;
+            appContext.preregisteredScriptsRegistered = false;
             appContext.preregisteredScriptRules = new Map();
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.clearRegistrations]: Failed to clear preregistered scripts', e);
@@ -169,10 +195,9 @@ export class PreregisteredScriptsService {
     /**
      * Tears down preregistration: clears the persisted registrations through
      * the queue (so an in-flight sync settles first), then resets the
-     * published coverage and the boot snapshot, so the dynamic path fully
-     * takes over after the app stops. Without the clear,
-     * `persistAcrossSessions` registrations would keep firing at
-     * `document_start` and survive browser sessions.
+     * published coverage, the boot snapshot and the stored build-time
+     * configuration, so neither the dynamic path nor a later
+     * `setDebugScriptlets()` can bring the registrations back after stop.
      */
     public static async stop(): Promise<void> {
         try {
@@ -183,6 +208,7 @@ export class PreregisteredScriptsService {
 
         appContext.preregisteredScriptRules = new Map();
         appContext.preregisteredScriptRulesAtBoot = undefined;
+        appContext.preregisteredScripts = undefined;
     }
 
     /**
@@ -238,6 +264,7 @@ export class PreregisteredScriptsService {
         return PreregisteredScriptsService.enqueue(async () => {
             await ContentScriptManager.clear(PREREGISTERED_SCRIPTS_NAMESPACE);
             appContext.preregisteredScriptsKey = undefined;
+            appContext.preregisteredScriptsRegistered = false;
         });
     }
 
@@ -285,9 +312,9 @@ export class PreregisteredScriptsService {
      *
      * @returns Promise resolving with, per hostname, the hashes of the rules
      * with an active preregistered registration after the sync. Rules
-     * cancelled by runtime `$path` exceptions, missing from the manifest, or
-     * whose registration failed are absent — they stay on the dynamic
-     * injection path. The returned coverage is also published into
+     * cancelled by runtime `$path`/`$url` exceptions, missing from the
+     * manifest, or whose registration failed are absent — they stay on the
+     * dynamic injection path. The returned coverage is also published into
      * {@link appContext}. On sync failure the last published coverage is
      * republished (a failed sync leaves the previous registrations active,
      * and this is the set that describes them). On a failed post-sync read
@@ -346,6 +373,7 @@ export class PreregisteredScriptsService {
             if (scriptsKey === appContext.preregisteredScriptsKey) {
                 logger.debug('[tsweb.PreregisteredScriptsService.doSync]: Descriptors unchanged, skipping the sync');
             } else {
+                appContext.preregisteredScriptsRegistered = true;
                 const { errors } = await ContentScriptManager.sync(
                     PREREGISTERED_SCRIPTS_NAMESPACE,
                     scripts,
@@ -354,6 +382,7 @@ export class PreregisteredScriptsService {
                 appContext.preregisteredScriptsKey = errors.length === 0
                     ? scriptsKey
                     : undefined;
+                appContext.preregisteredScriptsRegistered = errors.length > 0 || scripts.length > 0;
             }
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.doSync]: Sync failed, keeping the previous coverage', e);
@@ -418,12 +447,12 @@ export class PreregisteredScriptsService {
         const scripts: ContentScriptDescriptor[] = [];
         const degradedRules = new Set<string>();
         const degradedHostnames = new Set<string>();
+        let degradedHashFailures = 0;
 
         // Per-rule details go to debug; one warn summarizes the sync below.
         const logDegradedRule = (reason: string, hash: string, hostname: string): void => {
             degradedRules.add(hash);
             degradedHostnames.add(hostname);
-            // eslint-disable-next-line max-len
             logger.debug(`[tsweb.PreregisteredScriptsService.buildDomainScripts]: Rule ${hash} on "${hostname}" ${reason}, keeping dynamic injection`);
         };
 
@@ -434,11 +463,11 @@ export class PreregisteredScriptsService {
             const batch = hostnames.slice(i, i + HOST_LOOKUP_BATCH_SIZE);
 
             // eslint-disable-next-line no-await-in-loop
-            await Promise.all(
+            const batchHashFailures = await Promise.all(
                 batch.map(async (hostname) => {
                     const rules = getHostnameScriptRules(hostname);
                     if (rules.length === 0) {
-                        return;
+                        return 0;
                     }
 
                     const hashResults = await Promise.all(
@@ -446,15 +475,16 @@ export class PreregisteredScriptsService {
                             try {
                                 return { rule, hash: await computeRuleHashCached(rule) };
                             } catch (e) {
-                                logger.error(
-                                    // eslint-disable-next-line max-len
-                                    `[tsweb.PreregisteredScriptsService.buildDomainScripts]: Failed to hash a rule for "${hostname}"`,
-                                    e,
-                                );
+                                logger.debug(`[tsweb.PreregisteredScriptsService.buildDomainScripts]: Failed to hash a rule for "${hostname}", keeping dynamic injection`, e);
                                 return null;
                             }
                         }),
                     );
+
+                    const failedHashCount = hashResults.filter((result) => result === null).length;
+                    if (failedHashCount > 0) {
+                        degradedHostnames.add(hostname);
+                    }
 
                     const coveredHashes = new Set<string>();
                     const scriptletFunctionFiles = new Set<string>();
@@ -506,7 +536,7 @@ export class PreregisteredScriptsService {
                     }
 
                     if (coveredHashes.size === 0) {
-                        return;
+                        return failedHashCount;
                     }
 
                     const ruleFiles = [...coveredHashes]
@@ -528,13 +558,16 @@ export class PreregisteredScriptsService {
                         matchOriginAsFallback: true,
                         persistAcrossSessions: true,
                     });
+
+                    return failedHashCount;
                 }),
             );
+
+            degradedHashFailures += batchHashFailures.reduce((sum, count) => sum + count, 0);
         }
 
         if (degradedHostnames.size > 0) {
-            // eslint-disable-next-line max-len
-            logger.warn(`[tsweb.PreregisteredScriptsService.buildDomainScripts]: ${degradedRules.size} rule(s) on ${degradedHostnames.size} hostname(s) stay on dynamic injection, see debug logs for details`);
+            logger.warn(`[tsweb.PreregisteredScriptsService.buildDomainScripts]: ${degradedRules.size + degradedHashFailures} rule(s) on ${degradedHostnames.size} hostname(s) stay on dynamic injection, see debug logs for details`);
         }
 
         return scripts;

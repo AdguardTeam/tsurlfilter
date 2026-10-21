@@ -747,8 +747,9 @@ describe('ContentScriptManager', () => {
             await expect(
                 ContentScriptManager.clear(NS),
             ).rejects.toThrow('Unregister failure');
-            // clear() calls get(), then unregister() also calls get() to check existence
-            expect(mockGetRegistered).toHaveBeenCalledTimes(2);
+            // clear() lists the registry once and unregisters the known
+            // IDs directly, without a second existence check.
+            expect(mockGetRegistered).toHaveBeenCalledTimes(1);
             expect(mockUnregister).toHaveBeenCalledTimes(1);
             expect(mockUnregister).toHaveBeenCalledWith({
                 ids: ['critical:a', 'critical:b'],

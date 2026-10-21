@@ -361,21 +361,22 @@ runtime sync is shared through
 (`getPreregisteredRootUrl`, `createPreregisteredRootRequest`), so both sides
 query the engine with the same URL.
 
-Preregistered executions bypass hit logging; they do appear in the
-filtering log, but the entries reflect the coverage decision, not the
-in-page execution outcome — a preregistered file failing inside the page is
-not observable.
+Preregistered executions bypass hit logging; the filtering log lists the
+matched local rules regardless of whether the preregistered or the dynamic
+path applied them, and an in-page execution failure is not observable.
 
 Known limitations:
 
 - `$document`/`$jsinject` exceptions below the root path (e.g.
   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for the
   host: rules registered on `*://youtube.com/*` still execute on `/embed/…`.
-  Tracked in [AG-54564](https://jira.int.agrd.dev/browse/AG-54564).
+  Tracked in AG-54564.
 - With protection disabled on a site (or in inverted allowlist mode),
   YouTube embeds on it still run these scriptlets: the registration covers
   every frame of the host, while the dynamic path would inject nothing
-  there. Tracked in [AG-60054](https://jira.int.agrd.dev/browse/AG-60054).
+  there. Tracked in AG-60054.
+- `$url`-modified rules are never preregistered: the engine is queried per
+  hostname root, so they stay on the dynamic injection path.
 - A page that started before a sync removed a `#%#` JS rule can execute it
   twice: the preregistered file already ran it, and the dynamic path runs
   it again because the coordination set only dedupes within one

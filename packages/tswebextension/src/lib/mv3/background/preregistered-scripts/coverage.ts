@@ -144,7 +144,6 @@ export const filterUncoveredRules = async (
         } catch (e) {
             if (!loggedHashFailures.has(rule)) {
                 loggedHashFailures.add(rule);
-                // eslint-disable-next-line max-len
                 logger.error(`[tsweb.coverage]: Failed to hash a rule for "${frameUrl}", keeping dynamic injection`, e);
             }
             return rule;

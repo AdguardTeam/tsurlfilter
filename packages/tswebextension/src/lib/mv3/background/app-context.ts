@@ -78,6 +78,13 @@ export class AppContext {
      * scripting calls are skipped. Plain (non-persisted) field.
      */
     public preregisteredScriptsKey?: string;
+
+    /**
+     * Whether this service worker may have content scripts registered in
+     * the preregistered namespace: set before a sync and cleared only after
+     * a successful clear. Plain (non-persisted) field.
+     */
+    public preregisteredScriptsRegistered?: boolean;
 }
 
 export const appContext = new AppContext();

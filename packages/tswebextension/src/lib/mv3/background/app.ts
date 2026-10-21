@@ -59,6 +59,7 @@ type FiltersUpdateInfo = {
 // Reexport types
 export type {
     ConfigurationResult,
+    ContentScriptDescriptor,
     ConversionResult,
     FailedEnableRulesetsError,
     SyncScriptsResult,
@@ -500,6 +501,12 @@ export class TsWebExtension implements AppInterface<
             res.staticFilters = staticRulesets;
         } else {
             await TsWebExtension.removeAllFilteringRules();
+
+            // Filtering is off: tear preregistration down as soon as the
+            // engine stops, before the tab and cache updates below, so a
+            // page that starts in between cannot receive the persisted
+            // registrations.
+            await PreregisteredScriptsService.stop();
         }
 
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
@@ -514,15 +521,17 @@ export class TsWebExtension implements AppInterface<
         documentBlockingService.configure(config);
 
         // Debug needs verbose scriptlets, which only dynamic injection
-        // can build — disable preregistration entirely. Keep the
-        // configuration itself: the stored context drops it, and
-        // setDebugScriptlets() re-evaluates the gate at runtime.
-        const { filteringEnabled, debugScriptlets } = configuration.settings;
-        appContext.preregisteredScripts = configuration.preregisteredScripts;
-        await PreregisteredScriptsService.init(
-            filteringEnabled && !debugScriptlets,
-            configuration.preregisteredScripts,
-        );
+        // can build: the gate depends on the runtime debug flag. The
+        // disabled branch above already tore preregistration down and
+        // dropped the stored configuration.
+        if (configuration.settings.filteringEnabled) {
+            const { debugScriptlets } = configuration.settings;
+            appContext.preregisteredScripts = configuration.preregisteredScripts;
+            await PreregisteredScriptsService.init(
+                !debugScriptlets,
+                configuration.preregisteredScripts,
+            );
+        }
 
         logger.trace('[tsweb.TsWebExtension.configure]: end');
 

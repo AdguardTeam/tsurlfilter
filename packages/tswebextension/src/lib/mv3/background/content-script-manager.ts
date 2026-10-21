@@ -378,10 +378,9 @@ export class ContentScriptManager {
      * Unregisters all content scripts registered under the given namespace.
      *
      * Delegates to the internal {@code getRegistered()} helper to retrieve
-     * all currently registered script IDs, then to
-     * {@link ContentScriptManager.unregister} to remove them. If no
-     * scripts are registered under the namespace, the method returns
-     * immediately without calling the chrome API.
+     * all currently registered script IDs, then unregisters them without a
+     * second listing. If no scripts are registered under the namespace, the
+     * method returns immediately without calling the chrome API.
      *
      * **Snapshot semantics**: The set of script IDs to unregister is a
      * snapshot taken at the point the internal {@code getRegistered()}
@@ -412,7 +411,9 @@ export class ContentScriptManager {
         const ownIds = allScripts.map((script) => script.id);
 
         try {
-            await ContentScriptManager.unregister(namespace, ownIds);
+            // The IDs are known to be registered: skip the existence check
+            // inside unregister(), which would list the registry again.
+            await ContentScriptManager.unregisterScripts(namespace, ownIds);
             logger.debug(`[tsweb.ContentScriptManager.clear]: Cleared ${ownIds.length} script(s) from "${namespace}"`);
         } catch (e) {
             logger.error(`[tsweb.ContentScriptManager.clear]: Failed in "${namespace}": ${ownIds.join(', ')}`, e);
