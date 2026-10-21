@@ -264,6 +264,31 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(errors).toHaveLength(0);
         });
 
+        it('reports a broken CSP rule once when CSP rules are excluded', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',removeparam=x",
+            ], 1);
+
+            const [{ errors }] = await converter.convert([filter], {
+                excludeCspRules: true,
+                withSourceMap: true,
+            });
+
+            expect(errors).toHaveLength(0);
+        });
+
+        it('reports a broken CSP rule when CSP rules are not excluded', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',removeparam=x",
+            ], 1);
+
+            const [{ errors }] = await converter.convert([filter], {
+                withSourceMap: true,
+            });
+
+            expect(errors).toHaveLength(1);
+        });
+
         it('converts network rules to declarative rules', async () => {
             const filter = createFilter(['||example.org^']);
             const [{ ruleset, errors, limitations }] = await converter.convert([filter], withSourceMapOptions);
@@ -398,6 +423,20 @@ describe('FilterConverter (withSourceMap: true)', () => {
             const declarativeRules = await ruleset.getDeclarativeRules();
             expect(declarativeRules).toHaveLength(2);
             expect(ruleset.getId()).toBe(FilterConverter.COMBINED_RULESET_ID);
+        });
+
+        it('reports a broken CSP rule once when CSP rules are excluded', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',removeparam=x",
+            ], 1);
+
+            const [{ errors }] = await converter.convert([filter], {
+                combine: true,
+                excludeCspRules: true,
+                withSourceMap: true,
+            });
+
+            expect(errors).toHaveLength(0);
         });
     });
 

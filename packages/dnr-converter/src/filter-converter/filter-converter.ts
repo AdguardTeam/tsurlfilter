@@ -560,6 +560,12 @@ export class FilterConverter {
             )
             : undefined;
 
+        // CSP rules are dropped here and reported by the CSP pass, so their
+        // parse errors must not be duplicated in the regular result.
+        const skipErrorLineSelector = options.excludeCspRules
+            ? FilterConverter.isCspRelatedText
+            : undefined;
+
         if (options?.combine) {
             const {
                 errors: scanErrors,
@@ -568,6 +574,8 @@ export class FilterConverter {
                 filters,
                 filterRule,
                 scannedLimit,
+                undefined,
+                skipErrorLineSelector,
             );
             const convertedRules = await RulesConverter.convert(scannedFilters, options);
             const badFilterRules = scannedFilters.flatMap(({ badFilterRules: rules }) => rules);
@@ -590,6 +598,8 @@ export class FilterConverter {
                 [filter],
                 filterRule,
                 scannedLimit,
+                undefined,
+                skipErrorLineSelector,
             );
             const convertedRules = await RulesConverter.convert([scannedFilter], options);
             const result = FilterConverter.collectConvertedResult(

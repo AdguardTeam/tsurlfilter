@@ -247,6 +247,86 @@ describe('RulesScanner', () => {
             });
         });
 
+        it('should skip errors of lines matched by the error line selector', async () => {
+            const filterRule = '||example.com^';
+            const filter = createFilter([filterRule]);
+            const mockAst = {
+                children: [{
+                    category: RuleCategory.Network,
+                    start: 0,
+                    raws: { text: filterRule },
+                }],
+            };
+            parserMock.mockReturnValue(mockAst as any);
+            parseFromNodeMock.mockImplementation(() => {
+                throw new Error('Rule creation failed');
+            });
+
+            const result = await RulesScanner.scanFilters(
+                [filter],
+                undefined,
+                undefined,
+                undefined,
+                (line) => line === filterRule,
+            );
+
+            expect(result.errors).toEqual([]);
+            expect(result.filters[0].rules).toEqual([]);
+        });
+
+        it('should skip errors of invalid lines matched by the error line selector', async () => {
+            const filterRule = 'invalid rule';
+            const filter = createFilter([filterRule]);
+            const mockAst = {
+                children: [{
+                    category: RuleCategory.Invalid,
+                    start: 0,
+                    raws: { text: filterRule },
+                    error: {
+                        name: 'ParseError',
+                        message: 'Invalid rule syntax',
+                    },
+                }],
+            };
+            parserMock.mockReturnValue(mockAst as any);
+
+            const result = await RulesScanner.scanFilters(
+                [filter],
+                undefined,
+                undefined,
+                undefined,
+                (line) => line === filterRule,
+            );
+
+            expect(result.errors).toEqual([]);
+        });
+
+        it('should report errors of lines not matched by the error line selector', async () => {
+            const filterRule = '||example.com^';
+            const filter = createFilter([filterRule]);
+            const mockAst = {
+                children: [{
+                    category: RuleCategory.Network,
+                    start: 0,
+                    raws: { text: filterRule },
+                }],
+            };
+            parserMock.mockReturnValue(mockAst as any);
+            parseFromNodeMock.mockImplementation(() => {
+                throw new Error('Rule creation failed');
+            });
+
+            const result = await RulesScanner.scanFilters(
+                [filter],
+                undefined,
+                undefined,
+                undefined,
+                (line) => line !== filterRule,
+            );
+
+            expect(result.errors).toEqual([new Error('Rule creation failed')]);
+        });
+
         it('should handle unknown errors during Rule creation', async () => {
             const filterRule = '||example.com^';
             const filter = createFilter([filterRule]);

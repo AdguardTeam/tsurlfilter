@@ -118,6 +118,9 @@ export class RulesScanner {
      * @param lineSelector If this function is specified, only lines matching it
      * are parsed. It keeps the scan cost proportional to the number of
      * candidate lines, and original offsets of the rules are preserved.
+     * @param skipErrorLineSelector If this function is specified, parse errors
+     * of lines matching it are not reported. It is used when another pass owns
+     * such lines and reports their errors itself.
      *
      * @returns Result object of {@link ScannedFiltersWithErrors}.
      */
@@ -126,6 +129,7 @@ export class RulesScanner {
         filterFn?: (r: Rule) => boolean,
         maxScannedRules?: number,
         lineSelector?: LineSelector,
+        skipErrorLineSelector?: LineSelector,
     ): Promise<ScannedFiltersWithErrors> {
         const result: ScannedFiltersWithErrors = {
             errors: [],
@@ -141,6 +145,7 @@ export class RulesScanner {
                 filterFn,
                 maxScannedRules,
                 lineSelector,
+                skipErrorLineSelector,
             );
             const badFilterRules = rules.filter(RulesScanner.isBadFilterRule);
 
@@ -169,6 +174,8 @@ export class RulesScanner {
      * will be added to the list of result errors.
      * @param lineSelector If this function is specified, only lines matching it
      * are parsed, and their original offsets are preserved.
+     * @param skipErrorLineSelector If this function is specified, parse errors
+     * of lines matching it are not reported.
      *
      * @returns Result object of {@link ScannedRulesWithErrors}.
      */
@@ -177,6 +184,7 @@ export class RulesScanner {
         filterFn?: (r: Rule) => boolean,
         maxScannedRules?: number,
         lineSelector?: LineSelector,
+        skipErrorLineSelector?: LineSelector,
     ): Promise<ScannedRulesWithErrors> {
         const filterId = filter.getId();
         const content = await filter.getContent();
@@ -194,6 +202,7 @@ export class RulesScanner {
                 segment,
                 filterFn,
                 maxScannedRules,
+                skipErrorLineSelector,
             );
 
             if (isLimitReached) {
@@ -250,6 +259,8 @@ export class RulesScanner {
      * parsed rule.
      * @param maxScannedRules Maximum number of rules to scan, `undefined` if
      * there is no limit.
+     * @param skipErrorLineSelector If this function is specified, parse errors
+     * of lines matching it are not reported.
      *
      * @returns Whether the limit of scanned rules has been reached.
      */
@@ -259,14 +270,20 @@ export class RulesScanner {
         segment: LineSegment,
         filterFn?: (r: Rule) => boolean,
         maxScannedRules?: number,
+        skipErrorLineSelector?: LineSelector,
     ): boolean {
         const ast = FilterListParser.parse(segment.text, RulesScanner.PARSER_OPTIONS);
 
         for (const node of ast.children) {
             const index = segment.offset + node.start!;
             const raw = node.raws!.text!;
+            const isErrorSkipped = skipErrorLineSelector !== undefined && skipErrorLineSelector(raw);
 
             if (node.category === RuleCategory.Invalid) {
+                if (isErrorSkipped) {
+                    continue;
+                }
+
                 const { name, message } = node.error;
                 const msg = `[${name}] ${message}: filter id - ${filterId}, `
                     + `line index - ${index}, line - ${raw}`;
@@ -290,7 +307,9 @@ export class RulesScanner {
                     return true;
                 }
             } catch (error) {
-                result.errors.push(RulesScanner.createRuleParseError(error, filterId, index, raw));
+                if (!isErrorSkipped) {
+                    result.errors.push(RulesScanner.createRuleParseError(error, filterId, index, raw));
+                }
             }
         }
 
