@@ -130,6 +130,7 @@ export class TsWebExtension implements AppInterface<
         this.canvasProtection = new CanvasProtectionController(
             canvasProtection,
             () => (this.appContext.isStorageInitialized ? this.appContext.configuration : undefined),
+            () => ({ ruleTexts: this.engineApi.getDocumentOrStealthExceptionRuleTexts(), allowlist }),
         );
         this.onFilteringLogEvent = this.filteringLog.onLogEvent;
         this.getMessageHandler = this.getMessageHandler.bind(this);
@@ -176,7 +177,7 @@ export class TsWebExtension implements AppInterface<
             await this.redirectsService.start();
             this.documentBlockingService.configure(configuration);
             result = await this.engineApi.startEngine(configuration);
-            this.canvasProtection.updatePolicy(this.engineApi.getDocumentOrStealthExceptionRuleTexts(), allowlist);
+            this.canvasProtection.invalidatePolicy();
             await this.tabCosmeticInjector.processOpenTabs();
             await this.tabsApi.start();
             WebRequestApi.start();
@@ -218,7 +219,7 @@ export class TsWebExtension implements AppInterface<
      * Also updates webRTC privacy.network settings on demand and flushes browser in-memory request cache.
      *
      * Requires app is started.
-     * Recompiles canvas exclusions from the updated rules and allowlist.
+     * Canvas exclusions are compiled again from the updated rules and allowlist when protection is enabled.
      *
      * @param config App configuration.
      *
@@ -241,7 +242,7 @@ export class TsWebExtension implements AppInterface<
 
         this.documentBlockingService.configure(configuration);
         const result = await this.engineApi.startEngine(configuration);
-        this.canvasProtection.updatePolicy(this.engineApi.getDocumentOrStealthExceptionRuleTexts(), allowlist);
+        this.canvasProtection.invalidatePolicy();
         await this.tabsApi.updateCurrentTabsMainFrameRules();
 
         await WebRequestApi.flushMemoryCache();

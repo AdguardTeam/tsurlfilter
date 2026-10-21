@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { CanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
-import { CanvasConditionFlags, CanvasConditionType } from '../../../src/lib/common/canvas-protection/constants';
+import { CanvasConditionType } from '../../../src/lib/common/canvas-protection/constants';
 import { type ProtectionPolicyArtifact } from '../../../src/lib/common/canvas-protection/contracts';
 import { deriveSiteSeed } from '../../../src/lib/common/canvas-protection/noise';
 
@@ -38,10 +38,12 @@ describe('canvas protection inserted as a page script', () => {
             const state = snapshot();
             const policy: ProtectionPolicyArtifact = {
                 ...state.policy,
+                // Every top document with a hostname.
                 documentExclusions: [{
-                    type: CanvasConditionType.UrlRegexp,
-                    pattern: '.',
-                    flags: CanvasConditionFlags.None,
+                    type: CanvasConditionType.Not,
+                    operand: {
+                        type: CanvasConditionType.Host, hosts: [], domains: [], parents: [],
+                    },
                 }],
             };
             expect(realm.eval(CanvasProtectionCode.createPageScriptExpression({ ...state, policy }))).toBeUndefined();

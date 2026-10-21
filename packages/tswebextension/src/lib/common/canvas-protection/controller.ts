@@ -14,6 +14,21 @@ interface CanvasConfiguration {
 }
 
 /**
+ * Inputs of canvas exclusions.
+ */
+export interface CanvasPolicyInput {
+    /**
+     * Active document or stealth exception rule texts.
+     */
+    readonly ruleTexts: readonly string[];
+
+    /**
+     * Configured platform allowlist.
+     */
+    readonly allowlist: PolicyAllowlist;
+}
+
+/**
  * Shares configuration updates and keeps canvas registration stopped until start.
  */
 export class CanvasProtectionController {
@@ -22,14 +37,21 @@ export class CanvasProtectionController {
     private policy: ProtectionPolicyArtifact | undefined;
 
     /**
+     * Whether the filtering engine was rebuilt after the policy was compiled.
+     */
+    private policyOutdated = false;
+
+    /**
      * Connects application configuration to its browser registration authority.
      *
      * @param registration The application's owned browser registration.
      * @param configuration Reads its current authoritative configuration.
+     * @param readPolicyInput Reads exceptions from the current filtering engine and allowlist.
      */
     constructor(
         private readonly registration: CanvasProtectionRegistration,
         private readonly configuration: () => CanvasConfiguration | undefined,
+        private readonly readPolicyInput: () => CanvasPolicyInput,
     ) {}
 
     /**
@@ -51,6 +73,8 @@ export class CanvasProtectionController {
 
     /**
      * Applies current settings while retaining the application stop gate.
+     * Compiles exceptions when every gate is enabled and the filtering engine
+     * was rebuilt since the last compilation, so disabled protection costs nothing.
      *
      * @returns The browser registration result.
      */
@@ -62,6 +86,11 @@ export class CanvasProtectionController {
             stealthModeEnabled: settings?.stealthModeEnabled === true,
             protectCanvas: settings?.stealth.protectCanvas === true,
         };
+        if (this.policyOutdated && gates.filteringEnabled && gates.stealthModeEnabled && gates.protectCanvas) {
+            const { ruleTexts, allowlist } = this.readPolicyInput();
+            this.policy = CanvasPolicyCompiler.compile(ruleTexts, allowlist);
+            this.policyOutdated = false;
+        }
         return this.registration.apply({ gates, policy: this.policy });
     }
 
@@ -80,13 +109,12 @@ export class CanvasProtectionController {
     }
 
     /**
-     * Replaces canvas exclusions after the filtering engine has been rebuilt.
-     *
-     * @param ruleTexts Active document exception rule texts.
-     * @param allowlist Configured platform allowlist.
+     * Drops canvas exclusions after the filtering engine has been rebuilt.
+     * The next {@link apply} with every gate enabled compiles them again.
      */
-    public updatePolicy(ruleTexts: readonly string[], allowlist: PolicyAllowlist): void {
-        this.policy = CanvasPolicyCompiler.compile(ruleTexts, allowlist);
+    public invalidatePolicy(): void {
+        this.policy = undefined;
+        this.policyOutdated = true;
     }
 
     /**

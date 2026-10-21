@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { CanvasConditionFlags, CanvasConditionType } from '../../../../src/lib/common/canvas-protection/constants';
+import { CanvasConditionType } from '../../../../src/lib/common/canvas-protection/constants';
 import {
     type DocumentPolicyInput,
     type PreparedCondition,
@@ -9,7 +9,7 @@ import {
 import { resolveProtectedSite, resolveSiteKey } from '../../../../src/lib/common/canvas-protection/policy';
 import { getDomain } from '../../../../src/lib/common/utils/url';
 
-import { createProtectAllPolicy, preparedPolicyFixtures } from './fixtures/prepared-policies';
+import { createProtectAllPolicy, hostCondition, preparedPolicyFixtures } from './fixtures/prepared-policies';
 
 /**
  * Creates a policy with the given exclusions.
@@ -48,19 +48,6 @@ const childFrame = (url: string, topUrl?: string): DocumentPolicyInput => ({
     url, topUrl,
 });
 
-/**
- * Creates a URL predicate.
- *
- * @param pattern Regular expression source.
- *
- * @returns Prepared condition.
- */
-const matches = (
-    pattern: string,
-): PreparedCondition => ({
-    type: CanvasConditionType.UrlRegexp, pattern, flags: CanvasConditionFlags.None,
-});
-
 describe('canvas protection policy', () => {
     it('keys a top document by its own hostname', () => {
         expect(resolveProtectedSite(createPolicy(), topDocument('https://www.example.com/page'))).toBe('example.com');
@@ -83,7 +70,7 @@ describe('canvas protection policy', () => {
 
     it('applies document exclusions of the top document to its frames', () => {
         const policy = createPolicy({
-            documentExclusions: [matches('^https://top\\.example/')],
+            documentExclusions: [hostCondition({ hosts: ['top.example'] })],
         });
         const frame = 'https://frame.example/widget';
         expect(resolveProtectedSite(policy, topDocument('https://top.example/page'))).toBeUndefined();
@@ -98,7 +85,7 @@ describe('canvas protection policy', () => {
     });
 
     it('preserves three-state logic when the top URL is unknown', () => {
-        const unknownTop = matches('^https://top\\.example/');
+        const unknownTop = hostCondition({ hosts: ['top.example'] });
         const expectations: [PreparedCondition, boolean][] = [
             [unknownTop, false],
             [{ type: CanvasConditionType.Not, operand: unknownTop }, false],
@@ -138,6 +125,19 @@ describe('canvas protection policy', () => {
             expect(resolveProtectedSite(createPolicy(), childFrame(url))).toBeUndefined();
         }
     });
+
+    it.each(['about:blank', 'data:text/html,top', 'file:///tmp/page.html'])(
+        'never excludes a top document without a hostname: %s',
+        (topUrl) => {
+            const policy = createPolicy({
+                documentExclusions: [{ type: CanvasConditionType.Not, operand: hostCondition({}) }],
+            });
+            expect(resolveProtectedSite(policy, childFrame('https://frame.example/widget', topUrl)))
+                .toBe('frame.example');
+            expect(resolveProtectedSite(policy, childFrame('https://frame.example/widget', 'https://top.example/')))
+                .toBeUndefined();
+        },
+    );
 
     it.each(preparedPolicyFixtures)('evaluates exact prepared fixture: $name', (fixture) => {
         const policy = createPolicy({ documentExclusions: [fixture.condition] });

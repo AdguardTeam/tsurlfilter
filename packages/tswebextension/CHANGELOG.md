@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Exceptions are compiled from filter rules and the allowlist, including
   `$stealth=fingerprinting` and `$document`, with host boundaries preserved
   and inverted wildcard entries covering one level below the domain, as frame
-  matching does [AdguardBrowserExtension#3475].
+  matching does. The filtering log shows the `$stealth` exception that keeps
+  a document native [AdguardBrowserExtension#3475].
 
 [AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475
 

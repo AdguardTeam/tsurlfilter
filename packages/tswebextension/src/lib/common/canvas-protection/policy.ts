@@ -1,12 +1,32 @@
 // Part of the engine injected into pages: plain functions instead of a static class keep it small,
 // see engine-entry.ts.
 import { CanvasConditionType } from './constants';
-import { type DocumentPolicyInput, type PreparedCondition, type ProtectionPolicyArtifact } from './contracts';
+import {
+    type DocumentPolicyInput,
+    type HostCondition,
+    type PreparedCondition,
+    type ProtectionPolicyArtifact,
+} from './contracts';
 
 /**
- * A predicate's result, or `undefined` when the URL it needs is unknown.
+ * A predicate's result, or `undefined` when the hostname it needs is unknown.
  */
 type Verdict = boolean | undefined;
+
+/**
+ * Reads the hostname of a URL.
+ *
+ * @param url Document URL or origin.
+ *
+ * @returns Lowercase hostname without a trailing dot, or `undefined` when the URL has none.
+ */
+const parseHostname = (url: string): string | undefined => {
+    try {
+        return new URL(url).hostname.replace(/\.$/, '') || undefined;
+    } catch {
+        return undefined;
+    }
+};
 
 /**
  * Resolves the hostname that keys a site's noise with the extension's existing site-key rules.
@@ -15,36 +35,55 @@ type Verdict = boolean | undefined;
  *
  * @returns The complete hostname without `www.`, or `undefined` when the URL has none.
  */
-export const resolveSiteKey = (url: string): string | undefined => {
-    let parsed: URL;
-    try {
-        parsed = new URL(url);
-    } catch {
-        return undefined;
-    }
-    if (!parsed.hostname) {
-        return undefined;
-    }
+export const resolveSiteKey = (url: string): string | undefined => (
     // Same key as the extension's getDomain(), without importing extension code into the page engine.
-    return parsed.hostname.replace(/\.$/, '').replace(/^www\./, '') || undefined;
+    parseHostname(url)?.replace(/^www\./, '') || undefined
+);
+
+/**
+ * Looks a hostname up in a host condition with set membership tests, so a long list
+ * costs no regular expression with one alternative per entry.
+ *
+ * @param condition Host lookups prepared by the policy compiler.
+ * @param hostname Hostname of the top-level document.
+ *
+ * @returns Whether any lookup matches.
+ */
+const matchHost = (condition: HostCondition, hostname: string): boolean => {
+    const hosts = new Set(condition.hosts);
+    // `www.` is stripped once, as frame matching does.
+    const domain = hostname.startsWith('www.') ? hostname.slice(4) : hostname;
+    if (hosts.has(hostname) || hosts.has(domain)) {
+        return true;
+    }
+    const firstDot = domain.indexOf('.');
+    if (firstDot > 0 && new Set(condition.parents).has(domain.slice(firstDot + 1))) {
+        return true;
+    }
+    const domains = new Set(condition.domains);
+    const labels = hostname.split('.');
+    if (labels.some((label, index) => domains.has(labels.slice(index).join('.')))) {
+        return true;
+    }
+    return condition.pattern !== undefined && new RegExp(condition.pattern).test(hostname);
 };
 
 /**
- * Evaluates a prepared condition against the URL of a top-level document.
+ * Evaluates a prepared condition against the hostname of a top-level document.
  *
  * @param condition Predicate prepared by the policy compiler.
- * @param url URL of the top-level document, if known.
+ * @param hostname Hostname of the top-level document, if known.
  *
- * @returns Match, mismatch or `undefined` when the URL is unknown.
+ * @returns Match, mismatch or `undefined` when the hostname is unknown.
  *
  * @throws When a trusted artifact contains an unexpected condition type.
  */
-const evaluate = (condition: PreparedCondition, url: string | undefined): Verdict => {
+const evaluate = (condition: PreparedCondition, hostname: string | undefined): Verdict => {
     switch (condition.type) {
-        case CanvasConditionType.UrlRegexp:
-            return url === undefined ? undefined : new RegExp(condition.pattern, condition.flags).test(url);
+        case CanvasConditionType.Host:
+            return hostname === undefined ? undefined : matchHost(condition, hostname);
         case CanvasConditionType.Not: {
-            const verdict = evaluate(condition.operand, url);
+            const verdict = evaluate(condition.operand, hostname);
             return verdict === undefined ? undefined : !verdict;
         }
         default:
@@ -68,8 +107,9 @@ export const resolveProtectedSite = (
     input: DocumentPolicyInput,
 ): string | undefined => {
     const { url, topUrl } = input;
-    // Unknown verdicts do not exclude.
-    if (policy.documentExclusions.some((condition) => evaluate(condition, topUrl) === true)) {
+    const topHostname = topUrl === undefined ? undefined : parseHostname(topUrl);
+    // Unknown verdicts do not exclude, so a top document without a hostname is never excluded.
+    if (policy.documentExclusions.some((condition) => evaluate(condition, topHostname) === true)) {
         return undefined;
     }
     return (topUrl === undefined ? undefined : resolveSiteKey(topUrl)) ?? resolveSiteKey(url);

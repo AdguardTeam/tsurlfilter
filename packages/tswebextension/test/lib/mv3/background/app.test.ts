@@ -93,6 +93,22 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
         }));
     });
 
+    it('compiles exceptions only once protection is enabled', async () => {
+        appContext.isStorageInitialized = true;
+        prepareConfigure();
+        const rules = vi.spyOn(engineApi, 'getDocumentOrStealthExceptionRuleTexts').mockReturnValue([]);
+        rules.mockClear();
+        const config = getConfigurationMv3Fixture();
+        config.settings.filteringEnabled = true;
+        config.settings.stealth.protectCanvas = false;
+        await instance.configure(config);
+        expect(rules).not.toHaveBeenCalled();
+        expect(apply).toHaveBeenLastCalledWith(expect.objectContaining({ policy: undefined }));
+        await instance.setCanvasProtectionEnabled(true);
+        expect(rules).toHaveBeenCalledOnce();
+        expect(apply).toHaveBeenLastCalledWith(expect.objectContaining({ policy: expect.any(Object) }));
+    });
+
     it('does not compile without filtering', async () => {
         appContext.isStorageInitialized = true;
         prepareConfigure();

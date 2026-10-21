@@ -294,6 +294,23 @@ describe('TsWebExtension', () => {
             expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
         });
 
+        it('reads exceptions only once protection is enabled', async () => {
+            vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts)
+                .mockClear()
+                .mockReturnValue(['@@||example.org^$stealth']);
+            await instance.initStorage();
+            await instance.start(config);
+            await instance.configure(config);
+            expect(engineApi.getDocumentOrStealthExceptionRuleTexts).not.toHaveBeenCalled();
+            expect(await instance.setCanvasProtectionEnabled(true)).toMatchObject({
+                status: CanvasRegistrationStatus.Installed,
+            });
+            expect(engineApi.getDocumentOrStealthExceptionRuleTexts).toHaveBeenCalledOnce();
+            expect(browser.contentScripts.register).toHaveBeenLastCalledWith(expect.objectContaining({
+                excludeMatches: ['*://*.example.org/*'],
+            }));
+        });
+
         it('reports a missing policy before the first start', async () => {
             await instance.initStorage();
             appContext.configuration = {

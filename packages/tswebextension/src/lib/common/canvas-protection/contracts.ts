@@ -1,6 +1,5 @@
 import {
     type CanvasAvailabilityStatus,
-    type CanvasConditionFlags,
     type CanvasConditionType,
     type CanvasOperationStatus,
     type CanvasRegistrationOperation,
@@ -50,14 +49,38 @@ export interface CanvasFeatureGates {
 }
 
 /**
- * Exact JSON predicates evaluated against the URL of a top-level document.
+ * Lookups of a top-level document's hostname, lowercase and without a trailing dot.
+ * The hostname matches when any lookup matches.
+ */
+export interface HostCondition {
+    readonly type: CanvasConditionType.Host;
+
+    /**
+     * Hosts matched as written or with a `www.` prefix.
+     */
+    readonly hosts: readonly string[];
+
+    /**
+     * Domains matched together with their subdomains at any depth.
+     */
+    readonly domains: readonly string[];
+
+    /**
+     * Domains whose subdomains one level below match after stripping `www.`.
+     */
+    readonly parents: readonly string[];
+
+    /**
+     * Regular expression for allowlist entries with a wildcard, tested against the whole hostname.
+     */
+    readonly pattern?: string;
+}
+
+/**
+ * Exact JSON predicates evaluated against the hostname of a top-level document.
  */
 export type PreparedCondition =
-    | {
-        readonly type: CanvasConditionType.UrlRegexp;
-        readonly pattern: string;
-        readonly flags: CanvasConditionFlags;
-    }
+    | HostCondition
     | { readonly type: CanvasConditionType.Not; readonly operand: PreparedCondition };
 
 /**
@@ -158,7 +181,7 @@ export interface ProtectionPolicyArtifact {
     };
 
     /**
-     * Conditions on the top-level document's URL. A matching top-level document
+     * Conditions on the top-level document's hostname. A matching top-level document
      * stays native together with its frames.
      */
     readonly documentExclusions: readonly PreparedCondition[];

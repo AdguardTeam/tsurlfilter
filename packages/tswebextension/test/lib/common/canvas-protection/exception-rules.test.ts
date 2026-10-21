@@ -6,7 +6,7 @@ import {
     vi,
 } from 'vitest';
 
-import { Engine } from '@adguard/tsurlfilter';
+import { Engine, Request, RequestType } from '@adguard/tsurlfilter';
 
 import { CanvasExceptionRules } from '../../../../src/lib/common/canvas-protection/exception-rules';
 import { ALLOWLIST_FILTER_ID } from '../../../../src/lib/common/constants';
@@ -36,5 +36,30 @@ describe('canvas exception rule texts', () => {
         ]);
         vi.spyOn(engine, 'retrieveRuleText').mockReturnValueOnce(null);
         expect(CanvasExceptionRules.getRuleTexts(engine)).toEqual(['@@||document.org^$document']);
+    });
+});
+
+describe('canvas stealth exception of a document', () => {
+    it('finds a matching $stealth exception that the policy compiler accepts', () => {
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: [
+                    '@@||example.org/path$stealth=fingerprinting',
+                    '@@||example.org^$stealth=referrer',
+                    '@@||sub.example.org^$stealth=referrer|fingerprinting',
+                ].join('\n'),
+            }],
+        });
+        const match = (url: string): string | undefined => {
+            const rule = CanvasExceptionRules.findStealthException(
+                engine.matchRequest(new Request(url, null, RequestType.Document)),
+                engine,
+            );
+            return rule ? engine.retrieveRuleText(rule.getFilterListId(), rule.getIndex()) ?? undefined : undefined;
+        };
+        expect(match('https://sub.example.org/path')).toBe('@@||sub.example.org^$stealth=referrer|fingerprinting');
+        expect(match('https://example.org/path')).toBeUndefined();
+        expect(match('https://other.org/')).toBeUndefined();
     });
 });

@@ -13,8 +13,8 @@ import {
 
 import { logger } from '../utils/logger';
 
-import { CanvasConditionFlags, CanvasConditionType } from './constants';
-import { type PreparedCondition, type ProtectionPolicyArtifact } from './contracts';
+import { CanvasConditionType } from './constants';
+import { type HostCondition, type PreparedCondition, type ProtectionPolicyArtifact } from './contracts';
 
 /**
  * Configured platform allowlist state.
@@ -26,44 +26,43 @@ export interface PolicyAllowlist {
 }
 
 /**
+ * What a supported filter rule excludes from canvas protection.
+ */
+export interface CanvasRuleExclusion {
+    /**
+     * Lowercase ASCII hostname of the `||host^` pattern.
+     */
+    readonly hostname: string;
+
+    /**
+     * `$document`: top-level documents of the host and its subdomains, together with their frames.
+     */
+    readonly document: boolean;
+
+    /**
+     * `$stealth` covering fingerprinting: documents of the host and its subdomains by their own URL.
+     */
+    readonly stealth: boolean;
+}
+
+/**
  * Prepares deterministic canvas exclusions from filter rules and the configured allowlist.
  */
 export class CanvasPolicyCompiler {
-    /**
-     * Start of an absolute URL up to its host.
-     */
-    private static readonly URL_START = '^[^:/?#]+://';
-
-    /**
-     * End of a host: an optional trailing dot and port, then a path, query, fragment or the URL end.
-     */
-    private static readonly HOST_END = '\\.?(?::\\d+)?(?:[/?#]|$)';
-
-    /**
-     * URL without an authority, e.g. `file:///`. Frame matching finds no domain there and
-     * never applies the inverted allowlist.
-     */
-    private static readonly NO_AUTHORITY = '^[^:/?#]+:///';
-
     /**
      * Optional `www.` subdomain.
      */
     private static readonly WWW = '(?:www\\.)?';
 
     /**
-     * One label after stripping `www.`, mirroring the upper-level domain lookup of frame matching.
+     * Optional subdomain labels.
      */
-    private static readonly FIRST_LABEL = '(?:www\\.[^./?#:]+|(?!www\\.)[^./?#:]+)\\.';
+    private static readonly SUBDOMAINS = '(?:[^.]+\\.)*';
 
     /**
-     * One or more subdomain labels.
+     * Wildcard of an allowlist domain.
      */
-    private static readonly SUBDOMAINS = '(?:[^./?#:]+\\.)+';
-
-    /**
-     * Wildcard of an allowlist domain, limited to the host.
-     */
-    private static readonly HOST_WILDCARD = '[^/?#:]*';
+    private static readonly HOST_WILDCARD = '.*';
 
     /**
      * Characters a rule host may contain. URL parsing would rewrite or drop the others,
@@ -91,77 +90,33 @@ export class CanvasPolicyCompiler {
      */
     public static compile(ruleTexts: readonly string[], allowlist: PolicyAllowlist): ProtectionPolicyArtifact {
         const excludeMatches: string[] = [];
-        const positivePatterns: string[] = [];
+        const hosts: string[] = [];
+        const domains: string[] = [];
+        const patterns: string[] = [];
         for (const text of ruleTexts) {
-            let rule: AnyRule;
-            try {
-                rule = RuleParser.parse(text);
-            } catch (error) {
-                logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": parsing failed: ${error}`);
-                continue;
+            const exclusion = CanvasPolicyCompiler.parseRule(text);
+            if (exclusion?.stealth) {
+                excludeMatches.push(CanvasPolicyCompiler.IPV4.test(exclusion.hostname)
+                    ? `*://${exclusion.hostname}/*` : `*://*.${exclusion.hostname}/*`);
             }
-            if (rule.type !== NetworkRuleType.NetworkRule || rule.exception !== true) {
-                continue;
-            }
-            const modifiers = rule.modifiers?.children ?? [];
-            const document = modifiers.find((modifier) => modifier.name.value === NETWORK_RULE_OPTIONS.DOCUMENT);
-            // The engine keeps the last `$stealth`; `findLast` is missing in older supported Firefox.
-            const stealths = modifiers.filter((modifier) => modifier.name.value === NETWORK_RULE_OPTIONS.STEALTH);
-            const stealth = stealths[stealths.length - 1];
-            const fingerprinting = stealth !== undefined && (stealth.value === undefined
-                || stealth.value.value.split(PIPE_MODIFIER_SEPARATOR)
-                    .some((option) => option.trim() === StealthOptionName.Fingerprinting));
-            if (!document && !fingerprinting) {
-                continue;
-            }
-            const unsupportedModifier = modifiers.some((modifier) => {
-                if (modifier.exception) {
-                    return true;
-                }
-                switch (modifier.name.value) {
-                    case NETWORK_RULE_OPTIONS.STEALTH:
-                        return false;
-                    case NETWORK_RULE_OPTIONS.DOCUMENT:
-                    case NETWORK_RULE_OPTIONS.IMPORTANT:
-                        return modifier.value !== undefined;
-                    default:
-                        return true;
-                }
-            });
-            if (unsupportedModifier) {
-                logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": unsupported modifiers`);
-                continue;
-            }
-            const pattern = rule.pattern.value;
-            if (!pattern.startsWith('||') || !pattern.endsWith('^')) {
-                logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": expected a ||host^ pattern`);
-                continue;
-            }
-            const host = pattern.slice(2, -1);
-            if (host.includes('*')) {
-                logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": wildcard hosts are unsupported`);
-                continue;
-            }
-            const hostname = CanvasPolicyCompiler.parseHost(host);
-            if (hostname === undefined) {
-                logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipping rule "${text}": expected a plain hostname`);
-                continue;
-            }
-            if (fingerprinting) {
-                excludeMatches.push(CanvasPolicyCompiler.IPV4.test(hostname)
-                    ? `*://${hostname}/*` : `*://*.${hostname}/*`);
-            }
-            if (document) {
-                const regexp = SimpleRegex.patternToRegexp(`||${hostname}^`);
-                positivePatterns.push(regexp);
+            if (exclusion?.document) {
+                domains.push(exclusion.hostname);
             }
         }
         if (allowlist.enabled && !allowlist.inverted) {
-            positivePatterns.push(...allowlist.domains.map((domain) => CanvasPolicyCompiler.allowlistPattern(domain)));
+            for (const domain of allowlist.domains) {
+                const subdomains = domain.startsWith('*.');
+                const host = subdomains ? domain.slice(2) : domain;
+                if (host.includes('*')) {
+                    patterns.push(CanvasPolicyCompiler.wildcardPattern(host, subdomains));
+                } else {
+                    (subdomains ? domains : hosts).push(host);
+                }
+            }
         }
         const documentExclusions: PreparedCondition[] = [];
-        if (positivePatterns.length > 0) {
-            documentExclusions.push(CanvasPolicyCompiler.urlCondition(positivePatterns));
+        if (hosts.length > 0 || domains.length > 0 || patterns.length > 0) {
+            documentExclusions.push(CanvasPolicyCompiler.hostCondition({ hosts, domains, patterns }));
         }
         if (allowlist.enabled && allowlist.inverted) {
             documentExclusions.push(CanvasPolicyCompiler.invertedAllowlistExclusion(allowlist.domains));
@@ -171,6 +126,71 @@ export class CanvasPolicyCompiler {
             documentExclusions,
         };
         return { revision: fastHash(JSON.stringify(policy)).toString(16).padStart(8, '0'), ...policy };
+    }
+
+    /**
+     * Reads what a filter rule excludes from canvas protection.
+     *
+     * @param text Rule text.
+     *
+     * @returns The exclusion, or `undefined` for a rule that does not affect canvas protection.
+     */
+    public static parseRule(text: string): CanvasRuleExclusion | undefined {
+        let rule: AnyRule;
+        try {
+            rule = RuleParser.parse(text);
+        } catch (error) {
+            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": parsing failed: ${error}`);
+            return undefined;
+        }
+        if (rule.type !== NetworkRuleType.NetworkRule || rule.exception !== true) {
+            return undefined;
+        }
+        const modifiers = rule.modifiers?.children ?? [];
+        const document = modifiers.find((modifier) => modifier.name.value === NETWORK_RULE_OPTIONS.DOCUMENT);
+        // The engine keeps the last `$stealth`; `findLast` is missing in older supported Firefox.
+        const stealths = modifiers.filter((modifier) => modifier.name.value === NETWORK_RULE_OPTIONS.STEALTH);
+        const stealth = stealths[stealths.length - 1];
+        const fingerprinting = stealth !== undefined && (stealth.value === undefined
+            || stealth.value.value.split(PIPE_MODIFIER_SEPARATOR)
+                .some((option) => option.trim() === StealthOptionName.Fingerprinting));
+        if (!document && !fingerprinting) {
+            return undefined;
+        }
+        const unsupportedModifier = modifiers.some((modifier) => {
+            if (modifier.exception) {
+                return true;
+            }
+            switch (modifier.name.value) {
+                case NETWORK_RULE_OPTIONS.STEALTH:
+                    return false;
+                case NETWORK_RULE_OPTIONS.DOCUMENT:
+                case NETWORK_RULE_OPTIONS.IMPORTANT:
+                    return modifier.value !== undefined;
+                default:
+                    return true;
+            }
+        });
+        if (unsupportedModifier) {
+            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": unsupported modifiers`);
+            return undefined;
+        }
+        const pattern = rule.pattern.value;
+        if (!pattern.startsWith('||') || !pattern.endsWith('^')) {
+            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": expected a ||host^ pattern`);
+            return undefined;
+        }
+        const host = pattern.slice(2, -1);
+        if (host.includes('*')) {
+            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": wildcard hosts are unsupported`);
+            return undefined;
+        }
+        const hostname = CanvasPolicyCompiler.parseHost(host);
+        if (hostname === undefined) {
+            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": expected a plain hostname`);
+            return undefined;
+        }
+        return { hostname, document: document !== undefined, stealth: fingerprinting };
     }
 
     /**
@@ -206,73 +226,78 @@ export class CanvasPolicyCompiler {
     }
 
     /**
-     * Matches a top-level document allowlisted by a normal-mode entry: the domain and its
-     * `www.` subdomain, or the domain with all subdomains for a `*.` entry. A `*` in the
-     * domain matches within the host.
+     * Matches the hostname of a top-level document allowlisted by a normal-mode entry with
+     * a wildcard: the domain and its `www.` subdomain, or the domain with all subdomains for
+     * a `*.` entry. A `*` in the domain matches within the host.
      *
-     * @param domain Allowlist entry.
+     * @param host Allowlist entry without the `*.` prefix.
+     * @param subdomains Whether the entry has the `*.` prefix.
      *
-     * @returns URL regular expression source.
+     * @returns Hostname regular expression source.
      */
-    private static allowlistPattern(domain: string): string {
-        const subdomains = domain.startsWith('*.');
-        const host = SimpleRegex.escapeRegexSpecials(subdomains ? domain.slice(2) : domain)
-            .replaceAll('\\*', CanvasPolicyCompiler.HOST_WILDCARD);
-        return CanvasPolicyCompiler.hostPattern(
-            subdomains ? `(?:${CanvasPolicyCompiler.SUBDOMAINS})?` : CanvasPolicyCompiler.WWW,
-            host,
-        );
+    private static wildcardPattern(host: string, subdomains: boolean): string {
+        const prefix = subdomains ? CanvasPolicyCompiler.SUBDOMAINS : CanvasPolicyCompiler.WWW;
+        const pattern = SimpleRegex.escapeRegexSpecials(host).replaceAll('\\*', CanvasPolicyCompiler.HOST_WILDCARD);
+        return `${prefix}${pattern}`;
     }
 
     /**
      * Matches hosted top-level documents outside the inverted allowlist. Plain entries cover the
      * host and `www.`, while `*.` entries cover subdomains one level below the domain after
      * stripping `www.`, mirroring the upper-level domain lookup of frame matching.
+     * Top-level documents without a hostname stay protected, as frame matching finds no domain there.
      *
      * @param domains Allowlist entries.
      *
      * @returns Document exclusion.
      */
     private static invertedAllowlistExclusion(domains: readonly string[]): PreparedCondition {
-        const patterns = [
-            CanvasPolicyCompiler.NO_AUTHORITY,
-            ...domains.map((domain) => (domain.startsWith('*.')
-                ? CanvasPolicyCompiler.hostPattern(
-                    CanvasPolicyCompiler.FIRST_LABEL,
-                    SimpleRegex.escapeRegexSpecials(domain.slice(2)),
-                )
-                : CanvasPolicyCompiler.hostPattern(
-                    CanvasPolicyCompiler.WWW,
-                    SimpleRegex.escapeRegexSpecials(domain),
-                ))),
-        ];
+        const hosts: string[] = [];
+        const parents: string[] = [];
+        for (const domain of domains) {
+            if (domain.startsWith('*.')) {
+                parents.push(domain.slice(2));
+            } else {
+                hosts.push(domain);
+            }
+        }
         return {
             type: CanvasConditionType.Not,
-            operand: CanvasPolicyCompiler.urlCondition(patterns),
+            operand: CanvasPolicyCompiler.hostCondition({ hosts, parents }),
         };
     }
 
     /**
-     * Matches a top document by its host.
+     * Combines lookups into a single predicate evaluated against the top document's hostname.
      *
-     * @param prefix Regular expression of the labels before the host.
-     * @param host Escaped host regular expression.
+     * @param lookups Hosts, domains, parent domains and hostname regular expression sources.
+     * @param lookups.hosts Hosts matched as written or with a `www.` prefix.
+     * @param lookups.domains Domains matched together with their subdomains.
+     * @param lookups.parents Domains whose subdomains one level below match after stripping `www.`.
+     * @param lookups.patterns Regular expression sources of wildcard entries.
      *
-     * @returns URL regular expression source.
+     * @returns Host predicate with deterministic, deduplicated lookups.
      */
-    private static hostPattern(prefix: string, host: string): string {
-        return `${CanvasPolicyCompiler.URL_START}${prefix}${host}${CanvasPolicyCompiler.HOST_END}`;
-    }
-
-    /**
-     * Combines patterns into a single predicate evaluated against the top document's URL.
-     *
-     * @param patterns Regular expression sources.
-     *
-     * @returns URL predicate with deterministic, deduplicated alternatives.
-     */
-    private static urlCondition(patterns: readonly string[]): PreparedCondition {
-        const pattern = [...new Set(patterns)].sort().map((source) => `(?:${source})`).join('|');
-        return { type: CanvasConditionType.UrlRegexp, pattern, flags: CanvasConditionFlags.IgnoreCase };
+    private static hostCondition(lookups: {
+        hosts?: readonly string[];
+        domains?: readonly string[];
+        parents?: readonly string[];
+        patterns?: readonly string[];
+    }): HostCondition {
+        const unique = (values: readonly string[] = []): string[] => [...new Set(values)].sort();
+        const domains = unique(lookups.domains);
+        const domainSet = new Set(domains);
+        // A domain lookup already covers the host and `www.`, e.g. the `*.` twins MV3 adds to every entry.
+        const hosts = unique(lookups.hosts).filter((host) => !domainSet.has(host));
+        const patterns = unique(lookups.patterns);
+        const condition: HostCondition = {
+            type: CanvasConditionType.Host,
+            hosts,
+            domains,
+            parents: unique(lookups.parents),
+        };
+        return patterns.length > 0
+            ? { ...condition, pattern: `^(?:${patterns.map((source) => `(?:${source})`).join('|')})$` }
+            : condition;
     }
 }

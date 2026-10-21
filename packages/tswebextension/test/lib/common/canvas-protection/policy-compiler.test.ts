@@ -6,6 +6,7 @@ import {
     vi,
 } from 'vitest';
 
+import { CanvasConditionType } from '../../../../src/lib/common/canvas-protection/constants';
 import { type ProtectionPolicyArtifact } from '../../../../src/lib/common/canvas-protection/contracts';
 import { resolveProtectedSite } from '../../../../src/lib/common/canvas-protection/policy';
 import { CanvasPolicyCompiler } from '../../../../src/lib/common/canvas-protection/policy-compiler';
@@ -197,7 +198,6 @@ describe('canvas policy compiler', () => {
     it.each([
         ['a|b.com', 'https://a/', false],
         ['a|b.com', 'https://b.com/', false],
-        ['a|b.com', 'https://a|b.com/', true],
         ['ex(ample.com', 'https://ex(ample.com/', true],
         ['ex(ample.com', 'https://example.com/', false],
         ['example.com', 'https://example.com/', true],
@@ -313,8 +313,43 @@ describe('canvas policy compiler', () => {
         const policy = CanvasPolicyCompiler.compile([], { enabled: true, inverted: true, domains: [] });
         expect(policy.documentExclusions).toHaveLength(1);
         expect(isNative(policy, 'https://example.com/')).toBe(true);
-        expect(isNative(policy, 'https://frame.example/', 'file:///x.html')).toBe(false);
-        expect(isNative(policy, 'https://frame.example/', '')).toBe(false);
+        for (const topUrl of ['file:///x.html', 'about:blank', 'data:text/html,top', '']) {
+            expect(isNative(policy, 'https://frame.example/', topUrl)).toBe(false);
+        }
+    });
+
+    it.each([false, true])('looks hosts up without a regular expression per entry (inverted %s)', (inverted) => {
+        const allowlist = new AllowlistApi();
+        const domains = Array.from({ length: 1500 }, (_, index) => `site${index}.example`);
+        configureAllowlist(allowlist, domains, inverted);
+        const policy = CanvasPolicyCompiler.compile(domains.map((domain) => `@@||doc.${domain}^$document`), allowlist);
+        expect(JSON.stringify(policy)).not.toContain('pattern');
+        expect(isNative(policy, 'https://frame.example/', 'https://site1499.example/')).toBe(!inverted);
+        expect(isNative(policy, 'https://frame.example/', 'https://doc.site0.example/')).toBe(true);
+        expect(isNative(policy, 'https://frame.example/', 'https://other.example/')).toBe(inverted);
+    });
+
+    it('drops plain entries covered by their MV3 subdomain twins', () => {
+        const allowlist = configureAllowlist(new AllowlistApi(), ['example.com', 'example.org']);
+        expect(CanvasPolicyCompiler.compile([], allowlist).documentExclusions).toEqual([{
+            type: CanvasConditionType.Host,
+            hosts: [],
+            domains: ['example.com', 'example.org'],
+            parents: [],
+        }]);
+    });
+
+    it('keeps wildcard allowlist entries in one hostname pattern', () => {
+        const policy = CanvasPolicyCompiler.compile([], {
+            enabled: true, inverted: false, domains: ['example.*', '*.test.*', 'plain.com'],
+        });
+        expect(policy.documentExclusions).toEqual([{
+            type: CanvasConditionType.Host,
+            hosts: ['plain.com'],
+            domains: [],
+            parents: [],
+            pattern: String.raw`^(?:(?:(?:[^.]+\.)*test\..*)|(?:(?:www\.)?example\..*))$`,
+        }]);
     });
 
     it.each([false, true])('uses at most two document exclusions for rules and entries (inverted %s)', (inverted) => {
