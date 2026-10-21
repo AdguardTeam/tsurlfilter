@@ -10,15 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added partial `$csp` exception support for exact conditions and clean domain
-  exclusions, including a focused runtime CSP conversion API.
+  exclusions, including a focused runtime CSP conversion API. The standalone CSP
+  conversion parses only candidate lines — those containing `csp`, `badfilter`
+  or a `csp` alias as a modifier — instead of the whole filter list, and rejects
+  an invalid `resourcesPath`.
 - `ComputedWithSourceMapOptions` type for callers that compute `withSourceMap`
   at runtime — now includes every source-map-only option.
+- `UnexpectedConversionError` is now exported, because it can be reported in
+  `dynamicRules.errors`.
 
 ### Changed
 
-- The standalone CSP conversion parses only lines which may contain `$csp` or
-  `$badfilter` rules instead of the whole filter list; `$csp` aliases are now
-  taken from the AGTree conversion map.
 - `Rule.writtenKeys` is gone: `$badfilter` compares the rule text as written
   (`Rule.originalText`), so a rule no longer keeps a comparison key.
 
@@ -28,10 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Unicode domain anchors in converted URL filters now preserve their Adblock
-  syntax and match their punycode hostnames.
-- Invalid `resourcesPath` is now rejected by `convertCspRules()` instead of
-  being applied silently.
+- Non-ASCII characters in converted URL filters no longer break the Adblock
+  syntax: a hostname, including one after a `*` or `*.` wildcard, is converted
+  to punycode, while the rest of the pattern is percent-encoded. This covers
+  unanchored and scheme-prefixed patterns too, e.g. `example.com/путь` and
+  `пример.рф^`.
 - `$badfilter` incorrectly negated rules with different values of value-bearing
   modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
   `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when
