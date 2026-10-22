@@ -190,10 +190,10 @@ matchFrame(frameUrl: string): NetworkRule | null;
 getDocumentOrStealthExceptionRules(): NetworkRule[];
 ```
 
-Returns exceptions whose modifiers include `$stealth` or `$document` as
-written, selected by a build-time substring prefilter, with `$badfilter`
-cancellations applied. An equivalent exception spelled out as
-`$elemhide,content,urlblock,jsinject` is not collected.
+Returns exceptions with a `$stealth` or `$document` modifier, selected by a
+build-time substring prefilter on the converted rule text, so `$doc` counts as
+`$document`. `$badfilter` cancellations are applied. An equivalent exception
+spelled out as `$elemhide,content,urlblock,jsinject` is not collected.
 
 ##### Starting engine
 

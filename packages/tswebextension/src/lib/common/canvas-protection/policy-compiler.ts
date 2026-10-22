@@ -222,7 +222,8 @@ export class CanvasPolicyCompiler {
      * @returns Lowercase ASCII hostname, or `undefined` for anything but a plain hostname.
      */
     private static parseHost(host: string): string | undefined {
-        if (!CanvasPolicyCompiler.RULE_HOST.test(host)) {
+        // Documents are matched by hostnames without a trailing dot, which such a host would never match.
+        if (!CanvasPolicyCompiler.RULE_HOST.test(host) || host.endsWith('.')) {
             return undefined;
         }
         let hostname: string;

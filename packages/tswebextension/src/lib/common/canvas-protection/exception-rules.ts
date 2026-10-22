@@ -1,7 +1,7 @@
 import { type Engine, type MatchingResult, type NetworkRule } from '@adguard/tsurlfilter';
 
 import { ALLOWLIST_FILTER_ID } from '../constants';
-import { getRuleTexts, type RuleTextProvider } from '../utils/rule-text-provider';
+import { getRuleTexts as resolveRuleTexts, type RuleTextProvider } from '../utils/rule-text-provider';
 
 import { CanvasPolicyCompiler } from './policy-compiler';
 
@@ -45,7 +45,7 @@ export class CanvasExceptionRules {
         provider: RuleTextProvider,
     ): NetworkRule | null {
         return matchingResult.stealthRules?.find((rule) => (
-            CanvasPolicyCompiler.parseRule(getRuleTexts(rule, provider).appliedRuleText)?.stealth === true
+            CanvasPolicyCompiler.parseRule(resolveRuleTexts(rule, provider).appliedRuleText)?.stealth === true
         )) ?? null;
     }
 }

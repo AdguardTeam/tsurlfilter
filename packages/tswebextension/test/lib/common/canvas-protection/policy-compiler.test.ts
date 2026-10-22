@@ -112,7 +112,7 @@ describe('canvas policy compiler', () => {
         '@@||example.org^$stealth,domain=a.com', '@@||example.org^$document,domain=a.com',
         '@@||example.*^$stealth', '@@||[::1]^$stealth', String.raw`@@||exa\mple.org^$stealth`,
         '@@||exa mple.org^$stealth', '@@||example.org^$stealth,',
-        ...['%65xample.org', '127.1', '0x7f000001'].flatMap((host) => [
+        ...['%65xample.org', '127.1', '0x7f000001', 'example.org.'].flatMap((host) => [
             `@@||${host}^$stealth`, `@@||${host}^$document`,
         ]),
     ])('skips unsupported forms with a debug message: %s', (text) => {

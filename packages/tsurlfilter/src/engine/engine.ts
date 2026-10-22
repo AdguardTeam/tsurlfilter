@@ -335,9 +335,9 @@ export class Engine {
     }
 
     /**
-     * Returns exceptions whose modifiers include `$stealth` or `$document` as written,
-     * selected by a build-time substring prefilter. An equivalent exception spelled out
-     * as `$elemhide,content,urlblock,jsinject` is not collected.
+     * Returns exceptions with a `$stealth` or `$document` modifier, selected by a build-time
+     * substring prefilter on the converted rule text, so `$doc` counts as `$document`.
+     * An equivalent exception spelled out as `$elemhide,content,urlblock,jsinject` is not collected.
      * Rules cancelled by `$badfilter` and the `$badfilter` rules themselves are excluded.
      *
      * @returns Document or stealth exception rules with `$badfilter` applied.
