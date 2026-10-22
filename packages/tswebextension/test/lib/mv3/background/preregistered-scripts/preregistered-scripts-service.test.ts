@@ -160,10 +160,13 @@ const scriptletFilename = (name: string): string => `s-${name}.js`;
  * (404) manifest.
  * @param scriptletFiles Scriptlet name → per-function filename map.
  * Defaults to an empty map.
+ * @param hostnames Expanded host set to embed in the manifest. Omitted in
+ * manifests generated before AG-60054.
  */
 const setupManifest = (
     hashes: string[] | null,
     scriptletFiles?: Record<string, string>,
+    hostnames?: string[],
 ): void => {
     // sinon-chrome exposes getURL via a getter — replace the whole global.
     const getURL = vi.fn((p: string) => `chrome-extension://test/${p}`);
@@ -183,6 +186,7 @@ const setupManifest = (
                 schemaVersion: MANIFEST_SCHEMA_VERSION,
                 hashes,
                 scriptletFiles: scriptletFiles ?? {},
+                ...(hostnames ? { hostnames } : {}),
             }),
         };
     }));
@@ -243,6 +247,8 @@ describe('PreregisteredScriptsService', () => {
         vi.unstubAllGlobals();
         appContext.preregisteredScriptRulesAtBoot = undefined;
         appContext.preregisteredScriptRules = undefined;
+        appContext.preregisteredHostnames = undefined;
+        appContext.preregisteredScripts = undefined;
         registryState.descriptors = [];
         // `clearAllMocks` clears calls but not implementations, so the
         // custom implementations and queued one-shot results of a test
@@ -901,6 +907,12 @@ describe('PreregisteredScriptsService', () => {
             expect(appContext.preregisteredScriptRules).toEqual(
                 new Map([['youtube.com', new Set([hash])]]),
             );
+
+            // The embed gate's host set is the configured domains plus their
+            // `www.` aliases — the same expansion the shared bundle embeds.
+            expect(appContext.preregisteredHostnames).toEqual(
+                new Set(['youtube.com', 'www.youtube.com']),
+            );
         });
 
         it('snapshots the boot registrations once when two init calls overlap', async () => {
@@ -969,6 +981,10 @@ describe('PreregisteredScriptsService', () => {
                 new Map([['youtube.com', new Set(['0123456789abcdef'])]]),
             );
             expect(appContext.preregisteredScriptRules).toEqual(new Map());
+            // The boot snapshot's hosts stay published: pre-existing pages
+            // already received those registrations' files at document_start,
+            // and their coverage must remain resolvable.
+            expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
         });
 
         it('does not resurrect stale coverage after a successful clear', async () => {
@@ -993,6 +1009,74 @@ describe('PreregisteredScriptsService', () => {
             const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
             expect(result).toEqual(new Map());
+        });
+
+        it('keeps the previous hostname set when a later sync fails', async () => {
+            await setupRulesWithManifest({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            expect(appContext.preregisteredHostnames).toEqual(
+                new Set(['youtube.com', 'www.youtube.com']),
+            );
+
+            // A failed sync leaves the previous registrations active, so the
+            // published host set must still describe them.
+            vi.mocked(ContentScriptManager.sync).mockRejectedValueOnce(new Error('invalid namespace'));
+
+            await PreregisteredScriptsService.sync(true, ['example.com'], SCRIPTS_PATH);
+
+            expect(appContext.preregisteredHostnames).toEqual(
+                new Set(['youtube.com', 'www.youtube.com']),
+            );
+        });
+
+        it('publishes the configured hostname set when the first sync fails', async () => {
+            appContext.preregisteredScripts = { domains: ['youtube.com'], path: SCRIPTS_PATH };
+            appContext.preregisteredScriptRulesAtBoot = new Map([
+                ['youtube.com', new Set(['0123456789abcdef'])],
+            ]);
+            vi.mocked(ContentScriptManager.sync).mockRejectedValueOnce(new Error('invalid namespace'));
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            // The fallback coverage describes the registrations that are
+            // still active, so the dynamic path must be able to match them
+            // against the published host set.
+            expect(result).toEqual(new Map([
+                ['youtube.com', new Set(['0123456789abcdef'])],
+            ]));
+            expect(appContext.preregisteredHostnames).toEqual(
+                new Set(['youtube.com', 'www.youtube.com']),
+            );
+        });
+
+        it('falls back to the coverage keys when the first sync fails without a config', async () => {
+            appContext.preregisteredScriptRulesAtBoot = new Map([
+                ['youtube.com', new Set(['0123456789abcdef'])],
+            ]);
+            vi.mocked(ContentScriptManager.sync).mockRejectedValueOnce(new Error('invalid namespace'));
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
+        });
+
+        it('publishes the host set embedded in the manifest', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            await setupRulesWithManifest({ 'youtube.com': [rule] });
+
+            // The shared bundle embeds the generation's host set; it is the
+            // source of truth for the ancestor-chain predicate, even when the
+            // runtime config expands to a different list.
+            setupManifest(
+                [await computeRuleHash(rule)],
+                { 'set-cookie': scriptletFilename('set-cookie') },
+                ['youtube.com'],
+            );
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
         });
 
         it('awaits an in-flight sync before clearing in the no-config path', async () => {

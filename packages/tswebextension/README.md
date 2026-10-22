@@ -329,7 +329,9 @@ re-evaluates preregistration immediately.
 type: `string[]`
 
 Domains with build-time preregistered scripts. Each domain's `www.` alias
-is derived automatically at runtime.
+is derived automatically at runtime. The list must match the domains the
+artifacts were generated for: the shared bundle embeds the same expanded
+host set as the page-side embed gate.
 
 ##### path
 
@@ -343,8 +345,14 @@ Coverage is reported from the registrations actually active after a sync:
 on sync failure the last successful coverage is kept (the boot snapshot
 before the first sync), and rules in those sets stay excluded from dynamic
 injection; a rule that cannot be confirmed as covered remains on the
-dynamic path. Tabs opened before the first sync are judged against the
-boot snapshot of the registrations that existed when they loaded.
+dynamic path. Coverage also requires the top-level site to belong to the
+configured host set: the filtering state (allowlist, inverted allowlist) is
+tab-level, so a preregistered host's frame embedded under a foreign top (for
+example, a YouTube embed on an allowlisted third-party site) stays on the
+dynamic injection path, which is the only side that can see the embedding
+site's filtering state. Tabs opened before the first sync
+are judged against the boot snapshot of the registrations that existed when
+they loaded.
 
 At runtime, each configured hostname (plus its `www.` alias) is matched
 against the engine with `$path` ignored, the matching rules are hashed, and
@@ -353,7 +361,9 @@ a persistent content script is registered with
 A scriptlet function file carries only the implementations the host's rules
 use; the per-rule file enforces any `$path` condition via `location`; the
 cleanup file runs last, deleting the coordination `window` property before
-page scripts run.
+page scripts run. The shared bundle itself installs a no-op shim when the
+top-level origin is outside the embedded host set, so the files that follow
+it do nothing under a foreign top-level site.
 
 Preregistered executions bypass hit logging; they do appear in the
 filtering log, but the entries reflect the coverage decision, not the
@@ -366,10 +376,10 @@ Known limitations:
   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for the
   host: rules registered on `*://youtube.com/*` still execute on `/embed/…`.
   Tracked in [AG-54564](https://jira.int.agrd.dev/browse/AG-54564).
-- With protection disabled on a site (or in inverted allowlist mode),
-  YouTube embeds on it still run these scriptlets: the registration covers
-  every frame of the host, while the dynamic path would inject nothing
-  there. Tracked in [AG-60054](https://jira.int.agrd.dev/browse/AG-60054).
+- The embed gate reads `location.ancestorOrigins`, which is Blink-only; the
+  preregistered path is not supported on other engines. A top-level document
+  with an opaque origin (e.g. a CSP sandbox) is rejected by the page gate,
+  while the background still sees its URL — the only remaining divergence.
 
 #### allowlist
 

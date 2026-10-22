@@ -76,49 +76,153 @@ interface ApplyCosmeticRulesParams {
 const loggedHashFailures = new WeakSet<CosmeticRule>();
 
 /**
+ * Parses a URL hostname, lower-cased. Uses the WHATWG parser: `getHost()`
+ * misreads userinfo URLs (`https://youtube.com:x@evil.com/`).
+ *
+ * @param url URL to parse.
+ *
+ * @returns Hostname or `null` when missing or unparseable.
+ */
+const parseHostname = (url: unknown): string | null => {
+    if (typeof url !== 'string' || url === '') {
+        return null;
+    }
+
+    try {
+        const { hostname } = new URL(url);
+        return hostname ? hostname.toLowerCase() : null;
+    } catch {
+        return null;
+    }
+};
+
+/**
+ * Resolves the origin host of an opaque frame URL (`blob:` carries the
+ * creator's origin, `data:` is opaque).
+ *
+ * @param url Frame URL.
+ *
+ * @returns Origin hostname, or `null` for an opaque origin.
+ */
+const parseUrlOriginHost = (url: string): string | null => {
+    try {
+        const { origin } = new URL(url);
+        if (origin === 'null') {
+            return null;
+        }
+        return parseHostname(origin);
+    } catch {
+        return null;
+    }
+};
+
+/**
+ * Frame-chain node of the preregistered coverage walk: the fields available
+ * both from the cached frame contexts and from `webNavigation.getAllFrames`.
+ */
+type FrameChainNode = Pick<FrameMV3, 'url' | 'frameId' | 'parentFrameId'>;
+
+/**
  * Cosmetic api class.
  * Used to prepare and inject javascript and css into pages.
  */
 export class CosmeticApi extends CosmeticApiCommon {
     /**
-     * Resolves the hostname whose preregistered coverage applies to a frame.
-     * Opaque frames (`about:blank`, srcdoc) have no own host: their coverage
-     * comes from the nearest HTTP(S) ancestor, mirroring the
-     * `matchOriginAsFallback: true` semantics of preregistered
-     * registrations.
+     * Resolves the hostname whose preregistered coverage applies to a frame,
+     * or `null` when the frame must stay on the dynamic path.
+     *
+     * Only the top-level origin decides: the allowlist, the inverted
+     * allowlist and the per-site filtering state are tab-level, and the page
+     * gate checks `location.ancestorOrigins` the same way. Intermediate
+     * frames do not participate. The returned key is the nearest HTTP(S)
+     * host, which is what `matchOriginAsFallback` matched the registration
+     * against. A missing cached parent is resolved from the live frame tree.
      *
      * @param tabId Tab id.
      * @param frameContext Frame context to resolve the host for.
+     * @param hostnames Preregistered hostnames.
      *
-     * @returns Lower-cased hostname or `null` when no HTTP ancestor exists.
+     * @returns Coverage hostname or `null`.
      */
-    private static resolveCoverageHost(tabId: number, frameContext: FrameMV3): string | null {
+    private static async resolveCoverageHost(
+        tabId: number,
+        frameContext: FrameMV3,
+        hostnames: ReadonlySet<string>,
+    ): Promise<string | null> {
         const visited = new Set<number>();
-        let current: FrameMV3 | undefined = frameContext;
+        let current: FrameChainNode | undefined = frameContext;
+        let coverageHost: string | null = null;
+        let topHost: string | null = null;
+        let liveFrames: Map<number, FrameChainNode> | undefined;
 
         while (current) {
-            if (isHttpRequest(current.url)) {
-                try {
-                    const { hostname } = new URL(current.url);
-                    return hostname ? hostname.toLowerCase() : null;
-                } catch {
-                    return null;
-                }
-            }
-
-            // Guard against broken parent chains (partially recorded frame
-            // contexts) looping forever.
+            // Broken parent chains must not loop forever.
             if (visited.has(current.frameId)) {
                 return null;
             }
             visited.add(current.frameId);
 
-            current = current.parentFrameId >= 0
-                ? tabsApi.getFrameContext(tabId, current.parentFrameId)
-                : undefined;
+            const isHttp = isHttpRequest(current.url);
+            const host = isHttp ? parseHostname(current.url) : null;
+            // The nearest HTTP(S) node is the coverage key; the last node of
+            // the walk is the top frame, whose origin decides.
+            coverageHost ??= host;
+            topHost = isHttp ? host : parseUrlOriginHost(current.url);
+
+            if (current.parentFrameId < 0) {
+                break;
+            }
+
+            const { parentFrameId }: FrameChainNode = current;
+            const cachedParent = tabsApi.getFrameContext(tabId, parentFrameId);
+
+            if (cachedParent) {
+                current = cachedParent;
+                continue;
+            }
+
+            // Pruned cache: resolve the parent from the live tree.
+            // eslint-disable-next-line no-await-in-loop
+            liveFrames ??= await CosmeticApi.getLiveFrameTree(tabId);
+            const liveParent: FrameChainNode | undefined = liveFrames?.get(parentFrameId);
+            if (!liveParent) {
+                return null;
+            }
+            current = liveParent;
         }
 
-        return null;
+        if (!topHost || !hostnames.has(topHost)) {
+            return null;
+        }
+
+        return coverageHost;
+    }
+
+    /**
+     * Returns the live frame tree of a tab, used when the cached frame
+     * contexts no longer cover the ancestor chain.
+     *
+     * @param tabId Tab id.
+     *
+     * @returns Frame id → node map, or `undefined` when unreadable.
+     */
+    private static async getLiveFrameTree(
+        tabId: number,
+    ): Promise<Map<number, FrameChainNode> | undefined> {
+        try {
+            const frames = await chrome.webNavigation.getAllFrames({ tabId });
+            if (!frames) {
+                return undefined;
+            }
+
+            return new Map(frames.map(({ frameId, parentFrameId, url }) => [
+                frameId,
+                { frameId, parentFrameId, url },
+            ]));
+        } catch (e) {
+            logger.debug('[tsweb.CosmeticApi.getLiveFrameTree]: failed to read the frame tree', e);
+            return undefined;
+        }
     }
 
     /**
@@ -134,11 +238,11 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * @returns Covered rule hashes or `undefined` when there is no coverage.
      */
-    private static getPreregisteredCoveredRules(
+    private static async getPreregisteredCoveredRules(
         tabId: number,
         frameContext: FrameMV3,
         preExistingDocument = false,
-    ): ReadonlySet<string> | undefined {
+    ): Promise<ReadonlySet<string> | undefined> {
         const coveredRules = preExistingDocument
             ? appContext.preregisteredScriptRulesAtBoot
             : appContext.preregisteredScriptRules;
@@ -147,7 +251,12 @@ export class CosmeticApi extends CosmeticApiCommon {
             return undefined;
         }
 
-        const host = CosmeticApi.resolveCoverageHost(tabId, frameContext);
+        const hostnames = appContext.preregisteredHostnames;
+        if (!hostnames || hostnames.size === 0) {
+            return undefined;
+        }
+
+        const host = await CosmeticApi.resolveCoverageHost(tabId, frameContext, hostnames);
         if (!host) {
             return undefined;
         }
@@ -691,7 +800,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         // loaded) still go through the dynamic path. `remoteRules` below
         // doesn't need this guard: it only ever contains custom/user filter
         // rules, which preregistered scripts (local filters only) never cover.
-        const coveredRules = CosmeticApi.getPreregisteredCoveredRules(tabId, frameContext, preExistingDocument);
+        const coveredRules = await CosmeticApi.getPreregisteredCoveredRules(tabId, frameContext, preExistingDocument);
 
         const { localRules } = frameContext.preparedCosmeticResult;
 

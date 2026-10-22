@@ -52,6 +52,15 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  *
  * Hostnames not in the list keep the standard dynamic injection path.
  *
+ * A frame is covered only when the top-level site belongs to the
+ * preregistered host set: the filtering state (allowlist, inverted
+ * allowlist) is tab-level, so the shared bundle installs a no-op shim when
+ * the top-level origin (`location.ancestorOrigins`) is outside the set, and
+ * the dynamic path applies the same rule to the published coverage.
+ * Third-party embeds under a foreign top therefore stay on the dynamic path,
+ * which can see the embedding site's filtering state. See the CSP-sandbox
+ * limitation below.
+ *
  * Known timing windows (accepted by design, self-healing on navigation):
  * - Documents are judged against the latest reported coverage, not the
  *   registrations they received at `document_start`: after a mid-lifetime
@@ -70,10 +79,9 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  *   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for
  *   the host: rules registered on `*://youtube.com/*` still execute on
  *   `/embed/…` — tracked in AG-54564.
- * - With protection disabled on a site (or in inverted allowlist mode),
- *   YouTube embeds on it still run these scriptlets: the registration
- *   covers every frame of the host, while the dynamic path would inject
- *   nothing there — tracked in AG-60054.
+ * - A top-level document with an opaque origin (e.g. a CSP sandbox) is
+ *   rejected by the page gate, while the background still sees its URL, so
+ *   the two predicates may disagree for such a tab.
  */
 export class PreregisteredScriptsService {
     /**
@@ -89,7 +97,8 @@ export class PreregisteredScriptsService {
      * decide dynamic injection for pre-existing tabs), then syncs them — or
      * clears all when the feature is not configured, since persisted
      * registrations would otherwise keep firing across browser sessions.
-     * Both operations publish the resulting coverage into {@link appContext}.
+     * Both operations publish the resulting coverage and hostname set into
+     * {@link appContext}.
      *
      * @param preregistrationEnabled Whether preregistration should be active
      * (the caller composes it from `filteringEnabled && !debugScriptlets`).
@@ -127,11 +136,19 @@ export class PreregisteredScriptsService {
             // A successful clear invalidates the published coverage: a later
             // failed sync would otherwise republish stale covered hashes and
             // suppress dynamic injection for rules with no active
-            // registration.
+            // registration. The hostname set keeps the boot snapshot's hosts:
+            // pre-existing pages already received those files at
+            // document_start, and the boot coverage must stay resolvable for
+            // them.
             appContext.preregisteredScriptRules = new Map();
+            appContext.preregisteredHostnames = new Set(
+                appContext.preregisteredScriptRulesAtBoot?.keys() ?? [],
+            );
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.init]: Failed to clear preregistered scripts', e);
-            appContext.preregisteredScriptRules = PreregisteredScriptsService.getFallbackCoverage();
+            const fallback = PreregisteredScriptsService.getFallbackCoverage();
+            appContext.preregisteredScriptRules = fallback;
+            PreregisteredScriptsService.publishFallbackHostnames(fallback);
         }
     }
 
@@ -152,6 +169,7 @@ export class PreregisteredScriptsService {
 
         appContext.preregisteredScriptRules = new Map();
         appContext.preregisteredScriptRulesAtBoot = undefined;
+        appContext.preregisteredHostnames = undefined;
     }
 
     /**
@@ -202,6 +220,31 @@ export class PreregisteredScriptsService {
     }
 
     /**
+     * Publishes the hostname set that describes the fallback coverage when a
+     * sync/clear fails before the first successful publication. The
+     * previously published set is kept when it exists: it describes the
+     * registrations that are still active. Without this, a failed first sync
+     * would republish coverage that the dynamic path can never match against
+     * the (missing) host set, re-injecting rules the persisted registrations
+     * already ran at `document_start`.
+     *
+     * @param coverage Coverage map that is being republished.
+     */
+    private static publishFallbackHostnames(coverage: Map<string, Set<string>>): void {
+        if (appContext.preregisteredHostnames !== undefined) {
+            return;
+        }
+
+        const configured = appContext.preregisteredScripts
+            ? expandHostnames(appContext.preregisteredScripts.domains)
+            : [];
+
+        appContext.preregisteredHostnames = new Set(
+            configured.length > 0 ? configured : coverage.keys(),
+        );
+    }
+
+    /**
      * Synchronizes preregistered content scripts with the current engine state.
      *
      * Unregisters everything when preregistration is disabled or no domains
@@ -220,8 +263,9 @@ export class PreregisteredScriptsService {
      * cancelled by runtime `$path` exceptions, missing from the manifest, or
      * whose registration failed are absent — they stay on the dynamic
      * injection path. The returned coverage is also published into
-     * {@link appContext}. On sync failure the last published coverage is
-     * republished (a failed sync leaves the previous registrations active,
+     * {@link appContext}, together with the artifact hostname set (the
+     * manifest's when present). On sync failure the last published coverage
+     * is republished (a failed sync leaves the previous registrations active,
      * and this is the set that describes them). On a failed post-sync read
      * the registrations were already replaced, so empty coverage is
      * published to avoid suppressing dynamic injection for rules with no
@@ -258,6 +302,10 @@ export class PreregisteredScriptsService {
         scriptsPath: string,
     ): Promise<Map<string, Set<string>>> {
         const hostnames = expandHostnames(domains);
+        // The shared bundle embeds the host set of the generation it was
+        // built for; prefer it over the runtime expansion so the page gate
+        // and this predicate can never disagree about the set.
+        let publishedHostnames: readonly string[] = hostnames;
 
         // Sync attempt. A failure here leaves the previous registrations
         // active, so the last published coverage still describes them.
@@ -266,6 +314,7 @@ export class PreregisteredScriptsService {
 
             if (preregistrationEnabled && hostnames.length > 0) {
                 const manifest = await readManifest(scriptsPath);
+                publishedHostnames = manifest.hostnames ?? hostnames;
                 scripts = await PreregisteredScriptsService.buildDomainScripts(
                     hostnames,
                     scriptsPath,
@@ -279,9 +328,18 @@ export class PreregisteredScriptsService {
 
             const fallback = PreregisteredScriptsService.getFallbackCoverage();
             appContext.preregisteredScriptRules = fallback;
+            PreregisteredScriptsService.publishFallbackHostnames(fallback);
 
             return fallback;
         }
+
+        // The registrations now describe this hostname set; publish it for
+        // the dynamic path's ancestor-chain check. A failed sync keeps the
+        // previous registrations, so it keeps the previous set too. Published
+        // even when preregistration is disabled: the boot snapshot may still
+        // describe pre-existing pages, and the coverage map short-circuits
+        // when there are no active registrations.
+        appContext.preregisteredHostnames = new Set(publishedHostnames);
 
         // Report exactly what is registered, not what the sync attempted:
         // failed updates leave the previous registration active, and the
