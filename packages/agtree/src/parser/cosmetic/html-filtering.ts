@@ -13,6 +13,7 @@ import { cssIdentSequenceLength } from '../../css/tokenizer/css-token-mapping';
 import { isCssWhitespace } from '../../css/tokenizer/css-token-utils';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { TokenType } from '../../tokenizer/token-types';
+import { CLOSE_PARENTHESIS } from '../../utils/constants';
 import { SPECIAL_PSEUDO_CLASS_NAMES } from '../../utils/special-pseudo-classes';
 import type { ParserContext } from '../context';
 import { regionEquals, selectorListDataOffset, tokenStart } from '../context';
@@ -29,14 +30,20 @@ import {
     CHILD_FIELD_SOURCE_END,
     CHILD_FIELD_SOURCE_START,
     ChildKind,
+    COMBINATOR_CHILD,
     COMBINATOR_DESCENDANT,
+    COMBINATOR_NEXT_SIBLING,
+    COMBINATOR_SUBSEQUENT_SIBLING,
     COMPLEX_FIELD_CHILD_COUNT,
     COMPLEX_FIELD_SOURCE_END,
+    COMPLEX_FIELD_SOURCE_START,
     COMPLEX_STRIDE,
     DEFAULT_MAX_CHILDREN,
     DEFAULT_MAX_COMPLEX,
     NO_VALUE,
     SelectorListParser,
+    SL_COUNT_OFFSET,
+    SL_FLAGS_OFFSET,
     SL_HEADER_SIZE,
 } from '../css/selector-list';
 import { handleCombinator } from '../css/selector-list/combinator';
@@ -105,6 +112,27 @@ function skipWsTokens(types: Uint8Array, ti: number, endTi: number): number {
         i += 1;
     }
     return i;
+}
+
+/**
+ * Maps an explicit combinator token type to its encoded combinator value.
+ *
+ * @param tokenType Token type to map.
+ *
+ * @returns Encoded combinator value, or `null` if the token is not an
+ * explicit combinator.
+ */
+function getExplicitCombinatorValue(tokenType: number): number | null {
+    switch (tokenType) {
+        case TokenType.GreaterThan:
+            return COMBINATOR_CHILD;
+        case TokenType.PlusSign:
+            return COMBINATOR_NEXT_SIBLING;
+        case TokenType.Tilde:
+            return COMBINATOR_SUBSEQUENT_SIBLING;
+        default:
+            return null;
+    }
 }
 
 /**
@@ -302,8 +330,14 @@ export class AdgHtmlFilteringParser implements CosmeticBodyParser {
      *
      * The structural selector list data in `ctx.data` is rewritten from
      * scratch: the prefix selector list is parsed first, then the
-     * pseudo-class (and the descendant combinator in front of it, if any)
-     * is appended to the last complex selector.
+     * pseudo-class is appended to the last complex selector together with
+     * the combinator in front of it, if any. The prefix may be empty
+     * (`:contains(...)`), and it may end with an explicit combinator
+     * (`div > :contains(...)`); both shapes are valid for CoreLibs.
+     *
+     * Only {@link AdblockSyntaxError} from the prefix parse means that the
+     * body cannot be parsed leniently. Other errors are rethrown, so a real
+     * parser bug is not masked as a syntax error.
      *
      * @param ctx Parser context.
      * @param startTi Inclusive token index where the body starts.
@@ -319,7 +353,9 @@ export class AdgHtmlFilteringParser implements CosmeticBodyParser {
         startTi: number,
         endTi: number,
     ): boolean {
-        const { types, ends, data } = ctx;
+        const {
+            types, ends, data, source,
+        } = ctx;
 
         // CoreLibs requires the argument to be closed by the last `)` of the
         // body, so trailing whitespace is not a part of the argument
@@ -328,7 +364,10 @@ export class AdgHtmlFilteringParser implements CosmeticBodyParser {
             lastTi -= 1;
         }
 
-        if (lastTi <= startTi || types[lastTi - 1] !== TokenType.CloseParen) {
+        // Check the last raw character rather than the token type: a trailing
+        // escaped parenthesis (e.g. `foo\)`) is a single `Escaped` token, but
+        // its last character still closes the argument, as in CoreLibs.
+        if (lastTi <= startTi || source[ends[lastTi - 1] - 1] !== CLOSE_PARENTHESIS) {
             return false;
         }
 
@@ -351,21 +390,66 @@ export class AdgHtmlFilteringParser implements CosmeticBodyParser {
 
         const dataOffset = selectorListDataOffset(ctx);
 
-        // The part of the body before the special pseudo-class must be a
-        // valid selector list; anything else (e.g. unbalanced brackets)
-        // cannot be parsed leniently
-        try {
-            SelectorListParser.parse(
-                ctx,
-                startTi,
-                marker.markerTi,
-                dataOffset,
-                undefined,
-                undefined,
-                true, // isAdg
-            );
-        } catch {
-            return false;
+        // The prefix is everything before the special pseudo-class. A trailing
+        // explicit combinator (`div > :contains(...)`) is not a complete
+        // selector list, so it is parsed separately and appended to the last
+        // complex selector together with the pseudo-class.
+        let prefixEndTi = marker.markerTi;
+        let explicitCombinatorTi = -1;
+        let explicitCombinatorValue: number | null = null;
+
+        let prevTi = marker.markerTi - 1;
+        while (prevTi >= startTi && isCssWhitespace(types[prevTi])) {
+            prevTi -= 1;
+        }
+
+        if (prevTi >= startTi) {
+            explicitCombinatorValue = getExplicitCombinatorValue(types[prevTi]);
+            if (explicitCombinatorValue !== null) {
+                explicitCombinatorTi = prevTi;
+                prefixEndTi = prevTi;
+            }
+        }
+
+        // The prefix may be empty (`:contains(...)`), which is valid for
+        // CoreLibs and handled downstream by tswebextension. In that case,
+        // start with one empty complex selector to append the pseudo-class to.
+        const prefixStartTi = skipWsTokens(types, startTi, prefixEndTi);
+
+        if (prefixStartTi >= prefixEndTi) {
+            // A combinator cannot start a selector list
+            if (explicitCombinatorTi !== -1) {
+                return false;
+            }
+
+            data[dataOffset + SL_COUNT_OFFSET] = 1;
+            data[dataOffset + SL_FLAGS_OFFSET] = 0;
+
+            const emptyComplexBase = dataOffset + SL_HEADER_SIZE;
+            data[emptyComplexBase + COMPLEX_FIELD_CHILD_COUNT] = 0;
+            data[emptyComplexBase + COMPLEX_FIELD_SOURCE_START] = tokenStart(ctx, marker.markerTi);
+            data[emptyComplexBase + COMPLEX_FIELD_SOURCE_END] = tokenStart(ctx, marker.markerTi);
+        } else {
+            // The part of the body before the special pseudo-class must be a
+            // valid selector list; anything else (e.g. unbalanced brackets)
+            // cannot be parsed leniently
+            try {
+                SelectorListParser.parse(
+                    ctx,
+                    startTi,
+                    prefixEndTi,
+                    dataOffset,
+                    undefined,
+                    undefined,
+                    true, // isAdg
+                );
+            } catch (error) {
+                if (error instanceof AdblockSyntaxError) {
+                    return false;
+                }
+
+                throw error;
+            }
         }
 
         const complexCount = SelectorListParser.complexCount(data, dataOffset);
@@ -381,14 +465,40 @@ export class AdgHtmlFilteringParser implements CosmeticBodyParser {
         let childIdx = SelectorListParser.childStartIndex(data, dataOffset, complexIdx) + childCount;
         let appendedChildren = 0;
 
-        // If the pseudo-class is preceded by whitespace, the whitespace is a
-        // descendant combinator, e.g. `div :has-text(...)`. The prefix parser
-        // drops a trailing descendant space, so the combinator must be
-        // restored explicitly — otherwise the appended pseudo-class would be
-        // glued to the last compound selector, turning `div :has-text(...)`
-        // into `div:contains(...)` with different matching semantics (the
-        // whole `div` would match instead of the matching descendant)
-        if (marker.markerTi > startTi && isCssWhitespace(types[marker.markerTi - 1])) {
+        if (explicitCombinatorTi !== -1 && explicitCombinatorValue !== null) {
+            // Restore the explicit combinator that the prefix parser could not
+            // consume because it ended the selector list
+            if (childIdx >= DEFAULT_MAX_CHILDREN) {
+                return false;
+            }
+
+            handleCombinator(
+                ctx,
+                explicitCombinatorTi,
+                dataOffset,
+                DEFAULT_MAX_COMPLEX,
+                childIdx,
+                explicitCombinatorValue,
+                tokenStart(ctx, explicitCombinatorTi),
+                ends[explicitCombinatorTi],
+            );
+
+            childIdx += 1;
+            appendedChildren += 1;
+            data[complexBase + COMPLEX_FIELD_SOURCE_END] = ends[explicitCombinatorTi];
+        } else if (
+            childCount > 0
+            && marker.markerTi > startTi
+            && isCssWhitespace(types[marker.markerTi - 1])
+        ) {
+            // If the pseudo-class is preceded by whitespace, the whitespace is
+            // a descendant combinator, e.g. `div :has-text(...)`. The prefix
+            // parser drops a trailing descendant space, so the combinator must
+            // be restored explicitly — otherwise the appended pseudo-class
+            // would be glued to the last compound selector, turning
+            // `div :has-text(...)` into `div:contains(...)` with different
+            // matching semantics (the whole `div` would match instead of the
+            // matching descendant)
             if (childIdx >= DEFAULT_MAX_CHILDREN) {
                 return false;
             }

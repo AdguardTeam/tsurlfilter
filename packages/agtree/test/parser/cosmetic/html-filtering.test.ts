@@ -34,6 +34,8 @@ import { parseCommonCosmeticHeader } from '../../../src/parser/cosmetic/cosmetic
 import { AdgHtmlFilteringParser, UboHtmlFilteringParser } from '../../../src/parser/cosmetic/html-filtering';
 import {
     ChildKind,
+    COMBINATOR_CHILD,
+    COMBINATOR_DESCENDANT,
     DEFAULT_MAX_COMPLEX,
     SelectorListParser,
     SL_COUNT_OFFSET,
@@ -215,6 +217,50 @@ describe('HtmlFilteringParser — ADG', () => {
         const c1 = slChild(1);
         expect(c1.kind).toBe(ChildKind.AttributeSelector);
         expect(ctx.source.slice(c1.f0, c1.f1)).toBe('some_attr');
+    });
+
+    test('ADG lenient :contains() with an empty prefix', () => {
+        parseAdg('example.org$$:contains((function(g,b,a,c,e,d))');
+
+        expect(ctx.data[SL_DATA_OFFSET + SL_COUNT_OFFSET]).toBe(1);
+        expect(SelectorListParser.childCountInComplex(ctx.data, SL_DATA_OFFSET, 0)).toBe(1);
+
+        const c0 = slChild(0);
+        expect(c0.kind).toBe(ChildKind.PseudoClassSelector);
+        expect(ctx.source.slice(c0.f0, c0.f1)).toBe('contains');
+        expect(ctx.source.slice(c0.f2, c0.f3)).toBe('(function(g,b,a,c,e,d)');
+    });
+
+    test('ADG lenient :contains() after a trailing explicit combinator', () => {
+        parseAdg('example.org$$div > :contains((function(g,b,a,c,e,d))');
+
+        expect(ctx.data[SL_DATA_OFFSET + SL_COUNT_OFFSET]).toBe(1);
+        expect(SelectorListParser.childCountInComplex(ctx.data, SL_DATA_OFFSET, 0)).toBe(3);
+
+        const c0 = slChild(0);
+        expect(c0.kind).toBe(ChildKind.TypeSelector);
+
+        const c1 = slChild(1);
+        expect(c1.kind).toBe(ChildKind.SelectorCombinator);
+        expect(c1.f0).toBe(COMBINATOR_CHILD);
+
+        const c2 = slChild(2);
+        expect(c2.kind).toBe(ChildKind.PseudoClassSelector);
+        expect(ctx.source.slice(c2.f2, c2.f3)).toBe('(function(g,b,a,c,e,d)');
+    });
+
+    test('ADG lenient :contains() after a descendant combinator', () => {
+        parseAdg('example.org$$div :contains((function(g,b,a,c,e,d))');
+
+        expect(ctx.data[SL_DATA_OFFSET + SL_COUNT_OFFSET]).toBe(1);
+        expect(SelectorListParser.childCountInComplex(ctx.data, SL_DATA_OFFSET, 0)).toBe(3);
+
+        const c1 = slChild(1);
+        expect(c1.kind).toBe(ChildKind.SelectorCombinator);
+        expect(c1.f0).toBe(COMBINATOR_DESCENDANT);
+
+        const c2 = slChild(2);
+        expect(c2.kind).toBe(ChildKind.PseudoClassSelector);
     });
 });
 
