@@ -38,11 +38,13 @@ const makePrepared = (extCssRules: string[] | null): PreparedCosmeticResultMV3 =
 
 const makeFrameContext = (
     preparedCosmeticResult: PreparedCosmeticResultMV3,
+    overrides: Partial<FrameMV3> = {},
 ): FrameMV3 => ({
     url: 'https://example.com/',
     tabId: 1,
     frameId: 0,
     preparedCosmeticResult,
+    ...overrides,
 } as FrameMV3);
 
 describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
@@ -50,6 +52,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         vi.restoreAllMocks();
         vi.mocked(tabsApi.getFrameContext).mockReset();
         vi.spyOn(ScriptingApi, 'executeExtCss').mockResolvedValue();
+        vi.spyOn(ScriptingApi, 'disposeExtCss').mockResolvedValue();
         vi.spyOn(ScriptingApi, 'insertCSS').mockResolvedValue();
     });
 
@@ -94,6 +97,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         await CosmeticApi.applyCosmeticRules(1, 0, true);
 
         expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
+        expect(ScriptingApi.disposeExtCss).not.toHaveBeenCalled();
     });
 
     it('does not inject ExtCSS when extCssRules is null', async () => {
@@ -102,6 +106,55 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         await CosmeticApi.applyCosmeticRules(1, 0, true);
 
         expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
+        expect(ScriptingApi.disposeExtCss).not.toHaveBeenCalled();
+    });
+
+    it('binds the injection to the frame context document', async () => {
+        const rules = ['div:has(.ad) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(
+            makePrepared(rules),
+            { documentId: 'document-1' },
+        ));
+
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        expect(ScriptingApi.executeExtCss).toHaveBeenCalledWith({
+            tabId: 1,
+            frameId: 0,
+            documentId: 'document-1',
+            cssRules: rules,
+            collectStats: false,
+        });
+    });
+
+    it('disposes the retained instance when the rule set becomes empty', async () => {
+        const frameContext = makeFrameContext(
+            makePrepared([]),
+            { documentId: 'document-1', extCssApplied: true },
+        );
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
+        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledWith({
+            tabId: 1,
+            frameId: 0,
+            documentId: 'document-1',
+        });
+        expect(frameContext.extCssApplied).toBe(false);
+    });
+
+    it('marks the document as applied after a successful injection', async () => {
+        const rules = ['div:has(.ad) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        await vi.waitFor(() => {
+            expect(frameContext.extCssApplied).toBe(true);
+        });
     });
 
     it('does not inject ExtCSS on onResponseStarted (shouldApplyCss=false)', async () => {

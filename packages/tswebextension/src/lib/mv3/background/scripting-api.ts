@@ -4,7 +4,7 @@ import { type ScriptletData } from '@adguard/tsurlfilter';
 import { EXTCSS_PROTOCOL } from '../../common/message-constants';
 
 import { appContext } from './app-context';
-import { extCssInjectedApply } from './extcss-apply-fn';
+import { extCssInjectedApply, extCssInjectedDispose } from './extcss-apply-fn';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
 
 /**
@@ -85,9 +85,19 @@ export type ExecuteCombinedScriptParams = ExecuteTarget & {
 };
 
 /**
+ * Target of an ExtendedCSS injection.
+ */
+type ExecuteExtCssTarget = ExecuteTarget & {
+    /**
+     * The ID of the document the rules were prepared for, when known.
+     */
+    documentId?: string;
+};
+
+/**
  * Parameters for executing the ExtendedCSS engine + rules.
  */
-export type ExecuteExtCssParams = ExecuteTarget & {
+export type ExecuteExtCssParams = ExecuteExtCssTarget & {
     /**
      * ExtendedCSS rule strings to apply.
      */
@@ -300,6 +310,8 @@ export class ScriptingApi {
      * @param params Parameters for executing ExtendedCSS.
      * @param params.tabId The ID of the tab.
      * @param params.frameId The ID of the frame.
+     * @param params.documentId The ID of the document the rules were prepared
+     * for, when known.
      * @param params.cssRules ExtendedCSS rule strings to apply.
      * @param params.collectStats Whether to register the CSS-hits
      * `beforeStyleApplied` callback in the injected func.
@@ -309,15 +321,75 @@ export class ScriptingApi {
     public static async executeExtCss({
         tabId,
         frameId,
+        documentId,
         cssRules,
         collectStats,
     }: ExecuteExtCssParams): Promise<void> {
         await chrome.scripting.executeScript({
-            target: { tabId, frameIds: [frameId] },
+            target: ScriptingApi.buildExtCssTarget({ tabId, frameId, documentId }),
             func: extCssInjectedApply,
             args: [cssRules, collectStats, EXTCSS_PROTOCOL],
             injectImmediately: true,
             world: 'ISOLATED',
         });
+    }
+
+    /**
+     * Disposes the ExtendedCss instance previously retained in the target
+     * document (if any) by injecting the self-contained
+     * {@link extCssInjectedDispose} function.
+     *
+     * Called when the matched ExtendedCSS rule set is empty for a document
+     * that already received an instance, so the stale instance's
+     * MutationObserver and styles are cleaned up instead of leaking.
+     *
+     * @param params Target parameters.
+     * @param params.tabId The ID of the tab.
+     * @param params.frameId The ID of the frame.
+     * @param params.documentId The ID of the document the rules were prepared
+     * for, when known.
+     *
+     * @returns Promise that resolves when the disposal is executed.
+     */
+    public static async disposeExtCss({
+        tabId,
+        frameId,
+        documentId,
+    }: ExecuteExtCssTarget): Promise<void> {
+        await chrome.scripting.executeScript({
+            target: ScriptingApi.buildExtCssTarget({ tabId, frameId, documentId }),
+            func: extCssInjectedDispose,
+            args: [EXTCSS_PROTOCOL],
+            injectImmediately: true,
+            world: 'ISOLATED',
+        });
+    }
+
+    /**
+     * Builds the `executeScript` target for the ExtendedCSS functions.
+     *
+     * The rules are prepared for a specific document, while `frameIds`
+     * resolves to whatever document the frame holds at execution time: a
+     * navigation between queueing and executing the injection would apply the
+     * previous document's rules to the new one. When the document id is known,
+     * the injection is therefore bound to it, and `executeScript` fails
+     * instead of injecting into a different document. Frames without a
+     * document id fall back to the frame target.
+     *
+     * @param params Target parameters.
+     * @param params.tabId The ID of the tab.
+     * @param params.frameId The ID of the frame.
+     * @param params.documentId The ID of the document, when known.
+     *
+     * @returns The `executeScript` target.
+     */
+    private static buildExtCssTarget({
+        tabId,
+        frameId,
+        documentId,
+    }: ExecuteExtCssTarget): chrome.scripting.InjectionTarget {
+        return documentId
+            ? { tabId, documentIds: [documentId] }
+            : { tabId, frameIds: [frameId] };
     }
 }

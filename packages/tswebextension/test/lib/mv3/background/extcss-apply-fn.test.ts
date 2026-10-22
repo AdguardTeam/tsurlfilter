@@ -577,12 +577,43 @@ describe('extCssInjectedApply — CSS hits stats', () => {
 
         // A second injection into the same document — e.g. `onCommitted`
         // firing while `processOpenTabs` is still running — receives the same
-        // marker-carrying rule strings. The new instance must not register the
-        // hits callback, otherwise the hit above is reported twice.
+        // marker-carrying rule strings. The retained per-node dedupe state must
+        // keep the hit above from being reported again.
         extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         await new Promise((resolve) => { setTimeout(resolve, 0); });
         expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports hits for elements matched after a re-injection', async () => {
+        document.body.innerHTML = '<div id="first" class="ad"><span class="child">ad</span></div>';
+
+        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
+        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+
+        // The re-injection replaces the instance, so the callback must be
+        // registered again: elements matched for the first time by the new
+        // instance would otherwise never be reported.
+        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
+        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+
+        const added = document.createElement('div');
+        added.id = 'added';
+        added.className = 'ad';
+        added.innerHTML = '<span class="child">ad</span>';
+        document.body.appendChild(added);
+
+        await vi.waitFor(() => {
+            expect(sendMessageSpy).toHaveBeenCalledTimes(2);
+        }, { timeout: 1000, interval: 30 });
+
+        // Only the new node is reported; the already counted one is skipped.
+        const msg = sendMessageSpy.mock.calls[1][0] as any;
+        expect(msg.payload[0].element).toBe('<div id="added" class="ad">');
     });
 
     // Regression: attribute values containing double-quotes must be escaped

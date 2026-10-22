@@ -154,24 +154,33 @@ function elementToString(element: Element): string {
 }
 
 /**
- * Rule keys (`filterId;ruleIndex`) already reported for a node.
+ * Default per-node reported hits, used by the MV2 content script, whose
+ * `CssHitsCounter` lives for the whole document.
  *
  * ExtendedCss keeps one parsed rule object shared by every element the rule
  * matches, so the marker cannot be consumed destructively: clearing it on the
  * rule would drop the hits of all the other elements. Each node is therefore
  * reported once per rule, like the native CSS hits counter does.
+ *
+ * MV3's injected func re-creates this module on every injection, so it retains
+ * its own state and passes it explicitly — see {@link collectExtendedCssHits}.
  */
-const countedHits = new WeakMap<Element, Set<string>>();
+const defaultCountedHits = new WeakMap<Element, Set<string>>();
 
 /**
  * Registers a hit for a node and reports whether it was registered before.
  *
  * @param node Affected node, if any.
  * @param hitKey Rule key in the `filterId;ruleIndex` form.
+ * @param countedHits Per-node reported hits.
  *
  * @returns True when the node and rule pair was already reported.
  */
-function registerHit(node: Element | undefined, hitKey: string): boolean {
+function registerHit(
+    node: Element | undefined,
+    hitKey: string,
+    countedHits: WeakMap<Element, Set<string>>,
+): boolean {
     if (!node) {
         return false;
     }
@@ -206,6 +215,9 @@ function registerHit(node: Element | undefined, hitKey: string): boolean {
  * @param attributeMarker Marker prefix (e.g. `'adguard'`).
  * @param serializeElement Whether to serialize the affected node with
  * {@link elementToString}. When false, the node itself is reported.
+ * @param countedHits Per-node reported hits. MV3 passes the state retained
+ * across injections, so a re-apply reports only the hits that are new;
+ * defaults to the state of the MV2 content script.
  *
  * @returns Collected hits.
  */
@@ -213,6 +225,7 @@ function collectExtendedCssHits(
     affectedEl: IAffectedElement,
     attributeMarker: string,
     serializeElement: boolean,
+    countedHits: WeakMap<Element, Set<string>> = defaultCountedHits,
 ): ExtendedCssHit[] {
     const hits: ExtendedCssHit[] = [];
 
@@ -247,7 +260,7 @@ function collectExtendedCssHits(
 
         const { filterId, ruleIndex } = ruleInfo;
 
-        if (registerHit(node, `${filterId};${ruleIndex}`)) {
+        if (registerHit(node, `${filterId};${ruleIndex}`, countedHits)) {
             continue;
         }
 

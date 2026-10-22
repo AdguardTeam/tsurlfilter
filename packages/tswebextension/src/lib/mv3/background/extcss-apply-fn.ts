@@ -55,9 +55,9 @@ declare const applyExtendedCss: typeof applyExtendedCssImpl;
  * @param cssRules ExtendedCSS rule strings to apply to the current document.
  * @param collectStats When true, register a CSS-hits `beforeStyleApplied`
  * callback (else nothing is registered and no overhead is incurred). The
- * callback is registered only for the first injection into a document; a
- * re-apply reuses the rule strings with fresh markers, so reporting them again
- * would duplicate the hits.
+ * callback is registered on every injection; the per-node dedupe state is
+ * retained across injections, so a re-apply reports only the hits that were
+ * not reported before.
  * @param protocol Serialized protocol values (see `EXTCSS_PROTOCOL`). A
  * required argument (not a module-scope default) so the serialized body has
  * zero free identifiers.
@@ -82,12 +82,27 @@ export const extCssInjectedApply = (
 
     /**
      * Retained ExtendedCss instance together with the rule strings it was
-     * built from. The rule strings are kept so a failed re-apply can rebuild
-     * the previous instance instead of leaving the page unprotected.
+     * built from and the per-node hits dedupe state. The rule strings are kept
+     * so a failed re-apply can rebuild the previous instance instead of
+     * leaving the page unprotected; the dedupe state is kept so a re-apply
+     * does not report the same hits again.
      */
-    type RetainedExtCss = ExtendedCss & { cssRules?: string[] };
+    type RetainedExtCss = ExtendedCss & {
+        cssRules?: string[];
+        countedHits?: WeakMap<Element, Set<string>>;
+    };
 
     const w = window as unknown as Record<string, RetainedExtCss | null | undefined>;
+
+    // The key arrives via `protocol` — a module-scope const would be an
+    // unresolved free identifier in the page's ISOLATED world.
+    const previous = w[protocol.instanceKey];
+    const previousRules = previous?.cssRules;
+    // The inlined helpers create their default dedupe state on every
+    // injection, so it is retained on the instance and passed explicitly.
+    // Nodes reported before a re-apply are skipped, while nodes matched for
+    // the first time by the new instance are still reported.
+    const countedHits = previous?.countedHits ?? new WeakMap<Element, Set<string>>();
 
     /**
      * CSS-hits callback. Uses the inlined `cssHitsHelpers` (defined above by
@@ -101,7 +116,12 @@ export const extCssInjectedApply = (
      * @returns The same element (with the hit marker content cleared).
      */
     const beforeStyleApplied = (el: IAffectedElement): IAffectedElement => {
-        const hits = cssHitsHelpers.collectExtendedCssHits(el, protocol.markerPrefix, true);
+        const hits = cssHitsHelpers.collectExtendedCssHits(
+            el,
+            protocol.markerPrefix,
+            true,
+            countedHits,
+        );
 
         if (hits.length > 0) {
             // Defer the call into a microtask so a synchronous throw
@@ -128,14 +148,9 @@ export const extCssInjectedApply = (
     // reverts its elements to their pre-ExtCSS `cssText`, so the new instance
     // snapshots clean `originalStyle` values (a disposal after the apply would
     // otherwise resurrect the previous instance's inline styles later). Its
-    // rule strings are kept aside and re-applied if the new apply throws, so a
-    // failed apply never leaves the page without ExtendedCSS filtering until
-    // the next navigation. The key arrives via `protocol` — a module-scope
-    // const would be an unresolved free identifier in the page's ISOLATED
-    // world.
-    const previous = w[protocol.instanceKey];
-    const previousRules = previous?.cssRules;
-
+    // rule strings are kept aside (`previousRules`) and re-applied if the new
+    // apply throws, so a failed apply never leaves the page without ExtendedCSS
+    // filtering until the next navigation.
     if (previous) {
         try {
             previous.dispose();
@@ -145,34 +160,58 @@ export const extCssInjectedApply = (
     }
 
     try {
-        // A second injection into the same document re-applies rule strings
-        // that carry fresh hit markers, so every already reported hit would be
-        // reported again. This happens on startup: `onCommitted` is already
-        // registered while `processOpenTabs` runs, so a tab that commits
-        // during that pass gets ExtCSS from both. Register the callback only
-        // for the first injection into the document.
-        const collectHits = collectStats && !previous;
-
-        // Retain the new instance, and the rule strings it was built from, so
-        // the next call can dispose it and restore it on failure.
-        const next: RetainedExtCss = collectHits
+        // Retain the new instance, the rule strings it was built from, and the
+        // dedupe state, so the next call can dispose it, restore it on
+        // failure, and keep reporting only the hits that are new.
+        const next: RetainedExtCss = collectStats
             ? applyExtendedCss(cssRules, beforeStyleApplied)
             : applyExtendedCss(cssRules);
         next.cssRules = cssRules;
+        next.countedHits = countedHits;
         w[protocol.instanceKey] = next;
     } catch (e) {
-        // Rebuild the previous instance from its retained rule strings. No
-        // `beforeStyleApplied` callback is registered on the restored instance
-        // to avoid reporting the same hits twice.
+        // Rebuild the previous instance from its retained rule strings. The
+        // restored rules carry the same markers, so the callback is registered
+        // too: the retained dedupe state skips the already reported hits while
+        // elements matched from now on are still counted.
         if (previousRules && previousRules.length > 0) {
             try {
-                const restored: RetainedExtCss = applyExtendedCss(previousRules);
+                const restored: RetainedExtCss = collectStats
+                    ? applyExtendedCss(previousRules, beforeStyleApplied)
+                    : applyExtendedCss(previousRules);
                 restored.cssRules = previousRules;
+                restored.countedHits = countedHits;
                 w[protocol.instanceKey] = restored;
             } catch {
                 // Nothing else can be done in the page context.
             }
         }
         throw e;
+    }
+};
+
+/**
+ * Self-contained ExtendedCSS disposal function injected into pages via
+ * `chrome.scripting.executeScript({ func, args })` when the rule set is empty
+ * for a document that already received an instance. Disposes the previously
+ * retained ExtendedCss instance (if any): disconnects its MutationObserver and
+ * reverts its styles, so stale observers and styles do not leak.
+ *
+ * Like {@link extCssInjectedApply}, it MUST NOT reference any outer-scope
+ * identifier; the instance key arrives via the `protocol` argument.
+ *
+ * @param protocol Serialized protocol values (see `EXTCSS_PROTOCOL`); only
+ * `instanceKey` is used.
+ */
+export const extCssInjectedDispose = (protocol: ExtCssProtocol): void => {
+    const w = window as unknown as Record<string, { dispose(): void } | null | undefined>;
+    const previous = w[protocol.instanceKey];
+    if (previous) {
+        try {
+            previous.dispose();
+        } catch {
+            // Ignore disposal errors; the key is cleared regardless.
+        }
+        w[protocol.instanceKey] = null;
     }
 };

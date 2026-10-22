@@ -90,4 +90,49 @@ describe('ScriptingApi.executeExtCss', () => {
             instanceKey: '__adguardExtCss',
         });
     });
+
+    it('binds the injection to the document when its id is known', async () => {
+        await ScriptingApi.executeExtCss({
+            tabId: 1,
+            frameId: 0,
+            documentId: 'document-1',
+            cssRules: ['div:has(.ad) { display: none !important; }'],
+            collectStats: false,
+        });
+
+        expect(chrome.scripting.executeScript).toHaveBeenCalledWith(expect.objectContaining({
+            target: { tabId: 1, documentIds: ['document-1'] },
+        }));
+    });
+});
+
+describe('ScriptingApi.disposeExtCss', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('injects the disposal func in the ISOLATED world', async () => {
+        await ScriptingApi.disposeExtCss({ tabId: 1, frameId: 0 });
+
+        expect(chrome.scripting.executeScript).toHaveBeenCalledTimes(1);
+        expect(chrome.scripting.executeScript).toHaveBeenCalledWith({
+            target: { tabId: 1, frameIds: [0] },
+            func: expect.any(Function),
+            args: [EXTCSS_PROTOCOL],
+            injectImmediately: true,
+            world: 'ISOLATED',
+        });
+    });
+
+    it('binds the disposal to the document when its id is known', async () => {
+        await ScriptingApi.disposeExtCss({
+            tabId: 1,
+            frameId: 0,
+            documentId: 'document-1',
+        });
+
+        expect(chrome.scripting.executeScript).toHaveBeenCalledWith(expect.objectContaining({
+            target: { tabId: 1, documentIds: ['document-1'] },
+        }));
+    });
 });
