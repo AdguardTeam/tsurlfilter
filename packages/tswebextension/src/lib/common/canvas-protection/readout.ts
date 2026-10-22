@@ -33,8 +33,8 @@ const isObjectLike = (value: unknown): boolean => (
 
 /**
  * Moves every channel the noise changed in the 8-bit sRGB readout of the same
- * pixels by one level of the other readout's format. A channel that would leave
- * the range moves the other way.
+ * pixels by one 8-bit level: 1 in an 8-bit readout, 1/255 in a float one.
+ * A channel that would leave the range moves the other way.
  *
  * @param data Readout in another color space or pixel format.
  * @param original The 8-bit sRGB readout before the noise.
@@ -232,6 +232,8 @@ export function isCanvasSizeProtected(width: number, height: number): boolean {
 
 /**
  * Reads through the browser binding once, modifying only eligible returned bytes.
+ * A readout in another color space or pixel format reads once more in 8-bit sRGB,
+ * so the noise is chosen on the same pixels.
  * Object coordinates are converted here, once and in native order, so the noise
  * uses the same values as the readout.
  *

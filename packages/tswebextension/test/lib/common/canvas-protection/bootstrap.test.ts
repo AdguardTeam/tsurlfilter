@@ -9,10 +9,9 @@ import {
     bootstrapCanvasProtection,
     readDocumentPolicyInput,
 } from '../../../../src/lib/common/canvas-protection/bootstrap';
-import { CanvasConditionType } from '../../../../src/lib/common/canvas-protection/constants';
 import { type CanvasBootstrapSnapshot } from '../../../../src/lib/common/canvas-protection/contracts';
 
-import { createProtectAllPolicy } from './fixtures/prepared-policies';
+import { createProtectAllPolicy, EXCLUDE_EVERY_HOSTED_DOCUMENT } from './fixtures/prepared-policies';
 
 /**
  * Creates trusted registration state.
@@ -115,13 +114,7 @@ describe('document canvas bootstrap', () => {
         const globals = Reflect.ownKeys(window);
         const excluded = snapshot({
             ...createProtectAllPolicy('current'),
-            // Every top document with a hostname.
-            documentExclusions: [{
-                type: CanvasConditionType.Not,
-                operand: {
-                    type: CanvasConditionType.Host, hosts: [], domains: [], parents: [],
-                },
-            }],
+            documentExclusions: EXCLUDE_EVERY_HOSTED_DOCUMENT,
         });
         bootstrapCanvasProtection(excluded);
         expect(HTMLCanvasElement.prototype.toDataURL).toBe(before);

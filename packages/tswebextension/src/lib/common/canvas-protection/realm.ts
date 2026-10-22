@@ -124,8 +124,9 @@ export function createRealmProtection(own: Window, seed: Uint8Array, tokens: Ins
     const add = (set: WeakSet<object>, value: unknown): void => {
         intrinsics.apply(intrinsics.weakAdd, set, [value]);
     };
-    // Child realms are protected after page code ran, so nothing here may reach a
-    // page-defined member through Object.prototype or call a replaceable method.
+    // Page code can reach a child realm before it is protected, so descriptors are read
+    // without Object.prototype. The child's canvas bindings still come from the child:
+    // a page that replaced them first already holds that realm's natives.
     const describe = (owner: object, name: string): PropertyDescriptor | undefined => {
         const descriptor = intrinsics.getOwnPropertyDescriptor(owner, name);
         return descriptor === undefined ? undefined : withoutPrototype(descriptor);

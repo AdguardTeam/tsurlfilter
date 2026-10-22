@@ -1,4 +1,5 @@
 import { type ProtectionSession } from './contracts';
+import { formatKey } from './noise';
 
 /**
  * Root seed of canvas noise for one browser session.
@@ -22,9 +23,6 @@ export class CanvasProtectionSession {
      * @returns A 16-byte random value.
      */
     private static randomHex(): string {
-        return Array.from(
-            crypto.getRandomValues(new Uint8Array(16)),
-            (byte) => byte.toString(16).padStart(2, '0'),
-        ).join('');
+        return formatKey(crypto.getRandomValues(new Uint8Array(16)), 16);
     }
 }

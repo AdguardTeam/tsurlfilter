@@ -15,7 +15,8 @@ export enum CanvasRegistrationStatus {
      */
     Disabled = 'disabled',
     /**
-     * The browser acknowledged the current script.
+     * The browser acknowledged the current script. Chromium MV2 has no registration,
+     * so there it means the script is set up for injection.
      */
     Installed = 'installed',
     /**

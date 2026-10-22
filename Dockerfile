@@ -286,7 +286,7 @@ COPY --from=test-dnr-converter /out/ /
 
 # ============================================================================
 # Stage: test-tswebextension
-# Runs test:prod (lint + smoke + test:ci + test:e2e) for @adguard/tswebextension
+# Runs test:prod (lint + smoke + test:ci) for @adguard/tswebextension
 # ============================================================================
 FROM built-tswebextension AS test-tswebextension
 

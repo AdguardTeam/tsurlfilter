@@ -32,8 +32,14 @@ export interface CanvasPolicyInput {
  * Shares configuration updates and keeps canvas registration stopped until start.
  */
 export class CanvasProtectionController {
+    /**
+     * Whether the application is stopped, which keeps the script removed whatever the settings are.
+     */
     private stopped = false;
 
+    /**
+     * Exclusions compiled from the current filtering engine, if compiled yet.
+     */
     private policy: ProtectionPolicyArtifact | undefined;
 
     /**

@@ -56,7 +56,7 @@ export const INERT_CONTEXT_METHODS: Readonly<Record<string, true>> = withoutProt
 
 /**
  * Tracks which canvases received rendering, so untouched ones keep native readouts.
- * A canvas filled only from video frames or `putImageData` holds no rendering
+ * A canvas filled only from `<video>` elements or `putImageData` holds no rendering
  * fingerprint. The mark is permanent: clearing or resizing does not remove it.
  * One tracking serves every realm an engine instance protects, for HTML canvases,
  * OffscreenCanvas objects and bitmap renderers alike.

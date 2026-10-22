@@ -11,7 +11,27 @@ export {
     getRuleSourceText,
 } from '@adguard/tsurlfilter';
 
-export * from './api';
+export {
+    allowlist,
+    stealthApi,
+    engineApi,
+    documentApi,
+    tabsApi,
+    cosmeticFrameProcessor,
+    documentBlockingService,
+    messagesApi,
+    resourcesService,
+    redirectsService,
+    paramsService,
+    urlTransformService,
+    cspService,
+    removeHeadersService,
+    permissionsPolicyService,
+    cookieFiltering,
+    contentFiltering,
+    removeParamInjectionService,
+    createTsWebExtension,
+} from './api';
 export * from './app';
 export * from './ext-session-storage';
 export * from './tabs';

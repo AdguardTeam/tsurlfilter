@@ -8,7 +8,7 @@ import { CanvasConditionType } from '../../../../src/lib/common/canvas-protectio
 import { type CanvasBootstrapSnapshot } from '../../../../src/lib/common/canvas-protection/contracts';
 import { deriveSiteSeed, formatKey } from '../../../../src/lib/common/canvas-protection/noise';
 
-import { createProtectAllPolicy } from './fixtures/prepared-policies';
+import { createProtectAllPolicy, EXCLUDE_EVERY_HOSTED_DOCUMENT } from './fixtures/prepared-policies';
 
 /**
  * Runs generated delivery code in a new document, without extension privileges.
@@ -48,13 +48,7 @@ describe('generated canvas delivery code', () => {
             policy: {
                 ...policy,
                 // The delivery must stay inert here: jsdom has no canvas bindings to wrap.
-                // Every top document with a hostname.
-                documentExclusions: [{
-                    type: CanvasConditionType.Not,
-                    operand: {
-                        type: CanvasConditionType.Host, hosts: [], domains: [], parents: [],
-                    },
-                }],
+                documentExclusions: EXCLUDE_EVERY_HOSTED_DOCUMENT,
             },
         });
         expect(untouched).toBe(true);

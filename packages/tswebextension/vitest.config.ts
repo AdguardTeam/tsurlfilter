@@ -36,7 +36,7 @@ const createProjectForManifestVersion = (
             // eslint-disable-next-line max-len
             `**/test/lib/mv${manifestVersion === ManifestVersionEnv.Second ? ManifestVersionEnv.Third : ManifestVersionEnv.Second}/**`,
             '**/test/lib/common/**',
-            // Browser e2e specs are run via `pnpm test:e2e` (vitest --project browser).
+            // Browser e2e specs are run by the `browser` and `canvas-native` projects, see `pnpm test:e2e`.
             '**/test/e2e/**',
         ],
     },
@@ -66,7 +66,7 @@ export default defineConfig({
                         // the default config, we need to exclude them explicitly.
                         '**/node_modules/**',
                         '**/test/lib/mv*/**',
-                        // Browser e2e specs are run via `pnpm test:e2e` (vitest --project browser).
+                        // Browser e2e specs are run by the `browser` and `canvas-native` projects, see `pnpm test:e2e`.
                         '**/test/e2e/**',
                     ],
                 },

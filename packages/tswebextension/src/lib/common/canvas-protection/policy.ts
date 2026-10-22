@@ -36,7 +36,8 @@ const parseHostname = (url: string): string | undefined => {
  * @returns The complete hostname without `www.`, or `undefined` when the URL has none.
  */
 export const resolveSiteKey = (url: string): string | undefined => (
-    // Same key as the extension's getDomain(), without importing extension code into the page engine.
+    // The extension's getDomain() key for a URL with a hostname, without importing extension code
+    // into the page engine.
     parseHostname(url)?.replace(/^www\./, '') || undefined
 );
 

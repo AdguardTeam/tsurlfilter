@@ -17,6 +17,7 @@ import {
     type RegistrationOperationOutcome,
     type RegistrationResult,
 } from './contracts';
+import { formatKey } from './noise';
 import { CanvasProtectionSession } from './session';
 
 /**
@@ -127,7 +128,7 @@ export class CanvasProtectionRegistration {
             if (result.status === CanvasRegistrationStatus.Failed
                 || (result.status === CanvasRegistrationStatus.Unavailable && (requested.gates.protectCanvas
                     || result.installed.status === CanvasAvailabilityStatus.Available))) {
-                logger.warn(`[tsweb.CanvasProtectionRegistration.apply]: ${result.reason}`);
+                logger.warn(`[tsweb.CanvasProtectionRegistration.apply]: ${CanvasProtectionRegistration.describe(result)}`);
             }
             // A newer request stays pending, but learns what the browser acknowledged meanwhile.
             this.state = version === this.requestVersion
@@ -248,6 +249,20 @@ export class CanvasProtectionRegistration {
     }
 
     /**
+     * Joins the result reason with the browser errors of its failed operations.
+     *
+     * @param result Unresolved registration result.
+     *
+     * @returns Reason followed by each failed operation and its browser error.
+     */
+    private static describe(result: RegistrationResult): string {
+        const failures = result.operations
+            .filter(({ status, reason }) => status === CanvasOperationStatus.Failed && reason !== result.reason)
+            .map(({ operation, reason }) => `${operation}: ${reason}`);
+        return [result.reason, ...failures].join('; ');
+    }
+
+    /**
      * Describes an acknowledged registration without its code hash.
      *
      * @param record The last acknowledged registration, if any.
@@ -272,6 +287,6 @@ export class CanvasProtectionRegistration {
      */
     private static async hash(code: string): Promise<string> {
         const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code));
-        return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+        return formatKey(new Uint8Array(digest), digest.byteLength);
     }
 }

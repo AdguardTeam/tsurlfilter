@@ -12,7 +12,6 @@ import browser from 'webextension-polyfill';
 import { type Runtime } from 'webextension-polyfill';
 
 import {
-    canvasDeliveryChannel,
     type ConfigurationMV2,
     createTsWebExtension,
     engineApi,
@@ -25,6 +24,7 @@ import {
     CanvasRegistrationStatus,
 } from '../../../../src/lib/common/canvas-protection/constants';
 import { type Message } from '../../../../src/lib/common/message';
+import { canvasDeliveryChannel } from '../../../../src/lib/mv2/background/api';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { assistant, Assistant } from '../../../../src/lib/mv2/background/assistant';
 import { configurationMV2Validator } from '../../../../src/lib/mv2/background/configuration';
@@ -288,6 +288,16 @@ describe('TsWebExtension', () => {
         });
 
         /**
+         * Builds the test configuration with canvas protection enabled.
+         *
+         * @returns Configuration with `protectCanvas` set.
+         */
+        const canvasConfig = (): ConfigurationMV2 => ({
+            ...config,
+            settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
+        });
+
+        /**
          * Starts the app and enables canvas protection.
          *
          * @returns The registration result of enabling.
@@ -328,9 +338,8 @@ describe('TsWebExtension', () => {
         it('reports a missing policy before the first start', async () => {
             await instance.initStorage();
             appContext.configuration = {
-                ...config,
+                ...canvasConfig(),
                 filters: config.filters.map(({ filterId }) => filterId),
-                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
             };
             const result = await instance.setCanvasProtectionEnabled(true);
             expect(result).toMatchObject({
@@ -352,10 +361,7 @@ describe('TsWebExtension', () => {
             expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
             await instance.setStealthModeEnabled(true);
             vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
-            await instance.configure({
-                ...config,
-                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
-            });
+            await instance.configure(canvasConfig());
             const replacement = instance.getCanvasProtectionState();
             expect(replacement).toMatchObject({
                 status: CanvasRegistrationStatus.Installed,
@@ -377,10 +383,7 @@ describe('TsWebExtension', () => {
             vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts)
                 .mockReturnValue(['@@||example.org^$stealth=fingerprinting']);
             await instance.initStorage();
-            await instance.start({
-                ...config,
-                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
-            });
+            await instance.start(canvasConfig());
             expect(browser.contentScripts.register).toHaveBeenLastCalledWith(expect.objectContaining({
                 excludeMatches: ['*://*.example.org/*'],
             }));
@@ -390,10 +393,7 @@ describe('TsWebExtension', () => {
             vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
             const initial = await enable();
             vi.mocked(browser.contentScripts.register).mockClear();
-            await instance.configure({
-                ...config,
-                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
-            });
+            await instance.configure(canvasConfig());
             expect(instance.getCanvasProtectionState().requested.revision).toBe(initial.requested.revision);
             expect(browser.contentScripts.register).not.toHaveBeenCalled();
         });
@@ -401,10 +401,7 @@ describe('TsWebExtension', () => {
         it('updates the registration when configure brings new rules', async () => {
             const initial = await enable();
             vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
-            await instance.configure({
-                ...config,
-                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
-            });
+            await instance.configure(canvasConfig());
             expect(instance.getCanvasProtectionState().requested.revision).not.toBe(initial.requested.revision);
             expect(browser.contentScripts.register).toHaveBeenLastCalledWith(expect.objectContaining({
                 excludeMatches: ['*://*.example.org/*'],
@@ -456,10 +453,7 @@ describe('TsWebExtension', () => {
             const restarted = createTsWebExtension('test');
             await restarted.initStorage();
             vi.mocked(browser.contentScripts.register).mockRejectedValueOnce(new Error('reinstallation rejected'));
-            const enabled: ConfigurationMV2 = {
-                ...config,
-                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
-            };
+            const enabled = canvasConfig();
             expect(await restarted.start(enabled)).toMatchObject({
                 canvasProtection: {
                     status: CanvasRegistrationStatus.Failed,
@@ -480,10 +474,7 @@ describe('TsWebExtension', () => {
         it('keeps canvas registration off after a failed start', async () => {
             await instance.initStorage();
             vi.mocked(engineApi.startEngine).mockRejectedValueOnce(new Error('engine failed'));
-            const enabled: ConfigurationMV2 = {
-                ...config,
-                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
-            };
+            const enabled = canvasConfig();
             await expect(instance.start(enabled)).rejects.toThrow('engine failed');
             await instance.setCanvasProtectionEnabled(true);
             expect(browser.contentScripts.register).not.toHaveBeenCalled();
@@ -493,10 +484,7 @@ describe('TsWebExtension', () => {
         it('does not restart canvas registration through setters after stop', async () => {
             await enable();
             vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
-            await instance.configure({
-                ...config,
-                settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
-            });
+            await instance.configure(canvasConfig());
             await instance.stop();
             vi.mocked(browser.contentScripts.register).mockClear();
             await instance.setFilteringEnabled(true);

@@ -68,9 +68,9 @@ export function createNativeMasking(): NativeMasking {
     const stackSetters = new intrinsics.WeakMap<Function, Function>();
 
     /**
-     * Reads the stack text of an error created by the browser in a protected realm.
-     * V8 gives every error an own `stack` accessor backed by the realm's native pair.
-     * Other errors, and other browsers' errors, are left as they are.
+     * Reads the V8 stack text of a thrown value: an own `stack` string, or the own
+     * `stack` accessor V8 gives errors, backed by the realm's native pair.
+     * Values with neither, and stacks of other browsers, are left as they are.
      *
      * @param error Thrown value.
      *

@@ -193,11 +193,12 @@ Requirements:
 - Chromium MV2: host permissions and the content script
   `@adguard/tswebextension/content-script` declared at `document_start` in
   all frames.
+- Firefox MV2: host permissions.
 - Private windows: the extension must be allowed to run there.
 
 Only canvases that received rendering are noised: any 2D context call that
 can put device-dependent pixels on a canvas marks it for good. A canvas
-filled only from video frames or `putImageData()` is read natively.
+filled only from `<video>` elements or `putImageData()` is read natively.
 
 ### Exceptions
 
@@ -210,8 +211,8 @@ filled only from video frames or `putImageData()` is read natively.
   `FilteringEventType.StealthAllowlistAction` event.
 - `@@||host^$document` and the allowlist, in normal or inverted mode,
   exclude the top-level document and its frames when the browser reveals
-  the top-level document's URL and it has a hostname, so a `file:` or
-  `about:blank` top-level document is never excluded.
+  the top-level document's URL and it has a hostname, so frames of a
+  `file:` or `about:blank` top-level document are never excluded.
   See [Limits](#limits) for browser restrictions.
   `$document` may also use `$important` or combine with `$stealth`.
   In normal mode, MV2 entries such as `example.com` cover the host and
@@ -240,19 +241,22 @@ only while protection is enabled.
 
 - Only fully opaque pixels change, on canvases up to 32767 px per side and
   268435456 px in area. The noise is chosen on 8-bit sRGB values. A readout
-  in another color space or pixel format shows it at the same pixels, by one
-  level of its own format.
+  in another color space or pixel format shows it at the same pixels: by one
+  level in an 8-bit format, by 1/255 in a float one.
+- Documents without a hostname, such as `file:` pages, stay native. A frame
+  with a hostname inside one uses its own hostname.
 - WebGL and WebGPU readouts, an OffscreenCanvas in a worker and copies made
   through `VideoFrame`, a WebGL texture or `captureStream()` stay native.
   Big-endian platforms get no noise.
 - Same-origin `about:blank`, `about:srcdoc` and `blob:` frames are protected
   by the document that contains them, a frame without a URL as soon as it is
   inserted. A frame with a URL shows an empty `about:blank` document until its
-  own one loads; read through `window[index]`, `window.name` or
-  `document.name` in the same synchronous run as its insertion, that document
-  stays native. A frame in a shadow root created from
-  markup is protected once the page touches its window or inserts another
-  frame. `data:` frames, sandboxed frames without `allow-same-origin` and
+  own one loads; read through `window[index]` or by the frame's name on
+  `window` or `document` in the same synchronous run as its insertion, that
+  document stays native. A frame in a shadow root created from markup, e.g.
+  `<template shadowrootmode>` or `setHTMLUnsafe()`, is protected once the
+  page reads it through `contentWindow`, `contentDocument` or
+  `getSVGDocument()`. `data:` frames, sandboxed frames without `allow-same-origin` and
   `about:blank` or `blob:` popups stay native. A popup or a sandboxed frame
   that loads a matching URL gets the script like any other document.
 - A cross-origin frame learns its top-level document from
@@ -706,6 +710,21 @@ limited the extension's site access, stays native without an error. `start()` an
 replaces setter changes with its own `settings.stealth.protectCanvas` and
 recalculates exceptions; omitting the setting disables protection. Changes
 apply to documents loaded afterwards.
+
+`RegistrationResult` fields:
+
+- `status`, `reason`, `requiredUserAction`: the verdict. The texts are
+  English diagnostics for logs.
+- `requested`: the gates and the exceptions revision of the last request.
+- `installed`: the revision and generation of the script the browser last
+  accepted, or `Unavailable` when no script is registered.
+- `operations`: browser calls of the request in order, with the browser
+  error of each failed one.
+
+On `Unavailable`, ask the user for `requiredUserAction`, e.g. to allow user
+scripts in Chromium MV3, and call `setCanvasProtectionEnabled(true)` again
+afterwards. A pending request also reports `Unavailable` until its promise
+resolves.
 
 ##### initStorage()
 

@@ -11,12 +11,15 @@ import {
 } from 'vitest';
 import browser from 'webextension-polyfill';
 
+import { CanvasAvailabilityStatus } from '../../../../src/lib/common/canvas-protection/constants';
 import { CanvasProtectionRegistration } from '../../../../src/lib/common/canvas-protection/registration';
 import { TsWebExtension } from '../../../../src/lib/mv3/background/app';
 import { appContext } from '../../../../src/lib/mv3/background/app-context';
+import { ChromiumCanvasRegistration } from '../../../../src/lib/mv3/background/canvas-registration';
 import { type ConfigurationMV3 } from '../../../../src/lib/mv3/background/configuration';
 import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
+import { extSessionStorage } from '../../../../src/lib/mv3/background/ext-session-storage';
 import FiltersApi from '../../../../src/lib/mv3/background/filters-api';
 import { CspService } from '../../../../src/lib/mv3/background/services/csp-service';
 import { StealthService } from '../../../../src/lib/mv3/background/services/stealth-service';
@@ -137,5 +140,48 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
         expect(apply).toHaveBeenLastCalledWith(expect.objectContaining({
             gates: { filteringEnabled: false, stealthModeEnabled: true, protectCanvas: true },
         }));
+    });
+
+    it('keeps the script removed after stop', async () => {
+        appContext.isStorageInitialized = true;
+        vi.spyOn(configureBoundaries, 'removeAllFilteringRules').mockResolvedValue(undefined);
+        appContext.configuration = {
+            settings: { filteringEnabled: true, stealthModeEnabled: true, stealth: { protectCanvas: true } },
+        } as never;
+        await instance.stop();
+        await instance.setCanvasProtectionEnabled(true);
+        expect(apply).toHaveBeenLastCalledWith(expect.objectContaining({
+            gates: { filteringEnabled: false, stealthModeEnabled: true, protectCanvas: true },
+        }));
+    });
+
+    describe('initStorage', () => {
+        let remove: ReturnType<typeof vi.spyOn>;
+
+        beforeEach(() => {
+            apply.mockRestore();
+            vi.spyOn(extSessionStorage, 'init').mockResolvedValue(undefined);
+            vi.spyOn(ChromiumCanvasRegistration.prototype, 'checkAvailability')
+                .mockResolvedValue({ status: CanvasAvailabilityStatus.Available, value: true });
+            remove = vi.spyOn(ChromiumCanvasRegistration.prototype, 'remove').mockResolvedValue([]);
+            appContext.canvasProtectionRegistration = {
+                revision: 'revision', generation: 'generation', codeHash: 'hash',
+            };
+        });
+
+        it('keeps the script when the service worker restarts', async () => {
+            appContext.configuration = {
+                settings: { filteringEnabled: true, stealthModeEnabled: true, stealth: { protectCanvas: true } },
+            } as never;
+            await instance.initStorage();
+            expect(remove).not.toHaveBeenCalled();
+            expect(appContext.canvasProtectionRegistration).toBeDefined();
+        });
+
+        it('removes the script of the previous browser session', async () => {
+            appContext.canvasProtectionRegistration = undefined;
+            await instance.initStorage();
+            expect(remove).toHaveBeenCalledOnce();
+        });
     });
 });

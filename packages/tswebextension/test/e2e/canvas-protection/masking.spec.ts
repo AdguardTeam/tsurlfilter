@@ -2,9 +2,9 @@ import { describe, expect, test } from 'vitest';
 import { server } from 'vitest/browser';
 
 import { CanvasProtectionCode } from '../../../src/lib/common/canvas-protection/code';
-import { CanvasConditionType } from '../../../src/lib/common/canvas-protection/constants';
 import { type CanvasBootstrapSnapshot } from '../../../src/lib/common/canvas-protection/contracts';
 import { deriveSiteSeed } from '../../../src/lib/common/canvas-protection/noise';
+import { EXCLUDE_EVERY_HOSTED_DOCUMENT } from '../../lib/common/canvas-protection/fixtures/prepared-policies';
 
 import {
     decodeExport,
@@ -39,6 +39,21 @@ const draw = (realm: Realm): { context: CanvasRenderingContext2D; original: Imag
  */
 const repaint = ({ context }: { context: CanvasRenderingContext2D }): void => {
     context.fillRect(0, 0, 32, 16);
+};
+
+/**
+ * Draws the fixture, installs the engine and repeats the fill, so the canvas holds tracked rendering.
+ *
+ * @param realm Canvas owner realm.
+ * @param state Delivery snapshot to install.
+ *
+ * @returns The drawn fixture.
+ */
+const drawProtected = (realm: Realm, state: CanvasBootstrapSnapshot): ReturnType<typeof draw> => {
+    const fixture = draw(realm);
+    realm.eval(CanvasProtectionCode.create(state));
+    repaint(fixture);
+    return fixture;
 };
 
 /**
@@ -81,13 +96,7 @@ describe('generated canvas bootstrap and native masking', () => {
                 ...state,
                 policy: {
                     ...state.policy,
-                    // Every top document with a hostname.
-                    documentExclusions: [{
-                        type: CanvasConditionType.Not,
-                        operand: {
-                            type: CanvasConditionType.Host, hosts: [], domains: [], parents: [],
-                        },
-                    }],
+                    documentExclusions: EXCLUDE_EVERY_HOSTED_DOCUMENT,
                 },
             }));
             methods().forEach((method, index) => expect(method).toBe(before[index]));
@@ -106,9 +115,7 @@ describe('generated canvas bootstrap and native masking', () => {
             ));
             const originalToString = realm.Function.prototype.toString;
             const representations = originals.map((method) => Reflect.apply(originalToString, method, []));
-            const fixture = draw(realm);
-            realm.eval(CanvasProtectionCode.create(state));
-            repaint(fixture);
+            const fixture = drawProtected(realm, state);
             const wrappers = [realm.HTMLCanvasElement.prototype.toDataURL,
                 realm.HTMLCanvasElement.prototype.toBlob, realm.CanvasRenderingContext2D.prototype.getImageData];
             wrappers.forEach((method, index) => {
@@ -137,9 +144,7 @@ describe('generated canvas bootstrap and native masking', () => {
     test('serves a repeated delivery with the existing wrappers', async () => {
         await withRealm((realm) => {
             const state = snapshot();
-            const fixture = draw(realm);
-            realm.eval(CanvasProtectionCode.create(state));
-            repaint(fixture);
+            const fixture = drawProtected(realm, state);
             const methods = (): Function[] => [
                 realm.CanvasRenderingContext2D.prototype.getImageData,
                 realm.CanvasRenderingContext2D.prototype.fillText,
@@ -295,9 +300,7 @@ describe('generated canvas bootstrap and native masking', () => {
     test('keeps optional private state away from inherited accessors', async () => {
         await withRealm((realm) => {
             const state = snapshot();
-            const fixture = draw(realm);
-            realm.eval(CanvasProtectionCode.create(state));
-            repaint(fixture);
+            const fixture = drawProtected(realm, state);
             const stored = new WeakMap<object, Map<string, unknown>>();
             const calls: string[] = [];
             ['readout', 'originX', 'originY', 'canvasWidth', 'canvasHeight', 'exportContext',
@@ -427,9 +430,7 @@ describe('generated canvas bootstrap and native masking', () => {
     test('converts object coordinates once and in order, and noises the converted rectangle', async () => {
         await withRealm((realm) => {
             const state = snapshot();
-            const fixture = draw(realm);
-            realm.eval(CanvasProtectionCode.create(state));
-            repaint(fixture);
+            const fixture = drawProtected(realm, state);
             const log: string[] = [];
             const coordinate = (name: string, value: number): object => ({
                 valueOf: (): number => { log.push(name); return value; },
@@ -457,9 +458,7 @@ describe('generated canvas bootstrap and native masking', () => {
                 toDataURL: realm.HTMLCanvasElement.prototype.toDataURL,
                 toBlob: realm.HTMLCanvasElement.prototype.toBlob,
             };
-            const fixture = draw(realm);
-            realm.eval(CanvasProtectionCode.create(snapshot()));
-            repaint(fixture);
+            const fixture = drawProtected(realm, snapshot());
             const { context } = fixture;
             const failure = (method: Function, receiver: object, args: unknown[]): Error => {
                 try {
@@ -490,9 +489,7 @@ describe('generated canvas bootstrap and native masking', () => {
 
     test('throws a realm TypeError when an object argument converts to no number or string', async () => {
         await withRealm(async (realm) => {
-            const fixture = draw(realm);
-            realm.eval(CanvasProtectionCode.create(snapshot()));
-            repaint(fixture);
+            const fixture = drawProtected(realm, snapshot());
             const { context } = fixture;
             let conversions = 0;
             let callbacks = 0;

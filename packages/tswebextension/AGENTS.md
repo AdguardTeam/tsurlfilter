@@ -68,7 +68,8 @@ packages/tswebextension/
   type errors, rebuild from the repo root:
   `npx lerna run build --scope=@adguard/tswebextension --include-dependencies`
 - `pnpm test` — run all tests via Vitest (mv2, mv3, common, browser and
-  canvas-native projects)
+  canvas-native projects). The last two need the Playwright browsers, see
+  [Running Tests](DEVELOPMENT.md#running-tests).
 - `pnpm test:mv2` — run MV2 tests only
 - `pnpm test:mv3` — run MV3 tests only
 - `pnpm test:common` — run common tests only

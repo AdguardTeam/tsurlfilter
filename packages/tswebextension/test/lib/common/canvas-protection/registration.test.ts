@@ -190,6 +190,20 @@ describe('Canvas protection registration', () => {
         warn.mockRestore();
     });
 
+    it('logs the browser error of a failed operation', async () => {
+        const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+        adapter.install.mockRejectedValueOnce(new CanvasRegistrationOperationError('register failed', [{
+            operation: CanvasRegistrationOperation.Register,
+            status: CanvasOperationStatus.Failed,
+            reason: 'Error: Invalid url pattern',
+        }]));
+        await registration.apply(request());
+        expect(warn).toHaveBeenCalledWith(
+            expect.stringContaining('register failed; register: Error: Invalid url pattern'),
+        );
+        warn.mockRestore();
+    });
+
     it('requires a prepared policy', async () => {
         expect(await registration.apply({ gates: enabled })).toMatchObject({
             status: CanvasRegistrationStatus.Unavailable,

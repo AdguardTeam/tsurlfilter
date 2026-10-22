@@ -45,6 +45,14 @@ export const hostCondition = (lookups: Partial<Omit<HostCondition, 'type'>>): Ho
     ...lookups,
 });
 
+/**
+ * Exclusions matching every top document with a hostname.
+ */
+export const EXCLUDE_EVERY_HOSTED_DOCUMENT: readonly PreparedCondition[] = [{
+    type: CanvasConditionType.Not,
+    operand: hostCondition({}),
+}];
+
 const hosts = hostCondition({ hosts: ['a.example.com', 'b.example.com'] });
 const domains = hostCondition({ domains: ['example.com'] });
 const parents = hostCondition({ parents: ['example.com'] });

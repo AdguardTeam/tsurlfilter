@@ -97,6 +97,9 @@ export class TsWebExtension implements AppInterface<
         this.appContext.configuration = value;
     }
 
+    /**
+     * Applies canvas protection settings to the browser registration.
+     */
     private readonly canvasProtection: CanvasProtectionController;
 
     /**
