@@ -140,6 +140,11 @@ export class PreregisteredScriptsService {
 
         if (PreregisteredScriptsService.isNamespaceEmpty()) {
             appContext.preregisteredScriptRules = new Map();
+            // Pre-existing pages already received the boot files at
+            // document_start: keep their host set resolvable.
+            appContext.preregisteredHostnames = new Set(
+                appContext.preregisteredScriptRulesAtBoot?.keys() ?? [],
+            );
 
             return;
         }
@@ -191,11 +196,18 @@ export class PreregisteredScriptsService {
             appContext.preregisteredScriptsKey = undefined;
             appContext.preregisteredScriptsRegistered = false;
             appContext.preregisteredScriptRules = new Map();
+            // Pre-existing pages already received the boot files at
+            // document_start: keep their host set resolvable.
+            appContext.preregisteredHostnames = new Set(
+                appContext.preregisteredScriptRulesAtBoot?.keys() ?? [],
+            );
             // The namespace is known to be empty now.
             appContext.preregisteredScriptRulesAtBootFailed = false;
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.clearRegistrations]: Failed to clear preregistered scripts', e);
-            appContext.preregisteredScriptRules = PreregisteredScriptsService.getFallbackCoverage();
+            const fallback = PreregisteredScriptsService.getFallbackCoverage();
+            appContext.preregisteredScriptRules = fallback;
+            PreregisteredScriptsService.publishFallbackHostnames(fallback);
         }
     }
 
@@ -225,6 +237,7 @@ export class PreregisteredScriptsService {
         appContext.preregisteredScriptRules = new Map();
         appContext.preregisteredScriptRulesAtBoot = undefined;
         appContext.preregisteredScriptRulesAtBootFailed = false;
+        appContext.preregisteredHostnames = undefined;
     }
 
     /**
@@ -301,6 +314,30 @@ export class PreregisteredScriptsService {
     }
 
     /**
+     * Publishes the hostname set that describes the fallback coverage when a
+     * sync/clear fails before the first successful publication. The already
+     * published set is kept: it describes the registrations that are still
+     * active. Without this, a failed first sync would republish coverage that
+     * the dynamic path can never match, re-injecting rules the persisted
+     * registrations already ran at `document_start`.
+     *
+     * @param coverage Coverage map that is being republished.
+     */
+    private static publishFallbackHostnames(coverage: Map<string, Set<string>>): void {
+        if (appContext.preregisteredHostnames !== undefined) {
+            return;
+        }
+
+        const configured = appContext.preregisteredScripts
+            ? expandHostnames(appContext.preregisteredScripts.domains)
+            : [];
+
+        appContext.preregisteredHostnames = new Set(
+            configured.length > 0 ? configured : coverage.keys(),
+        );
+    }
+
+    /**
      * Builds a stable key for a descriptor set; the registry order is
      * irrelevant, so the descriptors are sorted by id.
      *
@@ -369,6 +406,10 @@ export class PreregisteredScriptsService {
         scriptsPath: string,
     ): Promise<Map<string, Set<string>>> {
         const hostnames = expandHostnames(domains);
+        // The shared bundle embeds the host set of the generation it was
+        // built for; prefer it over the runtime expansion so the page gate
+        // and this predicate can never disagree about the set.
+        let publishedHostnames: readonly string[] = hostnames;
 
         // A failure here leaves the previous registrations active, so the
         // last published coverage still describes them.
@@ -377,6 +418,7 @@ export class PreregisteredScriptsService {
         try {
             if (preregistrationEnabled && hostnames.length > 0) {
                 const manifest = await readManifest(scriptsPath);
+                publishedHostnames = manifest.hostnames ?? hostnames;
                 scripts = await PreregisteredScriptsService.buildDomainScripts(
                     hostnames,
                     scriptsPath,
@@ -405,9 +447,18 @@ export class PreregisteredScriptsService {
 
             const fallback = PreregisteredScriptsService.getFallbackCoverage();
             appContext.preregisteredScriptRules = fallback;
+            PreregisteredScriptsService.publishFallbackHostnames(fallback);
 
             return fallback;
         }
+
+        // The registrations now describe this hostname set; publish it for
+        // the dynamic path's top-level check. A failed sync keeps the
+        // previous registrations, so it keeps the previous set too. Published
+        // even when preregistration is disabled: the boot snapshot may still
+        // describe pre-existing pages, and the coverage map short-circuits
+        // when there are no active registrations.
+        appContext.preregisteredHostnames = new Set(publishedHostnames);
 
         // Report exactly what is registered, not what the sync attempted:
         // after a partial failure the browser still holds the previous

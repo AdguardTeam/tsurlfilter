@@ -347,6 +347,13 @@ dynamic path. Documents that loaded before the current service worker
 started are judged against the boot snapshot of the registrations that
 existed then; later documents use the last published coverage.
 
+Coverage also requires the top-level site to belong to the configured host
+set: the filtering state (allowlist, inverted allowlist) is tab-level, so a
+preregistered host's frame embedded under a foreign top (for example, a
+YouTube embed on an allowlisted third-party site) stays on the dynamic
+injection path, which is the only side that can see the embedding site's
+filtering state. Intermediate frames do not participate.
+
 At runtime, each configured hostname (plus its `www.` alias) is matched
 against the engine with `$path` ignored, the matching rules are hashed, and
 a persistent content script is registered with
@@ -354,7 +361,9 @@ a persistent content script is registered with
 A scriptlet function file carries only the implementations the host's rules
 use; the per-rule file enforces any `$path` condition via `location`; the
 cleanup file runs last, deleting the coordination `window` property before
-page scripts run.
+page scripts run. The shared bundle itself installs a no-op shim when the
+top-level origin is outside the embedded host set, so the files that follow
+it do nothing under a foreign top-level site.
 
 The synthetic root request used by both the build-time collector and the
 runtime sync is shared through
@@ -372,10 +381,10 @@ Known limitations:
   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for the
   host: rules registered on `*://youtube.com/*` still execute on `/embed/…`.
   Tracked in AG-54564.
-- With protection disabled on a site (or in inverted allowlist mode),
-  YouTube embeds on it still run these scriptlets: the registration covers
-  every frame of the host, while the dynamic path would inject nothing
-  there. Tracked in AG-60054.
+- The embed gate reads `location.ancestorOrigins`, which is Blink-only; the
+  preregistered path is not supported on other engines. A top-level document
+  with an opaque origin (e.g. a CSP sandbox) is rejected by the page gate,
+  while the background still sees its URL — the only remaining divergence.
 - `$url`-modified rules are never preregistered: the engine is queried per
   hostname root, so they stay on the dynamic injection path.
 - A page that started before a sync removed a `#%#` JS rule can execute it

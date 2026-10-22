@@ -566,7 +566,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         // loaded) still go through the dynamic path. `remoteRules` below
         // doesn't need this guard: it only ever contains custom/user filter
         // rules, which preregistered scripts (local filters only) never cover.
-        const coveredRules = getCoveredRules(tabId, frameContext, getFrameContext, preExistingDocument);
+        const coveredRules = await getCoveredRules(tabId, frameContext, getFrameContext, preExistingDocument);
 
         const { localRules } = frameContext.preparedCosmeticResult;
 

@@ -59,6 +59,16 @@ export class AppContext {
     public preregisteredScriptRules?: Map<string, Set<string>>;
 
     /**
+     * Normalized hostnames of the preregistered artifact generation: the
+     * shared bundle's embed-gate set (the build manifest is preferred over
+     * the runtime expansion). A frame is covered only when its whole
+     * ancestor chain belongs to this set, so an embed outside it stays on
+     * the dynamic injection path. Plain (non-persisted) field: it lives for
+     * one service-worker lifetime.
+     */
+    public preregisteredHostnames?: Set<string>;
+
+    /**
      * Per-hostname hashes of rules covered by preregistered content-script
      * registrations that existed when the service worker started (before
      * the first sync of this SW lifetime), recovered from the registrations'

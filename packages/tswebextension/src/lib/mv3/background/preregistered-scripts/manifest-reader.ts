@@ -45,7 +45,7 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         throw new Error(`Malformed manifest at ${url}: expected an object`);
     }
 
-    const { schemaVersion, hashes, scriptletFiles } = value as Partial<PreregisteredScriptsManifest>;
+    const { schemaVersion, hashes, scriptletFiles, hostnames } = value as Partial<PreregisteredScriptsManifest>;
 
     if (schemaVersion !== MANIFEST_SCHEMA_VERSION) {
         throw new Error(`Unsupported manifest schema version ${String(schemaVersion)} at ${url}`);
@@ -65,7 +65,17 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         }
     }
 
-    return { schemaVersion, hashes, scriptletFiles };
+    if (hostnames !== undefined
+        && (!Array.isArray(hostnames) || !hostnames.every((hostname) => typeof hostname === 'string'))) {
+        throw new Error(`Malformed manifest at ${url}: "hostnames" must be an array of strings`);
+    }
+
+    return {
+        schemaVersion,
+        hashes,
+        scriptletFiles,
+        ...(hostnames ? { hostnames } : {}),
+    };
 };
 
 /**

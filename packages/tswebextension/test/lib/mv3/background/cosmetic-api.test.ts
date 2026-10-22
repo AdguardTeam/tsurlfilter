@@ -1,3 +1,4 @@
+import chrome from 'sinon-chrome';
 import {
     afterEach,
     beforeEach,
@@ -100,6 +101,8 @@ const makeFrameContext = (
     rawRules: object[] = [makeRawRule(LOCAL_JS_RULE_CONTENT)],
 ): object => ({
     url,
+    frameId: 0,
+    parentFrameId: -1,
     preparedCosmeticResult: {
         localRules: {
             scriptTexts: ['console.log("local")'],
@@ -115,6 +118,24 @@ const makeFrameContext = (
 });
 
 /**
+ * Builds a resolver returning frame contexts by frame id.
+ *
+ * @param frames Frame descriptors: frame id, parent frame id and URL.
+ *
+ * @returns Resolver for `tabsApi.getFrameContext`.
+ */
+const makeFrameChain = (
+    frames: Array<{ frameId: number; parentFrameId: number; url: string }>,
+): ((frameId: number) => object) => {
+    const byId = new Map(frames.map((frame) => [
+        frame.frameId,
+        { ...makeFrameContext(frame.url), ...frame },
+    ]));
+
+    return (frameId: number) => byId.get(frameId) as object;
+};
+
+/**
  * Runs {@link CosmeticApi.applyCosmeticRules} for the given coverage and
  * frame, returning spies on the local and remote application paths.
  *
@@ -123,6 +144,7 @@ const makeFrameContext = (
  * receiving the requested frame id.
  * @param frameId Frame id the rules are applied to.
  * @param preExistingDocument Whether to pass `preExistingDocument`.
+ * @param hostnames Preregistered hostnames; defaults to the covered keys.
  *
  * @returns Spies on `applyLocalCosmeticRules` and `applyRemoteCosmeticRules`.
  */
@@ -131,8 +153,10 @@ const runCosmeticApply = async (
     frame: object | ((frameId: number) => object),
     frameId = 0,
     preExistingDocument = false,
+    hostnames: string[] = coveredEntries.map(([hostname]) => hostname),
 ): Promise<{ applyLocal: MockInstance; applyRemote: MockInstance }> => {
     appContext.preregisteredScriptRules = new Map(coveredEntries);
+    appContext.preregisteredHostnames = new Set(hostnames);
 
     const frameMock = vi.mocked(tabsApi.getFrameContext);
     if (typeof frame === 'function') {
@@ -160,12 +184,14 @@ describe('CosmeticApi — preregistered script rules', () => {
     beforeEach(() => {
         // Reset to an empty map before every test.
         appContext.preregisteredScriptRules = new Map();
+        appContext.preregisteredHostnames = new Set();
     });
 
     afterEach(() => {
         vi.clearAllMocks();
         delete (appContext as { preregisteredScriptRulesAtBoot?: unknown }).preregisteredScriptRulesAtBoot;
         delete (appContext as { preregisteredScriptRules?: unknown }).preregisteredScriptRules;
+        delete (appContext as { preregisteredHostnames?: unknown }).preregisteredHostnames;
     });
 
     describe('preregistered coverage / applyCosmeticRules', () => {
@@ -286,6 +312,43 @@ describe('CosmeticApi — preregistered script rules', () => {
             expect(applyLocal).not.toHaveBeenCalled();
         });
 
+        it('skips local rules for a data: current frame whose parent is a preregistered host', async () => {
+            // The content script matched the data: frame through its
+            // creator/initiator origin; the background uses the nearest HTTP
+            // ancestor as the coverage host.
+            const childFrame = {
+                ...makeFrameContext('data:text/html,<p>x</p>'),
+                frameId: 1,
+                parentFrameId: 0,
+            };
+            const parentFrame = { ...makeFrameContext('https://youtube.com/'), frameId: 0, parentFrameId: -1 };
+
+            const { applyLocal } = await runCosmeticApply(
+                [['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
+                (frameId: number) => (frameId === 1 ? childFrame : parentFrame),
+                1,
+            );
+
+            expect(applyLocal).not.toHaveBeenCalled();
+        });
+
+        it('skips local rules for a blob: current frame whose parent is a preregistered host', async () => {
+            const childFrame = {
+                ...makeFrameContext('blob:https://youtube.com/00000000-0000-0000-0000-000000000000'),
+                frameId: 1,
+                parentFrameId: 0,
+            };
+            const parentFrame = { ...makeFrameContext('https://youtube.com/'), frameId: 0, parentFrameId: -1 };
+
+            const { applyLocal } = await runCosmeticApply(
+                [['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
+                (frameId: number) => (frameId === 1 ? childFrame : parentFrame),
+                1,
+            );
+
+            expect(applyLocal).not.toHaveBeenCalled();
+        });
+
         it('keeps $path-qualified rules on the dynamic path in an opaque frame', async () => {
             // The per-rule `$path` guard cannot evaluate the ancestor's URL
             // from an about:blank/srcdoc frame, so the preregistered file
@@ -315,6 +378,173 @@ describe('CosmeticApi — preregistered script rules', () => {
             expect(localRules.rawRules[0]).toBe(pathRule);
         });
 
+        describe('ancestor chain', () => {
+            beforeEach(() => {
+                chrome.webNavigation.getAllFrames.reset();
+            });
+
+            /**
+             * Runs the cosmetic apply for a frame chain and returns the
+             * local-apply spy.
+             *
+             * @param frames Frame descriptors: frame id, parent frame id and URL.
+             * @param frameId Frame id the rules are applied to.
+             * @param hostnames Preregistered hostnames.
+             *
+             * @returns Spy on `applyLocalCosmeticRules`.
+             */
+            const runChain = async (
+                frames: Array<{ frameId: number; parentFrameId: number; url: string }>,
+                frameId: number,
+                hostnames: string[] = ['youtube.com', 'www.youtube.com'],
+            ): Promise<MockInstance> => {
+                const { applyLocal } = await runCosmeticApply(
+                    [['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
+                    makeFrameChain(frames),
+                    frameId,
+                    false,
+                    hostnames,
+                );
+
+                return applyLocal;
+            };
+
+            it('does NOT skip local rules when the frame is embedded into a foreign site', async () => {
+                const applyLocal = await runChain([
+                    { frameId: 1, parentFrameId: 0, url: 'https://youtube.com/embed/abc' },
+                    { frameId: 0, parentFrameId: -1, url: 'https://example.com/' },
+                ], 1);
+
+                expect(applyLocal).toHaveBeenCalled();
+            });
+
+            it('skips local rules when the top-level site is a preregistered host', async () => {
+                const applyLocal = await runChain([
+                    { frameId: 1, parentFrameId: 0, url: 'https://youtube.com/embed/abc' },
+                    { frameId: 0, parentFrameId: -1, url: 'https://www.youtube.com/watch?v=1' },
+                ], 1);
+
+                expect(applyLocal).not.toHaveBeenCalled();
+            });
+
+            it('skips local rules when a foreign frame sits between the frame and a preregistered top', async () => {
+                // The filtering state is tab-level: an intermediate frame does
+                // not change it, and the dynamic path does not consider it.
+                const applyLocal = await runChain([
+                    { frameId: 1, parentFrameId: 2, url: 'https://youtube.com/embed/abc' },
+                    { frameId: 2, parentFrameId: 0, url: 'https://example.com/embed' },
+                    { frameId: 0, parentFrameId: -1, url: 'https://youtube.com/watch?v=1' },
+                ], 1);
+
+                expect(applyLocal).not.toHaveBeenCalled();
+            });
+
+            it('does NOT skip local rules when an intermediate ancestor is unknown', async () => {
+                // The frame storage is temporary and the live frame tree does
+                // not know the parent either: the top-level frame cannot be
+                // reached. Unsure resolves to "foreign".
+                chrome.webNavigation.getAllFrames.resolves([
+                    { frameId: 1, parentFrameId: 2, url: 'https://youtube.com/embed/abc' },
+                ]);
+
+                const applyLocal = await runChain([
+                    { frameId: 1, parentFrameId: 2, url: 'https://youtube.com/embed/abc' },
+                ], 1);
+
+                expect(applyLocal).toHaveBeenCalled();
+            });
+
+            it('skips local rules when a pruned parent is resolved from the live frame tree', async () => {
+                // Intermediate frame contexts are pruned a few seconds after
+                // load; the live frame tree still knows the whole chain.
+                chrome.webNavigation.getAllFrames.resolves([
+                    { frameId: 1, parentFrameId: 0, url: 'https://youtube.com/embed/abc' },
+                    { frameId: 0, parentFrameId: -1, url: 'https://youtube.com/watch?v=1' },
+                ]);
+
+                const applyLocal = await runChain(
+                    [{ frameId: 1, parentFrameId: 0, url: 'https://youtube.com/embed/abc' }],
+                    1,
+                );
+
+                expect(applyLocal).not.toHaveBeenCalled();
+            });
+
+            it('does NOT skip local rules when a pruned parent is missing from the live frame tree', async () => {
+                chrome.webNavigation.getAllFrames.resolves([
+                    { frameId: 1, parentFrameId: 0, url: 'https://youtube.com/embed/abc' },
+                ]);
+
+                const applyLocal = await runChain(
+                    [{ frameId: 1, parentFrameId: 0, url: 'https://youtube.com/embed/abc' }],
+                    1,
+                );
+
+                expect(applyLocal).toHaveBeenCalled();
+            });
+
+            it('skips local rules when an about:blank frame sits under a preregistered top', async () => {
+                const applyLocal = await runChain([
+                    { frameId: 1, parentFrameId: 2, url: 'https://youtube.com/embed/abc' },
+                    { frameId: 2, parentFrameId: 0, url: 'about:blank' },
+                    { frameId: 0, parentFrameId: -1, url: 'https://youtube.com/watch?v=1' },
+                ], 1);
+
+                expect(applyLocal).not.toHaveBeenCalled();
+            });
+
+            it('skips local rules when a data: frame sits under a preregistered top', async () => {
+                const applyLocal = await runChain([
+                    { frameId: 1, parentFrameId: 2, url: 'https://youtube.com/embed/abc' },
+                    { frameId: 2, parentFrameId: 0, url: 'data:text/html,<iframe></iframe>' },
+                    { frameId: 0, parentFrameId: -1, url: 'https://youtube.com/watch?v=1' },
+                ], 1);
+
+                expect(applyLocal).not.toHaveBeenCalled();
+            });
+
+            it('does NOT skip local rules when the top-level frame has an opaque origin', async () => {
+                const applyLocal = await runChain([
+                    { frameId: 1, parentFrameId: 0, url: 'https://youtube.com/embed/abc' },
+                    { frameId: 0, parentFrameId: -1, url: 'data:text/html,<iframe></iframe>' },
+                ], 1);
+
+                expect(applyLocal).toHaveBeenCalled();
+            });
+
+            it('skips local rules when a blob: frame carries a preregistered origin', async () => {
+                const applyLocal = await runChain([
+                    { frameId: 1, parentFrameId: 2, url: 'https://youtube.com/embed/abc' },
+                    // eslint-disable-next-line max-len
+                    { frameId: 2, parentFrameId: 0, url: 'blob:https://youtube.com/00000000-0000-0000-0000-000000000000' },
+                    { frameId: 0, parentFrameId: -1, url: 'https://youtube.com/watch?v=1' },
+                ], 1);
+
+                expect(applyLocal).not.toHaveBeenCalled();
+            });
+
+            it('skips local rules when a foreign-origin blob: frame sits under a preregistered top', async () => {
+                const applyLocal = await runChain([
+                    { frameId: 1, parentFrameId: 2, url: 'https://youtube.com/embed/abc' },
+                    // eslint-disable-next-line max-len
+                    { frameId: 2, parentFrameId: 0, url: 'blob:https://example.com/00000000-0000-0000-0000-000000000000' },
+                    { frameId: 0, parentFrameId: -1, url: 'https://youtube.com/watch?v=1' },
+                ], 1);
+
+                expect(applyLocal).not.toHaveBeenCalled();
+            });
+
+            it('does NOT skip local rules when the preregistered hostnames are not published', async () => {
+                const applyLocal = await runChain(
+                    [{ frameId: 0, parentFrameId: -1, url: 'https://youtube.com/watch?v=1' }],
+                    0,
+                    [],
+                );
+
+                expect(applyLocal).toHaveBeenCalled();
+            });
+        });
+
         it('always applies remote rules regardless of preregistered domain match', async () => {
             const { applyRemote } = await runCosmeticApply(
                 [['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
@@ -336,6 +566,7 @@ describe('CosmeticApi — preregistered script rules', () => {
             const hash = await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT));
             appContext.preregisteredScriptRules = new Map([['youtube.com', new Set([hash])]]);
             appContext.preregisteredScriptRulesAtBoot = new Map([['youtube.com', new Set([hash])]]);
+            appContext.preregisteredHostnames = new Set(['youtube.com']);
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(
                 makeFrameContext('https://youtube.com/') as any,
             );
@@ -358,6 +589,7 @@ describe('CosmeticApi — preregistered script rules', () => {
             appContext.preregisteredScriptRules = new Map([['youtube.com', new Set([bootHash, addedHash])]]);
             // The boot snapshot only proves the first rule executed.
             appContext.preregisteredScriptRulesAtBoot = new Map([['youtube.com', new Set([bootHash])]]);
+            appContext.preregisteredHostnames = new Set(['youtube.com']);
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(
                 makeFrameContext(
                     'https://youtube.com/',
@@ -385,6 +617,7 @@ describe('CosmeticApi — preregistered script rules', () => {
                 ['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])],
             ]);
             appContext.preregisteredScriptRulesAtBoot = new Map();
+            appContext.preregisteredHostnames = new Set(['youtube.com']);
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(
                 makeFrameContext('https://youtube.com/') as any,
             );
@@ -408,6 +641,7 @@ describe('CosmeticApi — preregistered script rules', () => {
             appContext.preregisteredScriptRules = new Map([
                 ['example.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])],
             ]);
+            appContext.preregisteredHostnames = new Set(['example.com']);
 
             // youtube.com should now be un-preregistered
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(
@@ -425,6 +659,7 @@ describe('CosmeticApi — preregistered script rules', () => {
             const coveredRule = makeRawRule(LOCAL_JS_RULE_CONTENT);
             const uncoveredRule = makeRawRule(OTHER_JS_RULE_CONTENT);
             appContext.preregisteredScriptRules = new Map([['youtube.com', new Set([await hashRule(coveredRule)])]]);
+            appContext.preregisteredHostnames = new Set(['youtube.com']);
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(
                 makeFrameContext(
                     'https://youtube.com/',
@@ -448,6 +683,7 @@ describe('CosmeticApi — preregistered script rules', () => {
             appContext.preregisteredScriptRules = new Map([
                 ['youtube.com', new Set([await hashRule(makeRawRule(OTHER_JS_RULE_CONTENT))])],
             ]);
+            appContext.preregisteredHostnames = new Set(['youtube.com']);
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(
                 makeFrameContext('https://youtube.com/') as any,
             );

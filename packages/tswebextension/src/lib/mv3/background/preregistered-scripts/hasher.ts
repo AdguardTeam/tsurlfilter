@@ -67,6 +67,15 @@ export interface PreregisteredScriptsManifest {
      * scriptlet has no entry here stays on the dynamic injection path.
      */
     scriptletFiles: Record<string, string>;
+
+    /**
+     * Expanded preregistered hostnames embedded in the shared bundle's embed
+     * gate. The runtime publishes this set for the ancestor-chain check, so
+     * the page and background predicates always use the same set. Absent in
+     * manifests generated before AG-60054; the runtime then falls back to the
+     * configured domains.
+     */
+    hostnames?: string[];
 }
 
 /**
