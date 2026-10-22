@@ -17,6 +17,15 @@ adg_os_any|adg_ext_any|adg_safari_any:
   description: Prevents a call of a given native method, matching the call by incoming arguments.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-suppress-native-method
   parameters:
+    - name: methodPath
+      required: true
+      description: String path to a native method (joined with "." (dot) if needed). The property must be attached to window.
+    - name: signatureStr
+      required: true
+      description: String of |-separated argument matchers.
+    - name: how
+      required: false
+      description: String, one of the following.
     - name: stack
       required: false
       description: String or regular expression that must match the current function call stack trace.

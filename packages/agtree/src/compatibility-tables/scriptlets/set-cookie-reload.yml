@@ -20,6 +20,15 @@ adg_os_any|adg_ext_any|adg_safari_any:
     - ubo-set-cookie-reload
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-cookie-reload
   parameters:
+    - name: name
+      required: true
+      description: Cookie name to be set.
+    - name: value
+      required: true
+      description: Cookie value.
+    - name: path
+      required: false
+      description: Cookie path, defaults to /.
     - name: domain
       required: false
       description: Cookie domain, if not set origin will be set as domain, if the domain does not match the origin, the cookie will not be set.

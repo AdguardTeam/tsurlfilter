@@ -407,7 +407,17 @@ export class Tokenizer {
                     continue;
                 }
                 case ACT_BACKSLASH: {
-                    if (offset + 1 < len) {
+                    const next = offset + 1 < len ? s.charCodeAt(offset + 1) : -1;
+
+                    // A backslash before a line break is not an escape: filter lists
+                    // are line-oriented, so the line break must stay a separate
+                    // `LineBreak` token. Otherwise a trailing `\` would swallow the
+                    // line break and merge the next line into the current rule.
+                    const nextIsLineBreak = next === CHAR_LINE_FEED
+                        || next === CHAR_CARRIAGE_RETURN
+                        || next === CHAR_FORM_FEED;
+
+                    if (next !== -1 && !nextIsLineBreak) {
                         t[tokenCount] = TokenType.Escaped;
                         e[tokenCount] = offset + 2;
                         tokenCount += 1;

@@ -92,6 +92,26 @@ describe('FilterListScanner', () => {
         expect(rules).toHaveLength(2);
     });
 
+    test('trailing backslash before LF does not merge the next line', () => {
+        // '! comment \' + LF + '||example.com^'
+        const source = '! comment \\\n||example.com^';
+        const { rules } = collectRules(source);
+        expect(rules).toHaveLength(2);
+        expect(rules[0].kind).toBe(RuleKind.Comment);
+        expect(rules[0].ruleEnd).toBe(11);
+        expect(rules[1].kind).toBe(RuleKind.Network);
+        expect(rules[1].ruleStart).toBe(12);
+    });
+
+    test('trailing backslash before CRLF ends the rule at the CR', () => {
+        // 'a\' + CRLF + '||example.com^'
+        const source = 'a\\\r\n||example.com^';
+        const { rules } = collectRules(source);
+        expect(rules).toHaveLength(2);
+        expect(rules[0].ruleEnd).toBe(2);
+        expect(rules[1].ruleStart).toBe(4);
+    });
+
     test('handles empty lines', () => {
         const source = '||a.com^\n\n||b.com^';
         const { rules, empties } = collectRules(source);

@@ -134,5 +134,56 @@ describe('Scriptlets Compatibility Table', () => {
         expect(data!.isTrusted).toBe(true);
     });
 
+    it('scriptletsCompatibilityTable.get - platform entries keep common parameters', () => {
+        // Platform-specific `parameters` replace the `common` list, so every
+        // parameter must be listed in the platform entry.
+        const cases: Array<{
+            name: string;
+            platform: Platform;
+            parameters: string[];
+        }> = [
+            {
+                name: 'set-cookie-reload',
+                platform: Platform.AdgExtChrome,
+                parameters: ['name*', 'value*', 'path', 'domain'],
+            },
+            {
+                name: 'trusted-set-cookie-reload',
+                platform: Platform.AdgExtChrome,
+                parameters: ['name*', 'value*', 'offsetExpiresSec', 'path', 'domain'],
+            },
+            {
+                name: 'trusted-suppress-native-method',
+                platform: Platform.AdgExtChrome,
+                parameters: ['methodPath*', 'signatureStr*', 'how', 'stack'],
+            },
+            {
+                name: 'set-cookie-reload',
+                platform: Platform.UboExtChrome,
+                parameters: ['name*', 'value*', 'path'],
+            },
+            {
+                name: 'trusted-set-cookie-reload',
+                platform: Platform.UboExtChrome,
+                parameters: ['name*', 'value*', 'offsetExpiresSec', 'path'],
+            },
+            {
+                name: 'trusted-suppress-native-method',
+                platform: Platform.UboExtChrome,
+                parameters: ['methodPath*', 'signature', 'how', 'stack'],
+            },
+        ];
+
+        for (const testCase of cases) {
+            const data = scriptletsCompatibilityTable.get(testCase.name, testCase.platform);
+
+            expect(data, `${testCase.name} on ${testCase.platform}`).not.toBeNull();
+            expect(
+                data!.parameters!.map((parameter) => `${parameter.name}${parameter.required ? '*' : ''}`),
+                `${testCase.name} on ${testCase.platform}`,
+            ).toEqual(testCase.parameters);
+        }
+    });
+
     // TODO: Add more tests
 });
