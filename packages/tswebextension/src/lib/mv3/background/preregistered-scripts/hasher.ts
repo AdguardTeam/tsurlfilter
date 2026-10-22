@@ -1,6 +1,6 @@
 import { type CosmeticRule } from '@adguard/tsurlfilter';
 
-import { normalizeDomain } from '../../../common/utils/url';
+import { normalizeDomain } from '../../../common/utils/hostname';
 
 /**
  * Coordination key: the `window` property name shared by the shared bundle,

@@ -1,14 +1,16 @@
 import { z as zod } from 'zod';
 
 import { basicFilterValidator, configurationValidator, settingsConfigValidator } from '../../common/configuration';
-import { isPlainHostname, normalizeDomain } from '../../common/utils/url';
+import { isPlainHostname, normalizeDomain } from '../../common/utils/hostname';
 
 /**
  * Rejects values that cannot be a plain hostname before normalization:
- * wildcards, schemes, ports and paths. IDN labels are allowed here and
+ * wildcards, schemes, ports, paths, userinfo, query strings and fragments.
+ * `@`, `?` and `#` would otherwise be silently stripped by `URL`, turning
+ * `u@youtube.com` into `youtube.com`. IDN labels are allowed here and
  * checked after normalization.
  */
-const PLAIN_HOSTNAME_SHAPE_REGEX = /^[^\s*/:]+$/;
+const PLAIN_HOSTNAME_SHAPE_REGEX = /^[^\s*/:@?#]+$/;
 
 /**
  * Custom filter list configuration validator for MV3.
@@ -67,11 +69,7 @@ export const preregisteredScriptsConfigValidator = zod.object({
             'Expected a plain hostname without a scheme, path, port or wildcard',
         )
         .array()
-        .transform((domains) => (
-            domains
-                .map(normalizeDomain)
-                .filter((domain) => domain !== '')
-        ))
+        .transform((domains) => domains.map(normalizeDomain))
         .refine(
             (domains) => domains.every(isPlainHostname),
             'Expected a valid hostname',

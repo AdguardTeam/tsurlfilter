@@ -110,10 +110,11 @@ export interface SyncScriptsResult {
     errors: PromiseRejectedResult[];
 
     /**
-     * Original (unprefixed) IDs of desired scripts whose desired state is
-     * not guaranteed after the call: failed registrations (no registration
-     * active), failed updates (stale registration active) and failed
-     * unregistrations (stale registration still active).
+     * Original (unprefixed) IDs whose desired state is not guaranteed after
+     * the call: failed registrations (no registration active), failed
+     * updates, and failed unregistrations (a stale registration is still
+     * active). Unregistration failures therefore list IDs that are not
+     * desired anymore.
      */
     failedScriptIds: string[];
 }

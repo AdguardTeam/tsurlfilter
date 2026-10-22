@@ -244,6 +244,7 @@ describe('PreregisteredScriptsService', () => {
         vi.unstubAllGlobals();
         clearManifestCache();
         appContext.preregisteredScriptRulesAtBoot = undefined;
+        appContext.preregisteredScriptRulesAtBootFailed = undefined;
         appContext.preregisteredScriptRules = undefined;
         appContext.preregisteredScripts = undefined;
         appContext.preregisteredScriptsKey = undefined;
@@ -318,6 +319,20 @@ describe('PreregisteredScriptsService', () => {
                 `${SCRIPTS_PATH}/${getRuleFilename(hash)}`,
                 `${SCRIPTS_PATH}/${CLEANUP_FILENAME}`,
             ]);
+        });
+
+        it('does not treat prototype properties as scriptlet function files', async () => {
+            // A manifest cannot have an own `__proto__` key in practice:
+            // assigning it through a plain object literal sets the prototype.
+            // The lookup must not resolve the inherited member and mark the
+            // rule as covered with a file that cannot exist.
+            const rule = mockScriptletRule('__proto__', []);
+            await setupRulesWithManifest({ 'youtube.com': [rule] });
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(result.get('youtube.com')).toBeUndefined();
+            expect(ContentScriptManager.sync).toHaveBeenCalledWith('preregistered', []);
         });
 
         it('registers a content script for a domain with a JS injection rule', async () => {
@@ -1053,6 +1068,57 @@ describe('PreregisteredScriptsService', () => {
             // The failed read is not retried.
             expect(ContentScriptManager.getRegistered).toHaveBeenCalledTimes(1);
             expect(appContext.preregisteredScriptRulesAtBoot).toEqual(new Map());
+        });
+
+        it('clears when the boot snapshot failed, since an unknown namespace may not be empty', async () => {
+            vi.mocked(ContentScriptManager.getRegistered).mockRejectedValueOnce(new Error('no scripting'));
+
+            await PreregisteredScriptsService.init(true, undefined);
+
+            // A failed snapshot leaves an empty map, but that is not proof
+            // that the namespace is empty: persisted registrations from a
+            // previous service-worker lifetime may still be active.
+            expect(ContentScriptManager.clear).toHaveBeenCalledWith('preregistered');
+            // The successful clear makes the namespace known to be empty.
+            expect(appContext.preregisteredScriptRulesAtBootFailed).toBe(false);
+        });
+
+        it('does not re-register when reapplyGate fires during stop', async () => {
+            appContext.preregisteredScripts = { domains: ['youtube.com'], path: SCRIPTS_PATH };
+
+            let releaseClear = (): void => {};
+            const clearGate = new Promise<void>((resolve) => {
+                releaseClear = resolve;
+            });
+            vi.mocked(ContentScriptManager.clear).mockImplementation(async () => {
+                await clearGate;
+                registryState.descriptors = [];
+            });
+
+            const stopPromise = PreregisteredScriptsService.stop();
+
+            // The filtering log closes while the clear is in flight: the
+            // stored configuration must already be gone, otherwise the gate
+            // enqueues an init that re-registers what stop() removes.
+            PreregisteredScriptsService.reapplyGate(true);
+
+            releaseClear();
+            await stopPromise;
+
+            expect(ContentScriptManager.sync).not.toHaveBeenCalled();
+        });
+
+        it('keeps the coverage when the clear fails in stop, since the registrations are still active', async () => {
+            const covered = new Map([['youtube.com', new Set(['0123456789abcdef'])]]);
+            appContext.preregisteredScriptRules = covered;
+            vi.mocked(ContentScriptManager.clear).mockRejectedValueOnce(new Error('no scripting'));
+
+            await PreregisteredScriptsService.stop();
+
+            // Wiping coverage would let the dynamic path re-inject rules
+            // whose persisted registrations are still active.
+            expect(appContext.preregisteredScriptRules).toEqual(covered);
+            expect(appContext.preregisteredScripts).toBeUndefined();
         });
 
         it('clears the persisted registrations when the feature is not configured, but still snapshots', async () => {

@@ -144,7 +144,8 @@ export const filterUncoveredRules = async (
         } catch (e) {
             if (!loggedHashFailures.has(rule)) {
                 loggedHashFailures.add(rule);
-                logger.error(`[tsweb.coverage]: Failed to hash a rule for "${frameUrl}", keeping dynamic injection`, e);
+                logger.error('[tsweb.coverage]: Failed to hash a rule, keeping dynamic injection', e);
+                logger.debug(`[tsweb.coverage]: Rule hashing failed for "${frameUrl}"`);
             }
             return rule;
         }

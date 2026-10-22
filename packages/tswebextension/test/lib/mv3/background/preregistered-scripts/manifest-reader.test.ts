@@ -81,6 +81,45 @@ describe('readManifest', () => {
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('schema version');
     });
 
+    it('throws when "hashes" is missing, so a truncated manifest does not unregister everything', async () => {
+        stubManifestFetch({ schemaVersion: MANIFEST_SCHEMA_VERSION, scriptletFiles: {} });
+
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hashes"');
+    });
+
+    it('throws when "hashes" is not an array of strings', async () => {
+        stubManifestFetch({
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: '0123456789abcdef',
+            scriptletFiles: {},
+        });
+
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hashes"');
+    });
+
+    it('throws when "scriptletFiles" is missing or not an object', async () => {
+        stubManifestFetch({ schemaVersion: MANIFEST_SCHEMA_VERSION, hashes: [] });
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"scriptletFiles"');
+
+        clearManifestCache();
+        stubManifestFetch({
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: [],
+            scriptletFiles: ['s-set-cookie.js'],
+        });
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"scriptletFiles"');
+    });
+
+    it('throws when a scriptlet file mapping is not a string', async () => {
+        stubManifestFetch({
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: [],
+            scriptletFiles: { 'set-cookie': 1 },
+        });
+
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"set-cookie"');
+    });
+
     it('passes an abort signal to fetch, so a hung request cannot stall the sync', async () => {
         stubManifestFetch({
             schemaVersion: MANIFEST_SCHEMA_VERSION,
@@ -115,7 +154,7 @@ describe('readManifest', () => {
         expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
     });
 
-    it('does not cache a failed read', async () => {
+    it('caches a failed read until the cache is cleared', async () => {
         stubManifestFetch(null);
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('404');
 
@@ -125,6 +164,13 @@ describe('readManifest', () => {
             scriptletFiles: {},
         };
         stubManifestFetch(body);
+
+        // A manifest is package-immutable: refetching a broken one would
+        // only stall every sync for the fetch timeout.
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('404');
+        expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+
+        clearManifestCache();
 
         await expect(readManifest(SCRIPTS_PATH)).resolves.toEqual(body);
     });

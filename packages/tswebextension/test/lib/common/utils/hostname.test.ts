@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isPlainHostname, normalizeDomain } from '../../../../src/lib/common/utils/url';
+import { isPlainHostname, normalizeDomain } from '../../../../src/lib/common/utils/hostname';
 
 describe('normalizeDomain', () => {
     it('lower-cases the domain', () => {

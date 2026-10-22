@@ -48,6 +48,15 @@ export class AppContext {
     public preregisteredScripts?: PreregisteredScriptsConfig;
 
     /**
+     * Runtime debug-scriptlets toggle set by `setDebugScriptlets()`. The MV3
+     * consumer always configures `debugScriptlets: false` and toggles it at
+     * runtime, so `configure()` must combine this flag with the configured
+     * value — otherwise a filter update re-enables preregistration while
+     * the filtering log is open.
+     */
+    public debugScriptlets?: boolean;
+
+    /**
      * Per-hostname hashes of rules covered by the currently active
      * preregistered content-script registrations, recovered from their `js`
      * file lists. Published by `PreregisteredScriptsService` on every
@@ -71,6 +80,14 @@ export class AppContext {
      * dynamic injection) and which are not (inject dynamically).
      */
     public preregisteredScriptRulesAtBoot?: Map<string, Set<string>>;
+
+    /**
+     * Whether the boot snapshot read failed. A failed read leaves an empty
+     * snapshot, but an empty snapshot is not proof that the namespace is
+     * empty: persisted registrations may still be active, so the no-config
+     * path must still attempt a clear. Plain (non-persisted) field.
+     */
+    public preregisteredScriptRulesAtBootFailed?: boolean;
 
     /**
      * Descriptor-set key of the last successful preregistered sync: when

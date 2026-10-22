@@ -150,20 +150,24 @@ export class PreregisteredScriptsService {
     /**
      * Returns true when this service worker has neither seen persisted
      * registrations at boot nor registered any script itself, so clearing
-     * the namespace would only list an empty registry.
+     * the namespace would only list an empty registry. A failed boot
+     * snapshot never counts as empty: the registry may still hold persisted
+     * registrations, so a clear attempt is required.
      *
      * @returns True when the namespace is known to be empty.
      */
     private static isNamespaceEmpty(): boolean {
-        return appContext.preregisteredScriptRulesAtBoot?.size === 0
+        return !appContext.preregisteredScriptRulesAtBootFailed
+            && appContext.preregisteredScriptRulesAtBoot?.size === 0
             && !appContext.preregisteredScriptsRegistered;
     }
 
     /**
      * Snapshots the persisted registrations once per service-worker
-     * lifetime. A failed read fails open with an empty snapshot: the init
-     * that follows mutates the registrations, so a later retry would judge
-     * pre-existing tabs against rules they never received.
+     * lifetime. A failed read fails open with an empty snapshot, so a later
+     * retry does not judge pre-existing tabs against rules they never
+     * received; the failure is remembered so the no-config path still
+     * clears the possibly non-empty namespace.
      */
     private static async snapshotBootRegistrationsOnce(): Promise<void> {
         if (appContext.preregisteredScriptRulesAtBoot !== undefined) {
@@ -172,6 +176,7 @@ export class PreregisteredScriptsService {
 
         const succeeded = await snapshotBootRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE);
         if (!succeeded) {
+            appContext.preregisteredScriptRulesAtBootFailed = true;
             appContext.preregisteredScriptRulesAtBoot = new Map();
         }
     }
@@ -186,6 +191,8 @@ export class PreregisteredScriptsService {
             appContext.preregisteredScriptsKey = undefined;
             appContext.preregisteredScriptsRegistered = false;
             appContext.preregisteredScriptRules = new Map();
+            // The namespace is known to be empty now.
+            appContext.preregisteredScriptRulesAtBootFailed = false;
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.clearRegistrations]: Failed to clear preregistered scripts', e);
             appContext.preregisteredScriptRules = PreregisteredScriptsService.getFallbackCoverage();
@@ -193,22 +200,31 @@ export class PreregisteredScriptsService {
     }
 
     /**
-     * Tears down preregistration: clears the persisted registrations through
-     * the queue (so an in-flight sync settles first), then resets the
-     * published coverage, the boot snapshot and the stored build-time
-     * configuration, so neither the dynamic path nor a later
-     * `setDebugScriptlets()` can bring the registrations back after stop.
+     * Tears down preregistration: drops the stored build-time configuration
+     * synchronously (so a concurrent `reapplyGate()` cannot capture it and
+     * enqueue an init that re-registers what stop removed), clears the
+     * persisted registrations through the queue (so an in-flight sync
+     * settles first), then resets the published coverage and the boot
+     * snapshot.
      */
     public static async stop(): Promise<void> {
+        appContext.preregisteredScripts = undefined;
+
         try {
             await PreregisteredScriptsService.clear();
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.stop]: Failed to clear preregistered scripts', e);
+
+            // The persisted registrations are still active: keep their
+            // coverage, otherwise the dynamic path re-injects every rule.
+            appContext.preregisteredScriptRules = PreregisteredScriptsService.getFallbackCoverage();
+
+            return;
         }
 
         appContext.preregisteredScriptRules = new Map();
         appContext.preregisteredScriptRulesAtBoot = undefined;
-        appContext.preregisteredScripts = undefined;
+        appContext.preregisteredScriptRulesAtBootFailed = false;
     }
 
     /**
@@ -516,7 +532,12 @@ export class PreregisteredScriptsService {
 
                         if (rule.isScriptlet) {
                             const scriptletName = rule.getScriptletData()?.params.name;
+                            // `scriptletFiles` is a JSON-parsed plain object:
+                            // a scriptlet named `__proto__`/`constructor` would
+                            // resolve an inherited member and mark the rule as
+                            // covered with a file that cannot exist.
                             const functionFile = scriptletName
+                                && Object.hasOwn(manifest.scriptletFiles, scriptletName)
                                 ? manifest.scriptletFiles[scriptletName]
                                 : undefined;
 

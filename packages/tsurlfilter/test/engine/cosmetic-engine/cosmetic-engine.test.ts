@@ -875,6 +875,28 @@ describe('Test cosmetic engine - JS rules', () => {
             expect(onEmbed).toBe(true);
             expect(onWatch).toBe(false);
         });
+
+        it('cancels a scriptlet rule by a name-only $url exception', () => {
+            const scriptletBlockingText = "example.org#%#//scriptlet('set-cookie', 'a', 'b')";
+            const nameOnlyUrlException = "[$url=/embed/]#@%#//scriptlet('set-cookie')";
+            const blockingRule = new CosmeticRule(scriptletBlockingText, 1);
+            const cosmeticEngine = createCosmeticEngine([
+                new StringRuleList(1, [scriptletBlockingText, nameOnlyUrlException].join('\n')),
+            ]);
+
+            // `$url` cannot be combined with `$domain`, so the exception is
+            // generic and cancels the scriptlet by name on every hostname —
+            // the sync-time flag does not change the outcome.
+            expect(cosmeticEngine.isAllowlisted(
+                createRequest('https://example.org/'),
+                blockingRule,
+            )).toBe(true);
+            expect(cosmeticEngine.isAllowlisted(
+                createRequest('https://example.org/'),
+                blockingRule,
+                true,
+            )).toBe(true);
+        });
     });
 });
 

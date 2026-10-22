@@ -37,4 +37,22 @@ describe('preregisteredScriptsConfigValidator', () => {
             path: 'scripts',
         })).toThrow();
     });
+
+    it('rejects userinfo, query strings and fragments instead of silently stripping them', () => {
+        // `URL` would turn each of these into `youtube.com`, enabling
+        // preregistration for a host the caller did not write.
+        for (const domain of ['u@youtube.com', 'youtube.com?x=1', 'youtube.com#frag']) {
+            expect(() => preregisteredScriptsConfigValidator.parse({
+                domains: [domain],
+                path: 'scripts',
+            })).toThrow();
+        }
+    });
+
+    it('rejects a value that normalizes to an empty hostname', () => {
+        expect(() => preregisteredScriptsConfigValidator.parse({
+            domains: ['...'],
+            path: 'scripts',
+        })).toThrow();
+    });
 });
