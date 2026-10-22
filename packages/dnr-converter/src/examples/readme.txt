@@ -137,6 +137,13 @@ example.org##.banner
 ! <br/>
 ! Doesn't support regexps and wildcard domains except exact wildcard TLD
 ! domains such as example.*, which are expanded to popular TLDs.
+! For a document request started by the browser (new tab page, address bar,
+! bookmark, reload), an additional rule matches `$domain` against the target
+! hostname. It is not created when a permitted `$to` meets a permitted
+! `$domain`, when a `$domain`, `$to`, or `$denyallow` value is not
+! representable in DNR, or for a permitted-only `$domain` with a
+! domain-specific or regexp pattern. An excluded-only `$domain` still matches
+! a browser-started request to an excluded domain.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -714,7 +721,9 @@ $xmlhttprequest,removeparam=p1case2
 ! Converted to DNR redirect rules with regexSubstitution. Full-URL replacements
 ! are passed through directly. Path-only replacements are wrapped so the origin
 ! is preserved. Multi-stage pipelines (multiple substitutions separated by `|`)
-! produce one DNR rule per stage.
+! produce one DNR rule per stage. A `$domain` modifier on a `$urltransform`
+! rule does not match document navigations started by the browser, because the
+! pipeline is not extended with the additional `main_frame` rule.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>

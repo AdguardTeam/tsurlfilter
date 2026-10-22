@@ -1610,10 +1610,22 @@ describe('RuleConverter', () => {
         it('does not add a rule for a regex pattern', async () => {
             vi.spyOn(re2Validator, 'isRegexSupported').mockResolvedValue(true);
 
-            const rules = await convert('/banner\\d+/$domain=foo.com');
+            const rules = await convert('/banner\\d+/$document,domain=foo.com');
 
             expect(rules).toHaveLength(1);
             expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('adds a rule for an excluded-only list with a regex pattern', async () => {
+            vi.spyOn(re2Validator, 'isRegexSupported').mockResolvedValue(true);
+
+            const rules = await convert('/banner\\d+/$document,domain=~foo.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].condition).toMatchObject({
+                resourceTypes: [ResourceType.MainFrame],
+                excludedRequestDomains: ['foo.com'],
+            });
         });
 
         it('maps both rules to the source rule', async () => {
