@@ -47,6 +47,17 @@ export enum CanvasOperationStatus {
 }
 
 /**
+ * Why the policy compiler skips an exception rule that could affect canvas protection.
+ */
+export enum CanvasRuleSkipReason {
+    Unparsable = 'unparsable',
+    UnsupportedModifiers = 'unsupported modifiers',
+    NotHostPattern = 'not a ||host^ pattern',
+    WildcardHost = 'wildcard host',
+    NotPlainHostname = 'not a plain hostname',
+}
+
+/**
  * Type of a prepared condition.
  */
 export enum CanvasConditionType {

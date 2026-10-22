@@ -122,10 +122,33 @@ describe('canvas policy compiler', () => {
         const error = vi.spyOn(logger, 'error');
         expect(CanvasPolicyCompiler.compile([text], disabledAllowlist))
             .toEqual(CanvasPolicyCompiler.compile([], disabledAllowlist));
-        expect(debug).toHaveBeenCalledWith(expect.stringContaining(text));
+        expect(debug).toHaveBeenCalledOnce();
+        expect(debug).toHaveBeenCalledWith(expect.stringContaining('Skipped 1 exception rule(s)'));
         expect(info).not.toHaveBeenCalled();
         expect(warn).not.toHaveBeenCalled();
         expect(error).not.toHaveBeenCalled();
+    });
+
+    it('summarizes skipped rules in one debug message', () => {
+        const debug = vi.spyOn(logger, 'debug');
+        CanvasPolicyCompiler.compile([
+            '@@||a.org/path$document', '@@||b.org/path$stealth', '@@||c.org^$stealth,domain=d.org',
+            '@@||example.*^$document', '@@||example.org^$stealth', '@@||e.org^$stealth=referrer',
+        ], disabledAllowlist);
+        expect(debug).toHaveBeenCalledOnce();
+        expect(debug).toHaveBeenCalledWith(expect.stringContaining(
+            'Skipped 4 exception rule(s) that canvas protection cannot express: '
+            + '2 not a ||host^ pattern, 1 unsupported modifiers, 1 wildcard host',
+        ));
+    });
+
+    it('parses rules without logging', () => {
+        const debug = vi.spyOn(logger, 'debug');
+        expect(CanvasPolicyCompiler.parseRule('@@||example.org/path$stealth')).toBeUndefined();
+        expect(CanvasPolicyCompiler.parseRule('@@||example.org^$stealth')).toEqual({
+            hostname: 'example.org', document: false, stealth: true,
+        });
+        expect(debug).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -138,7 +161,7 @@ describe('canvas policy compiler', () => {
         const debug = vi.spyOn(logger, 'debug');
         expect(CanvasPolicyCompiler.compile([text], disabledAllowlist))
             .toEqual(CanvasPolicyCompiler.compile([], disabledAllowlist));
-        expect(debug).toHaveBeenCalledWith(expect.stringContaining('expected a plain hostname'));
+        expect(debug).toHaveBeenCalledWith(expect.stringContaining('1 not a plain hostname'));
     });
 
     it.each(['жкхнсо.рф', 'café.example'])('excludes an IDN host by its punycode form: %s', (host) => {

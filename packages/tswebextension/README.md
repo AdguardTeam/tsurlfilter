@@ -224,7 +224,7 @@ filled only from video frames or `putImageData()` is read natively.
   `example.com`, never match.
 - `$badfilter` cancels an exception. Other forms, including paths,
   `$domain`, regular expressions and wildcard hosts such as `example.*`,
-  do not affect canvas protection; skipped rules appear in the debug log.
+  do not affect canvas protection; the debug log counts skipped rules by reason.
   `$urlblock`, `$genericblock`, `$content` and trusted domains do not
   disable it.
 - Rules with a Unicode hostname apply to canvas protection after conversion

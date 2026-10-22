@@ -13,7 +13,7 @@ import {
 
 import { logger } from '../utils/logger';
 
-import { CanvasConditionType } from './constants';
+import { CanvasConditionType, CanvasRuleSkipReason } from './constants';
 import { type HostCondition, type PreparedCondition, type ProtectionPolicyArtifact } from './contracts';
 
 /**
@@ -93,8 +93,13 @@ export class CanvasPolicyCompiler {
         const hosts: string[] = [];
         const domains: string[] = [];
         const patterns: string[] = [];
+        const skipped = new Map<CanvasRuleSkipReason, number>();
         for (const text of ruleTexts) {
-            const exclusion = CanvasPolicyCompiler.parseRule(text);
+            const exclusion = CanvasPolicyCompiler.readRule(text);
+            if (typeof exclusion === 'string') {
+                skipped.set(exclusion, (skipped.get(exclusion) ?? 0) + 1);
+                continue;
+            }
             if (exclusion?.stealth) {
                 excludeMatches.push(CanvasPolicyCompiler.IPV4.test(exclusion.hostname)
                     ? `*://${exclusion.hostname}/*` : `*://*.${exclusion.hostname}/*`);
@@ -102,6 +107,12 @@ export class CanvasPolicyCompiler {
             if (exclusion?.document) {
                 domains.push(exclusion.hostname);
             }
+        }
+        // One line instead of one per rule: filter lists hold hundreds of such exceptions.
+        if (skipped.size > 0) {
+            const total = [...skipped.values()].reduce((sum, count) => sum + count, 0);
+            const reasons = [...skipped].map(([reason, count]) => `${count} ${reason}`).join(', ');
+            logger.debug(`[tsweb.CanvasPolicyCompiler.compile]: Skipped ${total} exception rule(s) that canvas protection cannot express: ${reasons}`);
         }
         if (allowlist.enabled && !allowlist.inverted) {
             for (const domain of allowlist.domains) {
@@ -133,15 +144,28 @@ export class CanvasPolicyCompiler {
      *
      * @param text Rule text.
      *
-     * @returns The exclusion, or `undefined` for a rule that does not affect canvas protection.
+     * @returns The exclusion, or `undefined` for a rule that does not affect canvas protection
+     * or cannot be expressed by it.
      */
     public static parseRule(text: string): CanvasRuleExclusion | undefined {
+        const exclusion = CanvasPolicyCompiler.readRule(text);
+        return typeof exclusion === 'string' ? undefined : exclusion;
+    }
+
+    /**
+     * Reads what a filter rule excludes from canvas protection, or why it is skipped.
+     *
+     * @param text Rule text.
+     *
+     * @returns The exclusion, the reason a rule that could affect canvas protection is skipped,
+     * or `undefined` for a rule that does not affect it.
+     */
+    private static readRule(text: string): CanvasRuleExclusion | CanvasRuleSkipReason | undefined {
         let rule: AnyRule;
         try {
             rule = RuleParser.parse(text);
-        } catch (error) {
-            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": parsing failed: ${error}`);
-            return undefined;
+        } catch {
+            return CanvasRuleSkipReason.Unparsable;
         }
         if (rule.type !== NetworkRuleType.NetworkRule || rule.exception !== true) {
             return undefined;
@@ -172,23 +196,19 @@ export class CanvasPolicyCompiler {
             }
         });
         if (unsupportedModifier) {
-            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": unsupported modifiers`);
-            return undefined;
+            return CanvasRuleSkipReason.UnsupportedModifiers;
         }
         const pattern = rule.pattern.value;
         if (!pattern.startsWith('||') || !pattern.endsWith('^')) {
-            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": expected a ||host^ pattern`);
-            return undefined;
+            return CanvasRuleSkipReason.NotHostPattern;
         }
         const host = pattern.slice(2, -1);
         if (host.includes('*')) {
-            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": wildcard hosts are unsupported`);
-            return undefined;
+            return CanvasRuleSkipReason.WildcardHost;
         }
         const hostname = CanvasPolicyCompiler.parseHost(host);
         if (hostname === undefined) {
-            logger.debug(`[tsweb.CanvasPolicyCompiler.parseRule]: Skipping rule "${text}": expected a plain hostname`);
-            return undefined;
+            return CanvasRuleSkipReason.NotPlainHostname;
         }
         return { hostname, document: document !== undefined, stealth: fingerprinting };
     }
