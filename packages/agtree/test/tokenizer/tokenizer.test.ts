@@ -141,6 +141,39 @@ describe('Tokenizer', () => {
             expect(tokens[1]).toEqual({ type: TokenType.Symbol, value: '\\' });
         });
 
+        test('backslash before LF does not swallow the line break', () => {
+            const input = '! comment \\\n||example.com^';
+            const t = tokenize(input);
+            const tokens = extractTokens(t);
+            expect(tokens).toContainEqual({ type: TokenType.Symbol, value: '\\' });
+            expect(tokens).toContainEqual({ type: TokenType.LineBreak, value: '\n' });
+            expect(t.offset).toBe(input.length);
+        });
+
+        test('backslash before CRLF does not swallow the carriage return', () => {
+            const input = 'a\\\r\nb';
+            const t = tokenize(input);
+            const tokens = extractTokens(t);
+            expect(tokens).toEqual([
+                { type: TokenType.Letter, value: 'a' },
+                { type: TokenType.Symbol, value: '\\' },
+                { type: TokenType.LineBreak, value: '\r\n' },
+                { type: TokenType.Letter, value: 'b' },
+            ]);
+        });
+
+        test('backslash before form feed does not swallow the line break', () => {
+            const input = 'a\\\fb';
+            const t = tokenize(input);
+            const tokens = extractTokens(t);
+            expect(tokens).toEqual([
+                { type: TokenType.Letter, value: 'a' },
+                { type: TokenType.Symbol, value: '\\' },
+                { type: TokenType.LineBreak, value: '\f' },
+                { type: TokenType.Letter, value: 'b' },
+            ]);
+        });
+
         test('greater-than, less-than, and backtick have dedicated types', () => {
             const input = '<>`';
             const t = tokenize(input);

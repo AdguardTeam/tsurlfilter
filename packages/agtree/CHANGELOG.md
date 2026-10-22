@@ -19,6 +19,18 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- A backslash at the end of a line no longer consumes the line break. Filter
+  lists are line-oriented, so the following line is parsed as a separate rule
+  again (previously it was merged into the preceding comment or rule), and CRLF
+  rule boundaries now end at the `\r` offset instead of the `\n` half of the
+  pair.
+- Scriptlet compatibility data for `set-cookie-reload`,
+  `trusted-set-cookie-reload`, and `trusted-suppress-native-method` again lists
+  all parameters in the AdGuard platform entries. The platform-specific
+  `parameters` list replaces `common.parameters` rather than extending it, so
+  the common required parameters had been dropped and valid calls were reported
+  as having too many arguments.
+
 ### Security
 
 ## [5.0.0-alpha.0] - 2026-10-12

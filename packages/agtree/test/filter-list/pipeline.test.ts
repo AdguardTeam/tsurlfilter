@@ -5,6 +5,7 @@ import type { FilterListParseOptions } from '../../src/filter-list/types';
 import {
     CommentRuleType,
     CosmeticRuleType,
+    type NetworkRule,
     NetworkRuleType,
     NodeType,
     type RawRule,
@@ -63,6 +64,39 @@ describe('FilterListPipeline', () => {
         expect(ast.children[0].end).toBe(8);
         expect(ast.children[1].start).toBe(9);
         expect(ast.children[1].end).toBe(17);
+    });
+
+    test('trailing backslash does not merge the next line into a comment', () => {
+        // A trailing `\` must not escape the line break: the network rule on the
+        // next line has to stay a separate rule and keep its modifiers.
+        const source = '! comment \\\n||example.com^$unknown';
+        const ast = pipeline.parse(source, { isLocIncluded: true });
+
+        expect(ast.children).toHaveLength(2);
+        expect(ast.children[0].type).toBe(CommentRuleType.CommentRule);
+        expect(ast.children[0].start).toBe(0);
+        expect(ast.children[0].end).toBe(11);
+
+        expect(ast.children[1].type).toBe(NetworkRuleType.NetworkRule);
+        expect(ast.children[1].start).toBe(12);
+        expect(ast.children[1].end).toBe(source.length);
+
+        const networkRule = ast.children[1] as NetworkRule;
+        expect(networkRule.modifiers!.children.map((modifier) => modifier.name.value))
+            .toEqual(['unknown']);
+    });
+
+    test('trailing backslash before CRLF keeps the rule end at the CR offset', () => {
+        // '! c \' + CRLF + '||example.com^'
+        const source = '! c \\\r\n||example.com^';
+        const ast = pipeline.parse(source, { isLocIncluded: true });
+
+        expect(ast.children).toHaveLength(2);
+        expect(ast.children[0].type).toBe(CommentRuleType.CommentRule);
+        // Must be the `\r` offset, not the `\n` half of the CRLF pair.
+        expect(ast.children[0].end).toBe(5);
+        expect(ast.children[1].type).toBe(NetworkRuleType.NetworkRule);
+        expect(ast.children[1].start).toBe(7);
     });
 
     test('tolerant mode (default) wraps syntax errors as InvalidRule', () => {
