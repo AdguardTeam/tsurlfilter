@@ -49,6 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Browsing session from incognito window sometimes leaks to normal window when
   "delete third-party cookies" option is enabled [AdguardBrowserExtension#3553].
 - Inverted allowlist entries with uppercase letters not matching their sites.
+- `$stealth` exception rules shown as `<dynamic rule text is not specified>`
+  instead of their text in the MV3 filtering log.
 
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538

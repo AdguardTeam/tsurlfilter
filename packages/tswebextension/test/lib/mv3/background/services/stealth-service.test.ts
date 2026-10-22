@@ -7,12 +7,18 @@ import {
     vi,
 } from 'vitest';
 
-import { HTTPMethod, MatchingResult, RequestType } from '@adguard/tsurlfilter';
+import {
+    HTTPMethod,
+    MatchingResult,
+    RequestType,
+    RULE_INDEX_NONE,
+} from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog, FilteringEventType } from '../../../../../src/lib/common/filtering-log';
 import { ContentType } from '../../../../../src/lib/common/request-type';
 import { appContext } from '../../../../../src/lib/mv3/background/app-context';
 import { type ConfigurationMV3Context } from '../../../../../src/lib/mv3/background/configuration';
+import { engineApi } from '../../../../../src/lib/mv3/background/engine-api';
 import { type RequestContext, RequestContextState } from '../../../../../src/lib/mv3/background/request';
 import { StealthService } from '../../../../../src/lib/mv3/background/services/stealth-service';
 import { createNetworkRule } from '../../../../helpers/rule-creator';
@@ -103,10 +109,16 @@ describe('StealthService', () => {
          *
          * @param protectCanvas Whether canvas protection is enabled.
          * @param rule Rule matching the request.
+         * @param ruleIndex Index of the rule in its filter list, {@link RULE_INDEX_NONE} for a rule
+         * that keeps its own text.
          *
          * @returns Applied rule texts of the published event, if any.
          */
-        const publishedExceptions = (protectCanvas: boolean, rule: string): string[] | undefined => {
+        const publishedExceptions = (
+            protectCanvas: boolean,
+            rule: string,
+            ruleIndex = RULE_INDEX_NONE,
+        ): string[] | undefined => {
             const publishEvent = vi.spyOn(defaultFilteringLog, 'publishEvent');
             publishEvent.mockClear();
             vi.spyOn(appContext, 'configuration', 'get').mockReturnValue({
@@ -136,7 +148,7 @@ describe('StealthService', () => {
                 thirdParty: false,
                 method: HTTPMethod.GET,
                 requestHeaders: [],
-                matchingResult: new MatchingResult([createNetworkRule(rule, 1)], null),
+                matchingResult: new MatchingResult([createNetworkRule(rule, 1, ruleIndex)], null),
             };
             StealthService.onBeforeSendHeaders(context);
             const event = publishEvent.mock.calls
@@ -151,6 +163,17 @@ describe('StealthService', () => {
             expect(publishedExceptions(true, '@@||example.org^$stealth=fingerprinting'))
                 .toEqual(['@@||example.org^$stealth=fingerprinting']);
             expect(publishedExceptions(true, '@@||example.org^$stealth')).toEqual(['@@||example.org^$stealth']);
+        });
+
+        it('publishes the text of an exception loaded from a filter list', () => {
+            const rules = ['@@||example.org^$stealth=fingerprinting', '@@||example.org^$stealth'];
+            vi.spyOn(engineApi, 'retrieveRuleText').mockImplementation((filterListId, ruleIndex) => (
+                filterListId === 1 ? rules[ruleIndex] ?? null : null
+            ));
+            vi.spyOn(engineApi, 'retrieveOriginalRuleText').mockReturnValue(null);
+
+            expect(publishedExceptions(true, rules[0], 0)).toEqual([rules[0]]);
+            expect(publishedExceptions(true, rules[1], 1)).toEqual([rules[1]]);
         });
 
         it('publishes nothing while canvas protection is off', () => {

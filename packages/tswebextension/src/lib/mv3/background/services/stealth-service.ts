@@ -9,6 +9,7 @@ import { defaultFilteringLog, FilteringEventType } from '../../../common/filteri
 import { StealthActions } from '../../../common/stealth-actions';
 import { findHeaderByName, hasHeader, hasHeaderByName } from '../../../common/utils/headers';
 import { logger } from '../../../common/utils/logger';
+import { getRuleTexts } from '../../../common/utils/rule-text-provider';
 import { getDomain } from '../../../common/utils/url';
 import { appContext } from '../app-context';
 import { type SettingsConfigMV3 } from '../configuration';
@@ -291,20 +292,21 @@ export class StealthService {
                 data: {
                     tabId,
                     eventId,
-                    rules: Array.from(appliedAllowlistRules).map((rule) => ({
-                        filterId: rule.getFilterListId(),
-                        ruleIndex: rule.getIndex(),
-                        // fallback should never happen during normal operation
-                        // eslint-disable-next-line max-len
-                        appliedRuleText: rule.getText() ?? `<dynamic rule text is not specified> (${rule.getFilterListId()}:${rule.getIndex()})`,
-                        originalRuleText: null,
-                        isAllowlist: rule.isAllowlist(),
-                        isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
-                        isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
-                        isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
-                        isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
-                        advancedModifier: rule.getAdvancedModifierValue(),
-                    })),
+                    rules: Array.from(appliedAllowlistRules).map((rule) => {
+                        const { appliedRuleText, originalRuleText } = getRuleTexts(rule, engineApi);
+                        return {
+                            filterId: rule.getFilterListId(),
+                            ruleIndex: rule.getIndex(),
+                            appliedRuleText,
+                            originalRuleText,
+                            isAllowlist: rule.isAllowlist(),
+                            isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                            isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                            isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                            isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                            advancedModifier: rule.getAdvancedModifierValue(),
+                        };
+                    }),
                     requestUrl,
                     frameUrl: referrerUrl,
                     requestType: contentType,
