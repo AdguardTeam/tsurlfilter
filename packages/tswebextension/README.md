@@ -190,7 +190,9 @@ Requirements:
 
 - Chromium MV3: the `userScripts` permission, host permissions and user
   scripts allowed by the user.
-- Chromium MV2: host permissions.
+- Chromium MV2: host permissions and the content script
+  `@adguard/tswebextension/content-script` declared at `document_start` in
+  all frames.
 - Private windows: the extension must be allowed to run there.
 
 Only canvases that received rendering are noised: any 2D context call that
@@ -259,13 +261,15 @@ only while protection is enabled.
   `referrerpolicy="no-referrer"` or `"same-origin"` on the frame. The frame
   then uses its own hostname, so it gets the same noise on every site, and
   inherits no document exclusions.
-- Chromium MV2 has no early script registration. The script is injected with
-  `tabs.executeScript` when the document response starts and again when the
-  document commits, and it inserts the engine as an inline page script. It
-  usually runs before external page scripts, but an inline script that
-  arrives in the first chunk of the response runs earlier and reads native
-  pixels. Opera fires no webRequest events for documents, so there the
-  script is injected only when the document commits.
+- Chromium MV2 has no early script registration. The content script fetches
+  the engine from the background page with one synchronous request to
+  `https://tswebextension.invalid/` per `http:` or `https:` document and
+  inserts it as an inline page script before page scripts run. Some
+  documents get the engine injected with `tabs.executeScript` when they
+  commit, after their first scripts: frames that forbid `sync-xhr` by
+  Permissions Policy, documents with an opaque origin such as sandboxed
+  frames, frames that load while their top-level document navigates, and
+  documents where the request is blocked.
 - Firefox before 128 runs registered scripts only in the content script
   sandbox, so the script there inserts the engine as an inline page script.
   On a page whose CSP blocks inline scripts it falls back to a `blob:` script,

@@ -11,8 +11,8 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { MAIN_FRAME_ID } from '../../../../src/lib/common/constants';
 import { canvasInjection, engineApi, tabsApi } from '../../../../src/lib/mv2/background/api';
+import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { type RequestContext } from '../../../../src/lib/mv2/background/request/request-context-storage';
-import { type TabContext } from '../../../../src/lib/mv2/background/tabs/tab-context';
 import { WebRequestApi } from '../../../../src/lib/mv2/background/web-request-api';
 
 vi.mock('../../../../src/lib/mv2/background/api');
@@ -48,48 +48,46 @@ describe('web request api', () => {
         });
     });
 
-    describe('onResponseStarted', () => {
-        /**
-         * Starts a document response in a tab whose current document has the given URL.
-         *
-         * @param frameId Frame ID.
-         * @param tabUrl URL of the document the tab currently shows.
-         */
-        const startResponse = (frameId: number, tabUrl: string): void => {
-            vi.mocked(tabsApi.getTabContext).mockReturnValue({ info: { url: tabUrl } } as TabContext);
-            // @ts-ignore - accessing private method for testing
-            WebRequestApi.onResponseStarted({
-                context: {
-                    tabId: 1,
-                    frameId,
-                    requestType: frameId === MAIN_FRAME_ID ? RequestType.Document : RequestType.SubDocument,
-                    requestUrl: 'https://example.org/',
-                } as RequestContext,
-            });
-        };
-
+    describe('canvas protection', () => {
         beforeEach(() => {
             vi.mocked(canvasInjection.inject).mockClear();
         });
 
-        it.each([
-            'chrome://newtab/',
-            'edge://newtab/',
-            'about:blank',
-            'view-source:https://example.org/',
-            'chrome-extension://abcdef/page.html',
-        ])('does not inject canvas protection into the main frame showing %s', (tabUrl) => {
-            startResponse(MAIN_FRAME_ID, tabUrl);
+        it('does not inject canvas protection when a document response starts', () => {
+            const applyJs = vi.spyOn(CosmeticApi, 'applyJs').mockResolvedValue(undefined);
+
+            [MAIN_FRAME_ID, 2].forEach((frameId) => {
+                // @ts-ignore - accessing private method for testing
+                WebRequestApi.onResponseStarted({
+                    context: {
+                        tabId: 1,
+                        frameId,
+                        requestType: frameId === MAIN_FRAME_ID ? RequestType.Document : RequestType.SubDocument,
+                        requestUrl: 'https://example.org/',
+                    } as RequestContext,
+                });
+            });
+
             expect(canvasInjection.inject).not.toHaveBeenCalled();
+            expect(applyJs).toHaveBeenCalledTimes(2);
+            expect(applyJs).toHaveBeenNthCalledWith(1, 1, MAIN_FRAME_ID);
+            expect(applyJs).toHaveBeenNthCalledWith(2, 1, 2);
+
+            applyJs.mockRestore();
         });
 
-        it('injects canvas protection into the main frame showing a web page', () => {
-            startResponse(MAIN_FRAME_ID, 'https://example.com/');
-            expect(canvasInjection.inject).toHaveBeenCalledExactlyOnceWith(1, MAIN_FRAME_ID, 'https://example.org/');
-        });
+        it('injects canvas protection when a document commits', () => {
+            // @ts-ignore - accessing private method for testing
+            WebRequestApi.onCommitted({
+                tabId: 1,
+                frameId: 2,
+                url: 'https://example.org/',
+                transitionType: 'link',
+                transitionQualifiers: [],
+                timeStamp: Date.now(),
+                documentId: 'document-id',
+            });
 
-        it('injects canvas protection into subframes', () => {
-            startResponse(2, 'chrome://newtab/');
             expect(canvasInjection.inject).toHaveBeenCalledExactlyOnceWith(1, 2, 'https://example.org/');
         });
     });

@@ -7,6 +7,14 @@ import { type CanvasBootstrapSnapshot } from './contracts';
  */
 export class CanvasProtectionCode {
     /**
+     * Source text of a function returning the engine. Page scripts built in the content script
+     * world and in the background page share it, so both carry the same engine text.
+     */
+    private static readonly ENGINE_FUNCTION = `function(){
+${engineSource}
+return canvasEngine;}`;
+
+    /**
      * Generates a private standalone engine with safely serialized trusted state.
      *
      * @param snapshot Browser-acknowledged seed and prepared policy.
@@ -31,11 +39,21 @@ canvasEngine.bootstrapCanvasProtection(${CanvasProtectionCode.serialize(snapshot
      * @returns JavaScript expression.
      */
     public static createPageScriptExpression(snapshot: CanvasBootstrapSnapshot): string {
-        return `(function(){var engine=function(){
-${engineSource}
-return canvasEngine;};
+        return `(function(){var engine=${CanvasProtectionCode.ENGINE_FUNCTION};
 var seed=engine().resolveCanvasSeed(${CanvasProtectionCode.serialize(snapshot)});
 return seed===undefined?undefined:'('+engine+')().bootstrapSeededCanvasProtection("'+seed+'");';})()`;
+    }
+
+    /**
+     * Generates the page script for a site key the background page resolved: the same text
+     * the expression of {@link createPageScriptExpression} evaluates to in the content script world.
+     *
+     * @param seed The site key in hex, from trusted code.
+     *
+     * @returns Page script that protects the document it runs in.
+     */
+    public static createSeededPageScript(seed: string): string {
+        return `(${CanvasProtectionCode.ENGINE_FUNCTION})().bootstrapSeededCanvasProtection("${seed}");`;
     }
 
     /**

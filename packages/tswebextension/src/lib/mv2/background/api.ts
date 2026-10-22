@@ -9,6 +9,7 @@ import { defaultFilteringLog } from '../../common/filtering-log';
 import { Allowlist } from './allowlist';
 import { TsWebExtension } from './app';
 import { appContext } from './app-context';
+import { ChromiumMv2CanvasDeliveryChannel } from './canvas-delivery-channel';
 import { ChromiumMv2CanvasInjection } from './canvas-injection';
 import { FirefoxCanvasRegistration } from './canvas-registration';
 import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
@@ -87,6 +88,9 @@ export const removeParamInjectionService = new RemoveParamInjectionService(
 // TODO: remove when Chromium MV2 is no longer supported.
 export const canvasInjection = new ChromiumMv2CanvasInjection();
 
+// TODO: remove when Chromium MV2 is no longer supported.
+export const canvasDeliveryChannel = new ChromiumMv2CanvasDeliveryChannel(canvasInjection, tabsApi);
+
 /**
  * Creates new instance of {@link TsWebExtension}.
  *
@@ -96,6 +100,11 @@ export const canvasInjection = new ChromiumMv2CanvasInjection();
  */
 export function createTsWebExtension(webAccessibleResourcesPath: string): TsWebExtension {
     resourcesService.init(webAccessibleResourcesPath);
+
+    // TODO: remove when Chromium MV2 is no longer supported.
+    if (!browserDetectorMV2.isFirefox()) {
+        canvasDeliveryChannel.listen();
+    }
 
     const tabCosmeticInjector = new TabsCosmeticInjector(
         documentApi,

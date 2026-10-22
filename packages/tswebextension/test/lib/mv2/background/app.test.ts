@@ -12,6 +12,7 @@ import browser from 'webextension-polyfill';
 import { type Runtime } from 'webextension-polyfill';
 
 import {
+    canvasDeliveryChannel,
     type ConfigurationMV2,
     createTsWebExtension,
     engineApi,
@@ -73,6 +74,19 @@ describe('TsWebExtension', () => {
 
     it('should be created correctly', () => {
         expect(instance).toBeInstanceOf(TsWebExtension);
+    });
+
+    it('listens to the canvas delivery host on creation in Chromium', () => {
+        const listen = vi.spyOn(canvasDeliveryChannel, 'listen').mockImplementation(() => {});
+
+        vi.spyOn(browserDetectorMV2, 'isFirefox').mockReturnValue(false);
+        createTsWebExtension('test');
+        expect(listen).toHaveBeenCalledTimes(1);
+
+        listen.mockClear();
+        vi.spyOn(browserDetectorMV2, 'isFirefox').mockReturnValue(true);
+        createTsWebExtension('test');
+        expect(listen).not.toHaveBeenCalled();
     });
 
     describe('start, configure and update methods', () => {

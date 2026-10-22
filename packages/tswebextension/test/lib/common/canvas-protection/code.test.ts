@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { CanvasProtectionCode } from '../../../../src/lib/common/canvas-protection/code';
 import { CanvasConditionType } from '../../../../src/lib/common/canvas-protection/constants';
 import { type CanvasBootstrapSnapshot } from '../../../../src/lib/common/canvas-protection/contracts';
+import { deriveSiteSeed, formatKey } from '../../../../src/lib/common/canvas-protection/noise';
 
 import { createProtectAllPolicy } from './fixtures/prepared-policies';
 
@@ -89,6 +90,34 @@ describe('generated canvas delivery code', () => {
         `, { TextEncoder, URL }, { timeout: 5000 });
         expect(result).toEqual({
             pixels: 'native-pixels', url: 'native-url', unchanged: true, injected: undefined,
+        });
+    });
+
+    describe('seeded page script', () => {
+        const snapshot: CanvasBootstrapSnapshot = {
+            session: { root: '0123456789abcdef0123456789abcdef', generation: 'fedcba9876543210fedcba9876543210' },
+            policy: createProtectAllPolicy('seeded'),
+        };
+
+        it('builds the same seeded page script as the content script expression', () => {
+            const expected = runInNewContext(`
+                globalThis.window = globalThis;
+                globalThis.top = globalThis;
+                globalThis.location = { href: 'https://canvas.test/read' };
+                ${CanvasProtectionCode.createPageScriptExpression(snapshot)}
+            `, { TextEncoder, URL }, { timeout: 5000 });
+            const seed = formatKey(deriveSiteSeed(snapshot.session, 'canvas.test'), 16);
+
+            expect(typeof expected).toBe('string');
+            expect(CanvasProtectionCode.createSeededPageScript(seed)).toBe(expected);
+        });
+
+        it('carries the site key and not the session root', () => {
+            const seed = formatKey(deriveSiteSeed(snapshot.session, 'canvas.test'), 16);
+            const script = CanvasProtectionCode.createSeededPageScript(seed);
+
+            expect(script).toContain(`"${seed}"`);
+            expect(script).not.toContain(snapshot.session.root);
         });
     });
 });

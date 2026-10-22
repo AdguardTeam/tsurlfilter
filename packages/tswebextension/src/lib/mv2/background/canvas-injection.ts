@@ -7,14 +7,18 @@ import {
 import {
     type Available,
     type CanvasBootstrapSnapshot,
+    type DocumentPolicyInput,
     type ProtectionPolicyArtifact,
     type RegistrationOperationOutcome,
 } from '../../common/canvas-protection/contracts';
+import { deriveSiteSeed, formatKey } from '../../common/canvas-protection/noise';
+import { resolveProtectedSite } from '../../common/canvas-protection/policy';
 import {
     type CanvasRegistrationAdapter,
     CanvasRegistrationOperationError,
 } from '../../common/canvas-protection/registration';
 import { logger } from '../../common/utils/logger';
+import { CanvasDeliveryGuard } from '../common/canvas-delivery';
 
 import { appContext } from './app-context';
 import { buildScriptInserter, InjectionGuard } from './injection-helper';
@@ -26,14 +30,17 @@ import { MatchPatterns } from './utils/match-patterns';
  */
 interface CanvasDelivery {
     readonly script: string;
+    readonly snapshot: CanvasBootstrapSnapshot;
     readonly matches: RegExp;
     readonly excludeMatches: RegExp;
 }
 
 /**
  * Delivers canvas protection in Chromium MV2, which cannot register page-world scripts.
- * Like scriptlets, the code is injected with `tabs.executeScript` when a document
- * response starts and again when it commits, and inserts itself as a page script.
+ * The content script fetches the page script synchronously from the background page
+ * (`ChromiumMv2CanvasDeliveryChannel`) before page scripts run. Documents that did
+ * not get it, e.g. frames that forbid synchronous requests, get the code injected with
+ * `tabs.executeScript` when they commit, and it inserts itself as a page script.
  *
  * TODO: remove when Chromium MV2 is no longer supported.
  */
@@ -42,6 +49,15 @@ export class ChromiumMv2CanvasInjection implements CanvasRegistrationAdapter {
      * Current delivery, kept for the background lifetime like a registration.
      */
     private delivery: CanvasDelivery | undefined;
+
+    /**
+     * Snapshot of the last generated code, taken by the next installation.
+     * The registration calls {@link ChromiumMv2CanvasInjection.createCode} before every
+     * {@link ChromiumMv2CanvasInjection.install} in the same serialized flow. `createCode` may
+     * also run without an installation when the code hash is unchanged, and a failed
+     * installation leaves nothing stale, because the field is cleared at its start.
+     */
+    private pendingSnapshot: CanvasBootstrapSnapshot | undefined;
 
     /**
      * Injection needs no optional browser API. Unlike a registration, a script set up
@@ -55,19 +71,27 @@ export class ChromiumMv2CanvasInjection implements CanvasRegistrationAdapter {
     }
 
     /**
-     * Generates a content script that inserts the engine as a page script.
+     * Generates a content script that inserts the engine as a page script, unless the document
+     * already got the page script from the content script.
+     *
+     * The flag name is fixed, because the content script cannot know the app start time.
+     * It is compared with `true`, because a page element with that `id` is a named property
+     * of `window`. The page cannot set the flag in the isolated world, and a forged flag would
+     * only skip delivery in that page's own document.
      *
      * @param snapshot Browser-acknowledged seed and prepared policy.
      *
      * @returns Code to inject.
      */
-    // eslint-disable-next-line class-methods-use-this -- Implements the adapter contract.
     public createCode(snapshot: CanvasBootstrapSnapshot): string {
-        return buildScriptInserter(
+        this.pendingSnapshot = snapshot;
+        const inserter = buildScriptInserter(
             CanvasProtectionCode.createPageScriptExpression(snapshot),
             appContext.startTimeMs,
             InjectionGuard.CanvasProtection,
         );
+        const flag = `window.${CanvasDeliveryGuard.Delivered}`;
+        return `if(${flag}!==true){${flag}=true;${inserter};}`;
     }
 
     /**
@@ -84,6 +108,8 @@ export class ChromiumMv2CanvasInjection implements CanvasRegistrationAdapter {
         code: string,
         policy: ProtectionPolicyArtifact,
     ): Promise<readonly RegistrationOperationOutcome[]> {
+        const snapshot = this.pendingSnapshot!;
+        this.pendingSnapshot = undefined;
         let matches: RegExp;
         let excludeMatches: RegExp;
         try {
@@ -98,6 +124,7 @@ export class ChromiumMv2CanvasInjection implements CanvasRegistrationAdapter {
         }
         this.delivery = {
             script: code,
+            snapshot,
             matches,
             excludeMatches,
         };
@@ -118,7 +145,30 @@ export class ChromiumMv2CanvasInjection implements CanvasRegistrationAdapter {
     }
 
     /**
-     * Injects the script into a document whose URL the selectors match.
+     * Builds the page script for a document, as the content script world would build it.
+     *
+     * @param input The document URL and the URL of its top document.
+     *
+     * @returns The page script, or `undefined` when nothing is delivered or the document
+     * is not protected.
+     */
+    public getPageScript(input: DocumentPolicyInput): string | undefined {
+        const { delivery } = this;
+        if (delivery === undefined
+            || !MatchPatterns.test(delivery.matches, input.url)
+            || MatchPatterns.test(delivery.excludeMatches, input.url)) {
+            return undefined;
+        }
+        const { session, policy } = delivery.snapshot;
+        const site = resolveProtectedSite(policy, input);
+        if (site === undefined) {
+            return undefined;
+        }
+        return CanvasProtectionCode.createSeededPageScript(formatKey(deriveSiteSeed(session, site), 16));
+    }
+
+    /**
+     * Injects the script into a document whose URL the selectors match, when it commits.
      *
      * @param tabId Tab ID.
      * @param frameId Frame ID.
