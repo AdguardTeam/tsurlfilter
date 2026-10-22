@@ -328,6 +328,45 @@ describe('CspRulesResolver.resolve', () => {
         });
     });
 
+    it('lets an exception without $to cancel a blocker restricted by $to', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',to=cdn.example.com",
+            "@@||example.com^$csp=script-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('lets a wider $to exception cancel a blocker restricted by $to', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',to=cdn.example.com",
+            "@@||example.com^$csp=script-src 'none',to=cdn.example.com|static.example.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('reports a narrower $to exception instead of treating it as safe', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',to=cdn.example.com|static.example.com",
+            "@@||example.com^$csp=script-src 'none',to=cdn.example.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
     it('lets an unrestricted exception cancel a blocker restricted by $domain', () => {
         const rules = createRules(
             "||example.com^$csp=script-src 'none',domain=foo.com",

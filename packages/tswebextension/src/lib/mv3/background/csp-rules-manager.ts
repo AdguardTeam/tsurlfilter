@@ -26,6 +26,14 @@ export type CspRulesResult = Omit<ConversionResult<IRulesetWithSourceMap>, 'limi
     dynamicRules: DeclarativeRule[];
 
     /**
+     * CSP conversion errors originating from static filters.
+     *
+     * Errors of user rules are reported separately, in `dynamicErrors`, so a
+     * consumer that reads both channels does not see the same error twice.
+     */
+    staticErrors: ConversionResult<IRulesetWithSourceMap>['errors'];
+
+    /**
      * CSP conversion errors originating from dynamic filters.
      *
      * Both kinds of errors are included: a conversion error carries the rule,
@@ -92,13 +100,29 @@ export class CspRulesManager {
             ...conversionResult,
             staticRules,
             dynamicRules,
-            dynamicErrors: conversionResult.errors.filter((error) => {
-                if (isConversionError(error)) {
-                    return dynamicFilterIds.has(error.rule.filterListId);
-                }
-
-                return isRuleScanError(error) && dynamicFilterIds.has(error.filterId);
-            }),
+            staticErrors: CspRulesManager.filterErrors(conversionResult.errors, staticFilterIds),
+            dynamicErrors: CspRulesManager.filterErrors(conversionResult.errors, dynamicFilterIds),
         };
+    }
+
+    /**
+     * Filters conversion and scan errors by the filters they belong to.
+     *
+     * @param errors Errors of the CSP conversion.
+     * @param filterIds Ids of the filters to keep.
+     *
+     * @returns Errors of the given filters.
+     */
+    private static filterErrors(
+        errors: ConversionResult<IRulesetWithSourceMap>['errors'],
+        filterIds: Set<number>,
+    ): ConversionResult<IRulesetWithSourceMap>['errors'] {
+        return errors.filter((error) => {
+            if (isConversionError(error)) {
+                return filterIds.has(error.rule.filterListId);
+            }
+
+            return isRuleScanError(error) && filterIds.has(error.filterId);
+        });
     }
 }

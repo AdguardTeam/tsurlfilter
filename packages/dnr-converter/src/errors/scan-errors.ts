@@ -12,9 +12,10 @@ export class RuleScanError extends Error {
     public filterId: number;
 
     /**
-     * Index of the rule line in the filter list.
+     * Character offset of the rule in the filter content, the same value as
+     * `Rule.index`.
      */
-    public lineIndex: number;
+    public offset: number;
 
     /**
      * Describes an error of a rule which could not be parsed or validated
@@ -22,10 +23,10 @@ export class RuleScanError extends Error {
      *
      * @param message Message of error.
      * @param filterId Id of the filter the rule belongs to.
-     * @param lineIndex Index of the rule line in the filter list.
+     * @param offset Character offset of the rule in the filter content.
      * @param cause Captured error.
      */
-    constructor(message: string, filterId: number, lineIndex: number, cause?: unknown) {
+    constructor(message: string, filterId: number, offset: number, cause?: unknown) {
         super(message, cause === undefined ? undefined : { cause });
 
         // For proper work of the "instanceof" operator
@@ -36,7 +37,7 @@ export class RuleScanError extends Error {
         this.name = this.constructor.name;
 
         this.filterId = filterId;
-        this.lineIndex = lineIndex;
+        this.offset = offset;
     }
 }
 

@@ -16,8 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   an invalid `resourcesPath`.
 - `ComputedWithSourceMapOptions` type for callers that compute `withSourceMap`
   at runtime — now includes every source-map-only option.
-- `UnexpectedConversionError` is now exported, because it can be reported in
-  `dynamicRules.errors`.
+- `UnexpectedConversionError` and `RuleScanError` are now exported: the first
+  can be reported in `dynamicRules.errors`, the second keeps the filter id and
+  the offset of a rule which failed to parse.
 
 ### Changed
 

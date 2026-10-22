@@ -90,4 +90,20 @@ describe('CspRulesManager', () => {
         expect(result.errors).toHaveLength(1);
         expect(result.dynamicErrors).toHaveLength(0);
     });
+
+    it('splits CSP errors by the filter scope', async () => {
+        const staticFilter = createFilter([
+            "||example.com^$csp=script-src 'none',removeparam=x",
+        ], 1);
+        const dynamicFilter = createFilter([
+            "||example.net^$csp=script-src 'none',removeparam=x",
+        ], 10_000);
+
+        const result = await CspRulesManager.build([staticFilter], [dynamicFilter]);
+
+        expect(result.errors).toHaveLength(2);
+        expect(result.staticErrors).toHaveLength(1);
+        expect(result.dynamicErrors).toHaveLength(1);
+        expect(result.staticErrors[0]).not.toBe(result.dynamicErrors[0]);
+    });
 });

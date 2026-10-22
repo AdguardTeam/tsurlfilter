@@ -99,6 +99,32 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(errors).toHaveLength(0);
         });
 
+        it('removes a CSP rule negated by an exception with the same condition', async () => {
+            const filter = createFilter([
+                "||playzone.cz^$csp=child-src *",
+                "@@||playzone.cz^$csp=child-src *",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('removes a valued CSP rule negated by a value-less exception', async () => {
+            const filter = createFilter([
+                "||playzone.cz^$csp=child-src *",
+                '@@||playzone.cz^$csp',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(0);
+        });
+
         it('removes a CSP rule negated by an identical exact URL exception', async () => {
             const filter = createFilter([
                 "|https://example.com/path|$csp=script-src 'none'",

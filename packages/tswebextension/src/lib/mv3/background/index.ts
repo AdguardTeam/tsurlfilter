@@ -12,6 +12,8 @@ export {
     ResourcesPathError,
     type LimitationError,
     MaxScannedRulesError,
+    RuleScanError,
+    isRuleScanError,
     TooManyRegexpRulesError,
     TooManyUnsafeRulesError,
     TooManyRulesError,

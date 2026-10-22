@@ -216,7 +216,7 @@ describe('RulesScanner', () => {
                 `[ParseError] Invalid rule syntax: filter id - 1, line index - 0, line - ${filterRule}`,
             );
             expect((result.errors[0] as RuleScanError).filterId).toBe(1);
-            expect((result.errors[0] as RuleScanError).lineIndex).toBe(0);
+            expect((result.errors[0] as RuleScanError).offset).toBe(0);
             expect(result.filters).toEqual([{
                 id: 1,
                 rules: [],

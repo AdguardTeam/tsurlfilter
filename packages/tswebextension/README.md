@@ -578,12 +578,13 @@ that **must be checked**:
   ruleset is not found.
 - **`dynamicRules.errors`**: Array of conversion errors that occurred
   during dynamic rules conversion (custom filters, user rules,
-  allowlist).
-- **`cspRules.errors`**: Array of conversion errors of rebuilt CSP rules,
-  including errors of rules from built-in filters. This is the only place
-  where they are reported.
+  allowlist) and of rebuilt CSP rules from those filters.
+- **`cspRules.errors`**: Array of conversion errors of rebuilt CSP rules
+  from built-in filters. Errors of user rules are reported in
+  `dynamicRules.errors`, so the two channels are disjoint.
 - **`limitations`**: Array of limitation errors for dynamic rules omitted
   due to the browser quotas: regular conversion and rebuilt CSP rules.
+  `dynamicRules.limitations` carries the same list.
 - **`sessionRules.limitations`**: Array of limitation errors for session
   rules omitted due to the browser quotas.
 

@@ -78,6 +78,9 @@ export interface SourceMapConverterOptions extends BaseFilterConverterOptions {
     /**
      * Excludes CSP rules from regular conversion when they are rebuilt globally.
      *
+     * The caller must run `convertCspRules()` afterwards: this pass drops such
+     * rules together with their parse errors, because the CSP pass reports them.
+     *
      * @default false
      */
     excludeCspRules?: boolean;

@@ -221,4 +221,26 @@ describe('coversNonUrlConditions', () => {
                 expect(coversNonUrlConditions(exceptionCondition, {})).toBe(false);
             });
     });
+
+    it('requires every exception header to be implied by the blocking rule', () => {
+        const blocker: RuleCondition = {
+            responseHeaders: [{ header: 'set-cookie' }, { header: 'x-frame-options' }],
+        };
+        const narrower: RuleCondition = { responseHeaders: [{ header: 'set-cookie' }] };
+
+        expect(coversNonUrlConditions(narrower, blocker)).toBe(true);
+        expect(coversNonUrlConditions(blocker, narrower)).toBe(false);
+    });
+
+    it('compares request domains by coverage like initiator domains', () => {
+        expect(coversNonUrlConditions({}, { requestDomains: ['a.com'] })).toBe(true);
+        expect(coversNonUrlConditions(
+            { requestDomains: ['a.com', 'b.com'] },
+            { requestDomains: ['a.com'] },
+        )).toBe(true);
+        expect(coversNonUrlConditions(
+            { requestDomains: ['a.com'] },
+            { requestDomains: ['a.com', 'b.com'] },
+        )).toBe(false);
+    });
 });

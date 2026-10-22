@@ -62,8 +62,9 @@ type ConfigurationResult = {
     /**
      * Rebuilt CSP rules result.
      *
-     * `errors` collects conversion errors of CSP rules, including errors of
-     * rules from built-in filters, which are reported nowhere else.
+     * `errors` collects conversion errors of CSP rules from built-in filters.
+     * Errors of user rules are reported in `dynamicRules.errors`, so the two
+     * channels stay disjoint.
      */
     cspRules?: Pick<CspRulesResult, 'errors'>;
     /**
@@ -521,7 +522,7 @@ export class TsWebExtension implements AppInterface<
                 ],
                 this.webAccessibleResourcesPath,
             );
-            res.cspRules = { errors: cspRules.errors };
+            res.cspRules = { errors: cspRules.staticErrors };
 
             const limitedDynamicCspRules = DynamicRulesApi.limitRebuiltCspRules(
                 dynamicRules,
@@ -531,12 +532,13 @@ export class TsWebExtension implements AppInterface<
             res.dynamicRules = {
                 ...dynamicRules,
                 counts: limitedDynamicCspRules.counts,
+                limitations: [
+                    ...dynamicRules.limitations,
+                    ...limitedDynamicCspRules.limitations,
+                ],
                 errors: dynamicRules.errors.concat(cspRules.dynamicErrors),
             };
-            res.limitations = [
-                ...dynamicRules.limitations,
-                ...limitedDynamicCspRules.limitations,
-            ];
+            res.limitations = res.dynamicRules.limitations;
 
             const dynamicRulesSnapshot = await DynamicRulesApi.applyDynamicFiltering(
                 res.dynamicRules,

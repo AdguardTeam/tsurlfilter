@@ -277,17 +277,19 @@ const isHeaderListSubset = (subset: unknown, superset: unknown): boolean => (
 );
 
 /**
- * Checks whether an exception's initiator domains cover a blocking rule's ones.
+ * Checks whether an exception's domain list covers a blocking rule's one.
  *
  * An absent exception list means the exception is not restricted by the
- * condition at all, so it covers any list of the blocking rule.
+ * condition at all, so it covers any list of the blocking rule. The same rule
+ * applies to `initiatorDomains` and `requestDomains`, which DNR treats as
+ * "all domains" when omitted.
  *
  * @param exceptionList Domains of the exception.
  * @param blockingList Domains of the blocking rule.
  *
  * @returns `true` if the exception's list covers the blocking rule's list.
  */
-const coversInitiatorDomains = (exceptionList: unknown, blockingList: unknown): boolean => (
+const coversDomainList = (exceptionList: unknown, blockingList: unknown): boolean => (
     exceptionList === undefined || isDomainListSubset(blockingList, exceptionList)
 );
 
@@ -309,8 +311,11 @@ const coversExcludedDomains = (exceptionList: unknown, blockingList: unknown): b
 /**
  * Checks whether an exception's response headers cover a blocking rule's ones.
  *
- * An absent exception list means the exception is not restricted by headers, so
- * it covers any list of the blocking rule.
+ * Headers of one condition are combined with AND, so the exception covers the
+ * blocking rule only when every exception header is implied by some header of
+ * the blocking rule: a response that matches the blocking rule must match the
+ * exception as well. An absent exception list means the exception is not
+ * restricted by headers, so it covers any list of the blocking rule.
  *
  * @param exceptionHeaders Headers of the exception.
  * @param blockingHeaders Headers of the blocking rule.
@@ -318,7 +323,7 @@ const coversExcludedDomains = (exceptionList: unknown, blockingList: unknown): b
  * @returns `true` if the exception's list covers the blocking rule's list.
  */
 const coversResponseHeaders = (exceptionHeaders: unknown, blockingHeaders: unknown): boolean => (
-    exceptionHeaders === undefined || isHeaderListSubset(blockingHeaders, exceptionHeaders)
+    exceptionHeaders === undefined || isHeaderListSubset(exceptionHeaders, blockingHeaders)
 );
 
 /**
@@ -337,7 +342,7 @@ const CONDITION_COVERAGE: {
     urlFilter: createEqualityComparator(['urlFilter', 'regexFilter']),
     regexFilter: createEqualityComparator(['urlFilter', 'regexFilter']),
     domainType: coversDomainType,
-    initiatorDomains: (exceptionCondition, blockingCondition) => coversInitiatorDomains(
+    initiatorDomains: (exceptionCondition, blockingCondition) => coversDomainList(
         exceptionCondition.initiatorDomains,
         blockingCondition.initiatorDomains,
     ),
@@ -345,7 +350,10 @@ const CONDITION_COVERAGE: {
         exceptionCondition.excludedInitiatorDomains,
         blockingCondition.excludedInitiatorDomains,
     ),
-    requestDomains: createEqualityComparator(['requestDomains']),
+    requestDomains: (exceptionCondition, blockingCondition) => coversDomainList(
+        exceptionCondition.requestDomains,
+        blockingCondition.requestDomains,
+    ),
     excludedRequestDomains: (exceptionCondition, blockingCondition) => coversExcludedDomains(
         exceptionCondition.excludedRequestDomains,
         blockingCondition.excludedRequestDomains,
