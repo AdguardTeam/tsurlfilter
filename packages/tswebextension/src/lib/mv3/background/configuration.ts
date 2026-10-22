@@ -78,7 +78,7 @@ export const preregisteredScriptsConfigValidator = zod.object({
     /**
      * Path to the preregistered script artifacts directory.
      */
-    path: zod.string(),
+    path: zod.string().min(1),
 });
 
 /**
@@ -146,6 +146,8 @@ export type ConfigurationMV3 = zod.infer<typeof configurationMV3Validator>;
  * Configuration context type for MV3.
  * This type is {@link ConfigurationMV3} with an omitted array of rule and domain strings loaded in the filter engine.
  * It is used to reduce memory consumption when storing configuration data in memory.
+ * The build-time `preregisteredScripts` config is omitted as well: the stored context does not need it,
+ * and it is kept separately in the app context.
  */
 export type ConfigurationMV3Context =
     & Omit<

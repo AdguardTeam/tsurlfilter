@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of exceptions (build-time preregistration discovery).
 - `Engine.getCosmeticResult()` accepts an `ignorePath` option, and
   `CosmeticRule.match()` — a new `ignorePath` parameter, both skipping the
-  `$path` modifier check for JS/scriptlet rules.
+  `$path` modifier check.
 
 ### Changed
 

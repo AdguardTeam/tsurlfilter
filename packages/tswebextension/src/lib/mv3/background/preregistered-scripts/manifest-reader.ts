@@ -1,4 +1,9 @@
-import { MANIFEST_FILENAME, MANIFEST_SCHEMA_VERSION, type PreregisteredScriptsManifest } from './hasher';
+import {
+    MANIFEST_FILENAME,
+    MANIFEST_SCHEMA_VERSION,
+    type PreregisteredScriptsManifest,
+    SCRIPTLET_FUNCTION_FILENAME_REGEX,
+} from './hasher';
 
 /**
  * Timeout for fetching the build-time manifest. It is a local package file,
@@ -55,8 +60,8 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
     }
 
     for (const [name, file] of Object.entries(scriptletFiles)) {
-        if (typeof file !== 'string') {
-            throw new Error(`Malformed manifest at ${url}: scriptlet "${name}" must map to a string`);
+        if (typeof file !== 'string' || !SCRIPTLET_FUNCTION_FILENAME_REGEX.test(file)) {
+            throw new Error(`Malformed manifest at ${url}: scriptlet "${name}" must map to an s-*.js file name`);
         }
     }
 

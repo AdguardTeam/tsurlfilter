@@ -120,6 +120,17 @@ describe('readManifest', () => {
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"set-cookie"');
     });
 
+    it('throws when a scriptlet file mapping is not an s-*.js basename', async () => {
+        stubManifestFetch({
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: [],
+            scriptletFiles: { 'set-cookie': '../s-set-cookie.js' },
+        });
+
+        // The value goes straight into the MAIN-world `js` list.
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('s-*.js');
+    });
+
     it('passes an abort signal to fetch, so a hung request cannot stall the sync', async () => {
         stubManifestFetch({
             schemaVersion: MANIFEST_SCHEMA_VERSION,

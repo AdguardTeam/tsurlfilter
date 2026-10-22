@@ -100,6 +100,18 @@ const RULE_FILE_PATH_REGEX = new RegExp(`(?:^|/)([0-9a-f]{${HASH_LENGTH}})\\.js$
 export const SCRIPTLET_FUNCTION_FILENAME_PREFIX = 's-';
 
 /**
+ * Matches per-scriptlet-function filenames (`s-*.js`) that stay inside the
+ * artifacts directory. Derived from
+ * {@link SCRIPTLET_FUNCTION_FILENAME_PREFIX} so the build and runtime sides
+ * cannot drift apart. Used to validate manifest entries before they reach
+ * the registration `js` list: a value with a path separator or an unexpected
+ * name must not be turned into a URL.
+ */
+export const SCRIPTLET_FUNCTION_FILENAME_REGEX = new RegExp(
+    `^${SCRIPTLET_FUNCTION_FILENAME_PREFIX}[A-Za-z0-9_-]+\\.js$`,
+);
+
+/**
  * Computes a truncated SHA-256 hash of a string, used as a short, stable
  * filename (`{hash}.js`) for both build-time file generation and runtime
  * content-script registration.

@@ -55,4 +55,13 @@ describe('preregisteredScriptsConfigValidator', () => {
             path: 'scripts',
         })).toThrow();
     });
+
+    it('rejects an empty artifacts path', () => {
+        // An empty path reads the extension's own manifest.json and fails
+        // with a confusing schema-version error at runtime.
+        expect(() => preregisteredScriptsConfigValidator.parse({
+            domains: ['youtube.com'],
+            path: '',
+        })).toThrow();
+    });
 });

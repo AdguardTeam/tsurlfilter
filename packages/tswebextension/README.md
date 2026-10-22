@@ -340,11 +340,12 @@ Path to the preregistered script artifacts directory (contains
 file per rule, and the cleanup file — see
 `@adguard/tswebextension/mv3/preregistered-scripts/build-contract`).
 Coverage is reported from the registrations actually active after a sync:
-on sync failure the last successful coverage is kept (the boot snapshot
+on sync failure the last published coverage is kept (the boot snapshot
 before the first sync), and rules in those sets stay excluded from dynamic
 injection; a rule that cannot be confirmed as covered remains on the
-dynamic path. Tabs opened before the first sync are judged against the
-boot snapshot of the registrations that existed when they loaded.
+dynamic path. Documents that loaded before the current service worker
+started are judged against the boot snapshot of the registrations that
+existed then; later documents use the last published coverage.
 
 At runtime, each configured hostname (plus its `www.` alias) is matched
 against the engine with `$path` ignored, the matching rules are hashed, and
