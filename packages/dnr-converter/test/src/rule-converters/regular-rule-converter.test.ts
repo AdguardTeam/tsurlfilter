@@ -1447,7 +1447,7 @@ describe('RuleConverter', () => {
         });
     });
 
-    describe('convertRuleWithTargetDomain', () => {
+    describe('additional main_frame rule', () => {
         const filterListId = 1;
 
         /**
@@ -1593,7 +1593,40 @@ describe('RuleConverter', () => {
             expect(rules[0].condition.requestDomains).toBeUndefined();
         });
 
-        it('does not add a rule when $to is set', async () => {
+        it('does not add a rule when a domain-specific pattern has permitted domains', async () => {
+            const rules = await convert('||example.com^$document,domain=example.com|~sub.example.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.initiatorDomains).toEqual(['example.com']);
+            expect(rules[0].condition.excludedInitiatorDomains).toEqual(['sub.example.com']);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule when $third-party is set', async () => {
+            const rules = await convert('*$document,third-party,domain=example.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition).toMatchObject({
+                domainType: DomainType.ThirdParty,
+                initiatorDomains: ['example.com'],
+                resourceTypes: [ResourceType.MainFrame],
+            });
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule when $~third-party is set', async () => {
+            const rules = await convert('*$document,~third-party,domain=example.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition).toMatchObject({
+                domainType: DomainType.FirstParty,
+                initiatorDomains: ['example.com'],
+                resourceTypes: [ResourceType.MainFrame],
+            });
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule when permitted $to and $domain are both set', async () => {
             const rules = await convert('*$document,to=foo.com,domain=example.com');
 
             expect(rules).toHaveLength(1);
@@ -1601,7 +1634,7 @@ describe('RuleConverter', () => {
         });
 
         it('does not add a rule when the rule does not target main_frame', async () => {
-            const rules = await convert('||ads.example^$script,domain=foo.com');
+            const rules = await convert('*$script,domain=foo.com');
 
             expect(rules).toHaveLength(1);
             expect(rules[0].condition.requestDomains).toBeUndefined();

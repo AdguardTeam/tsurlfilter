@@ -193,9 +193,12 @@ export class RegularRuleConverter {
      *
      * AdGuard matches the `$domain` modifier against the target hostname of
      * a document request when the pattern is not domain-specific, or when the
-     * `$domain` list contains only excluded domains.
+     * `$domain` list contains only excluded domains. This mirrors
+     * `NetworkRule.matchDomainModifier()` and
+     * `Pattern.isPatternDomainSpecific()` in `@adguard/tsurlfilter`.
      *
-     * @see {@link https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tsurlfilter/src/rules/pattern.ts}
+     * @see {@link https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tsurlfilter/src/rules/network-rule.ts | NetworkRule.matchDomainModifier()}
+     * @see {@link https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tsurlfilter/src/rules/pattern.ts | Pattern.isPatternDomainSpecific()}
      */
     private static readonly DOMAIN_SPECIFIC_PATTERN_PREFIXES = [ADBLOCK_URL_START, 'http://', 'https:/', '://'];
 
@@ -937,45 +940,40 @@ export class RegularRuleConverter {
     }
 
     /**
-     * Converts the {@link Rule} into a list of {@link DeclarativeRule}.
+     * Builds the additional `main_frame` rule when the `$domain` modifier
+     * must also match the target hostname of a document request.
      *
-     * Adds a second `main_frame` rule when the `$domain` modifier must also
-     * match the target hostname of a document request. Chrome matches
-     * `initiatorDomains` against the request initiator only, and a document
-     * request started by the browser (new tab page, address bar, bookmark,
-     * reload) has no initiator. AdGuard matches `$domain` against the target
-     * hostname for document requests when the pattern is not domain-specific,
-     * or when the `$domain` list contains only excluded domains, so the
-     * additional rule keeps the same behavior.
+     * Chrome matches `initiatorDomains` against the request initiator only,
+     * and a document request started by the browser (new tab page, address
+     * bar, bookmark, reload) has no initiator. AdGuard matches `$domain`
+     * against the target hostname for document requests when the pattern is
+     * not domain-specific, or when the `$domain` list contains only excluded
+     * domains, so the additional rule keeps the same behavior.
      *
-     * @param id Rule ID.
-     * @param rule {@link Rule} to convert.
+     * @param rule Source {@link Rule}.
+     * @param declarativeRule Converted {@link DeclarativeRule}.
      * @param usedIds Set with already used IDs to exclude duplications in IDs.
      *
-     * @returns List of converted {@link DeclarativeRule}.
-     *
-     * @throws The same errors as {@link RegularRuleConverter.convertRule}.
+     * @returns Additional {@link DeclarativeRule}, or `null` when the
+     * additional rule is not needed.
      */
-    protected async convertRuleWithTargetDomain(
-        id: number,
+    private static buildTargetDomainRule(
         rule: Rule,
+        declarativeRule: DeclarativeRule,
         usedIds: Set<number>,
-    ): Promise<DeclarativeRule[]> {
-        const declarativeRule = await this.convertRule(id, rule);
+    ): DeclarativeRule | null {
         const targetDomainCondition = RegularRuleConverter.getTargetDomainCondition(rule, declarativeRule);
 
         if (!targetDomainCondition) {
-            return [declarativeRule];
+            return null;
         }
 
-        const targetDomainRule: DeclarativeRule = {
+        return {
             id: RegularRuleConverter.generateId(rule, usedIds),
             action: JSON.parse(JSON.stringify(declarativeRule.action)) as RuleAction,
             condition: targetDomainCondition,
             priority: declarativeRule.priority,
         };
-
-        return [declarativeRule, targetDomainRule];
     }
 
     /**
@@ -997,8 +995,18 @@ export class RegularRuleConverter {
         rule: Rule,
         declarativeRule: DeclarativeRule,
     ): RuleCondition | null {
-        const permittedDomains = RegularRuleConverter.prepareDeclarativeDomains(rule.permittedDomains);
-        const excludedDomains = RegularRuleConverter.prepareDeclarativeDomains(rule.restrictedDomains);
+        /**
+         * DNR cannot express "first party or no initiator". Chrome treats a
+         * request without an initiator as third-party, while MV2 treats it as
+         * first-party, so the additional rule would widen a `$third-party`
+         * or a `$~third-party` rule. Skip it in this case.
+         */
+        if (declarativeRule.condition.domainType) {
+            return null;
+        }
+
+        const permittedDomains = declarativeRule.condition.initiatorDomains ?? [];
+        const excludedDomains = declarativeRule.condition.excludedInitiatorDomains ?? [];
 
         if (permittedDomains.length === 0 && excludedDomains.length === 0) {
             return null;
@@ -1199,7 +1207,17 @@ export class RegularRuleConverter {
                 }
 
                 // Convert rule and collect source map values
-                const convertedRules = await this.convertRuleWithTargetDomain(id, rule, usedIds);
+                const declarativeRule = await this.convertRule(id, rule);
+                const convertedRules = [declarativeRule];
+                const targetDomainRule = RegularRuleConverter.buildTargetDomainRule(
+                    rule,
+                    declarativeRule,
+                    usedIds,
+                );
+                if (targetDomainRule) {
+                    convertedRules.push(targetDomainRule);
+                }
+
                 convertedRules.forEach((converted) => {
                     res.sourceMapValues.push({
                         declarativeRuleId: converted.id,

@@ -27,11 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `*$document,csp=script-src-attr 'none',domain=example.com` now
   also produces a `main_frame` rule with `requestDomains`, so it works on the
   first page load, as it does in MV2. The additional rule is not created when
-  the rule does not target `main_frame`, when a permitted `$to` and a
-  permitted `$domain` are both present, or when a `$domain`, `$to`, or
-  `$denyallow` value cannot be represented in DNR. A permitted-only `$domain`
-  list still needs a non-domain-specific, non-regexp pattern, as in the MV2
-  matcher. `$urltransform` rules are not covered.
+  the rule does not target `main_frame`, when the rule has `$third-party` or
+  `$~third-party`, when a permitted `$to` and a permitted `$domain` are both
+  present, or when a `$domain`, `$to`, or `$denyallow` value cannot be
+  represented in DNR. A `$domain` with permitted domains still needs a
+  non-domain-specific, non-regexp pattern, as in the MV2 matcher.
+  `$urltransform` rules do not get the additional rule: a `$domain` with
+  permitted domains does not match browser-started navigations, while an
+  excluded-only `$domain` still matches them through the base rule.
 - `$badfilter` incorrectly negated rules with different values of value-bearing
   modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
   `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when
