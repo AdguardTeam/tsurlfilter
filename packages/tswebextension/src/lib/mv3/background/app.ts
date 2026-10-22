@@ -521,14 +521,11 @@ export class TsWebExtension implements AppInterface<
         documentBlockingService.configure(config);
 
         // Debug needs verbose scriptlets, which only dynamic injection
-        // can build: the gate depends on the runtime debug flag as well,
-        // because the MV3 consumer always configures `debugScriptlets:
-        // false` and toggles it via `setDebugScriptlets()`. The disabled
-        // branch above already tore preregistration down and dropped the
-        // stored configuration.
+        // can build: the gate depends on the runtime debug flag. The
+        // disabled branch above already tore preregistration down and
+        // dropped the stored configuration.
         if (configuration.settings.filteringEnabled) {
-            const debugScriptlets = configuration.settings.debugScriptlets
-                || appContext.debugScriptlets === true;
+            const { debugScriptlets } = configuration.settings;
             appContext.preregisteredScripts = configuration.preregisteredScripts;
             await PreregisteredScriptsService.init(
                 !debugScriptlets,
@@ -863,9 +860,7 @@ export class TsWebExtension implements AppInterface<
      * Sets the debug scriptlets state.
      *
      * Preregistration is re-evaluated immediately: verbose scriptlets exist
-     * only on the dynamic injection path. The runtime toggle is kept in
-     * {@link appContext} so a later `configure()` does not re-enable
-     * preregistration while the filtering log is open.
+     * only on the dynamic injection path.
      *
      * @param debug Debug filtering state.
      *
@@ -876,7 +871,6 @@ export class TsWebExtension implements AppInterface<
             throw new Error('Configuration not set');
         }
         this.configuration.settings.debugScriptlets = debug;
-        appContext.debugScriptlets = debug;
 
         const { filteringEnabled } = this.configuration.settings;
         PreregisteredScriptsService.reapplyGate(filteringEnabled && !debug);

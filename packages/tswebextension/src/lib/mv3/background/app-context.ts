@@ -48,15 +48,6 @@ export class AppContext {
     public preregisteredScripts?: PreregisteredScriptsConfig;
 
     /**
-     * Runtime debug-scriptlets toggle set by `setDebugScriptlets()`. The MV3
-     * consumer always configures `debugScriptlets: false` and toggles it at
-     * runtime, so `configure()` must combine this flag with the configured
-     * value — otherwise a filter update re-enables preregistration while
-     * the filtering log is open.
-     */
-    public debugScriptlets?: boolean;
-
-    /**
      * Per-hostname hashes of rules covered by the currently active
      * preregistered content-script registrations, recovered from their `js`
      * file lists. Published by `PreregisteredScriptsService` on every
