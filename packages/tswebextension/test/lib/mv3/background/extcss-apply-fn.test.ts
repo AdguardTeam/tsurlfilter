@@ -335,6 +335,48 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         expect((msg as any).payload[0].element).toBe('<div class="ad">');
     });
 
+    it('reports one hit per element matched by the same rule', async () => {
+        // ExtendedCss keeps one parsed rule object shared by every element the
+        // rule matches. Consuming the marker on that object would report only
+        // the first element and leave the others uncounted.
+        document.body.innerHTML = '<div id="first" class="ad"><span class="child">ad</span></div>'
+            + '<div id="second" class="ad"><span class="child">ad</span></div>';
+
+        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
+
+        expect(sendMessageSpy).toHaveBeenCalledTimes(2);
+        const elements = sendMessageSpy.mock.calls.map(
+            (call: any[]) => (call[0] as any).payload[0].element,
+        );
+        expect(elements).toEqual(['<div id="first" class="ad">', '<div id="second" class="ad">']);
+    });
+
+    it('reports a hit for an element matched after the apply', async () => {
+        document.body.innerHTML = '<div id="first" class="ad"><span class="child">ad</span></div>';
+
+        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
+        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+
+        // A node added later is matched by the same parsed rule, so it must
+        // still carry the marker and be reported.
+        const added = document.createElement('div');
+        added.id = 'added';
+        added.className = 'ad';
+        added.innerHTML = '<span class="child">ad</span>';
+        document.body.appendChild(added);
+
+        await vi.waitFor(() => {
+            expect(sendMessageSpy).toHaveBeenCalledTimes(2);
+        }, { timeout: 1000, interval: 30 });
+
+        const msg = sendMessageSpy.mock.calls[1][0] as any;
+        expect(msg.payload[0].element).toBe('<div id="added" class="ad">');
+    });
+
     it('uses .catch() — not try/catch — to swallow the async sendMessage rejection', () => {
         const src = String(extCssInjectedApply);
         // The fire-and-forget reporter MUST attach .catch(); a synchronous
@@ -504,11 +546,11 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         expect(msg.payload[0].element).toBe('<div class="ad">');
     });
 
-    // Regression: the dedup guard (rule.style.content = '') must prevent
-    // duplicate hits when the same element is re-styled by the throttled
-    // MutationObserver. After the first hit clears the content marker,
-    // subsequent beforeStyleApplied calls find an empty string and skip.
-    it('does not send duplicate hits (dedup via content clearing)', async () => {
+    // Regression: the per-node dedup guard must prevent duplicate hits when
+    // the same element is re-styled by the throttled MutationObserver. The
+    // applied copy of the rule loses the marker, and the node/rule pair is
+    // tracked, so a second beforeStyleApplied call reports nothing.
+    it('does not send duplicate hits for the same element and rule', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
         extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);

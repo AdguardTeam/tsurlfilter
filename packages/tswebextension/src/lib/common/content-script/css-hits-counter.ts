@@ -126,8 +126,10 @@ export class CssHitsCounter {
 
     /**
      * ExtendedCss callback: collects the legacy `content:` markers of the
-     * affected element's rules, reports the hits, and clears the markers so
-     * they never reach the DOM.
+     * affected element's rules, reports the hits, and clears the markers on
+     * the copy of the rules applied to that element, so they never reach the
+     * DOM while the remaining elements matched by the same rule are still
+     * counted.
      *
      * The ExtendedCss path was *not* affected by AG-265 — its rules are
      * applied imperatively, never inserted as a stylesheet, so the

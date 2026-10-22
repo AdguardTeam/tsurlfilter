@@ -154,13 +154,53 @@ function elementToString(element: Element): string {
 }
 
 /**
+ * Rule keys (`filterId;ruleIndex`) already reported for a node.
+ *
+ * ExtendedCss keeps one parsed rule object shared by every element the rule
+ * matches, so the marker cannot be consumed destructively: clearing it on the
+ * rule would drop the hits of all the other elements. Each node is therefore
+ * reported once per rule, like the native CSS hits counter does.
+ */
+const countedHits = new WeakMap<Element, Set<string>>();
+
+/**
+ * Registers a hit for a node and reports whether it was registered before.
+ *
+ * @param node Affected node, if any.
+ * @param hitKey Rule key in the `filterId;ruleIndex` form.
+ *
+ * @returns True when the node and rule pair was already reported.
+ */
+function registerHit(node: Element | undefined, hitKey: string): boolean {
+    if (!node) {
+        return false;
+    }
+
+    const counted = countedHits.get(node);
+
+    if (!counted) {
+        countedHits.set(node, new Set([hitKey]));
+        return false;
+    }
+
+    if (counted.has(hitKey)) {
+        return true;
+    }
+
+    counted.add(hitKey);
+
+    return false;
+}
+
+/**
  * Collects the CSS hits of an ExtendedCSS affected element: reads the hits
- * marker from every matched rule's `content`, clears it so the marker is never
- * painted and never counted twice, and returns the collected hits.
+ * marker from every matched rule's `content`, strips the marker from the copy
+ * of the rule that is applied to this node, and returns the collected hits.
  *
  * Shared by the MV2 `CssHitsCounter.countAffectedByExtendedCss` callback and
  * the MV3 injected `beforeStyleApplied` callback, so both report hits the same
- * way.
+ * way. The marker is stripped per element, not on the shared parsed rule, so
+ * every element matched by a rule is reported instead of only the first one.
  *
  * @param affectedEl Affected element from ExtendedCss.
  * @param attributeMarker Marker prefix (e.g. `'adguard'`).
@@ -180,11 +220,25 @@ function collectExtendedCssHits(
         return hits;
     }
 
-    for (const rule of affectedEl.rules) {
-        const content = rule && rule.style && rule.style.content;
+    const { rules, node } = affectedEl;
+
+    for (let i = 0; i < rules.length; i += 1) {
+        const rule = rules[i];
+
+        if (!rule || !rule.style) {
+            continue;
+        }
+
+        const { style } = rule;
+        const { content } = style;
         if (!content || content.indexOf(attributeMarker) < 0) {
             continue;
         }
+
+        // Replace the rule in the element's own rules array with a copy that
+        // has the marker stripped: the marker must never be painted on the
+        // node, while the shared parsed rule keeps it for the other elements.
+        rules[i] = { ...rule, style: { ...style, content: '' } };
 
         const ruleInfo = parseExtendedStyleInfo(content, attributeMarker);
         if (!ruleInfo) {
@@ -193,21 +247,19 @@ function collectExtendedCssHits(
 
         const { filterId, ruleIndex } = ruleInfo;
 
-        let element: string | Element = affectedEl.node;
+        if (registerHit(node, `${filterId};${ruleIndex}`)) {
+            continue;
+        }
+
+        let element: string | Element = node;
 
         if (serializeElement) {
             // Fall back to a static tag when the node is missing, so a hit is
             // still reported instead of failing the whole cosmetic pass.
-            element = affectedEl.node ? elementToString(affectedEl.node) : '<div>';
+            element = node ? elementToString(node) : '<div>';
         }
 
         hits.push({ filterId, ruleIndex, element });
-
-        // Clear to avoid duplicate counting on re-style and to keep the
-        // marker text from being painted.
-        if (rule.style) {
-            rule.style.content = '';
-        }
     }
 
     return hits;

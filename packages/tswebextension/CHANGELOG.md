@@ -34,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   skipped for documents that loaded before the background engine started:
   the content script now retries `GetCosmeticData` while the background
   answers `undefined`, instead of giving up on the first response.
+- ExtendedCSS hits are now counted for every element matched by a rule, in MV2
+  and MV3. Previously only the first element matched by a rule was counted and
+  elements matched later were not.
 - Malformed CSS hit markers no longer break cosmetic application in MV2: a
   `URIError` from `decodeURIComponent` is treated as a non-matching marker
   instead of propagating.

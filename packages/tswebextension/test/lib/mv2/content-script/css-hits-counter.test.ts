@@ -178,6 +178,43 @@ describe('CssHitsCounter', () => {
         cssHitsCounter.stop();
     });
 
+    it('counts every element matched by the same ExtendedCSS rule', () => {
+        const onCssHitsFound = vi.fn();
+        const cssHitsCounter = new CssHitsCounter(onCssHitsFound);
+        // Drop the native hits of the fixture counted on construction.
+        onCssHitsFound.mockClear();
+
+        // One parsed rule object shared by every element it matches, as
+        // ExtendedCss keeps it.
+        const sharedRule = { style: { content: 'adguard7%3B7' } };
+        const firstNode = document.createElement('div');
+        firstNode.id = 'firstExtCss';
+        const secondNode = document.createElement('div');
+        secondNode.id = 'secondExtCss';
+        document.body.append(firstNode, secondNode);
+
+        const firstEl = { rules: [sharedRule], node: firstNode };
+        cssHitsCounter.countAffectedByExtendedCss(firstEl);
+        cssHitsCounter.countAffectedByExtendedCss({ rules: [sharedRule], node: secondNode });
+
+        const reported = onCssHitsFound.mock.calls.flatMap(([batch]) => batch);
+        expect(reported).toEqual([
+            { filterId: 7, ruleIndex: 7, element: '<div id="firstExtCss">' },
+            { filterId: 7, ruleIndex: 7, element: '<div id="secondExtCss">' },
+        ]);
+        // The marker is stripped from the copy applied to the element only, so
+        // the shared rule keeps it for the remaining elements.
+        expect(firstEl.rules[0].style.content).toBe('');
+        expect(sharedRule.style.content).toBe('adguard7%3B7');
+
+        // The same node and rule pair is reported once, even when ExtendedCss
+        // re-matches the node later.
+        cssHitsCounter.countAffectedByExtendedCss({ rules: [sharedRule], node: firstNode });
+        expect(onCssHitsFound.mock.calls.flatMap(([batch]) => batch)).toEqual(reported);
+
+        cssHitsCounter.stop();
+    });
+
     it('counts --adguard-hit marker without leaking marker text (AG-265)', () => {
         // Emitter output under the new design: stylesheet carries an
         // `@property` declaration and the marker is a custom property.
