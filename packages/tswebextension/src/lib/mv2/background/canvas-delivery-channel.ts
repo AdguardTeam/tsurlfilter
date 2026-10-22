@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill';
+import browser, { type WebRequest } from 'webextension-polyfill';
 
 import { NO_PARENT_FRAME_ID } from '../../common/constants';
 import { logger } from '../../common/utils/logger';
@@ -11,11 +11,15 @@ import { type TabsApi } from './tabs/tabs-api';
 
 /**
  * Answers the synchronous request of the content script for the canvas protection page script
- * in Chromium MV2. The request goes to a reserved host, and a blocking listener redirects it
- * to a `data:` URL carrying the page script, or nothing when the document is not protected.
+ * in Chromium MV2. The request goes to the reserved host of the extension, and a blocking
+ * listener redirects it to a `data:` URL carrying the page script, or nothing when the document
+ * is not protected.
  *
- * Each document gets one answer: the page knows the reserved URL and could repeat the request,
- * but it learns at most its own site key, which the inserted script exposes anyway.
+ * Each document gets one answer. The content script requests it before page scripts run, so
+ * any later request comes from the page and is cancelled: it fails like the same request
+ * without the extension, and the page cannot tell that the extension is installed.
+ * An empty answer is a redirect rather than a cancellation, because a cancelled request
+ * prints a network error to the console of every page.
  *
  * TODO: remove when Chromium MV2 is no longer supported.
  */
@@ -56,7 +60,7 @@ export class ChromiumMv2CanvasDeliveryChannel {
         this.listening = true;
         browser.webRequest.onBeforeRequest.addListener(
             (details) => this.answer(details),
-            { urls: [CanvasDeliveryUrl.PATTERN] },
+            { urls: [CanvasDeliveryUrl.getPattern(browser.runtime.id)], types: ['xmlhttprequest'] },
             ['blocking'],
         );
     }
@@ -67,9 +71,23 @@ export class ChromiumMv2CanvasDeliveryChannel {
      *
      * @param details Details of the request to the reserved host.
      *
-     * @returns Redirect to a `data:` URL with the page script, empty when nothing is delivered.
+     * @returns Redirect to a `data:` URL with the page script, empty when nothing is delivered,
+     * or a cancellation for a request that is not the first one of its document.
      */
-    public answer(details: OnBeforeRequestDetailsType): { redirectUrl: string } {
+    public answer(details: OnBeforeRequestDetailsType): WebRequest.BlockingResponse {
+        const { documentId, tabId, frameId } = details;
+
+        if (!documentId) {
+            logger.debug(`[tsweb.ChromiumMv2CanvasDeliveryChannel.answer]: no documentId in tab ${tabId}, frame ${frameId}`);
+            return { cancel: true };
+        }
+
+        if (this.answered.has(documentId)) {
+            logger.debug(`[tsweb.ChromiumMv2CanvasDeliveryChannel.answer]: document ${documentId} was answered before`);
+            return { cancel: true };
+        }
+        this.remember(documentId);
+
         const script = this.getPageScript(details) ?? '';
         return { redirectUrl: `${ChromiumMv2CanvasDeliveryChannel.DATA_URL_PREFIX}${encodeURIComponent(script)}` };
     }
@@ -83,23 +101,11 @@ export class ChromiumMv2CanvasDeliveryChannel {
      */
     private getPageScript(details: OnBeforeRequestDetailsType): string | undefined {
         const {
-            documentId,
             tabId,
             frameId,
             parentFrameId,
             initiator,
         } = details;
-
-        if (!documentId) {
-            logger.debug(`[tsweb.ChromiumMv2CanvasDeliveryChannel.getPageScript]: no documentId in tab ${tabId}, frame ${frameId}`);
-            return undefined;
-        }
-
-        if (this.answered.has(documentId)) {
-            logger.debug(`[tsweb.ChromiumMv2CanvasDeliveryChannel.getPageScript]: document ${documentId} was answered before`);
-            return undefined;
-        }
-        this.remember(documentId);
 
         const frame = this.tabsApi.getFrameContext(tabId, frameId);
         if (!frame) {

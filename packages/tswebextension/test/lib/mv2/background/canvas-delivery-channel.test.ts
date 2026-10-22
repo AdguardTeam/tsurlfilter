@@ -1,11 +1,13 @@
 import browser from 'sinon-chrome';
 import {
+    beforeAll,
     beforeEach,
     describe,
     expect,
     it,
     vi,
 } from 'vitest';
+import polyfill from 'webextension-polyfill';
 
 import { ChromiumMv2CanvasDeliveryChannel } from '../../../../src/lib/mv2/background/canvas-delivery-channel';
 import { type ChromiumMv2CanvasInjection } from '../../../../src/lib/mv2/background/canvas-injection';
@@ -14,6 +16,7 @@ import { type TabsApi } from '../../../../src/lib/mv2/background/tabs/tabs-api';
 import { CanvasDeliveryUrl } from '../../../../src/lib/mv2/common/canvas-delivery';
 
 const DATA_URL_PREFIX = 'data:text/javascript;charset=utf-8,';
+const EXTENSION_ID = 'abcdefghijklmnopabcdefghijklmnop';
 
 /**
  * Decodes the page script from an answer.
@@ -23,9 +26,9 @@ const DATA_URL_PREFIX = 'data:text/javascript;charset=utf-8,';
  *
  * @returns The script text.
  */
-const decode = ({ redirectUrl }: { redirectUrl: string }): string => {
-    expect(redirectUrl.startsWith(DATA_URL_PREFIX)).toBe(true);
-    return decodeURIComponent(redirectUrl.slice(DATA_URL_PREFIX.length));
+const decode = ({ redirectUrl }: { redirectUrl?: string }): string => {
+    expect(redirectUrl?.startsWith(DATA_URL_PREFIX)).toBe(true);
+    return decodeURIComponent(redirectUrl!.slice(DATA_URL_PREFIX.length));
 };
 
 describe('Chromium MV2 canvas delivery channel', () => {
@@ -54,7 +57,7 @@ describe('Chromium MV2 canvas delivery channel', () => {
      */
     const createDetails = (overrides: Partial<OnBeforeRequestDetailsType> = {}): OnBeforeRequestDetailsType => ({
         requestId: '1',
-        url: CanvasDeliveryUrl.URL,
+        url: CanvasDeliveryUrl.getUrl(EXTENSION_ID),
         method: 'GET',
         frameId: 0,
         parentFrameId: -1,
@@ -83,6 +86,10 @@ describe('Chromium MV2 canvas delivery channel', () => {
         });
     };
 
+    beforeAll(() => {
+        Object.defineProperty(polyfill.runtime, 'id', { configurable: true, value: EXTENSION_ID });
+    });
+
     beforeEach(() => {
         browser.webRequest.onBeforeRequest.addListener.resetHistory();
         frames = new Map([[0, TOP_URL], [3, FRAME_URL]]);
@@ -104,12 +111,15 @@ describe('Chromium MV2 canvas delivery channel', () => {
         );
     });
 
-    it('listens once to the reserved host with a blocking listener', () => {
+    it('listens once to requests of the content script to the host of the extension', () => {
         channel.listen();
         channel.listen();
         expect(browser.webRequest.onBeforeRequest.addListener.callCount).toBe(1);
         const [, filter, extraInfoSpec] = browser.webRequest.onBeforeRequest.addListener.lastCall.args;
-        expect(filter).toEqual({ urls: ['*://tswebextension.invalid/*'] });
+        expect(filter).toEqual({
+            urls: [`*://${EXTENSION_ID}.tswebextension.invalid/*`],
+            types: ['xmlhttprequest'],
+        });
         expect(extraInfoSpec).toEqual(['blocking']);
     });
 
@@ -159,9 +169,9 @@ describe('Chromium MV2 canvas delivery channel', () => {
         expect(injection.getPageScript).not.toHaveBeenCalled();
     });
 
-    it('answers once per document', () => {
+    it('cancels later requests of an answered document, so its page cannot read the answer', () => {
         expect(decode(channel.answer(createDetails()))).toBe(SCRIPT);
-        expect(decode(channel.answer(createDetails()))).toBe('');
+        expect(channel.answer(createDetails())).toEqual({ cancel: true });
         expect(injection.getPageScript).toHaveBeenCalledTimes(1);
     });
 
@@ -169,7 +179,7 @@ describe('Chromium MV2 canvas delivery channel', () => {
         injection.getPageScript.mockReturnValue(undefined);
         expect(decode(channel.answer(createDetails()))).toBe('');
         injection.getPageScript.mockReturnValue(SCRIPT);
-        expect(decode(channel.answer(createDetails()))).toBe('');
+        expect(channel.answer(createDetails())).toEqual({ cancel: true });
     });
 
     it('forgets the oldest document beyond the bound', () => {
@@ -178,14 +188,14 @@ describe('Chromium MV2 canvas delivery channel', () => {
         for (let i = 0; i < 4095; i += 1) {
             channel.answer(createDetails({ documentId: `other-${i}` }));
         }
-        expect(decode(channel.answer(createDetails({ documentId: 'first' })))).toBe('');
+        expect(channel.answer(createDetails({ documentId: 'first' }))).toEqual({ cancel: true });
 
         channel.answer(createDetails({ documentId: 'other-4095' }));
         expect(decode(channel.answer(createDetails({ documentId: 'first' })))).toBe(SCRIPT);
     });
 
-    it('answers empty without a documentId', () => {
-        expect(decode(channel.answer(createDetails({ documentId: undefined })))).toBe('');
+    it('cancels a request without a documentId', () => {
+        expect(channel.answer(createDetails({ documentId: undefined }))).toEqual({ cancel: true });
         expect(injection.getPageScript).not.toHaveBeenCalled();
     });
 

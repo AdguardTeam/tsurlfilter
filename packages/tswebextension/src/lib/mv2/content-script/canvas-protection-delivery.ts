@@ -17,6 +17,10 @@ type FeaturePolicy = {
  * request and inserts it as an inline script. Documents it skips get the code injected
  * by the background page when they commit.
  *
+ * The background page answers only the first request of a document, so the content script
+ * always sends one before page scripts run, asynchronously when it does not need the script:
+ * a page script repeating the request then fails as it would without the extension.
+ *
  * TODO: remove when Chromium MV2 is no longer supported.
  */
 export class CanvasProtectionDelivery {
@@ -34,11 +38,6 @@ export class CanvasProtectionDelivery {
      */
     public static deliver(realm: Window & typeof globalThis): void {
         try {
-            // A page element with this `id` is a named property of `window`, so only `true` counts.
-            if (Reflect.get(realm, CanvasDeliveryGuard.Delivered) === true) {
-                return;
-            }
-
             const { protocol } = realm.location;
             if (protocol !== 'http:' && protocol !== 'https:') {
                 return;
@@ -49,19 +48,23 @@ export class CanvasProtectionDelivery {
                 return;
             }
 
+            const url = CanvasDeliveryUrl.getUrl(browser.runtime.id);
             const { document } = realm;
-            if (document instanceof realm.XMLDocument) {
-                return;
-            }
-
-            // A synchronous request the policy forbids fails and reports a policy violation.
             const { featurePolicy } = document as Document & { featurePolicy?: FeaturePolicy };
-            if (featurePolicy?.allowsFeature('sync-xhr') !== true) {
+            const xhr = new realm.XMLHttpRequest();
+
+            // A page element with this `id` is a named property of `window`, so only `true` counts.
+            // A synchronous request the policy forbids fails and reports a policy violation.
+            if (Reflect.get(realm, CanvasDeliveryGuard.Delivered) === true
+                || document instanceof realm.XMLDocument
+                || featurePolicy?.allowsFeature('sync-xhr') !== true) {
+                // Takes the single answer of the document, so that a page script cannot get it.
+                xhr.open('GET', url, true);
+                xhr.send();
                 return;
             }
 
-            const xhr = new realm.XMLHttpRequest();
-            xhr.open('GET', CanvasDeliveryUrl.URL, false);
+            xhr.open('GET', url, false);
             xhr.send();
 
             const text = xhr.responseText;

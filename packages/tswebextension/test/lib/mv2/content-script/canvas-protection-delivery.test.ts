@@ -7,12 +7,15 @@ import {
     it,
     vi,
 } from 'vitest';
+import polyfill from 'webextension-polyfill';
 
 import { CanvasDeliveryGuard, CanvasDeliveryUrl } from '../../../../src/lib/mv2/common/canvas-delivery';
 import { CanvasProtectionDelivery } from '../../../../src/lib/mv2/content-script/canvas-protection-delivery';
 
 const BODY = 'document.documentElement.setAttribute("data-delivered-body-ran", "");';
 const MARKER = 'data-delivered-body-ran';
+const EXTENSION_ID = 'abcdefghijklmnopabcdefghijklmnop';
+const URL = CanvasDeliveryUrl.getUrl(EXTENSION_ID);
 
 /**
  * Options of a fake content script realm.
@@ -103,6 +106,7 @@ describe('CanvasProtectionDelivery', () => {
     };
 
     beforeEach(() => {
+        Object.defineProperty(polyfill.runtime, 'id', { configurable: true, value: EXTENSION_ID });
         requests = [];
         sends = 0;
         browser.runtime.getURL.returns('chrome-extension://id/');
@@ -117,7 +121,7 @@ describe('CanvasProtectionDelivery', () => {
 
     it('sends one synchronous GET to the reserved URL in a Chromium web document', () => {
         CanvasProtectionDelivery.deliver(createRealm({ responseText: '' }));
-        expect(requests).toEqual([['GET', CanvasDeliveryUrl.URL, false]]);
+        expect(requests).toEqual([['GET', URL, false]]);
         expect(sends).toBe(1);
     });
 
@@ -127,14 +131,16 @@ describe('CanvasProtectionDelivery', () => {
         expect(sends).toBe(0);
     });
 
-    it('sends nothing when the document already got canvas protection', () => {
+    it('only uses up the answer with an asynchronous request when the document already got canvas protection', () => {
         CanvasProtectionDelivery.deliver(createRealm({ flag: true }));
-        expect(sends).toBe(0);
+        expect(requests).toEqual([['GET', URL, true]]);
+        expect(sends).toBe(1);
+        expect(document.documentElement.hasAttribute(MARKER)).toBe(false);
     });
 
     it('sends a request when only a page element carries the flag\'s id', () => {
         CanvasProtectionDelivery.deliver(createRealm({ flag: document.createElement('div'), responseText: '' }));
-        expect(sends).toBe(1);
+        expect(requests).toEqual([['GET', URL, false]]);
     });
 
     it.each(['about:', 'blob:', 'data:'])('sends nothing in documents that are not web pages: %s', (protocol) => {
@@ -142,19 +148,20 @@ describe('CanvasProtectionDelivery', () => {
         expect(sends).toBe(0);
     });
 
-    it('sends nothing when the feature policy forbids sync-xhr', () => {
+    it('only uses up the answer with an asynchronous request when the feature policy forbids sync-xhr', () => {
         setFeaturePolicy(document, false);
         CanvasProtectionDelivery.deliver(createRealm());
         setFeaturePolicy(document, undefined);
         CanvasProtectionDelivery.deliver(createRealm());
-        expect(sends).toBe(0);
+        expect(requests).toEqual([['GET', URL, true], ['GET', URL, true]]);
+        expect(document.documentElement.hasAttribute(MARKER)).toBe(false);
     });
 
-    it('sends nothing in an XML document', () => {
+    it('only uses up the answer with an asynchronous request in an XML document', () => {
         const doc = document.implementation.createDocument(null, 'root');
         setFeaturePolicy(doc, true);
         CanvasProtectionDelivery.deliver(createRealm({ doc }));
-        expect(sends).toBe(0);
+        expect(requests).toEqual([['GET', URL, true]]);
     });
 
     it('inserts a non-empty body as an inline script and removes it', () => {
@@ -201,7 +208,7 @@ describe('CanvasProtectionDelivery', () => {
         expect(Reflect.get(realm, CanvasDeliveryGuard.Delivered)).toBeUndefined();
     });
 
-    it('leaves the flag unset when the request is skipped', () => {
+    it('leaves the flag unset when no script is requested', () => {
         browser.runtime.getURL.returns('moz-extension://id/');
         const firefox = createRealm();
         CanvasProtectionDelivery.deliver(firefox);

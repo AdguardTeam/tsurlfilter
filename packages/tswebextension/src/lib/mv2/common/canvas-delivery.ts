@@ -1,37 +1,55 @@
 /**
- * Reserved URL of the synchronous canvas protection delivery in Chromium MV2.
+ * Reserved URLs of the synchronous canvas protection delivery in Chromium MV2.
  *
- * The content script requests it with a synchronous XHR, and the background page
- * answers with a redirect to the page script. The `.invalid` top-level domain
- * never resolves (RFC 2606), so an unanswered request fails fast without reaching
- * any server.
+ * The content script requests the URL of its extension with a synchronous XHR, and
+ * the background page answers with a redirect to the page script. Each extension
+ * has its own host, so extensions built on this library do not answer each other.
+ *
+ * The URL uses port 1, which browsers refuse to connect to: a request that no listener
+ * answers, e.g. while the background page is not running yet, fails locally with
+ * `ERR_UNSAFE_PORT` before any DNS lookup or connection. The `.invalid` top-level domain
+ * (RFC 2606) also never resolves.
  *
  * The module imports nothing, because the content script bundle imports it too.
  *
  * TODO: remove when Chromium MV2 is no longer supported.
  */
 export class CanvasDeliveryUrl {
-    /**
-     * URL the content script requests.
-     */
-    public static readonly URL = 'https://tswebextension.invalid/canvas-protection';
+    private static readonly HOST = 'tswebextension.invalid';
 
     /**
-     * Match pattern of the background page listener.
+     * Any web URL on a reserved host of any extension.
      */
-    public static readonly PATTERN = '*://tswebextension.invalid/*';
+    private static readonly RESERVED_URL_RE = /^(?:https?|wss?):\/\/(?:[^/?#]+\.)?tswebextension\.invalid(?::\d+)?\//;
 
     /**
-     * Any web URL on the reserved host.
+     * Returns the URL the content script requests.
+     *
+     * @param extensionId ID of the extension.
+     *
+     * @returns URL on the reserved host of the extension.
      */
-    private static readonly RESERVED_URL_RE = /^(?:https?|wss?):\/\/tswebextension\.invalid(?::\d+)?\//;
+    public static getUrl(extensionId: string): string {
+        return `https://${extensionId}.${CanvasDeliveryUrl.HOST}:1/canvas-protection`;
+    }
 
     /**
-     * Checks whether a request goes to the reserved host.
+     * Returns the match pattern of the background page listener. Match patterns ignore ports.
+     *
+     * @param extensionId ID of the extension.
+     *
+     * @returns Pattern of the reserved host of the extension.
+     */
+    public static getPattern(extensionId: string): string {
+        return `*://${extensionId}.${CanvasDeliveryUrl.HOST}/*`;
+    }
+
+    /**
+     * Checks whether a request goes to a reserved host of any extension.
      *
      * @param url Request URL.
      *
-     * @returns True if the URL is on the reserved host.
+     * @returns True if the URL is on a reserved host.
      */
     public static isReserved(url: string): boolean {
         return CanvasDeliveryUrl.RESERVED_URL_RE.test(url);

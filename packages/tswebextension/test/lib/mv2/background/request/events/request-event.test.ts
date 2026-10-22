@@ -104,7 +104,7 @@ describe('Request Event', () => {
 
         const browserListener = browser.webRequest.onBeforeRequest.addListener.lastCall.args[0];
 
-        expect(browserListener({ url: CanvasDeliveryUrl.URL })).toBeUndefined();
+        expect(browserListener({ url: CanvasDeliveryUrl.getUrl('extensionid') })).toBeUndefined();
         expect(handler).not.toHaveBeenCalled();
         expect(listener).not.toHaveBeenCalled();
 

@@ -261,15 +261,19 @@ only while protection is enabled.
   `referrerpolicy="no-referrer"` or `"same-origin"` on the frame. The frame
   then uses its own hostname, so it gets the same noise on every site, and
   inherits no document exclusions.
-- Chromium MV2 has no early script registration. The content script fetches
-  the engine from the background page with one synchronous request to
-  `https://tswebextension.invalid/` per `http:` or `https:` document and
-  inserts it as an inline page script before page scripts run. Some
-  documents get the engine injected with `tabs.executeScript` when they
-  commit, after their first scripts: frames that forbid `sync-xhr` by
-  Permissions Policy, documents with an opaque origin such as sandboxed
-  frames, frames that load while their top-level document navigates, and
-  documents where the request is blocked.
+- Chromium MV2 has no early script registration. The content script sends
+  one request per `http:` or `https:` document to
+  `https://<extension ID>.tswebextension.invalid:1/`, which the background
+  page answers with the engine. The request is synchronous when the
+  document needs the engine, which the content script then inserts as an
+  inline page script before page scripts run. Without the background page,
+  e.g. while it starts, the request fails in the browser without a DNS
+  lookup or connection, because port 1 is blocked. Some documents get the
+  engine injected with `tabs.executeScript` when they commit, after their
+  first scripts: frames that forbid `sync-xhr` by Permissions Policy,
+  documents with an opaque origin such as sandboxed frames, frames that
+  load while their top-level document navigates, and documents where the
+  request fails.
 - Firefox before 128 runs registered scripts only in the content script
   sandbox, so the script there inserts the engine as an inline page script.
   On a page whose CSP blocks inline scripts it falls back to a `blob:` script,

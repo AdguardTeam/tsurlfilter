@@ -304,7 +304,7 @@ describe('Request Events', () => {
             ...commonRequestData,
             requestId,
             type: 'xmlhttprequest',
-            url: CanvasDeliveryUrl.URL,
+            url: CanvasDeliveryUrl.getUrl('extensionid'),
             initiator: 'https://example.com',
             timeStamp: Date.now(),
         });
@@ -313,7 +313,7 @@ describe('Request Events', () => {
             ...commonRequestData,
             requestId,
             type: 'xmlhttprequest',
-            url: CanvasDeliveryUrl.URL,
+            url: CanvasDeliveryUrl.getUrl('extensionid'),
             redirectUrl: 'data:text/javascript;charset=utf-8,',
             fromCache: false,
             statusCode: 307,
