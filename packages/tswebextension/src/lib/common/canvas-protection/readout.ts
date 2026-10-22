@@ -62,8 +62,6 @@ export interface SurfaceNatives {
     readonly getContextAttributes: Function | undefined;
     readonly drawImage: Function;
     readonly putImageData: Function;
-    readonly fillRect: Function;
-    readonly setFillStyle: Function;
     readonly getImageData: Function;
     readonly contextCanvas: Function;
     readonly canvasWidth: Function;
@@ -93,8 +91,6 @@ export interface CanvasNatives {
     readonly exceptionName: (this: DOMException) => string;
     readonly drawImage: CanvasRenderingContext2D['drawImage'];
     readonly putImageData: CanvasRenderingContext2D['putImageData'];
-    readonly fillRect: CanvasRenderingContext2D['fillRect'];
-    readonly setFillStyle: (this: CanvasRenderingContext2D, value: string) => void;
     readonly createElement: Document['createElement'];
     readonly document: Document;
     readonly setCanvasWidth: (this: HTMLCanvasElement, value: number) => void;
@@ -149,8 +145,6 @@ export function captureCanvasNatives(realm: Window): CanvasNatives {
         exceptionName: getter(global.DOMException.prototype, 'name') as CanvasNatives['exceptionName'],
         drawImage: context.drawImage,
         putImageData: context.putImageData,
-        fillRect: context.fillRect,
-        setFillStyle: global.Object.getOwnPropertyDescriptor(context, 'fillStyle')!.set!,
         createElement: global.Document.prototype.createElement,
         document: global.document,
         setCanvasWidth: global.Object.getOwnPropertyDescriptor(canvas, 'width')!.set!,
@@ -170,8 +164,6 @@ export function captureCanvasNatives(realm: Window): CanvasNatives {
             getContextAttributes: (offscreenContext as { getContextAttributes?: Function }).getContextAttributes,
             drawImage: offscreenContext.drawImage,
             putImageData: offscreenContext.putImageData,
-            fillRect: offscreenContext.fillRect,
-            setFillStyle: global.Object.getOwnPropertyDescriptor(offscreenContext, 'fillStyle')!.set!,
             getImageData: offscreenContext.getImageData,
             contextCanvas: getter(offscreenContext, 'canvas'),
             canvasWidth: getter(OffscreenCanvas.prototype, 'width'),
@@ -210,8 +202,6 @@ const htmlSurface = (native: CanvasNatives): SurfaceNatives => ({
     getContextAttributes: native.getContextAttributes,
     drawImage: native.drawImage,
     putImageData: native.putImageData,
-    fillRect: native.fillRect,
-    setFillStyle: native.setFillStyle,
     getImageData: native.getImageData,
     contextCanvas: native.contextCanvas,
     canvasWidth: native.canvasWidth,
@@ -361,33 +351,41 @@ export function createOffscreenGetImageDataWrapper(
 }
 
 /**
- * Paints the noised pixels onto a private copy with transparency. The noise
- * changes only opaque pixels, so each one is painted as an opaque 1×1 rectangle:
- * replaying nonopaque pixels would quantize their premultiplied values again, and
- * Chromium flushes the canvas on every `putImageData`, which makes many small
- * writes slow.
+ * Draws the opaque pixels of a noised 8-bit sRGB readout over a private copy with
+ * transparency. `putImageData` would replace the nonopaque pixels and quantize their
+ * premultiplied values again, so they are cleared in the readout, which is put on
+ * a second private canvas and drawn once: cleared pixels leave the copy as it is.
  *
- * @param noised Noised 8-bit sRGB pixels.
- * @param original The same pixels before the noise.
- * @param width Pixels per row.
- * @param fill Paints one pixel with the given opaque color.
+ * @param native Captured browser bindings.
+ * @param surface Bindings of the copy's canvas kind.
+ * @param context 2D context of the copy.
+ * @param image Noised readout of the whole copy.
+ * @param view Pixels of `image`.
  */
-export function paintNoisedPixels(
-    noised: Uint8ClampedArray,
-    original: Uint8ClampedArray,
-    width: number,
-    fill: (x: number, y: number, color: string) => void,
-): void {
-    const length = intrinsics.apply(intrinsics.typedLength, noised, []) as number;
-    for (let offset = 0; offset < length; offset += 4) {
-        if (noised[offset] !== original[offset] || noised[offset + 1] !== original[offset + 1]
-            || noised[offset + 2] !== original[offset + 2]) {
-            const pixel = offset / 4;
-            const x = pixel % width;
-            fill(x, (pixel - x) / width, `rgb(${noised[offset]},${noised[offset + 1]},${noised[offset + 2]})`);
+const drawOpaquePixels = (
+    native: CanvasNatives,
+    surface: SurfaceNatives,
+    context: object,
+    image: ImageData,
+    view: Uint8ClampedArray,
+): void => {
+    const length = intrinsics.apply(intrinsics.typedLength, view, []) as number;
+    for (let alpha = 3; alpha < length; alpha += 4) {
+        if (view[alpha] !== 255) {
+            view[alpha - 3] = 0;
+            view[alpha - 2] = 0;
+            view[alpha - 1] = 0;
+            view[alpha] = 0;
         }
     }
-}
+    const overlay = surface.create(
+        native.apply(native.imageWidth, image, []),
+        native.apply(native.imageHeight, image, []),
+    );
+    const overlayContext = native.apply(surface.getContext, overlay, ['2d']) as object;
+    native.apply(surface.putImageData, overlayContext, [image, 0, 0]);
+    native.apply(surface.drawImage, context, [overlay, 0, 0]);
+};
 
 /**
  * Copies a drawn-on canvas into a private canvas of the same kind, color space
@@ -475,9 +473,8 @@ const prepareExport = (native: CanvasNatives, surface: SurfaceNatives, seed: Uin
     if (opaque === 0) {
         return receiver;
     }
-    // A fully opaque copy takes one write, so it needs no original to compare with.
-    const whole = isSrgb8 && opaque === width * height;
-    const original = whole ? view : new intrinsics.Uint8ClampedArray(view);
+    // Another format moves its own pixels by the noise chosen on the 8-bit sRGB readout.
+    const original = isSrgb8 ? undefined : new intrinsics.Uint8ClampedArray(view);
     applyCanvasNoise({
         data: view,
         width,
@@ -488,16 +485,13 @@ const prepareExport = (native: CanvasNatives, surface: SurfaceNatives, seed: Uin
         canvasHeight: height,
         colorSpace: 'srgb',
     }, seed);
-    if (whole) {
-        native.apply(surface.putImageData, context, [image, 0, 0]);
-    } else if (isSrgb8) {
-        paintNoisedPixels(view, original, width, (x, y, color) => {
-            native.apply(surface.setFillStyle, context, [color]);
-            native.apply(surface.fillRect, context, [x, y, 1, 1]);
-        });
-    } else {
+    if (original !== undefined) {
         transferNoise(native.apply(native.imageData, image, []) as PixelData, original, view);
         native.apply(surface.putImageData, context, [image, 0, 0]);
+    } else if (opaque === width * height) {
+        native.apply(surface.putImageData, context, [image, 0, 0]);
+    } else {
+        drawOpaquePixels(native, surface, context, image, view);
     }
     return copy;
 };

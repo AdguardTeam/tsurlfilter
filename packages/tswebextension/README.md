@@ -295,7 +295,8 @@ only while protection is enabled.
   native name, length and source text.
 - A protected readout costs time proportional to its area: a few
   milliseconds for 1280×720. `toDataURL()` and `toBlob()` also copy the
-  canvas before encoding.
+  canvas before encoding, through one more private canvas when it has
+  transparent pixels.
 
 ## CLI
 
