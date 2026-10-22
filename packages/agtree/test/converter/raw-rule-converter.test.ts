@@ -118,6 +118,40 @@ describe('RawRuleConverter fixed detail level', () => {
     });
 });
 
+describe('RawRuleConverter tolerant HTML filtering fallback', () => {
+    // The parser rejects bodies it cannot parse, but the converter keeps
+    // AdGuard HTML filtering rules with special selectors as-is. The raw
+    // converter must retry with raw HTML filtering bodies so this fallback
+    // is reachable through the main conversion API.
+    test.each([
+        'example.com$$div[tag-content="a"]x',
+        '$$div[tag-content = "a" ]x',
+    ])('keeps unparseable HTML filtering rule %j as-is', (rule) => {
+        expect(() => RawRuleConverter.convertToAdg(rule)).not.toThrow();
+
+        const result = RawRuleConverter.convertToAdg(rule);
+
+        expect(result.isConverted).toBe(false);
+        expect(result.result).toEqual([rule]);
+    });
+
+    test('still throws for unparseable rules without special selectors', () => {
+        const rule = 'example.com$$div[class="hotword-container"]com^';
+
+        expect(() => RawRuleConverter.convertToAdg(rule)).toThrowError(
+            'Type selector is already set for the compound selector',
+        );
+    });
+});
+
+describe('RawRuleConverter HTML filtering length limit', () => {
+    test('throws when a length attribute exceeds the PCRE2 limit', () => {
+        expect(() => RawRuleConverter.convertToAdg('$$div[min-length="65536"]')).toThrowError(
+            "Value of special attribute selector 'min-length' must not exceed 65535, got '65536'",
+        );
+    });
+});
+
 describe('RawRuleConverter shared pipeline', () => {
     test('converts consistently across many calls', () => {
         for (let i = 0; i < 1000; i += 1) {
