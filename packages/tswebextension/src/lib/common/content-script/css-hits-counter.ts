@@ -824,12 +824,15 @@ export class CssHitsCounter {
         };
 
         /**
-         * Splits a dependent group into chunks that fit the batch size.
+         * Splits a dependent group into chunks that fit the batch size when
+         * the group has independent branches.
          *
          * The group is sorted by depth, so each chunk keeps the ancestors of
          * its probes. Ancestors processed in a previous chunk are added again
          * to the next chunk, because restored probes are removed at the end
-         * of a chunk.
+         * of a chunk. A dependency chain deeper than the batch size is kept
+         * as one chunk, because it cannot be measured in smaller independent
+         * pieces.
          *
          * @param group Dependent probes sorted by depth.
          *
@@ -864,6 +867,25 @@ export class CssHitsCounter {
 
             if (groupChunk.length > 0) {
                 groupChunks.push(groupChunk);
+            }
+
+            // A chunk that only repeats probes from later chunks cannot make
+            // progress: after it is processed, every probe is still in the
+            // queue as an ancestor. Drop such chunks. A deep dependency chain
+            // then collapses into its last chunk, which is processed as one
+            // task, because the chain cannot be measured in smaller
+            // independent pieces.
+            const seenProbes = new Set<PendingProbe>();
+            for (let i = groupChunks.length - 1; i >= 0; i -= 1) {
+                const chunkToCheck = groupChunks[i];
+                const hasUniqueProbe = chunkToCheck
+                    .some((probe) => !seenProbes.has(probe));
+
+                if (hasUniqueProbe) {
+                    chunkToCheck.forEach((probe) => seenProbes.add(probe));
+                } else {
+                    groupChunks.splice(i, 1);
+                }
             }
 
             return groupChunks;
@@ -916,8 +938,10 @@ export class CssHitsCounter {
      * Each probe is temporarily reinserted into the document, so that the
      * injected marker can be read from its computed style, and removed
      * synchronously after the counting, so it is never painted. The probes
-     * are processed in small chunks, so a large queue does not block the page
-     * in one task; nothing stays in the document between chunks.
+     * are processed in small chunks when possible, so a large queue does not
+     * block the page in one task; a dependency chain deeper than the chunk
+     * size is processed as one chunk. Nothing stays in the document between
+     * chunks.
      *
      * Probes are ordered by dependency: a probe removed from another probe's
      * element is processed after that element is restored, and dependent

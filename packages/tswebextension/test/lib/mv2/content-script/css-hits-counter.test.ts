@@ -480,6 +480,54 @@ describe('CssHitsCounter', () => {
         counter.stop();
     });
 
+    it('drains a dependency chain deeper than the batch size', () => {
+        vi.useFakeTimers();
+
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        const chainLength = 26;
+        const elements = Array.from({ length: chainLength }, () => document.createElement('div'));
+        for (let i = 1; i < chainLength; i += 1) {
+            elements[i - 1].appendChild(elements[i]);
+        }
+        document.body.appendChild(elements[0]);
+        for (let i = chainLength - 1; i >= 0; i -= 1) {
+            elements[i].remove();
+        }
+
+        const bodyAppendSpy = vi.spyOn(document.body, 'appendChild');
+        const getRootInsertions = (): number => bodyAppendSpy.mock.calls
+            .filter(([node]) => node === elements[0])
+            .length;
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, {
+                pendingProbes: elements.map((element, index) => ({
+                    element,
+                    target: index === 0 ? document.body : elements[index - 1],
+                    previousSibling: null,
+                    nextSibling: null,
+                })),
+            });
+
+            // Five passes process the whole chain. A chunk that only repeats
+            // probes from later chunks must not be requeued forever.
+            vi.advanceTimersByTime(1000);
+            const insertions = getRootInsertions();
+            expect(insertions).toBeLessThanOrEqual(5);
+
+            vi.advanceTimersByTime(1000);
+            expect(getRootInsertions()).toBe(insertions);
+
+            bodyAppendSpy.mockRestore();
+            counter.stop();
+        } finally {
+            restoreFixtureMarkers();
+            vi.useRealTimers();
+        }
+    });
+
     it('restores a counted container when a bait was removed from it', () => {
         vi.useFakeTimers();
         const restoreMutationObserver = mockMutationObserver();
