@@ -23,6 +23,7 @@ import {
     REGEX_MARKER,
     SLASH,
 } from './constants';
+import { StringUtils } from './string';
 
 // Special RegExp constants
 export const REGEX_START = CARET; // '^'
@@ -329,13 +330,7 @@ export class RegExpUtils {
      * RegExpUtils.escapeRegexSpecials("$('http')");
      */
     public static escapeRegexSpecials(value: string): string {
-        let result = EMPTY;
-        for (const ch of value) {
-            result += SPECIAL_REGEX_SYMBOLS.has(ch)
-                ? ESCAPE_CHARACTER + ch
-                : ch;
-        }
-        return result;
+        return StringUtils.escapeCharacters(value, SPECIAL_REGEX_SYMBOLS);
     }
 
     /**

@@ -76,20 +76,26 @@ describe('HtmlRuleConverter', () => {
 
                     // `[min-length]` and `[max-length]` combined - tag-content before length selectors
                     {
-                        actual: '$$script[tag-content="text"][min-length="100000"][max-length="360000"]',
-                        expected: ['$$script:contains(text):contains(/^(?=.{100000,360000}$).*/s)'],
+                        actual: '$$script[tag-content="text"][min-length="10000"][max-length="60000"]',
+                        expected: ['$$script:contains(text):contains(/^(?=.{10000,60000}$).*/s)'],
                     },
 
                     // `[min-length]` and `[max-length]` combined - tag-content after length selectors
                     {
-                        actual: '$$script[tag-content="Flags."][min-length="20000"][max-length="300000"]',
-                        expected: ['$$script:contains(Flags.):contains(/^(?=.{20000,300000}$).*/s)'],
+                        actual: '$$script[tag-content="Flags."][min-length="20000"][max-length="60000"]',
+                        expected: ['$$script:contains(Flags.):contains(/^(?=.{20000,60000}$).*/s)'],
                     },
 
                     // `[min-length]` and `[max-length]` combined - max-length appears before min-length
                     {
-                        actual: '$$script[max-length="300000"][min-length="20000"]',
-                        expected: ['$$script:contains(/^(?=.{20000,300000}$).*/s)'],
+                        actual: '$$script[max-length="60000"][min-length="20000"]',
+                        expected: ['$$script:contains(/^(?=.{20000,60000}$).*/s)'],
+                    },
+
+                    // `[min-length]` and `[max-length]` at the PCRE2 quantifier limit
+                    {
+                        actual: '$$div[min-length="65535"][max-length="65535"]',
+                        expected: ['$$div:contains(/^(?=.{65535,65535}$).*/s)'],
                     },
 
                     // `[tag-content]` with an unbalanced value + `[max-length]`: such a literal cannot
@@ -150,6 +156,21 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: 'example.net$$div > span[tag-content="kid("][max-length="9"]',
                         expected: ['example.net$$div > span:contains(/^(?=.{0,9}$)(?=.*kid\\().*/s)'],
+                    },
+
+                    // special attributes on a non-leaf selector with combinators: the constraint
+                    // stays on the compound selector it belongs to, not on the descendant
+                    {
+                        actual: '$$div[tag-content="a"] > span',
+                        expected: ['$$div:contains(a) > span'],
+                    },
+                    {
+                        actual: '$$div[min-length="10"] > span',
+                        expected: ['$$div:contains(/^(?=.{10,}$).*/s) > span'],
+                    },
+                    {
+                        actual: '$$div[tag-content="a"] > span[tag-content="b"]',
+                        expected: ['$$div:contains(a) > span:contains(b)'],
                     },
 
                     // `[tag-content]` special attribute selector
@@ -418,6 +439,18 @@ describe('HtmlRuleConverter', () => {
                         error: "Value of special attribute selector 'min-length' must be a positive integer, got '-1'",
                     },
 
+                    // invalid special attribute selector - length value exceeds the PCRE2 limit
+                    {
+                        input: '$$[min-length="65536"]',
+                        // eslint-disable-next-line max-len
+                        error: "Value of special attribute selector 'min-length' must not exceed 65535, got '65536'",
+                    },
+                    {
+                        input: '$$[max-length="65536"]',
+                        // eslint-disable-next-line max-len
+                        error: "Value of special attribute selector 'max-length' must not exceed 65535, got '65536'",
+                    },
+
                     // invalid special pseudo-class selector - argument missing
                     {
                         input: '$$:contains()',
@@ -559,6 +592,42 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div :has-text(/foo[)]/)',
                         expected: ['$$div :contains(/foo[)]/)'],
+                    },
+
+                    // `:has-text()` argument with trailing whitespace — the
+                    // whitespace is part of the matched text, so it is kept
+                    {
+                        actual: '$$div:has-text(foo )',
+                        expected: ['$$div:contains(foo )'],
+                    },
+
+                    // `:has-text()` whitespace-only argument — the whitespace
+                    // is part of the matched text, so the argument is not empty
+                    {
+                        actual: '$$div:has-text( )',
+                        expected: ['$$div:contains( )'],
+                    },
+
+                    // `:has-text()` argument with an escaped closing parenthesis
+                    // — the trailing `\)` is an `Escaped` token, but its last
+                    // character closes the argument, as in CoreLibs
+                    {
+                        actual: String.raw`$$script:has-text(foo\)`,
+                        expected: [String.raw`$$script:contains(foo\)`],
+                    },
+
+                    // `:has-text()` as the whole body (empty prefix) — parsed
+                    // leniently and converted to `:contains()`
+                    {
+                        actual: '$$:has-text((function(g,b,a,c,e,d))',
+                        expected: ['$$:contains((function(g,b,a,c,e,d))'],
+                    },
+
+                    // `:has-text()` after a trailing explicit combinator — parsed
+                    // leniently, the combinator stays in front of the pseudo-class
+                    {
+                        actual: '$$div > :has-text((function(g,b,a,c,e,d))',
+                        expected: ['$$div > :contains((function(g,b,a,c,e,d))'],
                     },
 
                     // `:-abp-contains()` with unbalanced parentheses in the argument —

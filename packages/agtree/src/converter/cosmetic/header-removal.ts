@@ -77,13 +77,16 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
                 ) as HtmlFilteringRule;
                 body = parsedRule.body as HtmlFilteringRuleBody;
             } catch (error) {
-                // Tolerant fallback: a parse error does not necessarily mean
-                // that this is not a uBO responseheader(...) rule — the token
-                // stream checks the whole body's balance before the function
-                // name, so malformed responseheader(...) bodies can throw here
-                // too. Hand the rule to the main HTML filtering rule converter
-                // for further handling instead: it keeps rules with special
-                // selectors as-is, and throws for genuinely invalid rules.
+                // A parse error does not necessarily mean that this is not a
+                // uBO responseheader(...) rule. `tryParseResponseHeader()`
+                // throws for a malformed responseheader(...) body: an
+                // unbalanced or missing closing parenthesis, an empty
+                // argument, or trailing content after the closing
+                // parenthesis. An invalid CSS selector list of another raw
+                // body also throws here. Hand the rule to the main HTML
+                // filtering rule converter for further handling instead: it
+                // keeps rules with special selectors as-is, and throws for
+                // genuinely invalid rules.
                 if (error instanceof AdblockSyntaxError) {
                     return createNodeConversionResult([rule], false);
                 }

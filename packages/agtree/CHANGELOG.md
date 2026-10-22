@@ -22,14 +22,17 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `$$script:contains((function(g,b,a,c,e,d)`, are now parsed leniently,
   mirroring CoreLibs: the argument is the raw text between the opening
   parenthesis of the pseudo-class and the last closing parenthesis of
-  the body, taken as-is. Previously such bodies either threw a parse
-  error or were normalized to a quoted argument during conversion —
-  no quoting is inserted anymore. A descendant combinator in front of
-  the special pseudo-class is preserved as well, so
-  `$$div :has-text(/foo[)]/)` converts to `$$div :contains(/foo[)]/)`
-  instead of being glued into `$$div:contains(/foo[)]/)`, and the
-  selector list and last complex selector source ranges are extended to
-  cover the appended pseudo-class when locations are enabled.
+  the body, taken as-is. Previously such bodies threw a parse error.
+  A descendant combinator in front of the special pseudo-class is
+  preserved as well, so `$$div :has-text(/foo[)]/)` converts to
+  `$$div :contains(/foo[)]/)` instead of being glued into
+  `$$div:contains(/foo[)]/)`. The same lenient path now accepts a body
+  that starts with the special pseudo-class (`$$:contains(...)`) and a
+  body with a trailing explicit combinator before it
+  (`$$div > :contains(...)`); both shapes are supported by CoreLibs and
+  by tswebextension's `HtmlRuleSelector`. The selector list and last
+  complex selector source ranges are extended to cover the appended
+  pseudo-class when locations are enabled.
 
 ### Deprecated
 
@@ -48,13 +51,17 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   gated on special selector markers — unparseable bodies without
   `:contains()` / `:-abp-contains()` / `:has-text()` or `[tag-content]` /
   `[wildcard]` / `[min-length]` / `[max-length]` markers (outside of
-  quoted text) still throw.
+  quoted text) still throw. The raw rule and filter list converters use
+  the same tolerant fallback.
 - uBlock `:min-text-length()` conversion now caps the upper bound of the
   generated length-matching regular expression at 65535 instead of 262144,
   because CoreLibs compiles `:contains(/.../)` patterns with PCRE2, which
   rejects quantifier numbers greater than 65535. `:min-text-length()`
   arguments greater than 65535 now throw a conversion error instead of
-  producing a PCRE2-invalid pattern.
+  producing a PCRE2-invalid pattern. The same limit now applies to the
+  deprecated AdGuard `[min-length]` and `[max-length]` attributes during
+  ADG→ADG conversion, which rewrites them into the same kind of
+  `:contains()` regex.
 - ADG→ADG conversion of HTML filtering rules now merges combinations of
   deprecated special attribute selectors that cannot be represented as a
   chain of separate `:contains()` pseudo-classes into a single regex
@@ -67,6 +74,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `aces.gg$$script:contains(/^(?=.{0,250}$)(?=.*\$\('#alert'\)\.on\('click').*/s)`
   instead of the CoreLibs-rejected
   `aces.gg$$script:contains($('#alert').on('click'):contains(/^(?=.{0,250}$).*/s)`.
+  Likewise, the body of
+  `msn.com$$li[class="hasimage"][tag-content="""NativeAdHeadlineItemViewModel"""][max-length="2000"]`
+  now converts to
+  `msn.com$$li[class="hasimage"]:contains(/^(?=.{0,2000}$)(?=.*"NativeAdHeadlineItemViewModel").*/s)`
+  instead of a chain of two `:contains()` pseudo-classes.
   Multiple `[tag-content]` values and multiple `[wildcard]` globs are
   AND-merged the same way (`$$div[tag-content="a"][tag-content="b"]` →
   `$$div:contains(/^(?=.*a)(?=.*b).*/s)`), while a literal that is safe
@@ -75,7 +87,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   as a standalone `:contains()` followed by at most one regex
   `:contains()`. Converted special attribute pseudo-classes are now
   appended after pre-existing `:contains()` pseudo-classes of the same
-  selector.
+  compound selector. Deferred special attributes are emitted at the end
+  of the compound selector they belong to, so a constraint on an
+  ancestor is not moved to a descendant:
+  `$$div[tag-content="a"] > span` converts to
+  `$$div:contains(a) > span`, not `$$div > span:contains(a)`.
 - `QuoteUtils.escapeAttributeDoubleQuotes()` and
   `QuoteUtils.unescapeAttributeDoubleQuotes()` no longer get stuck inside
   the first quoted attribute selector's value for the rest of the
@@ -83,11 +99,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   nesting state. Previously, an attribute selector following a quoted one
   was handled as if it were still inside the first value, so the legacy
   `""` quote doubling there was paired with shifted quotes and escaped
-  incorrectly. For example, the body of
-  `msn.com$$li[class="hasimage"][tag-content="""NativeAdHeadlineItemViewModel"""][max-length="2000"]`
-  previously failed to parse with
-  `Expected '<ident-token>', but got '<string-token>'`; it now converts to
-  `msn.com$$li[class="hasimage"]:contains(/^(?=.{0,2000}$)(?=.*"NativeAdHeadlineItemViewModel").*/s)`.
+  incorrectly. For example,
+  `QuoteUtils.escapeAttributeDoubleQuotes('[a="x"][b="a""b"]')` now
+  returns `[a="x"][b="a\"b"]`.
 
 ### Security
 
