@@ -189,7 +189,7 @@ import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-
 import { DocumentLifecycle } from '../../common/interfaces';
 import { findHeaderByName } from '../../common/utils/headers';
 import { logger } from '../../common/utils/logger';
-import { getDomain, isHttpOrWsRequest } from '../../common/utils/url';
+import { getDomain, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 
 import {
     canvasInjection,
@@ -746,7 +746,11 @@ export class WebRequestApi {
         }
 
         // TODO: remove when Chromium MV2 is no longer supported.
-        canvasInjection.inject(tabId, frameId, requestUrl);
+        // Before the commit the main frame still shows the previous document, and the browser
+        // refuses to inject into its own pages, e.g. the new tab page. Injection on commit covers them.
+        if (frameId !== MAIN_FRAME_ID || isHttpRequest(tabsApi.getTabContext(tabId)?.info.url)) {
+            canvasInjection.inject(tabId, frameId, requestUrl);
+        }
         CosmeticApi.applyJs(tabId, frameId);
     }
 
