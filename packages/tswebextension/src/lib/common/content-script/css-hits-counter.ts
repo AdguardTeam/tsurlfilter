@@ -173,6 +173,11 @@ export class CssHitsCounter {
     private pendingProbesTimeoutId: number | null = null;
 
     /**
+     * Timer for the debounced full CSS hits scan.
+     */
+    private countAllCssHitsTimeoutId: number | null = null;
+
+    /**
      * Lifecycle cleanup flag. Delayed callbacks check it before doing work.
      */
     private stopped = false;
@@ -273,6 +278,11 @@ export class CssHitsCounter {
         if (this.pendingProbesTimeoutId !== null) {
             window.clearTimeout(this.pendingProbesTimeoutId);
             this.pendingProbesTimeoutId = null;
+        }
+
+        if (this.countAllCssHitsTimeoutId !== null) {
+            window.clearTimeout(this.countAllCssHitsTimeoutId);
+            this.countAllCssHitsTimeoutId = null;
         }
 
         if (this.pendingProbesCollector) {
@@ -554,7 +564,13 @@ export class CssHitsCounter {
             this.observer.disconnect();
         }
 
-        let timeoutId: number | null = null;
+        // A new observer replaces the previous one, so a debounce armed by
+        // the previous observer must not run a full scan anymore.
+        if (this.countAllCssHitsTimeoutId !== null) {
+            window.clearTimeout(this.countAllCssHitsTimeoutId);
+            this.countAllCssHitsTimeoutId = null;
+        }
+
         this.observer = new MutationObserver(((mutationRecords) => {
             // Collect probe elements, count them, then remove from their targets
             const probeElements: Element[] = [];
@@ -672,12 +688,12 @@ export class CssHitsCounter {
             }
 
             // debounce counting all css hits when mutation record fires
-            if (timeoutId) {
-                window.clearTimeout(timeoutId);
+            if (this.countAllCssHitsTimeoutId !== null) {
+                window.clearTimeout(this.countAllCssHitsTimeoutId);
             }
-            timeoutId = window.setTimeout(() => {
+            this.countAllCssHitsTimeoutId = window.setTimeout(() => {
+                this.countAllCssHitsTimeoutId = null;
                 this.countAllCssHits();
-                window.clearTimeout(timeoutId!);
             }, CssHitsCounter.COUNT_ALL_CSS_HITS_TIMEOUT_MS);
         }));
 
@@ -914,7 +930,9 @@ export class CssHitsCounter {
      * marker styles may be injected slightly after the cosmetic data is
      * received. Once any hit is observed, the styles are known to be applied,
      * so unmatched probes are not retried; a probe is also not retried when
-     * its own subtree already produced a hit.
+     * its own subtree already produced a hit. An ancestor probe stays queued
+     * while a probe that still needs a retry depends on it, even if the
+     * ancestor's own retry budget is exhausted.
      *
      * Only native stylesheet markers are detected this way: ExtendedCss
      * rules are reported when ExtendedCss itself applies them to an element.
@@ -931,6 +949,10 @@ export class CssHitsCounter {
         const probes = chunks[0] ?? [];
         // Probes that did not fit into this chunk, if any.
         const remainingProbes = chunks.slice(1).flat();
+        // An ancestor probe is repeated in each dependent chunk; it will be
+        // processed again in a later chunk, so it must not spend its retry
+        // budget here.
+        const remainingProbeSet = new Set(remainingProbes);
 
         // Elements that another probe in this chunk was removed from. A
         // counted probe that is such an ancestor must be restored again,
@@ -1081,11 +1103,54 @@ export class CssHitsCounter {
                 continue;
             }
 
+            // The next chunk processes this probe again as an ancestor, so
+            // do not spend its retry budget on chunking.
+            if (remainingProbeSet.has(probe)) {
+                continue;
+            }
+
             const attempts = (this.pendingProbeAttempts.get(probe) ?? 0) + 1;
             this.pendingProbeAttempts.set(probe, attempts);
 
             if (attempts < CssHitsCounter.PENDING_PROBES_MAX_ATTEMPTS) {
                 retryProbes.push(probe);
+            }
+        }
+
+        // A retrying probe still needs its ancestor to restore the original
+        // parent. Keep that ancestor queued even when its own retry budget is
+        // exhausted; otherwise the retrying probe would be measured with a
+        // detached target.
+        if (!this.markerStylesApplied
+            && (retryProbes.length > 0 || remainingProbes.length > 0)) {
+            const neededAncestorElements = new Set<Element>();
+            const collectAncestors = (probe: PendingProbe): void => {
+                let node: Node | null = probe.target;
+                while (node) {
+                    if (node instanceof Element) {
+                        neededAncestorElements.add(node);
+                    }
+                    node = node.parentNode;
+                }
+            };
+
+            retryProbes.forEach(collectAncestors);
+            remainingProbes.forEach(collectAncestors);
+
+            const retryProbeSet = new Set(retryProbes);
+            for (let i = 0; i < probes.length; i += 1) {
+                const probe = probes[i];
+                if (settledProbes.has(probe)
+                    || probesWithHit.has(probe)
+                    || retryProbeSet.has(probe)
+                    || remainingProbeSet.has(probe)) {
+                    continue;
+                }
+
+                if (neededAncestorElements.has(probe.element)) {
+                    retryProbes.push(probe);
+                    retryProbeSet.add(probe);
+                }
             }
         }
 

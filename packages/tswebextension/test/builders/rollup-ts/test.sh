@@ -37,11 +37,12 @@ tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
 # 27000-byte limit. Updated to the current size now that the guard is portable
 # and actually enforces on Linux; raise this only when a genuine size increase
 # lands, never to silence a regression.
-# Raised to 52000 for AG-48018: the short-lived probe collector, the chunked
+# Raised to 54000 for AG-48018: the short-lived probe collector, the chunked
 # probe processing, and the review fixes (retry stop, dependency ordering,
-# large-group splitting, counted-ancestor restore, deferred observer start)
-# push the bundle past the previous limits.
-max_size=52000
+# large-group splitting, counted-ancestor restore, deferred observer start,
+# ancestor retention, debounce cleanup) push the bundle past the previous
+# limits.
+max_size=54000
 filename="dist/css-hits-counter.js"
 # Portable file-size query: GNU stat (Linux/Docker) needs `-c %s`, BSD stat
 # (macOS) needs `-f %z`.

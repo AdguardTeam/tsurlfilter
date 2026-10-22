@@ -902,6 +902,153 @@ describe('CssHitsCounter', () => {
         }
     });
 
+    it('keeps a container queued while its late bait still has retries', () => {
+        vi.useFakeTimers();
+
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        const container = document.createElement('div');
+        const bait = document.createElement('div');
+        bait.className = 'late-nested-bait';
+        container.appendChild(bait);
+        document.body.appendChild(container);
+        bait.remove();
+        container.remove();
+
+        try {
+            const { collector, deliver } = createProbesCollector();
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, {
+                pendingProbes: [{
+                    element: container,
+                    target: document.body,
+                    previousSibling: null,
+                    nextSibling: null,
+                }],
+                pendingProbesCollector: collector,
+            });
+
+            // Spend four attempts of the container's budget; a retry is
+            // still armed.
+            vi.advanceTimersByTime(300);
+
+            // The bait arrives while the container's last attempt is armed.
+            deliver([{
+                element: bait,
+                target: container,
+                previousSibling: null,
+                nextSibling: null,
+            }]);
+
+            // The container reaches its fifth attempt here and would be
+            // dropped, but the bait still needs it to restore its parent.
+            vi.advanceTimersByTime(100);
+
+            const style = document.createElement('style');
+            style.textContent = [
+                'div.late-nested-bait',
+                "{ display: none !important; --adguard-hit: 'adguard25%3B25' !important; }",
+            ].join(' ');
+            document.head.appendChild(style);
+
+            vi.advanceTimersByTime(200);
+
+            const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(flat).toContainEqual(expect.objectContaining({ filterId: 25, ruleIndex: 25 }));
+            expect(bait.parentNode).toBeNull();
+            expect(container.parentNode).toBeNull();
+
+            counter.stop();
+            style.remove();
+        } finally {
+            restoreFixtureMarkers();
+            vi.useRealTimers();
+        }
+    });
+
+    it('does not spend an ancestor retry budget on every sub-chunk', () => {
+        vi.useFakeTimers();
+
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        const container = document.createElement('div');
+        const children = Array.from({ length: 50 }, () => {
+            const child = document.createElement('div');
+            // A restricted subtree makes the probe settle without being
+            // restored, so the container is the only probe that can retry.
+            child.appendChild(document.createElement('iframe'));
+            return child;
+        });
+        children.forEach((child) => container.appendChild(child));
+        document.body.appendChild(container);
+        children.forEach((child) => child.remove());
+        container.remove();
+
+        const bodyAppendSpy = vi.spyOn(document.body, 'appendChild');
+        const getContainerInsertions = (): number => bodyAppendSpy.mock.calls
+            .filter(([node]) => node === container)
+            .length;
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, {
+                pendingProbes: [
+                    ...children.map((element) => ({
+                        element,
+                        target: container,
+                        previousSibling: null,
+                        nextSibling: null,
+                    })),
+                    {
+                        element: container,
+                        target: document.body,
+                        previousSibling: null,
+                        nextSibling: null,
+                    },
+                ],
+            });
+
+            // The first chunk is processed synchronously. The container is
+            // repeated in the next chunks, so it must not consume a retry
+            // attempt here; the next chunk is processed after 5 ms.
+            expect(getContainerInsertions()).toBe(1);
+            vi.advanceTimersByTime(10);
+            expect(getContainerInsertions()).toBeGreaterThan(1);
+
+            bodyAppendSpy.mockRestore();
+            counter.stop();
+        } finally {
+            restoreFixtureMarkers();
+            vi.useRealTimers();
+        }
+    });
+
+    it('clears the debounced full scan timer on stop', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+
+        try {
+            const counter = new CssHitsCounter(vi.fn());
+
+            expect(vi.getTimerCount()).toBe(0);
+
+            // Any mutation callback arms the debounced full scan.
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(vi.getTimerCount()).toBe(1);
+            counter.stop();
+            expect(vi.getTimerCount()).toBe(0);
+        } finally {
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
     it('counts probes added after the counter initialization', () => {
         vi.useFakeTimers();
 
