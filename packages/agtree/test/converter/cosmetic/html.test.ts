@@ -302,8 +302,48 @@ describe('HtmlRuleConverter', () => {
                         actual: '$$script[tag-content="{""zone_id"":"""]',
                         expected: ['$$script:contains({"zone_id":")'],
                     },
+
+                    // `[tag-content]` with a single-quoted value: `""` is not an
+                    // escape outside double quotes, so both quotes stay literal
+                    {
+                        actual: '$$div[tag-content=\'x===""\']',
+                        expected: ['$$div:contains(x==="")'],
+                    },
+
+                    // A normal attribute selector with `""` next to a special
+                    // attribute selector must round-trip unchanged
+                    {
+                        actual: '$$div[data-x="a""b"][tag-content="c""d"]',
+                        expected: ['$$div[data-x="a""b"]:contains(c"d)'],
+                    },
+
+                    // `[wildcard]` with `""` escaped double quotes in a
+                    // double-quoted value
+                    {
+                        actual: '$$div[wildcard="*a""b*"]',
+                        expected: ['$$div:contains(/^.*a"b.*$/s)'],
+                    },
+
+                    // `[wildcard]` with `""` in a single-quoted value: both
+                    // quotes stay literal
+                    {
+                        actual: '$$div[wildcard=\'*a""b*\']',
+                        expected: ['$$div:contains(/^.*a""b.*$/s)'],
+                    },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperlyNew(
+                        HtmlRuleConverter,
+                        'convertToAdg',
+                        { parseHtmlFilteringRuleBodies: true },
+                    );
+                });
+
+                test('should keep a normal attribute selector with `""` stable on repeated conversion', () => {
+                    expect({
+                        actual: '$$div[data-x="a""b"]:contains(c"d)',
+                        expected: ['$$div[data-x="a""b"]:contains(c"d)'],
+                        shouldConvert: false,
+                    }).toBeConvertedProperlyNew(
                         HtmlRuleConverter,
                         'convertToAdg',
                         { parseHtmlFilteringRuleBodies: true },
@@ -515,6 +555,20 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$script[tag-content="{""zone_id"":"""]',
                         expected: ['$$script:contains({"zone_id":")'],
+                    },
+
+                    // `[tag-content]` with a single-quoted value: `""` is not an
+                    // escape outside double quotes, so both quotes stay literal
+                    {
+                        actual: '$$div[tag-content=\'x===""\']',
+                        expected: ['$$div:contains(x==="")'],
+                    },
+
+                    // A normal attribute selector with `""` next to a special
+                    // attribute selector must round-trip unchanged
+                    {
+                        actual: '$$div[data-x="a""b"][tag-content="c""d"]',
+                        expected: ['$$div[data-x="a""b"]:contains(c"d)'],
                     },
 
                     // `[tag-content]` with a single-quoted value — the quotes are part of the
@@ -1137,6 +1191,34 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]:contains(b)',
                         expected: ['##^div:has-text(a):has-text(/^.*example.*$/s):has-text(b)'],
+                    },
+
+                    // `[tag-content]` with `""` escaped double quotes in a
+                    // double-quoted value
+                    {
+                        actual: '$$div[tag-content="a""b"]',
+                        expected: ['##^div:has-text(a"b)'],
+                    },
+
+                    // `[tag-content]` with `""` in a single-quoted value: both
+                    // quotes stay literal
+                    {
+                        actual: '$$div[tag-content=\'x===""\']',
+                        expected: ['##^div:has-text(x==="")'],
+                    },
+
+                    // `[wildcard]` with `""` escaped double quotes in a
+                    // double-quoted value
+                    {
+                        actual: '$$div[wildcard="*a""b*"]',
+                        expected: ['##^div:has-text(/^.*a"b.*$/s)'],
+                    },
+
+                    // `[wildcard]` with `""` in a single-quoted value: both
+                    // quotes stay literal
+                    {
+                        actual: '$$div[wildcard=\'*a""b*\']',
+                        expected: ['##^div:has-text(/^.*a""b.*$/s)'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperlyNew(

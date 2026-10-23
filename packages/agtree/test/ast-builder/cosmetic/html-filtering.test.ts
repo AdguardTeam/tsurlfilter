@@ -428,7 +428,7 @@ describe('RuleParser — HTML filtering rules', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: 'value with "" quotes',
+                                    value: 'value with " quotes',
                                 },
                             }],
                         }],

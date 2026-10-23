@@ -40,6 +40,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Legacy `""` double-quote escaping in HTML filtering attribute values is
+  now decoded only for double-quoted values, and exactly once. A
+  single-quoted value such as `$$div[tag-content='x===""']` now converts
+  to `$$div:contains(x==="")` instead of dropping the two literal double
+  quotes. A normal attribute selector next to a special one, e.g.
+  `$$div[data-x="a""b"][tag-content="c""d"]`, now converts to
+  `$$div[data-x="a""b"]:contains(c"d)` instead of doubling the `""`
+  escape. The same rule applies to `[wildcard]` values.
 - `[tag-content]` values are now emitted raw during ADG→ADG conversion:
   quotes within the value (e.g. `[tag-content='"advert"']` →
   `:contains("advert")`) are literal characters of the text to match,

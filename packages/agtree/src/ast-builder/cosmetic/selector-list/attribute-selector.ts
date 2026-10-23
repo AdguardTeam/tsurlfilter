@@ -28,7 +28,40 @@ import {
     CHILD_FIELD_SOURCE_START,
     NO_VALUE,
 } from '../../../parser/css/selector-list/constants';
+import { DOUBLE_QUOTE } from '../../../utils/constants';
 import { ValueAstBuilder } from '../../misc/value';
+
+/**
+ * Decodes the legacy AdGuard `""` double-quote escape in an attribute value.
+ *
+ * In the legacy AdGuard syntax, a double quote inside a double-quoted
+ * attribute value is escaped by doubling it: `""` means one literal `"`.
+ * The parser keeps the raw `""` text in the value range, so the escape is
+ * decoded exactly once here, when the AST is built. The value offsets still
+ * point to the original source range.
+ *
+ * Single-quoted values do not use this escape convention, so `""` in them
+ * stays two literal double quotes.
+ *
+ * @param source Original source string.
+ * @param valueStart Source offset of the first character of the value.
+ * The offset excludes the surrounding quote characters, so
+ * `source[valueStart - 1]` is the opening quote, if any.
+ * @param value Value node built from the raw source range.
+ *
+ * @returns The value node with the decoded value, or the same node when the
+ * value is not double-quoted.
+ */
+function decodeLegacyDoubleQuoteEscapes(source: string, valueStart: number, value: Value): Value {
+    if (source[valueStart - 1] !== DOUBLE_QUOTE) {
+        return value;
+    }
+
+    return {
+        ...value,
+        value: value.value.replace(/""/g, DOUBLE_QUOTE),
+    };
+}
 
 /**
  * Build an AttributeSelector AST node from a parsed child record.
@@ -40,7 +73,10 @@ import { ValueAstBuilder } from '../../misc/value';
  *
  * For quoted attribute values the parser stores offsets that already
  * exclude the surrounding quote characters, so `source.slice()` yields the
- * unquoted content directly.
+ * unquoted content directly. In a double-quoted value, the legacy AdGuard
+ * `""` escape is decoded to a single `"` (see
+ * {@link decodeLegacyDoubleQuoteEscapes}); single-quoted values keep `""`
+ * as two literal double quotes.
  *
  * @param source Original source string.
  * @param data Int32Array buffer with parsed data.
@@ -91,7 +127,11 @@ export function buildAttributeSelector(
         isLocIncluded,
     ) as Value<AttributeSelectorOperatorValue>;
 
-    const value = ValueAstBuilder.parse(source, valueStart, valueEnd, isLocIncluded);
+    const value = decodeLegacyDoubleQuoteEscapes(
+        source,
+        valueStart,
+        ValueAstBuilder.parse(source, valueStart, valueEnd, isLocIncluded),
+    );
 
     const node: AttributeSelectorWithValue = {
         type: NodeType.AttributeSelector,
