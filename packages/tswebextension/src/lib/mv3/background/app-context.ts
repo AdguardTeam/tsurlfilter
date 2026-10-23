@@ -61,10 +61,10 @@ export class AppContext {
     /**
      * Normalized hostnames of the preregistered artifact generation: the
      * shared bundle's embed-gate set (the build manifest is preferred over
-     * the runtime expansion). A frame is covered only when its whole
-     * ancestor chain belongs to this set, so an embed outside it stays on
-     * the dynamic injection path. Plain (non-persisted) field: it lives for
-     * one service-worker lifetime.
+     * the runtime expansion). A frame is covered only when the top-level site
+     * belongs to this set, so an embed under a foreign top stays on the
+     * dynamic injection path. Plain (non-persisted) field: it lives for one
+     * service-worker lifetime.
      */
     public preregisteredHostnames?: Set<string>;
 

@@ -45,7 +45,12 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         throw new Error(`Malformed manifest at ${url}: expected an object`);
     }
 
-    const { schemaVersion, hashes, scriptletFiles, hostnames } = value as Partial<PreregisteredScriptsManifest>;
+    const {
+        schemaVersion,
+        hashes,
+        scriptletFiles,
+        hostnames,
+    } = value as Partial<PreregisteredScriptsManifest>;
 
     if (schemaVersion !== MANIFEST_SCHEMA_VERSION) {
         throw new Error(`Unsupported manifest schema version ${String(schemaVersion)} at ${url}`);
