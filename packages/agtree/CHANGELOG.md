@@ -33,8 +33,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   by tswebextension's `HtmlRuleSelector`. The selector list and last
   complex selector source ranges are extended to cover the appended
   pseudo-class when locations are enabled.
-- The JSDoc of `HtmlRuleConverter.collectLengthConstraints()` no longer states
-  that the method logs a warning for duplicate length selectors.
 
 ### Deprecated
 
