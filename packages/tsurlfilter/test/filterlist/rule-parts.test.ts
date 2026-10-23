@@ -230,6 +230,30 @@ describe('getRuleParts', () => {
         expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe('replace=/(a)$/$1/g');
     });
 
+    test('keeps a $ inside a regex value that also contains =', () => {
+        // The `=` inside the pattern must not end the regex-region scan early.
+        const rule = '||example.org^$replace=/a=b$c/good/';
+        const parts = getRuleParts(rule) as NetworkRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Network);
+        expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe('||example.org^');
+        expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe('replace=/a=b$c/good/');
+    });
+
+    test('finds the separator in a long rule with many $ inside a regex', () => {
+        // Regression: the per-`$` backward/forward scan was quadratic here.
+        // `a$` is repeated rather than `$` so the value does not contain `$$`,
+        // which is a cosmetic separator.
+        const rule = `||example.org^$replace=/${'a$'.repeat(5_000)}/x/`;
+        const parts = getRuleParts(rule) as NetworkRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Network);
+        expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe('||example.org^');
+        expect(parts!.modifiersStart).toBe('||example.org^$'.length);
+    });
+
     test('parses host rules if `ignoreHosts` is false', () => {
         const rule = '127.0.0.1 example.com alias # hosts-like comment';
         const parts = getRuleParts(rule, false, false) as HostRuleParts;

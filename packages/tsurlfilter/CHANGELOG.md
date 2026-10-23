@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Rule splitting no longer scans the whole rule once per `$` character. Regex
+  value regions (`$replace=/…/`, `$removeparam=/…/`) are collected in a single
+  pass, so a long rule with many `$` characters inside a regex no longer makes
+  filter-list loading quadratic.
+- `$replace`/`$removeparam` values that contain `=` no longer split at a `$`
+  inside the regex: the whole `=/…/` region is treated as a modifier value.
 - `CosmeticRule.createFromReader` now throws when the reader represents a
   cosmetic kind the binary path cannot materialize (uBO scriptlets, ABP
   snippets, CSS injection, HTML filtering), and the `CosmeticRule`/`NetworkRule`

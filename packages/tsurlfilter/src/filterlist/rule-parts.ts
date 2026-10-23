@@ -20,95 +20,85 @@ const REGEX_MARKER = '/';
 const MODIFIER_ASSIGN = '=';
 
 /**
- * Checks whether a `$` at the given position falls inside a `/.../` regex
- * value region — either the pattern part (`/x$y/`) or the replacement part
- * (`$1` in `/(a)/$1/`) of a `$replace` or `$removeparam` modifier.
+ * A `=/.../` regex value region of a network rule.
  *
- * Finds the nearest `=/` opener before `pos`, then scans forward to determine
- * whether `pos` lies between the opening `/` and the final closing `/` of the
- * modifier value.
+ * `start` is the index of the opening `/`, `end` is one past the closing `/`.
+ */
+type RegexValueRegion = [start: number, end: number];
+
+/**
+ * Collects the `=/.../` regex value regions of a rule in a single forward pass.
  *
- * This is an intentionally duplicated, allocation-free character scan on
- * tsurlfilter's hot rule-splitting path: AGTree does not export an equivalent
- * regex-region predicate, so reusing its parser here would mean tokenizing the
- * rule just to locate the separator. Keep this in sync with AGTree's network
- * rule separator handling if that logic changes.
+ * A region covers the pattern part and, when present, the replacement part
+ * (`$replace=/(a)/$1/`). Escaped characters are skipped, and the replacement
+ * scan stops at `,` because a comma starts the next modifier.
+ *
+ * This replaces the previous per-`$` backward/forward scan, which was
+ * quadratic on rules with many `$` characters inside one regex value.
  *
  * @param rule Network rule text.
- * @param pos Position of the `$` to check.
  *
- * @returns Whether the `$` at `pos` is inside a regex value region.
+ * @returns Regions in ascending order.
  */
-function isDollarInsideRegex(rule: string, pos: number): boolean {
-    // Find the nearest `=/` (regex value opener) before `pos`.
-    // We scan backward skipping `=` that are not followed by `/`,
-    // since those belong to non-regex modifiers (e.g. `$domain=...`).
-    let openerIdx = -1;
-    for (let j = pos - 1; j >= 1; j -= 1) {
-        if (rule[j] === ESCAPE) {
-            j -= 1;
-            continue;
-        }
-        if (rule[j] === REGEX_MARKER && rule[j - 1] === MODIFIER_ASSIGN) {
-            openerIdx = j;
-            break;
-        }
-        // If we hit `=` NOT followed by `/`, this `=` belongs to
-        // a different modifier — stop looking.
-        if (rule[j] === MODIFIER_ASSIGN && rule[j + 1] !== REGEX_MARKER) {
-            break;
-        }
-    }
+function collectRegexValueRegions(rule: string): RegexValueRegion[] {
+    const regions: RegexValueRegion[] = [];
+    const { length } = rule;
 
-    if (openerIdx === -1) {
-        return false;
-    }
-
-    // Scan forward from the opening `/` to find the matching closing `/`
-    // of the regex pattern.
-    let depth = 1;
-    for (let i = openerIdx + 1; i < rule.length; i += 1) {
+    for (let i = 0; i < length; i += 1) {
         if (rule[i] === ESCAPE) {
             i += 1;
             continue;
         }
-        if (rule[i] === REGEX_MARKER) {
-            depth -= 1;
-            if (depth === 0) {
-                // Found the closing `/` of the pattern.
-                // If `pos` is inside the pattern, we're done.
-                if (pos < i) {
-                    return true;
-                }
 
-                // `pos` >= `i`: `pos` is at or after the pattern's
-                // closing `/`. For `$replace`, there may be a
-                // replacement string between this `/` and a third `/`.
-                // Scan for a trailing replacement-closing `/`.
-                // NOTE: we do NOT break on `$` here — inside a regex
-                // value region (after `=/`), `$` is part of the
-                // replacement string (e.g. `$1`), not a separator.
-                let r = i + 1;
-                while (r < rule.length) {
-                    if (rule[r] === ESCAPE) {
-                        r += 2;
-                        continue;
-                    }
-                    if (rule[r] === REGEX_MARKER) {
-                        // Found replacement's closing `/`.
-                        return pos < r;
-                    }
-                    if (rule[r] === COMMA) {
-                        break;
-                    }
-                    r += 1;
-                }
-                return false;
+        if (rule[i] !== MODIFIER_ASSIGN || rule[i + 1] !== REGEX_MARKER) {
+            continue;
+        }
+
+        // Opening `/` of the regex value.
+        const start = i + 1;
+
+        // Closing `/` of the pattern.
+        let closing = start + 1;
+        while (closing < length) {
+            if (rule[closing] === ESCAPE) {
+                closing += 2;
+                continue;
+            }
+            if (rule[closing] === REGEX_MARKER) {
+                break;
+            }
+            closing += 1;
+        }
+
+        // No closing `/` — not a regex value.
+        if (closing >= length) {
+            continue;
+        }
+
+        // Optional replacement part: `/<replacement>/`.
+        let end = closing + 1;
+        for (let r = closing + 1; r < length; r += 1) {
+            if (rule[r] === ESCAPE) {
+                r += 1;
+                continue;
+            }
+            if (rule[r] === REGEX_MARKER) {
+                end = r + 1;
+                break;
+            }
+            if (rule[r] === COMMA) {
+                break;
             }
         }
+
+        regions.push([start, end]);
+
+        // Skip past the region so `=/` sequences inside it are not treated
+        // as separate regions.
+        i = end - 1;
     }
 
-    return false;
+    return regions;
 }
 
 /**
@@ -117,7 +107,8 @@ function isDollarInsideRegex(rule: string, pos: number): boolean {
  * `example.org^$removeparam=/regex$/`, `$replace=/a$b/good/`,
  * `$replace=/(a)/$1/`).
  *
- * Scans backward through the rule. A `$` is skipped if:
+ * Regex value regions are collected once, then a single backward pass picks
+ * the separator. A `$` is skipped if:
  * - It is immediately followed by `/` (inside a regex value).
  * - It is preceded by `\` (escaped `$` inside a regex).
  * - It falls inside a `=/…/` regex value region (including
@@ -128,25 +119,40 @@ function isDollarInsideRegex(rule: string, pos: number): boolean {
  * @returns The separator index, or `-1` if there is none.
  */
 const findNetworkRuleSeparatorIndex = (rule: string): number => {
-    for (let i = rule.length - 1; i >= 0; i -= 1) {
-        const ch = rule[i];
+    let regions: RegexValueRegion[] | null = null;
+    let regionIndex = -1;
 
-        if (ch === NETWORK_RULE_SEPARATOR) {
-            // A `$` immediately followed by `/` is inside a regex value
-            // (e.g. `$replace=/foo$/bar/`), never the separator.
-            if (rule[i + 1] !== REGEX_MARKER
-                // A `$` preceded by `\` is an escaped `$` inside a
-                // regex value (e.g. `$removeparam=/x\$y/`) and is
-                // never the separator.
-                && rule[i - 1] !== ESCAPE
-                // A `$` not caught by the two fast checks above could
-                // still be inside a regex segment — either in the
-                // middle of the pattern (e.g. `/x$y/`) or in the
-                // replacement string (e.g. `$1` in `/(a)/$1/`).
-                && !isDollarInsideRegex(rule, i)) {
-                return i;
+    for (let i = rule.length - 1; i >= 0; i -= 1) {
+        if (rule[i] !== NETWORK_RULE_SEPARATOR) {
+            continue;
+        }
+
+        // A `$` immediately followed by `/` is inside a regex value
+        // (e.g. `$replace=/foo$/bar/`), never the separator.
+        // A `$` preceded by `\` is an escaped `$` inside a regex value
+        // (e.g. `$removeparam=/x\$y/`) and is never the separator.
+        if (rule[i + 1] === REGEX_MARKER || rule[i - 1] === ESCAPE) {
+            continue;
+        }
+
+        if (regions === null) {
+            regions = collectRegexValueRegions(rule);
+            regionIndex = regions.length - 1;
+        }
+
+        // Regions are ascending, so walk the index down as `i` decreases.
+        while (regionIndex >= 0 && regions[regionIndex][0] > i) {
+            regionIndex -= 1;
+        }
+
+        if (regionIndex >= 0) {
+            const [start, end] = regions[regionIndex];
+            if (i >= start && i < end) {
+                continue;
             }
         }
+
+        return i;
     }
 
     return -1;
