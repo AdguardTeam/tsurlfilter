@@ -672,12 +672,19 @@ export class CssHitsCounter {
                 }
 
                 // Remember which probes matched, so the collector does not
-                // re-insert them again.
-                for (let i = 0; i < probeElements.length; i += 1) {
-                    if (countedElements.has(probeElements[i])) {
-                        this.countedProbes.add(probeElements[i]);
+                // re-insert them again. A hit on a descendant also proves
+                // that the probe was checked, so walk up from every counted
+                // element and mark all probe roots that contain it.
+                const probeRoots = new Set<Element>(probeElements);
+                countedElements.forEach((element) => {
+                    let node: Node | null = element;
+                    while (node) {
+                        if (node instanceof Element && probeRoots.has(node)) {
+                            this.countedProbes.add(node);
+                        }
+                        node = node.parentNode;
                     }
-                }
+                });
 
                 /**
                  * Don't remove child elements of probe elements

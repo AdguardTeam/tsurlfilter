@@ -268,10 +268,19 @@ describe('PendingProbesCollector', () => {
         const withImage = document.createElement('div');
         withImage.appendChild(document.createElement('img'));
 
+        // An SVG image loads its `href`, so a bait that contains one must
+        // not be restored.
+        const withSvgImage = document.createElement('div');
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        const svgImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+        svgImage.setAttribute('href', 'https://example.com/pixel.png');
+        svg.appendChild(svgImage);
+        withSvgImage.appendChild(svg);
+
         const bait = document.createElement('div');
 
         MutationObserverMock.last!.trigger([createMutationRecord({
-            addedNodes: [withIframe, withCustomElement, withImage, bait],
+            addedNodes: [withIframe, withCustomElement, withImage, withSvgImage, bait],
             target: document.body,
         })]);
 

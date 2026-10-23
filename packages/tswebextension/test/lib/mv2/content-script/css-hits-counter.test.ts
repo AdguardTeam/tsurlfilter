@@ -92,6 +92,40 @@ describe('CssHitsCounter', () => {
         cssHitsCounter.countAffectedByExtendedCss(elementToCount);
     });
 
+    it('uses the elementToString default when the options omit it', () => {
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.default-string-bait',
+            "{ display: none !important; --adguard-hit: 'adguard27%3B27' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        try {
+            const bait = document.createElement('div');
+            bait.className = 'default-string-bait';
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, {
+                pendingProbes: [{
+                    element: bait,
+                    target: document.body,
+                    previousSibling: null,
+                    nextSibling: null,
+                }],
+            });
+
+            const flat = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            const hit = flat.find((stat) => stat.filterId === 27);
+
+            expect(hit).toBeDefined();
+            expect(typeof hit?.element).toBe('string');
+            expect(hit?.element).toEqual(expect.stringContaining('default-string-bait'));
+
+            counter.stop();
+        } finally {
+            style.remove();
+        }
+    });
+
     it('checks counting', () => {
         const onCssHitsFound = vi.fn((stats: any): void => {
             expect(stats).toHaveLength(2);
@@ -587,6 +621,61 @@ describe('CssHitsCounter', () => {
             expect(bait.parentNode).toBeNull();
             expect(container.parentNode).toBeNull();
 
+            counter.stop();
+        } finally {
+            restoreMutationObserver();
+            vi.useRealTimers();
+            style.remove();
+        }
+    });
+
+    it('marks a probe root as counted when its descendant matched', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+
+        const style = document.createElement('style');
+        style.textContent = "div.probe-child { display: none !important; --adguard-hit: 'adguard26%3B26' !important; }";
+        document.head.appendChild(style);
+
+        try {
+            const { collector, deliver } = createProbesCollector();
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, { pendingProbesCollector: collector });
+
+            const root = document.createElement('div');
+            const child = document.createElement('div');
+            child.className = 'probe-child';
+            root.appendChild(child);
+
+            // The observer re-inserts the root, counts the child, and
+            // removes the root.
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [root],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            const childHits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 26);
+            expect(childHits).toHaveLength(1);
+
+            const bodyAppendSpy = vi.spyOn(document.body, 'appendChild');
+            deliver([{
+                element: root,
+                target: document.body,
+                previousSibling: null,
+                nextSibling: null,
+            }]);
+
+            vi.advanceTimersByTime(1000);
+
+            // The observer already counted the child, so the pending pass
+            // must not insert the root again.
+            expect(bodyAppendSpy.mock.calls.filter(([node]) => node === root)).toHaveLength(0);
+
+            bodyAppendSpy.mockRestore();
             counter.stop();
         } finally {
             restoreMutationObserver();

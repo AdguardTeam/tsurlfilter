@@ -56,6 +56,9 @@ const IGNORED_TAGS = [
 const RESTRICTED_SUBTREE_TAGS = [
     'link', 'img', 'picture', 'source', 'iframe', 'frame', 'object', 'embed',
     'video', 'audio', 'track',
+    // SVG image elements load their `href`, so they are resource-bearing
+    // even though the `svg` root itself is safe for inline graphics.
+    'image',
 ];
 
 /**
