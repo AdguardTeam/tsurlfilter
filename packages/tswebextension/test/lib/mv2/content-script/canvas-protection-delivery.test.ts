@@ -18,6 +18,17 @@ const EXTENSION_ID = 'abcdefghijklmnopabcdefghijklmnop';
 const URL = CanvasDeliveryUrl.getUrl(EXTENSION_ID);
 
 /**
+ * Returns the user agent of a Chrome version.
+ *
+ * @param version Major version.
+ *
+ * @returns User agent.
+ */
+const chromeUserAgent = (version: number): string => {
+    return `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/${version}.0.0.0 Safari/537.36`;
+};
+
+/**
  * Options of a fake content script realm.
  */
 interface RealmOptions {
@@ -26,6 +37,7 @@ interface RealmOptions {
     responseText?: string;
     sendThrows?: boolean;
     flag?: unknown;
+    userAgent?: string;
 }
 
 /**
@@ -61,6 +73,7 @@ describe('CanvasProtectionDelivery', () => {
             responseText = BODY,
             sendThrows = false,
             flag,
+            userAgent = chromeUserAgent(130),
         } = options;
 
         /**
@@ -98,6 +111,7 @@ describe('CanvasProtectionDelivery', () => {
             document: doc,
             XMLDocument: window.XMLDocument,
             XMLHttpRequest: FakeXhr,
+            navigator: { userAgent },
         };
         if (flag !== undefined) {
             Reflect.set(realm, CanvasDeliveryGuard.Delivered, flag);
@@ -129,6 +143,19 @@ describe('CanvasProtectionDelivery', () => {
         browser.runtime.getURL.returns('moz-extension://id/');
         CanvasProtectionDelivery.deliver(createRealm());
         expect(sends).toBe(0);
+    });
+
+    it('sends nothing in Chromium before 106, which has no documentId in webRequest', () => {
+        CanvasProtectionDelivery.deliver(createRealm({ userAgent: chromeUserAgent(105) }));
+        expect(sends).toBe(0);
+    });
+
+    it.each([
+        ['Chromium 106', chromeUserAgent(106)],
+        ['an unknown browser', 'Mozilla/5.0'],
+    ])('sends a synchronous request in %s', (_, userAgent) => {
+        CanvasProtectionDelivery.deliver(createRealm({ userAgent, responseText: '' }));
+        expect(requests).toEqual([['GET', URL, false]]);
     });
 
     it('only uses up the answer with an asynchronous request when the document already got canvas protection', () => {

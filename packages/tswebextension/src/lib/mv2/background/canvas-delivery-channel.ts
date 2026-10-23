@@ -21,6 +21,10 @@ import { type TabsApi } from './tabs/tabs-api';
  * An empty answer is a redirect rather than a cancellation, because a cancelled request
  * prints a network error to the console of every page.
  *
+ * Chromium before 106 has no `documentId` in `webRequest`, so a request there is cancelled
+ * as well: an answer could go to a page script repeating the request. The content script
+ * sends no request in those versions.
+ *
  * TODO: remove when Chromium MV2 is no longer supported.
  */
 export class ChromiumMv2CanvasDeliveryChannel {
@@ -72,7 +76,7 @@ export class ChromiumMv2CanvasDeliveryChannel {
      * @param details Details of the request to the reserved host.
      *
      * @returns Redirect to a `data:` URL with the page script, empty when nothing is delivered,
-     * or a cancellation for a request that is not the first one of its document.
+     * or a cancellation for a request without a document ID or not the first one of its document.
      */
     public answer(details: OnBeforeRequestDetailsType): WebRequest.BlockingResponse {
         const { documentId, tabId, frameId } = details;

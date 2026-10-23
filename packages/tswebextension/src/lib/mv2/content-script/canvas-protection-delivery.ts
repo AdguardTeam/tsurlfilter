@@ -17,13 +17,26 @@ type FeaturePolicy = {
  * request and inserts it as an inline script. Documents it skips get the code injected
  * by the background page when they commit.
  *
- * The background page answers only the first request of a document, so the content script
- * always sends one before page scripts run, asynchronously when it does not need the script:
- * a page script repeating the request then fails as it would without the extension.
+ * The content script cannot know whether the document is protected, so it sends the request
+ * in every web document, whether protection is on or off. The request is asynchronous only
+ * when the document already got the script, is an XML document or forbids `sync-xhr`.
+ * The background page answers only the first request of a document, so a page script
+ * repeating the request fails as it would without the extension.
+ *
+ * Chromium before 106 has no `documentId` in `webRequest`, so the background page cannot tell
+ * documents apart and cancels every request. The content script sends none there, and
+ * documents get the code injected on commit.
  *
  * TODO: remove when Chromium MV2 is no longer supported.
  */
 export class CanvasProtectionDelivery {
+    /**
+     * First Chromium version with `documentId` in `webRequest` details.
+     */
+    private static readonly MIN_CHROMIUM_VERSION = 106;
+
+    private static readonly CHROMIUM_VERSION_RE = /\bChrom(?:e|ium)\/(\d+)/;
+
     /**
      * Delivers canvas protection to the current document.
      */
@@ -45,6 +58,10 @@ export class CanvasProtectionDelivery {
 
             // Firefox registers the page script itself.
             if (browser.runtime.getURL('').startsWith('moz-extension:')) {
+                return;
+            }
+
+            if (CanvasProtectionDelivery.isOldChromium(realm.navigator.userAgent)) {
                 return;
             }
 
@@ -90,5 +107,17 @@ export class CanvasProtectionDelivery {
         } catch {
             // The request can be blocked; the background page then injects the code on commit.
         }
+    }
+
+    /**
+     * Checks whether the browser is a Chromium version without `documentId` in `webRequest`.
+     *
+     * @param userAgent User agent of the browser.
+     *
+     * @returns True for Chromium before 106; false for later versions and unknown browsers.
+     */
+    private static isOldChromium(userAgent: string): boolean {
+        const match = CanvasProtectionDelivery.CHROMIUM_VERSION_RE.exec(userAgent);
+        return match !== null && Number(match[1]) < CanvasProtectionDelivery.MIN_CHROMIUM_VERSION;
     }
 }
