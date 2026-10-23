@@ -13,6 +13,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- `HtmlRuleConverter` no longer logs a console warning when a complex
+  selector contains multiple `[min-length]` or `[max-length]` attribute
+  selectors; the most restrictive value is still selected.
+
 ### Deprecated
 
 ### Removed
