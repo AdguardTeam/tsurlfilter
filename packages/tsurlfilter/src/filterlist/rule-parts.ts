@@ -1,5 +1,7 @@
 import isIp from 'is-ip';
 
+import { collectRegexValueRegions, type RegexValueRegion } from '@adguard/agtree/utils';
+
 import {
     CLOSE_SQUARE,
     COMMA,
@@ -18,88 +20,6 @@ import {
 const NETWORK_RULE_SEPARATOR = '$';
 const REGEX_MARKER = '/';
 const MODIFIER_ASSIGN = '=';
-
-/**
- * A `=/.../` regex value region of a network rule.
- *
- * `start` is the index of the opening `/`, `end` is one past the closing `/`.
- */
-type RegexValueRegion = [start: number, end: number];
-
-/**
- * Collects the `=/.../` regex value regions of a rule in a single forward pass.
- *
- * A region covers the pattern part and, when present, the replacement part
- * (`$replace=/(a)/$1/`). Escaped characters are skipped, and the replacement
- * scan stops at `,` because a comma starts the next modifier.
- *
- * This replaces the previous per-`$` backward/forward scan, which was
- * quadratic on rules with many `$` characters inside one regex value.
- *
- * @param rule Network rule text.
- *
- * @returns Regions in ascending order.
- */
-function collectRegexValueRegions(rule: string): RegexValueRegion[] {
-    const regions: RegexValueRegion[] = [];
-    const { length } = rule;
-
-    for (let i = 0; i < length; i += 1) {
-        if (rule[i] === ESCAPE) {
-            i += 1;
-            continue;
-        }
-
-        if (rule[i] !== MODIFIER_ASSIGN || rule[i + 1] !== REGEX_MARKER) {
-            continue;
-        }
-
-        // Opening `/` of the regex value.
-        const start = i + 1;
-
-        // Closing `/` of the pattern.
-        let closing = start + 1;
-        while (closing < length) {
-            if (rule[closing] === ESCAPE) {
-                closing += 2;
-                continue;
-            }
-            if (rule[closing] === REGEX_MARKER) {
-                break;
-            }
-            closing += 1;
-        }
-
-        // No closing `/` — not a regex value.
-        if (closing >= length) {
-            continue;
-        }
-
-        // Optional replacement part: `/<replacement>/`.
-        let end = closing + 1;
-        for (let r = closing + 1; r < length; r += 1) {
-            if (rule[r] === ESCAPE) {
-                r += 1;
-                continue;
-            }
-            if (rule[r] === REGEX_MARKER) {
-                end = r + 1;
-                break;
-            }
-            if (rule[r] === COMMA) {
-                break;
-            }
-        }
-
-        regions.push([start, end]);
-
-        // Skip past the region so `=/` sequences inside it are not treated
-        // as separate regions.
-        i = end - 1;
-    }
-
-    return regions;
-}
 
 /**
  * Finds the index of the last unescaped `$` option separator in a network rule

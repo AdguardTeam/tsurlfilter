@@ -19,6 +19,7 @@ export {
     PIPE,
 } from './constants';
 export { AdblockSyntax } from './adblockers';
+export { collectRegexValueRegions, type RegexValueRegion } from './regex-value-regions';
 export { getBitCount } from './bit-count';
 export { type ReadonlyRecord } from './types';
 export { type CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './cosmetic-rule-separator';

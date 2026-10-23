@@ -429,6 +429,33 @@ describe('parseNetworkRule', () => {
             expect(ModifierParser.getName(source, d, 0)).toBe('script');
         });
 
+        test('$ inside a regex value is not the separator', () => {
+            const source = '||example.org^$replace=/a$b/good/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org^');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('replace');
+        });
+
+        test('$ and comma inside a regex value do not split the modifier list', () => {
+            const source = '||example.com$removeparam=/x$y,z/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.com');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('removeparam');
+        });
+
+        test('$ inside a regex value containing = is not the separator', () => {
+            const source = '||example.org^$replace=/a=b$c/good/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org^');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('replace');
+        });
+
         test('buffer reuse across calls', () => {
             const source1 = '||first.org^$script';
             parse(source1);

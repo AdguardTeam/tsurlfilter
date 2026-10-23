@@ -26,6 +26,7 @@
 
 import { CHAR_BACKSLASH } from '../../tokenizer/char-codes';
 import { TokenType } from '../../tokenizer/token-types';
+import { collectRegexValueRegions, type RegexValueRegion } from '../../utils/regex-value-regions';
 import type { ParserContext } from '../context';
 import {
     lastNonWs,
@@ -244,6 +245,11 @@ export class NetworkRuleParser implements StructuralParser {
         const { types, source } = ctx;
         let i = endTi;
 
+        // Regex value regions (`$replace=/…/`, `$removeparam=/…/`) are
+        // collected lazily, once, because most rules have none.
+        let regions: RegexValueRegion[] | null = null;
+        let regionIndex = -1;
+
         while (i > searchStart) {
             i = types.lastIndexOf(TokenType.DollarSign, i - 1);
 
@@ -251,24 +257,32 @@ export class NetworkRuleParser implements StructuralParser {
                 break;
             }
 
-            // Keep in sync with `findNetworkRuleSeparatorIndex` in tsurlfilter
-            // (`src/filterlist/rule-parts.ts`), which mirrors this logic. The
-            // two already differ for regex values with `$` in the middle:
-            // tsurlfilter also skips `$` inside `=/…/` regions, so e.g.
-            // `$removeparam=/x$y,z/` and `$replace=/a$b=c/d/` are handled there.
-            //
-            // A `$` inside a modifier value is not a separator: skip a `$`
-            // preceded by an escaped backslash (e.g. `/^\\$ja=/`). A `$`
-            // directly preceded by `\$` never reaches this loop — the tokenizer
-            // emits `\$` as a single `Escaped` token. A `$` followed by `/`
-            // (a regex end anchor) is already rejected by
-            // `isPotentialNetModifier` below.
+            // A `$` preceded by a backslash is escaped (e.g. `/^\\$ja=/`) and
+            // never the separator.
             const dollarOff = tokenStart(ctx, i);
 
             if (source.charCodeAt(dollarOff - 1) === CHAR_BACKSLASH) {
                 continue;
             }
 
+            // A `$` inside a `=/…/` value belongs to the regex or to its
+            // replacement string (`$1`), not to the modifier list.
+            if (regions === null) {
+                regions = collectRegexValueRegions(source);
+                regionIndex = regions.length - 1;
+            }
+
+            // Regions are ascending, so walk the index down as `i` decreases.
+            while (regionIndex >= 0 && regions[regionIndex][0] > dollarOff) {
+                regionIndex -= 1;
+            }
+
+            if (regionIndex >= 0 && dollarOff < regions[regionIndex][1]) {
+                continue;
+            }
+
+            // A `$` followed by `/` (a regex end anchor) is rejected by
+            // `isPotentialNetModifier`.
             if (isPotentialNetModifier(ctx, i + 1, endTi)) {
                 return i;
             }

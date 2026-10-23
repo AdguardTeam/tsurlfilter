@@ -13,6 +13,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- `CommentKind` is a regular `enum` instead of a `const enum`, so consumers
+  compiling with `isolatedModules` can use it in a value position.
+
 ### Deprecated
 
 ### Removed
@@ -31,6 +34,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   returned an empty list and every compatibility entry keyed by it was silently
   dropped — for example `prevent-window-open` for Safari content blockers.
   Wildcard expansion now throws when it matches no concrete platform.
+- A `$` inside a `$replace`/`$removeparam` regex value is no longer treated as
+  the modifier separator, so `$replace=/a$b/good/` and
+  `$removeparam=/x$y,z/` parse as a single modifier.
+- Leading whitespace before an AdGuard `[$...]` modifier list is ignored, so an
+  indented rule no longer parses the modifier list as part of the domain list.
 - Trailing whitespace is no longer part of a network rule pattern. A rule with
   a trailing space or tab, or with whitespace before the `$` separator,
   previously produced a pattern containing that whitespace, which made the
