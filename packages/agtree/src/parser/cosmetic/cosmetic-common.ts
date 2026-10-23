@@ -11,7 +11,7 @@ import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { TokenType } from '../../tokenizer/token-types';
 import { RuleClassifier } from '../classifier';
 import type { ParserContext } from '../context';
-import { skipWs, tokenStart } from '../context';
+import { CTX_STATUS_OVERFLOW, skipWs, tokenStart } from '../context';
 import { DomainListParser } from '../misc/domain-list';
 import { ModifierListParser } from '../misc/modifier-list';
 
@@ -196,28 +196,30 @@ export function parseCommonCosmeticHeader(
     const sepSourceEnd = ctx.ends[sepTokenIndex + sepTokens - 1];
     const sepLen = sepSourceEnd - sepSourceStart;
 
-    // Detect AdGuard modifier list prefix: [$...]
-    let domainStartTi = startTi;
+    // Detect AdGuard modifier list prefix: [$...]. Leading whitespace is
+    // insignificant, so skip it before looking for the bracket.
+    const headerStartTi = skipWs(ctx, startTi);
+    let domainStartTi = headerStartTi;
     let hasAdgMods = false;
 
-    if (types[startTi] === TokenType.OpenSquare && types[startTi + 1] === TokenType.DollarSign) {
+    if (types[headerStartTi] === TokenType.OpenSquare && types[headerStartTi + 1] === TokenType.DollarSign) {
         // Find closing ] with bracket depth tracking
-        const closeBracketTi = findClosingBracket(ctx, startTi + 1, sepTokenIndex);
+        const closeBracketTi = findClosingBracket(ctx, headerStartTi + 1, sepTokenIndex);
 
         if (closeBracketTi < 0) {
             throw new Error('Unclosed AdGuard modifier list: missing ]');
         }
 
         // Preparse modifier list (up to closeBracketTi, exclusive)
-        if (closeBracketTi === startTi + 2) {
+        if (closeBracketTi === headerStartTi + 2) {
             throw new Error('AdGuard modifier list [$...] is empty');
         }
 
         const savedTokenCount = ctx.tokenCount;
         try {
             ctx.tokenCount = closeBracketTi;
-            ModifierListParser.parse(ctx, startTi + 2, CR_MODIFIER_RECORDS_OFFSET, 0);
-            if (ctx.status === 1) {
+            ModifierListParser.parse(ctx, headerStartTi + 2, CR_MODIFIER_RECORDS_OFFSET, 0);
+            if (ctx.status === CTX_STATUS_OVERFLOW) {
                 throw new AdblockSyntaxError(
                     'Too many modifiers in AdGuard modifier list',
                     tokenStart(ctx, 1),
