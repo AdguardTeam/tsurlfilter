@@ -83,6 +83,20 @@ export class NetworkRuleDataReader {
     }
 
     /**
+     * Reads the modifier count directly from a populated context, without
+     * allocating a reader. Intended for high-volume callers that only need
+     * this field.
+     *
+     * @param ctx Parser context populated for a network rule.
+     * @param dataOffset Offset of the rule record within `ctx.data`.
+     *
+     * @returns Number of modifiers.
+     */
+    public static getModifierCount(ctx: ParserContext, dataOffset = 0): number {
+        return ctx.data[dataOffset + NR_MODIFIER_COUNT_OFFSET];
+    }
+
+    /**
      * Number of modifiers carried by the rule.
      *
      * @returns Number of modifiers.

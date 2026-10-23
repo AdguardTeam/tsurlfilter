@@ -23,7 +23,7 @@ import { NetworkRuleDataReader, type ParserContext, RuleKind } from '../parser';
  */
 export function isConversionCandidate(kind: RuleKind, ctx: ParserContext): boolean {
     if (kind === RuleKind.Network) {
-        return new NetworkRuleDataReader(ctx).modifierCount > 0;
+        return NetworkRuleDataReader.getModifierCount(ctx) > 0;
     }
     // Cosmetic (RuleKind.Cosmetic) and Comment (RuleKind.Comment).
     return true;
