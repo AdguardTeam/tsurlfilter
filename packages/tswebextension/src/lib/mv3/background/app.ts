@@ -542,8 +542,11 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws When the application has no configuration.
      */
-    public setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult> {
-        return this.canvasProtection.setEnabled(enabled);
+    public async setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult> {
+        const result = await this.canvasProtection.setEnabled(enabled);
+        // The setting is changed in place, but the session storage saves only an assigned configuration.
+        this.configuration = this.configuration!;
+        return result;
     }
 
     /**
@@ -839,7 +842,10 @@ export class TsWebExtension implements AppInterface<
         appContext.isStorageInitialized = true;
         // Chromium keeps the registered script across browser restarts, with the previous session's seed.
         // The session storage is empty then, so this removes it until start() registers a new one.
-        await this.canvasProtection.apply();
+        // After a service worker restart the script is as the last apply() left it, and start() reconciles it.
+        if (!this.configuration) {
+            await this.canvasProtection.apply();
+        }
     }
 
     /**

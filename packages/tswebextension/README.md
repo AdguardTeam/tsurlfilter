@@ -290,7 +290,7 @@ only while protection is enabled.
   has no `canvas` on `ImageBitmapRenderingContext`, so a canvas filled only
   through `transferFromImageBitmap()` is read natively there.
 - A document loaded before the script is registered stays native until
-  reload. Chromium MV3 keeps registered user scripts across restarts:
+  reload. Chromium MV3 keeps registered user scripts across browser restarts:
   `initStorage()` removes the previous session's script, and documents loaded
   before that get the previous session's seed.
 - The protection is detectable and a determined page can defeat it. The

@@ -13,13 +13,15 @@ import browser from 'webextension-polyfill';
 
 import { CanvasAvailabilityStatus } from '../../../../src/lib/common/canvas-protection/constants';
 import { CanvasProtectionRegistration } from '../../../../src/lib/common/canvas-protection/registration';
+import { MemoryStorage } from '../../../../src/lib/common/storage/core';
+import { logger } from '../../../../src/lib/common/utils/logger';
 import { TsWebExtension } from '../../../../src/lib/mv3/background/app';
 import { appContext } from '../../../../src/lib/mv3/background/app-context';
 import { ChromiumCanvasRegistration } from '../../../../src/lib/mv3/background/canvas-registration';
 import { type ConfigurationMV3 } from '../../../../src/lib/mv3/background/configuration';
 import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
-import { extSessionStorage } from '../../../../src/lib/mv3/background/ext-session-storage';
+import { extSessionStorage, type SessionStorageSchema } from '../../../../src/lib/mv3/background/ext-session-storage';
 import FiltersApi from '../../../../src/lib/mv3/background/filters-api';
 import { CspService } from '../../../../src/lib/mv3/background/services/csp-service';
 import { StealthService } from '../../../../src/lib/mv3/background/services/stealth-service';
@@ -155,6 +157,19 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
         }));
     });
 
+    it('saves the opt-in to the session storage', async () => {
+        const save = vi.spyOn(MemoryStorage.prototype, 'set');
+        appContext.isStorageInitialized = true;
+        appContext.configuration = {
+            settings: { filteringEnabled: true, stealthModeEnabled: true, stealth: { protectCanvas: false } },
+        } as never;
+        await instance.setCanvasProtectionEnabled(true);
+        // The session storage is the memory storage here, and it keeps a copy of each saved value.
+        const storage = save.mock.contexts.at(-1) as MemoryStorage<SessionStorageSchema>;
+        const stored = await storage.get('tswebextension');
+        expect(stored?.configuration?.settings.stealth.protectCanvas).toBe(true);
+    });
+
     describe('initStorage', () => {
         let remove: ReturnType<typeof vi.spyOn>;
 
@@ -170,10 +185,14 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
         });
 
         it('keeps the script when the service worker restarts', async () => {
+            const applyRegistration = vi.spyOn(CanvasProtectionRegistration.prototype, 'apply');
+            const warn = vi.spyOn(logger, 'warn');
             appContext.configuration = {
                 settings: { filteringEnabled: true, stealthModeEnabled: true, stealth: { protectCanvas: true } },
             } as never;
             await instance.initStorage();
+            expect(applyRegistration).not.toHaveBeenCalled();
+            expect(warn).not.toHaveBeenCalled();
             expect(remove).not.toHaveBeenCalled();
             expect(appContext.canvasProtectionRegistration).toBeDefined();
         });
