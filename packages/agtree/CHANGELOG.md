@@ -19,6 +19,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Trailing whitespace is no longer part of a network rule pattern. A rule with
+  a trailing space or tab, or with whitespace before the `$` separator,
+  previously produced a pattern containing that whitespace, which made the
+  engine reject the rule as a host rule. The pattern now ends at the last
+  non-whitespace token, as in v4.
 - A backslash at the end of a line no longer consumes the line break. Filter
   lists are line-oriented, so the following line is parsed as a separate rule
   again (previously it was merged into the preceding comment or rule), and CRLF

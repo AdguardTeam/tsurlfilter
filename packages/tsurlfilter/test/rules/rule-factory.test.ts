@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { CompatibilityTypes, setConfiguration } from '../../src/configuration';
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';
 import { HostRule } from '../../src/rules/host-rule';
-import { NetworkRule } from '../../src/rules/network-rule';
+import { NetworkRule, NetworkRuleOption } from '../../src/rules/network-rule';
 import { RULE_INDEX_NONE } from '../../src/rules/rule';
 import { RuleFactory } from '../../src/rules/rule-factory';
 import { createRule } from '../helpers/rule-creator';
@@ -96,6 +96,30 @@ describe('RuleFactory shared pipeline', () => {
         for (let i = 0; i < 100; i += 1) {
             expect(RuleFactory.createRule('||a.com^$third-party', 0)).toBeInstanceOf(NetworkRule);
         }
+    });
+});
+
+describe('RuleFactory whitespace handling', () => {
+    it('does not reject a network rule with trailing spaces', () => {
+        const rule = RuleFactory.createRule('||example.org^  ', 0);
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect((rule as NetworkRule).getPattern()).toBe('||example.org^');
+    });
+
+    it('does not reject a network rule with a trailing tab', () => {
+        const rule = RuleFactory.createRule('||example.org^\t', 0);
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect((rule as NetworkRule).getPattern()).toBe('||example.org^');
+    });
+
+    it('trims whitespace before the modifier separator', () => {
+        const rule = RuleFactory.createRule('||example.org^ $third-party', 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe('||example.org^');
+        expect(rule.isOptionEnabled(NetworkRuleOption.ThirdParty)).toBe(true);
     });
 });
 

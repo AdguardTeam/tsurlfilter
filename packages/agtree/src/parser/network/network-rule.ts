@@ -27,7 +27,12 @@
 import { CHAR_BACKSLASH } from '../../tokenizer/char-codes';
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
-import { regionEquals, skipWs, tokenStart } from '../context';
+import {
+    lastNonWs,
+    regionEquals,
+    skipWs,
+    tokenStart,
+} from '../context';
 import { ModifierListParser } from '../misc/modifier-list';
 import { isRegexLiteral } from '../misc/regex-literal';
 import { isPotentialNetModifier } from '../misc/shared';
@@ -188,14 +193,21 @@ export class NetworkRuleParser implements StructuralParser {
         let patternEndIdx: number;
         let separatorSourceIdx: number;
 
+        // Trailing whitespace is not part of the pattern. The tokenizer groups
+        // it into a single Whitespace token, so the last non-whitespace token
+        // before the separator (or before the end of the rule) is the real
+        // pattern end. Keeping the whitespace would make `hasSpaces()` in the
+        // engine treat the rule as a host rule and reject it.
         if (sepTi === -1) {
-            patternEndIdx = endTi > startTi
-                ? ends[endTi - 1]
+            const lastPatternTi = lastNonWs(ctx, ti, endTi);
+            patternEndIdx = lastPatternTi >= 0
+                ? ends[lastPatternTi]
                 : patternStartIdx;
             separatorSourceIdx = NO_VALUE;
         } else {
-            patternEndIdx = sepTi > ti
-                ? tokenStart(ctx, sepTi)
+            const lastPatternTi = lastNonWs(ctx, ti, sepTi);
+            patternEndIdx = lastPatternTi >= 0
+                ? ends[lastPatternTi]
                 : patternStartIdx;
             separatorSourceIdx = tokenStart(ctx, sepTi);
         }

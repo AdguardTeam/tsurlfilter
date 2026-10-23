@@ -407,11 +407,26 @@ describe('parseNetworkRule', () => {
             expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org^');
         });
 
-        test('trailing whitespace is preserved (raw parser)', () => {
+        test('trailing whitespace is trimmed from the pattern', () => {
             const source = '||example.org^  ';
             const d = parse(source);
 
-            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org^  ');
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org^');
+        });
+
+        test('trailing tab is trimmed from the pattern', () => {
+            const source = '||example.org^\t';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org^');
+        });
+
+        test('whitespace before the separator is trimmed from the pattern', () => {
+            const source = '||example.org^ $script';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org^');
+            expect(ModifierParser.getName(source, d, 0)).toBe('script');
         });
 
         test('buffer reuse across calls', () => {
