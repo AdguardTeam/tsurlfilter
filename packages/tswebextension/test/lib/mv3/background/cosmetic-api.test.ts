@@ -378,7 +378,7 @@ describe('CosmeticApi — preregistered script rules', () => {
             expect(localRules.rawRules[0]).toBe(pathRule);
         });
 
-        describe('ancestor chain', () => {
+        describe('preregistered coverage', () => {
             beforeEach(() => {
                 chrome.webNavigation.getAllFrames.reset();
             });
