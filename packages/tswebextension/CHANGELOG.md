@@ -20,9 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   literal characters of the matched text, unbalanced arguments (e.g.
   `$$script:contains((function(g,b,a,c,e,d)`) are matched as-is, and
   `/regexp/`-looking arguments keep their regexp semantics.
-- ExtendedCSS rules in MV3 are now applied by the background service worker
-  via `chrome.scripting.executeScript` instead of the content script. The MV2
-  path is unchanged.
+- ExtendedCSS rules in MV2 and MV3 are now applied solely by the background
+  injection path — removed from the content scripts (`GetCosmeticData`
+  returns `extCssRules: null`, `@adguard/extended-css` is no longer
+  instantiated in the content-script bundles). In MV2 the background
+  serializes the shared payload into a `tabs.executeScript` code string.
+- MV2 `:contains()` now uses the `init()` snapshot of the native
+  `textContent` getter, matching MV3.
 
 ### Deprecated
 
@@ -40,6 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Malformed CSS hit markers no longer break cosmetic application in MV2: a
   `URIError` from `decodeURIComponent` is treated as a non-matching marker
   instead of propagating.
+- MV2 retained ExtendedCSS instance not being disposed when the rule set
+  becomes empty on a same-document navigation.
 - In MV3, static filters, custom filters and user rules were handed to the
   converter already converted by the extension, so `$badfilter` rules from those
   sources were compared by the converted text instead of the text as written and

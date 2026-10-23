@@ -10,6 +10,8 @@ import {
 import { MAIN_FRAME_ID } from '../../../../src/lib/common/constants';
 import { DocumentLifecycle } from '../../../../src/lib/common/interfaces';
 import { documentApi } from '../../../../src/lib/mv2/background/api';
+import { appContext } from '../../../../src/lib/mv2/background/app-context';
+import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { CosmeticFrameProcessor } from '../../../../src/lib/mv2/background/cosmetic-frame-processor';
 
 vi.mock('../../../../src/lib/mv2/background/api', () => ({
@@ -39,6 +41,7 @@ vi.mock('../../../../src/lib/mv2/background/cosmetic-api', () => ({
     CosmeticApi: {
         getCssText: vi.fn().mockReturnValue(''),
         getScriptsAndScriptletsData: vi.fn().mockReturnValue({ scriptText: '' }),
+        getExtCssRules: vi.fn(),
     },
 }));
 
@@ -199,6 +202,91 @@ describe('CosmeticFrameProcessor', () => {
             expect(mockTabsApi.resetBlockedRequestsCount).toHaveBeenCalledWith(1);
             // Should not proceed with matching since it's not an HTTP request
             expect(mockEngineApi.matchRequest).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('extractCosmeticRules ExtCSS preparation', () => {
+        beforeEach(() => {
+            vi.mocked(CosmeticApi.getExtCssRules).mockReset();
+            vi.mocked(CosmeticApi.getExtCssRules).mockReturnValue(null);
+            appContext.configuration!.settings.collectStats = false;
+        });
+
+        afterEach(() => {
+            appContext.configuration!.settings.collectStats = false;
+        });
+
+        /**
+         * Drives the main-frame path with a matching result.
+         */
+        const handleMainFrame = (): void => {
+            mockEngineApi.matchRequest.mockReturnValue({
+                getCosmeticOption: vi.fn().mockReturnValue(0),
+            });
+            mockEngineApi.getCosmeticResult.mockReturnValue({
+                elementHiding: { generic: [], specific: [] },
+                CSS: { generic: [], specific: [] },
+                getScriptRules: vi.fn().mockReturnValue([]),
+            });
+
+            cosmeticFrameProcessor.handleFrame({
+                tabId: 1,
+                frameId: MAIN_FRAME_ID,
+                parentFrameId: -1,
+                url: 'https://example.com/',
+                timeStamp: Date.now(),
+                documentLifecycle: DocumentLifecycle.Active,
+            });
+        };
+
+        it('stores extCssRules and areHitsStatsCollected on the prepared result', () => {
+            const rules = ['.ad:has(.child) { display: none !important; }'];
+            appContext.configuration!.settings.collectStats = true;
+            vi.mocked(CosmeticApi.getExtCssRules).mockReturnValue(rules);
+
+            handleMainFrame();
+
+            expect(mockTabsApi.updateFrameContext).toHaveBeenCalledWith(
+                1,
+                MAIN_FRAME_ID,
+                expect.objectContaining({
+                    preparedCosmeticResult: expect.objectContaining({
+                        extCssRules: rules,
+                        areHitsStatsCollected: true,
+                    }),
+                }),
+            );
+        });
+
+        it('stores null extCssRules when no extended rules match', () => {
+            vi.mocked(CosmeticApi.getExtCssRules).mockReturnValue(null);
+
+            handleMainFrame();
+
+            expect(mockTabsApi.updateFrameContext).toHaveBeenCalledWith(
+                1,
+                MAIN_FRAME_ID,
+                expect.objectContaining({
+                    preparedCosmeticResult: expect.objectContaining({
+                        extCssRules: null,
+                        areHitsStatsCollected: false,
+                    }),
+                }),
+            );
+        });
+
+        it('passes the hits flag and native :has support to getExtCssRules', () => {
+            appContext.configuration!.settings.collectStats = true;
+
+            handleMainFrame();
+
+            expect(CosmeticApi.getExtCssRules).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({
+                    areHitsStatsCollected: true,
+                    isNativeHasSupported: expect.any(Boolean),
+                }),
+            );
         });
     });
 

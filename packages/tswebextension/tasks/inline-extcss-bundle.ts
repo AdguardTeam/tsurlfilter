@@ -30,7 +30,7 @@ import { assertNoMarkerInBundle } from './marker-integrity.ts';
 // breaking `fileURLToPath`.
 const EXT_CSS_INJECT_SRC = resolvePath(
     dirname(fileURLToPath(import.meta.url)),
-    '../src/lib/mv3/background/extcss-inject-src.ts',
+    '../src/lib/common/extcss-inject-src.ts',
 );
 
 if (!existsSync(EXT_CSS_INJECT_SRC)) {

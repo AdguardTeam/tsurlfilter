@@ -11,9 +11,10 @@ import {
     vi,
 } from 'vitest';
 
-import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../../src/lib/common/message-constants';
-import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-apply-fn';
-import { resetExtCssState } from '../helpers';
+import { extCssInjectedApply } from '../../../src/lib/common/extcss-apply-fn';
+import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../src/lib/common/message-constants';
+
+import { resetExtCssState } from './helpers';
 
 // Single file-level cleanup. The jsdom `window` is shared across every test in
 // this file, so a retained ExtendedCss instance (and its MutationObserver)

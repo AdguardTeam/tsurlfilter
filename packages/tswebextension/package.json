@@ -94,6 +94,7 @@
         "test:smoke": "pnpm run test:smoke:exports && (cd test/builders/rollup-ts && pnpm test)",
         "test:smoke:exports": "./test/smoke/exports/test.sh",
         "test:e2e": "vitest run --project browser",
+        "test:e2e:firefox": "vitest run --config vitest.firefox.config.ts",
         "test:prod": "pnpm lint && pnpm test:smoke && pnpm test:ci && pnpm test:e2e",
         "report-coverage": "cat ./coverage/lcov.info | coveralls",
         "precommit": "lint-staged",

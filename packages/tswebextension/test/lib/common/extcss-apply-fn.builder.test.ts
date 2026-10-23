@@ -13,9 +13,9 @@ import {
 
 import { type IAffectedElement } from '@adguard/extended-css';
 
-import applyExtendedCss from '../../../../src/lib/mv3/background/extcss-inject-src';
-import { inlineCssHitsHelpers } from '../../../../tasks/inline-css-hits-helpers';
-import { getExtCssBundle, inlineExtCssBundle } from '../../../../tasks/inline-extcss-bundle';
+import applyExtendedCss from '../../../src/lib/common/extcss-inject-src';
+import { inlineCssHitsHelpers } from '../../../tasks/inline-css-hits-helpers';
+import { getExtCssBundle, inlineExtCssBundle } from '../../../tasks/inline-extcss-bundle';
 
 // `vi.mock` factories are hoisted above top-level `const` declarations, so the
 // spies must be created via `vi.hoisted` to be referenceable inside the
@@ -164,7 +164,7 @@ describe('inline-extcss-bundle builder', () => {
         // module is re-imported after a registry reset to observe the mocked
         // build of this test file.
         vi.resetModules();
-        const freshModule = await import('../../../../tasks/inline-extcss-bundle');
+        const freshModule = await import('../../../tasks/inline-extcss-bundle');
         const [first, second] = await Promise.all([
             freshModule.getExtCssBundle(),
             freshModule.getExtCssBundle(),
@@ -180,7 +180,7 @@ describe('inline-extcss-bundle builder', () => {
     it('closes the Rollup bundle in finally (no handle leak)', async () => {
         vi.resetModules();
         closeSpyHolder.closeSpy = undefined;
-        const freshModule = await import('../../../../tasks/inline-extcss-bundle');
+        const freshModule = await import('../../../tasks/inline-extcss-bundle');
         await freshModule.getExtCssBundle();
 
         expect(closeSpyHolder.closeSpy).toBeDefined();
@@ -271,7 +271,7 @@ describe('inline-css-hits-helpers builder', () => {
         expect(await runTransform(
             plugin,
             'expect(src).not.toMatch(/__INLINE_CSS_HITS_HELPERS__\\(\\)/);',
-            '/pkg/test/lib/mv3/background/extcss-apply-fn.test.ts',
+            '/pkg/test/lib/common/extcss-apply-fn.test.ts',
         )).toBeNull();
     });
 });

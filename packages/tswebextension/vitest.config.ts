@@ -42,12 +42,9 @@ const createProjectForManifestVersion = (
             ? { include: ['test/**/*.bench.ts'] }
             : undefined,
     },
-    // The ExtCSS and CSS-hits inlining plugins are only needed for the MV3
-    // project, where the `extCssInjectedApply` function (and its tests) live.
-    // They are no-ops for MV2.
-    plugins: manifestVersion === ManifestVersionEnv.Third
-        ? [inlineExtCssBundle(), inlineCssHitsHelpers()]
-        : [],
+    // Both manifest-version projects run tests for the shared ExtCSS payload
+    // and its MV2 serializer, so both need the build-time inliners.
+    plugins: [inlineExtCssBundle(), inlineCssHitsHelpers()],
 });
 
 export default defineConfig({
@@ -77,6 +74,9 @@ export default defineConfig({
                         '**/test/e2e/**',
                     ],
                 },
+                // The shared ExtCSS payload and its tests live in `common` and
+                // rely on the build-time inliners, as the MV3 project does.
+                plugins: [inlineExtCssBundle(), inlineCssHitsHelpers()],
             }),
             createProjectForManifestVersion(ManifestVersionEnv.Second),
             createProjectForManifestVersion(ManifestVersionEnv.Third),
@@ -84,6 +84,9 @@ export default defineConfig({
                 test: {
                     name: 'browser',
                     include: ['test/e2e/**/*.spec.ts'],
+                    // Firefox specs run via `pnpm test:e2e:firefox`
+                    // (vitest.firefox.config.ts), not in the Chromium project.
+                    exclude: ['**/node_modules/**', '**/*.firefox.spec.ts'],
                     browser: {
                         enabled: true,
                         provider: playwright(),

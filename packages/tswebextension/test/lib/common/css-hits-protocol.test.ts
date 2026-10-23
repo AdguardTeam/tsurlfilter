@@ -11,10 +11,11 @@ import {
     vi,
 } from 'vitest';
 
-import { ElementUtils } from '../../../../src/lib/common/content-script/utils/element-utils';
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
-import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-apply-fn';
-import { resetExtCssState } from '../helpers';
+import { ElementUtils } from '../../../src/lib/common/content-script/utils/element-utils';
+import { extCssInjectedApply } from '../../../src/lib/common/extcss-apply-fn';
+import { EXTCSS_PROTOCOL } from '../../../src/lib/common/message-constants';
+
+import { resetExtCssState } from './helpers';
 
 /**
  * Shared protocol contract test: asserts the MV3 injected `beforeStyleApplied`

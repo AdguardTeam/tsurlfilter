@@ -13,7 +13,7 @@ import {
     USER_FILTER_ID,
 } from '../../../../src/lib/common/constants';
 import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
-import { createFilter } from '../helpers';
+import { createFilter } from '../../common/helpers';
 
 describe('DynamicRulesApi', () => {
     describe('updateDynamicFiltering', () => {
