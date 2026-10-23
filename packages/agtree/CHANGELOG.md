@@ -19,6 +19,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `adg_safari_any` now expands to `adg_cb_ios` and `adg_cb_safari`. It parses
+  to a platform type that has no concrete instances, so wildcard expansion
+  returned an empty list and every compatibility entry keyed by it was silently
+  dropped — for example `prevent-window-open` for Safari content blockers.
+  Wildcard expansion now throws when it matches no concrete platform.
 - Trailing whitespace is no longer part of a network rule pattern. A rule with
   a trailing space or tab, or with whitespace before the `$` separator,
   previously produced a pattern containing that whitespace, which made the

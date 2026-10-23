@@ -28,6 +28,22 @@ describe('PlatformExpressionEvaluator', () => {
             expect(resultStrings).toHaveLength(4);
         });
 
+        it('should expand adg_safari_any to the Safari content-blocker family', () => {
+            const result = PlatformExpressionEvaluator.evaluate('adg_safari_any');
+            const resultStrings = result.map((p) => p.toString()).sort();
+
+            expect(resultStrings).toEqual(['adg_cb_ios', 'adg_cb_safari']);
+        });
+
+        it('should expand adg_safari_any inside a combined expression', () => {
+            const result = PlatformExpressionEvaluator.evaluate('adg_os_any|adg_safari_any');
+            const resultStrings = result.map((p) => p.toString());
+
+            expect(resultStrings).toContain('adg_os_windows');
+            expect(resultStrings).toContain('adg_cb_ios');
+            expect(resultStrings).toContain('adg_cb_safari');
+        });
+
         it('should handle negation - remove specific platform from wildcard', () => {
             const result = PlatformExpressionEvaluator.evaluate('adg_os_any|~adg_os_windows');
             const resultStrings = result.map((p) => p.toString()).sort();

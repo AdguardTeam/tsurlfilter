@@ -13,6 +13,15 @@ import {
  * Tests real-world scenarios and end-to-end workflows.
  */
 describe('Compatibility Tables - Integration', () => {
+    describe('safari content-blocker family', () => {
+        it('should report adg_safari_any features for cb ios and cb safari', () => {
+            // `adg_safari_any` is used by scriptlet entries that must also
+            // resolve for the two concrete Safari content blockers.
+            expect(scriptletsCompatibilityTable.supports('prevent-window-open', Platform.AdgCbSafari)).toBe(true);
+            expect(scriptletsCompatibilityTable.supports('prevent-window-open', Platform.AdgCbIos)).toBe(true);
+        });
+    });
+
     describe('cross-product modifier compatibility', () => {
         it('should check common modifiers across all products', () => {
             // Test known common modifiers
