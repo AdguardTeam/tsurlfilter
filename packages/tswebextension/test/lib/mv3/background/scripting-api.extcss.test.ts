@@ -6,8 +6,8 @@ import {
     vi,
 } from 'vitest';
 
+import { extCssInjectedDispose } from '../../../../src/lib/common/extcss-apply-fn';
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
-import { extCssInjectedDispose } from '../../../../src/lib/mv3/background/extcss-apply-fn';
 import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
 
 describe('ScriptingApi.executeExtCss', () => {

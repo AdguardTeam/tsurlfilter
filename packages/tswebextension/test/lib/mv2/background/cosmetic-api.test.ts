@@ -1,4 +1,5 @@
 import {
+    afterEach,
     describe,
     expect,
     it,
@@ -396,6 +397,26 @@ describe('cosmetic api', () => {
                     },
                 )).toEqual(expected);
             });
+        });
+    });
+
+    describe('injectCosmetic()', () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it('runs applyJs, applyCss, and applyExtCss', () => {
+            const tabId = 1;
+            const frameId = 0;
+            const applyJsSpy = vi.spyOn(CosmeticApi, 'applyJs').mockResolvedValue();
+            const applyCssSpy = vi.spyOn(CosmeticApi, 'applyCss').mockResolvedValue();
+            const applyExtCssSpy = vi.spyOn(CosmeticApi, 'applyExtCss').mockResolvedValue();
+
+            CosmeticApi.injectCosmetic(tabId, frameId);
+
+            expect(applyJsSpy).toHaveBeenCalledWith(tabId, frameId);
+            expect(applyCssSpy).toHaveBeenCalledWith(tabId, frameId);
+            expect(applyExtCssSpy).toHaveBeenCalledWith(tabId, frameId);
         });
     });
 

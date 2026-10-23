@@ -1,5 +1,3 @@
-import { type ExtCssConfiguration, ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
-
 import { CssHitsCounter } from '../../common/content-script/css-hits-counter';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
@@ -38,7 +36,6 @@ export class CosmeticController {
      */
     constructor() {
         this.process = this.process.bind(this);
-        this.beforeStyleApplied = this.beforeStyleApplied.bind(this);
     }
 
     /**
@@ -69,17 +66,20 @@ export class CosmeticController {
     /**
      * Process {@link MessageType.GetCosmeticData} response from background.
      *
-     * If {@link cosmeticData.isAppStarted} is false, retry
-     * request after {@link GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} milliseconds.
-     * Else apply extended css rules from {@link cosmeticData.extCssText}
-     * and enable {@link CssHitsCounter} if {@link cosmeticData.areHitsStatsCollected} is true.
+     * If {@link cosmeticData.isAppStarted} is false, retry the request after
+     * {@link CosmeticController.GET_COSMETIC_DATA_RETRY_TIMEOUT_MS}
+     * milliseconds. Otherwise repair native CSS selectors and enable the
+     * native {@link CssHitsCounter} if
+     * {@link cosmeticData.areHitsStatsCollected} is true.
+     *
+     * ExtendedCSS rules are applied by the background, so
+     * {@link cosmeticData.extCssRules} is not used here.
      *
      * @param cosmeticData Response cosmetic data from background.
      */
     private applyCosmetic(cosmeticData: ContentScriptCosmeticData): void {
         const {
             isAppStarted,
-            extCssRules,
             areHitsStatsCollected,
             nativeCssSelectors,
         } = cosmeticData;
@@ -101,21 +101,6 @@ export class CosmeticController {
         }
 
         CosmeticController.repairNativeCss(nativeCssSelectors);
-
-        if (!extCssRules || extCssRules.length === 0) {
-            return;
-        }
-
-        const extendedCssConfig: ExtCssConfiguration = {
-            cssRules: extCssRules,
-        };
-
-        if (areHitsStatsCollected) {
-            extendedCssConfig.beforeStyleApplied = this.beforeStyleApplied;
-        }
-
-        const extendedCss = new ExtendedCss(extendedCssConfig);
-        extendedCss.apply();
     }
 
     /**
@@ -151,21 +136,6 @@ export class CosmeticController {
             .map((sel) => `${sel} ${HIDING_STYLE}`)
             .join('\n');
         (document.head || document.documentElement).appendChild(style);
-    }
-
-    /**
-     * Preprocess {@link IAffectedElement} for {@link ExtendedCss} instance.
-     *
-     * @param el Record with required 'content' style property in rules.
-     *
-     * @returns Affected element record.
-     */
-    private beforeStyleApplied(el: IAffectedElement): IAffectedElement {
-        if (!this.cssHitsCounter) {
-            return el;
-        }
-
-        return this.cssHitsCounter.countAffectedByExtendedCss(el);
     }
 
     /**

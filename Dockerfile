@@ -290,8 +290,9 @@ COPY --from=test-dnr-converter /out/ /
 # ============================================================================
 FROM built-tswebextension AS test-tswebextension
 
-# Install Playwright Chromium browser and its system dependencies for e2e tests
-RUN cd packages/tswebextension && npx playwright install --with-deps chromium
+# Install Playwright Chromium and Firefox browsers with their system
+# dependencies for e2e tests.
+RUN cd packages/tswebextension && npx playwright install --with-deps chromium firefox
 
 ARG TEST_RUN_ID
 
@@ -305,6 +306,21 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     EXIT_CODE=$?; \
     bash ./scripts/ci/copy-test-reports.sh packages/tswebextension; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
+    exit 0
+
+# Firefox-only e2e: runs the serialized MV2 ExtCSS code string in real Gecko.
+# The test:prod exit code takes precedence; write the Firefox code only when
+# test:prod succeeded and Firefox failed.
+RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
+    pnpm config set store-dir /pnpm-store && \
+    EXISTING_EXIT_CODE=$(cat /out/exit-code.txt 2>/dev/null || echo 0); \
+    set +e; \
+    bash ./scripts/ci/timeout-wrapper.sh 600s sh -c \
+      'cd packages/tswebextension && pnpm test:e2e:firefox'; \
+    FIREFOX_EXIT_CODE=$?; \
+    if [ "${EXISTING_EXIT_CODE}" = "0" ] && [ ${FIREFOX_EXIT_CODE} -ne 0 ]; then \
+      echo ${FIREFOX_EXIT_CODE} > /out/exit-code.txt; \
+    fi; \
     exit 0
 
 FROM scratch AS test-tswebextension-output

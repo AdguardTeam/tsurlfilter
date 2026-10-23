@@ -2,12 +2,14 @@ import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
 import { USER_FILTER_ID } from '../../common/constants';
 import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParams } from '../../common/cosmetic-api';
+import { EXTCSS_PROTOCOL } from '../../common/message-constants';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { CssCapabilities } from '../../common/utils/css-capabilities';
 import { logger } from '../../common/utils/logger';
 
 import { engineApi, tabsApi } from './api';
 import { appContext } from './app-context';
+import { serializeExtCssDisposeForCode, serializeExtCssForCode } from './extcss-code';
 import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { TabsApi } from './tabs/tabs-api';
@@ -210,14 +212,6 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const isNativeHasSupported = CssCapabilities.isNativeHasPseudoClassSupported();
 
-        data.extCssRules = CosmeticApi.getExtCssRules(
-            cosmeticResult,
-            {
-                areHitsStatsCollected,
-                isNativeHasSupported,
-            },
-        );
-
         data.nativeCssSelectors = CosmeticApi.getNativeCssSelectors(
             cosmeticResult,
             { isNativeHasSupported },
@@ -258,6 +252,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         Promise.all([
             CosmeticApi.applyJs(tabId, frameId),
             CosmeticApi.applyCss(tabId, frameId),
+            CosmeticApi.applyExtCss(tabId, frameId),
         ]).catch((e) => {
             logger.error('[tsweb.CosmeticApi.injectCosmetic]: error occurred during injection: ', e);
         });
@@ -370,6 +365,53 @@ export class CosmeticApi extends CosmeticApiCommon {
                 }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
                 logger.debug('[tsweb.CosmeticApi.applyCss]: error occurred during injection', e);
+            }
+        }
+    }
+
+    /**
+     * Applies or disposes ExtendedCSS in the specified tab and frame.
+     *
+     * When the prepared result carries rules, the shared ExtCSS payload is
+     * serialized into a code string and injected. When the rule set is empty
+     * or null and an instance was applied to the current document, the dispose
+     * code string is injected instead, so observers and styles do not leak.
+     * Otherwise no code is injected.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @param tries Number of tries for the injection in case of failure.
+     */
+    public static async applyExtCss(tabId: number, frameId: number, tries = 0): Promise<void> {
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+        const preparedCosmeticResult = frameContext?.preparedCosmeticResult;
+
+        if (!frameContext || !preparedCosmeticResult) {
+            return;
+        }
+
+        const { extCssRules, areHitsStatsCollected } = preparedCosmeticResult;
+        const shouldApply = Boolean(extCssRules?.length);
+
+        if (!shouldApply && !frameContext.extCssApplied) {
+            return;
+        }
+
+        const code = shouldApply
+            ? serializeExtCssForCode(extCssRules!, areHitsStatsCollected, EXTCSS_PROTOCOL)
+            : serializeExtCssDisposeForCode(EXTCSS_PROTOCOL);
+
+        try {
+            await TabsApi.injectExtCss(tabId, frameId, code);
+            frameContext.extCssApplied = shouldApply;
+        } catch (e) {
+            // Retry injection if it fails
+            if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
+                setTimeout(() => {
+                    CosmeticApi.applyExtCss(tabId, frameId, tries + 1);
+                }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
+            } else {
+                logger.debug('[tsweb.CosmeticApi.applyExtCss]: error occurred during injection', e);
             }
         }
     }

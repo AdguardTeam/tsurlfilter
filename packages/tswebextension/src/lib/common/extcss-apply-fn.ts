@@ -1,9 +1,8 @@
 import { type ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
 
-import type { cssHitsHelpers as cssHitsHelpersImpl } from '../../common/content-script/utils/css-hits-helpers';
-import { type ExtCssProtocol } from '../../common/message-constants';
-
+import type { cssHitsHelpers as cssHitsHelpersImpl } from './content-script/utils/css-hits-helpers';
 import type applyExtendedCssImpl from './extcss-inject-src';
+import { type ExtCssProtocol } from './message-constants';
 
 // Type-only decls for symbols supplied by build-time inlining (see the
 // inlineExtCssBundle plugin). Erased at runtime; they exist only so the source
@@ -37,10 +36,13 @@ declare const cssHitsHelpers: typeof cssHitsHelpersImpl;
 declare const applyExtendedCss: typeof applyExtendedCssImpl;
 
 /**
- * Self-contained ExtendedCSS apply function injected into pages via
- * `chrome.scripting.executeScript({ func, args })`.
+ * Self-contained ExtendedCSS apply function shared by MV2 and MV3.
  *
- * NEVER called in the service worker — it is serialized by `toString()` and
+ * In MV3 it is injected with
+ * `chrome.scripting.executeScript({ func, args })`. In MV2 it is serialized
+ * into a code string for `browser.tabs.executeScript({ code })`.
+ *
+ * NEVER called in the background — it is serialized by `toString()` and
  * re-evaluated in the page's ISOLATED world, so it MUST NOT reference any
  * outer-scope identifier: only literal source in this body (and `window`)
  * survives. The `inlineExtCssBundle` build plugin replaces the inlining
@@ -91,7 +93,7 @@ export const extCssInjectedApply = (
      * the build-time helpers inliner) — the SAME source as MV2's
      * `ElementUtils` — so both manifest versions share one implementation of
      * marker parsing and element serialization. The contract test
-     * (test/lib/mv3/background/css-hits-protocol.test.ts) pins both paths to
+     * (test/lib/common/css-hits-protocol.test.ts) pins both paths to
      * identical outputs.
      *
      * @param el The affected element whose style is about to be applied.
@@ -199,12 +201,12 @@ export const extCssInjectedApply = (
 };
 
 /**
- * Self-contained ExtendedCSS disposal function injected into pages via
- * `chrome.scripting.executeScript({ func, args })` when the rule set
- * transitions from non-empty to empty (or null) on a same-document
- * navigation. Disposes the previously retained ExtendedCss instance (if
- * any): disconnects its MutationObserver and reverts its styles, so stale
- * observers and styles do not leak.
+ * Self-contained ExtendedCSS disposal function shared by MV2 and MV3.
+ *
+ * It runs when the rule set transitions from non-empty to empty (or null) on
+ * a same-document navigation. It disposes the previously retained
+ * ExtendedCss instance (if any): disconnects its MutationObserver and reverts
+ * its styles, so stale observers and styles do not leak.
  *
  * Like {@link extCssInjectedApply}, it MUST NOT reference any outer-scope
  * identifier; the instance key arrives via the `protocol` argument.

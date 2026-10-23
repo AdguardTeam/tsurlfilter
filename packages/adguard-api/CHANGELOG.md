@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- ExtendedCSS rules in MV2 are now applied by the `@adguard/tswebextension`
+  background; the content script no longer bundles the ExtendedCSS engine.
+
 ### Deprecated
 
 ### Removed

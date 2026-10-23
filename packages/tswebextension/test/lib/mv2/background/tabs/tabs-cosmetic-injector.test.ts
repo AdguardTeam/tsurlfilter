@@ -91,7 +91,28 @@ describe('TabsCosmeticInjector', () => {
             expect(CosmeticApi.logScriptRules).toBeCalledWith(expectedLogParams);
         });
 
-        it('should not apply cosmetic rules for non-browser tabs', async () => {
+        it('processOpenTabs applies ExtCSS on the startup pass', async () => {
+            const tabId = 1;
+            const frameId = 0;
+            const url = 'https://example.com';
+
+            browser.tabs.query.resolves([{ id: tabId, url }]);
+            browser.webNavigation.getAllFrames.resolves([{ frameId, url }]);
+
+            const matchingResult = {} as MatchingResult;
+            matchingResult.getCosmeticOption = vi.fn();
+
+            vi.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
+            vi.spyOn(engineApi, 'getCosmeticResult').mockReturnValue({} as CosmeticResult);
+            vi.spyOn(CosmeticApi, 'getScriptsAndScriptletsData').mockReturnValue({ scriptText: '' });
+            vi.spyOn(stealthApi, 'getStealthScript').mockReturnValue('');
+
+            await tabsCosmeticInjector.processOpenTabs();
+
+            expect(CosmeticApi.applyExtCss).toHaveBeenCalledWith(tabId, frameId);
+        });
+
+        it('processOpenTabs skips ExtCSS for non-browser tabs', async () => {
             const tabId = -1;
 
             browser.tabs.query.resolves([{ id: tabId }]);
@@ -100,6 +121,7 @@ describe('TabsCosmeticInjector', () => {
 
             expect(CosmeticApi.applyCss).not.toBeCalled();
             expect(CosmeticApi.applyJs).not.toBeCalled();
+            expect(CosmeticApi.applyExtCss).not.toBeCalled();
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
 
@@ -118,6 +140,7 @@ describe('TabsCosmeticInjector', () => {
 
             expect(CosmeticApi.applyCss).not.toBeCalled();
             expect(CosmeticApi.applyJs).not.toBeCalled();
+            expect(CosmeticApi.applyExtCss).not.toBeCalled();
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
     });

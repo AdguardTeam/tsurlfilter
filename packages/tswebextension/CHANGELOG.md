@@ -30,11 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   literal characters of the matched text, unbalanced arguments (e.g.
   `$$script:contains((function(g,b,a,c,e,d)`) are matched as-is, and
   `/regexp/`-looking arguments keep their regexp semantics.
-- ExtendedCSS rules in MV3 are now applied solely by the background
-  injection path — removed from the MV3 content script
-  (`GetCosmeticData` returns `extCssRules: null`, `@adguard/extended-css`
-  instantiation is removed from the content-script bundle). The MV2 path
-  is unchanged.
+- ExtendedCSS rules in MV2 and MV3 are now applied solely by the background
+  injection path — removed from the content scripts (`GetCosmeticData`
+  returns `extCssRules: null`, `@adguard/extended-css` is no longer
+  instantiated in the content-script bundles). In MV2 the background
+  serializes the shared payload into a `tabs.executeScript` code string.
+- MV2 `:contains()` now uses the `init()` snapshot of the native
+  `textContent` getter, matching MV3.
 
 ### Deprecated
 
@@ -49,6 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stale ExtendedCSS styles and observers persisting when a frame's ExtCSS
   rules transition from non-empty to empty: the previously injected
   instance is now explicitly disposed.
+- MV2 retained ExtendedCSS instance not being disposed when the rule set
+  becomes empty on a same-document navigation.
 - Protocol literals (hit-marker prefix, message handler/type,
   retained-instance key) hardcoded across the MV3 ExtCSS injection path:
   centralized into `EXTCSS_PROTOCOL` and passed to the injected function

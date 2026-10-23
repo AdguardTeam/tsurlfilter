@@ -12,8 +12,11 @@ import {
     it,
 } from 'vitest';
 
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
-import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-apply-fn';
+import { extCssInjectedApply } from '../../../src/lib/common/extcss-apply-fn';
+import { EXTCSS_PROTOCOL } from '../../../src/lib/common/message-constants';
+import { serializeExtCssForCode } from '../../../src/lib/mv2/background/extcss-code';
+
+import { APPLY_FN_MAX_BYTES } from './extcss-payload-size';
 
 // NOTE: This benchmark follows the convention of the prior-art
 // `packages/tsurlfilter/test/engine/start-engine-benchmark.test.ts`:
@@ -23,8 +26,8 @@ import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-a
 // (`APPLY_FN_MAX_BYTES`): it fails on an accidental growth of the inlined
 // engine, not on machine speed.
 // This avoids machine/load-dependent CI flakiness in the standard
-// `pnpm test:mv3` gate, which `@adguard/tswebextension` runs in full on every
-// CI invocation (there is no `test:light`-style exclude here).
+// `pnpm test:common` gate, which `@adguard/tswebextension` runs in full on
+// every CI invocation (there is no `test:light`-style exclude here).
 //
 // This is NOT a latency-target assertion (that is architectural: the new
 // path injects with injectImmediately:true and no retry loop, verified
@@ -36,13 +39,6 @@ const ITERATIONS = 50;
 
 // A representative rule set size (matches the "hundreds of rules" scenario).
 const RULESET_SIZE = 100;
-
-// Ceiling for the serialized `func` payload only (not the total executeScript
-// payload — see extcss-large-ruleset.test.ts for the 1 MiB total ceiling).
-// Measured value on 2026-10-20: 46 474 B (~45.4 KiB) for the Vitest-serialized
-// `extCssInjectedApply`; the ceiling leaves ~2x headroom for engine growth
-// while still failing long before the 1 MiB total-payload ceiling.
-const APPLY_FN_MAX_BYTES = 96 * 1024;
 
 afterEach(() => {
     // eslint-disable-next-line no-underscore-dangle -- marker key inlined into extCssInjectedApply
@@ -72,7 +68,7 @@ function buildRuleset(): { rules: string[]; matchClass: string } {
     return { rules, matchClass: 'ad-0' };
 }
 
-describe('extCssInjectedApply — performance benchmark (AC1, print-only timings)', () => {
+describe('extCssInjectedApply — performance benchmark (print-only timings)', () => {
     /* eslint-disable jsdoc/require-description-complete-sentence */
     /**
      * Baseline apply latency in jsdom (record the first measured values here):
@@ -144,5 +140,21 @@ describe('extCssInjectedApply — performance benchmark (AC1, print-only timings
         );
 
         expect(funcBytes).toBeLessThan(APPLY_FN_MAX_BYTES);
+    });
+
+    it('serialized MV2 apply code stays under the size ceiling', () => {
+        // The MV2 code string is the same payload source plus the rule JSON.
+        // It must stay under the same ceiling as the MV3 `func` payload.
+        const { rules } = buildRuleset();
+        const code = serializeExtCssForCode(rules, false, EXTCSS_PROTOCOL);
+        const codeBytes = Buffer.byteLength(code, 'utf8');
+
+        // eslint-disable-next-line no-console -- benchmark/validation report
+        console.log(
+            `[extcss-apply-benchmark] mv2Code=${codeBytes} B `
+            + `(ceiling=${APPLY_FN_MAX_BYTES} B)`,
+        );
+
+        expect(codeBytes).toBeLessThan(APPLY_FN_MAX_BYTES);
     });
 });

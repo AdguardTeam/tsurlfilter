@@ -11,8 +11,8 @@ import {
     vi,
 } from 'vitest';
 
-import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../../src/lib/common/message-constants';
-import { extCssInjectedApply, extCssInjectedDispose } from '../../../../src/lib/mv3/background/extcss-apply-fn';
+import { extCssInjectedApply, extCssInjectedDispose } from '../../../src/lib/common/extcss-apply-fn';
+import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../src/lib/common/message-constants';
 
 // Single file-level cleanup. The jsdom `window` is shared across
 // every test in this file, so a retained `window['__adguardExtCss']` instance
@@ -120,7 +120,7 @@ describe('extCssInjectedApply (inlined bundle)', () => {
     });
 });
 
-describe('extCssInjectedApply — navigation cleanup (AC2)', () => {
+describe('extCssInjectedApply — navigation cleanup', () => {
     it('disposes the previous instance on re-apply (old styles reverted, old observer stopped)', async () => {
         // First injection: rule A hides `.ad:has(.child)`.
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
@@ -247,7 +247,7 @@ describe('extCssInjectedApply — atomic re-apply', () => {
     });
 });
 
-describe('extCssInjectedApply — continuous observation (AC1)', () => {
+describe('extCssInjectedApply — continuous observation', () => {
     it('hides a matching element added dynamically after extCssInjectedApply', async () => {
         document.body.innerHTML = '';
         extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
