@@ -22,6 +22,7 @@ import type {
 } from '../../../nodes';
 import { NodeType } from '../../../nodes';
 import type { ParserContext } from '../../../parser/context';
+import { CTX_STATUS_OVERFLOW } from '../../../parser/context';
 import { CssAtRuleParser } from '../../../parser/css/atrule';
 import { AT_HEADER_SIZE, AT_NO_VALUE } from '../../../parser/css/atrule/constants';
 import { DeclarationListParser } from '../../../parser/css/declaration-list';
@@ -208,7 +209,7 @@ export class CssAtRuleAstBuilder {
                         bodyDataOffset,
                         DEFAULT_MAX_DECLARATIONS,
                     );
-                    if (ctx.status === 1) {
+                    if (ctx.status === CTX_STATUS_OVERFLOW) {
                         // eslint-disable-next-line max-len
                         throw new Error('Parser data buffer overflow: declaration list too large for current capacity');
                     }

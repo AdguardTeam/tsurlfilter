@@ -10,7 +10,7 @@
  * Comment sub-type discriminator.
  * Stored in `ctx.data[CM_KIND]` by all comment parsers.
  */
-export const enum CommentKind {
+export enum CommentKind {
     Simple = 0,
     Preprocessor = 1,
     Hint = 2,

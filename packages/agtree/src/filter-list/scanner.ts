@@ -53,13 +53,6 @@ const ERR_DATA_BUFFER_OVERFLOW = 'Parser data buffer overflow: rule too large fo
 const DEFAULT_TOKEN_CAPACITY = 2048;
 
 /**
- * Hard upper limit on token buffer growth.
- * A single rule using more tokens than this is considered malformed and is
- * reported as an error without emitting a partial-rule callback.
- */
-const HARD_TOKEN_CAP = 262_144;
-
-/**
  * Default modifier capacity per rule.
  */
 const DEFAULT_ITEM_CAPACITY = 64;
@@ -373,7 +366,7 @@ export class FilterListScanner {
             } else if (this.grow) {
                 // No LineBreak found in this entire chunk — we have a single
                 // rule that is larger than the token buffer. Buffer may grow.
-                const newCap = Math.min(t.types.length * 2, HARD_TOKEN_CAP);
+                const newCap = Math.min(t.types.length * 2, MAX_TOKEN_CAPACITY);
                 if (newCap > t.types.length) {
                     // Grow and retry from the same position.
                     t.growCapacity(newCap);
@@ -385,7 +378,7 @@ export class FilterListScanner {
                     // physical-line contract.
                     const [ruleEnd, nextStart] = findNextNewline(source, t.offset);
                     // eslint-disable-next-line max-len
-                    const e = new Error(`Rule at offset ${pendingRuleSourceStart} exceeds the maximum token capacity of ${HARD_TOKEN_CAP} tokens`);
+                    const e = new Error(`Rule at offset ${pendingRuleSourceStart} exceeds the maximum token capacity of ${MAX_TOKEN_CAPACITY} tokens`);
                     if (onRuleError) {
                         onRuleError(e, pendingRuleSourceStart, ruleEnd);
                     } else {
