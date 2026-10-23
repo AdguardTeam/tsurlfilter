@@ -244,6 +244,13 @@ export class StructuralRuleParser implements RootParser<RuleParserOptions> {
                 return RuleKind.Network;
 
             case RuleKind.Cosmetic: {
+                // Cosmetic structural parsers write the CR header and every
+                // sub-region at absolute offsets, so a non-zero dataOffset
+                // would make the AST builders read a region that was never
+                // written. Reject it instead of returning a wrong rule.
+                if (dataOffset !== 0) {
+                    throw new Error('Non-zero dataOffset is not supported for cosmetic rules');
+                }
                 if (ignoreCosmetic) {
                     ctx.data[dataOffset] = 0;
                     return RuleKind.Cosmetic;

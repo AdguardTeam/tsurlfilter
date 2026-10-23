@@ -19,6 +19,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `RuleParserPipeline.parseRange` now rejects a non-zero `dataOffset` for
+  cosmetic rules. Their structural parsers write at fixed offsets, so a
+  non-zero offset previously produced a rule with an empty selector and no
+  domains instead of an error.
 - A parameter list with more than 32 entries (`!#safari_cb_affinity(...)`,
   hint parameters) is now rejected instead of writing past the reserved
   `ctx.data` region.

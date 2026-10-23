@@ -567,7 +567,9 @@ export class RuleParserPipeline {
      * @param ctx Parser context with tokenizer output already loaded.
      * @param startTi Inclusive start token index.
      * @param endTi Exclusive end token index.
-     * @param dataOffset Offset within ctx.data to write structural data.
+     * @param dataOffset Offset within ctx.data to write structural data. Must
+     *   be `0` for cosmetic rules: their structural parsers write the header
+     *   and sub-regions at fixed offsets.
      * @param options Parsing options (location, raws).
      *
      * @returns Parsed rule AST node.
