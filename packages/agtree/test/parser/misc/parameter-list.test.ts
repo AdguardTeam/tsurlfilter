@@ -8,6 +8,7 @@ import {
     PL_HEADER,
     PL_LIST_END,
     PL_LIST_START,
+    PL_MAX_PARAMS,
     PL_PARAM_END,
     PL_PARAM_START,
     PL_STRIDE,
@@ -168,6 +169,21 @@ describe('ParameterListParser', () => {
             expect(buf[PL_COUNT]).toBe(0);
             expect(buf[PL_LIST_START]).toBe(0);
             expect(buf[PL_LIST_END]).toBe(0);
+        });
+    });
+
+    describe('capacity', () => {
+        test('exactly PL_MAX_PARAMS parameters are accepted', () => {
+            const input = new Array(PL_MAX_PARAMS).fill('a').join(',');
+            parse(input);
+
+            expect(buf[PL_COUNT]).toBe(PL_MAX_PARAMS);
+        });
+
+        test('more than PL_MAX_PARAMS parameters throw instead of overflowing', () => {
+            const input = new Array(PL_MAX_PARAMS + 1).fill('a').join(',');
+
+            expect(() => parse(input)).toThrow(/maximum of 32 parameters/);
         });
     });
 

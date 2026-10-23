@@ -233,6 +233,11 @@ export class ParameterListParser implements BufferedParser {
                 }
             }
 
+            // The buffer is fixed-size, so a longer list must not be written.
+            if (paramCount >= PL_MAX_PARAMS) {
+                throw new Error(`Parameter list exceeds the maximum of ${PL_MAX_PARAMS} parameters`);
+            }
+
             // Trim trailing whitespace from the segment [segTi, sepTi)
             const pLastTi = lastNonWs(ctx, segTi, sepTi);
 

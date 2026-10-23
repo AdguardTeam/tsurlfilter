@@ -19,6 +19,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- A parameter list with more than 32 entries (`!#safari_cb_affinity(...)`,
+  hint parameters) is now rejected instead of writing past the reserved
+  `ctx.data` region.
 - `adg_safari_any` now expands to `adg_cb_ios` and `adg_cb_safari`. It parses
   to a platform type that has no concrete instances, so wildcard expansion
   returned an empty list and every compatibility entry keyed by it was silently
