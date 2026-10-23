@@ -389,4 +389,21 @@ describe('FilterListPipeline', () => {
             expect(errors[1]).toMatchObject({ start: 24, end: source.length });
         });
     });
+
+    test('parses a long list of rules with regex values in linear time', () => {
+        // Regression: the regex value regions were collected over the whole
+        // source for every rule, which made list parsing quadratic.
+        const rules: string[] = [];
+        for (let i = 0; i < 10_000; i += 1) {
+            rules.push(`||example${i}.com^$replace=/a$b/good/`);
+        }
+        const source = rules.join('\n');
+
+        const started = performance.now();
+        const ast = pipeline.parse(source);
+        const elapsed = performance.now() - started;
+
+        expect(ast.children).toHaveLength(rules.length);
+        expect(elapsed).toBeLessThan(5_000);
+    });
 });

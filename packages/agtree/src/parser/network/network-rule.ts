@@ -268,7 +268,11 @@ export class NetworkRuleParser implements StructuralParser {
             // A `$` inside a `=/…/` value belongs to the regex or to its
             // replacement string (`$1`), not to the modifier list.
             if (regions === null) {
-                regions = collectRegexValueRegions(source);
+                // `ctx.source` can be a whole filter list, so scan only the
+                // current rule's range.
+                const ruleStartOff = tokenStart(ctx, searchStart);
+                const ruleEndOff = endTi > searchStart ? ctx.ends[endTi - 1] : ruleStartOff;
+                regions = collectRegexValueRegions(source, ruleStartOff, ruleEndOff);
                 regionIndex = regions.length - 1;
             }
 

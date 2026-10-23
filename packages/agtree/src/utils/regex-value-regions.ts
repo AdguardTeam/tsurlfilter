@@ -28,30 +28,37 @@ export type RegexValueRegion = readonly [start: number, end: number];
  * (`$replace=/(a)/$1/`). Escaped characters are skipped, and the replacement
  * scan stops at `,` because a comma starts the next modifier.
  *
- * @param rule Rule text.
+ * `start` and `end` bound the scan. When the source string holds a whole
+ * filter list, pass the rule's range so the scan stays per-rule instead of
+ * per-list. Returned indices are absolute.
+ *
+ * @param rule Rule text, or a source string containing the rule.
+ * @param start Inclusive scan start.
+ * @param end Exclusive scan end.
  *
  * @returns Regions in ascending order.
  */
-export function collectRegexValueRegions(rule: string): RegexValueRegion[] {
+export function collectRegexValueRegions(rule: string, start = 0, end = rule.length): RegexValueRegion[] {
     const regions: RegexValueRegion[] = [];
-    const { length } = rule;
 
-    for (let i = 0; i < length; i += 1) {
+    for (let i = start; i < end; i += 1) {
         if (rule[i] === BACKSLASH) {
             i += 1;
             continue;
         }
 
-        if (rule[i] !== MODIFIER_ASSIGN_OPERATOR || rule[i + 1] !== REGEX_MARKER) {
+        if (i + 1 >= end
+            || rule[i] !== MODIFIER_ASSIGN_OPERATOR
+            || rule[i + 1] !== REGEX_MARKER) {
             continue;
         }
 
         // Opening `/` of the regex value.
-        const start = i + 1;
+        const opening = i + 1;
 
         // Closing `/` of the pattern.
-        let closing = start + 1;
-        while (closing < length) {
+        let closing = opening + 1;
+        while (closing < end) {
             if (rule[closing] === BACKSLASH) {
                 closing += 2;
                 continue;
@@ -63,19 +70,19 @@ export function collectRegexValueRegions(rule: string): RegexValueRegion[] {
         }
 
         // No closing `/` — not a regex value.
-        if (closing >= length) {
+        if (closing >= end) {
             continue;
         }
 
         // Optional replacement part: `/<replacement>/`.
-        let end = closing + 1;
-        for (let r = closing + 1; r < length; r += 1) {
+        let regionEnd = closing + 1;
+        for (let r = closing + 1; r < end; r += 1) {
             if (rule[r] === BACKSLASH) {
                 r += 1;
                 continue;
             }
             if (rule[r] === REGEX_MARKER) {
-                end = r + 1;
+                regionEnd = r + 1;
                 break;
             }
             if (rule[r] === COMMA) {
@@ -83,11 +90,11 @@ export function collectRegexValueRegions(rule: string): RegexValueRegion[] {
             }
         }
 
-        regions.push([start, end]);
+        regions.push([opening, regionEnd]);
 
         // Skip past the region so `=/` sequences inside it are not treated
         // as separate regions.
-        i = end - 1;
+        i = regionEnd - 1;
     }
 
     return regions;
