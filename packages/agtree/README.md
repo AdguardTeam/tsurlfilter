@@ -160,6 +160,38 @@ interface):
 const located = parser.parse('||example.com^', { isLocIncluded: true });
 ```
 
+## Migrating from v4
+
+v5 removes the monolithic v4 parser and changes several public APIs. The
+short version:
+
+- `RuleParser` / `FilterListParser` → `RuleParserPipeline` /
+  `FilterListPipeline`. `RuleParser` and `defaultParserOptions` are still
+  exported from the package root and `@adguard/agtree/parser` as a thin
+  compatibility shim, but they return v5 nodes.
+- `ParserOptions` → `ParseOptions`. `isLocIncluded` now defaults to `false`
+  in the pipeline; pass it explicitly if you need `start`/`end`.
+- `RawRuleConverter.convertToAdg(list, tolerant)` →
+  `convertToAdg(list, { tolerant })`, and the converted text moved from
+  `.result` to `.converted`.
+- `GenericPlatform` / `SpecificPlatform` bitmasks → the `Platform` class.
+- Compatibility table methods: `find()` → `query()`, `query()` →
+  `queryAll()`, `existsAny()` → `has()`.
+
+See the `BREAKING` entries in the [changelog](CHANGELOG.md) for the full list.
+
+### Limits and error handling
+
+Structural parsers use reusable buffers with hard caps (`src/limits.ts`):
+262,144 tokens, 65,536 modifiers, 65,536 domains and 65,536 scriptlet-body
+slots per rule. Exceeding a cap raises `CapacityOverflowError`.
+
+`FilterListPipeline` parses in tolerant mode by default: invalid rules become
+`InvalidRule` nodes instead of aborting the list. Pass
+`onParseError(error, ruleStart, ruleEnd)` to observe them. Parsers retain
+grown buffers, so call `reset()` on a long-lived pipeline at filter-list
+boundaries to release peak memory.
+
 ## Documentation
 
 - [Changelog](CHANGELOG.md)

@@ -8,6 +8,11 @@
 export interface ParseOptions {
     /**
      * Whether to include source location info (start/end) on AST nodes.
+     *
+     * Defaults to `false` in the v5 pipeline. The v4-compatible
+     * `RuleParser`/`defaultParserOptions` shim defaults it to `true`, so
+     * migrating to `RuleParserPipeline` requires passing it explicitly when
+     * locations are needed.
      */
     isLocIncluded?: boolean;
 

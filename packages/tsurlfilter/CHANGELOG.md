@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/agtree` to `v5.0.0` with refactored parser API: rule parsing now uses
+- Updated `@adguard/agtree` to `v5.0.0-alpha.0` with refactored parser API: rule parsing now uses
   `RuleParserPipeline`, domain lists use `parseDomainList`, and `ParserOptions`
   is replaced by `ParseOptions`.
 - The matching engine now materializes network and cosmetic rules directly from

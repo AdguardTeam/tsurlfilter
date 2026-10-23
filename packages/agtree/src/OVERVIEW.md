@@ -22,7 +22,7 @@ All three stages share the same pre-allocated buffers that are reused across
 calls. The only heap allocations that happen are in the final AST builder
 stage, when AST objects and their `value` strings are created.
 
-> The v5 pipeline API is documented in the [package README](../../README.md#quick-start).
+> The v5 pipeline API is documented in the [package README](../README.md#quick-start).
 
 ---
 
@@ -102,12 +102,12 @@ source → Tokenizer → Parser → AST builder → AST node
 **File:** `tokenizer/tokenizer.ts`
 
 Scans the raw source string character-by-character and classifies spans into
-token types (`Ident`, `Comma`, `OpenParen`, `Whitespace`, …).
+token types (`Letter`, `Comma`, `OpenParen`, `Whitespace`, …).
 
-Output is written into a caller-supplied `TokenizeResult`:
+Output is written into the tokenizer's own arrays:
 
 ```typescript
-TokenizeResult {
+Tokenizer {
   tokenCount: number       — how many tokens were produced
   types:  Uint8Array       — TokenType per token
   ends:   Uint32Array      — exclusive source end of each token
@@ -118,8 +118,8 @@ Token **starts** are implicit: `token[i].start = token[i-1].end` (or 0 for
 the first token). Storing only ends halves the memory required and the first
 start is always derivable.
 
-The same `TokenizeResult` object is reused across calls — both typed arrays
-are overwritten in-place each time.
+The same `Tokenizer` instance is reused across calls — both typed arrays are
+overwritten in-place each time.
 
 ---
 
@@ -150,7 +150,9 @@ ParserContext {
 ```
 
 A single `ParserContext` is created once and reused. `initParserContext`
-rebinds the tokenizer arrays and clears `data` before each parse.
+rebinds the tokenizer arrays and resets `status`, but it does **not** clear
+`data`: the buffer contents are undefined on entry, and every slot a parser
+reads must be written by that parse.
 
 ### ctx.data layout (example: preprocessor comment)
 
@@ -298,7 +300,7 @@ tokenizer.setSource(source);                    // stage 1: tokenize
 initParserContext(ctx, source, tokenizer);       // bind tokenizer output
 const kind = StructuralRuleParser.parse(ctx);  // stage 2: structural parse
 if (kind === RuleKind.Comment) {
-    const ast = CommentAstBuilder.parse(source, ctx.data, options); // stage 3
+    const ast = CommentAstBuilder.parse(source, ctx.data, 0, options); // stage 3
 }
 ```
 
@@ -476,15 +478,16 @@ sub-parsers (e.g., `CssRuleParser` calling `SelectorListParser`).
 ```text
 Offset   Size    Region
 ──────────────────────────────────────────────────────────────────────
-0        5       Network rule header (NR_*)
-                 — OR — CR header for cosmetic rules (CR_*, 6 slots)
-5        320     Network modifier records (64 modifiers × stride 5)
-                 — OR — uBO modifier records for element-hiding rules
-                    (4 modifiers × stride 7 = 28 slots, fits in [6..33])
-453      384     Domain records (128 domains × stride 3)
+0        5       Network rule header (NR_*) — for cosmetic rules, the
+                 first 5 slots of the 7-slot CR header
+5        448     Modifier records (64 × stride 7). Cosmetic records start
+                 at slot 7, so slots 5-6 hold the rest of the CR header.
+                 uBO modifier records for element-hiding rules occupy
+                 [7..34] (4 × stride 7).
+453      384     Domain records (128 × stride 3)
 837      128     Scriptlet body data
 ──────────────────────────────────────────────────────────────────────
-Total    965     default ctx.data.length
+Total    965     5 + 64 × 7 + 128 × 3 + 128
 ```
 
 Network rules and cosmetic rules are mutually exclusive, so their header and
