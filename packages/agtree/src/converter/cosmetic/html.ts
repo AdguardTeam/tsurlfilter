@@ -739,8 +739,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - for multiple `[min-length]` selectors, the largest value is selected;
      * - for multiple `[max-length]` selectors, the smallest value is selected.
      *
-     * Logs a warning when duplicate length selectors are found.
-     *
      * @param selectors Child selectors of a compound selector to scan.
      *
      * @returns Resolved length constraints,
