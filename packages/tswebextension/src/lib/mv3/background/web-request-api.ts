@@ -856,10 +856,60 @@ export class WebRequestApi {
      * @param details Navigation event details.
      */
     private static onCommitted(details: chrome.webNavigation.WebNavigationFramedCallbackDetails): void {
-        const { tabId, frameId, documentId } = details;
+        const {
+            tabId,
+            frameId,
+            documentId,
+            url,
+            timeStamp,
+        } = details;
+
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+
+        /**
+         * A prerendered page is activated without a new precalculation: a
+         * main-frame prerender navigation is skipped in `onBeforeNavigate` and
+         * `onBeforeRequest`, so the frame context still holds the previous
+         * document's URL and prepared cosmetic result. The prepared rules
+         * belong to the document they were calculated for, so recalculate them
+         * for the committed document, otherwise the previous document's rules
+         * are injected into the activated page.
+         *
+         * The URL check keeps same-document navigations out: the prepared
+         * result stays valid there, and recalculating it would inject the
+         * scriptlets again.
+         */
+        const isNewDocument = !!frameContext
+            && frameContext.documentId !== documentId
+            && frameContext.url !== url;
 
         // This is necessary mainly to update documentId
-        tabsApi.updateFrameContext(tabId, frameId, { documentId });
+        tabsApi.updateFrameContext(
+            tabId,
+            frameId,
+            isNewDocument
+                ? {
+                    documentId,
+                    url,
+                    timeStamp,
+                    // The previous document's instance is gone together with
+                    // its isolated world.
+                    extCssApplied: false,
+                }
+                : { documentId },
+        );
+
+        if (isNewDocument && frameContext) {
+            CosmeticFrameProcessor.precalculateCosmetics({
+                tabId,
+                frameId,
+                parentFrameId: frameContext.parentFrameId,
+                url,
+                timeStamp,
+                parentDocumentId: details.parentDocumentId,
+                documentLifecycle: details.documentLifecycle,
+            });
+        }
 
         if (WebRequestApi.isAssistantFrame(tabId, details)) {
             logger.debug(`[tsweb.WebRequestApi.onCommitted]: assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`);
