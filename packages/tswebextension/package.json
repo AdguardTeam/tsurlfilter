@@ -24,6 +24,14 @@
             "types": "./dist/types/mv3-utils.d.ts",
             "default": "./dist/mv3-utils.js"
         },
+        "./mv3/preregistered-scripts/build-contract": {
+            "types": "./dist/types/preregistered-scripts-build-contract.d.ts",
+            "default": "./dist/preregistered-scripts-build-contract.js"
+        },
+        "./mv3/preregistered-scripts/root-request": {
+            "types": "./dist/types/preregistered-scripts-root-request.d.ts",
+            "default": "./dist/preregistered-scripts-root-request.js"
+        },
         "./mv3/gpc": {
             "default": "./dist/gpc.mv3.js"
         },

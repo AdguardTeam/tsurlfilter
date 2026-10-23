@@ -5,6 +5,7 @@ import {
     CompatibilityTypes,
     type CosmeticOption,
     CosmeticResult,
+    type CosmeticRule,
     Engine,
     type EngineFactoryFilterList,
     type HTTPMethod,
@@ -20,6 +21,7 @@ import { logger } from '../../common/utils/logger';
 import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 
 import { type ConfigurationMV3 } from './configuration';
+import { createPreregisteredRootRequest } from './preregistered-scripts/root-request';
 import { type ITrustedFilter } from './trusted-filter';
 import { UserScriptsApi } from './user-scripts-api';
 
@@ -242,10 +244,17 @@ export class EngineApi {
      *
      * @param url Hostname to check.
      * @param option Mask of enabled cosmetic types.
+     * @param options Optional match modifiers.
+     * @param options.ignorePath If true, skips the `$path` modifier check for
+     * JS/scriptlet rules only. Defaults to false.
      *
      * @returns Cosmetic result.
      */
-    public getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
+    public getCosmeticResult(
+        url: string,
+        option: CosmeticOption,
+        options: { ignorePath?: boolean } = {},
+    ): CosmeticResult {
         if (!this.engine) {
             return new CosmeticResult();
         }
@@ -254,7 +263,7 @@ export class EngineApi {
 
         const request = new Request(url, frameUrl, RequestType.Document);
 
-        return this.engine.getCosmeticResult(request, option);
+        return this.engine.getCosmeticResult(request, option, options);
     }
 
     /**
@@ -271,10 +280,19 @@ export class EngineApi {
      * Searched for cosmetic rules by match query.
      *
      * @param matchQuery Query against which the request would be matched.
+     * @param options Optional match modifiers.
+     * @param options.ignorePath If true, skips the `$path` modifier check for
+     * JS/scriptlet rules only. Defaults to false.
+     * @param options.optionMask If set, narrows the computed cosmetic option
+     * to the given category bits (e.g. `CosmeticOption.CosmeticOptionJS` to
+     * match only JS/scriptlet rules, skipping CSS/elemhide/HTML lookups).
      *
      * @returns Cosmetic result.
      */
-    public matchCosmetic(matchQuery: MatchQuery): CosmeticResult {
+    public matchCosmetic(
+        matchQuery: MatchQuery,
+        { ignorePath = false, optionMask }: { ignorePath?: boolean; optionMask?: CosmeticOption } = {},
+    ): CosmeticResult {
         if (!this.engine || !isHttpRequest(matchQuery.frameUrl)) {
             return new CosmeticResult();
         }
@@ -286,8 +304,15 @@ export class EngineApi {
         }
 
         const cosmeticOption = matchingResult.getCosmeticOption();
+        const maskedOption = optionMask === undefined
+            ? cosmeticOption
+            : cosmeticOption & optionMask;
 
-        return this.getCosmeticResult(matchQuery.requestUrl, cosmeticOption);
+        return this.getCosmeticResult(
+            matchQuery.requestUrl,
+            maskedOption,
+            { ignorePath },
+        );
     }
 
     /**
@@ -327,6 +352,33 @@ export class EngineApi {
      */
     public isLocalFilter(filterId: number): boolean {
         return this.localRulesFiltersIds.includes(filterId);
+    }
+
+    /**
+     * Checks if a JS/scriptlet rule is cancelled on a hostname by an allowlist
+     * exception (user rules, custom filters).
+     *
+     * @param hostname Hostname to match the exception domains against.
+     * @param rule Cosmetic rule to check.
+     * @param options Optional match modifiers.
+     * @param options.ignoreExceptionUrlConditions If true, URL conditions of
+     * exceptions (`$path`, `$url`) are ignored, i.e. an exception applying to
+     * any URL of the hostname cancels the rule. Defaults to false.
+     *
+     * @returns `true` if the rule is cancelled by an exception, `false`
+     * otherwise or when the engine is not started.
+     */
+    public isCosmeticRuleAllowlisted(
+        hostname: string,
+        rule: CosmeticRule,
+        { ignoreExceptionUrlConditions = false }: { ignoreExceptionUrlConditions?: boolean } = {},
+    ): boolean {
+        if (!this.engine) {
+            return false;
+        }
+
+        const request = createPreregisteredRootRequest(hostname);
+        return this.engine.isCosmeticRuleAllowlisted(request, rule, { ignoreExceptionUrlConditions });
     }
 
     /**

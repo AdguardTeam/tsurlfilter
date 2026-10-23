@@ -1,6 +1,16 @@
 import { z as zod } from 'zod';
 
 import { basicFilterValidator, configurationValidator, settingsConfigValidator } from '../../common/configuration';
+import { isPlainHostname, normalizeDomain } from '../../common/utils/hostname';
+
+/**
+ * Rejects values that cannot be a plain hostname before normalization:
+ * wildcards, schemes, ports, paths, userinfo, query strings and fragments.
+ * `@`, `?` and `#` would otherwise be silently stripped by `URL`, turning
+ * `u@youtube.com` into `youtube.com`. IDN labels are allowed here and
+ * checked after normalization.
+ */
+const PLAIN_HOSTNAME_SHAPE_REGEX = /^[^\s*/:@?#]+$/;
 
 /**
  * Custom filter list configuration validator for MV3.
@@ -44,6 +54,40 @@ export const settingsConfigMV3 = settingsConfigValidator.extend({
 export type SettingsConfigMV3 = zod.infer<typeof settingsConfigMV3>;
 
 /**
+ * Build-time preregistered script configuration validator. When provided,
+ * enables persistent content-script registration and skips dynamic
+ * injection of JS and scriptlet rules for the listed domains.
+ */
+export const preregisteredScriptsConfigValidator = zod.object({
+    /**
+     * Domains with build-time preregistered scripts. Each domain's `www.`
+     * alias is derived automatically at runtime.
+     */
+    domains: zod.string()
+        .refine(
+            (domain) => PLAIN_HOSTNAME_SHAPE_REGEX.test(domain.trim()),
+            'Expected a plain hostname without a scheme, path, port or wildcard',
+        )
+        .array()
+        .transform((domains) => domains.map(normalizeDomain))
+        .refine(
+            (domains) => domains.every(isPlainHostname),
+            'Expected a valid hostname',
+        ),
+
+    /**
+     * Path to the preregistered script artifacts directory.
+     */
+    path: zod.string().min(1),
+});
+
+/**
+ * Preregistered scripts configuration type.
+ * This type is inferred from the {@link preregisteredScriptsConfigValidator} schema.
+ */
+export type PreregisteredScriptsConfig = zod.infer<typeof preregisteredScriptsConfigValidator>;
+
+/**
  * Configuration validator for MV3.
  */
 export const configurationMV3Validator = configurationValidator.extend({
@@ -83,6 +127,13 @@ export const configurationMV3Validator = configurationValidator.extend({
      * List of rules added by user.
      */
     userrules: customFilterMV3Validator.omit({ filterId: true, trusted: true }),
+
+    /**
+     * Build-time preregistered script configuration. When provided,
+     * enables persistent content-script registration and skips dynamic
+     * injection of JS and scriptlet rules for the listed domains.
+     */
+    preregisteredScripts: preregisteredScriptsConfigValidator.optional(),
 });
 
 /**
@@ -95,7 +146,12 @@ export type ConfigurationMV3 = zod.infer<typeof configurationMV3Validator>;
  * Configuration context type for MV3.
  * This type is {@link ConfigurationMV3} with an omitted array of rule and domain strings loaded in the filter engine.
  * It is used to reduce memory consumption when storing configuration data in memory.
+ * The build-time `preregisteredScripts` config is omitted as well: the stored context does not need it,
+ * and it is kept separately in the app context.
  */
 export type ConfigurationMV3Context =
-    & Omit<ConfigurationMV3, 'customFilters' | 'allowlist' | 'userrules' | 'trustedDomains'>
+    & Omit<
+        ConfigurationMV3,
+        'customFilters' | 'allowlist' | 'userrules' | 'trustedDomains' | 'preregisteredScripts'
+    >
     & { customFilters: number[] };

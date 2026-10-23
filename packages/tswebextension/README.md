@@ -26,6 +26,9 @@ Table of content:
             - [filtersPath (MV3 only)](#filterspath-mv3-only)
             - [rulesetsPath (MV3 only)](#rulesetspath-mv3-only)
             - [declarativeLogEnabled (MV3 only)](#declarativelogenabled-mv3-only)
+            - [preregisteredScripts (MV3 only)](#preregisteredscripts-mv3-only)
+                - [domains](#domains)
+                - [path](#path)
             - [allowlist](#allowlist)
             - [trustedDomains](#trusteddomains)
             - [userrules (MV2)](#userrules-mv2)
@@ -310,6 +313,76 @@ Path to directory with converted rule sets.
 type: `boolean`
 
 Enables matching declarative rules for filtering log.
+
+#### preregisteredScripts (MV3 only)
+
+type: `{ domains: string[]; path: string }` (optional)
+
+Build-time preregistered script configuration. Registers persistent content
+scripts for `domains` and skips dynamic injection of both JS (`#%#`) and
+scriptlet (`#%#//scriptlet`) rules they cover. Preregistration is disabled
+while debug scriptlets are enabled; toggling via `setDebugScriptlets()`
+re-evaluates preregistration immediately.
+
+##### domains
+
+type: `string[]`
+
+Domains with build-time preregistered scripts. Each domain's `www.` alias
+is derived automatically at runtime.
+
+##### path
+
+type: `string`
+
+Path to the preregistered script artifacts directory (contains
+`manifest.json`, the shared bundle, one function file per scriptlet, one
+file per rule, and the cleanup file — see
+`@adguard/tswebextension/mv3/preregistered-scripts/build-contract`).
+Coverage is reported from the registrations actually active after a sync:
+on sync failure the last published coverage is kept (the boot snapshot
+before the first sync), and rules in those sets stay excluded from dynamic
+injection; a rule that cannot be confirmed as covered remains on the
+dynamic path. Documents that loaded before the current service worker
+started are judged against the boot snapshot of the registrations that
+existed then; later documents use the last published coverage.
+
+At runtime, each configured hostname (plus its `www.` alias) is matched
+against the engine with `$path` ignored, the matching rules are hashed, and
+a persistent content script is registered with
+`js: [shared bundle, ...scriptlet function files, ...per-rule files, cleanup]`.
+A scriptlet function file carries only the implementations the host's rules
+use; the per-rule file enforces any `$path` condition via `location`; the
+cleanup file runs last, deleting the coordination `window` property before
+page scripts run.
+
+The synthetic root request used by both the build-time collector and the
+runtime sync is shared through
+`@adguard/tswebextension/mv3/preregistered-scripts/root-request`
+(`getPreregisteredRootUrl`, `createPreregisteredRootRequest`), so both sides
+query the engine with the same URL.
+
+Preregistered executions bypass hit logging; the filtering log lists the
+matched local rules regardless of whether the preregistered or the dynamic
+path applied them, and an in-page execution failure is not observable.
+
+Known limitations:
+
+- `$document`/`$jsinject` exceptions below the root path (e.g.
+  `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for the
+  host: rules registered on `*://youtube.com/*` still execute on `/embed/…`.
+  Tracked in AG-54564.
+- With protection disabled on a site (or in inverted allowlist mode),
+  YouTube embeds on it still run these scriptlets: the registration covers
+  every frame of the host, while the dynamic path would inject nothing
+  there. Tracked in AG-60054.
+- `$url`-modified rules are never preregistered: the engine is queried per
+  hostname root, so they stay on the dynamic injection path.
+- A page that started before a sync removed a `#%#` JS rule can execute it
+  twice: the preregistered file already ran it, and the dynamic path runs
+  it again because the coordination set only dedupes within one
+  registration execution and `cleanup` deletes it before page scripts run.
+  Re-executing a scriptlet is harmless; arbitrary JS is not idempotent.
 
 #### allowlist
 
