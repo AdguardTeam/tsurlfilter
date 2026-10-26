@@ -1068,7 +1068,7 @@ export class RegularRuleConverter {
         delete condition.excludedInitiatorDomains;
 
         if (permittedDomains.length > 0) {
-            condition.requestDomains = permittedDomains;
+            condition.requestDomains = [...permittedDomains];
         }
 
         if (excludedDomains.length > 0) {
