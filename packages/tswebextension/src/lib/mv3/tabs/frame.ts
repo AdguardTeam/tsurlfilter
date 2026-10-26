@@ -85,8 +85,13 @@ export class FrameMV3 extends FrameCommon {
      *
      * Needed to avoid a guaranteed no-op cross-process `disposeExtCss` call
      * for every committed frame of every navigation: the disposal is injected
-     * only if something was actually applied to this document. The flag is
-     * reset naturally, because the frame context is recreated on navigation.
+     * only if something was actually applied to this document.
+     *
+     * The frame context is recreated on most navigations, which resets the
+     * flag. When a new document is committed into a frame context that was not
+     * recreated — a prerender activation, or a navigation whose precalculation
+     * was skipped — `WebRequestApi.onCommitted` resets the flag explicitly,
+     * because the previous document's isolated world is gone with it.
      */
     public extCssApplied = false;
 }
