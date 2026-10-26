@@ -44,8 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Malformed CSS hit markers no longer break cosmetic application in MV2: a
   `URIError` from `decodeURIComponent` is treated as a non-matching marker
   instead of propagating.
-- MV2 retained ExtendedCSS instance not being disposed when the rule set
-  becomes empty on a same-document navigation.
 - In MV3, static filters, custom filters and user rules were handed to the
   converter already converted by the extension, so `$badfilter` rules from those
   sources were compared by the converted text instead of the text as written and

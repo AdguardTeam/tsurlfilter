@@ -55,6 +55,10 @@ export type ContentScriptCosmeticData = {
 
     /**
      * Extended css rules to apply.
+     *
+     * @deprecated Always `null`. ExtendedCSS is applied by the background, so
+     * the content script must not read this field. It stays in the message
+     * contract for compatibility and can be removed in the next major.
      */
     extCssRules: string[] | null;
 

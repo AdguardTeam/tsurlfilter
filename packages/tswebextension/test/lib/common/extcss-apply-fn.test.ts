@@ -150,6 +150,34 @@ describe('extCssInjectedApply — re-apply in the same document', () => {
         await new Promise((resolve) => { setTimeout(resolve, 250); });
         expect((ad2 as HTMLElement).style.getPropertyValue('display')).toBe('');
     });
+
+    it('keeps the retained instance when the rule set is unchanged', () => {
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+
+        extCssInjectedApply(rules, false, EXTCSS_PROTOCOL);
+
+        const ad = document.querySelector('.ad') as HTMLElement;
+        expect(ad.style.getPropertyValue('display')).toBe('none');
+
+        // An inline style the rule does not touch, applied after the injection.
+        ad.style.setProperty('color', 'red');
+
+        const w = window as unknown as Record<string, unknown>;
+        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
+        const retainedBefore = w.__adguardExtCss;
+
+        // MV2 re-injects the same rule strings for every completed request in
+        // Firefox. dispose() would revert the element to its pre-ExtCSS
+        // `cssText` snapshot, so a real re-apply would drop `color` and re-run
+        // the whole engine.
+        extCssInjectedApply(rules, false, EXTCSS_PROTOCOL);
+
+        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
+        expect(w.__adguardExtCss).toBe(retainedBefore);
+        expect(ad.style.getPropertyValue('color')).toBe('red');
+        expect(ad.style.getPropertyValue('display')).toBe('none');
+    });
 });
 
 /**
@@ -578,8 +606,8 @@ describe('extCssInjectedApply — CSS hits stats', () => {
 
         // A second injection into the same document — e.g. `onCommitted`
         // firing while `processOpenTabs` is still running — receives the same
-        // marker-carrying rule strings. The retained per-node dedupe state must
-        // keep the hit above from being reported again.
+        // marker-carrying rule strings, so it is a no-op. The retained
+        // per-node dedupe state keeps the hit above from being reported again.
         extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         await new Promise((resolve) => { setTimeout(resolve, 0); });
@@ -594,9 +622,9 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         await new Promise((resolve) => { setTimeout(resolve, 0); });
         expect(sendMessageSpy).toHaveBeenCalledTimes(1);
 
-        // The re-injection replaces the instance, so the callback must be
-        // registered again: elements matched for the first time by the new
-        // instance would otherwise never be reported.
+        // A re-injection with the same rule strings is a no-op, so the
+        // retained instance and its callback stay in place: elements matched
+        // for the first time are still reported by that observer.
         extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         await new Promise((resolve) => { setTimeout(resolve, 0); });

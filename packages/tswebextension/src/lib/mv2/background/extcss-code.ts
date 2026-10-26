@@ -18,6 +18,23 @@ const escapeLineSeparators = (json: string): string => json
     .replace(/\u2029/g, '\\u2029');
 
 /**
+ * Serialized source of the shared apply payload.
+ *
+ * `String(extCssInjectedApply)` re-serializes the inlined engine, and MV2
+ * builds a code string for every cosmetic injection event and for each
+ * injection retry. The function source never changes, so it is serialized
+ * once here.
+ */
+const EXTCSS_APPLY_SOURCE = String(extCssInjectedApply);
+
+/**
+ * Serialized source of the shared dispose payload.
+ *
+ * @see {@link EXTCSS_APPLY_SOURCE}
+ */
+const EXTCSS_DISPOSE_SOURCE = String(extCssInjectedDispose);
+
+/**
  * Serializes the shared ExtendedCSS apply payload into a JavaScript code
  * string for `browser.tabs.executeScript({ code })` in MV2.
  *
@@ -39,7 +56,7 @@ export const serializeExtCssForCode = (
     const rulesJson = escapeLineSeparators(JSON.stringify(cssRules));
     const protocolJson = escapeLineSeparators(JSON.stringify(protocol));
 
-    return `(${String(extCssInjectedApply)})(${rulesJson}, ${collectStats}, ${protocolJson});`;
+    return `(${EXTCSS_APPLY_SOURCE})(${rulesJson}, ${collectStats}, ${protocolJson});`;
 };
 
 /**
@@ -55,5 +72,5 @@ export const serializeExtCssForCode = (
 export const serializeExtCssDisposeForCode = (protocol: ExtCssProtocol): string => {
     const protocolJson = escapeLineSeparators(JSON.stringify(protocol));
 
-    return `(${String(extCssInjectedDispose)})(${protocolJson});`;
+    return `(${EXTCSS_DISPOSE_SOURCE})(${protocolJson});`;
 };

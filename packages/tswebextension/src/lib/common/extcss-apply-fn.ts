@@ -54,11 +54,16 @@ declare const applyExtendedCss: typeof applyExtendedCssImpl;
  * constant is the single source of truth. Self-containment is pinned by the
  * `String(extCssInjectedApply)` unit tests.
  *
+ * A call whose rule strings match the ones the retained instance was built
+ * from is a no-op: the instance is neither disposed nor rebuilt, so repeated
+ * injections for the same document keep the engine state and the inline
+ * styles the page applied in the meantime.
+ *
  * @param cssRules ExtendedCSS rule strings to apply to the current document.
  * @param collectStats When true, register a CSS-hits `beforeStyleApplied`
  * callback (else nothing is registered and no overhead is incurred). The
- * callback is registered on every injection; the per-node dedupe state is
- * retained across injections, so a re-apply reports only the hits that were
+ * callback is registered on every apply; the per-node dedupe state is
+ * retained across applies, so a re-apply reports only the hits that were
  * not reported before.
  * @param protocol Serialized protocol values (see `EXTCSS_PROTOCOL`). A
  * required argument (not a module-scope default) so the serialized body has
@@ -100,6 +105,23 @@ export const extCssInjectedApply = (
     // unresolved free identifier in the page's ISOLATED world.
     const previous = w[protocol.instanceKey];
     const previousRules = previous?.cssRules;
+
+    // Re-applying the rule strings the retained instance was built from is a
+    // no-op: dispose() + apply() would rebuild an identical instance, revert
+    // the inline styles the page changed since the previous apply, and re-walk
+    // the DOM for nothing. MV2 reaches this path for every completed request
+    // in Firefox, so a page with N requests would otherwise re-run the whole
+    // engine N times. The rules encode the hits flag (markers are added when
+    // statistics are collected), so an unchanged rule set also means an
+    // unchanged callback registration.
+    if (
+        previousRules
+        && previousRules.length === cssRules.length
+        && previousRules.every((rule, index) => rule === cssRules[index])
+    ) {
+        return;
+    }
+
     // The inlined helpers create their default dedupe state on every
     // injection, so it is retained on the instance and passed explicitly.
     // Nodes reported before a re-apply are skipped, while nodes matched for

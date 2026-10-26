@@ -98,12 +98,25 @@ pnpm test:coverage
 # Run smoke tests (exports validation + Rollup builder)
 pnpm test:smoke
 
-# Full validation (lint + smoke + full test suite, no cache)
+# Run the Chromium browser-mode e2e specs
+pnpm test:e2e
+
+# Run the Firefox browser-mode e2e specs
+pnpm test:e2e:firefox
+
+# Full validation (lint + smoke + test:ci + Chromium e2e, no cache)
 pnpm test:prod
 ```
 
 **Always run `pnpm test:prod` before submitting changes.** It requires the
 package to be built first (`pnpm build`).
+
+`pnpm test:prod` does not run the Firefox e2e specs. Run
+`pnpm test:e2e:firefox` separately; it requires the Firefox browser once:
+
+```bash
+npx playwright install firefox
+```
 
 ### Build Output
 
@@ -171,12 +184,22 @@ npx lerna run build --scope @adguard/tswebextension --include-dependencies
 
 ### Issue: `test:prod` fails
 
-**Solution**: `test:prod` combines lint, smoke tests, and the full test suite.
-Ensure the package is built first:
+**Solution**: `test:prod` combines lint, smoke tests, `test:ci`, and the
+Chromium e2e specs. Ensure the package is built first:
 
 ```bash
 pnpm build
 pnpm test:prod
+```
+
+### Issue: the Firefox e2e specs fail
+
+**Solution**: These specs run only through `pnpm test:e2e:firefox`;
+`test:prod` does not include them. Install the browser once, then run them:
+
+```bash
+npx playwright install firefox
+pnpm test:e2e:firefox
 ```
 
 ### Issue: MV2 vs MV3 test isolation

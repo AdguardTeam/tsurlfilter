@@ -156,12 +156,48 @@ describe('CosmeticApi.applyExtCss', () => {
         expect(TabsApi.injectExtCss).not.toHaveBeenCalled();
     });
 
-    it('does not inject when the prepared result is missing', async () => {
+    it('does not inject when the frame has no cosmetic data', async () => {
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext());
 
         await CosmeticApi.applyExtCss(1, 0);
 
         expect(TabsApi.injectExtCss).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the cosmetic result when the prepared result is missing', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext();
+        frameContext.cosmeticResult = {} as FrameMV2['cosmeticResult'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        const getExtCssRulesSpy = vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(getExtCssRulesSpy).toHaveBeenCalledWith(
+            frameContext.cosmeticResult,
+            { areHitsStatsCollected: false, isNativeHasSupported: expect.any(Boolean) },
+        );
+        expect(TabsApi.injectExtCss).toHaveBeenCalledWith(
+            1,
+            0,
+            serializeExtCssForCode(rules, false, EXTCSS_PROTOCOL),
+        );
+    });
+
+    it('does not mark a frame context that was replaced during the injection', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const original = makeFrameContext(makePrepared(rules));
+        const replacement = makeFrameContext(makePrepared(rules));
+
+        vi.mocked(tabsApi.getFrameContext)
+            .mockReturnValueOnce(original)
+            .mockReturnValueOnce(replacement);
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectExtCss).toHaveBeenCalledTimes(1);
+        expect(original.extCssApplied).toBe(false);
+        expect(replacement.extCssApplied).toBe(false);
     });
 
     it('marks the frame as applied after a successful apply', async () => {

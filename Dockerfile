@@ -318,6 +318,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     bash ./scripts/ci/timeout-wrapper.sh 600s sh -c \
       'cd packages/tswebextension && pnpm test:e2e:firefox'; \
     FIREFOX_EXIT_CODE=$?; \
+    bash ./scripts/ci/copy-test-reports.sh packages/tswebextension; \
     if [ "${EXISTING_EXIT_CODE}" = "0" ] && [ ${FIREFOX_EXIT_CODE} -ne 0 ]; then \
       echo ${FIREFOX_EXIT_CODE} > /out/exit-code.txt; \
     fi; \

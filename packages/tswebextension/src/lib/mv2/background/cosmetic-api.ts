@@ -12,6 +12,7 @@ import { appContext } from './app-context';
 import { serializeExtCssDisposeForCode, serializeExtCssForCode } from './extcss-code';
 import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
+import { type FrameMV2 } from './tabs/frame';
 import { TabsApi } from './tabs/tabs-api';
 
 /**
@@ -22,6 +23,21 @@ type ScriptsAndScriptletsDataMv2 = {
      * JS and scriptlet rules **combined** script text.
      */
     scriptText: string;
+};
+
+/**
+ * ExtendedCSS data resolved for a frame.
+ */
+type ExtCssFrameData = {
+    /**
+     * ExtendedCSS rule strings to apply, or null when none match the frame.
+     */
+    extCssRules: string[] | null;
+
+    /**
+     * Whether ExtendedCSS hits statistics are collected for the frame.
+     */
+    areHitsStatsCollected: boolean;
 };
 
 type LogJsRulesParamsMv2 = LogJsRulesParams & {
@@ -372,11 +388,12 @@ export class CosmeticApi extends CosmeticApiCommon {
     /**
      * Applies or disposes ExtendedCSS in the specified tab and frame.
      *
-     * When the prepared result carries rules, the shared ExtCSS payload is
-     * serialized into a code string and injected. When the rule set is empty
-     * or null and an instance was applied to the current document, the dispose
-     * code string is injected instead, so observers and styles do not leak.
-     * Otherwise no code is injected.
+     * The rules come from the frame's prepared result, or from its cosmetic
+     * result when the frame was matched on demand. When they are non-empty,
+     * the shared ExtCSS payload is serialized into a code string and injected.
+     * When the rule set is empty or null and an instance was applied to the
+     * current document, the dispose code string is injected instead, so
+     * observers and styles do not leak. Otherwise no code is injected.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
@@ -384,13 +401,18 @@ export class CosmeticApi extends CosmeticApiCommon {
      */
     public static async applyExtCss(tabId: number, frameId: number, tries = 0): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
-        const preparedCosmeticResult = frameContext?.preparedCosmeticResult;
 
-        if (!frameContext || !preparedCosmeticResult) {
+        if (!frameContext) {
             return;
         }
 
-        const { extCssRules, areHitsStatsCollected } = preparedCosmeticResult;
+        const extCssData = CosmeticApi.getExtCssData(frameContext);
+
+        if (!extCssData) {
+            return;
+        }
+
+        const { extCssRules, areHitsStatsCollected } = extCssData;
         const shouldApply = Boolean(extCssRules?.length);
 
         if (!shouldApply && !frameContext.extCssApplied) {
@@ -403,7 +425,13 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         try {
             await TabsApi.injectExtCss(tabId, frameId, code);
-            frameContext.extCssApplied = shouldApply;
+
+            // The frame context is replaced on navigation, so a write to the
+            // captured object would land on the discarded document. Only the
+            // context that is still current records the applied state.
+            if (tabsApi.getFrameContext(tabId, frameId) === frameContext) {
+                frameContext.extCssApplied = shouldApply;
+            }
         } catch (e) {
             // Retry injection if it fails
             if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
@@ -414,6 +442,44 @@ export class CosmeticApi extends CosmeticApiCommon {
                 logger.debug('[tsweb.CosmeticApi.applyExtCss]: error occurred during injection', e);
             }
         }
+    }
+
+    /**
+     * Returns the ExtendedCSS data to apply for the frame.
+     *
+     * Frames precalculated by {@link CosmeticFrameProcessor} carry a prepared
+     * result. Frames matched on demand by
+     * {@link CosmeticApi.getContentScriptData} store only the cosmetic result,
+     * so the rules are extracted from it here — otherwise ExtCSS would be
+     * silently skipped for every frame that was not precalculated.
+     *
+     * @param frameContext Frame context.
+     *
+     * @returns ExtendedCSS data, or undefined when the frame has no cosmetic
+     * data yet.
+     */
+    private static getExtCssData(frameContext: FrameMV2): ExtCssFrameData | undefined {
+        const { preparedCosmeticResult, cosmeticResult } = frameContext;
+
+        if (preparedCosmeticResult) {
+            const { extCssRules, areHitsStatsCollected } = preparedCosmeticResult;
+
+            return { extCssRules, areHitsStatsCollected };
+        }
+
+        if (!cosmeticResult) {
+            return undefined;
+        }
+
+        const areHitsStatsCollected = appContext.configuration?.settings.collectStats || false;
+
+        return {
+            extCssRules: CosmeticApi.getExtCssRules(cosmeticResult, {
+                areHitsStatsCollected,
+                isNativeHasSupported: CssCapabilities.isNativeHasPseudoClassSupported(),
+            }),
+            areHitsStatsCollected,
+        };
     }
 }
 
