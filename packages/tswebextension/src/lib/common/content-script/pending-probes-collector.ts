@@ -140,6 +140,19 @@ export const isProbeRestorable = (element: Element, descendants?: Element[]): bo
 };
 
 /**
+ * Maximum number of probes kept in a pending queue.
+ *
+ * The collector uses it to bound its buffer, and the counter uses it to bound
+ * the queue it accumulates while the collector keeps observing. When the
+ * queue is full, new elements are dropped: baits are usually created by a
+ * script in `<head>`, so the earliest probes are the valuable ones, while
+ * later churn is more likely to be unrelated. Dropped elements are not marked
+ * as seen, so if the page adds and removes one again after the queue is
+ * drained, it can still be collected.
+ */
+export const MAX_PENDING_PROBES = 500;
+
+/**
  * Collects short-lived elements that are added and removed during the
  * document loading.
  *
@@ -157,20 +170,6 @@ export const isProbeRestorable = (element: Element, descendants?: Element[]): bo
  * {@link MAX_OBSERVATION_TIME_MS}.
  */
 export class PendingProbesCollector {
-    /**
-     * Maximum number of elements kept for the counter.
-     *
-     * The queue is used from the document start and keeps receiving probes
-     * after the counter initialization, while the collector stays alive.
-     * Pathological pages can mutate faster than the counter drains the queue.
-     * When the queue is full, new elements are dropped: baits are usually
-     * created by a script in `<head>`, so the earliest probes are the valuable
-     * ones, while later churn is more likely to be unrelated. Dropped elements
-     * are not marked as seen, so if the page adds and removes one again after
-     * the queue is drained, it can still be collected.
-     */
-    private static readonly MAX_PENDING_PROBES = 500;
-
     /**
      * Maximum observation time in milliseconds.
      *

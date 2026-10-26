@@ -4,7 +4,12 @@ import { SEMICOLON } from '../constants';
 import { type RuleInfoBasic } from '../rule-info';
 
 import { HitsStorage } from './hits-storage';
-import { isProbeRestorable, type PendingProbe, type PendingProbesCollector } from './pending-probes-collector';
+import {
+    isProbeRestorable,
+    MAX_PENDING_PROBES,
+    type PendingProbe,
+    type PendingProbesCollector,
+} from './pending-probes-collector';
 import { ElementUtils } from './utils/element-utils';
 
 /**
@@ -214,14 +219,14 @@ export class CssHitsCounter {
             if (pendingProbes && pendingProbes.length > 0) {
                 // Copy the array: the counter adds probes to its own queue,
                 // so the caller's array must not change.
-                this.pendingProbes = [...pendingProbes];
+                this.enqueuePendingProbes(pendingProbes);
             }
             if (pendingProbesCollector) {
                 this.pendingProbesCollector = pendingProbesCollector;
 
                 const collectedProbes = pendingProbesCollector.takePendingProbes();
                 if (collectedProbes.length > 0) {
-                    this.pendingProbes.push(...collectedProbes);
+                    this.enqueuePendingProbes(collectedProbes);
                 }
 
                 pendingProbesCollector.setOnProbesCollected((probes) => {
@@ -295,6 +300,29 @@ export class CssHitsCounter {
     }
 
     /**
+     * Adds probes to the pending queue, keeping at most
+     * {@link MAX_PENDING_PROBES} probes.
+     *
+     * The earliest probes are kept: baits are usually created by a script in
+     * `<head>`, while later churn is more likely to be unrelated.
+     *
+     * @param probes Probes to enqueue.
+     */
+    private enqueuePendingProbes(probes: PendingProbe[]): void {
+        const available = MAX_PENDING_PROBES - this.pendingProbes.length;
+        if (available <= 0) {
+            return;
+        }
+
+        if (probes.length > available) {
+            this.pendingProbes.push(...probes.slice(0, available));
+            return;
+        }
+
+        this.pendingProbes.push(...probes);
+    }
+
+    /**
      * Adds probes collected after the counter initialization.
      *
      * The probes are counted by the regular probe processing pass. If a pass
@@ -308,7 +336,7 @@ export class CssHitsCounter {
             return;
         }
 
-        this.pendingProbes.push(...probes);
+        this.enqueuePendingProbes(probes);
 
         if (this.pendingProbesTimeoutId !== null) {
             // A pass or a retry is already scheduled and will pick the new

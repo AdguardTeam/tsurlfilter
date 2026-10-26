@@ -11,6 +11,7 @@ import {
 
 import { CssHitsCounter } from '../../../../src/lib';
 import {
+    MAX_PENDING_PROBES,
     type PendingProbe,
     PendingProbesCollector,
 } from '../../../../src/lib/common/content-script/pending-probes-collector';
@@ -1527,6 +1528,56 @@ describe('CssHitsCounter', () => {
             vi.advanceTimersByTime(5);
 
             expect(getChunkHits()).toBe(30);
+
+            counter.stop();
+        } finally {
+            vi.useRealTimers();
+            style.remove();
+        }
+    });
+
+    it('caps the pending probe queue when the collector delivers more than the limit', () => {
+        vi.useFakeTimers();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.capped-bait',
+            "{ display: none !important; --adguard-hit: 'adguard28%3B28' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        try {
+            const { collector, deliver } = createProbesCollector();
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, {
+                pendingProbesCollector: collector,
+            });
+
+            const probes: PendingProbe[] = Array.from(
+                { length: MAX_PENDING_PROBES + 1 },
+                () => {
+                    const element = document.createElement('div');
+                    element.className = 'capped-bait';
+
+                    return {
+                        element,
+                        target: document.body,
+                        previousSibling: null,
+                        nextSibling: null,
+                    };
+                },
+            );
+
+            deliver(probes);
+
+            // All capped probes are counted in chunks; the extra probe is
+            // dropped instead of growing the counter queue without bound.
+            vi.advanceTimersByTime(1000);
+
+            const hits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 28);
+            expect(hits).toHaveLength(MAX_PENDING_PROBES);
 
             counter.stop();
         } finally {
