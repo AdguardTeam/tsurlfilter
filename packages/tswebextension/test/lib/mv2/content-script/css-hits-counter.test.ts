@@ -1639,6 +1639,74 @@ describe('CssHitsCounter', () => {
         }
     });
 
+    it('does not re-insert a probed element once the marker styles are applied', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.settled-marker',
+            "{ display: none !important; --adguard-hit: 'adguard29%3B29' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        const marker = document.createElement('div');
+        marker.className = 'settled-marker';
+        document.body.prepend(marker);
+
+        const appendChildSpy = vi.spyOn(document.body, 'appendChild');
+
+        try {
+            const { collector, deliver } = createProbesCollector();
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, {
+                pendingProbesCollector: collector,
+            });
+            const bait = document.createElement('div');
+            bait.className = 'settled-bait';
+
+            const getBaitInsertions = (): number => appendChildSpy.mock.calls
+                .filter(([node]) => node === bait)
+                .length;
+
+            // The marker proves that the injected styles are already applied.
+            expect(onCssHitsFound).toHaveBeenCalled();
+
+            // The mutation observer re-inserts the probe once, but it does
+            // not match any rule.
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(getBaitInsertions()).toBe(1);
+
+            // The collector reports the same element later. Since the
+            // observer already probed it and the styles are applied, it must
+            // not be re-inserted again.
+            deliver([{
+                element: bait,
+                target: document.body,
+                previousSibling: null,
+                nextSibling: null,
+            }]);
+
+            vi.advanceTimersByTime(1000);
+
+            expect(getBaitInsertions()).toBe(1);
+
+            counter.stop();
+        } finally {
+            appendChildSpy.mockRestore();
+            marker.remove();
+            style.remove();
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
     it('still retries a probe that the mutation observer could not count', () => {
         vi.useFakeTimers();
         const restoreMutationObserver = mockMutationObserver();

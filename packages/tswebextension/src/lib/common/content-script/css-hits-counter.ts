@@ -1049,9 +1049,13 @@ export class CssHitsCounter {
                 const { element } = probe;
 
                 // The mutation observer already re-inserted and counted the
-                // element, so it must not be put back again unless another
-                // probe in this chunk depends on it.
-                if (this.countedProbes.has(element) && !ancestorElements.has(element)) {
+                // element, or, once the marker styles are known to be
+                // applied, already re-inserted it without a hit. It must not
+                // be put back again unless another probe in this chunk
+                // depends on it.
+                if ((this.countedProbes.has(element)
+                    || (this.markerStylesApplied && this.probedElements.has(element)))
+                    && !ancestorElements.has(element)) {
                     settledProbes.add(probe);
                     continue;
                 }
