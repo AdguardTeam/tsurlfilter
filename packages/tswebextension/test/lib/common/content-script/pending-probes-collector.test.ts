@@ -11,7 +11,10 @@ import {
     vi,
 } from 'vitest';
 
-import { PendingProbesCollector } from '../../../../src/lib/common/content-script/pending-probes-collector';
+import {
+    MAX_PENDING_PROBES,
+    PendingProbesCollector,
+} from '../../../../src/lib/common/content-script/pending-probes-collector';
 import { mockMutationObserver, MutationObserverMock } from '../../../helpers/mutation-observer';
 
 /**
@@ -393,6 +396,40 @@ describe('PendingProbesCollector', () => {
         expect(probes.some((probe) => probe.element === elements[maxPendingProbes])).toBe(false);
 
         collector.stop();
+    });
+
+    it('does not scan a detached subtree after the queue is full', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const fillers = Array.from(
+            { length: MAX_PENDING_PROBES },
+            () => document.createElement('div'),
+        );
+
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: fillers,
+            target: document.body,
+        })]);
+
+        const candidate = document.createElement('div');
+        candidate.appendChild(document.createElement('iframe'));
+        const querySelectorAllSpy = vi.spyOn(candidate, 'querySelectorAll');
+
+        try {
+            // The queue is full, so the candidate is dropped without
+            // scanning its subtree.
+            MutationObserverMock.last!.trigger([createMutationRecord({
+                addedNodes: [candidate],
+                target: document.body,
+            })]);
+
+            expect(querySelectorAllSpy).not.toHaveBeenCalled();
+            expect(collector.takePendingProbes()).toHaveLength(MAX_PENDING_PROBES);
+        } finally {
+            querySelectorAllSpy.mockRestore();
+            collector.stop();
+        }
     });
 
     it('allows a dropped element to be collected when it is added and removed again', () => {

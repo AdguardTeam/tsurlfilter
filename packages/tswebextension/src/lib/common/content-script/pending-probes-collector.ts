@@ -480,17 +480,19 @@ export class PendingProbesCollector {
             return false;
         }
 
+        if (this.pendingProbes.length >= MAX_PENDING_PROBES) {
+            // Keep the earliest probes. The element is not marked as seen, so
+            // if the page adds and removes it again after the queue is
+            // drained, it can still be collected. Check the cap before
+            // scanning the subtree: when the queue is full, the scan would be
+            // wasted work for an element that is dropped anyway.
+            return false;
+        }
+
         if (!isProbeRestorable(element)) {
             // Mark the element as seen to avoid rescanning its subtree on
             // every repeated mutation record.
             this.collectedElements.add(element);
-            return false;
-        }
-
-        if (this.pendingProbes.length >= PendingProbesCollector.MAX_PENDING_PROBES) {
-            // Keep the earliest probes. The element is not marked as seen, so
-            // if the page adds and removes it again after the queue is
-            // drained, it can still be collected.
             return false;
         }
 
