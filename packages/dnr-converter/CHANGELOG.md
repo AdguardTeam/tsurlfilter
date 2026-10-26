@@ -35,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `$urltransform` rules do not get the additional rule: a `$domain` with
   permitted domains does not match browser-started navigations, while an
   excluded-only `$domain` still matches them through the base rule.
+  Affected rules now consume two declarative rules, and two regex-rule slots
+  when a `$removeparam` rule generates a regexp, so they count against the
+  rule and regex budgets.
 - `$badfilter` incorrectly negated rules with different values of value-bearing
   modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
   `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when
