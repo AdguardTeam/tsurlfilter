@@ -17,11 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   documentation now reflects that document tracking works the same in Firefox 153+
   as in Chromium. Consumers compiling against the published declarations must use
   `@types/webextension-polyfill` >= 0.12.6, since the previous alias is gone.
-- HTML filtering `:contains()` arguments are now handled with CoreLibs
-  semantics (via [@adguard/tsurlfilter]): wrapping quotes of any kind are
-  literal characters of the matched text, unbalanced arguments (e.g.
-  `$$script:contains((function(g,b,a,c,e,d)`) are matched as-is, and
-  `/regexp/`-looking arguments keep their regexp semantics.
+- Updated [@adguard/extended-css] to `v2.3.0`, which adds support for uBlock Origin
+  `:remove-attr()` and `:remove-class()` pseudo-classes [AdguardBrowserExtension#3538].
 
 ### Deprecated
 
@@ -49,9 +46,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   "delete third-party cookies" option is enabled [AdguardBrowserExtension#3553].
 
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
+[AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
 [AdguardBrowserExtension#3553]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3553
 
 ### Security
+
+## [6.0.1] - 2026-10-15
+
+### Changed
+
+- HTML filtering `:contains()` arguments are now handled with CoreLibs
+  semantics (via [@adguard/tsurlfilter]): wrapping quotes of any kind are
+  literal characters of the matched text, unbalanced arguments (e.g.
+  `$$script:contains((function(g,b,a,c,e,d)`) are matched as-is, and
+  `/regexp/`-looking arguments keep their regexp semantics.
+- Updated [@adguard/agtree] to `v4.3.0`.
+- Updated [@adguard/tsurlfilter] to `v6.0.4`.
+
+[6.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v6.0.1
 
 ## [6.0.0] - 2026-09-29
 

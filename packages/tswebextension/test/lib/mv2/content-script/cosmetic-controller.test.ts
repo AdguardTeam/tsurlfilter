@@ -201,6 +201,53 @@ describe('some extended css rules are invalid', () => {
     });
 });
 
+describe('uBO action pseudo-classes are applied by the content script', () => {
+    beforeEach(() => {
+        document.body.innerHTML = `
+            <a id="link" href="https://example.org/" onclick="void 0" class="ads ad-1 other">link</a>
+        `;
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    it('remove-attr and remove-class are applied, styles of action rules are ignored', async () => {
+        const rules = [
+            'example.org##a:remove-attr(href)',
+            'example.org##a:remove-attr(/^on[a-z]+$/)',
+            'example.org##a:remove-class(ads)',
+            'example.org##a:remove-class(/^ad-[0-9]+$/)',
+        ];
+
+        // Mocking the sendAppMessage function
+        vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(getCosmeticData(rules, false));
+
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
+
+        expect(cosmeticController).toBeDefined();
+
+        // Wait for the cosmetic controller to process (using a delay)
+        await new Promise((resolve) => {
+            setTimeout(resolve, 20);
+        });
+
+        const linkElement = document.getElementById('link');
+        if (!linkElement) {
+            throw new Error('#link element is required');
+        }
+
+        expect(linkElement.hasAttribute('href')).toBe(false);
+        expect(linkElement.hasAttribute('onclick')).toBe(false);
+        expect(linkElement.classList.contains('ads')).toBe(false);
+        expect(linkElement.classList.contains('ad-1')).toBe(false);
+        // Unrelated classes and the element itself are kept
+        expect(linkElement.classList.contains('other')).toBe(true);
+        expect(linkElement.style.getPropertyValue('display')).toEqual('');
+    });
+});
+
 describe('short-lived probes', () => {
     it('starts collecting probes before the cosmetic data request and reports them', async () => {
         const restoreMutationObserver = mockMutationObserver();
