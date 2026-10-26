@@ -1,0 +1,57 @@
+// Part of the engine injected into pages: plain functions instead of a static class keep it small,
+// see engine-entry.ts.
+/**
+ * JavaScript operations captured privately when the standalone realm engine loads.
+ * Later page replacements never receive hash state, seeds or private pixel buffers.
+ */
+const typedArrayPrototype = Object.getPrototypeOf(Uint8Array.prototype);
+export const canvasIntrinsics = Object.freeze({
+    Uint8Array,
+    Uint8ClampedArray,
+    Uint32Array,
+    DataView,
+    TextEncoder,
+    Proxy,
+    WeakMap,
+    WeakSet,
+    apply: Reflect.apply,
+    imul: Math.imul,
+    min: Math.min,
+    max: Math.max,
+    parseInt: Number.parseInt,
+    slice: String.prototype.slice,
+    indexOf: String.prototype.indexOf,
+    encode: TextEncoder.prototype.encode,
+    typedLength: Object.getOwnPropertyDescriptor(typedArrayPrototype, 'length')!.get!,
+    typedBuffer: Object.getOwnPropertyDescriptor(typedArrayPrototype, 'buffer')!.get!,
+    typedTag: Object.getOwnPropertyDescriptor(typedArrayPrototype, Symbol.toStringTag)!.get!,
+    typedSet: typedArrayPrototype.set as Uint8Array['set'],
+    setUint32: DataView.prototype.setUint32,
+    weakGet: WeakMap.prototype.get,
+    weakSet: WeakMap.prototype.set,
+    weakHas: WeakSet.prototype.has,
+    weakAdd: WeakSet.prototype.add,
+    setPrototypeOf: Object.setPrototypeOf,
+    get: Reflect.get,
+    getPrototypeOf: Reflect.getPrototypeOf,
+    reflectSetPrototypeOf: Reflect.setPrototypeOf,
+    create: Object.create,
+    // V8 only: captures the stack below a given function.
+    captureStackTrace: (
+        Error as { captureStackTrace?: (target: object, boundary: Function) => void }
+    ).captureStackTrace,
+    getOwnPropertyDescriptor: Object.getOwnPropertyDescriptor,
+    getOwnPropertyNames: Object.getOwnPropertyNames,
+    defineProperty: Object.defineProperty,
+});
+
+/**
+ * Removes inherited callbacks from private state, Proxy handlers and WebIDL dictionaries.
+ *
+ * @param value Newly created private handler or options dictionary.
+ *
+ * @returns The same object with no inherited page-owned callbacks.
+ */
+export function withoutPrototype<T extends object>(value: T): T {
+    return canvasIntrinsics.setPrototypeOf(value, null);
+}

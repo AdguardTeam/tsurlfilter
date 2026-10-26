@@ -22,6 +22,58 @@ const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
 };
 
 describe('Engine Tests', () => {
+    describe('getDocumentOrStealthExceptionRules', () => {
+        it.each(['createSync', 'createAsync'] as const)(
+            '%s returns stealth and document exceptions with badfilter applied',
+            async (factory) => {
+                const engine = await Engine[factory]({
+                    filters: [{
+                        id: 1,
+                        content: [
+                            '@@||a.org^$stealth',
+                            '@@||b.org^$stealth=fingerprinting',
+                            '@@||c.org^$stealth=referrer',
+                            '@@||d.org^$document',
+                            '@@||e.org^$stealth',
+                            '@@||e.org^$stealth,badfilter',
+                            '@@||f.org^$subdocument',
+                            '||g.org^$document',
+                            '||h.org^',
+                            '@@||i.org^$doc',
+                            '@@||explicit.org^$elemhide,content,urlblock,jsinject',
+                            '@@||j.org^$stealth=fingerprinting',
+                            '@@||j.org^$stealth=referrer,badfilter',
+                        ].join('\n'),
+                    }],
+                });
+
+                const texts = engine.getDocumentOrStealthExceptionRules().map((rule) => {
+                    return engine.retrieveRuleText(rule.getFilterListId(), rule.getIndex());
+                });
+
+                expect(texts).toStrictEqual([
+                    '@@||a.org^$stealth',
+                    '@@||b.org^$stealth=fingerprinting',
+                    '@@||c.org^$stealth=referrer',
+                    '@@||d.org^$document',
+                    '@@||i.org^$document',
+                    '@@||j.org^$stealth=fingerprinting',
+                ]);
+            },
+        );
+
+        it.each(['createSync', 'createAsync'] as const)(
+            '%s returns no rules without candidates',
+            async (factory) => {
+                const engine = await Engine[factory]({
+                    filters: [{ id: 1, content: ['||example.org^', 'example.org##.ad'].join('\n') }],
+                });
+
+                expect(engine.getDocumentOrStealthExceptionRules()).toStrictEqual([]);
+            },
+        );
+    });
+
     it('works if request matches rule', () => {
         const rules = ['||example.org^$third-party'];
         const text = rules.join('\n');

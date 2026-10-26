@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added the `fingerprinting` value for `$stealth`
+  (`StealthOptionName.Fingerprinting`).
+- Added `Engine.getDocumentOrStealthExceptionRules()` to retrieve `$stealth`
+  and `$document` exceptions with `$badfilter` applied.
 - Support of uBlock Origin `:remove-attr()` and `:remove-class()` pseudo-classes:
   rules with them are recognized as Extended CSS and passed to the Extended CSS
   engine [AdguardBrowserExtension#3538].

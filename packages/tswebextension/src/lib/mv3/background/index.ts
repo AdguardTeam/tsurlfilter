@@ -85,3 +85,14 @@ export type { LocalScriptFunctionData } from './services/local-script-rules-serv
 export type { RuleInfo } from '../../common/rule-info';
 
 export { TSWEBEXTENSION_VERSION, EXTENDED_CSS_VERSION } from '../../common/configuration';
+
+export {
+    type RegistrationOperationOutcome,
+    type RegistrationResult,
+} from '../../common/canvas-protection/contracts';
+export {
+    CanvasAvailabilityStatus,
+    CanvasOperationStatus,
+    CanvasRegistrationOperation,
+    CanvasRegistrationStatus,
+} from '../../common/canvas-protection/constants';

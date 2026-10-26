@@ -7,6 +7,7 @@ import {
 } from 'vitest';
 
 import { RequestEvent } from '../../../../../../src/lib';
+import { CanvasDeliveryUrl } from '../../../../../../src/lib/mv2/common/canvas-delivery';
 
 describe('Request Event', () => {
     it('subscribes to original event once on initialization', () => {
@@ -83,5 +84,32 @@ describe('Request Event', () => {
 
         expect(blockingCallback).toBeCalledTimes(1);
         expect(noop).toBeCalledTimes(0);
+    });
+
+    it('skips requests to the reserved canvas delivery host', () => {
+        const event = new RequestEvent();
+        const handler = vi.fn((details: { url: string }) => ({ details }));
+
+        event.init(
+            browser.webRequest.onBeforeRequest,
+            handler,
+            { urls: ['<all_urls>'] },
+            ['blocking', 'requestBody'],
+        );
+
+        const response = { cancel: true };
+        const listener = vi.fn(() => response);
+
+        event.addListener(listener);
+
+        const browserListener = browser.webRequest.onBeforeRequest.addListener.lastCall.args[0];
+
+        expect(browserListener({ url: CanvasDeliveryUrl.getUrl('extensionid') })).toBeUndefined();
+        expect(handler).not.toHaveBeenCalled();
+        expect(listener).not.toHaveBeenCalled();
+
+        expect(browserListener({ url: 'https://example.org/' })).toBe(response);
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(listener).toHaveBeenCalledTimes(1);
     });
 });

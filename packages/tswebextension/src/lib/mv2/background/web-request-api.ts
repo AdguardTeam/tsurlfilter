@@ -192,6 +192,7 @@ import { logger } from '../../common/utils/logger';
 import { getDomain, isHttpOrWsRequest } from '../../common/utils/url';
 
 import {
+    canvasInjection,
     contentFiltering,
     cookieFiltering,
     cosmeticFrameProcessor,
@@ -733,7 +734,11 @@ export class WebRequestApi {
             return;
         }
 
-        const { tabId, frameId, requestType } = context;
+        const {
+            tabId,
+            frameId,
+            requestType,
+        } = context;
 
         if (requestType !== RequestType.Document && requestType !== RequestType.SubDocument) {
             return;
@@ -948,6 +953,8 @@ export class WebRequestApi {
             },
         );
 
+        // TODO: remove when Chromium MV2 is no longer supported.
+        canvasInjection.inject(tabId, frameId, details.url);
         WebRequestApi.injectCosmetic(details);
         removeParamInjectionService.injectRemoveParam(details.tabId, details.frameId, details.url);
     }

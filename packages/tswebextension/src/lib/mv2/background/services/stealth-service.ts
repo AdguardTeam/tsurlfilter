@@ -3,6 +3,7 @@ import { type WebRequest } from 'webextension-polyfill';
 import { type NetworkRule, NetworkRuleOption, StealthOptionName } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
+import { CanvasExceptionRules } from '../../../common/canvas-protection/exception-rules';
 import { type StealthConfig } from '../../../common/configuration';
 import { FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 import { StealthActions } from '../../../common/stealth-actions';
@@ -133,13 +134,23 @@ export class StealthService {
             requestType,
             tabId,
             eventId,
-            referrerUrl,
-            contentType,
-            timestamp,
         } = context;
 
         if (!requestHeaders || matchingResult?.documentRule) {
             return stealthActions;
+        }
+
+        // Collect applied allowlist rules in a set to only publish
+        // one filtering event per applied allowlist rule
+        const appliedAllowlistRules = new Set<NetworkRule>();
+
+        // Canvas protection decides in the page, so the log shows the exception that kept a document native.
+        const isDocument = requestType === RequestType.Document || requestType === RequestType.SubDocument;
+        if (this.config.protectCanvas && isDocument && matchingResult) {
+            const canvasExceptionRule = CanvasExceptionRules.findStealthException(matchingResult, this.engineApi);
+            if (canvasExceptionRule) {
+                appliedAllowlistRules.add(canvasExceptionRule);
+            }
         }
 
         /**
@@ -150,13 +161,10 @@ export class StealthService {
         const stealthDisablingRule = matchingResult?.getStealthRule();
         if (stealthDisablingRule) {
             // $stealth rule without options is not being published to the filtering log
-            // to conform with desktop application behavior
+            // to conform with desktop application behavior, unless it disabled canvas protection
+            this.publishAllowlistRules(context, appliedAllowlistRules);
             return stealthActions;
         }
-
-        // Collect applied allowlist rules in a set to only publish
-        // one filtering event per applied allowlist rule
-        const appliedAllowlistRules = new Set<NetworkRule>();
 
         // Remove referrer for third-party requests
         if (this.config?.hideReferrer) {
@@ -199,34 +207,7 @@ export class StealthService {
             }
         }
 
-        if (appliedAllowlistRules.size > 0) {
-            this.filteringLog.publishEvent({
-                type: FilteringEventType.StealthAllowlistAction,
-                data: {
-                    tabId,
-                    eventId,
-                    rules: Array.from(appliedAllowlistRules).map((rule) => {
-                        const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
-                        return {
-                            filterId: rule.getFilterListId(),
-                            ruleIndex: rule.getIndex(),
-                            appliedRuleText,
-                            originalRuleText,
-                            isAllowlist: rule.isAllowlist(),
-                            isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
-                            isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
-                            isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
-                            isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
-                            advancedModifier: rule.getAdvancedModifierValue(),
-                        };
-                    }),
-                    requestUrl,
-                    frameUrl: referrerUrl,
-                    requestType: contentType,
-                    timestamp,
-                },
-            });
-        }
+        this.publishAllowlistRules(context, appliedAllowlistRules);
 
         if (stealthActions > 0) {
             this.filteringLog.publishEvent({
@@ -240,6 +221,52 @@ export class StealthService {
         }
 
         return stealthActions;
+    }
+
+    /**
+     * Publishes the stealth exceptions applied to a request to the filtering log.
+     *
+     * @param context Request context.
+     * @param rules Applied exceptions, published as one event when there are any.
+     */
+    private publishAllowlistRules(context: RequestContext, rules: ReadonlySet<NetworkRule>): void {
+        if (rules.size === 0) {
+            return;
+        }
+        const {
+            tabId,
+            eventId,
+            requestUrl,
+            referrerUrl,
+            contentType,
+            timestamp,
+        } = context;
+        this.filteringLog.publishEvent({
+            type: FilteringEventType.StealthAllowlistAction,
+            data: {
+                tabId,
+                eventId,
+                rules: Array.from(rules).map((rule) => {
+                    const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
+                    return {
+                        filterId: rule.getFilterListId(),
+                        ruleIndex: rule.getIndex(),
+                        appliedRuleText,
+                        originalRuleText,
+                        isAllowlist: rule.isAllowlist(),
+                        isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                        isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                        isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                        isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                        advancedModifier: rule.getAdvancedModifierValue(),
+                    };
+                }),
+                requestUrl,
+                frameUrl: referrerUrl,
+                requestType: contentType,
+                timestamp,
+            },
+        });
     }
 
     /**
