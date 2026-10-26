@@ -350,6 +350,7 @@ describe('WebRequestApi MV3 onCommitted', () => {
         vi.mocked(tabsApi.getFrameContext).mockReturnValue({
             url: 'https://previous.example/',
             documentId: 'previous-document-id',
+            parentFrameId: 2,
             extCssApplied: true,
         } as any);
 
@@ -367,6 +368,9 @@ describe('WebRequestApi MV3 onCommitted', () => {
             documentId: 'activated-document-id',
             url: 'https://activated.example/',
             timeStamp: 456,
+            preparedCosmeticResult: undefined,
+            cosmeticResult: undefined,
+            matchingResult: undefined,
             extCssApplied: false,
         });
         expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).toHaveBeenCalledWith(
@@ -374,20 +378,57 @@ describe('WebRequestApi MV3 onCommitted', () => {
                 tabId: 1,
                 frameId: 0,
                 url: 'https://activated.example/',
+                // The committed event's parent frame id, not the stale one
+                // stored in the reused frame context.
+                parentFrameId: -1,
             }),
         );
     });
 
-    it('does not recalculate cosmetics for a same-URL reload', () => {
-        // The document id changes, but the rules are prepared per URL, so the
-        // prepared result stays valid.
+    it('recalculates cosmetics for a new document with the same URL', () => {
+        // A same-URL prerender activation reuses the frame context too: the
+        // URL is unchanged, but the document and its isolated world are not,
+        // so the prepared result and the ExtCSS flag belong to the previous
+        // document.
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
+            url: 'https://example.com/',
+            documentId: 'previous-document-id',
+            extCssApplied: true,
+        } as any);
+
+        (WebRequestApi as any).onCommitted({
+            tabId: 1,
+            frameId: 0,
+            parentFrameId: -1,
+            documentId: 'activated-document-id',
+            url: 'https://example.com/',
+            timeStamp: 456,
+            documentLifecycle: DocumentLifecycle.Active,
+        });
+
+        expect(vi.mocked(tabsApi.updateFrameContext)).toHaveBeenCalledWith(1, 0, {
+            documentId: 'activated-document-id',
+            url: 'https://example.com/',
+            timeStamp: 456,
+            preparedCosmeticResult: undefined,
+            cosmeticResult: undefined,
+            matchingResult: undefined,
+            extCssApplied: false,
+        });
+        expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).toHaveBeenCalled();
+    });
+
+    it('does not recalculate cosmetics for a background page', () => {
+        // Cosmetics are never applied there, so the frame must not be
+        // recalculated — for the main frame that would also reset the tab's
+        // blocked request counter.
         vi.mocked(tabsApi.getFrameContext).mockReturnValue({
             url: 'https://example.com/',
             documentId: 'previous-document-id',
         } as any);
 
         (WebRequestApi as any).onCommitted({
-            tabId: 1,
+            tabId: -1,
             frameId: 0,
             parentFrameId: -1,
             documentId: 'new-document-id',
@@ -396,10 +437,32 @@ describe('WebRequestApi MV3 onCommitted', () => {
             documentLifecycle: DocumentLifecycle.Active,
         });
 
-        expect(vi.mocked(tabsApi.updateFrameContext)).toHaveBeenCalledWith(1, 0, {
-            documentId: 'new-document-id',
-        });
         expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).not.toHaveBeenCalled();
+        expect(vi.mocked(CosmeticApi.applyCosmeticRules)).not.toHaveBeenCalled();
+    });
+
+    it('does not recalculate cosmetics for an assistant frame', () => {
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
+            url: 'https://example.com/',
+            documentId: 'previous-document-id',
+        } as any);
+        vi.mocked(tabsApi.getTabContext).mockReturnValue({
+            assistantInitTimestamp: 1000,
+            getFrameContext: () => ({ parentFrameId: 0 }),
+        } as any);
+
+        (WebRequestApi as any).onCommitted({
+            tabId: 1,
+            frameId: 2,
+            parentFrameId: 0,
+            documentId: 'new-document-id',
+            url: 'about:blank',
+            timeStamp: 1100,
+            documentLifecycle: DocumentLifecycle.Active,
+        });
+
+        expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).not.toHaveBeenCalled();
+        expect(vi.mocked(CosmeticApi.applyCosmeticRules)).not.toHaveBeenCalled();
     });
 
     it('does not recalculate cosmetics for a same-document navigation', () => {

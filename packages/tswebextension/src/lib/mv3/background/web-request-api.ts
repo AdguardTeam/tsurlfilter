@@ -855,7 +855,15 @@ export class WebRequestApi {
      *
      * @param details Navigation event details.
      */
-    private static onCommitted(details: chrome.webNavigation.WebNavigationFramedCallbackDetails): void {
+    private static onCommitted(
+        details: chrome.webNavigation.WebNavigationFramedCallbackDetails & {
+            /**
+             * Chrome passes the parent frame id to `onCommitted`, but its
+             * typings narrow this event to the framed details without it.
+             */
+            parentFrameId?: number;
+        },
+    ): void {
         const {
             tabId,
             frameId,
@@ -875,15 +883,24 @@ export class WebRequestApi {
          * for the committed document, otherwise the previous document's rules
          * are injected into the activated page.
          *
-         * The URL check keeps same-document navigations out: the prepared
-         * result stays valid there, and recalculating it would inject the
-         * scriptlets again.
+         * Keyed on the document only: a same-document navigation keeps the
+         * document id, so the prepared result stays valid there, while a new
+         * document whose URL equals the previous one — a same-URL prerender
+         * activation — is still detected. Comparing the URLs would miss it,
+         * and the two values come from different APIs (`webRequest` and
+         * `webNavigation`), so they are not guaranteed to be equal anyway.
          */
         const isNewDocument = !!frameContext
-            && frameContext.documentId !== documentId
-            && frameContext.url !== url;
+            && frameContext.documentId !== documentId;
 
-        // This is necessary mainly to update documentId
+        /**
+         * For a new document refresh the URL and the timestamp and reset the
+         * ExtCSS flag; for the same document only the document id is updated.
+         *
+         * Nothing prepared for the previous document may survive into the new
+         * one, so its prepared, matching and cosmetic results are dropped
+         * here, even if the recalculation below bails out.
+         */
         tabsApi.updateFrameContext(
             tabId,
             frameId,
@@ -892,24 +909,15 @@ export class WebRequestApi {
                     documentId,
                     url,
                     timeStamp,
+                    preparedCosmeticResult: undefined,
+                    cosmeticResult: undefined,
+                    matchingResult: undefined,
                     // The previous document's instance is gone together with
                     // its isolated world.
                     extCssApplied: false,
                 }
                 : { documentId },
         );
-
-        if (isNewDocument && frameContext) {
-            CosmeticFrameProcessor.precalculateCosmetics({
-                tabId,
-                frameId,
-                parentFrameId: frameContext.parentFrameId,
-                url,
-                timeStamp,
-                parentDocumentId: details.parentDocumentId,
-                documentLifecycle: details.documentLifecycle,
-            });
-        }
 
         if (WebRequestApi.isAssistantFrame(tabId, details)) {
             logger.debug(`[tsweb.WebRequestApi.onCommitted]: assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`);
@@ -919,6 +927,21 @@ export class WebRequestApi {
         if (!CosmeticApi.shouldApplyCosmetics(tabId, details.url)) {
             logger.debug(`[tsweb.WebRequestApi.onCommitted]: Skipping cosmetics injection for background or extension page with tabId ${tabId}, frameId ${frameId} and url ${details.url}`);
             return;
+        }
+
+        // Cosmetics are never applied to assistant frames or extension pages,
+        // so their frames must not be recalculated either: for the main frame
+        // that would also reset the tab's blocked request counter.
+        if (isNewDocument && frameContext) {
+            CosmeticFrameProcessor.precalculateCosmetics({
+                tabId,
+                frameId,
+                parentFrameId: details.parentFrameId ?? frameContext.parentFrameId,
+                url,
+                timeStamp,
+                parentDocumentId: details.parentDocumentId,
+                documentLifecycle: details.documentLifecycle,
+            });
         }
 
         // Note: this is an async function, but we will not await it because
