@@ -266,6 +266,33 @@ describe('FilterConverter (withSourceMap: true)', () => {
             // No rules to disable since the dynamic filter doesn't negate the static one
             expect(result).toStrictEqual([]);
         });
+
+        it('documents the limitation: a dynamic $badfilter disables an already narrowed static rule', async () => {
+            // Both rules are in the same filter list, so the build narrows the
+            // target rule to `bar.com` without the `badFilterRules` option.
+            const staticFilter = createFilter([
+                '||example.com^$domain=foo.com|bar.com',
+                '||example.com^$domain=foo.com,badfilter',
+            ], 10);
+            const [{ ruleset: staticRuleset }] = await converter.convert([staticFilter], withSourceMapOptions);
+
+            const staticRules = await staticRuleset.getDeclarativeRules();
+            expect(staticRules).toHaveLength(1);
+            expect(staticRules[0].condition.initiatorDomains).toEqual(['bar.com']);
+
+            // The same badfilter text in a dynamic filter is compared against the
+            // re-parsed source rule, so the whole narrowed rule is disabled even
+            // though the build already removed `foo.com`.
+            const dynamicFilter = createFilter(['||example.com^$domain=foo.com,badfilter'], 20);
+            const [{ ruleset: dynamicRuleset }] = await converter.convert([dynamicFilter], withSourceMapOptions);
+
+            const result = await converter.computeRulesToDisable([dynamicRuleset], [staticRuleset]);
+
+            expect(result).toStrictEqual([{
+                rulesetId: staticRuleset.getId(),
+                disableRuleIds: [staticRules[0].id],
+            }]);
+        });
     });
 
     describe('respects limitations', () => {

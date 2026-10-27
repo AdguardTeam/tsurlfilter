@@ -133,7 +133,9 @@ Three cases are still not covered:
   the exclusion with `excludedInitiatorDomains`;
 - a `$badfilter` rule from a dynamic ruleset disables a whole declarative rule
   from an already-built static ruleset, because such a rule can only be
-  disabled as a whole, not narrowed;
+  disabled as a whole, not narrowed. This applies even when the static rule
+  was already narrowed by a badfilter in its own filter list, so the dynamic
+  rule cancels the remaining domains too;
 - wildcard-TLD entries (`example.*`) cancel only an identically written entry,
   because matching them against the domains they stand for needs the public
   suffix list, which the converter does not depend on.
