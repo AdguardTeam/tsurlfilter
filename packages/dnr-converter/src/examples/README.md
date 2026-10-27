@@ -117,9 +117,10 @@ display this in the declarative filtering log, as declarative rules are canceled
 ### Problem 1
 A `$badfilter` rule that carries `$domain` cancels the target rule only for
 the domains named in both rules, and only while neither rule negates a domain
-(`~domain`); otherwise the whole text is compared and nothing is cancelled.
-The converter narrows the `$domain` list of the target rule. For example, for
-these two rules:
+(`~domain`). Otherwise the `$domain` entries stay in the text, the whole text
+is compared, and the rule is cancelled completely only when the whole text
+matches. The converter narrows the `$domain` list of the target rule. For
+example, for these two rules:
 ```adblock
 /some$domain=example.com|example.org
 /some$domain=example.com,badfilter
