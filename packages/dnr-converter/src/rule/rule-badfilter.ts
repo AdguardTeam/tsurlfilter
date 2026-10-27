@@ -158,10 +158,11 @@ export class RuleBadfilter {
      *
      * A rule with `$domain` and without negated domains is an exception: it
      * negates the target rule only for the domains present in both lists, so the
-     * `$domain` entries are dropped from both texts and the rest is compared,
-     * together with an intersection check of the two domain lists. When the lists
-     * overlap only partly, the result is
-     * {@link BadfilterNegationKind.Partial} with the domains that stay.
+     * `$domain` entries are dropped from both texts and the rest is compared.
+     * The badfilter entries are then subtracted from the target list: an empty
+     * result means {@link BadfilterNegationKind.Full}, no removed entry means
+     * {@link BadfilterNegationKind.None}, and the entries that stay mean
+     * {@link BadfilterNegationKind.Partial}.
      *
      * @param badfilterRule The rule that carries the `$badfilter` modifier.
      * @param targetRule The rule to test for negation.
