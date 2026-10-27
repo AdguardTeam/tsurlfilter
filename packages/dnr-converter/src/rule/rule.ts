@@ -240,6 +240,23 @@ export const REMOVEHEADER_COMPATIBLE_MODIFIERS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Overrides for a {@link Rule} copy created by
+ * {@link Rule.withPermittedDomains}.
+ */
+interface RuleOverrides {
+    /**
+     * Permitted `$domain` entries that replace the ones parsed from the node.
+     */
+    readonly permittedDomains?: readonly string[];
+
+    /**
+     * Priority for the copy. A badfiltered rule keeps the priority of the rule
+     * it narrows, because MV2 does not change the weight of that rule.
+     */
+    readonly priority?: number;
+}
+
+/**
  * Parsed and normalized network filtering rule.
  *
  * Instances are created exclusively via the static factory methods
@@ -411,13 +428,10 @@ export class Rule {
      * @param node Network rule AST node (must already be in AG syntax).
      * @param originalText Rule text as written in the filter list, captured
      *   before conversion to AG syntax.
-     * @param permittedDomainsOverride Permitted `$domain` entries that replace the
-     *   ones parsed from `node`. Used by {@link Rule.withPermittedDomains} to
-     *   narrow a rule that a `$badfilter` cancels only partly.
-     * @param priorityOverride Priority for the copy. Used by
-     *   {@link Rule.withPermittedDomains} to keep the priority of the rule that a
-     *   `$badfilter` narrows, because MV2 does not change the weight of a
-     *   badfiltered rule.
+     * @param overrides Optional overrides for a rule copy: permitted `$domain`
+     *   entries and the priority. Used by {@link Rule.withPermittedDomains} to
+     *   narrow a rule that a `$badfilter` cancels only partly and to keep the
+     *   priority that MV2 keeps for a badfiltered rule.
      *
      * @throws `SyntaxError` when the pattern contains spaces, the rule is too
      *   general, or any modifier is invalid.
@@ -427,8 +441,7 @@ export class Rule {
         index: number,
         node: NetworkRuleNode,
         originalText: string,
-        permittedDomainsOverride?: readonly string[],
-        priorityOverride?: number,
+        overrides?: RuleOverrides,
     ) {
         this.originalText = originalText;
         const pattern = node.pattern.value;
@@ -609,7 +622,7 @@ export class Rule {
 
                 case OPTION_NAMES.DOMAIN: {
                     const { permitted, restricted } = Rule.parseDomainList(value);
-                    const effectivePermitted = permittedDomainsOverride ?? permitted;
+                    const effectivePermitted = overrides?.permittedDomains ?? permitted;
                     if (effectivePermitted.length > 0) {
                         this.permittedDomains = [...effectivePermitted];
                         meta.permittedDomainCount = effectivePermitted.length;
@@ -820,7 +833,7 @@ export class Rule {
         this.pattern = pattern;
         this.hash = fastHash(pattern);
         this.allowlist = isAllowlist;
-        this.priority = priorityOverride ?? RulePriority.calculate(meta, isAllowlist);
+        this.priority = overrides?.priority ?? RulePriority.calculate(meta, isAllowlist);
         this.permittedResourceTypes = [...permittedResourceTypesSet];
         this.restrictedResourceTypes = [...restrictedResourceTypesSet];
     }
@@ -1005,8 +1018,7 @@ export class Rule {
             this.index,
             this.node,
             this.originalText,
-            permittedDomains,
-            this.priority,
+            { permittedDomains, priority: this.priority },
         );
     }
 
