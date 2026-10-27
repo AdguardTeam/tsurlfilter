@@ -115,14 +115,21 @@ display this in the declarative filtering log, as declarative rules are canceled
 
 <a name="mv3_specific_limitations__$badfilter__problem_1"></a>
 ### Problem 1
-But the current algorithm does not cover rules with `$domain` intersections, for example,
-for these two rules:
+A `$badfilter` rule that carries `$domain` cancels the target rule only for
+the domains named in both rules, so the converter narrows the `$domain` list
+of the target rule. For example, for these two rules:
 ```adblock
 /some$domain=example.com|example.org
 /some$domain=example.com,badfilter
 ```
-A rule with `$badfilter` will fully negate the first rule and the output array of
-declarative rules will be empty.
+the output contains the first rule with `initiatorDomains` set to
+`["example.org"]`.
+
+Two cases are still not covered:
+- a target rule without `$domain` is cancelled completely, because DNR cannot
+  express "every domain except these";
+- a `$badfilter` rule from a dynamic ruleset disables a whole declarative rule
+  from an already-built static ruleset, for the same reason.
 
 <a name="mv3_specific_limitations__$badfilter__problem_2"></a>
 ### Problem 2
@@ -2325,8 +2332,9 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
 <br/>
 <b>MV3 limitations:</b>
 <br/>
-In the current implementation, it works across all filters, but it does not cover
-rules with `$domain` intersections.
+In the current implementation, it works across all filters. A `$domain` list
+cancels the target rule only for the domains present in both lists. A target
+rule without `$domain` is still cancelled completely.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -2399,7 +2407,22 @@ example 5
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 1019790748,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "/some",
+      "initiatorDomains": [
+        "example.org",
+        "example.io"
+      ]
+    },
+    "priority": 135
+  }
+]
 ```
 example 6
 
@@ -2411,7 +2434,21 @@ example 6
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 1019790748,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "/some",
+      "initiatorDomains": [
+        "example.io"
+      ]
+    },
+    "priority": 135
+  }
+]
 ```
 example 7
 

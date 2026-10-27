@@ -107,11 +107,47 @@ const isDomainModifier = (name: string): boolean => name === OPTION_NAMES.DOMAIN
     || name === DOMAIN_ALIAS_OPTION_NAME;
 
 /**
+ * Outcome of matching a `$badfilter` rule against a target rule.
+ */
+export enum BadfilterNegationKind {
+    /**
+     * The badfilter rule does not affect the target rule.
+     */
+    None = 'none',
+
+    /**
+     * The badfilter rule cancels the target rule for every domain.
+     */
+    Full = 'full',
+
+    /**
+     * The badfilter rule cancels the target rule only for the domains present in
+     * both `$domain` lists.
+     */
+    Partial = 'partial',
+}
+
+/**
+ * Result of {@link RuleBadfilter.negationScope}.
+ */
+export type BadfilterNegation =
+    | { readonly kind: BadfilterNegationKind.None }
+    | { readonly kind: BadfilterNegationKind.Full }
+    | {
+        readonly kind: BadfilterNegationKind.Partial;
+
+        /**
+         * Domains that stay in the target rule's permitted `$domain` list.
+         */
+        readonly permittedDomains: string[];
+    };
+
+/**
  * Helper class for checking whether a `$badfilter` rule negates another rule.
  */
 export class RuleBadfilter {
     /**
-     * Checks whether `badfilterRule` negates `targetRule`.
+     * Determines how `badfilterRule` affects `targetRule`.
      *
      * A `$badfilter` rule negates another rule when the text of the two rules, as
      * written in the rule text, matches: the whole text is taken, `$badfilter` is
@@ -123,7 +159,61 @@ export class RuleBadfilter {
      * A rule with `$domain` and without negated domains is an exception: it
      * negates the target rule only for the domains present in both lists, so the
      * `$domain` entries are dropped from both texts and the rest is compared,
-     * together with an intersection check of the two domain lists.
+     * together with an intersection check of the two domain lists. When the lists
+     * overlap only partly, the result is
+     * {@link BadfilterNegationKind.Partial} with the domains that stay.
+     *
+     * @param badfilterRule The rule that carries the `$badfilter` modifier.
+     * @param targetRule The rule to test for negation.
+     *
+     * @returns How `badfilterRule` affects `targetRule`.
+     */
+    public static negationScope(
+        badfilterRule: BadfilterTarget,
+        targetRule: BadfilterTarget,
+    ): BadfilterNegation {
+        if (!badfilterRule.enabledModifiers.has(OPTION_NAMES.BADFILTER)) {
+            return { kind: BadfilterNegationKind.None };
+        }
+
+        const withoutBadfilter = stripWrittenModifiers(badfilterRule.originalText, isBadfilterModifier);
+
+        if (!RuleBadfilter.isPartialDomainCase(badfilterRule, targetRule)) {
+            return withoutBadfilter === targetRule.originalText
+                ? { kind: BadfilterNegationKind.Full }
+                : { kind: BadfilterNegationKind.None };
+        }
+
+        if (stripWrittenModifiers(withoutBadfilter, isDomainModifier)
+            !== stripWrittenModifiers(targetRule.originalText, isDomainModifier)) {
+            return { kind: BadfilterNegationKind.None };
+        }
+
+        // A missing list matches any domain, so the other list is cancelled
+        // everywhere. This is the case of a `$badfilter` without `$domain`.
+        if (badfilterRule.permittedDomains === null || targetRule.permittedDomains === null) {
+            return { kind: BadfilterNegationKind.Full };
+        }
+
+        const permittedDomains = RuleBadfilter.subtractDomains(
+            targetRule.permittedDomains,
+            badfilterRule.permittedDomains,
+        );
+
+        if (permittedDomains.length === 0) {
+            return { kind: BadfilterNegationKind.Full };
+        }
+
+        // No entry was removed, so the two lists do not overlap.
+        if (permittedDomains.length === targetRule.permittedDomains.length) {
+            return { kind: BadfilterNegationKind.None };
+        }
+
+        return { kind: BadfilterNegationKind.Partial, permittedDomains };
+    }
+
+    /**
+     * Checks whether `badfilterRule` negates `targetRule` at least partly.
      *
      * @param badfilterRule The rule that carries the `$badfilter` modifier.
      * @param targetRule The rule to test for negation.
@@ -131,22 +221,8 @@ export class RuleBadfilter {
      * @returns `true` if `badfilterRule` negates `targetRule`.
      */
     public static negates(badfilterRule: BadfilterTarget, targetRule: BadfilterTarget): boolean {
-        if (!badfilterRule.enabledModifiers.has(OPTION_NAMES.BADFILTER)) {
-            return false;
-        }
-
-        const withoutBadfilter = stripWrittenModifiers(badfilterRule.originalText, isBadfilterModifier);
-
-        if (!RuleBadfilter.isPartialDomainCase(badfilterRule, targetRule)) {
-            return withoutBadfilter === targetRule.originalText;
-        }
-
-        return stripWrittenModifiers(withoutBadfilter, isDomainModifier)
-                === stripWrittenModifiers(targetRule.originalText, isDomainModifier)
-            && RuleBadfilter.haveIntersection(
-                badfilterRule.permittedDomains,
-                targetRule.permittedDomains,
-            );
+        return RuleBadfilter.negationScope(badfilterRule, targetRule).kind
+            !== BadfilterNegationKind.None;
     }
 
     /**
@@ -170,7 +246,8 @@ export class RuleBadfilter {
     }
 
     /**
-     * Checks whether two domain lists can match the same request domain.
+     * Removes from the target domain list the entries that the badfilter list
+     * also contains.
      *
      * Entries are compared as written, as `$badfilter` matches the rule text; a
      * plain domain name is compared case-insensitively, because a domain name is
@@ -186,25 +263,20 @@ export class RuleBadfilter {
      * public suffix list, which this package does not have, and a prefix-based
      * approximation cancels rules for domains the wildcard does not cover.
      *
-     * @param left First domain list.
-     * @param right Second domain list.
+     * @param targetDomains Domains permitted by the target rule.
+     * @param excludedDomains Domains permitted by the badfilter rule.
      *
-     * @returns True when at least one entry of one list equals an entry of the
-     *   other list. A missing list matches any domain, the same way a
-     *   `$badfilter` without `$domain` disables a rule everywhere it applies.
+     * @returns Target domains that the badfilter rule does not cover.
      */
-    private static haveIntersection(
-        left: readonly string[] | null,
-        right: readonly string[] | null,
-    ): boolean {
-        if (left === null || right === null) {
-            return true;
-        }
+    private static subtractDomains(
+        targetDomains: readonly string[],
+        excludedDomains: readonly string[],
+    ): string[] {
+        const excluded = new Set(excludedDomains.map(RuleBadfilter.normalizeForComparison));
 
-        return left.some((leftDomain) => right.some(
-            (rightDomain) => RuleBadfilter.normalizeForComparison(leftDomain)
-                === RuleBadfilter.normalizeForComparison(rightDomain),
-        ));
+        return targetDomains.filter(
+            (domain) => !excluded.has(RuleBadfilter.normalizeForComparison(domain)),
+        );
     }
 
     /**

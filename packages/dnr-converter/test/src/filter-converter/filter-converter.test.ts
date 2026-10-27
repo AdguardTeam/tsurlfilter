@@ -11,7 +11,11 @@ import { RE2 } from '@adguard/re2-wasm';
 import { SimpleRegex } from '@adguard/tsurlfilter';
 
 import { type RuleCondition } from '../../../src/declarative-rule/rule-condition';
-import { UnsupportedModifierError, UnsupportedRegexpError } from '../../../src/errors/conversion-errors';
+import {
+    EmptyDomainsError,
+    UnsupportedModifierError,
+    UnsupportedRegexpError,
+} from '../../../src/errors/conversion-errors';
 import {
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRulesError,
@@ -164,6 +168,44 @@ describe('FilterConverter', () => {
             const filter = createFilter([
                 '||example.org^$removeparam=foo',
                 '||example.org^$removeparam=foo,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(errors).toHaveLength(0);
+            expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('keeps a rule on the domains that a $domain badfilter does not cancel', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=foo.com|bar.com',
+                '||example.org^$domain=foo.com,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['bar.com']);
+        });
+
+        it('reports an empty-domains error when narrowing leaves only regexp domains', async () => {
+            const filter = createFilter([
+                '/some$domain=example.com|/^ads\\./',
+                '/some$domain=example.com,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            // DNR cannot express a regexp domain, so the narrowed rule would
+            // match everywhere. The converter reports it instead of converting it.
+            expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toBeInstanceOf(EmptyDomainsError);
+        });
+
+        it('removes a rule that a $domain badfilter cancels for every domain', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=foo.com',
+                '||example.org^$domain=foo.com|bar.com,badfilter',
             ]);
             const [{ ruleset, errors }] = await converter.convert([filter]);
 

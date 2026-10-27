@@ -76,7 +76,8 @@ MV3 limitations (inherent to the Declarative Net Request API) are:
 - `$urltransform` — limited; complex transforms produce multiple declarative
   rules via pipeline stages
 - `$cookie` — limited; only supported without parameters (bare `$cookie`)
-- `$badfilter` — partial: does not handle `$domain` intersections correctly
+- `$badfilter` — partial: a target rule without `$domain` is cancelled
+  completely, and a dynamic `$badfilter` disables a whole static rule
 
 **Not yet supported / not convertible to DNR**:
 

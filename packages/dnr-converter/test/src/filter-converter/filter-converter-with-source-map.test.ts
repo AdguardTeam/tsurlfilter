@@ -212,6 +212,34 @@ describe('FilterConverter (withSourceMap: true)', () => {
             const declarativeRules = await ruleset.getDeclarativeRules();
             expect(declarativeRules).toHaveLength(0);
         });
+
+        it('narrows a rule that a $domain badfilter cancels partly', async () => {
+            const filter = createFilter(['||example.com^$domain=foo.com|bar.com']);
+            const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+
+            const [{ ruleset, errors }] = await converter.convert(
+                [filter],
+                { withSourceMap: true, badFilterRules: [badfilterRule] },
+            );
+
+            const declarativeRules = await ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['bar.com']);
+            expect(declarativeRules[0].condition.excludedInitiatorDomains).toBeUndefined();
+        });
+
+        it('drops a rule that a $domain badfilter cancels for every domain', async () => {
+            const filter = createFilter(['||example.com^$domain=foo.com']);
+            const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com,badfilter');
+
+            const [{ ruleset }] = await converter.convert(
+                [filter],
+                { withSourceMap: true, badFilterRules: [badfilterRule] },
+            );
+
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
     });
 
     describe('computeRulesToDisable', () => {

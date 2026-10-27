@@ -23,9 +23,10 @@
  *                               │     │ Parse filter text into Rules. │
  *                               │     │ When withSourceMap is true and       │
  *                               │     │ options.badFilterRules is provided,  │
- *                               │     │ builds a skipNegatedRulesFn to skip  │
- *                               │     │ rules negated by $badfilter during   │
- *                               │     │ scanning. For simple mode            │
+ *                               │     │ builds an applyBadFiltersFn that     │
+ *                               │     │ drops rules negated by $badfilter    │
+ *                               │     │ and narrows partly negated ones      │
+ *                               │     │ during scanning. For simple mode     │
  *                               │     │ no pre-filtering is applied.         │
  *                               │     │┌────────────────────────────────┐    │
  *                               │     └┤                                │    │
@@ -101,7 +102,7 @@ import {
 } from '../errors/limitation-errors';
 import { type FilterConverterOptions } from '../filter-converter/filter-converter-options';
 import { UrlTransformRulesConverter } from '../grouped-rules-converters/url-transform-converter';
-import { type Rule } from '../rule/rule';
+import { Rule } from '../rule/rule';
 import { type ScannedFilter } from '../rules-scanner';
 import { type Source } from '../ruleset/source-map';
 import { isSafeRule } from '../utils/is-safe-rule';
@@ -595,23 +596,29 @@ export class RulesConverter {
             return tuple;
         });
 
-        // Define filter function
-        const filterByBadFilterFn = (ruleToTest: Rule): boolean => {
-            for (const rule of allBadFilterRules) {
-                if (rule.negatesBadfilter(ruleToTest)) {
-                    return false;
-                }
-            }
-            return true;
-        };
+        // Define the badfilter function: it drops a fully cancelled rule and
+        // narrows the `$domain` list of a partly cancelled one.
+        const applyBadFilterFn = (ruleToTest: Rule): Rule | null => Rule.applyBadfilters(
+            ruleToTest,
+            allBadFilterRules,
+        );
 
-        // For each group of filters' rules apply filter function
+        // For each group of filters' rules apply the badfilter function
         return filterIdsWithGroupedRules.map(([filterId, groupedRules]) => {
             const filtered = groupedRules;
             // Map because RulesGroup values are numbers
             const groups = Object.keys(filtered).map(Number);
             groups.forEach((key: RulesGroup) => {
-                filtered[key] = filtered[key].filter(filterByBadFilterFn);
+                // Badfilter rules are not converted, so they need no narrowing.
+                if (key === RulesGroup.BadFilter) {
+                    return;
+                }
+
+                filtered[key] = filtered[key].flatMap((rule) => {
+                    const keptRule = applyBadFilterFn(rule);
+
+                    return keptRule === null ? [] : [keptRule];
+                });
             });
 
             // Clean up bad filters rules — they are not converted

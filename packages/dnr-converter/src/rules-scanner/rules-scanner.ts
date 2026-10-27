@@ -85,8 +85,9 @@ export class RulesScanner {
      * @param filters List of {@link IFilter}.
      * @param filterFn If this function is specified, it will be applied to each
      * rule after it has been parsed and transformed. This function is needed
-     * for example to apply `$badfilter`: to exclude negated rules from the array
-     * of rules that will be returned.
+     * for example to apply `$badfilter`: to exclude a fully negated rule or to
+     * replace a partly negated one with a copy that has a narrower `$domain`
+     * list. Returning `null` excludes the rule.
      * @param maxScannedRules Maximum number of network rules to
      * scan, all other rules will be ignored. It will be applied to each filter
      * separately, not for cumulative scope of rules from all filters, because
@@ -96,7 +97,7 @@ export class RulesScanner {
      */
     public static async scanFilters(
         filters: IFilter[],
-        filterFn?: (r: Rule) => boolean,
+        filterFn?: (r: Rule) => Rule | null,
         maxScannedRules?: number,
     ): Promise<ScannedFiltersWithErrors> {
         const result: ScannedFiltersWithErrors = {
@@ -133,8 +134,9 @@ export class RulesScanner {
      * @param filter From which filter the rules should be scanned.
      * @param filterFn If this function is specified, it will be applied to each
      * rule after it has been parsed and transformed. This function is needed
-     * for example to apply `$badfilter`: to exclude negated rules from the array
-     * of rules that will be returned.
+     * for example to apply `$badfilter`: to exclude a fully negated rule or to
+     * replace a partly negated one with a copy that has a narrower `$domain`
+     * list. Returning `null` excludes the rule.
      * @param maxScannedRules Maximum number of network rules to
      * scan, all other rules will be ignored and an error {@link MaxScannedRulesError}
      * will be added to the list of result errors.
@@ -143,7 +145,7 @@ export class RulesScanner {
      */
     private static async scanRules(
         filter: IFilter,
-        filterFn?: (r: Rule) => boolean,
+        filterFn?: (r: Rule) => Rule | null,
         maxScannedRules?: number,
     ): Promise<ScannedRulesWithErrors> {
         const id = filter.getId();
@@ -180,7 +182,11 @@ export class RulesScanner {
                 const rules = Rule.parseFromNode(id, index, node);
 
                 const filteredRules = filterFn
-                    ? rules.filter(filterFn)
+                    ? rules.flatMap((rule) => {
+                        const keptRule = filterFn(rule);
+
+                        return keptRule === null ? [] : [keptRule];
+                    })
                     : rules;
 
                 result.rules.push(...filteredRules);

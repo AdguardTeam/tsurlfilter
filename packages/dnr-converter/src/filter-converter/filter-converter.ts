@@ -31,9 +31,10 @@
  *                               │     │ Parse filter text into Rules. │
  *                               │     │ When withSourceMap is true and       │
  *                               │     │ options.badFilterRules is provided,  │
- *                               │     │ builds a skipNegatedRulesFn to skip  │
- *                               │     │ rules negated by $badfilter during   │
- *                               │     │ scanning. For simple mode            │
+ *                               │     │ builds an applyBadFiltersFn that     │
+ *                               │     │ drops rules negated by $badfilter    │
+ *                               │     │ and narrows partly negated ones      │
+ *                               │     │ during scanning. For simple mode     │
  *                               │     │ no pre-filtering is applied.         │
  *                               │     │┌────────────────────────────────┐    │
  *                               │     └┤                                │    │
@@ -105,7 +106,7 @@ import {
     ResourcesPathError,
 } from '../errors/converter-options-errors';
 import { type IFilter } from '../filter/types';
-import { type Rule } from '../rule/rule';
+import { Rule } from '../rule/rule';
 import { type ConvertedRules } from '../rule-converters';
 import { RulesConverter } from '../rule-converters/rules-converter';
 import { RulesScanner, type ScannedFilter } from '../rules-scanner';
@@ -372,27 +373,21 @@ export class FilterConverter {
         filters: IFilter[],
         options: SourceMapConverterOptions,
     ): Promise<ConversionResult<IRulesetWithSourceMap>[]> {
-        let skipNegatedRulesFn: ((r: Rule) => boolean) | undefined;
+        let applyBadFiltersFn: ((r: Rule) => Rule | null) | undefined;
 
         if (options?.badFilterRules && options.badFilterRules.length > 0) {
             const badFilterHashMap = FilterConverter.buildRulesBadFilterHashMap(
                 options.badFilterRules,
             );
 
-            skipNegatedRulesFn = (r: Rule): boolean => {
+            applyBadFiltersFn = (r: Rule): Rule | null => {
                 const fastMatched = badFilterHashMap.get(r.hash);
 
                 if (!fastMatched) {
-                    return true;
+                    return r;
                 }
 
-                for (let i = 0; i < fastMatched.length; i += 1) {
-                    if (fastMatched[i].negatesBadfilter(r)) {
-                        return false;
-                    }
-                }
-
-                return true;
+                return Rule.applyBadfilters(r, fastMatched);
             };
         }
 
@@ -409,7 +404,7 @@ export class FilterConverter {
                 filters: scannedFilters,
             } = await RulesScanner.scanFilters(
                 filters,
-                skipNegatedRulesFn,
+                applyBadFiltersFn,
                 scannedLimit,
             );
             const convertedRules = await RulesConverter.convert(scannedFilters, options);
@@ -431,7 +426,7 @@ export class FilterConverter {
                 filters: [scannedFilter],
             } = await RulesScanner.scanFilters(
                 [filter],
-                skipNegatedRulesFn,
+                applyBadFiltersFn,
                 scannedLimit,
             );
             const convertedRules = await RulesConverter.convert([scannedFilter], options);
@@ -599,6 +594,9 @@ export class FilterConverter {
 
             // NOTE: Here we use .some but not .every to simplify first
             // version of applying $badfilter rules.
+            // A partly cancelled rule is disabled completely: DNR cannot disable
+            // a static rule for a part of its domains. The build-time conversion
+            // narrows such a rule instead, see `Rule.applyBadfilters`.
             const someRulesMatched = rules
                 .flat()
                 .some((rule) => badFilterRule.negatesBadfilter(rule));

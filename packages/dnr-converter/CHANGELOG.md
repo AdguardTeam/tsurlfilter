@@ -31,8 +31,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   domains present in both lists, but regular expression domains now keep their
   case, so `$domain=/A/` no longer cancels `$domain=/a/`. This exception applies
   only while neither rule has a negated `~domain`; otherwise the whole text is
-  compared. As before, the whole declarative rule is disabled rather than only
-  the domains named in both lists.
+  compared.
+- `$badfilter` with `$domain` cancelled the whole target rule instead of only
+  the domains present in both lists, so `||example.com^$domain=foo.com|bar.com`
+  stopped applying on `bar.com` after
+  `||example.com^$domain=foo.com,badfilter`. The converter now narrows the
+  `$domain` list of the target rule, as MV2 and CoreLibs do. A target rule
+  without `$domain` is still cancelled completely, and a `$badfilter` from a
+  dynamic ruleset still disables a whole rule from an already-built static
+  ruleset, because DNR cannot disable a rule for a part of its domains.
 - `$badfilter` rules that also carried a convertible modifier (e.g.
   `||example.com^$csp=script-src 'none',badfilter`) were converted into
   declarative rules instead of disabling the rule they refer to.

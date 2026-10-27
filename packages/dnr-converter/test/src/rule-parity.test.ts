@@ -624,6 +624,73 @@ describe('$domain badfilter negation through the MV2 engine', () => {
     );
 });
 
+describe('$domain badfilter narrowing through the MV3 converter', () => {
+    it.each(ENGINE_DOMAIN_BADFILTER_CASES)(
+        'target %s vs badfilter %s keeps the MV2 domain scope on %s',
+        (targetText, badfilterText, sourceUrl) => {
+            const sourceDomain = new URL(sourceUrl).hostname;
+
+            const [targetRule] = Rule.createFromText(1, 0, targetText);
+            const [badfilterRule] = Rule.createFromText(1, 0, badfilterText);
+
+            const narrowed = Rule.applyBadfilters(targetRule, [badfilterRule]);
+
+            // A narrowed rule applies when it keeps no `$domain` list or when
+            // the source domain is still in the list.
+            const mv3Applies = narrowed !== null
+                && (narrowed.permittedDomains === null
+                    || narrowed.permittedDomains.includes(sourceDomain));
+
+            expect(mv3Applies)
+                .toBe(matchesThroughEngine([targetText, badfilterText], 'https://example.com/', sourceUrl));
+        },
+    );
+
+    it('narrows the rule to the domains that the badfilter does not cover', () => {
+        const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+        const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+
+        const narrowed = Rule.applyBadfilters(targetRule, [badfilterRule]);
+
+        expect(narrowed?.permittedDomains).toEqual(['bar.com']);
+    });
+
+    it('keeps the MV2 priority after narrowing', () => {
+        const targetText = '||example.com^$domain=foo.com|bar.com';
+        const [targetRule] = Rule.createFromText(1, 0, targetText);
+        const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+        const tsRule = new NetworkRule(targetText, 1);
+
+        const narrowed = Rule.applyBadfilters(targetRule, [badfilterRule]);
+
+        // MV2 removes the rule from the matched array but keeps its weight, so
+        // the narrowed rule must keep the weight of the original rule.
+        expect(narrowed?.priority).toBe(tsRule.getPriorityWeight());
+    });
+
+    it('cancels the rule completely when the badfilter covers every target domain', () => {
+        const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com');
+        const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com,badfilter');
+
+        expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
+    });
+
+    it('documents the limitation for a target rule without $domain', () => {
+        // DNR cannot express "everywhere except these domains" for a rule that
+        // has no `$domain`, so such a rule is still cancelled completely. MV2
+        // keeps it on the domains that the badfilter does not name.
+        const [targetRule] = Rule.createFromText(1, 0, '||example.com^');
+        const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+
+        expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
+        expect(matchesThroughEngine(
+            ['||example.com^', '||example.com^$domain=foo.com,badfilter'],
+            'https://example.com/',
+            'https://bar.com/',
+        )).toBe(true);
+    });
+});
+
 // ---------------------------------------------------------------------------
 // Task 5: text roundtrip parity
 // ---------------------------------------------------------------------------

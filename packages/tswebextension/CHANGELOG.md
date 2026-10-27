@@ -34,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- In MV3, `$badfilter` rules with `$domain` cancelled the whole target rule
+  instead of only the domains present in both lists. Such a rule now keeps
+  applying on the other domains. A `$badfilter` from a dynamic ruleset still
+  disables a whole rule from a static ruleset, because DNR cannot disable a rule
+  for a part of its domains.
 - In MV3, static filters, custom filters and user rules were handed to the
   converter already converted by the extension, so `$badfilter` rules from those
   sources were compared by the converted text instead of the text as written and

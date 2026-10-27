@@ -29,6 +29,11 @@ interface CreateRuleMockOptions {
     pattern?: string;
 
     /**
+     * The rule text as written in the filter list. Defaults to {@link pattern}.
+     */
+    originalText?: string;
+
+    /**
      * The allowlist status of the rule to be returned by the mock. Defaults to {@link node.exception}.
      */
     allowlist?: boolean;
@@ -171,6 +176,7 @@ export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
             },
         },
         pattern = node.pattern.value,
+        originalText = pattern,
         allowlist = node.exception,
         hash = fastHash(pattern),
         priority = 1,
@@ -215,6 +221,7 @@ export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
         index,
         node,
         pattern,
+        originalText,
         allowlist,
         hash,
         priority,
@@ -250,5 +257,9 @@ export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
                 : responseHeaderNameToRemove
         ),
         negatesBadfilter,
+        withPermittedDomains: (domains: readonly string[]) => createRuleMock({
+            ...options,
+            permittedDomains: [...domains],
+        }),
     } as unknown as Rule;
 }

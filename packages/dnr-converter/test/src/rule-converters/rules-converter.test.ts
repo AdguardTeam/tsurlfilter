@@ -853,7 +853,6 @@ describe('RulesConverter', () => {
             const badFilterRule = createRuleMock({
                 pattern: 'example.com',
                 enabledOptions: [OPTION_NAMES.BADFILTER],
-                negatesBadfilter: (rule) => rule === regularRule1,
             });
 
             const scannedFilters = [
@@ -957,12 +956,10 @@ describe('RulesConverter', () => {
             const badFilterRule1 = createRuleMock({
                 pattern: 'example.com',
                 enabledOptions: [OPTION_NAMES.BADFILTER],
-                negatesBadfilter: (rule) => rule === regularRule1,
             });
             const badFilterRule2 = createRuleMock({
                 pattern: 'another.com',
                 enabledOptions: [OPTION_NAMES.BADFILTER],
-                negatesBadfilter: (rule) => rule === regularRule3,
             });
 
             const scannedFilters = [
@@ -993,7 +990,6 @@ describe('RulesConverter', () => {
             const badFilterRule = createRuleMock({
                 pattern: 'example.com',
                 enabledOptions: [OPTION_NAMES.BADFILTER],
-                negatesBadfilter: (rule) => rule === regularRule,
             });
 
             const scannedFilters = [
@@ -1018,12 +1014,10 @@ describe('RulesConverter', () => {
             const badFilterRule1 = createRuleMock({
                 pattern: 'example.com',
                 enabledOptions: [OPTION_NAMES.BADFILTER],
-                negatesBadfilter: (rule) => rule === regularRule,
             });
             const badFilterRule2 = createRuleMock({
                 pattern: 'example.com',
                 enabledOptions: [OPTION_NAMES.BADFILTER],
-                negatesBadfilter: (rule) => rule === regularRule,
             });
 
             const scannedFilters = [

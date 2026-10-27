@@ -22,7 +22,7 @@ import { getErrorMessage } from '../utils/error';
 import { fastHash, fastHash31, hasSpaces } from '../utils/string';
 
 import { OPTION_NAMES } from './option-names';
-import { RuleBadfilter } from './rule-badfilter';
+import { BadfilterNegationKind, RuleBadfilter } from './rule-badfilter';
 import { RulePriority } from './rule-priority';
 import { type ConversionMeta, type HttpHeaderMatcher } from './rule-types';
 
@@ -411,6 +411,13 @@ export class Rule {
      * @param node Network rule AST node (must already be in AG syntax).
      * @param originalText Rule text as written in the filter list, captured
      *   before conversion to AG syntax.
+     * @param permittedDomainsOverride Permitted `$domain` entries that replace the
+     *   ones parsed from `node`. Used by {@link Rule.withPermittedDomains} to
+     *   narrow a rule that a `$badfilter` cancels only partly.
+     * @param priorityOverride Priority for the copy. Used by
+     *   {@link Rule.withPermittedDomains} to keep the priority of the rule that a
+     *   `$badfilter` narrows, because MV2 does not change the weight of a
+     *   badfiltered rule.
      *
      * @throws `SyntaxError` when the pattern contains spaces, the rule is too
      *   general, or any modifier is invalid.
@@ -420,6 +427,8 @@ export class Rule {
         index: number,
         node: NetworkRuleNode,
         originalText: string,
+        permittedDomainsOverride?: readonly string[],
+        priorityOverride?: number,
     ) {
         this.originalText = originalText;
         const pattern = node.pattern.value;
@@ -600,9 +609,10 @@ export class Rule {
 
                 case OPTION_NAMES.DOMAIN: {
                     const { permitted, restricted } = Rule.parseDomainList(value);
-                    if (permitted.length > 0) {
-                        this.permittedDomains = permitted;
-                        meta.permittedDomainCount = permitted.length;
+                    const effectivePermitted = permittedDomainsOverride ?? permitted;
+                    if (effectivePermitted.length > 0) {
+                        this.permittedDomains = [...effectivePermitted];
+                        meta.permittedDomainCount = effectivePermitted.length;
                     }
                     if (restricted.length > 0) {
                         this.restrictedDomains = restricted;
@@ -810,7 +820,7 @@ export class Rule {
         this.pattern = pattern;
         this.hash = fastHash(pattern);
         this.allowlist = isAllowlist;
-        this.priority = RulePriority.calculate(meta, isAllowlist);
+        this.priority = priorityOverride ?? RulePriority.calculate(meta, isAllowlist);
         this.permittedResourceTypes = [...permittedResourceTypesSet];
         this.restrictedResourceTypes = [...restrictedResourceTypesSet];
     }
@@ -927,6 +937,77 @@ export class Rule {
      */
     public negatesBadfilter(targetRule: Rule): boolean {
         return RuleBadfilter.negates(this, targetRule);
+    }
+
+    /**
+     * Applies every `$badfilter` rule to `targetRule`.
+     *
+     * A rule that a badfilter cancels completely is dropped. A rule that a
+     * badfilter cancels only for some domains keeps the remaining domains of its
+     * permitted `$domain` list, because a declarative rule cannot be disabled for
+     * a part of its domains.
+     *
+     * @param targetRule The rule to apply the badfilter rules to.
+     * @param badfilterRules Rules that carry the `$badfilter` modifier.
+     *
+     * @returns The narrowed rule, or `null` when a badfilter cancels it
+     *   completely.
+     */
+    public static applyBadfilters(targetRule: Rule, badfilterRules: readonly Rule[]): Rule | null {
+        let current: Rule | null = targetRule;
+
+        for (let i = 0; i < badfilterRules.length; i += 1) {
+            if (current === null) {
+                return null;
+            }
+
+            const negation = RuleBadfilter.negationScope(badfilterRules[i], current);
+
+            if (negation.kind === BadfilterNegationKind.Full) {
+                return null;
+            }
+
+            if (negation.kind === BadfilterNegationKind.Partial) {
+                current = current.withPermittedDomains(negation.permittedDomains);
+            }
+        }
+
+        return current;
+    }
+
+    /**
+     * Creates a copy of this rule with a different permitted `$domain` list.
+     *
+     * The text as written in the filter list, the pattern hash and the priority
+     * stay unchanged, so a `$badfilter` rule keeps matching this rule by the same
+     * text, and the narrowed rule keeps the weight that the rule had before the
+     * `$badfilter` narrowed it — the same weight the rule keeps in MV2.
+     *
+     * @param permittedDomains Permitted domains for the copy. Must not be empty,
+     *   because a rule with an empty permitted list would match every domain.
+     *
+     * @returns A copy of this rule with the given permitted domains.
+     *
+     * @throws `Error` when `permittedDomains` is empty, or when this rule has no
+     *   permitted `$domain` list. Either copy would silently match every domain.
+     */
+    public withPermittedDomains(permittedDomains: readonly string[]): Rule {
+        if (permittedDomains.length === 0) {
+            throw new Error('Cannot set an empty permitted $domain list');
+        }
+
+        if (this.permittedDomains === null) {
+            throw new Error('Cannot set permitted domains on a rule without a permitted $domain list');
+        }
+
+        return new Rule(
+            this.filterListId,
+            this.index,
+            this.node,
+            this.originalText,
+            permittedDomains,
+            this.priority,
+        );
     }
 
     /**

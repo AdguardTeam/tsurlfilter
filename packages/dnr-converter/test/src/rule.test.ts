@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { OPTION_NAMES } from '../../src/rule/option-names';
 import { Rule } from '../../src/rule/rule';
+import { BadfilterNegationKind, RuleBadfilter } from '../../src/rule/rule-badfilter';
 
 describe('Rule', () => {
     describe('createFromText', () => {
@@ -280,6 +281,189 @@ describe('Rule', () => {
                 const [targetRule] = Rule.createFromText(1, 0, targetText);
                 expect(badfilterRule.negatesBadfilter(targetRule)).toBe(false);
             }
+        });
+
+        describe('negationScope', () => {
+            it('returns Full when the rule texts match', () => {
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule))
+                    .toEqual({ kind: BadfilterNegationKind.Full });
+            });
+
+            it('returns None when the badfilter rule has no $badfilter modifier', () => {
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule))
+                    .toEqual({ kind: BadfilterNegationKind.None });
+            });
+
+            it('returns Partial with the domains that the badfilter does not cover', () => {
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule)).toEqual({
+                    kind: BadfilterNegationKind.Partial,
+                    permittedDomains: ['bar.com'],
+                });
+            });
+
+            it('returns Partial for a wildcard-TLD entry that both rules name', () => {
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=example.*,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=example.*|bar.com');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule)).toEqual({
+                    kind: BadfilterNegationKind.Partial,
+                    permittedDomains: ['bar.com'],
+                });
+            });
+
+            it('compares domain names case-insensitively', () => {
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=FOO.com,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule)).toEqual({
+                    kind: BadfilterNegationKind.Partial,
+                    permittedDomains: ['bar.com'],
+                });
+            });
+
+            it('returns Full when the badfilter covers every target domain', () => {
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule))
+                    .toEqual({ kind: BadfilterNegationKind.Full });
+            });
+
+            it('returns Full when the target rule has no $domain', () => {
+                // A rule without `$domain` applies everywhere, so the badfilter
+                // covers its whole domain scope.
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule))
+                    .toEqual({ kind: BadfilterNegationKind.Full });
+            });
+
+            it('returns None when the $domain lists do not overlap', () => {
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=bar.com');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule))
+                    .toEqual({ kind: BadfilterNegationKind.None });
+            });
+
+            it('returns None when a value-bearing modifier differs', () => {
+                const [badfilterRule] = Rule.createFromText(
+                    1,
+                    0,
+                    '||example.com^$removeparam=foo,domain=foo.com,badfilter',
+                );
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$removeparam=bar,domain=foo.com|bar.com');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule))
+                    .toEqual({ kind: BadfilterNegationKind.None });
+            });
+
+            it('returns None when a rule has a negated $domain', () => {
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|~bar.com,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule))
+                    .toEqual({ kind: BadfilterNegationKind.None });
+            });
+        });
+
+        describe('withPermittedDomains', () => {
+            it('narrows the permitted domains and keeps the written text and hash', () => {
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+                const narrowed = targetRule.withPermittedDomains(['bar.com']);
+
+                expect(narrowed).not.toBe(targetRule);
+                expect(narrowed.permittedDomains).toEqual(['bar.com']);
+                expect(narrowed.restrictedDomains).toBeNull();
+                expect(narrowed.originalText).toBe(targetRule.originalText);
+                expect(narrowed.hash).toBe(targetRule.hash);
+                expect(narrowed.pattern).toBe(targetRule.pattern);
+            });
+
+            it('keeps the priority of the rule that the badfilter narrows', () => {
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+                const [singleDomainRule] = Rule.createFromText(1, 0, '||example.com^$domain=bar.com');
+
+                // A narrower list would get a higher priority on its own, but MV2
+                // does not change the weight of a badfiltered rule.
+                expect(singleDomainRule.priority).toBeGreaterThan(targetRule.priority);
+                expect(targetRule.withPermittedDomains(['bar.com']).priority)
+                    .toBe(targetRule.priority);
+            });
+
+            it('throws when the rule has no permitted $domain list', () => {
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^');
+
+                expect(() => targetRule.withPermittedDomains(['bar.com'])).toThrow();
+            });
+
+            it('throws when the new permitted $domain list is empty', () => {
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+
+                expect(() => targetRule.withPermittedDomains([])).toThrow();
+            });
+
+            it('keeps a second badfilter matching the narrowed rule', () => {
+                const [secondBadfilter] = Rule.createFromText(1, 0, '||example.com^$domain=baz.com,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com|baz.com');
+
+                const narrowed = targetRule.withPermittedDomains(['bar.com', 'baz.com']);
+
+                expect(secondBadfilter.negatesBadfilter(narrowed)).toBe(true);
+            });
+        });
+
+        describe('applyBadfilters', () => {
+            it('returns null when a badfilter cancels the rule completely', () => {
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^');
+
+                expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
+            });
+
+            it('returns the unchanged rule when no badfilter matches', () => {
+                const [badfilterRule] = Rule.createFromText(1, 0, '||other.com^$badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^');
+
+                expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBe(targetRule);
+            });
+
+            it('narrows the rule when a badfilter cancels it partly', () => {
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+
+                const result = Rule.applyBadfilters(targetRule, [badfilterRule]);
+
+                expect(result?.permittedDomains).toEqual(['bar.com']);
+            });
+
+            it('applies several partial badfilters one after another', () => {
+                const [firstBadfilter] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+                const [secondBadfilter] = Rule.createFromText(1, 0, '||example.com^$domain=baz.com,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com|baz.com');
+
+                const result = Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter]);
+
+                expect(result?.permittedDomains).toEqual(['bar.com']);
+            });
+
+            it('drops the rule when a later badfilter covers the remaining domains', () => {
+                const [firstBadfilter] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+                const [secondBadfilter] = Rule.createFromText(1, 0, '||example.com^$domain=bar.com,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+
+                expect(Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter])).toBeNull();
+            });
         });
 
         it('domain properties return null or empty for plain rule', () => {

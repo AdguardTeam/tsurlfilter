@@ -132,7 +132,7 @@ describe('RulesScanner', () => {
             });
             parseFromNodeMock.mockReturnValueOnce([mockRule2]);
 
-            const filterFn = vi.fn((rule: any) => rule.pattern === '||example.com^');
+            const filterFn = vi.fn((rule: any) => (rule.pattern === '||example.com^' ? rule : null));
             const result = await RulesScanner.scanFilters([filter], filterFn);
 
             expect(filterFn).toHaveBeenCalledTimes(2);
