@@ -594,9 +594,11 @@ export class FilterConverter {
 
             // NOTE: Here we use .some but not .every to simplify first
             // version of applying $badfilter rules.
-            // A partly cancelled rule is disabled completely: DNR cannot disable
-            // a static rule for a part of its domains. The build-time conversion
-            // narrows such a rule instead, see `Rule.applyBadfilters`.
+            // A partly cancelled rule is disabled completely: an already-built
+            // declarative rule can only be disabled as a whole, not narrowed.
+            // The source rule is re-parsed from the filter text, so a narrowing
+            // that `Rule.applyBadfilters` applied during conversion is not
+            // visible here.
             const someRulesMatched = rules
                 .flat()
                 .some((rule) => badFilterRule.negatesBadfilter(rule));
