@@ -676,9 +676,9 @@ describe('$domain badfilter narrowing through the MV3 converter', () => {
     });
 
     it('documents the limitation for a target rule without $domain', () => {
-        // DNR cannot express "everywhere except these domains" for a rule that
-        // has no `$domain`, so such a rule is still cancelled completely. MV2
-        // keeps it on the domains that the badfilter does not name.
+        // The converter narrows only an existing permitted `$domain` list, so a
+        // rule without one is still cancelled completely. MV2 keeps it on the
+        // domains that the badfilter does not name.
         const [targetRule] = Rule.createFromText(1, 0, '||example.com^');
         const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
 

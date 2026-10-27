@@ -116,8 +116,10 @@ display this in the declarative filtering log, as declarative rules are canceled
 <a name="mv3_specific_limitations__$badfilter__problem_1"></a>
 ### Problem 1
 A `$badfilter` rule that carries `$domain` cancels the target rule only for
-the domains named in both rules, so the converter narrows the `$domain` list
-of the target rule. For example, for these two rules:
+the domains named in both rules, and only while neither rule negates a domain
+(`~domain`); otherwise the whole text is compared and nothing is cancelled.
+The converter narrows the `$domain` list of the target rule. For example, for
+these two rules:
 ```adblock
 /some$domain=example.com|example.org
 /some$domain=example.com,badfilter
@@ -125,11 +127,16 @@ of the target rule. For example, for these two rules:
 the output contains the first rule with `initiatorDomains` set to
 `["example.org"]`.
 
-Two cases are still not covered:
-- a target rule without `$domain` is cancelled completely, because DNR cannot
-  express "every domain except these";
+Three cases are still not covered:
+- a target rule without `$domain` is cancelled completely: the converter
+  narrows only an existing permitted `$domain` list, although DNR could express
+  the exclusion with `excludedInitiatorDomains`;
 - a `$badfilter` rule from a dynamic ruleset disables a whole declarative rule
-  from an already-built static ruleset, for the same reason.
+  from an already-built static ruleset, because such a rule can only be
+  disabled as a whole, not narrowed;
+- wildcard-TLD entries (`example.*`) cancel only an identically written entry,
+  because matching them against the domains they stand for needs the public
+  suffix list, which the converter does not depend on.
 
 <a name="mv3_specific_limitations__$badfilter__problem_2"></a>
 ### Problem 2
@@ -2333,8 +2340,9 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
 <b>MV3 limitations:</b>
 <br/>
 In the current implementation, it works across all filters. A `$domain` list
-cancels the target rule only for the domains present in both lists. A target
-rule without `$domain` is still cancelled completely.
+cancels the target rule only for the domains present in both lists, and only
+while neither rule negates a domain (`~domain`). A target rule without
+`$domain` is still cancelled completely.
 <br/>
 <b>Examples:</b>
 <br/>
