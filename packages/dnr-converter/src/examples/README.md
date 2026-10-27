@@ -493,7 +493,7 @@ example 5 (regexp syntax — not supported in MV3; output reflects current parse
 []
 ```
 
-> ⚠️ Conversion errors: Conversion initiatorDomains is empty, but original rule's domains not: "||baddomain.com^$domain=/(^\\|.+\\.)example\\.(com\\|org)\\$/"
+> ⚠️ Conversion errors: Conversion initiatorDomains is empty, but the rule's permitted domains are not representable in DNR: "/(^\\|.+\\.)example\\.(com\\|org)\\$/" (rule: "||baddomain.com^$domain=/(^\\|.+\\.)example\\.(com\\|org)\\$/")
 example 6 (regexp syntax — not supported in MV3; output reflects current parser behavior only)
 
 ```adblock

@@ -933,13 +933,15 @@ export class RegularRuleConverter {
             return new EmptyResourcesError('Conversion resourceTypes is empty', rule, declarativeRule);
         }
 
-        // Check for empty initiator domains if original rule has permitted domains
+        // Check for empty initiator domains if the rule has permitted domains
         const { permittedDomains } = rule;
         if (permittedDomains && permittedDomains.length > 0) {
             const { initiatorDomains } = declarativeRule.condition;
             if (!initiatorDomains || initiatorDomains.length === 0) {
                 const ruleText = RuleGenerator.generate(rule.node);
-                const msg = `Conversion initiatorDomains is empty, but original rule's domains not: "${ruleText}"`;
+                const permittedDomainsText = permittedDomains.join('|');
+                const msg = 'Conversion initiatorDomains is empty, but the rule\'s permitted domains '
+                    + `are not representable in DNR: "${permittedDomainsText}" (rule: "${ruleText}")`;
                 return new EmptyDomainsError(msg, rule, declarativeRule);
             }
         }

@@ -200,6 +200,8 @@ describe('FilterConverter', () => {
             expect(ruleset.getDeclarativeRules()).toHaveLength(0);
             expect(errors).toHaveLength(1);
             expect(errors[0]).toBeInstanceOf(EmptyDomainsError);
+            // The message names the narrowed list, not only the original rule.
+            expect((errors[0] as EmptyDomainsError).message).toContain('"/^ads\\./"');
         });
 
         it('removes a rule that a $domain badfilter cancels for every domain', async () => {
