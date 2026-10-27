@@ -609,6 +609,21 @@ const ENGINE_DOMAIN_BADFILTER_CASES: [
         'https://example.com/',
         false,
     ],
+    // A `$domain` entry covers its subdomains.
+    [
+        '||example.com^$domain=example.org|example.net',
+        '||example.com^$domain=example.net,badfilter',
+        'https://sub.example.org/',
+        false,
+    ],
+    // A negated domain makes the cancellation complete, so the whole text is
+    // compared and a matching text cancels the rule.
+    [
+        '||example.com^$domain=example.org|~example.net',
+        '||example.com^$domain=example.org|~example.net,badfilter',
+        'https://example.org/',
+        true,
+    ],
 ];
 
 describe('$domain badfilter negation through the MV2 engine', () => {
@@ -624,6 +639,20 @@ describe('$domain badfilter negation through the MV2 engine', () => {
     );
 });
 
+/**
+ * Checks whether a domain is covered by a `$domain` list the way DNR matches
+ * `initiatorDomains`: an entry covers the domain itself and its subdomains.
+ * The shared cases use plain domain entries only.
+ *
+ * @param domain Source domain.
+ * @param list Permitted or restricted `$domain` entries.
+ *
+ * @returns True when the list covers the domain.
+ */
+const isDomainInList = (domain: string, list: readonly string[]): boolean => list.some(
+    (entry) => domain === entry || domain.endsWith(`.${entry}`),
+);
+
 describe('$domain badfilter narrowing through the MV3 converter', () => {
     it.each(ENGINE_DOMAIN_BADFILTER_CASES)(
         'target %s vs badfilter %s keeps the MV2 domain scope on %s',
@@ -635,11 +664,13 @@ describe('$domain badfilter narrowing through the MV3 converter', () => {
 
             const narrowed = Rule.applyBadfilters(targetRule, [badfilterRule]);
 
-            // A narrowed rule applies when it keeps no `$domain` list or when
-            // the source domain is still in the list.
+            // A narrowed rule applies when its permitted list covers the source
+            // domain and its restricted list does not.
             const mv3Applies = narrowed !== null
                 && (narrowed.permittedDomains === null
-                    || narrowed.permittedDomains.includes(sourceDomain));
+                    || isDomainInList(sourceDomain, narrowed.permittedDomains))
+                && (narrowed.restrictedDomains === null
+                    || !isDomainInList(sourceDomain, narrowed.restrictedDomains));
 
             expect(mv3Applies)
                 .toBe(matchesThroughEngine([targetText, badfilterText], 'https://example.com/', sourceUrl));
