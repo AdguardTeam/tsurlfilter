@@ -939,12 +939,15 @@ export class WebRequestApi {
             documentId,
         } = details;
 
-        // This is necessary mainly to update documentId
+        // This updates the document id and resets the ExtendedCSS flag: a
+        // commit starts a new document, and the context can survive a same-URL
+        // reload, so the previous document's applied state must not carry over.
         tabsApi.updateFrameContext(
             tabId,
             frameId,
             {
                 documentId: documentId || TabsApi.generateId(tabId, frameId),
+                extCssApplied: false,
             },
         );
 

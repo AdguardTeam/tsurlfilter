@@ -157,13 +157,13 @@ You MUST follow the following rules for EVERY task that you perform:
 
 ### III. Testing Discipline
 
-1. **Multi-project Vitest config.** Tests are organized into three Vitest
-   projects (`mv2`, `mv3`, `common`) in `vitest.config.ts`. Each project
-   targets the corresponding source and test directories. The same file
-   declares the `browser` project for the Chromium e2e specs
-   (`test/e2e/**/*.spec.ts`, excluding `*.firefox.spec.ts`).
-   `vitest.firefox.config.ts` holds the separate Firefox project for the
-   `*.firefox.spec.ts` specs.
+1. **Multi-project Vitest config.** Tests are organized into the `mv2`, `mv3`,
+   and `common` projects in `vitest.config.ts`. Each project targets the
+   corresponding source and test directories. The same file declares the
+   `browser` project for the Chromium e2e specs (`test/e2e/**/*.spec.ts`,
+   excluding `*.firefox.spec.ts`), so `pnpm test` and `test:ci` run those
+   specs too. `vitest.firefox.config.ts` holds the separate Firefox project
+   for the `*.firefox.spec.ts` specs.
 
    **Rationale**: Prevents MV2-specific mocks from interfering with MV3 tests
    and vice versa. The Firefox specs need their own config so that `pnpm test`,

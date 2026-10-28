@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { type CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../../../../src/lib/common/constants';
-import { FrameMV2, type PreparedCosmeticResultMV2 } from '../../../../../src/lib/mv2/background/tabs/frame';
+import { FrameMV2 } from '../../../../../src/lib/mv2/background/tabs/frame';
 
 /**
  * Creates a frame with the default test values.
@@ -55,23 +55,6 @@ describe('Frame', () => {
     describe('extCssApplied', () => {
         it('defaults extCssApplied to false', () => {
             expect(createFrame().extCssApplied).toBe(false);
-        });
-    });
-
-    describe('preparedCosmeticResult', () => {
-        it('stores prepared ExtCSS rules and the hits flag', () => {
-            const extCssRules = ['.ad:has(.child) { display: none !important; }'];
-            const preparedCosmeticResult: PreparedCosmeticResultMV2 = {
-                scriptText: '',
-                extCssRules,
-                areHitsStatsCollected: true,
-            };
-
-            const frame = createFrame();
-            frame.preparedCosmeticResult = preparedCosmeticResult;
-
-            expect(frame.preparedCosmeticResult.extCssRules).toEqual(extCssRules);
-            expect(frame.preparedCosmeticResult.areHitsStatsCollected).toBe(true);
         });
     });
 });

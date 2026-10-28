@@ -29,7 +29,7 @@ export type ExtendedCssHit = RuleInfoBasic & {
  * free identifiers.
  *
  * The round-trip contract is pinned by
- * `test/lib/mv3/background/css-hits-protocol.test.ts`, which asserts identical
+ * `test/lib/common/css-hits-protocol.test.ts`, which asserts identical
  * output between the MV2 `ElementUtils` path and the MV3 inlined path.
  */
 

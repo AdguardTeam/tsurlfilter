@@ -77,16 +77,6 @@ export const extCssInjectedApply = (
     collectStats: boolean,
     protocol: ExtCssProtocol,
 ): void => {
-    __INLINE_EXTCSS_BUNDLE__();
-
-    // Inlined CSS-hits helpers — the SAME source used by MV2's
-    // `ElementUtils` and `CssHitsCounter`. Defines a local `cssHitsHelpers`
-    // object with `collectExtendedCssHits()` so the `beforeStyleApplied`
-    // callback below can use it without any module-scope references (which
-    // would not survive toString()-based serialization for
-    // `chrome.scripting.executeScript({ func })`).
-    __INLINE_CSS_HITS_HELPERS__();
-
     /**
      * Retained ExtendedCss instance together with the rule strings it was
      * built from and the per-node hits dedupe state. The rule strings are kept
@@ -114,6 +104,9 @@ export const extCssInjectedApply = (
     // engine N times. The rules encode the hits flag (markers are added when
     // statistics are collected), so an unchanged rule set also means an
     // unchanged callback registration.
+    //
+    // The check runs before the inlined bundle is evaluated, so a repeated
+    // call does not parse the payload either.
     if (
         previousRules
         && previousRules.length === cssRules.length
@@ -121,6 +114,16 @@ export const extCssInjectedApply = (
     ) {
         return;
     }
+
+    __INLINE_EXTCSS_BUNDLE__();
+
+    // Inlined CSS-hits helpers — the SAME source used by MV2's
+    // `ElementUtils` and `CssHitsCounter`. Defines a local `cssHitsHelpers`
+    // object with `collectExtendedCssHits()` so the `beforeStyleApplied`
+    // callback below can use it without any module-scope references (which
+    // would not survive toString()-based serialization for
+    // `chrome.scripting.executeScript({ func })`).
+    __INLINE_CSS_HITS_HELPERS__();
 
     // The inlined helpers create their default dedupe state on every
     // injection, so it is retained on the instance and passed explicitly.

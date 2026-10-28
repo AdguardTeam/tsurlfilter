@@ -75,7 +75,7 @@ describe('CosmeticApi.applyExtCss', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         vi.mocked(tabsApi.getFrameContext).mockReset();
-        vi.spyOn(TabsApi, 'injectExtCss').mockResolvedValue();
+        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue();
     });
 
     afterEach(() => {
@@ -89,8 +89,8 @@ describe('CosmeticApi.applyExtCss', () => {
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(TabsApi.injectExtCss).toHaveBeenCalledTimes(1);
-        expect(TabsApi.injectExtCss).toHaveBeenCalledWith(
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        expect(TabsApi.injectScript).toHaveBeenCalledWith(
             1,
             0,
             serializeExtCssForCode(rules, false, EXTCSS_PROTOCOL),
@@ -104,7 +104,7 @@ describe('CosmeticApi.applyExtCss', () => {
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(TabsApi.injectExtCss).toHaveBeenCalledWith(
+        expect(TabsApi.injectScript).toHaveBeenCalledWith(
             1,
             0,
             serializeExtCssForCode(rules, true, EXTCSS_PROTOCOL),
@@ -117,8 +117,8 @@ describe('CosmeticApi.applyExtCss', () => {
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(TabsApi.injectExtCss).toHaveBeenCalledTimes(1);
-        expect(TabsApi.injectExtCss).toHaveBeenCalledWith(
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        expect(TabsApi.injectScript).toHaveBeenCalledWith(
             1,
             0,
             serializeExtCssDisposeForCode(EXTCSS_PROTOCOL),
@@ -131,8 +131,8 @@ describe('CosmeticApi.applyExtCss', () => {
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(TabsApi.injectExtCss).toHaveBeenCalledTimes(1);
-        expect(TabsApi.injectExtCss).toHaveBeenCalledWith(
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        expect(TabsApi.injectScript).toHaveBeenCalledWith(
             1,
             0,
             serializeExtCssDisposeForCode(EXTCSS_PROTOCOL),
@@ -145,7 +145,7 @@ describe('CosmeticApi.applyExtCss', () => {
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(TabsApi.injectExtCss).not.toHaveBeenCalled();
+        expect(TabsApi.injectScript).not.toHaveBeenCalled();
     });
 
     it('does not inject when the frame context is missing', async () => {
@@ -153,7 +153,7 @@ describe('CosmeticApi.applyExtCss', () => {
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(TabsApi.injectExtCss).not.toHaveBeenCalled();
+        expect(TabsApi.injectScript).not.toHaveBeenCalled();
     });
 
     it('does not inject when the frame has no cosmetic data', async () => {
@@ -161,7 +161,7 @@ describe('CosmeticApi.applyExtCss', () => {
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(TabsApi.injectExtCss).not.toHaveBeenCalled();
+        expect(TabsApi.injectScript).not.toHaveBeenCalled();
     });
 
     it('falls back to the cosmetic result when the prepared result is missing', async () => {
@@ -177,11 +177,39 @@ describe('CosmeticApi.applyExtCss', () => {
             frameContext.cosmeticResult,
             { areHitsStatsCollected: false, isNativeHasSupported: expect.any(Boolean) },
         );
-        expect(TabsApi.injectExtCss).toHaveBeenCalledWith(
+        expect(TabsApi.injectScript).toHaveBeenCalledWith(
             1,
             0,
             serializeExtCssForCode(rules, false, EXTCSS_PROTOCOL),
         );
+    });
+
+    it('uses the ExtCSS data kept on the frame context', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext();
+        frameContext.cosmeticResult = {} as FrameMV2['cosmeticResult'];
+        frameContext.extCssData = { extCssRules: rules, areHitsStatsCollected: true };
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        const getExtCssRulesSpy = vi.spyOn(CosmeticApi, 'getExtCssRules');
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(getExtCssRulesSpy).not.toHaveBeenCalled();
+        expect(TabsApi.injectScript).toHaveBeenCalledWith(
+            1,
+            0,
+            serializeExtCssForCode(rules, true, EXTCSS_PROTOCOL),
+        );
+    });
+
+    it('skips the injection when the rules were already applied', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext)
+            .mockReturnValue(makeFrameContext(makePrepared(rules), true));
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScript).not.toHaveBeenCalled();
     });
 
     it('does not mark a frame context that was replaced during the injection', async () => {
@@ -195,7 +223,7 @@ describe('CosmeticApi.applyExtCss', () => {
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(TabsApi.injectExtCss).toHaveBeenCalledTimes(1);
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
         expect(original.extCssApplied).toBe(false);
         expect(replacement.extCssApplied).toBe(false);
     });
@@ -226,18 +254,18 @@ describe('CosmeticApi.applyExtCss', () => {
             ['.ad:has(.child) { display: none !important; }'],
         ));
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
-        vi.mocked(TabsApi.injectExtCss)
+        vi.mocked(TabsApi.injectScript)
             .mockRejectedValueOnce(new Error('Missing host permission'))
             .mockResolvedValueOnce();
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(TabsApi.injectExtCss).toHaveBeenCalledTimes(1);
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
         expect(frameContext.extCssApplied).toBe(false);
 
         await vi.advanceTimersByTimeAsync(10);
 
-        expect(TabsApi.injectExtCss).toHaveBeenCalledTimes(2);
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
         expect(frameContext.extCssApplied).toBe(true);
     });
 
@@ -245,7 +273,7 @@ describe('CosmeticApi.applyExtCss', () => {
         const error = new Error('Missing host permission');
         vi.mocked(tabsApi.getFrameContext)
             .mockReturnValue(makeFrameContext(makePrepared(['.ad { display: none !important; }'])));
-        vi.mocked(TabsApi.injectExtCss).mockRejectedValue(error);
+        vi.mocked(TabsApi.injectScript).mockRejectedValue(error);
         const debugSpy = vi.spyOn(logger, 'debug');
 
         await CosmeticApi.applyExtCss(1, 0, 100);
@@ -259,7 +287,7 @@ describe('CosmeticApi.applyExtCss', () => {
     it('keeps the applied flag when dispose fails', async () => {
         const frameContext = makeFrameContext(makePrepared(null), true);
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
-        vi.mocked(TabsApi.injectExtCss).mockRejectedValue(new Error('Missing host permission'));
+        vi.mocked(TabsApi.injectScript).mockRejectedValue(new Error('Missing host permission'));
 
         await CosmeticApi.applyExtCss(1, 0, 100);
 

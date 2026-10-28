@@ -24,6 +24,21 @@ export type PreparedCosmeticResultMV2 = PreparedCosmeticResultCommon & {
 };
 
 /**
+ * ExtendedCSS data resolved for a frame.
+ */
+export type ExtCssFrameData = {
+    /**
+     * ExtendedCSS rule strings to apply, or null when none match the frame.
+     */
+    extCssRules: string[] | null;
+
+    /**
+     * Whether ExtendedCSS hits statistics are collected for the frame.
+     */
+    areHitsStatsCollected: boolean;
+};
+
+/**
  * Frame context data for MV2.
  *
  * @see {@link FrameCommon} description.
@@ -37,12 +52,21 @@ export class FrameMV2 extends FrameCommon {
     public preparedCosmeticResult?: PreparedCosmeticResultMV2;
 
     /**
-     * Whether an ExtendedCSS instance was injected into the current document.
+     * ExtendedCSS data resolved from the on-demand cosmetic result.
      *
-     * The frame context is replaced on navigation, so the flag normally
-     * resets. When recalculation is skipped and the context survives, a stale
-     * true value causes at most one no-op dispose call on the next empty rule
-     * set.
+     * Frames precalculated by the cosmetic frame processor carry this data in
+     * `preparedCosmeticResult` instead. It is kept here so repeated injection
+     * events do not rebuild the rule strings.
+     */
+    public extCssData?: ExtCssFrameData;
+
+    /**
+     * Whether an ExtendedCSS instance with the frame's rules was applied to
+     * the current document.
+     *
+     * The frame context is replaced on navigation, and `onCommitted` resets
+     * the flag when the context survives, so it always describes the current
+     * document.
      */
     public extCssApplied = false;
 }

@@ -140,25 +140,6 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
     }
 
     /**
-     * Injects a serialized ExtendedCSS code string into the frame by tab id
-     * and frame id.
-     *
-     * The code string is built by the MV2 serializer from the shared ExtCSS
-     * payload. It runs in the frame's isolated world at `document_start`.
-     *
-     * @param tabId Tab ID.
-     * @param frameId Frame ID.
-     * @param code Code string to be injected.
-     *
-     * @returns Promise that resolves when the code is injected.
-     *
-     * @throws Error if the script injection fails.
-     */
-    public static async injectExtCss(tabId: number, frameId: number, code: string): Promise<void> {
-        return TabsApi.injectScript(tabId, frameId, code);
-    }
-
-    /**
      * Injects css styles to the frame by tab id and frame id.
      *
      * @param tabId Tab ID.

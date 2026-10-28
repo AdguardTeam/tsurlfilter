@@ -54,7 +54,7 @@ export type ContentScriptCosmeticData = {
     areHitsStatsCollected: boolean;
 
     /**
-     * Extended css rules to apply.
+     * Always `null` — ExtendedCSS is applied by the background.
      *
      * @deprecated Always `null`. ExtendedCSS is applied by the background, so
      * the content script must not read this field. It stays in the message

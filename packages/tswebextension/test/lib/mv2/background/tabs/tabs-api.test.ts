@@ -529,29 +529,6 @@ describe('TabsApi', () => {
         });
     });
 
-    describe('static injectExtCss method', () => {
-        it('injects the ExtCSS code string with the frame id and document_start', async () => {
-            const code = 'console.log("ExtCSS")';
-            const tabId = 1;
-            const frameId = 1;
-
-            const injectDetails: ExtensionTypes.InjectDetails = {
-                code,
-                frameId,
-                runAt: 'document_start',
-                matchAboutBlank: true,
-            };
-
-            // The shared sinon-chrome stub is also used by the injectScript
-            // test, so reset it to assert this call in isolation.
-            browser.tabs.executeScript.reset();
-
-            await TabsApi.injectExtCss(tabId, frameId, code);
-
-            expect(browser.tabs.executeScript.calledOnceWith(tabId, injectDetails)).toBe(true);
-        });
-    });
-
     describe('static injectCss method', () => {
         it('should inject css to the frame with correct properties', async () => {
             const code = 'body { background: red; }';

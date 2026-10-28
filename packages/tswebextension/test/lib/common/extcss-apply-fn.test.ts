@@ -164,17 +164,15 @@ describe('extCssInjectedApply — re-apply in the same document', () => {
         ad.style.setProperty('color', 'red');
 
         const w = window as unknown as Record<string, unknown>;
-        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
-        const retainedBefore = w.__adguardExtCss;
+        const retainedBefore = w[EXTCSS_PROTOCOL.instanceKey];
 
         // MV2 re-injects the same rule strings for every completed request in
-        // Firefox. dispose() would revert the element to its pre-ExtCSS
+        // Firefox. dispose() would revert the element to its pre-extCSS
         // `cssText` snapshot, so a real re-apply would drop `color` and re-run
         // the whole engine.
         extCssInjectedApply(rules, false, EXTCSS_PROTOCOL);
 
-        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
-        expect(w.__adguardExtCss).toBe(retainedBefore);
+        expect(w[EXTCSS_PROTOCOL.instanceKey]).toBe(retainedBefore);
         expect(ad.style.getPropertyValue('color')).toBe('red');
         expect(ad.style.getPropertyValue('display')).toBe('none');
     });

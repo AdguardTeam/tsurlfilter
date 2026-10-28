@@ -221,20 +221,6 @@ describe('extcss-code serializer', () => {
         expect(Buffer.byteLength(code, 'utf8')).toBeLessThan(APPLY_FN_MAX_BYTES);
     });
 
-    it('executes the apply code against the DOM and hides a matching element', () => {
-        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
-
-        runInThisContext(serializeExtCssForCode(
-            ['.ad:has(.child) { display: none !important; }'],
-            false,
-            EXTCSS_PROTOCOL,
-        ));
-
-        const ad = document.querySelector('.ad') as HTMLElement;
-        expect(ad.style.getPropertyValue('display')).toBe('none');
-        expect(ad.style.getPropertyPriority('display')).toBe('important');
-    });
-
     it('executes the apply code with hits collection and sends SaveCssHitsStats', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
@@ -254,22 +240,5 @@ describe('extcss-code serializer', () => {
             type: 'saveCssHitsStats',
             payload: [{ filterId: 1, ruleIndex: 2, element: '<div class="ad">' }],
         });
-    });
-
-    it('executes the dispose code and reverts the applied styles', () => {
-        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
-        runInThisContext(serializeExtCssForCode(
-            ['.ad:has(.child) { display: none !important; }'],
-            false,
-            EXTCSS_PROTOCOL,
-        ));
-
-        const ad = document.querySelector('.ad') as HTMLElement;
-        expect(ad.style.getPropertyValue('display')).toBe('none');
-
-        runInThisContext(serializeExtCssDisposeForCode(EXTCSS_PROTOCOL));
-
-        expect(ad.style.getPropertyValue('display')).toBe('');
-        expect(getRetainedInstance(EXTCSS_PROTOCOL.instanceKey)).toBeNull();
     });
 });

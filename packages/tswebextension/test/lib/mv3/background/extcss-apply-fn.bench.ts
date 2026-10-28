@@ -21,32 +21,38 @@ const BENCH_OPTIONS = {
 /**
  * Builds a representative rule set with one matching element.
  *
+ * @param prefix Class-name prefix that keeps two rule sets distinct.
+ *
  * @returns The rules and the class of the element the first rule matches.
  */
-function buildRuleset(): { rules: string[]; matchClass: string } {
+function buildRuleset(prefix: string): { rules: string[]; matchClass: string } {
     const rules: string[] = [];
     for (let i = 0; i < RULESET_SIZE; i += 1) {
-        rules.push(`.ad-${i}:has(.child) { display: none !important; }`);
+        rules.push(`.${prefix}-${i}:has(.child) { display: none !important; }`);
     }
-    return { rules, matchClass: 'ad-0' };
+    return { rules, matchClass: `${prefix}-0` };
 }
 
 // The payload-size guard lives in `extcss-apply-fn.performance.test.ts`: it is
 // deterministic and belongs to the regular test suite, while wall-clock timings
 // depend on the machine and the load and are only tracked here.
 test('extCssInjectedApply — apply latency (jsdom)', async ({ bench }) => {
-    const { rules, matchClass } = buildRuleset();
+    const first = buildRuleset('ad-first');
+    const second = buildRuleset('ad-second');
 
-    document.body.innerHTML = `<div class="${matchClass}"><span class="child"></span></div>`;
+    document.body.innerHTML = `<div class="${first.matchClass}"><span class="child"></span></div>`;
 
-    // First apply outside the timed region, so every sample measures the same
-    // re-apply path: dispose the previous instance, then build and apply a new
-    // one. That is the steady state after the first `onCommitted` injection.
-    extCssInjectedApply(rules, false, EXTCSS_PROTOCOL);
+    // First apply outside the timed region, so every sample starts from an
+    // applied instance. The two rule sets alternate: re-applying the same set
+    // would hit the no-op early return instead of the re-apply path.
+    extCssInjectedApply(first.rules, false, EXTCSS_PROTOCOL);
+
+    let useSecond = false;
 
     try {
         await bench(`re-applies ${RULESET_SIZE} rules in the same document`, () => {
-            extCssInjectedApply(rules, false, EXTCSS_PROTOCOL);
+            useSecond = !useSecond;
+            extCssInjectedApply(useSecond ? second.rules : first.rules, false, EXTCSS_PROTOCOL);
         }).run(BENCH_OPTIONS);
     } finally {
         resetExtCssState();
