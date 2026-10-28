@@ -144,11 +144,12 @@ describe('RawRuleConverter tolerant HTML filtering fallback', () => {
     });
 });
 
-describe('RawRuleConverter HTML filtering length limit', () => {
-    test('throws when a length attribute exceeds the PCRE2 limit', () => {
-        expect(() => RawRuleConverter.convertToAdg('$$div[min-length="65536"]')).toThrowError(
-            "Value of special attribute selector 'min-length' must not exceed 65535, got '65536'",
-        );
+describe('RawRuleConverter HTML filtering length bounds', () => {
+    test('splits a length attribute above the PCRE2 limit', () => {
+        const result = RawRuleConverter.convertToAdg('$$div[min-length="65536"]');
+
+        expect(result.isConverted).toBe(true);
+        expect(result.result).toEqual(['$$div:contains(/^(?=.{65535}.).*/s)']);
     });
 });
 

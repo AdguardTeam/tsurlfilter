@@ -98,6 +98,46 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/^(?=.{65535,65535}$).*/s)'],
                     },
 
+                    // `[min-length]` above the PCRE2 quantifier limit is split into a
+                    // fixed-count lookahead, so CoreLibs and tsurlfilter can both use it
+                    {
+                        actual: '$$div[min-length="65536"]',
+                        expected: ['$$div:contains(/^(?=.{65535}.).*/s)'],
+                    },
+
+                    // `[max-length]` above the PCRE2 quantifier limit is split into a
+                    // negative fixed-count lookahead
+                    {
+                        actual: '$$div[max-length="65536"]',
+                        expected: ['$$div:contains(/^(?!.{65535}.{2}).*/s)'],
+                    },
+
+                    // both bounds above the PCRE2 quantifier limit
+                    {
+                        actual: '$$div[min-length="65536"][max-length="150000"]',
+                        expected: ['$$div:contains(/^(?=.{65535}.)(?!(?:.{65535}){2}.{18931}).*/s)'],
+                    },
+
+                    // real-world rule with a length range above the PCRE2 limit:
+                    // the literal stays standalone, the length range is split
+                    {
+                        actual: '$$script[tag-content="omi-service"][min-length="20000"][max-length="150000"]',
+                        expected: [
+                            // eslint-disable-next-line max-len
+                            '$$script:contains(omi-service):contains(/^(?=.{20000})(?!(?:.{65535}){2}.{18931}).*/s)',
+                        ],
+                    },
+
+                    // a split length range inside a merged regex keeps the
+                    // split lookaheads in front of the glob lookahead
+                    {
+                        actual: '$$script[wildcard="*track*"][min-length="20000"][max-length="150000"]',
+                        expected: [
+                            // eslint-disable-next-line max-len
+                            '$$script:contains(/^(?=.{20000})(?!(?:.{65535}){2}.{18931})(?=.*track.*$).*/s)',
+                        ],
+                    },
+
                     // `[tag-content]` with an unbalanced value + `[max-length]`: such a literal cannot
                     // be emitted as a standalone `:contains()` chained before the length regex, because
                     // CoreLibs' scanner would swallow the chain separator `:` into the unbalanced
@@ -479,18 +519,6 @@ describe('HtmlRuleConverter', () => {
                         error: "Value of special attribute selector 'min-length' must be a positive integer, got '-1'",
                     },
 
-                    // invalid special attribute selector - length value exceeds the PCRE2 limit
-                    {
-                        input: '$$[min-length="65536"]',
-                        // eslint-disable-next-line max-len
-                        error: "Value of special attribute selector 'min-length' must not exceed 65535, got '65536'",
-                    },
-                    {
-                        input: '$$[max-length="65536"]',
-                        // eslint-disable-next-line max-len
-                        error: "Value of special attribute selector 'max-length' must not exceed 65535, got '65536'",
-                    },
-
                     // invalid special pseudo-class selector - argument missing
                     {
                         input: '$$:contains()',
@@ -800,23 +828,34 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
                     },
 
-                    // `:min-text-length()` special pseudo-class selector (max is conversion default,
-                    // capped at the PCRE2 quantifier limit for CoreLibs)
+                    // `:min-text-length()` special pseudo-class selector: the
+                    // argument is a lower bound only, with no upper bound
                     {
                         actual: '##^div:min-text-length(10)',
-                        expected: ['$$div:contains(/^(?=.{10,65535}$).*/s)'],
+                        expected: ['$$div:contains(/^(?=.{10,}$).*/s)'],
                     },
 
-                    // `:min-text-length()` special pseudo-class selector (max is conversion default) - multiple usages
+                    // `:min-text-length()` special pseudo-class selector - multiple usages
                     {
                         actual: '##^div:min-text-length(10):min-text-length(20)',
-                        expected: ['$$div:contains(/^(?=.{10,65535}$).*/s):contains(/^(?=.{20,65535}$).*/s)'],
+                        expected: ['$$div:contains(/^(?=.{10,}$).*/s):contains(/^(?=.{20,}$).*/s)'],
                     },
 
                     // `:min-text-length()` special pseudo-class selector - argument at the PCRE2 quantifier limit
                     {
                         actual: '##^div:min-text-length(65535)',
-                        expected: ['$$div:contains(/^(?=.{65535,65535}$).*/s)'],
+                        expected: ['$$div:contains(/^(?=.{65535,}$).*/s)'],
+                    },
+
+                    // `:min-text-length()` special pseudo-class selector - argument above the
+                    // PCRE2 quantifier limit is split into a fixed-count lookahead
+                    {
+                        actual: '##^div:min-text-length(65536)',
+                        expected: ['$$div:contains(/^(?=.{65535}.).*/s)'],
+                    },
+                    {
+                        actual: '##^div:min-text-length(150000)',
+                        expected: ['$$div:contains(/^(?=(?:.{65535}){2}.{18930}).*/s)'],
                     },
 
                     // `:has-text()` special pseudo-class selector
@@ -974,13 +1013,6 @@ describe('HtmlRuleConverter', () => {
                         error: "Argument of special pseudo-class selector 'min-text-length' must be a positive integer, got '-1'",
                     },
 
-                    // invalid special pseudo-class selector - length value exceeds the PCRE2 quantifier limit
-                    {
-                        input: '##^:min-text-length(65536)',
-                        // eslint-disable-next-line max-len
-                        error: "Argument of special pseudo-class selector 'min-text-length' must not exceed 65535, got '65536'",
-                    },
-
                     // invalid simple selector - mixed syntax (AdGuard special attribute selector)
                     {
                         input: '##^div[tag-content="example"]',
@@ -1020,7 +1052,7 @@ describe('HtmlRuleConverter', () => {
                     },
                     {
                         actual: '##^div:min-text-length(10)',
-                        expected: ['$$div:contains(/^(?=.{10,65535}$).*/s)'],
+                        expected: ['$$div:contains(/^(?=.{10,}$).*/s)'],
                     },
                     {
                         actual: '##^div:has-text(example)',
@@ -1047,12 +1079,6 @@ describe('HtmlRuleConverter', () => {
                         // eslint-disable-next-line max-len
                         error: "Argument of special pseudo-class selector 'min-text-length' must be a positive integer, got '-1'",
                     },
-                    {
-                        input: '##^:min-text-length(65536)',
-                        // eslint-disable-next-line max-len
-                        error: "Argument of special pseudo-class selector 'min-text-length' must not exceed 65535, got '65536'",
-                    },
-
                     // Parsing errors
                     {
                         input: '##^[attr="value"]div',
@@ -1167,6 +1193,31 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div:contains(/ex.*ple/i)',
                         expected: ['##^div:has-text(/ex.*ple/i)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - native uBlock
+                    // syntax, kept as-is instead of a mixed-syntax error
+                    {
+                        actual: '$$div:has-text(example)',
+                        expected: ['##^div:has-text(example)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - regexp argument is kept as-is
+                    {
+                        actual: '$$div:has-text(/ex.*ple/i)',
+                        expected: ['##^div:has-text(/ex.*ple/i)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - multiple usages
+                    {
+                        actual: '$$div:has-text(a):has-text(b)',
+                        expected: ['##^div:has-text(a):has-text(b)'],
+                    },
+
+                    // `:has-text()` and `[tag-content]` special selectors - mixed usage
+                    {
+                        actual: '$$div[tag-content="a"]:has-text(b)',
+                        expected: ['##^div:has-text(a):has-text(b)'],
                     },
 
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
@@ -1362,12 +1413,6 @@ describe('HtmlRuleConverter', () => {
                         input: '$$:contains()',
                         error: "Special pseudo-class selector 'contains' requires an argument",
                     },
-
-                    // invalid simple selector - mixed syntax (uBlock special pseudo-class selector)
-                    {
-                        input: '$$div:has-text(example)',
-                        error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
-                    },
                 ])("should not convert '$input'", ({ input, error }) => {
                     if (typeof input !== 'string') {
                         expect(() => {
@@ -1409,6 +1454,14 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div:contains(example)',
                         expected: ['##^div:has-text(example)'],
+                    },
+                    {
+                        actual: '$$div:has-text(example)',
+                        expected: ['##^div:has-text(example)'],
+                    },
+                    {
+                        actual: '$$div:has-text(/ex.*ple/i)',
+                        expected: ['##^div:has-text(/ex.*ple/i)'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperlyNew(HtmlRuleConverter, 'convertToUbo');

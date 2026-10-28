@@ -647,6 +647,46 @@ describe('Html rule selector', () => {
         expect(notMatchedNoFlags).toHaveLength(0);
     });
 
+    it('checks special selector :contains() - converted length range above the PCRE2 limit', () => {
+        // The converter splits [min-length]/[max-length] bounds above 65535
+        // into fixed-count lookaheads, so the pattern works in both PCRE2
+        // and JavaScript.
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$script[tag-content="omi-service"][min-length="20000"][max-length="150000"]',
+        );
+        expect(convertedRuleText).toBe(
+            'example.org$$script:contains(omi-service):contains(/^(?=.{20000})(?!(?:.{65535}){2}.{18931}).*/s)',
+        );
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        // In range: 50000 chars, contains "omi-service"
+        document.body.innerHTML = `
+        <script id="matched">omi-service${'x'.repeat(50000 - 'omi-service'.length)}</script>
+        `;
+
+        const matched = selector.getMatchedElements(document);
+        expect(matched).toHaveLength(1);
+        expect(matched[0].id).toBe('matched');
+
+        // Too short: 19999 chars (< 20000 minimum)
+        document.body.innerHTML = `
+        <script id="not-matched-short">omi-service${'x'.repeat(19999 - 'omi-service'.length)}</script>
+        `;
+
+        const notMatchedShort = selector.getMatchedElements(document);
+        expect(notMatchedShort).toHaveLength(0);
+
+        // Too long: 150001 chars (> 150000 maximum)
+        document.body.innerHTML = `
+        <script id="not-matched-long">omi-service${'x'.repeat(150001 - 'omi-service'.length)}</script>
+        `;
+
+        const notMatchedLong = selector.getMatchedElements(document);
+        expect(notMatchedLong).toHaveLength(0);
+    });
+
     it('checks special selector :contains() - unbalanced argument is kept as-is (CoreLibs parity)', () => {
         // Unbalanced arguments are parsed leniently and kept as-is, no
         // quoting is inserted; the matcher treats the raw text between the

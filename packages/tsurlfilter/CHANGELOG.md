@@ -44,6 +44,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTML filtering rules with deprecated `[min-length]` / `[max-length]`
+  values above the PCRE2 quantifier limit (65535) now convert to a
+  PCRE2-safe regular expression split into fixed-count lookaheads and
+  match as expected, instead of failing conversion and staying as a native
+  selector that never matches.
 - `CosmeticRule.createFromReader` now throws when the reader represents a
   cosmetic kind the binary path cannot materialize (uBO scriptlets, ABP
   snippets, CSS injection, HTML filtering), and the `CosmeticRule`/`NetworkRule`

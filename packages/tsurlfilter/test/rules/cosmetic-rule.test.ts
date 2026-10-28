@@ -1299,6 +1299,34 @@ describe('HTML filtering rules (content rules)', () => {
         });
     });
 
+    it('correctly parses html rules - length range above the PCRE2 limit is split', () => {
+        // The converter splits [min-length]/[max-length] bounds above 65535
+        // into fixed-count lookaheads, so the pattern is valid in both PCRE2
+        // and JavaScript and compiles to a RegExp here instead of falling back
+        // to literal matching.
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$script[tag-content="omi-service"][min-length="20000"][max-length="150000"]',
+        );
+        const rule = createCosmeticRule(convertedRuleText, 0);
+
+        expect(rule.getType()).toBe(CosmeticRuleType.HtmlFilteringRule);
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [
+                    {
+                        name: 'contains',
+                        value: 'omi-service',
+                    },
+                    {
+                        name: 'contains',
+                        value: /^(?=.{20000})(?!(?:.{65535}){2}.{18931}).*/s,
+                    },
+                ],
+            }]],
+        });
+    });
+
     it('correctly parses html rules - complicated cases', () => {
         // eslint-disable-next-line max-len
         const contentPart = 'div > span, .class + h1#id:contains(some text):contains(other text)';

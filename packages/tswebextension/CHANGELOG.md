@@ -18,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `RuleParserPipeline` and the removed `CssTokenStream.hasNativeCssPseudoClass`
   is replaced by the `hasNativeCssPseudoClass` utility.
 
+### Fixed
+
+- HTML filtering rules with `[min-length]` / `[max-length]` values above
+  65535 now match as expected: the converted `:contains()` regular
+  expression is split into fixed-count lookaheads that are valid in both
+  PCRE2 and JavaScript.
+
 ## [6.0.0] - 2026-09-29
 
 ### Added

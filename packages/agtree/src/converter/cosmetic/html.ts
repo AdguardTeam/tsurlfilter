@@ -45,24 +45,6 @@ import { createNodeConversionResult, type NodeConversionResult } from '../base-i
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 
 /**
- * Upper bound of the length-matching regular expression generated when
- * converting a length constraint to AdGuard `:contains()`.
- *
- * The bound must not exceed 65535: converted rules are applied by CoreLibs,
- * which compiles `:contains(/.../)` patterns with PCRE2, and PCRE2 rejects
- * quantifier numbers greater than 65535 ("quantifier too large" error).
- *
- * The bound applies to uBlock `:min-text-length()` and to the deprecated
- * AdGuard `[min-length]` / `[max-length]` attributes: ADG→ADG conversion
- * rewrites both into a `:contains()` regular expression, so CoreLibs no
- * longer sees the native attribute.
- *
- * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}
- * @see {@link https://www.pcre.org/current/doc/html/pcre2limits.html}
- */
-const ADG_HTML_CONVERSION_MAX_LENGTH = 65535;
-
-/**
  * Supported special pseudo-classes from uBlock.
  *
  * Note: If new pseudo-classes are added here, ensure to update
@@ -173,12 +155,10 @@ export const ERROR_MESSAGES = {
     SPECIAL_ATTRIBUTE_SELECTOR_VALUE_REQUIRED: "Special attribute selector '%s' requires a value",
     SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT: "Value of special attribute selector '%s' must be an integer, got '%s'",
     SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE: "Value of special attribute selector '%s' must be a positive integer, got '%s'",
-    SPECIAL_ATTRIBUTE_SELECTOR_VALUE_TOO_LARGE: "Value of special attribute selector '%s' must not exceed %s, got '%s'",
     SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED: "Special attribute selector '%s' is not supported in conversion",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED: "Special pseudo-class selector '%s' requires an argument",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT: "Argument of special pseudo-class selector '%s' must be an integer, got '%s'",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE: "Argument of special pseudo-class selector '%s' must be a positive integer, got '%s'",
-    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_TOO_LARGE: "Argument of special pseudo-class selector '%s' must not exceed %s, got '%s'",
     SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED: "Special pseudo-class selector '%s' is not supported in conversion",
 } as const;
 /* eslint-enable max-len */
@@ -449,7 +429,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             // `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/s)`
             // `[max-length="max"]` -> `:contains(/^(?=.{0,max}$).*\/s)`
-            // converts to a length-matching regular expression
+            // converts to a length-matching regular expression. Bounds above
+            // the PCRE2 quantifier limit are split, see
+            // RegExpUtils.getLengthLookahead().
             case AdgAttributeSelectors.MinLength:
             case AdgAttributeSelectors.MaxLength: {
                 // Validate length value
@@ -458,7 +440,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     value,
                     ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
                     ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_TOO_LARGE,
                 );
 
                 // It's safe to cast to number here after validation
@@ -554,8 +535,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * Handles special pseudo-class selectors during uBlock to AdGuard conversion:
      * - `:has-text(text)` -> `:contains(text)`
      *   direct conversion, no changes to argument
-     * - `:min-text-length(min)` -> `:contains(/^(?=.{min,MAX_CONVERSION_DEFAULT}$).*\/s)`
-     *   converts to a length-matching regular expression.
+     * - `:min-text-length(min)` -> `:contains(/^(?=.{min,}$).*\/s)`
+     *   converts to a length-matching regular expression. Bounds above the
+     *   PCRE2 quantifier limit are split, see
+     *   {@link RegExpUtils.getLengthLookahead}.
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
@@ -575,17 +558,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 );
             }
 
-            // `:min-text-length(min)` -> `:contains(/^(?=.{min,MAX_CONVERSION_DEFAULT}$).*\/s)`
+            // `:min-text-length(min)` -> `:contains(/^(?=.{min,}$).*\/s)`
             // converts to a length-matching regular expression
             case UboPseudoClasses.MinTextLength: {
-                // Validate length value, including the PCRE2 quantifier limit —
-                // see the ADG_HTML_CONVERSION_MAX_LENGTH comment
+                // Validate length value
                 HtmlRuleConverter.assertValidLengthValue(
                     name,
                     argument,
                     ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT,
                     ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE,
-                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_TOO_LARGE,
                 );
 
                 // It's safe to cast to number here after validation
@@ -593,7 +574,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
-                    RegExpUtils.getLengthRegexp(minLength, ADG_HTML_CONVERSION_MAX_LENGTH),
+                    RegExpUtils.getLengthRegexp(minLength, null),
                 );
             }
 
@@ -685,15 +666,22 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * Handles special pseudo-class selectors during AdGuard to uBlock conversion:
      * - `:contains(text)` -> `:has-text(text)`
      *   direct conversion, no changes to argument.
+     * - `:has-text(text)` -> kept as-is
+     *   `:has-text()` is native uBlock syntax and a documented synonym of
+     *   `:contains()` in AdGuard products, so no conversion is needed.
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
      *
-     * @returns A {@link SimpleSelector} to add to the current complex selector.
+     * @returns A {@link SimpleSelector} to add to the current complex selector,
+     * or `true` to keep the original pseudo-class selector as-is.
      *
-     * @throws If uBlock-specific pseudo-class selector is found in AdGuard rule.
+     * @throws If a uBlock-only pseudo-class selector is found in an AdGuard rule.
      */
-    private static convertSpecialPseudoClassSelectorAdgToUbo(name: string, argument: string): SimpleSelector {
+    private static convertSpecialPseudoClassSelectorAdgToUbo(
+        name: string,
+        argument: string,
+    ): SimpleSelector | true {
         switch (name) {
             // `:contains(text)` -> `:has-text(text)`
             // direct conversion, no changes to argument
@@ -704,8 +692,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 );
             }
 
-            // Throw an error if the uBlock-specific pseudo-class selector found in AdGuard rule
-            case UboPseudoClasses.HasText:
+            // `:has-text(text)` is native uBlock syntax, so it is kept as-is
+            case UboPseudoClasses.HasText: {
+                return true;
+            }
+
+            // Throw an error if the uBlock-only pseudo-class selector
+            // (`:min-text-length()`) is found in an AdGuard rule
             case UboPseudoClasses.MinTextLength: {
                 throw new RuleConversionError(sprintf(
                     ERROR_MESSAGES.INVALID_RULE,
@@ -731,8 +724,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * Resolves duplicates to the most *restrictive* value:
      * - for multiple `[min-length]` selectors, the largest value is selected;
      * - for multiple `[max-length]` selectors, the smallest value is selected.
-     *
-     * Logs a warning when duplicate length selectors are found.
      *
      * @param selectors Child selectors of a compound selector to scan.
      *
@@ -772,7 +763,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 value,
                 ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
                 ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
-                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_TOO_LARGE,
             );
 
             if (name === AdgAttributeSelectors.MinLength) {
@@ -1217,7 +1207,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * constraints (multiple [wildcard] values, `[wildcard]` combined with
      * `[min/max-length]`, multiple [tag-content] values) — are merged into a
      * single regular expression instead:
-     * `/^(?=.{min,max}$)(?=<glob>)(?=.*<literal>).*\/s`.
+     * `/^(?=<length>)(?=<glob>)(?=.*<literal>).*\/s`.
+     * The length lookahead may be split into several lookaheads to stay
+     * within the PCRE2 quantifier limit, see
+     * {@link RegExpUtils.getLengthLookahead}.
      *
      * @param convertedSelectors Converted selectors of the compound selector,
      * the emitted pseudo-classes are appended to it.
@@ -1273,7 +1266,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             : tagContentValues;
 
         // Count the constraints which still have to be emitted: when exactly
-        // one remains, it keeps its own canonical single-constraint form
+        // one remains, it keeps its own standalone single-constraint form
         const remainingConstraints = mergedLiterals.length
             + wildcardGlobValues.length
             + (lengthConstraints !== null ? 1 : 0);
@@ -1304,7 +1297,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             && mergedLiterals.length === 0
             && wildcardGlobValues.length === 0
         ) {
-            // A single length constraint keeps its own canonical form.
+            // A single length constraint keeps its own standalone form.
             // lengthConstraints is non-null because remainingConstraints
             // is 1 and neither literals nor globs remain.
             convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
@@ -1318,8 +1311,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
         }
 
         // All remaining constraints are merged into a single regular
-        // expression, each as a lookahead: length `(?=.{min,max}$)`, glob
-        // `(?=<glob>)`, escaped literal `(?=.*<literal>)`.
+        // expression, each as a lookahead: length `(?=<length>)`, glob
+        // `(?=<glob>)`, escaped literal `(?=.*<literal>)`. The length
+        // lookahead may consist of several lookaheads when a bound exceeds
+        // the PCRE2 quantifier limit.
         let mergedRegex = '/^';
 
         if (lengthConstraints !== null) {
@@ -1479,22 +1474,18 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * @param value Value to parse.
      * @param notIntErrorMessage Error message when the value is not an integer.
      * @param notPositiveErrorMessage Error message when the value is not positive.
-     * @param tooLargeErrorMessage Error message when the value exceeds the
-     * PCRE2 quantifier limit. When omitted, the upper bound is not checked.
      *
-     * @throws If the value is not a valid number, not positive, or exceeds the
-     * PCRE2 quantifier limit when a `tooLargeErrorMessage` is provided.
+     * @throws If the value is not a safe non-negative integer.
      */
     private static assertValidLengthValue(
         name: string,
         value: string,
         notIntErrorMessage: string,
         notPositiveErrorMessage: string,
-        tooLargeErrorMessage?: string,
     ): void {
         const parsed = Number(value);
 
-        if (Number.isNaN(parsed)) {
+        if (!Number.isSafeInteger(parsed)) {
             throw new RuleConversionError(
                 sprintf(
                     notIntErrorMessage,
@@ -1509,20 +1500,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 sprintf(
                     notPositiveErrorMessage,
                     name,
-                    value,
-                ),
-            );
-        }
-
-        if (
-            tooLargeErrorMessage !== undefined
-            && parsed > ADG_HTML_CONVERSION_MAX_LENGTH
-        ) {
-            throw new RuleConversionError(
-                sprintf(
-                    tooLargeErrorMessage,
-                    name,
-                    ADG_HTML_CONVERSION_MAX_LENGTH,
                     value,
                 ),
             );

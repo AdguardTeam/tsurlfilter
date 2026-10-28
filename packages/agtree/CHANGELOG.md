@@ -33,6 +33,18 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   by tswebextension's `HtmlRuleSelector`. The selector list and last
   complex selector source ranges are extended to cover the appended
   pseudo-class when locations are enabled.
+- Special pseudo-class arguments are no longer trimmed in selector lists:
+  the argument is taken from the source as-is, so
+  `##div:has-text( foo ):style(color: red)` converts to
+  `#$?#div:contains( foo ) { color: red }`, and `##^div:has-text(  )`
+  converts instead of throwing.
+- ADG→uBO conversion now keeps `:has-text()` as-is instead of throwing a
+  mixed-syntax error, e.g. `$$div:has-text(example)` converts to
+  `##^div:has-text(example)`. `:has-text()` is native uBlock syntax and a
+  documented synonym of `:contains()` in AdGuard products, so a rule that
+  ADG→ADG conversion accepts is no longer rejected in the other direction.
+  Only uBlock-only constructs such as `:min-text-length()` still raise the
+  mixed-syntax error.
 
 ### Deprecated
 
@@ -48,10 +60,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `$$div[data-x="a""b"][tag-content="c""d"]`, now converts to
   `$$div[data-x="a""b"]:contains(c"d)` instead of doubling the `""`
   escape. The same rule applies to `[wildcard]` values.
-- `[tag-content]` values are now emitted raw during ADG→ADG conversion:
-  quotes within the value (e.g. `[tag-content='"advert"']` →
-  `:contains("advert")`) are literal characters of the text to match,
-  not a transport encoding to strip later, mirroring CoreLibs.
 - AdGuard HTML filtering rules whose bodies cannot be parsed as CSS
   selector lists, even leniently, are now kept as-is during conversion
   instead of throwing a parse error, e.g. `[tag-content]` with escaped
@@ -61,15 +69,20 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `[wildcard]` / `[min-length]` / `[max-length]` markers (outside of
   quoted text) still throw. The raw rule and filter list converters use
   the same tolerant fallback.
-- uBlock `:min-text-length()` conversion now caps the upper bound of the
-  generated length-matching regular expression at 65535 instead of 262144,
-  because CoreLibs compiles `:contains(/.../)` patterns with PCRE2, which
-  rejects quantifier numbers greater than 65535. `:min-text-length()`
-  arguments greater than 65535 now throw a conversion error instead of
-  producing a PCRE2-invalid pattern. The same limit now applies to the
-  deprecated AdGuard `[min-length]` and `[max-length]` attributes during
-  ADG→ADG conversion, which rewrites them into the same kind of
-  `:contains()` regex.
+- uBlock `:min-text-length()` conversion no longer caps the generated
+  length-matching regular expression at 262144, so a larger argument no
+  longer produces an invalid range. The converter now splits a length bound
+  into fixed-count lookaheads, so every quantifier stays within the PCRE2
+  limit of 65535 and the pattern remains valid in both PCRE2 and JavaScript.
+  For example,
+  `$$script[tag-content="omi-service"][min-length="20000"][max-length="150000"]`
+  converts to
+  `$$script:contains(omi-service):contains(/^(?=.{20000})(?!(?:.{65535}){2}.{18931}).*/s)`
+  instead of an invalid pattern. The same applies to the deprecated AdGuard
+  `[min-length]` and `[max-length]` attributes during ADG→ADG conversion.
+  `:min-text-length()` now converts to a lower bound only, e.g.
+  `:min-text-length(10)` becomes `:contains(/^(?=.{10,}$).*/s)` instead of
+  the previous upper bound of 262144.
 - ADG→ADG conversion of HTML filtering rules now merges combinations of
   deprecated special attribute selectors that cannot be represented as a
   chain of separate `:contains()` pseudo-classes into a single regex
