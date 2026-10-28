@@ -555,7 +555,20 @@ export class SimpleRegex {
         }
 
         try {
-            return new RegExp(pattern, flags);
+            // Compile the original literal first. This keeps the fallback for
+            // invalid literals, including invalid or duplicate flags.
+            const regexp = new RegExp(pattern, flags);
+
+            // Keep only the flags that CoreLibs supports. Other flags, e.g.
+            // `g` or `y`, make `RegExp.test()` stateful because it advances
+            // `lastIndex`, so the result depends on the previous match.
+            const supportedFlags = regexp.flags.replace(/[^is]/g, '');
+
+            if (supportedFlags === regexp.flags) {
+                return regexp;
+            }
+
+            return new RegExp(regexp.source, supportedFlags);
         } catch (e) {
             logger.warn(`[tsurl.SimpleRegex.fromLiteral]: Invalid regular expression literal: ${literal}:`, e);
             return literal;

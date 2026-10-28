@@ -235,6 +235,46 @@ describe('Html rule selector', () => {
         expect(notMatchedElements).toHaveLength(0);
     });
 
+    it('checks special selector :contains() - regexp with g flag matches statelessly', () => {
+        document.body.innerHTML = `
+        <div id="contains-regexp-g-1" class="test-class">foo</div>
+        <div id="contains-regexp-g-2" class="test-class">foo</div>
+        <div id="contains-regexp-g-3" class="test-class">foo</div>
+        `;
+
+        const ruleText = 'example.org$$div:contains(/foo/g)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(3);
+        expect(matchedElements!.map((element) => element.id)).toEqual([
+            'contains-regexp-g-1',
+            'contains-regexp-g-2',
+            'contains-regexp-g-3',
+        ]);
+    });
+
+    it('checks special selector :contains() - regexp with y flag matches statelessly', () => {
+        document.body.innerHTML = `
+        <div id="contains-regexp-y-1" class="test-class">foo</div>
+        <div id="contains-regexp-y-2" class="test-class">foo</div>
+        <div id="contains-regexp-y-3" class="test-class">foo</div>
+        `;
+
+        const ruleText = 'example.org$$div:contains(/foo/y)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(3);
+        expect(matchedElements!.map((element) => element.id)).toEqual([
+            'contains-regexp-y-1',
+            'contains-regexp-y-2',
+            'contains-regexp-y-3',
+        ]);
+    });
+
     it('checks special selector :contains() - converted from [wildcard]', () => {
         document.body.innerHTML = `
         <div id="contains-wildcard" class="test-class">Welcome to AdGuard!</div>

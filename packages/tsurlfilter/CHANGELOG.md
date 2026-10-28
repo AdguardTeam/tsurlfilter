@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `:contains()` regexp arguments in HTML filtering rules now ignore all
+  flags except `i` and `s`. Matching is stateless and does not depend on the
+  previously matched element.
 - Empty `:contains()` arguments in HTML filtering rules are now rejected.
 - `:-abp-contains()` and `:has-text()` are now treated as aliases of
   `:contains()` in HTML filtering rules.

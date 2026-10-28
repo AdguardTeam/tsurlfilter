@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTML filtering `:contains()` regexp arguments with the `g` or `y` flag now
+  match every element, not only every other element (via
+  [@adguard/tsurlfilter]).
 - HTML filtering rules with `:-abp-contains()` and `:has-text()` now work,
   and HTML filtering rules with an empty `:contains()` argument are now
   rejected (via [@adguard/tsurlfilter]).
