@@ -887,6 +887,22 @@ describe('HtmlRuleConverter', () => {
                         error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got 'abc'",
                     },
 
+                    // invalid special pseudo-class selector - whitespace-only argument
+                    // must not be accepted as 0 (Number(' ') === 0) and converted into
+                    // a match-all :contains() regex; uBO validates with /^\d+$/
+                    {
+                        input: '##^:min-text-length( )',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got ' '",
+                    },
+
+                    // invalid special pseudo-class selector - non-decimal number
+                    {
+                        input: '##^:min-text-length(1e2)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got '1e2'",
+                    },
+
                     // invalid special pseudo-class selector - length value negative
                     {
                         input: '##^:min-text-length(-1)',
@@ -961,6 +977,11 @@ describe('HtmlRuleConverter', () => {
                         input: '##^:min-text-length(abc)',
                         // eslint-disable-next-line max-len
                         error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got 'abc'",
+                    },
+                    {
+                        input: '##^:min-text-length( )',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got ' '",
                     },
                     {
                         input: '##^:min-text-length(-1)',

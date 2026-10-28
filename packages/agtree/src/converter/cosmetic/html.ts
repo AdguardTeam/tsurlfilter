@@ -1497,5 +1497,21 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 ),
             );
         }
+
+        // uBO validates `:min-text-length()` arguments with `/^\d+$/`
+        // (compileInteger in its static-filtering-parser.js). Without the
+        // digits check a whitespace-only argument — e.g. `:min-text-length( )`,
+        // which the parser now keeps as-is instead of trimming — would pass
+        // Number() validation as 0 and convert into a match-all `:contains()`
+        // regex.
+        if (!/^\d+$/.test(value)) {
+            throw new RuleConversionError(
+                sprintf(
+                    notIntErrorMessage,
+                    name,
+                    value,
+                ),
+            );
+        }
     }
 }
