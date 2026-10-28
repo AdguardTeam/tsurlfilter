@@ -61,7 +61,7 @@ extensions.
 ### Supported rule types
 
 The converter supports virtually all adblock network rule modifiers. The known
-MV3 limitations (inherent to the Declarative Net Request API) are:
+MV3 limitations are:
 
 **Supported modifiers** (with MV3 notes):
 
@@ -76,8 +76,9 @@ MV3 limitations (inherent to the Declarative Net Request API) are:
 - `$urltransform` — limited; complex transforms produce multiple declarative
   rules via pipeline stages
 - `$cookie` — limited; only supported without parameters (bare `$cookie`)
-- `$badfilter` — partial: a target rule without `$domain` is cancelled
-  completely, and a dynamic `$badfilter` disables a whole static rule
+- `$badfilter` — partial: a target rule without `$domain` is still cancelled
+  completely, wildcard-TLD entries cover only the expanded popular TLDs, and a
+  dynamic `$badfilter` disables a whole static rule
 
 **Not yet supported / not convertible to DNR**:
 

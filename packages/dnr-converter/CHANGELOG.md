@@ -28,16 +28,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   as `$redirect`, and spellings that are equivalent after parsing (e.g.
   `Set-Cookie` and `set-cookie`) do not negate each other.
 - `$badfilter` with `$domain` cancelled the whole target rule in MV3 instead of
-  only the domains present in both lists, so `||example.com^$domain=foo.com|bar.com`
-  stopped applying on `bar.com` after
+  only the domains that the badfilter covers, so
+  `||example.com^$domain=foo.com|bar.com` stopped applying on `bar.com` after
   `||example.com^$domain=foo.com,badfilter`. The converter now narrows the
-  `$domain` list of the target rule, as MV2 and CoreLibs do. Regular expression
-  domains keep their case in the comparison, so `$domain=/A/` no longer cancels
-  `$domain=/a/`, and this exception applies only while neither rule has a negated
-  `~domain`; otherwise the whole text is compared. A target rule without
-  `$domain` is still cancelled completely, and a `$badfilter` from a dynamic
-  ruleset still disables a whole rule from an already-built static ruleset,
-  because DNR cannot disable a rule for a part of its domains.
+  `$domain` list of the target rule, as MV2 and CoreLibs do: it removes a target
+  entry that the badfilter covers and excludes a badfilter subdomain that a kept
+  target entry still covers. Regular expression domains keep their case in the
+  comparison, so `$domain=/A/` no longer cancels `$domain=/a/`, and this
+  exception applies only while neither rule has a negated `~domain`; otherwise
+  the whole text is compared. A target rule without `$domain` is still cancelled
+  completely, because the converter narrows only an existing permitted list. A
+  `$badfilter` from a dynamic ruleset still disables a whole rule from an
+  already-built static ruleset, because such a rule can only be disabled as a
+  whole. Wildcard-TLD entries are expanded with a popular TLD list, so an entry
+  outside that list is not covered.
 - `$badfilter` rules that also carried a convertible modifier (e.g.
   `||example.com^$csp=script-src 'none',badfilter`) were converted into
   declarative rules instead of disabling the rule they refer to.
