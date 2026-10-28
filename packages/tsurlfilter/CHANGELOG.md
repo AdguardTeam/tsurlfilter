@@ -49,6 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [AdguardBrowserExtension#3605].
 - Domain-scoped cosmetic and JavaScript rules not matching hosts with labels
   ending in an underscore.
+- Empty `:contains()` arguments in HTML filtering rules are now rejected.
+- `:-abp-contains()` and `:has-text()` are now treated as aliases of
+  `:contains()` in HTML filtering rules.
 
 ### Security
 

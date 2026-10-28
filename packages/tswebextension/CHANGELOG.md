@@ -63,6 +63,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Inverted allowlist entries with uppercase letters not matching their sites.
 - `$stealth` exception rules shown as `<dynamic rule text is not specified>`
   instead of their text in the MV3 filtering log.
+- HTML filtering rules with `:-abp-contains()` and `:has-text()` now work,
+  and HTML filtering rules with an empty `:contains()` argument are now
+  rejected (via [@adguard/tsurlfilter]).
 
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
 [AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475
