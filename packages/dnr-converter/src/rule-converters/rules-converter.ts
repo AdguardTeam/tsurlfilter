@@ -447,6 +447,7 @@ export class RulesConverter {
             const excludedRulesIds: number[] = [];
 
             let unsafeRulesCounter = 0;
+            let totalLimitExceeded = false;
 
             for (let i = 0; i < declarativeRules.length; i += 1) {
                 const rule = declarativeRules[i];
@@ -466,10 +467,12 @@ export class RulesConverter {
                     }
                 }
 
-                if (i < maxNumberOfRules) {
+                if (filteredRules.length < maxNumberOfRules) {
                     filteredRules.push(rule);
                     continue;
                 }
+
+                totalLimitExceeded = true;
 
                 RulesConverter.removeTruncatedRuleSourcesAndErrors(
                     rule.id,
@@ -493,7 +496,7 @@ export class RulesConverter {
                 limitations.push(err);
             }
 
-            if (declarativeRules.length > maxNumberOfRules) {
+            if (totalLimitExceeded) {
                 const err = new TooManyRulesError(
                     // eslint-disable-next-line max-len
                     `After conversion, too many declarative rules remain: ${declarativeRules.length} exceeds the limit provided - ${maxNumberOfRules}`,

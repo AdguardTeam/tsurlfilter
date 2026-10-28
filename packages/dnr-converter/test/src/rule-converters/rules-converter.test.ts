@@ -1184,6 +1184,37 @@ describe('RulesConverter', () => {
             );
         });
 
+        it('counts kept rules for the total limit when the unsafe limit drops rules first', () => {
+            const declarativeRules = [
+                createDeclarativeRule(1, 'unsafe1.com'),
+                createDeclarativeRule(2, 'unsafe2.com'),
+                createDeclarativeRule(3, 'unsafe3.com'),
+                createDeclarativeRule(4, 'safe1.com'),
+                createDeclarativeRule(5, 'safe2.com'),
+            ];
+            const sourceMapValues = declarativeRules.map((rule, index) => (
+                createSource(rule.id, (index + 1) * 10, (index + 1) * 100)
+            ));
+            const converted = createConvertedRules(declarativeRules, sourceMapValues);
+
+            // The first three rules are unsafe, the last two are safe.
+            isSafeRuleMocked.mockImplementation((rule) => rule.id >= 4);
+
+            // @ts-expect-error Accessing private method for testing
+            const result = RulesConverter.checkLimitations(
+                converted,
+                3, // maxNumberOfRules
+                1, // maxNumberOfUnsafeRules
+            );
+
+            // The unsafe limit drops two rules, so the two safe rules fit the
+            // total limit. The total limit must not report an error.
+            expect(result.declarativeRules.map((r) => r.id)).toEqual([1, 4, 5]);
+            expect(result.sourceMapValues).toHaveLength(3);
+            expect(result.limitations).toHaveLength(1);
+            expect(result.limitations![0]).toBeInstanceOf(TooManyUnsafeRulesError);
+        });
+
         it('should enforce maximum number of regex rules limit', () => {
             const declarativeRules = [
                 createDeclarativeRule(1, 'example.com'), // non-regex
@@ -1260,17 +1291,13 @@ describe('RulesConverter', () => {
                 1, // maxNumberOfRegexpRules - limit to 1 regex rule
             );
 
-            // Should apply all limits: max 3 rules, max 1 unsafe, max 1 regex
-            // Expected: rule 1 (safe, non-regex), rule 2 (unsafe, non-regex), rule 4 (safe, regex)
-            // Rule 3 should be excluded due to regex limit, rule 5 should be excluded due to total limit
-            expect(result.declarativeRules).toHaveLength(2);
-            expect(result.declarativeRules.map((r) => r.id)).toEqual([1, 2]);
-            expect(result.limitations).toHaveLength(2);
-
-            // Check for all three types of limitation errors
-            const limitationTypes = result.limitations!.map((l) => l.constructor.name);
-            expect(limitationTypes).toContain('TooManyUnsafeRulesError');
-            expect(limitationTypes).toContain('TooManyRulesError');
+            // Should apply all limits: max 3 rules, max 1 unsafe, max 1 regex.
+            // The unsafe limit drops rules 3 and 5, so rules 1, 2 and 4 fit the
+            // total limit. Rule 4 is the only regex rule and fits its limit.
+            expect(result.declarativeRules).toHaveLength(3);
+            expect(result.declarativeRules.map((r) => r.id)).toEqual([1, 2, 4]);
+            expect(result.limitations).toHaveLength(1);
+            expect(result.limitations![0]).toBeInstanceOf(TooManyUnsafeRulesError);
         });
 
         it('should properly handle conversion errors and filter them correctly', () => {
