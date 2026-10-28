@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTML filtering rules with `:-abp-contains()` and `:has-text()` now work,
+  and HTML filtering rules with an empty `:contains()` argument are now
+  rejected (via [@adguard/tsurlfilter]).
 - HTML filtering rules with `[min-length]` / `[max-length]` values above
   65535 now match as expected: the converted `:contains()` regular
   expression is split into fixed-count lookaheads that are valid in both
