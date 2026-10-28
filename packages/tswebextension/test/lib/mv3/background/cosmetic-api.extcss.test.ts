@@ -10,7 +10,7 @@ import {
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
-import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-apply-fn';
+import { extCssInjectedApply, extCssInjectedDispose } from '../../../../src/lib/mv3/background/extcss-apply-fn';
 import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
 import { type FrameMV3, type PreparedCosmeticResultMV3 } from '../../../../src/lib/mv3/tabs/frame';
 import { tabsApi } from '../../../../src/lib/mv3/tabs/tabs-api';
@@ -230,5 +230,37 @@ describe('CosmeticApi.applyCosmeticRules — end-to-end in jsdom', () => {
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
         expect(ad.style.getPropertyPriority('display')).toBe('important');
+    });
+
+    it('disposes the instance when a recreated frame context gets an empty rule set', async () => {
+        document.body.innerHTML = '<div class="ad">ad</div>';
+
+        vi.spyOn(ScriptingApi, 'executeExtCss').mockImplementation(async (params) => {
+            extCssInjectedApply(params.cssRules, params.collectStats, EXTCSS_PROTOCOL);
+        });
+        vi.spyOn(ScriptingApi, 'disposeExtCss').mockImplementation(async () => {
+            extCssInjectedDispose(EXTCSS_PROTOCOL);
+        });
+
+        const rules = ['.ad { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(
+            makePrepared(rules),
+            { documentId: 'document-1' },
+        ));
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        const ad = document.querySelector('.ad') as HTMLElement;
+        expect(ad.style.getPropertyValue('display')).toBe('none');
+
+        // A frame context recreated for the same document — a BFCache restore,
+        // a prerender activation — holds no record of the injected instance,
+        // while the document still does. The empty rule set must dispose it.
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(
+            makePrepared([]),
+            { documentId: 'document-1' },
+        ));
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        expect(ad.style.getPropertyValue('display')).toBe('');
     });
 });
