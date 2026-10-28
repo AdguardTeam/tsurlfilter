@@ -37,9 +37,9 @@ const MARKER_NAME = '__INLINE_CSS_HITS_HELPERS__';
 
 /**
  * Transpiles the helpers module to self-contained JS — no imports, no exports.
- * The only import (`RuleInfoBasic`) is type-only and already erased, so the
- * result has no free identifiers and can be inlined into
- * `extCssInjectedApply`, whose body is serialized via `toString()` for
+ * The only imports (`RuleInfoBasic`, `IAffectedElement`) are type-only and
+ * already erased, so the result has no free identifiers and can be inlined
+ * into `extCssInjectedApply`, whose body is serialized via `toString()` for
  * `executeScript`.
  *
  * @returns Transpiled JavaScript source.

@@ -215,6 +215,51 @@ describe('CssHitsCounter', () => {
         cssHitsCounter.stop();
     });
 
+    it('keeps a content value that only mentions the marker', () => {
+        // `attr(data-adguard)` contains the marker text without being a
+        // marker: blanking it would change what the rule paints.
+        const onCssHitsFound = vi.fn();
+        const cssHitsCounter = new CssHitsCounter(onCssHitsFound);
+        onCssHitsFound.mockClear();
+
+        const rules = [{ style: { content: 'attr(data-adguard)' } }];
+        const node = document.createElement('div');
+
+        cssHitsCounter.countAffectedByExtendedCss({ rules, node });
+
+        expect(onCssHitsFound).toHaveBeenCalledWith([]);
+        expect(rules[0].style.content).toBe('attr(data-adguard)');
+
+        cssHitsCounter.stop();
+    });
+
+    it('does not share the reported hits between counters', () => {
+        // The dedupe state belongs to the counter: a counter created after
+        // `stop()` must still report the nodes the previous one counted.
+        const onFirstHitsFound = vi.fn();
+        const firstCounter = new CssHitsCounter(onFirstHitsFound);
+        const rule = { style: { content: 'adguard9%3B9' } };
+        const node = document.createElement('div');
+
+        firstCounter.countAffectedByExtendedCss({ rules: [rule], node });
+        firstCounter.stop();
+        expect(onFirstHitsFound).toHaveBeenCalledWith([
+            { filterId: 9, ruleIndex: 9, element: '<div>' },
+        ]);
+
+        const onSecondHitsFound = vi.fn();
+        const secondCounter = new CssHitsCounter(onSecondHitsFound);
+        onSecondHitsFound.mockClear();
+
+        secondCounter.countAffectedByExtendedCss({ rules: [rule], node });
+
+        expect(onSecondHitsFound).toHaveBeenCalledWith([
+            { filterId: 9, ruleIndex: 9, element: '<div>' },
+        ]);
+
+        secondCounter.stop();
+    });
+
     it('counts --adguard-hit marker without leaking marker text (AG-265)', () => {
         // Emitter output under the new design: stylesheet carries an
         // `@property` declaration and the marker is a custom property.

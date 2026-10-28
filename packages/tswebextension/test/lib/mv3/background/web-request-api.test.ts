@@ -485,4 +485,44 @@ describe('WebRequestApi MV3 onCommitted', () => {
 
         expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).not.toHaveBeenCalled();
     });
+
+    it('does not recalculate cosmetics after an ordinary navigation', () => {
+        // `onBeforeNavigate` leaves a frame context without a document id
+        // (Chrome does not set one there), so committing that same navigation
+        // must not be taken for a replaced document: the rules were already
+        // prepared for it and the tab's blocked request counter must not be
+        // reset again.
+        vi.mocked(CosmeticFrameProcessor.shouldSkipRecalculation).mockReturnValueOnce(false);
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
+            url: 'https://example.com/',
+            parentFrameId: -1,
+        } as any);
+
+        (WebRequestApi as any).onBeforeNavigate({
+            tabId: 1,
+            frameId: 0,
+            parentFrameId: -1,
+            url: 'https://example.com/',
+            timeStamp: 456,
+            documentLifecycle: DocumentLifecycle.Active,
+        });
+
+        expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).toHaveBeenCalledTimes(1);
+        vi.mocked(CosmeticFrameProcessor.precalculateCosmetics).mockClear();
+
+        (WebRequestApi as any).onCommitted({
+            tabId: 1,
+            frameId: 0,
+            parentFrameId: -1,
+            documentId: 'document-id',
+            url: 'https://example.com/',
+            timeStamp: 456,
+            documentLifecycle: DocumentLifecycle.Active,
+        });
+
+        expect(vi.mocked(tabsApi.updateFrameContext)).toHaveBeenCalledWith(1, 0, {
+            documentId: 'document-id',
+        });
+        expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).not.toHaveBeenCalled();
+    });
 });
