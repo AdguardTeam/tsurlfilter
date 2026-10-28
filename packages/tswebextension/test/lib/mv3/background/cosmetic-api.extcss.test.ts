@@ -7,7 +7,7 @@ import {
     vi,
 } from 'vitest';
 
-import { extCssInjectedApply } from '../../../../src/lib/common/extcss-apply-fn';
+import { extCssInjectedApply, extCssInjectedDispose } from '../../../../src/lib/common/extcss-apply-fn';
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
@@ -91,22 +91,22 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         });
     });
 
-    it('does not inject ExtCSS when the rule set is empty', async () => {
+    it('disposes instead of injecting when the rule set is empty', async () => {
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared([])));
 
         await CosmeticApi.applyCosmeticRules(1, 0, true);
 
         expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
-        expect(ScriptingApi.disposeExtCss).not.toHaveBeenCalled();
+        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledTimes(1);
     });
 
-    it('does not inject ExtCSS when extCssRules is null', async () => {
+    it('disposes instead of injecting when extCssRules is null', async () => {
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(null)));
 
         await CosmeticApi.applyCosmeticRules(1, 0, true);
 
         expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
-        expect(ScriptingApi.disposeExtCss).not.toHaveBeenCalled();
+        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledTimes(1);
     });
 
     it('binds the injection to the frame context document', async () => {
@@ -130,7 +130,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
     it('disposes the retained instance when the rule set becomes empty', async () => {
         const frameContext = makeFrameContext(
             makePrepared([]),
-            { documentId: 'document-1', extCssApplied: true },
+            { documentId: 'document-1' },
         );
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
 
@@ -141,19 +141,6 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
             tabId: 1,
             frameId: 0,
             documentId: 'document-1',
-        });
-        expect(frameContext.extCssApplied).toBe(false);
-    });
-
-    it('marks the document as applied after a successful injection', async () => {
-        const rules = ['div:has(.ad) { display: none !important; }'];
-        const frameContext = makeFrameContext(makePrepared(rules));
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
-
-        await CosmeticApi.applyCosmeticRules(1, 0, true);
-
-        await vi.waitFor(() => {
-            expect(frameContext.extCssApplied).toBe(true);
         });
     });
 
@@ -243,5 +230,37 @@ describe('CosmeticApi.applyCosmeticRules — end-to-end in jsdom', () => {
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
         expect(ad.style.getPropertyPriority('display')).toBe('important');
+    });
+
+    it('disposes the instance when a recreated frame context gets an empty rule set', async () => {
+        document.body.innerHTML = '<div class="ad">ad</div>';
+
+        vi.spyOn(ScriptingApi, 'executeExtCss').mockImplementation(async (params) => {
+            extCssInjectedApply(params.cssRules, params.collectStats, EXTCSS_PROTOCOL);
+        });
+        vi.spyOn(ScriptingApi, 'disposeExtCss').mockImplementation(async () => {
+            extCssInjectedDispose(EXTCSS_PROTOCOL);
+        });
+
+        const rules = ['.ad { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(
+            makePrepared(rules),
+            { documentId: 'document-1' },
+        ));
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        const ad = document.querySelector('.ad') as HTMLElement;
+        expect(ad.style.getPropertyValue('display')).toBe('none');
+
+        // A frame context recreated for the same document — a BFCache restore,
+        // a prerender activation — holds no record of the injected instance,
+        // while the document still does. The empty rule set must dispose it.
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(
+            makePrepared([]),
+            { documentId: 'document-1' },
+        ));
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        expect(ad.style.getPropertyValue('display')).toBe('');
     });
 });

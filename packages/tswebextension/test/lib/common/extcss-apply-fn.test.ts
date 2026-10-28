@@ -11,7 +11,7 @@ import {
     vi,
 } from 'vitest';
 
-import { extCssInjectedApply } from '../../../src/lib/common/extcss-apply-fn';
+import { extCssInjectedApply, extCssInjectedDispose } from '../../../src/lib/common/extcss-apply-fn';
 import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../src/lib/common/message-constants';
 
 import { resetExtCssState } from './helpers';
@@ -660,5 +660,44 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         const msg = sendMessageSpy.mock.calls[0][0] as any;
         // The serialized element must escape the " in the data-x value.
         expect(msg.payload[0].element).toBe('<div data-x="a\\"b" class="ad">');
+    });
+});
+
+describe('extCssInjectedDispose', () => {
+    it('disposes the retained instance and reverts its styles', () => {
+        document.body.innerHTML = '<div class="ad">ad</div>';
+        extCssInjectedApply(['.ad { display: none !important; }'], false, EXTCSS_PROTOCOL);
+
+        const ad = document.querySelector('.ad') as HTMLElement;
+        expect(ad.style.getPropertyValue('display')).toBe('none');
+
+        extCssInjectedDispose(EXTCSS_PROTOCOL);
+
+        expect(ad.style.getPropertyValue('display')).toBe('');
+    });
+
+    it('clears the retained instance so a second call is a no-op', () => {
+        extCssInjectedApply(['.ad { display: none !important; }'], false, EXTCSS_PROTOCOL);
+
+        const w = window as unknown as Record<string, unknown>;
+        expect(w[EXTCSS_PROTOCOL.instanceKey]).toBeTruthy();
+
+        extCssInjectedDispose(EXTCSS_PROTOCOL);
+
+        expect(w[EXTCSS_PROTOCOL.instanceKey]).toBeNull();
+        expect(() => extCssInjectedDispose(EXTCSS_PROTOCOL)).not.toThrow();
+    });
+
+    it('clears the key even when the retained dispose throws', () => {
+        const dispose = vi.fn(() => {
+            throw new Error('dispose failed');
+        });
+        const w = window as unknown as Record<string, unknown>;
+        w[EXTCSS_PROTOCOL.instanceKey] = { dispose };
+
+        expect(() => extCssInjectedDispose(EXTCSS_PROTOCOL)).not.toThrow();
+
+        expect(dispose).toHaveBeenCalledTimes(1);
+        expect(w[EXTCSS_PROTOCOL.instanceKey]).toBeNull();
     });
 });

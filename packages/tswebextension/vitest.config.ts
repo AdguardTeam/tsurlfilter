@@ -37,10 +37,12 @@ const createProjectForManifestVersion = (
             '**/test/e2e/**',
         ],
         // The ExtCSS benchmark lives in the MV3 test tree and is run by
-        // `pnpm bench`; it must not be collected by the MV2 project.
+        // `pnpm bench`; it must not be collected by the MV2 project. An empty
+        // `include` is required: `undefined` falls back to the default
+        // benchmark pattern, which ignores the `exclude` above.
         benchmark: manifestVersion === ManifestVersionEnv.Third
             ? { include: ['test/**/*.bench.ts'] }
-            : undefined,
+            : { include: [] },
     },
     // Both manifest-version projects run tests for the shared ExtCSS payload
     // and its MV2 serializer, so both need the build-time inliners.
@@ -73,6 +75,9 @@ export default defineConfig({
                         // Browser e2e specs are run via `pnpm test:e2e` (vitest --project browser).
                         '**/test/e2e/**',
                     ],
+                    // No benchmarks in this project; the default pattern would
+                    // collect the MV3 bench, which needs the MV3-only plugins.
+                    benchmark: { include: [] },
                 },
                 // The shared ExtCSS payload and its tests live in `common` and
                 // rely on the build-time inliners, as the MV3 project does.
@@ -87,6 +92,8 @@ export default defineConfig({
                     // Firefox specs run via `pnpm test:e2e:firefox`
                     // (vitest.firefox.config.ts), not in the Chromium project.
                     exclude: ['**/node_modules/**', '**/*.firefox.spec.ts'],
+                    // Same as the `common` project: no benchmarks here.
+                    benchmark: { include: [] },
                     browser: {
                         enabled: true,
                         provider: playwright(),

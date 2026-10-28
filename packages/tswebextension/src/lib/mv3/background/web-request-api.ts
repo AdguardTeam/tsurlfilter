@@ -875,20 +875,25 @@ export class WebRequestApi {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         /**
-         * A prerendered page is activated without a new precalculation: a
-         * main-frame prerender navigation is skipped in `onBeforeNavigate` and
-         * `onBeforeRequest`, so the frame context still holds the previous
-         * document's URL and prepared cosmetic result. The prepared rules
-         * belong to the document they were calculated for, so recalculate them
-         * for the committed document, otherwise the previous document's rules
-         * are injected into the activated page.
+         * A new document can be committed into a frame context that still
+         * holds the previous document's data, so that data must be dropped and
+         * the cosmetics recalculated for the committed document. Otherwise the
+         * previous document's rules are injected into it.
+         *
+         * On a prerender activation Chrome fires `onBeforeNavigate` again in
+         * frame 0 with the `active` lifecycle, so that path normally
+         * precalculates the activated page. This branch covers the cases where
+         * the precalculation was skipped: `onBeforeRequest` and
+         * `onBeforeNavigate` skip a speculative main-frame request, and
+         * `shouldSkipRecalculation` skips a navigation whose URL and timestamp
+         * match the stored context.
          *
          * Keyed on the document only: a same-document navigation keeps the
          * document id, so the prepared result stays valid there, while a new
-         * document whose URL equals the previous one — a same-URL prerender
-         * activation — is still detected. Comparing the URLs would miss it,
-         * and the two values come from different APIs (`webRequest` and
-         * `webNavigation`), so they are not guaranteed to be equal anyway.
+         * document whose URL equals the previous one is still detected.
+         * Comparing the URLs would miss it, and the two values come from
+         * different APIs (`webRequest` and `webNavigation`), so they are not
+         * guaranteed to be equal anyway.
          *
          * Only a context that already belongs to a committed document can be
          * stale: `onBeforeNavigate` and a main-frame `onBeforeRequest` carry no
@@ -902,8 +907,8 @@ export class WebRequestApi {
             && frameContext.documentId !== documentId;
 
         /**
-         * For a new document refresh the URL and the timestamp and reset the
-         * ExtCSS flag; for the same document only the document id is updated.
+         * For a new document refresh the URL and the timestamp; for the same
+         * document only the document id is updated.
          *
          * Nothing prepared for the previous document may survive into the new
          * one, so its prepared, matching and cosmetic results are dropped
@@ -920,9 +925,6 @@ export class WebRequestApi {
                     preparedCosmeticResult: undefined,
                     cosmeticResult: undefined,
                     matchingResult: undefined,
-                    // The previous document's instance is gone together with
-                    // its isolated world.
-                    extCssApplied: false,
                 }
                 : { documentId },
         );

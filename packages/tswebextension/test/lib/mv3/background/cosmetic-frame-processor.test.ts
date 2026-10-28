@@ -370,8 +370,9 @@ describe('CosmeticFrameProcessor', () => {
                 documentLifecycle: DocumentLifecycle.Active,
             });
 
-            // ExtCSS rules are computed without hits markers (CSS-hits reporting
-            // is a later slice) and with isNativeHasSupported always true for MV3.
+            // ExtCSS rules carry no hits markers when stats collection is off
+            // (the next suite covers the stats-on case), and isNativeHasSupported
+            // is always true for MV3.
             expect(vi.mocked(CosmeticApi.getExtCssRules)).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.objectContaining({
