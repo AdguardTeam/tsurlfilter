@@ -2,6 +2,7 @@ import * as z from 'zod';
 
 import { type FilterListConversionError } from '@adguard/tsurlfilter';
 
+import { type RegistrationResult } from '../../common/canvas-protection/contracts';
 import { basicFilterValidator, configurationValidator } from '../../common/configuration';
 
 /**
@@ -52,4 +53,5 @@ export type ConfigurationMV2Context =
  */
 export type ConfigurationResultMV2 = {
     conversionErrors: readonly FilterListConversionError[];
+    canvasProtection?: RegistrationResult;
 };

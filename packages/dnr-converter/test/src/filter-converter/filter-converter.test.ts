@@ -106,7 +106,7 @@ describe('FilterConverter', () => {
 
             const declarativeRules = ruleset.getDeclarativeRules();
             expect(errors).toHaveLength(0);
-            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules).toHaveLength(2);
             expect(declarativeRules[0].action).toEqual({
                 type: 'redirect',
                 redirect: {
@@ -117,6 +117,12 @@ describe('FilterConverter', () => {
             });
             expect(declarativeRules[0].condition.initiatorDomains).toEqual(['example.org']);
             expect(declarativeRules[0].condition.resourceTypes).toEqual(['main_frame', 'sub_frame']);
+            expect(declarativeRules[1].action).toEqual(declarativeRules[0].action);
+            expect(declarativeRules[1].condition).toMatchObject({
+                requestDomains: ['example.org'],
+                resourceTypes: ['main_frame'],
+            });
+            expect(declarativeRules[1].condition.initiatorDomains).toBeUndefined();
         });
 
         it('converts $removeparam with a value into a query transform', async () => {
@@ -202,6 +208,29 @@ describe('FilterConverter', () => {
 
             expect(errors).toHaveLength(0);
             expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('adds a main_frame rule that matches $domain against the request URL for a $csp rule', async () => {
+            const filter = createFilter(["*$document,csp=script-src-attr 'none',domain=example.org"]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(2);
+
+            const initiatorRule = declarativeRules.find((rule) => rule.condition.initiatorDomains);
+            expect(initiatorRule?.condition).toMatchObject({
+                initiatorDomains: ['example.org'],
+                resourceTypes: ['main_frame'],
+            });
+
+            const targetRule = declarativeRules.find((rule) => rule.condition.requestDomains);
+            expect(targetRule?.condition).toMatchObject({
+                requestDomains: ['example.org'],
+                resourceTypes: ['main_frame'],
+            });
+            expect(targetRule?.condition.initiatorDomains).toBeUndefined();
+            expect(targetRule?.action).toEqual(initiatorRule?.action);
         });
 
         it.each([
@@ -489,18 +518,18 @@ describe('FilterConverter', () => {
         });
 
         it.each([
-            '||bing.com/search$removeparam=cvid',
-            '$removeparam=cvid,domain=bing.com',
-            '||bing.com/search^$removeparam',
-            '||bing.com/search^$removeparam=cvid|form',
-            '||bing.com/search*^$removeparam=cvid',
-            '||bing.com/search?q=adguard^$removeparam=cvid',
-            '||bing.com/search#fragment^$removeparam=cvid',
-            '||bing.com/search^path^$removeparam=cvid',
-        ])('keeps unaffected %s rules within the non-regex rule quota', async (rule) => {
+            ['||bing.com/search$removeparam=cvid', 1],
+            ['$removeparam=cvid,domain=bing.com', 2],
+            ['||bing.com/search^$removeparam', 1],
+            ['||bing.com/search^$removeparam=cvid|form', 1],
+            ['||bing.com/search*^$removeparam=cvid', 1],
+            ['||bing.com/search?q=adguard^$removeparam=cvid', 1],
+            ['||bing.com/search#fragment^$removeparam=cvid', 1],
+            ['||bing.com/search^path^$removeparam=cvid', 1],
+        ])('keeps %s rules within the non-regex rule quota', async (rule, expectedRulesCount) => {
             const [{ ruleset, errors }] = await converter.convert([createFilter([rule])]);
             expect(errors).toEqual([]);
-            expect(ruleset.getDeclarativeRules()).toHaveLength(1);
+            expect(ruleset.getDeclarativeRules()).toHaveLength(expectedRulesCount);
             expect(ruleset.getRegexpRulesCount()).toBe(0);
         });
 

@@ -20,10 +20,12 @@ enum UniversalStealthOption {
     IP = 'ip',
     XClientData = 'xclientdata',
     DPI = 'dpi',
+    Fingerprinting = 'fingerprinting',
 }
 
 /**
  * List of stealth options, supported by browser extension, which can be disabled by $stealth modifier.
+ * The fingerprinting option disables fingerprinting protection.
  *
  * Following stealth options are initialized on the engine start
  * and can't be disabled via $stealth modifier:
@@ -38,6 +40,7 @@ export enum StealthOptionName {
     XClientData = 'xclientdata',
     FirstPartyCookies = '1p-cookie',
     ThirdPartyCookies = '3p-cookie',
+    Fingerprinting = 'fingerprinting',
 }
 
 const StealthModifierOptions = new Set(Object.values(StealthOptionName));
@@ -51,6 +54,7 @@ const StealthOption = {
     [StealthOptionName.XClientData]: 1 << 3,
     [StealthOptionName.FirstPartyCookies]: 1 << 4,
     [StealthOptionName.ThirdPartyCookies]: 1 << 5,
+    [StealthOptionName.Fingerprinting]: 1 << 6,
 } as const;
 
 /**

@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added opt-in canvas protection for Chromium MV3, Chromium MV2 and Firefox
+  MV2 with `stealth.protectCanvas` and methods to update protection.
+  Exceptions are compiled from filter rules and the allowlist, including
+  `$stealth=fingerprinting` and `$document`, with host boundaries preserved
+  and inverted wildcard entries covering one level below the domain, as frame
+  matching does. The filtering log shows the `$stealth` exception that keeps
+  a document native [AdguardBrowserExtension#3475].
+
 ### Changed
 
 - Updated `@types/webextension-polyfill` to `0.12.6`, which adds Firefox 153+
@@ -32,6 +40,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CssHitsCounter` now applies its documented `elementToString` default
   (`true`) when the option is omitted or `undefined`; previously an options
   object without this property disabled element stringification.
+- In MV3, `$domain` did not match the target hostname of a document request.
+  A document request started by the browser (new tab page, address bar,
+  bookmark, reload) has no initiator, so a rule such as
+  `*$document,csp=script-src-attr 'none',domain=example.com` did not work on the
+  first page load. The conversion now adds a `main_frame` rule with
+  `requestDomains` for such rules. Affected rules now consume two declarative
+  rules, and two regex-rule slots when a `$removeparam` rule generates a
+  regexp, so they count against the rule and regex budgets.
 - In MV3, static filters, custom filters and user rules were handed to the
   converter already converted by the extension, so `$badfilter` rules from those
   sources were compared by the converted text instead of the text as written and
@@ -44,8 +60,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   request classification for such hosts.
 - Browsing session from incognito window sometimes leaks to normal window when
   "delete third-party cookies" option is enabled [AdguardBrowserExtension#3553].
+- Inverted allowlist entries with uppercase letters not matching their sites.
+- `$stealth` exception rules shown as `<dynamic rule text is not specified>`
+  instead of their text in the MV3 filtering log.
 
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
+[AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
 [AdguardBrowserExtension#3553]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3553
 
