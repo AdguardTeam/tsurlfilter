@@ -1,6 +1,7 @@
 import { Filter, type IFilter } from '@adguard/dnr-converter';
 
 import { EXTCSS_PROTOCOL } from '../../../src/lib/common/message-constants';
+import { extCssInjectedDispose } from '../../../src/lib/mv3/background/extcss-apply-fn';
 
 export const createFilter = (
     rules: string[],
@@ -10,34 +11,15 @@ export const createFilter = (
 };
 
 /**
- * ExtendedCss instance retained on `window` by the injected function.
- */
-type RetainedExtCss = {
-    /**
-     * Reverts the applied styles and disconnects the instance's observers.
-     */
-    dispose(): void;
-};
-
-/**
  * Disposes the ExtendedCss instance retained in the shared jsdom `window` by
  * `extCssInjectedApply`, forgets it, and clears the DOM.
  *
- * The jsdom `window` is shared by every test in a file, so a retained instance
- * (and its MutationObserver) would otherwise leak into the next test.
+ * Calls the production disposal function, so the helper cannot drift from the
+ * body that runs in the page. The jsdom `window` is shared by every test in a
+ * file, so a retained instance (and its MutationObserver) would otherwise leak
+ * into the next test.
  */
 export const resetExtCssState = (): void => {
-    const w = window as unknown as Record<string, RetainedExtCss | null | undefined>;
-    const handle = w[EXTCSS_PROTOCOL.instanceKey];
-
-    if (handle) {
-        try {
-            handle.dispose();
-        } catch {
-            // ignore
-        }
-    }
-
-    w[EXTCSS_PROTOCOL.instanceKey] = null;
+    extCssInjectedDispose(EXTCSS_PROTOCOL);
     document.body.innerHTML = '';
 };

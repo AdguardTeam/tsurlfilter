@@ -432,7 +432,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * between queueing and executing it cannot apply the rules to a different
      * document. When there are no matching rules (empty or null), nothing is
      * applied; an instance already injected into this document is disposed
-     * instead, so a stale instance cannot stay active.
+     * instead, so a stale instance cannot stay active. The disposal is
+     * unconditional, because only the document itself knows whether it holds
+     * an instance.
      *
      * Errors are caught and logged, so restricted pages must not disrupt the
      * extension. When `areHitsStatsCollected` is true, the rules carry hits
@@ -459,20 +461,14 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         try {
             if (!extCssRules || extCssRules.length === 0) {
-                // Nothing was injected into this document, so the disposal
-                // would be a guaranteed no-op cross-process call.
-                if (!frameContext.extCssApplied) {
-                    return;
-                }
-
-                // Dispose the previously retained instance: the rule set is
-                // empty for this document, so its observer and styles must not
-                // stay active.
+                // Dispose unconditionally: the instance lives in the
+                // document's isolated world, while the frame context can be
+                // recreated for a document that already received one — a
+                // BFCache restore, a prerender activation. Nothing in the
+                // background knows whether this document still holds an
+                // instance, and the injected function is a no-op when it does
+                // not.
                 await ScriptingApi.disposeExtCss({ tabId, frameId, documentId });
-
-                // Nothing is retained in the document anymore, so a subsequent
-                // empty apply must not dispose again.
-                frameContext.extCssApplied = false;
 
                 return;
             }
@@ -484,9 +480,6 @@ export class CosmeticApi extends CosmeticApiCommon {
                 cssRules: extCssRules,
                 collectStats: areHitsStatsCollected,
             });
-
-            // The instance is now retained in the document's isolated world.
-            frameContext.extCssApplied = true;
         } catch (e) {
             logger.info(`[tsweb.CosmeticApi.applyExtCssRules]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
         }

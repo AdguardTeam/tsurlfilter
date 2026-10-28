@@ -78,20 +78,4 @@ export class FrameMV3 extends FrameCommon {
      * and may not be available immediately, but it should be available.
      */
     public preparedCosmeticResult?: PreparedCosmeticResultMV3;
-
-    /**
-     * Whether an ExtendedCSS instance was injected into the current document's
-     * isolated world by the background.
-     *
-     * Needed to avoid a guaranteed no-op cross-process `disposeExtCss` call
-     * for every committed frame of every navigation: the disposal is injected
-     * only if something was actually applied to this document.
-     *
-     * The frame context is recreated on most navigations, which resets the
-     * flag. When a new document is committed into a frame context that was not
-     * recreated — a prerender activation, or a navigation whose precalculation
-     * was skipped — `WebRequestApi.onCommitted` resets the flag explicitly,
-     * because the previous document's isolated world is gone with it.
-     */
-    public extCssApplied = false;
 }

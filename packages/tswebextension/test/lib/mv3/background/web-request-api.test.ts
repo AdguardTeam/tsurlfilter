@@ -341,17 +341,16 @@ describe('WebRequestApi MV3 onCommitted', () => {
         vi.spyOn(CosmeticApi, 'applyCosmeticRules').mockResolvedValue([]);
     });
 
-    it('recalculates cosmetics when a prerendered page is activated', () => {
-        // A prerender activation reuses the frame context of the previous
-        // document: no new context is created because prerender main-frame
-        // navigations are skipped, and `onCommitted` only overwrites
-        // documentId. Without the recalculation the previous document's
-        // prepared rules are injected into the activated page.
+    it('recalculates cosmetics when a new document reuses the frame context', () => {
+        // A new document can reuse the frame context of the previous one: the
+        // precalculation is skipped for a speculative main-frame request, and
+        // `shouldSkipRecalculation` skips a navigation whose URL and timestamp
+        // match the stored context. Without the recalculation the previous
+        // document's prepared rules are injected into the new document.
         vi.mocked(tabsApi.getFrameContext).mockReturnValue({
             url: 'https://previous.example/',
             documentId: 'previous-document-id',
             parentFrameId: 2,
-            extCssApplied: true,
         } as any);
 
         (WebRequestApi as any).onCommitted({
@@ -371,7 +370,6 @@ describe('WebRequestApi MV3 onCommitted', () => {
             preparedCosmeticResult: undefined,
             cosmeticResult: undefined,
             matchingResult: undefined,
-            extCssApplied: false,
         });
         expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -386,14 +384,12 @@ describe('WebRequestApi MV3 onCommitted', () => {
     });
 
     it('recalculates cosmetics for a new document with the same URL', () => {
-        // A same-URL prerender activation reuses the frame context too: the
+        // A new document with the same URL reuses the frame context too: the
         // URL is unchanged, but the document and its isolated world are not,
-        // so the prepared result and the ExtCSS flag belong to the previous
-        // document.
+        // so the prepared result belongs to the previous document.
         vi.mocked(tabsApi.getFrameContext).mockReturnValue({
             url: 'https://example.com/',
             documentId: 'previous-document-id',
-            extCssApplied: true,
         } as any);
 
         (WebRequestApi as any).onCommitted({
@@ -413,7 +409,6 @@ describe('WebRequestApi MV3 onCommitted', () => {
             preparedCosmeticResult: undefined,
             cosmeticResult: undefined,
             matchingResult: undefined,
-            extCssApplied: false,
         });
         expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).toHaveBeenCalled();
     });

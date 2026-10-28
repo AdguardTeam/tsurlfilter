@@ -98,10 +98,10 @@ export const extCssInjectedApply = (
     // unresolved free identifier in the page's ISOLATED world.
     const previous = w[protocol.instanceKey];
     const previousRules = previous?.cssRules;
-    // The inlined helpers create their default dedupe state on every
-    // injection, so it is retained on the instance and passed explicitly.
-    // Nodes reported before a re-apply are skipped, while nodes matched for
-    // the first time by the new instance are still reported.
+    // The inlined helpers keep no state between injections, so the dedupe map
+    // is created here, retained on the instance and passed explicitly. Nodes
+    // reported before a re-apply are skipped, while nodes matched for the
+    // first time by the new instance are still reported.
     const countedHits = previous?.countedHits ?? new WeakMap<Element, Set<string>>();
 
     /**
