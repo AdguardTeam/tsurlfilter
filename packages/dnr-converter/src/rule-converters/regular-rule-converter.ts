@@ -189,6 +189,20 @@ export class RegularRuleConverter {
     private static readonly WILDCARD_TLD = `${DOT}${MASK_ANY_CHARACTER}`;
 
     /**
+     * Pattern prefixes that target a specific domain.
+     *
+     * AdGuard matches the `$domain` modifier against the target hostname of
+     * a document request when the pattern is not domain-specific, or when the
+     * `$domain` list contains only excluded domains. This mirrors
+     * `NetworkRule.matchDomainModifier()` and
+     * `Pattern.isPatternDomainSpecific()` in `@adguard/tsurlfilter`.
+     *
+     * @see {@link https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tsurlfilter/src/rules/network-rule.ts | NetworkRule.matchDomainModifier()}
+     * @see {@link https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tsurlfilter/src/rules/pattern.ts | Pattern.isPatternDomainSpecific()}
+     */
+    private static readonly DOMAIN_SPECIFIC_PATTERN_PREFIXES = [ADBLOCK_URL_START, 'http://', 'https:/', '://'];
+
+    /**
      * String path to web accessible resources, relative to the extension root dir.
      * Should start with leading slash and end without trailing slash (`'/'`).
      */
@@ -229,6 +243,22 @@ export class RegularRuleConverter {
     }
 
     /**
+     * Checks whether a domain from a network rule modifier can be represented
+     * in a DNR condition.
+     *
+     * @param domain Domain to check.
+     *
+     * @returns `true` if DNR supports the domain.
+     */
+    private static isRepresentableDomain(domain: string): boolean {
+        return !isRegexPattern(domain)
+            && (
+                !domain.includes(MASK_ANY_CHARACTER)
+                || RegularRuleConverter.isWildcardTldDomain(domain)
+            );
+    }
+
+    /**
      * Prepares domains for DNR condition arrays.
      *
      * Regex and non-TLD wildcard domains are not representable in DNR and are
@@ -241,7 +271,7 @@ export class RegularRuleConverter {
      */
     private static prepareDeclarativeDomains(domains: string[] | null | undefined): string[] {
         const expandedDomains = domains?.flatMap((domain) => {
-            if (isRegexPattern(domain)) {
+            if (!RegularRuleConverter.isRepresentableDomain(domain)) {
                 return [];
             }
 
@@ -249,14 +279,22 @@ export class RegularRuleConverter {
                 return RegularRuleConverter.expandWildcardTldDomain(domain);
             }
 
-            if (domain.includes(MASK_ANY_CHARACTER)) {
-                return [];
-            }
-
             return [domain];
         }) ?? [];
 
         return [...new Set(toASCII(expandedDomains))];
+    }
+
+    /**
+     * Checks whether every domain from a network rule modifier can be
+     * represented in a DNR condition.
+     *
+     * @param domains Domains from network rule modifier.
+     *
+     * @returns `true` if every domain is supported by DNR.
+     */
+    private static areDomainsRepresentable(domains: string[] | null | undefined): boolean {
+        return domains?.every((domain) => RegularRuleConverter.isRepresentableDomain(domain)) ?? true;
     }
 
     /**
@@ -902,6 +940,148 @@ export class RegularRuleConverter {
     }
 
     /**
+     * Builds the additional `main_frame` rule when the `$domain` modifier
+     * must also match the target hostname of a document request.
+     *
+     * Chrome matches `initiatorDomains` against the request initiator only,
+     * and a document request started by the browser (new tab page, address
+     * bar, bookmark, reload) has no initiator. AdGuard matches `$domain`
+     * against the target hostname for document requests when the pattern is
+     * not domain-specific, or when the `$domain` list contains only excluded
+     * domains, so the additional rule keeps the same behavior.
+     *
+     * @param rule Source {@link Rule}.
+     * @param declarativeRule Converted {@link DeclarativeRule}.
+     * @param usedIds Set with already used IDs to exclude duplications in IDs.
+     *
+     * @returns Additional {@link DeclarativeRule}, or `null` when the
+     * additional rule is not needed.
+     */
+    private static buildTargetDomainRule(
+        rule: Rule,
+        declarativeRule: DeclarativeRule,
+        usedIds: Set<number>,
+    ): DeclarativeRule | null {
+        const targetDomainCondition = RegularRuleConverter.getTargetDomainCondition(rule, declarativeRule);
+
+        if (!targetDomainCondition) {
+            return null;
+        }
+
+        return {
+            id: RegularRuleConverter.generateId(rule, usedIds),
+            action: JSON.parse(JSON.stringify(declarativeRule.action)) as RuleAction,
+            condition: targetDomainCondition,
+            priority: declarativeRule.priority,
+        };
+    }
+
+    /**
+     * Builds the condition of the additional `main_frame` rule that matches
+     * the `$domain` modifier against the request URL hostname.
+     *
+     * Note: for a `$domain` list with only excluded domains, the original
+     * rule still matches a browser-initiated document request to an excluded
+     * domain, because DNR has no condition for a missing initiator. AdGuard
+     * does not match that request.
+     *
+     * @param rule Source {@link Rule}.
+     * @param declarativeRule Converted {@link DeclarativeRule}.
+     *
+     * @returns Condition for the additional rule, or `null` when the
+     * additional rule is not needed.
+     */
+    private static getTargetDomainCondition(
+        rule: Rule,
+        declarativeRule: DeclarativeRule,
+    ): RuleCondition | null {
+        /**
+         * DNR cannot express "first party or no initiator". Chrome treats a
+         * request without an initiator as third-party, while MV2 treats it as
+         * first-party, so the additional rule would widen a `$third-party`
+         * or a `$~third-party` rule. Skip it in this case.
+         */
+        if (declarativeRule.condition.domainType) {
+            return null;
+        }
+
+        const permittedDomains = declarativeRule.condition.initiatorDomains ?? [];
+        const excludedDomains = declarativeRule.condition.excludedInitiatorDomains ?? [];
+
+        if (permittedDomains.length === 0 && excludedDomains.length === 0) {
+            return null;
+        }
+
+        /**
+         * Every domain condition must be fully representable in the
+         * additional rule. Otherwise it would drop a constraint that the
+         * source rule has and match requests the source rule does not.
+         */
+        if (
+            !RegularRuleConverter.areDomainsRepresentable(rule.permittedDomains)
+            || !RegularRuleConverter.areDomainsRepresentable(rule.restrictedDomains)
+            || !RegularRuleConverter.areDomainsRepresentable(rule.permittedToDomains)
+            || !RegularRuleConverter.areDomainsRepresentable(rule.restrictedToDomains)
+            || !RegularRuleConverter.areDomainsRepresentable(rule.denyAllowDomains)
+        ) {
+            return null;
+        }
+
+        /**
+         * A permitted `$to` also sets `requestDomains`, and the additional
+         * rule would replace them with the `$domain` domains. `$denyallow`
+         * and a negated `$to` only add `excludedRequestDomains`, which the
+         * additional rule merges.
+         */
+        if ((rule.permittedToDomains?.length ?? 0) > 0 && permittedDomains.length > 0) {
+            return null;
+        }
+
+        if (!declarativeRule.condition.resourceTypes?.includes(ResourceType.MainFrame)) {
+            return null;
+        }
+
+        /**
+         * AdGuard matches the target hostname for a document request when
+         * the pattern is not domain-specific or when the `$domain` list
+         * contains only excluded domains.
+         */
+        const hasOnlyExcludedDomains = permittedDomains.length === 0 && excludedDomains.length > 0;
+        if (
+            !hasOnlyExcludedDomains
+            && (
+                rule.isRegexRule()
+                || RegularRuleConverter.DOMAIN_SPECIFIC_PATTERN_PREFIXES.some(
+                    (prefix) => rule.pattern.startsWith(prefix),
+                )
+            )
+        ) {
+            return null;
+        }
+
+        const condition: RuleCondition = {
+            ...declarativeRule.condition,
+            resourceTypes: [ResourceType.MainFrame],
+        };
+
+        delete condition.initiatorDomains;
+        delete condition.excludedInitiatorDomains;
+
+        if (permittedDomains.length > 0) {
+            condition.requestDomains = [...permittedDomains];
+        }
+
+        if (excludedDomains.length > 0) {
+            condition.excludedRequestDomains = Array.from(new Set([
+                ...(condition.excludedRequestDomains ?? []),
+                ...excludedDomains,
+            ]));
+        }
+
+        return condition;
+    }
+
+    /**
      * Verifies whether the converted {@link DeclarativeRule}:
      * - has non-empty resource types,
      * - has non-empty initiator domains if the original rule has permitted domains,
@@ -1026,14 +1206,26 @@ export class RegularRuleConverter {
                     return;
                 }
 
-                // Convert rule and collect source map value
-                const converted = await this.convertRule(id, rule);
-                res.sourceMapValues.push({
-                    declarativeRuleId: converted.id,
-                    sourceRuleIndex: index,
-                    filterId: filterListId,
+                // Convert rule and collect source map values
+                const declarativeRule = await this.convertRule(id, rule);
+                const convertedRules = [declarativeRule];
+                const targetDomainRule = RegularRuleConverter.buildTargetDomainRule(
+                    rule,
+                    declarativeRule,
+                    usedIds,
+                );
+                if (targetDomainRule) {
+                    convertedRules.push(targetDomainRule);
+                }
+
+                convertedRules.forEach((converted) => {
+                    res.sourceMapValues.push({
+                        declarativeRuleId: converted.id,
+                        sourceRuleIndex: index,
+                        filterId: filterListId,
+                    });
+                    res.declarativeRules.push(converted);
                 });
-                res.declarativeRules.push(converted);
             } catch (e) {
                 const err = RegularRuleConverter.catchConversionError(index, id, e);
                 res.errors.push(err);

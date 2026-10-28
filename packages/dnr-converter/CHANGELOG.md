@@ -20,6 +20,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `$domain` did not match the target hostname of a document request. Chrome
+  matches `initiatorDomains` against the request initiator only, and a document
+  request started by the browser (new tab page, address bar, bookmark, reload)
+  has no initiator. A rule such as
+  `*$document,csp=script-src-attr 'none',domain=example.com` now
+  also produces a `main_frame` rule with `requestDomains`, so it works on the
+  first page load, as it does in MV2. The additional rule is not created when
+  the rule does not target `main_frame`, when the rule has `$third-party` or
+  `$~third-party`, when a permitted `$to` and a permitted `$domain` are both
+  present, or when a `$domain`, `$to`, or `$denyallow` value cannot be
+  represented in DNR. A `$domain` with permitted domains still needs a
+  non-domain-specific, non-regexp pattern, as in the MV2 matcher.
+  `$urltransform` rules do not get the additional rule: a `$domain` with
+  permitted domains does not match browser-started navigations, while an
+  excluded-only `$domain` still matches them through the base rule.
+  Affected rules now consume two declarative rules, and two regex-rule slots
+  when a `$removeparam` rule generates a regexp, so they count against the
+  rule and regex budgets.
 - `$badfilter` incorrectly negated rules with different values of value-bearing
   modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
   `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when
