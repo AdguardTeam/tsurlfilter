@@ -1168,6 +1168,7 @@ export interface PseudoClassSelector extends Node {
      * Optional argument of the pseudo-class selector.
      * If not specified, the pseudo-class is not callable (e.g., `:hover`).
      * If specified, the pseudo-class is callable (e.g., `:nth-child(2n+1)`).
+     * The value is the raw text between the parentheses, not trimmed.
      */
     argument?: Value;
 }

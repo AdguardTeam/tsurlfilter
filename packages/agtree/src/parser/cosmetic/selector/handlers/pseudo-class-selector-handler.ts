@@ -4,7 +4,6 @@ import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 
 import { AdblockSyntaxError } from '../../../../errors/adblock-syntax-error';
 import { type PseudoClassSelector } from '../../../../nodes';
-import { EMPTY } from '../../../../utils/constants';
 import { ValueParser } from '../../../misc/value-parser';
 import { type SelectorListParserContext } from '../context';
 
@@ -84,57 +83,42 @@ export class PseudoClassSelectorHandler {
             // Save the function token's balance level for finding the matching close parenthesis
             const functionBalance = stream.getBalance();
 
+            // The argument is the raw text between the parentheses, with no
+            // trimming (CoreLibs parity), so it starts right after the
+            // opening parenthesis, whitespace included.
+            const argumentStart = token.end;
+
             // Advance pseudo-class selector name token
             stream.advance();
 
-            // Get pseudo-class selector argument token (the first token after the opening parenthesis)
+            // Skip to the closing parenthesis at the matching balance level.
+            // `skipUntilBalanced` cannot be used here: it skips until the
+            // balance of the *current* token minus one, while the current
+            // token may be nested deeper than the function (e.g. `[` in
+            // `:not([class])` has balance 2), so it would stop at the inner
+            // `]` instead of the closing `)`.
+            stream.skipUntil(TokenType.CloseParenthesis, functionBalance - 1);
+
+            // Get closing parenthesis token
             token = stream.getOrFail();
 
-            // Construct empty pseudo-class selector argument node by default
+            // The argument ends right before the closing parenthesis
+            const argumentEnd = token.start;
+
+            // Extract pseudo-class selector argument raw value (not trimmed)
+            // TODO: Consider parsing inner selectors (like :not(.class))
+            const argumentRaw = raw.slice(argumentStart, argumentEnd);
+
+            // Specify pseudo-class selector argument node value
             result.argument = {
                 type: 'Value',
-                value: EMPTY,
+                value: argumentRaw,
             };
 
             // Include pseudo-class selector argument node location if needed
             if (options.isLocIncluded) {
-                result.argument.start = baseOffset + token.start;
-                result.argument.end = baseOffset + token.start;
-            }
-
-            // The argument is the raw text between the parentheses, with no
-            // trimming (CoreLibs parity), so it starts right after the opening
-            // parenthesis, whitespace included.
-            const argumentStart = token.start;
-
-            // Check if there is any argument part
-            if (token.type !== TokenType.CloseParenthesis) {
-                // Use the function token's balance level to find the matching closing parenthesis
-                const balance = functionBalance;
-
-                // Skip to the closing parenthesis at the matching balance level
-                while (stream.get()?.balance !== balance - 1) {
-                    stream.advance();
-                }
-
-                // Get closing parenthesis token
-                token = stream.getOrFail();
-
-                // The argument ends right before the closing parenthesis
-                const argumentEnd = token.start;
-
-                // Extract pseudo-class selector argument raw value (not trimmed)
-                // TODO: Consider parsing inner selectors (like :not(.class))
-                const argumentRaw = raw.slice(argumentStart, argumentEnd);
-
-                // Specify pseudo-class selector argument node value
-                result.argument.value = argumentRaw;
-
-                // Include pseudo-class selector argument node location if needed
-                if (options.isLocIncluded) {
-                    result.argument.start = baseOffset + argumentStart;
-                    result.argument.end = baseOffset + argumentEnd;
-                }
+                result.argument.start = baseOffset + argumentStart;
+                result.argument.end = baseOffset + argumentEnd;
             }
 
             // Expect close parenthesis token
