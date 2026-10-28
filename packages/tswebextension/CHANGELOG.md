@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Filtering log now records CSS hits for elements that pages add and remove
+  while the page is loading, e.g. anti-adblock bait elements created by a
+  script in `<head>`.
+- `CssHitsCounter` now applies its documented `elementToString` default
+  (`true`) when the option is omitted or `undefined`; previously an options
+  object without this property disabled element stringification.
 - In MV3, `$domain` did not match the target hostname of a document request.
   A document request started by the browser (new tab page, address bar,
   bookmark, reload) has no initiator, so a rule such as
