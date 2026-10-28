@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTML filtering rules with `:-abp-contains()` and `:has-text()` now work,
+  and HTML filtering rules with an empty `:contains()` argument are now
+  rejected (via [@adguard/tsurlfilter]).
+
 ### Security
 
 ## [6.0.1] - 2026-10-15

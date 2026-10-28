@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Empty `:contains()` arguments in HTML filtering rules are now rejected.
+- `:-abp-contains()` and `:has-text()` are now treated as aliases of
+  `:contains()` in HTML filtering rules.
+
 ### Security
 
 ## [6.0.4] - 2026-10-15
