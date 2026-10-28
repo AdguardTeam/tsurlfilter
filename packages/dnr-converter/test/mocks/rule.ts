@@ -142,16 +142,6 @@ interface CreateRuleMockOptions {
      * @returns The hash number.
      */
     getRuleTextHash?: (salt?: number) => number;
-
-    /**
-     * Returns `true` if this rule negates the `ruleToCheck`.
-     * Only makes sense when this rule has a `$badfilter` modifier.
-     *
-     * @param ruleToCheck Rule to check.
-     *
-     * @returns `true` if this rule negates the specified rule, `false` otherwise.
-     */
-    negatesBadfilter?: (rule: Rule) => boolean;
 }
 
 /**
@@ -205,7 +195,6 @@ export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
 
             return fastHash31(trialText);
         },
-        negatesBadfilter = () => false,
     } = options;
 
     const enabledOptionsSet = new Set<string>(enabledOptions);
@@ -256,10 +245,5 @@ export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
                 ? requestHeaderNameToRemove
                 : responseHeaderNameToRemove
         ),
-        negatesBadfilter,
-        withPermittedDomains: (domains: readonly string[]) => createRuleMock({
-            ...options,
-            permittedDomains: [...domains],
-        }),
     } as unknown as Rule;
 }
