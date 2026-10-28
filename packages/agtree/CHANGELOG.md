@@ -52,6 +52,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `[tag-content]` values are now emitted raw during ADG→ADG conversion:
+  quotes within the value (e.g. `[tag-content='"advert"']` →
+  `:contains("advert")`) are literal characters of the text to match,
+  not a transport encoding to strip later, mirroring CoreLibs.
 - AdGuard HTML filtering rules whose bodies cannot be parsed as CSS
   selector lists, even leniently, are now kept as-is during conversion
   instead of throwing a parse error, e.g. `[tag-content]` with escaped
