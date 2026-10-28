@@ -578,7 +578,12 @@ export class RulesConverter {
     }
 
     /**
-     * Filters rules that have been affected by `$badfilter` rules and groups them by modifiers.
+     * Applies `$badfilter` rules to the scanned rules and groups the result by
+     * modifiers.
+     *
+     * A rule that a badfilter cancels completely is dropped. A rule that a
+     * badfilter cancels only partly keeps the remaining domains of its permitted
+     * `$domain` list and excludes the domains that the kept entries still cover.
      *
      * @param scannedFilters List of {@link ScannedFilter}.
      *
@@ -596,12 +601,21 @@ export class RulesConverter {
             return tuple;
         });
 
+        // A badfilter rule can only negate a rule with the same pattern, so a
+        // rule only needs the badfilters with its own pattern hash.
+        const badFilterRulesByHash = RulesConverter.groupBadFilterRulesByHash(allBadFilterRules);
+
         // Define the badfilter function: it drops a fully cancelled rule and
         // narrows the `$domain` list of a partly cancelled one.
-        const applyBadFilterFn = (ruleToTest: Rule): Rule | null => Rule.applyBadfilters(
-            ruleToTest,
-            allBadFilterRules,
-        );
+        const applyBadFilterFn = (ruleToTest: Rule): Rule | null => {
+            const matchingBadFilterRules = badFilterRulesByHash.get(ruleToTest.hash);
+
+            if (!matchingBadFilterRules) {
+                return ruleToTest;
+            }
+
+            return Rule.applyBadfilters(ruleToTest, matchingBadFilterRules);
+        };
 
         // For each group of filters' rules apply the badfilter function
         return filterIdsWithGroupedRules.map(([filterId, groupedRules]) => {
@@ -627,5 +641,31 @@ export class RulesConverter {
 
             return [filterId, filtered];
         });
+    }
+
+    /**
+     * Groups `$badfilter` rules by pattern hash.
+     *
+     * A badfilter rule can only negate a rule with the same pattern, so a rule
+     * only needs the badfilters with its own hash.
+     *
+     * @param badFilterRules Rules that carry the `$badfilter` modifier.
+     *
+     * @returns Map from pattern hash to the badfilter rules with that hash.
+     */
+    private static groupBadFilterRulesByHash(badFilterRules: readonly Rule[]): Map<number, Rule[]> {
+        const result: Map<number, Rule[]> = new Map();
+
+        badFilterRules.forEach((rule) => {
+            const existing = result.get(rule.hash);
+
+            if (existing) {
+                existing.push(rule);
+            } else {
+                result.set(rule.hash, [rule]);
+            }
+        });
+
+        return result;
     }
 }

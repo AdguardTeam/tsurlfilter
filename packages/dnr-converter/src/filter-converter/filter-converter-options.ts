@@ -67,7 +67,8 @@ export interface SourceMapConverterOptions extends BaseFilterConverterOptions {
      * rulesets (via {@link IRulesetWithSourceMap.getBadFilterRules}).
      *
      * When provided, `convert()` builds an internal hash map from these rules
-     * and skips any dynamic rules that are negated by them **before** conversion
+     * and drops any dynamic rules that they cancel completely, or narrows the
+     * `$domain` list of a partly cancelled rule, **before** conversion
      * (scan-time skip). This avoids the N-to-1 grouping problem that would
      * arise if the skip were applied post-conversion.
      *
