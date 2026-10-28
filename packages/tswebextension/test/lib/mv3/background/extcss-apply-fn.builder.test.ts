@@ -117,10 +117,10 @@ describe('extcss-inject-src entry point', () => {
     it('returns the created ExtendedCss instance (retained for disposal)', () => {
         const instance = applyExtendedCss(['.ad { display: none !important; }']);
 
-        // The returned value must BE the constructed instance — applyExtCss
-        // retains it on `window` and later calls dispose() on it. (Cast: at
-        // runtime this is the mocked class above, not the real ExtendedCss
-        // type that TypeScript sees.)
+        // The returned value must BE the constructed instance —
+        // `extCssInjectedApply` retains it on `window` and later calls
+        // dispose() on it. (Cast: at runtime this is the mocked class above,
+        // not the real ExtendedCss type that TypeScript sees.)
         const mocked = instance as unknown as { config: unknown; init: unknown; apply: unknown };
         expect(mocked.config).toEqual({
             cssRules: ['.ad { display: none !important; }'],
@@ -144,8 +144,8 @@ describe('inline-extcss-bundle builder', () => {
 
         // Deliberate eval: runs the generated IIFE the way chrome.scripting
         // would execute it, verifying it defines the global entry point in an
-        // isolated function scope (the surrounding `applyExtCss` body calls it
-        // the same way after inlining).
+        // isolated function scope (the surrounding `extCssInjectedApply` body
+        // calls it the same way after inlining).
         // eslint-disable-next-line no-new-func, @typescript-eslint/no-implied-eval
         const getGlobalType = new Function(`${src}; return typeof applyExtendedCss;`);
         expect(getGlobalType()).toBe('function');

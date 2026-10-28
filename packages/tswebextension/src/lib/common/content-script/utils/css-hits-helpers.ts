@@ -154,21 +154,9 @@ function elementToString(element: Element): string {
 }
 
 /**
- * Default per-node reported hits, used by the MV2 content script, whose
- * `CssHitsCounter` lives for the whole document.
- *
- * ExtendedCss keeps one parsed rule object shared by every element the rule
- * matches, so the marker cannot be consumed destructively: clearing it on the
- * rule would drop the hits of all the other elements. Each node is therefore
- * reported once per rule, like the native CSS hits counter does.
- *
- * MV3's injected func re-creates this module on every injection, so it retains
- * its own state and passes it explicitly — see {@link collectExtendedCssHits}.
- */
-const defaultCountedHits = new WeakMap<Element, Set<string>>();
-
-/**
  * Registers a hit for a node and reports whether it was registered before.
+ *
+ * Each node/rule pair is reported once, like the native CSS hits counter does.
  *
  * @param node Affected node, if any.
  * @param hitKey Rule key in the `filterId;ruleIndex` form.
@@ -215,9 +203,9 @@ function registerHit(
  * @param attributeMarker Marker prefix (e.g. `'adguard'`).
  * @param serializeElement Whether to serialize the affected node with
  * {@link elementToString}. When false, the node itself is reported.
- * @param countedHits Per-node reported hits. MV3 passes the state retained
- * across injections, so a re-apply reports only the hits that are new;
- * defaults to the state of the MV2 content script.
+ * @param countedHits Per-node reported hits, kept by the caller: the MV2
+ * `CssHitsCounter` or the MV3 injected instance. A re-apply reports only the
+ * hits that are new, and two counters in one document never share the state.
  *
  * @returns Collected hits.
  */
@@ -225,7 +213,7 @@ function collectExtendedCssHits(
     affectedEl: IAffectedElement,
     attributeMarker: string,
     serializeElement: boolean,
-    countedHits: WeakMap<Element, Set<string>> = defaultCountedHits,
+    countedHits: WeakMap<Element, Set<string>>,
 ): ExtendedCssHit[] {
     const hits: ExtendedCssHit[] = [];
 
@@ -248,15 +236,17 @@ function collectExtendedCssHits(
             continue;
         }
 
+        const ruleInfo = parseExtendedStyleInfo(content, attributeMarker);
+        if (!ruleInfo) {
+            // The content only mentions the marker without being one — e.g.
+            // `content: attr(data-adguard)` — so it must reach the node as is.
+            continue;
+        }
+
         // Replace the rule in the element's own rules array with a copy that
         // has the marker stripped: the marker must never be painted on the
         // node, while the shared parsed rule keeps it for the other elements.
         rules[i] = { ...rule, style: { ...style, content: '' } };
-
-        const ruleInfo = parseExtendedStyleInfo(content, attributeMarker);
-        if (!ruleInfo) {
-            continue;
-        }
 
         const { filterId, ruleIndex } = ruleInfo;
 

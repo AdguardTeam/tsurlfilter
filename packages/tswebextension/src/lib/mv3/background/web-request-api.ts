@@ -889,8 +889,16 @@ export class WebRequestApi {
          * activation — is still detected. Comparing the URLs would miss it,
          * and the two values come from different APIs (`webRequest` and
          * `webNavigation`), so they are not guaranteed to be equal anyway.
+         *
+         * Only a context that already belongs to a committed document can be
+         * stale: `onBeforeNavigate` and a main-frame `onBeforeRequest` carry no
+         * `documentId`, so an ordinary navigation must not count as a new
+         * document here. Otherwise every frame precalculates a second time
+         * right before the injection, and the main frame resets the tab's
+         * blocked request counter again.
          */
         const isNewDocument = !!frameContext
+            && frameContext.documentId !== undefined
             && frameContext.documentId !== documentId;
 
         /**

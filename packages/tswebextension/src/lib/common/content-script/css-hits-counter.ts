@@ -75,6 +75,13 @@ export class CssHitsCounter {
     private hitsStorage: HitsStorage = new HitsStorage();
 
     /**
+     * Per-node reported ExtendedCSS hits, kept on the instance: two counters in
+     * one document must not share it, otherwise a counter created after
+     * {@link stop} would not report the nodes the previous one already did.
+     */
+    private countedHits: WeakMap<Element, Set<string>> = new WeakMap();
+
+    /**
      * Mutation observer.
      */
     private observer: MutationObserver | null = null;
@@ -150,6 +157,7 @@ export class CssHitsCounter {
                 affectedEl,
                 CssHitsCounter.MARKER_PREFIX,
                 this.elementToString,
+                this.countedHits,
             );
 
             this.onCssHitsFoundCallback(result);
