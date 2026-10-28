@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTML filtering rules with `:-abp-contains()` and `:has-text()` now work,
   and HTML filtering rules with an empty `:contains()` argument are now
   rejected (via [@adguard/tsurlfilter]).
+- Whitespace around HTML filtering `:contains()` arguments is no longer
+  trimmed (via [@adguard/tsurlfilter]): `$$div:contains( "foo" )` now
+  matches the text ` "foo" ` with the surrounding spaces.
 
 ### Security
 

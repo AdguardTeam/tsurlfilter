@@ -546,6 +546,160 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 }),
             },
 
+            // special pseudo-class with a quoted argument — the argument is the
+            // raw text between the parentheses, surrounding spaces included
+            {
+                actual: 'div:contains( "foo" )',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: {
+                        type: 'SelectorList',
+                        children: [{
+                            type: 'ComplexSelector',
+                            children: [
+                                {
+                                    type: 'TypeSelector',
+                                    value: 'div',
+                                    ...context.getRangeFor('div'),
+                                },
+                                {
+                                    type: 'PseudoClassSelector',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'contains',
+                                        ...context.getRangeFor('contains'),
+                                    },
+                                    argument: {
+                                        type: 'Value',
+                                        value: ' "foo" ',
+                                        ...context.getRangeFor(' "foo" '),
+                                    },
+                                    ...context.getRangeFor(':contains( "foo" )'),
+                                },
+                            ],
+                            ...context.getFullRange(),
+                        }],
+                        ...context.getFullRange(),
+                    },
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // special pseudo-class with an unquoted argument — the argument is
+            // the raw text between the parentheses, surrounding spaces included
+            {
+                actual: 'div:contains( foo )',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: {
+                        type: 'SelectorList',
+                        children: [{
+                            type: 'ComplexSelector',
+                            children: [
+                                {
+                                    type: 'TypeSelector',
+                                    value: 'div',
+                                    ...context.getRangeFor('div'),
+                                },
+                                {
+                                    type: 'PseudoClassSelector',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'contains',
+                                        ...context.getRangeFor('contains'),
+                                    },
+                                    argument: {
+                                        type: 'Value',
+                                        value: ' foo ',
+                                        ...context.getRangeFor(' foo '),
+                                    },
+                                    ...context.getRangeFor(':contains( foo )'),
+                                },
+                            ],
+                            ...context.getFullRange(),
+                        }],
+                        ...context.getFullRange(),
+                    },
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // `:-abp-contains()` alias — spaces around the argument are preserved
+            {
+                actual: 'div:-abp-contains( "foo" )',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: {
+                        type: 'SelectorList',
+                        children: [{
+                            type: 'ComplexSelector',
+                            children: [
+                                {
+                                    type: 'TypeSelector',
+                                    value: 'div',
+                                    ...context.getRangeFor('div'),
+                                },
+                                {
+                                    type: 'PseudoClassSelector',
+                                    name: {
+                                        type: 'Value',
+                                        value: '-abp-contains',
+                                        ...context.getRangeFor('-abp-contains'),
+                                    },
+                                    argument: {
+                                        type: 'Value',
+                                        value: ' "foo" ',
+                                        ...context.getRangeFor(' "foo" '),
+                                    },
+                                    ...context.getRangeFor(':-abp-contains( "foo" )'),
+                                },
+                            ],
+                            ...context.getFullRange(),
+                        }],
+                        ...context.getFullRange(),
+                    },
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // `:has-text()` alias — spaces around the argument are preserved
+            {
+                actual: 'div:has-text( foo )',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: {
+                        type: 'SelectorList',
+                        children: [{
+                            type: 'ComplexSelector',
+                            children: [
+                                {
+                                    type: 'TypeSelector',
+                                    value: 'div',
+                                    ...context.getRangeFor('div'),
+                                },
+                                {
+                                    type: 'PseudoClassSelector',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'has-text',
+                                        ...context.getRangeFor('has-text'),
+                                    },
+                                    argument: {
+                                        type: 'Value',
+                                        value: ' foo ',
+                                        ...context.getRangeFor(' foo '),
+                                    },
+                                    ...context.getRangeFor(':has-text( foo )'),
+                                },
+                            ],
+                            ...context.getFullRange(),
+                        }],
+                        ...context.getFullRange(),
+                    },
+                    ...context.getFullRange(),
+                }),
+            },
+
             // Lenient parsing (CoreLibs parity): `:contains()` with unbalanced
             // parentheses in the argument — the raw text between the opening
             // parenthesis and the last closing parenthesis is taken as-is
@@ -798,6 +952,25 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: ':pseudo("[attr=""test""]")',
                 expected: ':pseudo("[attr=""test""]")',
+            },
+
+            // Spaces around a special pseudo-class argument are preserved as-is
+            // (CoreLibs parity: the argument is the raw text between the parentheses)
+            {
+                actual: 'div:contains( "foo" )',
+                expected: 'div:contains( "foo" )',
+            },
+            {
+                actual: 'div:contains( foo )',
+                expected: 'div:contains( foo )',
+            },
+            {
+                actual: 'div:-abp-contains( "foo" )',
+                expected: 'div:-abp-contains( "foo" )',
+            },
+            {
+                actual: 'div:has-text( foo )',
+                expected: 'div:has-text( foo )',
             },
 
             // Leniently parsed bodies round-trip to the original text verbatim,

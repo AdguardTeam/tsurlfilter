@@ -250,6 +250,42 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/ex.*ple/i)'],
                     },
 
+                    // `:contains()` with spaces around a quoted argument — the argument
+                    // is the raw text between the parentheses, so the spaces are kept
+                    {
+                        actual: '$$div:contains( "foo" )',
+                        expected: ['$$div:contains( "foo" )'],
+                        shouldConvert: false,
+                    },
+
+                    // `:contains()` with spaces around an unquoted argument — kept as-is
+                    {
+                        actual: '$$div:contains( foo )',
+                        expected: ['$$div:contains( foo )'],
+                        shouldConvert: false,
+                    },
+
+                    // `:-abp-contains()` with spaces around the argument — kept as-is
+                    {
+                        actual: '$$div:-abp-contains( "foo" )',
+                        expected: ['$$div:-abp-contains( "foo" )'],
+                        shouldConvert: false,
+                    },
+
+                    // `:has-text()` with spaces around the argument — converted to
+                    // `:contains()` with the same raw argument, spaces included
+                    {
+                        actual: '$$div:has-text( foo )',
+                        expected: ['$$div:contains( foo )'],
+                    },
+
+                    // `:has-text()` with spaces around a quoted argument — converted to
+                    // `:contains()` with the same raw argument, spaces included
+                    {
+                        actual: '$$div:has-text( "foo" )',
+                        expected: ['$$div:contains( "foo" )'],
+                    },
+
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]',

@@ -1730,7 +1730,8 @@ describe('CssSelectorListParser', () => {
                 }),
             },
 
-            // edge case - spaces in pseudo-class function argument
+            // edge case - spaces in pseudo-class function argument are kept as-is
+            // (the argument is the raw text between the parentheses, no trimming)
             {
                 actual: ':pseudo(  arg with spaces  )',
                 expected: (context) => ({
@@ -1746,8 +1747,8 @@ describe('CssSelectorListParser', () => {
                             },
                             argument: {
                                 type: 'Value',
-                                value: 'arg with spaces',
-                                ...context.getRangeFor('arg with spaces'),
+                                value: '  arg with spaces  ',
+                                ...context.getRangeFor('  arg with spaces  '),
                             },
                             ...context.getFullRange(),
                         }],
@@ -2418,9 +2419,10 @@ describe('CssSelectorListParser', () => {
                 actual: '[  attr   =   value  ]',
                 expected: '[attr="value"]',
             },
+            // spaces in a pseudo-class function argument are preserved as-is
             {
                 actual: ':pseudo(  arg with spaces  )',
-                expected: ':pseudo(arg with spaces)',
+                expected: ':pseudo(  arg with spaces  )',
             },
             {
                 actual: '[attr="value with \\"escaped\\" quotes"]',

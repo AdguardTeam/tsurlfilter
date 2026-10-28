@@ -22,6 +22,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Pseudo-class selector arguments are no longer trimmed: the argument is
+  the raw text between the pseudo-class parentheses, so HTML filtering
+  rules like `$$div:contains( "foo" )` keep the spaces around the quoted
+  text, matching CoreLibs.
+
 ### Security
 
 ## [4.3.0] - 2026-10-14

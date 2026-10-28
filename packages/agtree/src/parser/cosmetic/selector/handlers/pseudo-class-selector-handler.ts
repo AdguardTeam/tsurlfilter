@@ -5,7 +5,6 @@ import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { AdblockSyntaxError } from '../../../../errors/adblock-syntax-error';
 import { type PseudoClassSelector } from '../../../../nodes';
 import { EMPTY } from '../../../../utils/constants';
-import { type TokenData } from '../../../css/css-token-stream';
 import { ValueParser } from '../../../misc/value-parser';
 import { type SelectorListParserContext } from '../context';
 
@@ -88,7 +87,7 @@ export class PseudoClassSelectorHandler {
             // Advance pseudo-class selector name token
             stream.advance();
 
-            // Get pseudo-class selector argument token
+            // Get pseudo-class selector argument token (the first token after the opening parenthesis)
             token = stream.getOrFail();
 
             // Construct empty pseudo-class selector argument node by default
@@ -103,45 +102,28 @@ export class PseudoClassSelectorHandler {
                 result.argument.end = baseOffset + token.start;
             }
 
-            // Skip whitespaces after opening parenthesis
-            stream.skipWhitespace();
-
-            // Get pseudo-class selector argument or closing parenthesis token
-            token = stream.getOrFail();
+            // The argument is the raw text between the parentheses, with no
+            // trimming (CoreLibs parity), so it starts right after the opening
+            // parenthesis, whitespace included.
+            const argumentStart = token.start;
 
             // Check if there is any argument part
             if (token.type !== TokenType.CloseParenthesis) {
                 // Use the function token's balance level to find the matching closing parenthesis
                 const balance = functionBalance;
 
-                // Skip leading whitespace
-                stream.skipWhitespace();
-
-                // Get argument token
-                token = stream.getOrFail();
-
-                // Save pseudo-class selector argument start position
-                const argumentStart = token.start;
-
-                // Track last non-whitespace token to handle trailing whitespace
-                let lastNonWsToken: TokenData | undefined;
-
                 // Skip to the closing parenthesis at the matching balance level
                 while (stream.get()?.balance !== balance - 1) {
-                    const currentToken = stream.get();
-                    if (currentToken && currentToken.type !== TokenType.Whitespace) {
-                        lastNonWsToken = currentToken;
-                    }
                     stream.advance();
                 }
 
                 // Get closing parenthesis token
                 token = stream.getOrFail();
 
-                // Save pseudo-class selector argument end position (after last non-whitespace token)
-                const argumentEnd = lastNonWsToken ? lastNonWsToken.end : token.start;
+                // The argument ends right before the closing parenthesis
+                const argumentEnd = token.start;
 
-                // Extract pseudo-class selector argument raw value (trimmed)
+                // Extract pseudo-class selector argument raw value (not trimmed)
                 // TODO: Consider parsing inner selectors (like :not(.class))
                 const argumentRaw = raw.slice(argumentStart, argumentEnd);
 
@@ -151,7 +133,7 @@ export class PseudoClassSelectorHandler {
                 // Include pseudo-class selector argument node location if needed
                 if (options.isLocIncluded) {
                     result.argument.start = baseOffset + argumentStart;
-                    result.argument.end = baseOffset + argumentStart + argumentRaw.length;
+                    result.argument.end = baseOffset + argumentEnd;
                 }
             }
 
