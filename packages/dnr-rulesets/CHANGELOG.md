@@ -23,7 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `$badfilter` rules with `$domain` now cancel a target rule only for the
   domains present in both lists, so the built MV3 rulesets keep rules that were
-  previously removed for every domain.
+  previously removed for every domain. A target rule without `$domain` is still
+  cancelled completely.
 - Fixed `dnr-rulesets load` failing to copy packaged assets and returning a
   successful exit status after copy errors.
 
