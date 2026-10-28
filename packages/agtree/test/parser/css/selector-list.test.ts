@@ -712,11 +712,11 @@ describe('Extended CSS pseudo-classes — generic handler', () => {
         expect(c.f2).toBe(c.f3);
     });
 
-    test(':contains() whitespace-only argument trimmed to empty', () => {
+    test(':contains() whitespace-only argument is preserved', () => {
         p(':contains(   )');
         const c = child(0);
         expect(c.nameStr).toBe('contains');
-        expect(c.f2).toBe(c.f3);
+        expect(c.argStr).toBe('   ');
     });
 
     test(':has-text() with regex pattern', () => {
@@ -733,11 +733,11 @@ describe('Extended CSS pseudo-classes — generic handler', () => {
         expect(c.argStr).toBe('something');
     });
 
-    test(':has-text() leading/trailing whitespace trimmed', () => {
+    test(':has-text() leading/trailing whitespace is preserved', () => {
         p(':has-text(  trimmed  )');
         const c = child(0);
         expect(c.nameStr).toBe('has-text');
-        expect(c.argStr).toBe('trimmed');
+        expect(c.argStr).toBe('  trimmed  ');
     });
 
     test(':matches-css() with unquoted quote inside regex arg', () => {

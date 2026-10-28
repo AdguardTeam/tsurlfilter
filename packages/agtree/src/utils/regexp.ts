@@ -23,6 +23,7 @@ import {
     REGEX_MARKER,
     SLASH,
 } from './constants';
+import { StringUtils } from './string';
 
 // Special RegExp constants
 export const REGEX_START = CARET; // '^'
@@ -42,6 +43,20 @@ export const ADBLOCK_WILDCARD_REGEX = REGEX_ANY_CHARACTERS;
 // Negation wrapper for RegExp patterns
 export const REGEX_NEGATION_PREFIX = '^((?!';
 export const REGEX_NEGATION_SUFFIX = ').)*$';
+
+/**
+ * Maximum quantifier value supported by PCRE2.
+ *
+ * Converted HTML filtering rules are applied by CoreLibs, which compiles
+ * `:contains(/.../)` patterns with PCRE2. PCRE2 rejects a quantifier number
+ * greater than 65535 ("quantifier too large" error), while JavaScript
+ * regular expressions accept larger values. Length bounds above this limit
+ * are split into several fixed-count lookaheads, so the generated pattern
+ * stays valid in both engines.
+ *
+ * @see {@link https://www.pcre.org/current/doc/html/pcre2limits.html}
+ */
+const PCRE2_MAX_QUANTIFIER = 65535;
 
 /**
  * Special RegExp symbols.
@@ -270,10 +285,101 @@ export class RegExpUtils {
     }
 
     /**
-     * Creates a length-matching regular expression string: /^(?=.{min,max}$).*\/s
-     * Where:
-     * - (?=.{min,max}$) is a lookahead that ensures the string length is between min and max
-     * - .* matches any character (including newlines, due to the 's' flag).
+     * Creates a length-matching lookahead that asserts the string length is
+     * between min and max.
+     *
+     * When both bounds fit into the PCRE2 quantifier limit, the canonical
+     * form `(?=.{min,max}$)` is returned. A bound greater than 65535 is
+     * split into fixed-count lookaheads, because PCRE2 rejects larger
+     * quantifiers while JavaScript accepts them:
+     * - the lower bound is a positive lookahead for exactly `min` characters;
+     * - the upper bound is a negative lookahead for exactly `max + 1`
+     *   characters.
+     *
+     * For example, `getLengthLookahead(20000, 150000)` returns
+     * `(?=.{20000})(?!(?:.{65535}){2}.{18931})`.
+     *
+     * @param min Minimum length or `null` for no minimum (default to `0`).
+     * @param max Maximum length or `null` for no maximum (default to no maximum).
+     *
+     * @returns Length-matching lookahead, or several lookaheads concatenated.
+     */
+    public static getLengthLookahead(min: number | null, max: number | null): string {
+        const lowerBound = min ?? 0;
+
+        if (
+            lowerBound <= PCRE2_MAX_QUANTIFIER
+            && (max === null || max <= PCRE2_MAX_QUANTIFIER)
+        ) {
+            return `(?=.{${lowerBound},${max ?? ''}}$)`;
+        }
+
+        let lookahead = EMPTY;
+
+        if (lowerBound > 0) {
+            lookahead += `(?=${RegExpUtils.getExactLengthPattern(lowerBound)})`;
+        }
+
+        if (max !== null) {
+            lookahead += `(?!${RegExpUtils.getExactLengthPattern(max + 1)})`;
+        }
+
+        return lookahead;
+    }
+
+    /**
+     * Creates a pattern that matches exactly the specified number of
+     * characters, using only quantifiers within the PCRE2 limit.
+     *
+     * The number is decomposed into base-65535 digits. Each nested group
+     * repeats the previous unit 65535 times, so every quantifier stays
+     * within the limit, e.g. 150001 becomes
+     * `(?:.{65535}){2}.{18931}`.
+     *
+     * @param length Exact number of characters to match.
+     *
+     * @returns Pattern that matches exactly `length` characters.
+     */
+    private static getExactLengthPattern(length: number): string {
+        if (length <= PCRE2_MAX_QUANTIFIER) {
+            return length === 1 ? DOT : `.{${length}}`;
+        }
+
+        const parts: string[] = [];
+        let unit = DOT;
+        let rest = length;
+
+        while (rest > 0) {
+            const digit = rest % PCRE2_MAX_QUANTIFIER;
+
+            if (digit > 0) {
+                if (unit === DOT) {
+                    parts.unshift(digit === 1 ? DOT : `.{${digit}}`);
+                } else {
+                    parts.unshift(digit === 1 ? unit : `(?:${unit}){${digit}}`);
+                }
+            }
+
+            // Subtract the digit before dividing: the exact integer quotient
+            // keeps the decomposition precise for values close to
+            // Number.MAX_SAFE_INTEGER.
+            rest = (rest - digit) / PCRE2_MAX_QUANTIFIER;
+
+            if (rest > 0) {
+                unit = unit === DOT
+                    ? `.{${PCRE2_MAX_QUANTIFIER}}`
+                    : `(?:${unit}){${PCRE2_MAX_QUANTIFIER}}`;
+            }
+        }
+
+        return parts.join(EMPTY);
+    }
+
+    /**
+     * Creates a length-matching regular expression string:
+     * `/^<length-lookahead>.*\/s`, where:
+     * - the lookahead ensures the string length is between min and max;
+     * - `.*` matches any character, including newlines, due to the `s` flag.
      *
      * @param min Minimum length or `null` for no minimum (default to `0`).
      * @param max Maximum length or `null` for no maximum (default to no maximum).
@@ -281,7 +387,42 @@ export class RegExpUtils {
      * @returns Length-matching regular expression string.
      */
     public static getLengthRegexp(min: number | null, max: number | null): string {
-        return `/^(?=.{${min ?? 0},${max ?? ''}}$).*/s`;
+        return `/^${RegExpUtils.getLengthLookahead(min, max)}.*/s`;
+    }
+
+    /**
+     * Converts a glob pattern to a regular expression source body with the
+     * leading caret anchor removed, e.g. `.*track.*banner.*$` for the glob
+     * `*track*banner*`. The result is suitable for embedding into a larger
+     * pattern which is already anchored, e.g. as a lookahead: `(?=<body>)`.
+     *
+     * @param glob Glob pattern to convert.
+     *
+     * @returns Glob-converted regular expression source body.
+     *
+     * @example
+     * // Returns '.*track.*banner.*$'
+     * RegExpUtils.globToRegExpBody('*track*banner*');
+     */
+    public static globToRegExpBody(glob: string): string {
+        return GlobToRegExp(glob).source.replace(/^\^/, EMPTY);
+    }
+
+    /**
+     * Escapes all special RegExp symbols in the specified string, so that
+     * the string can be embedded into a larger regular expression and be
+     * matched literally.
+     *
+     * @param value String to escape.
+     *
+     * @returns Escaped string.
+     *
+     * @example
+     * // Returns '\$\('http'\)'
+     * RegExpUtils.escapeRegexSpecials("$('http')");
+     */
+    public static escapeRegexSpecials(value: string): string {
+        return StringUtils.escapeCharacters(value, SPECIAL_REGEX_SYMBOLS);
     }
 
     /**

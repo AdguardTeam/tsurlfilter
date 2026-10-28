@@ -11,7 +11,40 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `:has-text()` is now accepted as a synonym of `:contains()` in AdGuard
+  HTML filtering rules during ADG→ADG conversion.
+
 ### Changed
+
+- AdGuard HTML filtering rule bodies with an unbalanced or unterminated
+  special pseudo-class argument (`:contains()` / `:-abp-contains()` /
+  `:has-text()`), e.g.
+  `$$script:contains((function(g,b,a,c,e,d)`, are now parsed leniently,
+  mirroring CoreLibs: the argument is the raw text between the opening
+  parenthesis of the pseudo-class and the last closing parenthesis of
+  the body, taken as-is. Previously such bodies threw a parse error.
+  A descendant combinator in front of the special pseudo-class is
+  preserved as well, so `$$div :has-text(/foo[)]/)` converts to
+  `$$div :contains(/foo[)]/)` instead of being glued into
+  `$$div:contains(/foo[)]/)`. The same lenient path now accepts a body
+  that starts with the special pseudo-class (`$$:contains(...)`) and a
+  body with a trailing explicit combinator before it
+  (`$$div > :contains(...)`); both shapes are supported by CoreLibs and
+  by tswebextension's `HtmlRuleSelector`. The selector list and last
+  complex selector source ranges are extended to cover the appended
+  pseudo-class when locations are enabled.
+- Special pseudo-class arguments are no longer trimmed in selector lists:
+  the argument is taken from the source as-is, so
+  `##div:has-text( foo ):style(color: red)` converts to
+  `#$?#div:contains( foo ) { color: red }`, and `##^div:has-text(  )`
+  converts instead of throwing.
+- ADG→uBO conversion now keeps `:has-text()` as-is instead of throwing a
+  mixed-syntax error, e.g. `$$div:has-text(example)` converts to
+  `##^div:has-text(example)`. `:has-text()` is native uBlock syntax and a
+  documented synonym of `:contains()` in AdGuard products, so a rule that
+  ADG→ADG conversion accepts is no longer rejected in the other direction.
+  Only uBlock-only constructs such as `:min-text-length()` still raise the
+  mixed-syntax error.
 
 ### Deprecated
 
@@ -19,6 +52,69 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- AdGuard HTML filtering rules whose bodies cannot be parsed as CSS
+  selector lists, even leniently, are now kept as-is during conversion
+  instead of throwing a parse error, e.g. `[tag-content]` with escaped
+  double quotes that break CSS tokenization. This tolerant fallback is
+  gated on special selector markers — unparseable bodies without
+  `:contains()` / `:-abp-contains()` / `:has-text()` or `[tag-content]` /
+  `[wildcard]` / `[min-length]` / `[max-length]` markers (outside of
+  quoted text) still throw. The raw rule and filter list converters use
+  the same tolerant fallback.
+- uBlock `:min-text-length()` conversion no longer caps the generated
+  length-matching regular expression at 262144, so a larger argument no
+  longer produces an invalid range. The converter now splits a length bound
+  into fixed-count lookaheads, so every quantifier stays within the PCRE2
+  limit of 65535 and the pattern remains valid in both PCRE2 and JavaScript.
+  For example,
+  `$$script[tag-content="omi-service"][min-length="20000"][max-length="150000"]`
+  converts to
+  `$$script:contains(omi-service):contains(/^(?=.{20000})(?!(?:.{65535}){2}.{18931}).*/s)`
+  instead of an invalid pattern. The same applies to the deprecated AdGuard
+  `[min-length]` and `[max-length]` attributes during ADG→ADG conversion.
+  `:min-text-length()` now converts to a lower bound only, e.g.
+  `:min-text-length(10)` becomes `:contains(/^(?=.{10,}$).*/s)` instead of
+  the previous upper bound of 262144.
+- ADG→ADG conversion of HTML filtering rules now merges combinations of
+  deprecated special attribute selectors that cannot be represented as a
+  chain of separate `:contains()` pseudo-classes into a single regex
+  `:contains()` built from lookaheads. CoreLibs allows at most one literal
+  and one regex `:contains()` per selector, and its argument scanner
+  treats an unbalanced or quoted literal as the last argument of the
+  chain, so e.g.
+  `aces.gg$$script[tag-content="$('#alert').on('click'"][max-length="250"]`
+  now converts to
+  `aces.gg$$script:contains(/^(?=.{0,250}$)(?=.*\$\('#alert'\)\.on\('click').*/s)`
+  instead of the CoreLibs-rejected
+  `aces.gg$$script:contains($('#alert').on('click'):contains(/^(?=.{0,250}$).*/s)`.
+  Likewise, the body of
+  `msn.com$$li[class="hasimage"][tag-content="""NativeAdHeadlineItemViewModel"""][max-length="2000"]`
+  now converts to
+  `msn.com$$li[class="hasimage"]:contains(/^(?=.{0,2000}$)(?=.*"NativeAdHeadlineItemViewModel").*/s)`
+  instead of a chain of two `:contains()` pseudo-classes.
+  Multiple `[tag-content]` values and multiple `[wildcard]` globs are
+  AND-merged the same way (`$$div[tag-content="a"][tag-content="b"]` →
+  `$$div:contains(/^(?=.*a)(?=.*b).*/s)`), while a literal that is safe
+  to chain (non-empty, not starting with `/`, containing no quotes,
+  parentheses, brackets, braces, backslashes or colons) is still emitted
+  as a standalone `:contains()` followed by at most one regex
+  `:contains()`. Converted special attribute pseudo-classes are now
+  appended after pre-existing `:contains()` pseudo-classes of the same
+  compound selector. Deferred special attributes are emitted at the end
+  of the compound selector they belong to, so a constraint on an
+  ancestor is not moved to a descendant:
+  `$$div[tag-content="a"] > span` converts to
+  `$$div:contains(a) > span`, not `$$div > span:contains(a)`.
+- `QuoteUtils.escapeAttributeDoubleQuotes()` and
+  `QuoteUtils.unescapeAttributeDoubleQuotes()` no longer get stuck inside
+  the first quoted attribute selector's value for the rest of the
+  selector: an unpaired double quote now closes the value and leaves the
+  nesting state. Previously, an attribute selector following a quoted one
+  was handled as if it were still inside the first value, so the legacy
+  `""` quote doubling there was paired with shifted quotes and escaped
+  incorrectly. For example,
+  `QuoteUtils.escapeAttributeDoubleQuotes('[a="x"][b="a""b"]')` now
+  returns `[a="x"][b="a\"b"]`.
 - A backslash at the end of a line no longer consumes the line break. Filter
   lists are line-oriented, so the following line is parsed as a separate rule
   again (previously it was merged into the preceding comment or rule), and CRLF

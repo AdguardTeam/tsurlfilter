@@ -12,8 +12,10 @@
  * @todo Implement `convertToUbo` and `convertToAbp`.
  */
 
-import { RuleParserPipeline } from '../ast-builder/rule-parser';
+import type { ParseOptions } from '../ast-builder/options';
+import { RuleParserPipeline, type StructuralParseResult } from '../ast-builder/rule-parser';
 import { ProductCode } from '../compatibility-tables';
+import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import { RuleGenerator } from '../generator';
 import { LF } from '../utils/constants';
 import { getErrorMessage } from '../utils/error';
@@ -22,7 +24,7 @@ import { findNextLineBreak } from '../utils/line-break';
 import { BaseConverter } from './base-interfaces/base-converter';
 import { isConversionCandidate } from './candidate-filter';
 import { type FilterListConversionError, FilterListConversionResult } from './filter-list-conversion-result';
-import { CONVERTER_PARSE_OPTIONS } from './parse-options';
+import { CONVERTER_PARSE_OPTIONS, CONVERTER_PARSE_OPTIONS_RAW_HTML_BODIES } from './parse-options';
 import { RuleConverter } from './rule';
 import { createEmptyConversionSourceMap } from './source-map';
 
@@ -117,7 +119,32 @@ export class RawFilterListConverter extends BaseConverter {
 
             try {
                 // ONE structural parse per line (tokenize + structural, no AST).
-                const { kind, ctx } = listParser.parseStructural(line, CONVERTER_PARSE_OPTIONS);
+                let parseOptions: Readonly<ParseOptions> = CONVERTER_PARSE_OPTIONS;
+                let structuralResult: StructuralParseResult;
+
+                try {
+                    structuralResult = listParser.parseStructural(line, parseOptions);
+                } catch (error) {
+                    // The parser rejects HTML filtering bodies it cannot
+                    // parse, but the converter keeps such rules as-is when
+                    // they contain special selectors. Retry with raw HTML
+                    // filtering bodies so the tolerant fallback can run.
+                    // Only HTML filtering body parsing changes, so other
+                    // rules fail again and the original error is rethrown.
+                    if (!(error instanceof AdblockSyntaxError)) {
+                        throw error;
+                    }
+
+                    parseOptions = CONVERTER_PARSE_OPTIONS_RAW_HTML_BODIES;
+
+                    try {
+                        structuralResult = listParser.parseStructural(line, parseOptions);
+                    } catch {
+                        throw error;
+                    }
+                }
+
+                const { kind, ctx } = structuralResult;
 
                 if (!isConversionCandidate(kind, ctx)) {
                     // Non-candidate: verbatim copy, zero AST allocation.
@@ -128,7 +155,7 @@ export class RawFilterListConverter extends BaseConverter {
 
                 // Candidate: build the AST from the SAME ctx (no re-tokenize),
                 // then convert + generate.
-                const ast = listParser.parseFromCurrentCtx(line, kind, CONVERTER_PARSE_OPTIONS);
+                const ast = listParser.parseFromCurrentCtx(line, kind, parseOptions);
                 const conversion = RuleConverter.convertToAdg(ast);
 
                 if (!conversion.isConverted) {

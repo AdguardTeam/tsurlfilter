@@ -5,11 +5,13 @@
  */
 
 import { RuleParserPipeline } from '../ast-builder/rule-parser';
+import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import { RuleGenerator } from '../generator';
+import { type AnyRule } from '../nodes';
 
 import { BaseConverter } from './base-interfaces/base-converter';
 import { type ConversionResult, createConversionResult } from './base-interfaces/conversion-result';
-import { CONVERTER_PARSE_OPTIONS } from './parse-options';
+import { CONVERTER_PARSE_OPTIONS, CONVERTER_PARSE_OPTIONS_RAW_HTML_BODIES } from './parse-options';
 import { RuleConverter } from './rule';
 
 /**
@@ -40,9 +42,29 @@ export class RawRuleConverter extends BaseConverter {
      * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToAdg(rawRule: string): ConversionResult<string, string[]> {
-        const conversionResult = RuleConverter.convertToAdg(
-            sharedRuleParser.parse(rawRule, CONVERTER_PARSE_OPTIONS),
-        );
+        let ruleNode: AnyRule;
+
+        try {
+            ruleNode = sharedRuleParser.parse(rawRule, CONVERTER_PARSE_OPTIONS);
+        } catch (error) {
+            // The parser rejects HTML filtering bodies it cannot parse, but the
+            // converter keeps such rules as-is when they contain special
+            // selectors. Re-parse with raw HTML filtering bodies so the
+            // converter's tolerant fallback can run. Only HTML filtering body
+            // parsing changes, so other rules fail again and the original
+            // error is rethrown.
+            if (!(error instanceof AdblockSyntaxError)) {
+                throw error;
+            }
+
+            try {
+                ruleNode = sharedRuleParser.parse(rawRule, CONVERTER_PARSE_OPTIONS_RAW_HTML_BODIES);
+            } catch {
+                throw error;
+            }
+        }
+
+        const conversionResult = RuleConverter.convertToAdg(ruleNode);
 
         // If the rule was not converted, return the original rule text
         if (!conversionResult.isConverted) {

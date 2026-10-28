@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `:contains()` arguments of HTML filtering rules are now handled exactly
+  like CoreLibs does: the argument is the raw text between the parentheses
+  of the pseudo-class, so wrapping quotes of any kind (e.g.
+  `:contains('advert')` or `:contains("...")`) are literal characters of
+  the matched text, never a transport encoding. An argument that looks like
+  a `/regexp/` is compiled to a `RegExp`, everything else is matched as a
+  literal substring. Unbalanced arguments, e.g.
+  `$$script:contains((function(g,b,a,c,e,d)`, are now parsed and matched
+  as-is, mirroring CoreLibs [#96].
 - Updated `@adguard/agtree` to `v5.0.0` with refactored parser API: rule parsing now uses
   `RuleParserPipeline`, domain lists use `parseDomainList`, and `ParserOptions`
   is replaced by `ParseOptions`.
@@ -35,6 +44,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTML filtering rules with deprecated `[min-length]` / `[max-length]`
+  values above the PCRE2 quantifier limit (65535) now convert to a
+  PCRE2-safe regular expression split into fixed-count lookaheads and
+  match as expected, instead of failing conversion and staying as a native
+  selector that never matches.
 - `CosmeticRule.createFromReader` now throws when the reader represents a
   cosmetic kind the binary path cannot materialize (uBO scriptlets, ABP
   snippets, CSS injection, HTML filtering), and the `CosmeticRule`/`NetworkRule`

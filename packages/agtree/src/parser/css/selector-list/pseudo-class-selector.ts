@@ -14,6 +14,7 @@ import { cssIdentSequenceLength, cssStringLength } from '../../../css/tokenizer/
 import { isCssWhitespace } from '../../../css/tokenizer/css-token-utils';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { TokenType } from '../../../tokenizer/token-types';
+import { SPECIAL_PSEUDO_CLASS_NAMES } from '../../../utils/special-pseudo-classes';
 import type { ParserContext } from '../../context';
 import { regionEquals, tokenStart } from '../../context';
 
@@ -181,6 +182,13 @@ export function handlePseudoClassSelector(
     i += nameLen;
     const nameEnd = ends[i - 1];
 
+    // Special pseudo-classes take a raw-text argument. In CoreLibs the
+    // argument is the raw text between the parentheses, so surrounding
+    // whitespace is part of the matched text and must not be trimmed.
+    const hasRawArgument = SPECIAL_PSEUDO_CLASS_NAMES.some(
+        (specialName) => regionEquals(source, nameStart, nameEnd, specialName),
+    );
+
     let argStart = NO_VALUE;
     let argEnd = NO_VALUE;
     let srcEnd = nameEnd;
@@ -309,24 +317,37 @@ export function handlePseudoClassSelector(
         srcEnd = ends[i];
         i += 1; // consume ')'
 
-        // Trim argument content of leading and trailing whitespace
-        let trimStart = argContentStartTi;
-        let trimEnd = argContentEndTi;
-
-        while (trimStart < trimEnd && isCssWhitespace(types[trimStart])) {
-            trimStart += 1;
-        }
-        while (trimEnd > trimStart && isCssWhitespace(types[trimEnd - 1])) {
-            trimEnd -= 1;
-        }
-
-        if (trimStart < trimEnd) {
-            argStart = tokenStart(ctx, trimStart);
-            argEnd = ends[trimEnd - 1];
+        if (hasRawArgument) {
+            // Special pseudo-classes: keep the argument exactly as written,
+            // including leading and trailing whitespace.
+            if (argContentStartTi < argContentEndTi) {
+                argStart = tokenStart(ctx, argContentStartTi);
+                argEnd = ends[argContentEndTi - 1];
+            } else {
+                // Empty argument (empty parens)
+                argStart = ends[openParenTi]; // position right after '('
+                argEnd = argStart;
+            }
         } else {
-            // Empty argument (all whitespace or empty parens)
-            argStart = ends[openParenTi]; // position right after '('
-            argEnd = argStart;
+            // Trim argument content of leading and trailing whitespace
+            let trimStart = argContentStartTi;
+            let trimEnd = argContentEndTi;
+
+            while (trimStart < trimEnd && isCssWhitespace(types[trimStart])) {
+                trimStart += 1;
+            }
+            while (trimEnd > trimStart && isCssWhitespace(types[trimEnd - 1])) {
+                trimEnd -= 1;
+            }
+
+            if (trimStart < trimEnd) {
+                argStart = tokenStart(ctx, trimStart);
+                argEnd = ends[trimEnd - 1];
+            } else {
+                // Empty argument (all whitespace or empty parens)
+                argStart = ends[openParenTi]; // position right after '('
+                argEnd = argStart;
+            }
         }
     }
 
