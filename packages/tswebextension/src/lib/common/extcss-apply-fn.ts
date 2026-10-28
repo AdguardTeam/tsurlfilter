@@ -99,14 +99,16 @@ export const extCssInjectedApply = (
     // Re-applying the rule strings the retained instance was built from is a
     // no-op: dispose() + apply() would rebuild an identical instance, revert
     // the inline styles the page changed since the previous apply, and re-walk
-    // the DOM for nothing. MV2 reaches this path for every completed request
-    // in Firefox, so a page with N requests would otherwise re-run the whole
-    // engine N times. The rules encode the hits flag (markers are added when
+    // the DOM for nothing. The background records an applied rule set and
+    // skips it, but a frame with no context has no state to record, and the
+    // content script can ask for its data again, so the payload still guards
+    // itself. The rules encode the hits flag (markers are added when
     // statistics are collected), so an unchanged rule set also means an
     // unchanged callback registration.
     //
     // The check runs before the inlined bundle is evaluated, so a repeated
-    // call does not parse the payload either.
+    // call does not evaluate the engine. It does not avoid parsing the code
+    // string, which the browser does before the function runs.
     if (
         previousRules
         && previousRules.length === cssRules.length

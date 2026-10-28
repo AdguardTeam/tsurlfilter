@@ -27,11 +27,6 @@ export class CosmeticController {
     private tries = 0;
 
     /**
-     * Module that collects statistics about the usage of CSS rules.
-     */
-    private cssHitsCounter?: CssHitsCounter;
-
-    /**
      * Creates new {@link CosmeticController} instance.
      */
     constructor() {
@@ -97,7 +92,7 @@ export class CosmeticController {
         }
 
         if (areHitsStatsCollected) {
-            this.cssHitsCounter = CosmeticController.createCssHitsCounter();
+            CosmeticController.createCssHitsCounter();
         }
 
         CosmeticController.repairNativeCss(nativeCssSelectors);

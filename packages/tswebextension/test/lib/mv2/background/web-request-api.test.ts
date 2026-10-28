@@ -23,6 +23,34 @@ describe('web request api', () => {
         expect(true).toBe(true);
     });
 
+    describe('onCommitted', () => {
+        it('resets the ExtendedCSS applied state of the committed document', () => {
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue({
+                extCssApplied: true,
+                extCssDocumentVersion: 3,
+            } as ReturnType<typeof tabsApi.getFrameContext>);
+
+            const mockDetails: WebNavigation.OnCommittedDetailsType = {
+                tabId: 1,
+                frameId: MAIN_FRAME_ID,
+                url: 'https://example.com/',
+                transitionType: 'link',
+                transitionQualifiers: [],
+                timeStamp: Date.now(),
+                documentId: 'new-document-id',
+            };
+
+            // @ts-ignore - accessing private method for testing
+            WebRequestApi.onCommitted(mockDetails);
+
+            expect(tabsApi.updateFrameContext).toHaveBeenCalledWith(1, MAIN_FRAME_ID, {
+                documentId: 'new-document-id',
+                extCssApplied: false,
+                extCssDocumentVersion: 4,
+            });
+        });
+    });
+
     describe('onCommittedOperaHook', () => {
         it('should return early if url is not HTTP or WS request', () => {
             const mockDetails: WebNavigation.OnCommittedDetailsType = {

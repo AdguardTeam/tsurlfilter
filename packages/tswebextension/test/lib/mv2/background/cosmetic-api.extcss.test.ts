@@ -164,26 +164,6 @@ describe('CosmeticApi.applyExtCss', () => {
         expect(TabsApi.injectScript).not.toHaveBeenCalled();
     });
 
-    it('falls back to the cosmetic result when the prepared result is missing', async () => {
-        const rules = ['.ad:has(.child) { display: none !important; }'];
-        const frameContext = makeFrameContext();
-        frameContext.cosmeticResult = {} as FrameMV2['cosmeticResult'];
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
-        const getExtCssRulesSpy = vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
-
-        await CosmeticApi.applyExtCss(1, 0);
-
-        expect(getExtCssRulesSpy).toHaveBeenCalledWith(
-            frameContext.cosmeticResult,
-            { areHitsStatsCollected: false, isNativeHasSupported: expect.any(Boolean) },
-        );
-        expect(TabsApi.injectScript).toHaveBeenCalledWith(
-            1,
-            0,
-            serializeExtCssForCode(rules, false, EXTCSS_PROTOCOL),
-        );
-    });
-
     it('uses the ExtCSS data kept on the frame context', async () => {
         const rules = ['.ad:has(.child) { display: none !important; }'];
         const frameContext = makeFrameContext();
@@ -226,6 +206,49 @@ describe('CosmeticApi.applyExtCss', () => {
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
         expect(original.extCssApplied).toBe(false);
         expect(replacement.extCssApplied).toBe(false);
+    });
+
+    it('does not mark a document that was committed during the injection', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        let resolveInjection!: () => void;
+        vi.mocked(TabsApi.injectScript).mockImplementation(() => new Promise<void>((resolve) => {
+            resolveInjection = resolve;
+        }));
+
+        const injection = CosmeticApi.applyExtCss(1, 0);
+
+        // A same-URL commit keeps the context and bumps the document version.
+        frameContext.extCssDocumentVersion += 1;
+        frameContext.extCssApplied = false;
+
+        resolveInjection();
+        await injection;
+
+        expect(frameContext.extCssApplied).toBe(false);
+    });
+
+    it('does not inject again while an injection is in flight', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        let resolveInjection!: () => void;
+        vi.mocked(TabsApi.injectScript).mockImplementation(() => new Promise<void>((resolve) => {
+            resolveInjection = resolve;
+        }));
+
+        const injection = CosmeticApi.applyExtCss(1, 0);
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+
+        resolveInjection();
+        await injection;
+
+        expect(frameContext.extCssApplied).toBe(true);
     });
 
     it('marks the frame as applied after a successful apply', async () => {

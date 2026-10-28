@@ -167,7 +167,6 @@ describe('MV2 CosmeticController — native CSS repair', () => {
         expect(CONTROLLER_SRC).not.toContain('beforeStyleApplied');
         // Native CSS hits counting stays in the content script.
         expect(CONTROLLER_SRC).toContain('CssHitsCounter');
-        expect(CONTROLLER_SRC).toContain('cssHitsCounter');
     });
 });
 

@@ -234,16 +234,20 @@ export class CosmeticApi extends CosmeticApiCommon {
             } else if (extCssRules) {
                 // Nothing else reaches a frame without a context, so apply the
                 // on-demand rules from here.
-                const code = serializeExtCssForCode(
+                CosmeticApi.injectExtCssWithoutContext(
+                    tabId,
+                    frameId,
                     extCssRules,
                     areHitsStatsCollected,
-                    EXTCSS_PROTOCOL,
                 );
-
-                TabsApi.injectScript(tabId, frameId, code).catch((e) => {
-                    logger.debug(`[tsweb.CosmeticApi.getContentScriptData]: error occurred during ExtCSS injection into tabId ${tabId} and frameId ${frameId}`, e);
-                });
             }
+        }
+
+        // The content script can ask after the frame's injection events have
+        // already passed, e.g. for a page loaded while the app was stopped.
+        // The applied flag skips a frame that already has the rules.
+        if (isAppStarted) {
+            CosmeticApi.applyExtCss(tabId, frameId);
         }
 
         return data;
@@ -431,11 +435,11 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * The rules come from the frame's prepared result, or from the data kept
      * on the context when the frame was matched on demand. When they are
-     * non-empty, the shared ExtCSS payload is serialized into a code string
-     * and injected. When the rule set is empty or null and an instance was
-     * applied to the current document, the dispose code string is injected
-     * instead, so observers and styles do not leak. Otherwise no code is
-     * injected.
+     * non-empty and the current document does not have them yet, the shared
+     * ExtCSS payload is serialized into a code string and injected. When the
+     * rule set is empty or null and an instance was applied to the current
+     * document, the dispose code string is injected instead, so observers and
+     * styles do not leak. Otherwise no code is injected.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
@@ -456,6 +460,8 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const { extCssRules, areHitsStatsCollected } = extCssData;
 
+        const { extCssDocumentVersion } = frameContext;
+
         let code: string;
 
         if (extCssRules?.length) {
@@ -473,6 +479,14 @@ export class CosmeticApi extends CosmeticApiCommon {
             return;
         }
 
+        // An injection for this document is already in flight, so a second one
+        // would send the same payload again and start its own retry chain.
+        if (frameContext.extCssInjectionVersion === extCssDocumentVersion) {
+            return;
+        }
+
+        frameContext.extCssInjectionVersion = extCssDocumentVersion;
+
         const isInjected = await CosmeticApi.injectWithRetry(
             () => TabsApi.injectScript(tabId, frameId, code),
             () => {
@@ -484,12 +498,61 @@ export class CosmeticApi extends CosmeticApiCommon {
             tries,
         );
 
+        if (frameContext.extCssInjectionVersion === extCssDocumentVersion) {
+            frameContext.extCssInjectionVersion = undefined;
+        }
+
         // The frame context is replaced on navigation, so a write to the
-        // captured object would land on the discarded document. Only the
-        // context that is still current records the applied state.
-        if (isInjected && tabsApi.getFrameContext(tabId, frameId) === frameContext) {
+        // captured object would land on the discarded document. A commit of
+        // the same frame keeps the context and bumps the document version, so
+        // an injection started for the previous document records nothing.
+        if (isInjected
+            && tabsApi.getFrameContext(tabId, frameId) === frameContext
+            && frameContext.extCssDocumentVersion === extCssDocumentVersion
+        ) {
             frameContext.extCssApplied = Boolean(extCssRules?.length);
         }
+    }
+
+    /**
+     * Injects ExtendedCSS rules into a frame that has no frame context.
+     *
+     * Such a frame has no document state to record the applied rules on, so
+     * the shared retry budget is the only protection against a transient
+     * injection failure. A repeated call is a no-op in the page, because the
+     * payload returns early when the retained instance has the same rules.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @param extCssRules Rule strings to inject.
+     * @param areHitsStatsCollected Whether hits statistics are collected.
+     * @param tries Number of tries for the injection in case of failure.
+     */
+    private static async injectExtCssWithoutContext(
+        tabId: number,
+        frameId: number,
+        extCssRules: string[],
+        areHitsStatsCollected: boolean,
+        tries = 0,
+    ): Promise<void> {
+        const code = serializeExtCssForCode(extCssRules, areHitsStatsCollected, EXTCSS_PROTOCOL);
+
+        await CosmeticApi.injectWithRetry(
+            () => TabsApi.injectScript(tabId, frameId, code),
+            () => {
+                CosmeticApi.injectExtCssWithoutContext(
+                    tabId,
+                    frameId,
+                    extCssRules,
+                    areHitsStatsCollected,
+                    tries + 1,
+                );
+            },
+            (e) => {
+                logger.debug(`[tsweb.CosmeticApi.injectExtCssWithoutContext]: error occurred during ExtCSS injection into tabId ${tabId} and frameId ${frameId}`, e);
+            },
+            tries,
+        );
     }
 
     /**
@@ -498,8 +561,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Frames precalculated by {@link CosmeticFrameProcessor} carry a prepared
      * result. Frames matched on demand by
      * {@link CosmeticApi.getContentScriptData} keep the extracted rules on the
-     * context. When neither is available, the rules are extracted from the
-     * cosmetic result.
+     * context.
      *
      * @param frameContext Frame context.
      *
@@ -507,7 +569,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * data yet.
      */
     private static getExtCssData(frameContext: FrameMV2): ExtCssFrameData | undefined {
-        const { preparedCosmeticResult, extCssData, cosmeticResult } = frameContext;
+        const { preparedCosmeticResult, extCssData } = frameContext;
 
         if (preparedCosmeticResult) {
             const { extCssRules, areHitsStatsCollected } = preparedCosmeticResult;
@@ -515,23 +577,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             return { extCssRules, areHitsStatsCollected };
         }
 
-        if (extCssData) {
-            return extCssData;
-        }
-
-        if (!cosmeticResult) {
-            return undefined;
-        }
-
-        const areHitsStatsCollected = appContext.configuration?.settings.collectStats || false;
-
-        return {
-            extCssRules: CosmeticApi.getExtCssRules(cosmeticResult, {
-                areHitsStatsCollected,
-                isNativeHasSupported: CssCapabilities.isNativeHasPseudoClassSupported(),
-            }),
-            areHitsStatsCollected,
-        };
+        return extCssData;
     }
 }
 

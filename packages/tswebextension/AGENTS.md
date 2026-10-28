@@ -67,7 +67,8 @@ packages/tswebextension/
   (`@adguard/tsurlfilter`, `@adguard/agtree`, etc.). If you get stale-artifact
   type errors, rebuild from the repo root:
   `npx lerna run build --scope=@adguard/tswebextension --include-dependencies`
-- `pnpm test` — run all tests via Vitest (mv2 + mv3 + common projects)
+- `pnpm test` — run all tests via Vitest (mv2 + mv3 + common + Chromium e2e
+  projects)
 - `pnpm test:mv2` — run MV2 tests only
 - `pnpm test:mv3` — run MV3 tests only
 - `pnpm test:common` — run common tests only

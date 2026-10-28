@@ -21,9 +21,9 @@ const escapeLineSeparators = (json: string): string => json
  * Serialized source of the shared apply payload.
  *
  * `String(extCssInjectedApply)` re-serializes the inlined engine, and MV2
- * builds a code string for every cosmetic injection event and for each
- * injection retry. The function source never changes, so it is serialized
- * once here.
+ * builds a code string for each injection that is not skipped as already
+ * applied and for each injection retry. The function source never changes, so
+ * it is serialized once here.
  */
 const EXTCSS_APPLY_SOURCE = String(extCssInjectedApply);
 

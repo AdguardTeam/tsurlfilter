@@ -72,6 +72,7 @@ describe('CosmeticApi.getContentScriptData', () => {
     });
 
     afterEach(() => {
+        vi.useRealTimers();
         vi.restoreAllMocks();
     });
 
@@ -101,6 +102,41 @@ describe('CosmeticApi.getContentScriptData', () => {
             frameId,
             serializeExtCssForCode(rules, false, EXTCSS_PROTOCOL),
         );
+    });
+
+    it('retries the context-less injection after a failure', async () => {
+        vi.useFakeTimers();
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
+        vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
+        const injectSpy = vi.spyOn(TabsApi, 'injectScript')
+            .mockRejectedValueOnce(new Error('Missing host permission'))
+            .mockResolvedValueOnce();
+
+        CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+
+        expect(injectSpy).toHaveBeenCalledTimes(1);
+
+        await vi.advanceTimersByTimeAsync(10);
+
+        expect(injectSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('applies the ExtendedCSS rules when the app is started', () => {
+        const applyExtCssSpy = vi.spyOn(CosmeticApi, 'applyExtCss').mockResolvedValue();
+
+        CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+
+        expect(applyExtCssSpy).toHaveBeenCalledWith(tabId, frameId);
+    });
+
+    it('does not apply the ExtendedCSS rules while the app is not started', () => {
+        appContext.isAppStarted = false;
+        const applyExtCssSpy = vi.spyOn(CosmeticApi, 'applyExtCss').mockResolvedValue();
+
+        CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+
+        expect(applyExtCssSpy).not.toHaveBeenCalled();
     });
 
     it('still returns native CSS selectors for content-script repair', () => {

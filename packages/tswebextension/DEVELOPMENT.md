@@ -204,9 +204,9 @@ pnpm test:e2e:firefox
 
 ### Issue: MV2 vs MV3 test isolation
 
-Tests are organized into three Vitest projects (`mv2`, `mv3`, `common`). If
-MV2-specific mocks interfere with MV3 tests (or vice versa), ensure you are
-running the correct test project.
+Tests are organized into four Vitest projects (`mv2`, `mv3`, `common`, and
+the Chromium `browser` project). If MV2-specific mocks interfere with MV3
+tests (or vice versa), ensure you are running the correct test project.
 
 ## Additional Resources
 

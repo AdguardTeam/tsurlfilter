@@ -1,29 +1,6 @@
 import { FrameCommon, type PreparedCosmeticResultCommon } from '../../../common/tabs/frame';
 
 /**
- * Prepared cosmetic result for MV2.
- *
- * This type represents the processed cosmetic data extracted from the initial cosmetic result.
- */
-export type PreparedCosmeticResultMV2 = PreparedCosmeticResultCommon & {
-    /**
-     * Script text extracted from the cosmetic result.
-     */
-    scriptText: string;
-
-    /**
-     * ExtendedCSS rule strings to inject from the background, or null when no
-     * extended rules match the frame.
-     */
-    extCssRules: string[] | null;
-
-    /**
-     * Whether ExtendedCSS hits statistics are collected for the frame.
-     */
-    areHitsStatsCollected: boolean;
-};
-
-/**
  * ExtendedCSS data resolved for a frame.
  */
 export type ExtCssFrameData = {
@@ -36,6 +13,18 @@ export type ExtCssFrameData = {
      * Whether ExtendedCSS hits statistics are collected for the frame.
      */
     areHitsStatsCollected: boolean;
+};
+
+/**
+ * Prepared cosmetic result for MV2.
+ *
+ * This type represents the processed cosmetic data extracted from the initial cosmetic result.
+ */
+export type PreparedCosmeticResultMV2 = PreparedCosmeticResultCommon & ExtCssFrameData & {
+    /**
+     * Script text extracted from the cosmetic result.
+     */
+    scriptText: string;
 };
 
 /**
@@ -69,4 +58,23 @@ export class FrameMV2 extends FrameCommon {
      * document.
      */
     public extCssApplied = false;
+
+    /**
+     * Number of the document the ExtendedCSS state belongs to.
+     *
+     * The context survives a same-URL reload, so `documentId` cannot tell two
+     * documents apart. The counter is bumped on every commit, and an injection
+     * records its result only while the counter is unchanged.
+     */
+    public extCssDocumentVersion = 0;
+
+    /**
+     * Version of the document an ExtendedCSS injection is in flight for, if
+     * any.
+     *
+     * Injection events can arrive before the previous injection resolves. The
+     * marker stops them from sending the same payload again and from starting
+     * their own retry chain.
+     */
+    public extCssInjectionVersion?: number;
 }
