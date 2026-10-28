@@ -307,6 +307,7 @@ describe('Rule', () => {
                 expect(RuleBadfilter.negationScope(badfilterRule, targetRule)).toEqual({
                     kind: BadfilterNegationKind.Partial,
                     permittedDomains: ['bar.com'],
+                    excludedDomains: [],
                 });
             });
 
@@ -317,6 +318,7 @@ describe('Rule', () => {
                 expect(RuleBadfilter.negationScope(badfilterRule, targetRule)).toEqual({
                     kind: BadfilterNegationKind.Partial,
                     permittedDomains: ['bar.com'],
+                    excludedDomains: [],
                 });
             });
 
@@ -327,6 +329,7 @@ describe('Rule', () => {
                 expect(RuleBadfilter.negationScope(badfilterRule, targetRule)).toEqual({
                     kind: BadfilterNegationKind.Partial,
                     permittedDomains: ['bar.com'],
+                    excludedDomains: [],
                 });
             });
 
@@ -371,6 +374,39 @@ describe('Rule', () => {
             it('returns None when a rule has a negated $domain', () => {
                 const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|~bar.com,badfilter');
                 const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule))
+                    .toEqual({ kind: BadfilterNegationKind.None });
+            });
+
+            it('returns Full when a badfilter parent domain covers the target subdomains', () => {
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|sub.foo.com');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule))
+                    .toEqual({ kind: BadfilterNegationKind.Full });
+            });
+
+            it('returns Partial with exclusions for a badfilter subdomain of a kept entry', () => {
+                const [badfilterRule] = Rule.createFromText(
+                    1,
+                    0,
+                    '||example.com^$domain=foo.com|sub.bar.com,badfilter',
+                );
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule)).toEqual({
+                    kind: BadfilterNegationKind.Partial,
+                    permittedDomains: ['bar.com'],
+                    excludedDomains: ['sub.bar.com'],
+                });
+            });
+
+            it('returns None when the lists overlap only through a wildcard entry', () => {
+                // MV2 requires an identically written entry before it negates,
+                // even when a wildcard entry covers the concrete one.
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=example.com,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=example.*');
 
                 expect(RuleBadfilter.negationScope(badfilterRule, targetRule))
                     .toEqual({ kind: BadfilterNegationKind.None });
@@ -449,6 +485,38 @@ describe('Rule', () => {
         });
     });
 
+    describe('withExcludedDomains', () => {
+        it('adds restricted domains and keeps the written text and hash', () => {
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=bar.com');
+            const narrowed = targetRule.withExcludedDomains(['sub.bar.com']);
+
+            expect(narrowed).not.toBe(targetRule);
+            expect(narrowed.permittedDomains).toEqual(['bar.com']);
+            expect(narrowed.restrictedDomains).toEqual(['sub.bar.com']);
+            expect(narrowed.originalText).toBe(targetRule.originalText);
+            expect(narrowed.hash).toBe(targetRule.hash);
+            expect(narrowed.priority).toBe(targetRule.priority);
+        });
+
+        it('returns the same rule for an empty exclusion list', () => {
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=bar.com');
+
+            expect(targetRule.withExcludedDomains([])).toBe(targetRule);
+        });
+
+        it('throws when the rule has no permitted $domain list', () => {
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^');
+
+            expect(() => targetRule.withExcludedDomains(['sub.bar.com'])).toThrow();
+        });
+
+        it('throws when the rule already has restricted domains', () => {
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=bar.com|~foo.com');
+
+            expect(() => targetRule.withExcludedDomains(['sub.bar.com'])).toThrow();
+        });
+    });
+
     describe('applyBadfilters', () => {
         it('returns null when a badfilter cancels the rule completely', () => {
             const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$badfilter');
@@ -481,6 +549,65 @@ describe('Rule', () => {
             const result = Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter]);
 
             expect(result?.permittedDomains).toEqual(['bar.com']);
+        });
+
+        it('excludes a badfilter subdomain from a kept target entry', () => {
+            const [badfilterRule] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=foo.com|sub.bar.com,badfilter',
+            );
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+
+            const result = Rule.applyBadfilters(targetRule, [badfilterRule]);
+
+            expect(result?.permittedDomains).toEqual(['bar.com']);
+            expect(result?.restrictedDomains).toEqual(['sub.bar.com']);
+        });
+
+        it('merges exclusions from several badfilters', () => {
+            const [firstBadfilter] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=foo.com|sub.bar.com,badfilter',
+            );
+            const [secondBadfilter] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=baz.com|other.bar.com,badfilter',
+            );
+            const [targetRule] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=foo.com|baz.com|bar.com',
+            );
+
+            const result = Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter]);
+
+            expect(result?.permittedDomains).toEqual(['bar.com']);
+            expect(result?.restrictedDomains).toEqual(['sub.bar.com', 'other.bar.com']);
+        });
+
+        it('checks the intersection against the original list after a narrowing', () => {
+            const [firstBadfilter] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+            const [secondBadfilter] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=foo.com|sub.bar.com,badfilter',
+            );
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+
+            const result = Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter]);
+
+            expect(result?.permittedDomains).toEqual(['bar.com']);
+            expect(result?.restrictedDomains).toEqual(['sub.bar.com']);
+        });
+
+        it('drops the target when a badfilter covers its subdomains', () => {
+            const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|sub.foo.com');
+
+            expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
         });
 
         it('drops the rule when a later badfilter covers the remaining domains', () => {

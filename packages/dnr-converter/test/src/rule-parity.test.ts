@@ -17,6 +17,7 @@ import {
     RequestType,
 } from '@adguard/tsurlfilter';
 
+import { POPULAR_TLDS } from '../../src/constants/popular-tlds';
 import { ResourceType } from '../../src/declarative-rule/rule-condition';
 import { OPTION_NAMES } from '../../src/rule/option-names';
 import { Rule } from '../../src/rule/rule';
@@ -376,9 +377,9 @@ describe('$badfilter detection and negation parity', () => {
         ['||example.com^$domain=/foo\\.bar/', '||example.com^$domain=/foo\\.bar/,badfilter', true],
         ['||example.com^$domain=/FOO\\.bar/', '||example.com^$domain=/foo\\.bar/,badfilter', false],
         ['||example.com^$domain=example.*', '||example.com^$domain=example.*,badfilter', true],
-        // A wildcard TLD entry overlaps only an identically written entry: matching
-        // it against the domains it stands for needs the public suffix list, which
-        // the Manifest V3 converter does not have.
+        // A wildcard TLD entry intersects only an identically written entry:
+        // MV2 requires an exact entry match before it negates the rule, even
+        // when the wildcard covers the concrete entry.
         ['||example.com^$domain=example.*', '||example.com^$domain=example.com|example.org,badfilter', false],
         // In the domain-scoped case the position of $domain is not compared,
         // unlike the position of every other modifier.
@@ -616,6 +617,58 @@ const ENGINE_DOMAIN_BADFILTER_CASES: [
         'https://sub.example.org/',
         false,
     ],
+    // A badfilter entry cancels the target subdomains that it covers.
+    [
+        '||example.com^$domain=foo.com|sub.foo.com',
+        '||example.com^$domain=foo.com,badfilter',
+        'https://sub.foo.com/',
+        true,
+    ],
+    // A badfilter entry that is a subdomain of a kept target entry excludes it.
+    [
+        '||example.com^$domain=foo.com|bar.com',
+        '||example.com^$domain=foo.com|sub.bar.com,badfilter',
+        'https://sub.bar.com/',
+        true,
+    ],
+    [
+        '||example.com^$domain=foo.com|bar.com',
+        '||example.com^$domain=foo.com|sub.bar.com,badfilter',
+        'https://bar.com/',
+        false,
+    ],
+    // A badfilter subdomain cancels only that subdomain.
+    [
+        '||example.com^$domain=foo.com|sub.foo.com',
+        '||example.com^$domain=sub.foo.com,badfilter',
+        'https://foo.com/',
+        false,
+    ],
+    [
+        '||example.com^$domain=foo.com|sub.foo.com',
+        '||example.com^$domain=sub.foo.com,badfilter',
+        'https://sub.foo.com/',
+        true,
+    ],
+    // A wildcard-TLD badfilter covers the concrete entries that it expands to.
+    [
+        '||example.com^$domain=example.*|example.com',
+        '||example.com^$domain=example.com,badfilter',
+        'https://example.com/',
+        true,
+    ],
+    [
+        '||example.com^$domain=example.*|example.com',
+        '||example.com^$domain=example.com,badfilter',
+        'https://example.org/',
+        false,
+    ],
+    [
+        '||example.com^$domain=example.*|example.com',
+        '||example.com^$domain=example.*,badfilter',
+        'https://example.com/',
+        true,
+    ],
     // A negated domain makes the cancellation complete, so the whole text is
     // compared and a matching text cancels the rule.
     [
@@ -641,17 +694,27 @@ describe('$domain badfilter negation through the MV2 engine', () => {
 
 /**
  * Checks whether a domain is covered by a `$domain` list the way DNR matches
- * `initiatorDomains`: an entry covers the domain itself and its subdomains.
- * The shared cases use plain domain entries only.
+ * `initiatorDomains`: an entry covers the domain itself and its subdomains, and
+ * a wildcard TLD entry is expanded with `POPULAR_TLDS`.
  *
  * @param domain Source domain.
  * @param list Permitted or restricted `$domain` entries.
  *
  * @returns True when the list covers the domain.
  */
-const isDomainInList = (domain: string, list: readonly string[]): boolean => list.some(
-    (entry) => domain === entry || domain.endsWith(`.${entry}`),
-);
+const isDomainInList = (domain: string, list: readonly string[]): boolean => list.some((entry) => {
+    if (entry.endsWith('.*')) {
+        const prefix = entry.slice(0, -2);
+
+        return POPULAR_TLDS.some((tld) => {
+            const expanded = `${prefix}.${tld}`;
+
+            return domain === expanded || domain.endsWith(`.${expanded}`);
+        });
+    }
+
+    return domain === entry || domain.endsWith(`.${entry}`);
+});
 
 describe('$domain badfilter narrowing through the MV3 converter', () => {
     it.each(ENGINE_DOMAIN_BADFILTER_CASES)(

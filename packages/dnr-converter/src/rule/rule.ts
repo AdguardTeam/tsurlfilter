@@ -250,6 +250,11 @@ interface RuleOverrides {
     readonly permittedDomains?: readonly string[];
 
     /**
+     * Restricted `$domain` entries that replace the ones parsed from the node.
+     */
+    readonly restrictedDomains?: readonly string[];
+
+    /**
      * Priority for the copy. A badfiltered rule keeps the priority of the rule
      * it narrows, because MV2 does not change the weight of that rule.
      */
@@ -428,9 +433,10 @@ export class Rule {
      * @param node Network rule AST node (must already be in AG syntax).
      * @param originalText Rule text as written in the filter list, captured
      *   before conversion to AG syntax.
-     * @param overrides Optional overrides for a rule copy: permitted `$domain`
-     *   entries and the priority. Used by {@link Rule.withPermittedDomains} to
-     *   narrow a rule that a `$badfilter` cancels only partly and to keep the
+     * @param overrides Optional overrides for a rule copy: permitted and
+     *   restricted `$domain` entries and the priority. Used by
+     *   {@link Rule.withPermittedDomains} and {@link Rule.withExcludedDomains}
+     *   to narrow a rule that a `$badfilter` cancels only partly and to keep the
      *   priority that MV2 keeps for a badfiltered rule.
      *
      * @throws `SyntaxError` when the pattern contains spaces, the rule is too
@@ -623,12 +629,13 @@ export class Rule {
                 case OPTION_NAMES.DOMAIN: {
                     const { permitted, restricted } = Rule.parseDomainList(value);
                     const effectivePermitted = overrides?.permittedDomains ?? permitted;
+                    const effectiveRestricted = overrides?.restrictedDomains ?? restricted;
                     if (effectivePermitted.length > 0) {
                         this.permittedDomains = [...effectivePermitted];
                         meta.permittedDomainCount = effectivePermitted.length;
                     }
-                    if (restricted.length > 0) {
-                        this.restrictedDomains = restricted;
+                    if (effectiveRestricted.length > 0) {
+                        this.restrictedDomains = [...effectiveRestricted];
                         meta.baseModifierCount += 1;
                     }
                     break;
@@ -957,8 +964,9 @@ export class Rule {
      *
      * A rule that a badfilter cancels completely is dropped. A rule that a
      * badfilter cancels only for some domains keeps the remaining domains of its
-     * permitted `$domain` list, because a declarative rule cannot be disabled for
-     * a part of its domains.
+     * permitted `$domain` list, and excludes the badfilter domains that the kept
+     * entries still cover, because a declarative rule cannot be disabled for a
+     * part of its domains.
      *
      * @param targetRule The rule to apply the badfilter rules to.
      * @param badfilterRules Rules that carry the `$badfilter` modifier.
@@ -967,14 +975,15 @@ export class Rule {
      *   completely.
      */
     public static applyBadfilters(targetRule: Rule, badfilterRules: readonly Rule[]): Rule | null {
-        let current: Rule | null = targetRule;
+        let current = targetRule;
+        let excludedDomains: string[] = [];
 
         for (let i = 0; i < badfilterRules.length; i += 1) {
-            if (current === null) {
-                return null;
-            }
-
-            const negation = RuleBadfilter.negationScope(badfilterRules[i], current);
+            const negation = RuleBadfilter.negationScope(
+                badfilterRules[i],
+                targetRule,
+                current.permittedDomains,
+            );
 
             if (negation.kind === BadfilterNegationKind.Full) {
                 return null;
@@ -982,10 +991,13 @@ export class Rule {
 
             if (negation.kind === BadfilterNegationKind.Partial) {
                 current = current.withPermittedDomains(negation.permittedDomains);
+                excludedDomains = [...new Set([...excludedDomains, ...negation.excludedDomains])];
             }
         }
 
-        return current;
+        return excludedDomains.length > 0
+            ? current.withExcludedDomains(excludedDomains)
+            : current;
     }
 
     /**
@@ -1019,6 +1031,48 @@ export class Rule {
             this.node,
             this.originalText,
             { permittedDomains, priority: this.priority },
+        );
+    }
+
+    /**
+     * Creates a copy of this rule with additional restricted `$domain` entries.
+     *
+     * Used by {@link Rule.applyBadfilters} when a badfilter cancels a subdomain
+     * of a kept permitted domain. The text as written in the filter list, the
+     * pattern hash and the priority stay unchanged, so a `$badfilter` rule keeps
+     * matching this rule by the same text.
+     *
+     * @param excludedDomains Domains to exclude from the permitted `$domain`
+     *   list.
+     *
+     * @returns A copy of this rule with the given restricted domains.
+     *
+     * @throws `Error` when this rule has no permitted `$domain` list or already
+     *   has restricted domains.
+     */
+    public withExcludedDomains(excludedDomains: readonly string[]): Rule {
+        if (excludedDomains.length === 0) {
+            return this;
+        }
+
+        if (this.permittedDomains === null) {
+            throw new Error('Cannot add excluded domains to a rule without a permitted $domain list');
+        }
+
+        if (this.restrictedDomains !== null) {
+            throw new Error('Cannot add excluded domains to a rule with restricted domains');
+        }
+
+        return new Rule(
+            this.filterListId,
+            this.index,
+            this.node,
+            this.originalText,
+            {
+                permittedDomains: this.permittedDomains,
+                restrictedDomains: excludedDomains,
+                priority: this.priority,
+            },
         );
     }
 

@@ -188,6 +188,34 @@ describe('FilterConverter', () => {
             expect(declarativeRules[0].condition.initiatorDomains).toEqual(['bar.com']);
         });
 
+        it('excludes a subdomain that a $domain badfilter cancels', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=foo.com|bar.com',
+                '||example.org^$domain=foo.com|sub.bar.com,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['bar.com']);
+            expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['sub.bar.com']);
+        });
+
+        it('excludes a concrete entry that a kept wildcard TLD entry covers', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=example.*|example.com',
+                '||example.org^$domain=example.com,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toContain('example.com');
+            expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['example.com']);
+        });
+
         it('reports an empty-domains error when narrowing leaves only regexp domains', async () => {
             const filter = createFilter([
                 '/some$domain=example.com|/^ads\\./',

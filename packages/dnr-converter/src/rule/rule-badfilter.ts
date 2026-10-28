@@ -8,6 +8,7 @@
 import { NetworkRuleParser } from '@adguard/agtree/parser';
 
 import { OPTIONS_DELIMITER } from '../constants';
+import { POPULAR_TLDS } from '../constants/popular-tlds';
 import { isRegexPattern } from '../utils/string';
 
 import { OPTION_NAMES } from './option-names';
@@ -36,6 +37,11 @@ interface BadfilterTarget {
  * A separator escaped with a backslash belongs to the value, not to the list.
  */
 const WRITTEN_MODIFIER_SEPARATOR_REGEXP = /(?<!\\),/;
+
+/**
+ * Suffix of a wildcard TLD entry, e.g. `example.*`.
+ */
+const WILDCARD_TLD_SUFFIX = '.*';
 
 /**
  * Name of the `$domain` alias of other syntaxes, as it appears in the written
@@ -140,6 +146,12 @@ export type BadfilterNegation =
          * Domains that stay in the target rule's permitted `$domain` list.
          */
         readonly permittedDomains: string[];
+
+        /**
+         * Domains that the kept permitted entries still cover, but that the
+         * badfilter cancels. The target rule must exclude them.
+         */
+        readonly excludedDomains: string[];
     };
 
 /**
@@ -157,21 +169,28 @@ export class RuleBadfilter {
      * against `set-cookie`, or `$queryprune` against `$removeparam`) do not match.
      *
      * A rule with `$domain` and without negated domains is an exception: it
-     * negates the target rule only for the domains present in both lists, so the
-     * `$domain` entries are dropped from both texts and the rest is compared.
+     * negates the target rule only for the domains that the badfilter covers, so
+     * the `$domain` entries are dropped from both texts and the rest is compared.
      * The badfilter entries are then subtracted from the target list: an empty
-     * result means {@link BadfilterNegationKind.Full}, no removed entry means
-     * {@link BadfilterNegationKind.None}, and the entries that stay mean
-     * {@link BadfilterNegationKind.Partial}.
+     * result means {@link BadfilterNegationKind.Full}, no removed entry and no
+     * exclusion means {@link BadfilterNegationKind.None}, and the entries that
+     * stay mean {@link BadfilterNegationKind.Partial}. A badfilter entry that is
+     * a subdomain of a kept target entry becomes an exclusion, because the kept
+     * entry still covers it in DNR.
      *
      * @param badfilterRule The rule that carries the `$badfilter` modifier.
      * @param targetRule The rule to test for negation.
+     * @param currentPermittedDomains Permitted domains that the target rule still
+     *   has after earlier badfilters narrowed it. Defaults to the target rule's
+     *   own list. The intersection check always uses the original list, because
+     *   MV2 compares the written rule text.
      *
      * @returns How `badfilterRule` affects `targetRule`.
      */
     public static negationScope(
         badfilterRule: BadfilterTarget,
         targetRule: BadfilterTarget,
+        currentPermittedDomains: readonly string[] | null = targetRule.permittedDomains,
     ): BadfilterNegation {
         if (!badfilterRule.enabledModifiers.has(OPTION_NAMES.BADFILTER)) {
             return { kind: BadfilterNegationKind.None };
@@ -191,13 +210,22 @@ export class RuleBadfilter {
         }
 
         // A missing list matches any domain, so the other list is cancelled
-        // everywhere. This is the case of a `$badfilter` without `$domain`.
+        // everywhere. When the target rule has no `$domain`, MV2 does not cancel
+        // it everywhere: this branch keeps the whole-rule cancellation, which is
+        // a known limitation of the converter.
         if (badfilterRule.permittedDomains === null || targetRule.permittedDomains === null) {
             return { kind: BadfilterNegationKind.Full };
         }
 
-        const permittedDomains = RuleBadfilter.subtractDomains(
-            targetRule.permittedDomains,
+        // MV2 negates only when the two lists share an identically written
+        // entry. A wildcard entry does not intersect a concrete entry there,
+        // even when it covers it.
+        if (!RuleBadfilter.haveIntersection(targetRule.permittedDomains, badfilterRule.permittedDomains)) {
+            return { kind: BadfilterNegationKind.None };
+        }
+
+        const { permittedDomains, excludedDomains } = RuleBadfilter.narrowDomains(
+            currentPermittedDomains ?? targetRule.permittedDomains,
             badfilterRule.permittedDomains,
         );
 
@@ -205,12 +233,16 @@ export class RuleBadfilter {
             return { kind: BadfilterNegationKind.Full };
         }
 
-        // No entry was removed, so the two lists do not overlap.
-        if (permittedDomains.length === targetRule.permittedDomains.length) {
+        // No entry was removed and no entry needs an exclusion, so the two
+        // lists do not overlap.
+        if (
+            permittedDomains.length === (currentPermittedDomains ?? targetRule.permittedDomains).length
+            && excludedDomains.length === 0
+        ) {
             return { kind: BadfilterNegationKind.None };
         }
 
-        return { kind: BadfilterNegationKind.Partial, permittedDomains };
+        return { kind: BadfilterNegationKind.Partial, permittedDomains, excludedDomains };
     }
 
     /**
@@ -247,37 +279,117 @@ export class RuleBadfilter {
     }
 
     /**
-     * Removes from the target domain list the entries that the badfilter list
-     * also contains.
+     * Checks whether the two lists share an identically written entry.
+     *
+     * This is the same check that `DomainModifier.haveIntersection` applies in
+     * MV2: a plain domain name is compared case-insensitively, while a regexp
+     * pattern keeps its case. A wildcard entry does not intersect a concrete
+     * entry, even when it covers it.
+     *
+     * @param left First domain list.
+     * @param right Second domain list.
+     *
+     * @returns True when the lists share an entry.
+     */
+    private static haveIntersection(left: readonly string[], right: readonly string[]): boolean {
+        const normalizedRight = new Set(right.map(RuleBadfilter.normalizeForComparison));
+
+        return left.some((entry) => normalizedRight.has(RuleBadfilter.normalizeForComparison(entry)));
+    }
+
+    /**
+     * Splits the target domain list into the entries that stay and the
+     * exclusions that the kept entries need.
+     *
+     * A target entry is removed when a badfilter entry covers every domain that
+     * the target entry matches. A badfilter entry that a kept target entry
+     * covers is added to the exclusions, because the kept entry still matches it
+     * in DNR.
      *
      * Entries are compared as written, as `$badfilter` matches the rule text; a
      * plain domain name is compared case-insensitively, because a domain name is
-     * case-insensitive, while a regexp pattern keeps its case.
+     * case-insensitive, while a regexp pattern keeps its case. A regexp entry
+     * covers only an identically written entry, because the package cannot
+     * reason about pattern coverage.
      *
      * The MV2 twin receives values already normalized by `DomainModifier`, which
      * resolves the separator escape, so an escaped separator in a regexp entry
      * compares equal to the unescaped one there — a pre-existing divergence that
      * the `$domain` decision has to settle.
      *
-     * A wildcard TLD entry (`example.*`) therefore overlaps only an identically
-     * written entry: matching it against the domains it stands for needs the
-     * public suffix list, which this package does not have, and a prefix-based
-     * approximation cancels rules for domains the wildcard does not cover.
-     *
      * @param targetDomains Domains permitted by the target rule.
-     * @param excludedDomains Domains permitted by the badfilter rule.
+     * @param badfilterDomains Domains permitted by the badfilter rule.
      *
-     * @returns Target domains that the badfilter rule does not cover.
+     * @returns Target domains that stay and domains to exclude from them.
      */
-    private static subtractDomains(
+    private static narrowDomains(
         targetDomains: readonly string[],
-        excludedDomains: readonly string[],
-    ): string[] {
-        const excluded = new Set(excludedDomains.map(RuleBadfilter.normalizeForComparison));
+        badfilterDomains: readonly string[],
+    ): { permittedDomains: string[]; excludedDomains: string[] } {
+        const badfilterEntries = badfilterDomains.map(RuleBadfilter.normalizeForComparison);
 
-        return targetDomains.filter(
-            (domain) => !excluded.has(RuleBadfilter.normalizeForComparison(domain)),
-        );
+        const permittedDomains = targetDomains.filter((targetDomain) => {
+            const normalizedTarget = RuleBadfilter.normalizeForComparison(targetDomain);
+
+            return !badfilterEntries.some(
+                (badfilterDomain) => RuleBadfilter.isEntryUnder(normalizedTarget, badfilterDomain),
+            );
+        });
+
+        const excludedDomains = badfilterDomains.filter((badfilterDomain) => {
+            const normalizedBadfilter = RuleBadfilter.normalizeForComparison(badfilterDomain);
+
+            return permittedDomains.some((targetDomain) => RuleBadfilter.isEntryUnder(
+                normalizedBadfilter,
+                RuleBadfilter.normalizeForComparison(targetDomain),
+            ));
+        });
+
+        return {
+            permittedDomains,
+            excludedDomains: [...new Set(excludedDomains)],
+        };
+    }
+
+    /**
+     * Checks whether `parent` covers every domain that `child` matches.
+     *
+     * A plain domain covers itself and its subdomains. A wildcard TLD entry is
+     * expanded with {@link POPULAR_TLDS}, the same list that
+     * `RegularRuleConverter.prepareDeclarativeDomains` uses for
+     * `initiatorDomains`, so the check matches the converted rule. A regexp
+     * entry covers only an identically written entry.
+     *
+     * @param child Domain entry to check.
+     * @param parent Domain entry that may cover it.
+     *
+     * @returns True when `parent` covers `child`.
+     */
+    private static isEntryUnder(child: string, parent: string): boolean {
+        if (isRegexPattern(child) || isRegexPattern(parent)) {
+            return child === parent;
+        }
+
+        if (parent.endsWith(WILDCARD_TLD_SUFFIX)) {
+            const prefix = parent.slice(0, -WILDCARD_TLD_SUFFIX.length);
+
+            if (child.endsWith(WILDCARD_TLD_SUFFIX)) {
+                return child === parent || child.endsWith(`.${parent}`);
+            }
+
+            return POPULAR_TLDS.some((tld) => {
+                const expanded = `${prefix}.${tld}`;
+
+                return child === expanded || child.endsWith(`.${expanded}`);
+            });
+        }
+
+        // A wildcard covers many TLDs, so a plain parent cannot cover it.
+        if (child.endsWith(WILDCARD_TLD_SUFFIX)) {
+            return false;
+        }
+
+        return child === parent || child.endsWith(`.${parent}`);
     }
 
     /**
