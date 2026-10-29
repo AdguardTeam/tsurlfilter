@@ -41,6 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   filter-list loading quadratic.
 - `$replace`/`$removeparam` values that contain `=` no longer split at a `$`
   inside the regex: the whole `=/…/` region is treated as a modifier value.
+- A `=/` sequence in a rule pattern (for example `?ver=/` or `combo/f=/`) is
+  no longer mistaken for the start of a regex modifier value, so such rules
+  keep their modifier list instead of being split at the wrong `$`.
 - `CosmeticRule.createFromReader` now throws when the reader represents a
   cosmetic kind the binary path cannot materialize (uBO scriptlets, ABP
   snippets, CSS injection, HTML filtering), and the `CosmeticRule`/`NetworkRule`

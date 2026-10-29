@@ -7,6 +7,7 @@
  * `Int32Array` buffer for zero-allocation downstream consumption.
  */
 
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { lastNonWs, skipWs, tokenStart } from '../context';
@@ -120,6 +121,9 @@ export class ParameterListParser implements BufferedParser {
      * @param buf Output buffer (at least {@link PL_BUFFER_SIZE} elements).
      * @param separator Token type to use as separator (default: Comma).
      * @param mustQuote If true, unquoted parameters are flagged as failures.
+     *
+     * @throws {AdblockSyntaxError} If the list contains more than
+     *   {@link PL_MAX_PARAMS} parameters.
      */
     public static parse(
         ctx: ParserContext,
@@ -235,7 +239,11 @@ export class ParameterListParser implements BufferedParser {
 
             // The buffer is fixed-size, so a longer list must not be written.
             if (paramCount >= PL_MAX_PARAMS) {
-                throw new Error(`Parameter list exceeds the maximum of ${PL_MAX_PARAMS} parameters`);
+                throw new AdblockSyntaxError(
+                    `Parameter list exceeds the maximum of ${PL_MAX_PARAMS} parameters`,
+                    listStart,
+                    listEnd,
+                );
             }
 
             // Trim trailing whitespace from the segment [segTi, sepTi)

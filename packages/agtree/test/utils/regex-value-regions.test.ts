@@ -43,4 +43,38 @@ describe('collectRegexValueRegions', () => {
     test('returns no regions when the value has no closing slash', () => {
         expect(collectRegexValueRegions('||a.com^$replace=/abc')).toEqual([]);
     });
+
+    test('ignores a =/ sequence in the pattern', () => {
+        const rule = '||example.com/?u=/x$script,removeparam=/y/';
+
+        expect(collectRegexValueRegions(rule)).toEqual([
+            [rule.indexOf('/y'), rule.length],
+        ]);
+    });
+
+    test('ignores a =/ sequence that does not follow a modifier name', () => {
+        const rule = '||x-trojmiasto.pl/combo/f=/_style/$replace=/(.\\$)/\\$1.banner-maxia/,stylesheet';
+
+        const regions = collectRegexValueRegions(rule);
+
+        expect(regions).toHaveLength(1);
+        expect(regions[0][0]).toBe(rule.indexOf('/(.'));
+        expect(regions[0][1]).toBe(rule.lastIndexOf('/') + 1);
+    });
+
+    test('opens a region after a comma-separated modifier name', () => {
+        const rule = '||example.com^$script,removeparam=/x$y/';
+
+        expect(collectRegexValueRegions(rule)).toEqual([
+            [rule.indexOf('/x'), rule.lastIndexOf('/') + 1],
+        ]);
+    });
+
+    test('opens a region after a negated modifier name', () => {
+        const rule = '||example.com^$~removeparam=/x$y/';
+
+        expect(collectRegexValueRegions(rule)).toEqual([
+            [rule.indexOf('/x'), rule.lastIndexOf('/') + 1],
+        ]);
+    });
 });

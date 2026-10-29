@@ -2,13 +2,7 @@
  * @file Platform expression evaluator with support for negation and wildcards.
  */
 
-import {
-    Platform,
-    PlatformSpecific,
-    PlatformType,
-    type SpecificPlatformType,
-    type SpecificProductCode,
-} from './platform';
+import { Platform, type SpecificPlatformType, type SpecificProductCode } from './platform';
 
 /**
  * Platform separator, e.g. 'adg_os_any|adg_safari_any' means any AdGuard OS platform and
@@ -57,7 +51,8 @@ export class PlatformExpressionEvaluator {
      *
      * @returns Array of concrete Platform objects after expansion and filtering.
      *
-     * @throws Error if expression is empty or contains only negations.
+     * @throws Error if the expression is empty, contains only negations, or a
+     *   wildcard matches no concrete platform.
      */
     public static evaluate(expression: string): Platform[] {
         const parts = expression
@@ -151,17 +146,6 @@ export class PlatformExpressionEvaluator {
      */
     private static getConcreteMatches(wildcard: Platform): Platform[] {
         const allConcrete = Platform.getAllConcretePlatforms();
-
-        // `adg_safari_any` is the legacy name for the Safari content-blocker
-        // family, documented as `adg_cb_ios` + `adg_cb_safari`. It parses to
-        // `PlatformType.Safari`, which has no concrete instances, so a plain
-        // `matches()` filter would expand it to an empty list.
-        if (wildcard.type === PlatformType.Safari) {
-            return allConcrete.filter((concrete) => concrete.product === wildcard.product
-                && concrete.type === PlatformType.Cb
-                && (concrete.specific === PlatformSpecific.Ios
-                    || concrete.specific === PlatformSpecific.Safari));
-        }
 
         return allConcrete.filter((concrete) => wildcard.matches(concrete));
     }

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { createParserContext, initParserContext } from '../../../src/parser/context';
 import {
     ParameterListParser,
@@ -184,6 +185,15 @@ describe('ParameterListParser', () => {
             const input = new Array(PL_MAX_PARAMS + 1).fill('a').join(',');
 
             expect(() => parse(input)).toThrow(/maximum of 32 parameters/);
+
+            // The error carries the list range so the caller can report it.
+            try {
+                parse(input);
+            } catch (error) {
+                expect(error).toBeInstanceOf(AdblockSyntaxError);
+                expect((error as AdblockSyntaxError).start).toBe(0);
+                expect((error as AdblockSyntaxError).end).toBe(input.length);
+            }
         });
     });
 

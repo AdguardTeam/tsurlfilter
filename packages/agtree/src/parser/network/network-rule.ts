@@ -191,33 +191,23 @@ export class NetworkRuleParser implements StructuralParser {
         // Find the separator $
         const sepTi = NetworkRuleParser.findNetSeparator(ctx, ti, endTi);
 
-        let patternEndIdx: number;
-        let separatorSourceIdx: number;
-
         // Trailing whitespace is not part of the pattern. The tokenizer groups
         // it into a single Whitespace token, so the last non-whitespace token
         // before the separator (or before the end of the rule) is the real
         // pattern end. Keeping the whitespace would make `hasSpaces()` in the
         // engine treat the rule as a host rule and reject it.
-        if (sepTi === -1) {
-            const lastPatternTi = lastNonWs(ctx, ti, endTi);
-            patternEndIdx = lastPatternTi >= 0
-                ? ends[lastPatternTi]
-                : patternStartIdx;
-            separatorSourceIdx = NO_VALUE;
-        } else {
-            const lastPatternTi = lastNonWs(ctx, ti, sepTi);
-            patternEndIdx = lastPatternTi >= 0
-                ? ends[lastPatternTi]
-                : patternStartIdx;
-            separatorSourceIdx = tokenStart(ctx, sepTi);
-        }
+        const patternLimitTi = sepTi !== -1 ? sepTi : endTi;
+        const lastPatternTi = lastNonWs(ctx, ti, patternLimitTi);
+        const patternEndIdx = lastPatternTi >= 0
+            ? ends[lastPatternTi]
+            : patternStartIdx;
+        const separatorSourceIdx = sepTi !== -1 ? tokenStart(ctx, sepTi) : NO_VALUE;
 
         d[dataOffset + NR_FLAGS_OFFSET] = flags;
-        // Detect regex pattern: delegate to the shared isRegexLiteral helper.
-        const patternStartTi = ti;
-        const patternEndTi = sepTi !== -1 ? sepTi : endTi;
-        if (isRegexLiteral(types, patternStartTi, patternEndTi)) {
+        // Detect regex pattern from the same trimmed range as the pattern
+        // bounds, so a trailing space does not change the pattern kind.
+        const patternEndTi = lastPatternTi >= 0 ? lastPatternTi + 1 : ti;
+        if (isRegexLiteral(types, ti, patternEndTi)) {
             d[dataOffset + NR_FLAGS_OFFSET] = flags | NR_FLAG_PATTERN_REGEX;
         }
         d[dataOffset + NR_PATTERN_START_OFFSET] = patternStartIdx;
@@ -247,7 +237,7 @@ export class NetworkRuleParser implements StructuralParser {
 
         // Regex value regions (`$replace=/…/`, `$removeparam=/…/`) are
         // collected lazily, once, because most rules have none.
-        let regions: RegexValueRegion[] | null = null;
+        let regions: readonly RegexValueRegion[] | null = null;
         let regionIndex = -1;
 
         while (i > searchStart) {

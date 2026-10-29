@@ -60,22 +60,29 @@ codebase.
 | Value | Meaning                                                                                            |
 | :---: | -------------------------------------------------------------------------------------------------- |
 | `0`   | **Success.** `ctx.data` is populated and ready for AST building.                                   |
-| `1`   | **Recoverable overflow.** The region cap was hit with `grow: false`. See note below.               |
+| `1`   | **Recoverable overflow.** A region cap was hit and the parser did not grow the region. See note below. |
 | `2`   | **Hard-cap overflow.** Growing the region would exceed `src/limits.ts`.                            |
 
 When `ctx.status === 1`, the parser has written enough state to let callers
 surface a precise error; the rule is **not** valid and MUST NOT be turned
-into an AST. When `ctx.status === 2`, the parser also sets
-`ctx.overflowRegion` so the error names the region that overflowed.
+into an AST. A parser sets this when it cannot grow the region (`grow: false`)
+or when a fixed limit is reached even with growth enabled, such as
+`DeclarationListParser`'s `maxDeclarations`. When `ctx.status === 2`, the
+parser also sets `ctx.overflowRegion` so the error names the region that
+overflowed.
 
 The translation happens in `src/ast-builder/rule-parser.ts`
-(`surfaceStructuralOverflow`) and `src/filter-list/scanner.ts`
-(`checkCtxStatus`): both throw `CapacityOverflowError`. `src/parser/rule.ts`
-itself does not inspect `ctx.status`.
+(`surfaceStructuralOverflow`), `src/filter-list/scanner.ts`
+(`checkCtxStatus`), and `src/ast-utils/parsing.ts`: status `2` becomes a
+`CapacityOverflowError`, status `1` becomes a plain `Error`.
+`src/parser/rule.ts` itself does not inspect `ctx.status`.
 
 Parsers MUST set `ctx.status = 1` (or `2` for a hard cap) on overflow rather
 than throwing — this lets the surrounding pipeline decide how to react
-(re-attempt with larger capacity, log, skip, …).
+(re-attempt with larger capacity, log, skip, …). The one exception is a
+fixed-size list whose buffer cannot grow at all: `ParameterListParser` throws
+an `AdblockSyntaxError` with the list range when a list exceeds
+`PL_MAX_PARAMS`.
 
 ## Zero-heap-allocation invariant
 

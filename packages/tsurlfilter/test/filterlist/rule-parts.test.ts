@@ -241,18 +241,49 @@ describe('getRuleParts', () => {
         expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe('replace=/a=b$c/good/');
     });
 
+    test('parses a rule whose pattern contains =/', () => {
+        // `?u=/` is part of the pattern, not a regex modifier value.
+        const rule = '||example.com/?u=/x$script,removeparam=/y/';
+        const parts = getRuleParts(rule) as NetworkRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Network);
+        expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe('||example.com/?u=/x');
+        expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe('script,removeparam=/y/');
+    });
+
+    test('parses a rule whose pattern contains f=/', () => {
+        // Real-world rule: `combo/f=/` must not open a regex value that
+        // swallows the `$replace` separator.
+        const rule = '||x-trojmiasto.pl/combo/f=/_style/$replace=/(.\\$)/\\$1.banner-maxia/,stylesheet';
+        const parts = getRuleParts(rule) as NetworkRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Network);
+        expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe('||x-trojmiasto.pl/combo/f=/_style/');
+        expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd))
+            .toBe('replace=/(.\\$)/\\$1.banner-maxia/,stylesheet');
+    });
+
+    test('returns null when every $ is inside a regex literal', () => {
+        // There is no modifier separator here: both `$` are regex anchors.
+        // The scanner returns -1, and the rule must not be sliced at -1.
+        expect(getRuleParts('/a$/b$/')).toBeNull();
+    });
+
     test('finds the separator in a long rule with many $ inside a regex', () => {
         // Regression: the per-`$` backward/forward scan was quadratic here.
         // `a$` is repeated rather than `$` so the value does not contain `$$`,
-        // which is a cosmetic separator.
-        const rule = `||example.org^$replace=/${'a$'.repeat(5_000)}/x/`;
+        // which is a cosmetic separator. The timeout catches a quadratic scan:
+        // the linear implementation finishes in milliseconds.
+        const rule = `||example.org^$replace=/${'a$'.repeat(50_000)}/x/`;
         const parts = getRuleParts(rule) as NetworkRuleParts;
 
         expect(parts).not.toBeNull();
         expect(parts!.category).toBe(RuleCategory.Network);
         expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe('||example.org^');
         expect(parts!.modifiersStart).toBe('||example.org^$'.length);
-    });
+    }, 5_000);
 
     test('parses host rules if `ignoreHosts` is false', () => {
         const rule = '127.0.0.1 example.com alias # hosts-like comment';

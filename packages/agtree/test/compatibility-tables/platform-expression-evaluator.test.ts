@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { Platform, PlatformExpressionEvaluator } from '../../src/compatibility-tables';
+import { parseRawPlatforms } from '../../src/compatibility-tables/schemas/platform';
 
 describe('PlatformExpressionEvaluator', () => {
     describe('evaluate', () => {
@@ -42,6 +43,15 @@ describe('PlatformExpressionEvaluator', () => {
             expect(resultStrings).toContain('adg_os_windows');
             expect(resultStrings).toContain('adg_cb_ios');
             expect(resultStrings).toContain('adg_cb_safari');
+        });
+
+        it('should apply the adg_safari_any alias to negated platforms', () => {
+            const result = PlatformExpressionEvaluator.evaluate('adg_any|~adg_safari_any');
+            const resultStrings = result.map((p) => p.toString());
+
+            expect(resultStrings).not.toContain('adg_cb_ios');
+            expect(resultStrings).not.toContain('adg_cb_safari');
+            expect(resultStrings).toContain('adg_cb_android');
         });
 
         it('should handle negation - remove specific platform from wildcard', () => {
@@ -94,6 +104,14 @@ describe('PlatformExpressionEvaluator', () => {
         it('should throw for expression with only negation', () => {
             expect(() => PlatformExpressionEvaluator.evaluate('~adg_os_windows')).toThrow(
                 'must contain at least one positive',
+            );
+        });
+
+        it('should throw when a wildcard matches no concrete platform', () => {
+            // uBO has no OS platforms, so `ubo_os_any` would otherwise expand
+            // to an empty list and silently drop its compatibility entries.
+            expect(() => PlatformExpressionEvaluator.evaluate('ubo_os_any')).toThrow(
+                "Platform 'ubo_os_any' does not match any concrete platform",
             );
         });
 
@@ -393,5 +411,13 @@ describe('PlatformExpressionEvaluator', () => {
             // adg_os_any should appear exactly once
             expect(resultStrings.filter((s) => s === 'adg_os_any')).toHaveLength(1);
         });
+    });
+});
+
+describe('parseRawPlatforms', () => {
+    it('should include the reason when validation fails', () => {
+        expect(() => parseRawPlatforms('ubo_os_any')).toThrow(
+            "Invalid platform expression 'ubo_os_any': Platform 'ubo_os_any' does not match any concrete platform",
+        );
     });
 });

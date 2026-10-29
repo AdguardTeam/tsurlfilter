@@ -11,6 +11,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `collectRegexValueRegions()` and the `RegexValueRegion` type are exported
+  from `@adguard/agtree/utils`. They locate the `=/…/` regex value regions of
+  a network rule, including the replacement part of `$replace`, without
+  tokenizing the rule.
+- `NetworkRuleDataReader.getModifierCount()` reads the modifier count from a
+  populated parser context without allocating a reader.
+
 ### Changed
 
 - `CommentKind` is a regular `enum` instead of a `const enum`, so consumers
@@ -37,6 +44,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - A `$` inside a `$replace`/`$removeparam` regex value is no longer treated as
   the modifier separator, so `$replace=/a$b/good/` and
   `$removeparam=/x$y,z/` parse as a single modifier.
+- A `=/` sequence in a network rule pattern is no longer mistaken for the
+  start of a regex modifier value, so rules whose pattern contains `?ver=/` or
+  `combo/f=/` keep their modifier list instead of being parsed as a plain
+  blocking rule.
 - Leading whitespace before an AdGuard `[$...]` modifier list is ignored, so an
   indented rule no longer parses the modifier list as part of the domain list.
 - Trailing whitespace is no longer part of a network rule pattern. A rule with

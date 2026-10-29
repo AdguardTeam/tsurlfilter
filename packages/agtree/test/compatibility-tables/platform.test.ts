@@ -66,5 +66,14 @@ describe('Platform', () => {
         it('should not match different types', () => {
             expect(Platform.AdgOsAny.matches(Platform.AdgExtChrome)).toBe(false);
         });
+
+        it('should treat adg_safari_any as the Safari content-blocker family', () => {
+            const safariAny = Platform.parse('adg_safari_any');
+
+            expect(safariAny.matches(Platform.AdgCbIos)).toBe(true);
+            expect(safariAny.matches(Platform.AdgCbSafari)).toBe(true);
+            expect(safariAny.matches(Platform.AdgCbAndroid)).toBe(false);
+            expect(safariAny.matches(Platform.AdgOsMac)).toBe(false);
+        });
     });
 });

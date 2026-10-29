@@ -24,7 +24,8 @@ export const parseRawPlatforms = (rawPlatforms: string): string => {
     try {
         PlatformExpressionEvaluator.evaluate(rawPlatforms);
     } catch (error) {
-        throw new Error(`Invalid platform expression: ${rawPlatforms}`);
+        const reason = error instanceof Error ? error.message : String(error);
+        throw new Error(`Invalid platform expression '${rawPlatforms}': ${reason}`);
     }
 
     // Return the full expression for later expansion

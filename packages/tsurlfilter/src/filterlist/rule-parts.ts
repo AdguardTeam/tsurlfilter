@@ -39,7 +39,7 @@ const MODIFIER_ASSIGN = '=';
  * @returns The separator index, or `-1` if there is none.
  */
 const findNetworkRuleSeparatorIndex = (rule: string): number => {
-    let regions: RegexValueRegion[] | null = null;
+    let regions: readonly RegexValueRegion[] | null = null;
     let regionIndex = -1;
 
     for (let i = rule.length - 1; i >= 0; i -= 1) {
@@ -785,7 +785,15 @@ export function getRuleParts(rule: string, ignoreCosmetics = false, ignoreHosts 
     // last `$` (indicating a regex value like `$replace=/a$b/good/`),
     // use the backward regex-aware scanner to find the real separator.
     if (dollarCount > 1 && rule.indexOf('/', lastDollarIndex) !== -1) {
-        lastDollarIndex = findNetworkRuleSeparatorIndex(rule);
+        const separatorIndex = findNetworkRuleSeparatorIndex(rule);
+
+        // Every `$` is escaped or inside a regex value, so the rule has no
+        // modifier list. Treat it as invalid instead of slicing at `-1`.
+        if (separatorIndex === -1) {
+            return null;
+        }
+
+        lastDollarIndex = separatorIndex;
     }
 
     const modifierListStart = lastDollarIndex + 1;

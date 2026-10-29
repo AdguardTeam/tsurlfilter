@@ -123,6 +123,34 @@ describe('RuleFactory whitespace handling', () => {
     });
 });
 
+describe('RuleFactory regex value handling', () => {
+    it('parses a rule whose pattern contains =/', () => {
+        // Real-world rule from ag-base.txt: `?ver=/` is part of the pattern,
+        // not a regex modifier value.
+        // eslint-disable-next-line max-len
+        const text = '/^https:\\/\\/[0-9a-z.]+\\/wp-content\\/litespeed\\/js\\/[0-9a-f]{32}\\.js\\?ver=/$script,~third-party,match-case,replace=/function _0x[a-z0-9]{3}536\\(\\)\\{[\\s\\S]*?\\}/function _0x242536(){};/';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern())
+            .toBe('/^https:\\/\\/[0-9a-z.]+\\/wp-content\\/litespeed\\/js\\/[0-9a-f]{32}\\.js\\?ver=/');
+        expect(rule.isRegexRule()).toBe(true);
+        expect(rule.getAdvancedModifierValue())
+            .toBe('/function _0x[a-z0-9]{3}536\\(\\)\\{[\\s\\S]*?\\}/function _0x242536(){};/');
+    });
+
+    it('parses a rule whose pattern contains f=/', () => {
+        // Real-world rule from ag-base.txt: `combo/f=/` must not open a regex
+        // value that swallows the `$replace` separator.
+        const text = '||x-trojmiasto.pl/combo/f=/_style/$replace=/(.\\$)/\\$1.banner-maxia/,stylesheet';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe('||x-trojmiasto.pl/combo/f=/_style/');
+        expect(rule.getAdvancedModifierValue()).toBe('/(.\\$)/\\$1.banner-maxia/');
+    });
+});
+
 describe('RuleFactory cosmetic content parity', () => {
     const corpus = [
         '##.banner',

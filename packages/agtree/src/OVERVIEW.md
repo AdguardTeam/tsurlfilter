@@ -187,7 +187,8 @@ consumer entry points:
   materialization of high-volume rule kinds.
 - **`parseRange(ctx, startTi, endTi, dataOffset, options?)`** — for callers
   that have already tokenized and want to parse a sub-range of tokens,
-  optionally writing into a non-zero region of `ctx.data`.
+  optionally writing into a non-zero region of `ctx.data`. Cosmetic rules
+  require `dataOffset === 0` and throw otherwise.
 
 The two-phase flow is complemented by encapsulated structural readers —
 `CosmeticRuleDataReader` and `NetworkRuleDataReader` — that expose semantic

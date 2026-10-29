@@ -205,12 +205,14 @@ export class StructuralRuleParser implements RootParser<RuleParserOptions> {
      * @param startTi Inclusive start token index. Defaults to 0.
      * @param endTi Exclusive end token index. Defaults to ctx.tokenCount.
      * @param dataOffset Offset within ctx.data to write output. Defaults to 0.
+     *   Must be `0` for cosmetic rules.
      * @param options Parsing options object. See {@link RuleParserOptions}.
      *
      * @returns The {@link RuleKind} of the rule, so the caller can dispatch
      *   to the correct AST parser.
      *
-     * @throws If the rule is a non-supported cosmetic rule type.
+     * @throws If the rule is a non-supported cosmetic rule type, or if a
+     *   cosmetic rule is parsed with a non-zero `dataOffset`.
      */
     public static parse(
         ctx: ParserContext,

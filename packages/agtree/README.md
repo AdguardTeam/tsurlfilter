@@ -171,12 +171,14 @@ short version:
   compatibility shim, but they return v5 nodes.
 - `ParserOptions` → `ParseOptions`. `isLocIncluded` now defaults to `false`
   in the pipeline; pass it explicitly if you need `start`/`end`.
-- `RawRuleConverter.convertToAdg(list, tolerant)` →
-  `convertToAdg(list, { tolerant })`, and the converted text moved from
-  `.result` to `.converted`.
+- `RawFilterListConverter.convertToAdg(list, tolerant)` →
+  `RawFilterListConverter.convertToAdg(list, { tolerant })`, and the converted
+  text moved from `.result` to `.converted`.
 - `GenericPlatform` / `SpecificPlatform` bitmasks → the `Platform` class.
-- Compatibility table methods: `find()` → `query()`, `query()` →
-  `queryAll()`, `existsAny()` → `has()`.
+- Compatibility table methods were renamed: `existsAny()` → `has()`,
+  `getSingle()` → `get()`, `getFirst()` → `query()`, `getMultiple()` →
+  `queryAll()`, `getAllMultiple()` → `getAll()`, `getRow()` →
+  `getAllVariants()`, and `getRowsByProduct()` → `groupByProduct()`.
 
 See the `BREAKING` entries in the [changelog](CHANGELOG.md) for the full list.
 
