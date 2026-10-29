@@ -101,8 +101,8 @@ describe('FilterConverter (withSourceMap: true)', () => {
 
         it('removes a CSP rule negated by an exception with the same condition', async () => {
             const filter = createFilter([
-                "||playzone.cz^$csp=child-src *",
-                "@@||playzone.cz^$csp=child-src *",
+                '||playzone.cz^$csp=child-src *',
+                '@@||playzone.cz^$csp=child-src *',
             ], 1);
 
             const { ruleset, errors } = await converter.convertCspRules([filter]);
@@ -114,7 +114,7 @@ describe('FilterConverter (withSourceMap: true)', () => {
 
         it('removes a valued CSP rule negated by a value-less exception', async () => {
             const filter = createFilter([
-                "||playzone.cz^$csp=child-src *",
+                '||playzone.cz^$csp=child-src *',
                 '@@||playzone.cz^$csp',
             ], 1);
 

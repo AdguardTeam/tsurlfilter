@@ -29,12 +29,29 @@ const HEADER_CONDITIONS: RuleCondition['responseHeaders'] = [
 ];
 
 /**
+ * Single header conditions, so the OR semantics of the header list differs
+ * from the AND one for the multi-header fragment above.
+ */
+const SINGLE_HEADER_CONDITIONS: RuleCondition['responseHeaders'] = [
+    { header: 'set-cookie' },
+];
+
+/**
+ * A single header condition with a value restriction.
+ */
+const VALUED_HEADER_CONDITIONS: RuleCondition['responseHeaders'] = [
+    { header: 'set-cookie', values: ['a'] },
+];
+
+/**
  * Headers of the sample requests.
  */
 const SAMPLE_HEADERS: Record<string, string>[] = [
     {},
     { 'set-cookie': 'a' },
+    { 'set-cookie': 'b' },
     { 'x-frame-options': 'deny' },
+    { 'set-cookie': 'a', 'x-frame-options': 'deny' },
 ];
 
 /**
@@ -58,6 +75,8 @@ const CONDITION_FRAGMENTS: RuleCondition[] = [
     { initiatorDomains: ['sub.example.com'] },
     { excludedInitiatorDomains: ['example.com'] },
     { responseHeaders: HEADER_CONDITIONS },
+    { responseHeaders: SINGLE_HEADER_CONDITIONS },
+    { responseHeaders: VALUED_HEADER_CONDITIONS },
     { isUrlFilterCaseSensitive: true },
     { domainType: DomainType.ThirdParty, resourceTypes: [ResourceType.Script] },
     { domainType: DomainType.ThirdParty, excludedResourceTypes: [ResourceType.Script] },
@@ -174,7 +193,7 @@ function matchesCondition(condition: RuleCondition, sample: SampleRequest): bool
     }
 
     if (condition.responseHeaders !== undefined
-        && !condition.responseHeaders.every((header) => headerMatches(header, sample.headers))) {
+        && !condition.responseHeaders.some((header) => headerMatches(header, sample.headers))) {
         return false;
     }
 
@@ -222,14 +241,24 @@ describe('coversNonUrlConditions', () => {
             });
     });
 
-    it('requires every exception header to be implied by the blocking rule', () => {
+    it('compares response headers by OR, like DNR does', () => {
         const blocker: RuleCondition = {
             responseHeaders: [{ header: 'set-cookie' }, { header: 'x-frame-options' }],
         };
         const narrower: RuleCondition = { responseHeaders: [{ header: 'set-cookie' }] };
 
-        expect(coversNonUrlConditions(narrower, blocker)).toBe(true);
-        expect(coversNonUrlConditions(blocker, narrower)).toBe(false);
+        expect(coversNonUrlConditions(blocker, narrower)).toBe(true);
+        expect(coversNonUrlConditions(narrower, blocker)).toBe(false);
+    });
+
+    it('does not let a valued header cover a value-less one', () => {
+        const valueLess: RuleCondition = { responseHeaders: [{ header: 'x-frame-options' }] };
+        const withValue: RuleCondition = {
+            responseHeaders: [{ header: 'x-frame-options', values: ['deny'] }],
+        };
+
+        expect(coversNonUrlConditions(valueLess, withValue)).toBe(true);
+        expect(coversNonUrlConditions(withValue, valueLess)).toBe(false);
     });
 
     it('compares request domains by coverage like initiator domains', () => {

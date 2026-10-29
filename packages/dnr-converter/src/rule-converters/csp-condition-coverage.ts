@@ -311,9 +311,9 @@ const coversExcludedDomains = (exceptionList: unknown, blockingList: unknown): b
 /**
  * Checks whether an exception's response headers cover a blocking rule's ones.
  *
- * Headers of one condition are combined with AND, so the exception covers the
- * blocking rule only when every exception header is implied by some header of
- * the blocking rule: a response that matches the blocking rule must match the
+ * A rule matches when any header of its list matches, so the exception covers
+ * the blocking rule only when every blocking header is implied by some header
+ * of the exception: a response that matches the blocking rule must match the
  * exception as well. An absent exception list means the exception is not
  * restricted by headers, so it covers any list of the blocking rule.
  *
@@ -323,7 +323,7 @@ const coversExcludedDomains = (exceptionList: unknown, blockingList: unknown): b
  * @returns `true` if the exception's list covers the blocking rule's list.
  */
 const coversResponseHeaders = (exceptionHeaders: unknown, blockingHeaders: unknown): boolean => (
-    exceptionHeaders === undefined || isHeaderListSubset(exceptionHeaders, blockingHeaders)
+    exceptionHeaders === undefined || isHeaderListSubset(blockingHeaders, exceptionHeaders)
 );
 
 /**
