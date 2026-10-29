@@ -1,4 +1,5 @@
 import { CSS_HITS_MARKER_PREFIX } from '../../common/constants';
+import { EXTCSS_REMOVED_ELEMENTS_KEY } from '../../common/content-script/extcss-removed-elements';
 import { MESSAGE_HANDLER_NAME, MessageType } from '../../common/message-constants';
 
 /**
@@ -36,6 +37,13 @@ export type ExtCssProtocol = {
      * between injections so it can be disposed before a re-apply.
      */
     instanceKey: typeof EXTCSS_INSTANCE_KEY;
+
+    /**
+     * `window` key under which the injected function records the elements it
+     * removed with a `:remove()` rule, so the content-script CSS-hits counter
+     * does not put them back into the page as probes.
+     */
+    removedElementsKey: typeof EXTCSS_REMOVED_ELEMENTS_KEY;
 };
 
 /**
@@ -59,4 +67,5 @@ export const EXTCSS_PROTOCOL: ExtCssProtocol = {
     handlerName: MESSAGE_HANDLER_NAME,
     messageType: MessageType.SaveCssHitsStats,
     instanceKey: EXTCSS_INSTANCE_KEY,
+    removedElementsKey: EXTCSS_REMOVED_ELEMENTS_KEY,
 };

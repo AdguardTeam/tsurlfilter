@@ -870,7 +870,19 @@ export class WebRequestApi {
             documentId,
             url,
             timeStamp,
+            documentLifecycle,
         } = details;
+
+        /**
+         * A prerender commit belongs to a hidden document: `handleFrame` skips
+         * its cosmetic recalculation, so updating the frame context here would
+         * drop the visible document's prepared state and leave it without
+         * cosmetics if the prerender is discarded. Mirrors the prerender
+         * guards in `onBeforeRequest` and `onBeforeNavigate`.
+         */
+        if (documentLifecycle === DocumentLifecycle.Prerender) {
+            return;
+        }
 
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 

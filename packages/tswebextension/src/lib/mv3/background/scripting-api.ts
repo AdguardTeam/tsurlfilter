@@ -338,9 +338,10 @@ export class ScriptingApi {
      * document (if any) by injecting the self-contained
      * {@link extCssInjectedDispose} function.
      *
-     * Called when the matched ExtendedCSS rule set is empty for a document
-     * that already received an instance, so the stale instance's
-     * MutationObserver and styles are cleaned up instead of leaking.
+     * Called whenever the matched ExtendedCSS rule set is empty. The disposal
+     * is unconditional: the background cannot tell whether the document still
+     * holds an instance (a BFCache restore or a prerender activation recreates
+     * the frame context), so the injected function is a no-op without one.
      *
      * @param params Target parameters.
      * @param params.tabId The ID of the tab.

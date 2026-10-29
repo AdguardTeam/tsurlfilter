@@ -8,9 +8,9 @@ import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-a
 
 // Ceiling for the serialized `func` payload only (not the total executeScript
 // payload — see extcss-large-ruleset.test.ts for the 1 MiB total ceiling).
-// Measured value on 2026-10-20: 46 474 B (~45.4 KiB) for the Vitest-serialized
-// `extCssInjectedApply`; the ceiling leaves ~2x headroom for engine growth
-// while still failing long before the 1 MiB total-payload ceiling.
+// Only the ceiling is asserted: the measured value drifts with every engine
+// change, so it is printed by the test instead of pinned here. The ceiling
+// still fails long before the 1 MiB total-payload ceiling.
 const APPLY_FN_MAX_BYTES = 96 * 1024;
 
 describe('extCssInjectedApply — serialized payload size', () => {

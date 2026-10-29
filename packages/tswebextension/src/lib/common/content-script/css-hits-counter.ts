@@ -3,6 +3,7 @@ import { type IAffectedElement } from '@adguard/extended-css';
 import { CSS_HITS_MARKER_PREFIX, CSS_HITS_MARKER_PROPERTY, SEMICOLON } from '../constants';
 import { type RuleInfoBasic } from '../rule-info';
 
+import { EXTCSS_REMOVED_ELEMENTS_KEY } from './extcss-removed-elements';
 import { HitsStorage } from './hits-storage';
 import {
     isProbeRestorable,
@@ -406,6 +407,29 @@ export class CssHitsCounter {
     }
 
     /**
+     * Checks whether ExtendedCss removed the element with a `:remove()` rule.
+     *
+     * In MV2 the ExtendedCss callback fills
+     * {@link extendedCssRemovedElements}. In MV3 ExtendedCss runs in the
+     * background-injected function, which records the removed nodes on
+     * `window` — the injected function and the content script share the
+     * document's ISOLATED world — so the counter reads that set as well.
+     *
+     * @param element Element to check.
+     *
+     * @returns True if ExtendedCss removed the element.
+     */
+    private isRemovedByExtendedCss(element: Element): boolean {
+        if (this.extendedCssRemovedElements.has(element)) {
+            return true;
+        }
+
+        const w = window as unknown as Record<string, WeakSet<Element> | undefined>;
+
+        return w[EXTCSS_REMOVED_ELEMENTS_KEY]?.has(element) ?? false;
+    }
+
+    /**
      * Starts counting process.
      */
     private startCounter(): void {
@@ -620,7 +644,7 @@ export class CssHitsCounter {
 
                         // Elements removed by ExtendedCss are reported by it,
                         // so they must not be put back into the page.
-                        if (this.extendedCssRemovedElements.has(node)) {
+                        if (this.isRemovedByExtendedCss(node)) {
                             continue;
                         }
 
@@ -1056,7 +1080,7 @@ export class CssHitsCounter {
 
                 // ExtendedCss already reported the hit and removed the
                 // element itself, so it must not be put back.
-                if (this.extendedCssRemovedElements.has(element)) {
+                if (this.isRemovedByExtendedCss(element)) {
                     settledProbes.add(probe);
                     continue;
                 }

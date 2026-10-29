@@ -353,6 +353,24 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         expect(elements).toEqual(['<div id="first" class="ad">', '<div id="second" class="ad">']);
     });
 
+    it('records the nodes removed by a :remove() rule for the content-script counter', () => {
+        // In MV3 the content script no longer runs ExtendedCss, so its
+        // `beforeStyleApplied` callback never sees the `:remove()` rules. The
+        // removed nodes are kept on `window` — the injected function shares
+        // the document's ISOLATED world with the content script — so the
+        // CssHitsCounter does not put them back into the page as probes.
+        document.body.innerHTML = '<div class="ad">ad</div>';
+        const ad = document.querySelector('.ad') as HTMLElement;
+
+        extCssInjectedApply(['.ad:remove()'], true, EXTCSS_PROTOCOL);
+
+        const removed = (window as unknown as Record<string, WeakSet<Element>>)[EXTCSS_PROTOCOL.removedElementsKey];
+
+        expect(removed).toBeInstanceOf(WeakSet);
+        expect(removed.has(ad)).toBe(true);
+        expect(ad.parentNode).toBeNull();
+    });
+
     it('reports a hit for an element matched after the apply', async () => {
         document.body.innerHTML = '<div id="first" class="ad"><span class="child">ad</span></div>';
 
@@ -458,6 +476,8 @@ describe('extCssInjectedApply — CSS hits stats', () => {
             messageType: 'customCssHitsType',
             // eslint-disable-next-line no-underscore-dangle -- deliberate test marker key
             instanceKey: '__customExtCss',
+            // eslint-disable-next-line no-underscore-dangle -- deliberate test marker key
+            removedElementsKey: '__customExtCssRemoved',
         } as unknown as ExtCssProtocol;
         const customMarkerRule = '.ad:has(.child) { display: none !important; '
             + 'content: \'custommarker1%3B2\' !important; }';

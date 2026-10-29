@@ -95,17 +95,27 @@ export const extCssInjectedApply = (
         countedHits?: WeakMap<Element, Set<string>>;
     };
 
-    const w = window as unknown as Record<string, RetainedExtCss | null | undefined>;
+    const w = window as unknown as Record<string, unknown>;
 
     // The key arrives via `protocol` — a module-scope const would be an
     // unresolved free identifier in the page's ISOLATED world.
-    const previous = w[protocol.instanceKey];
+    const previous = w[protocol.instanceKey] as RetainedExtCss | null | undefined;
     const previousRules = previous?.cssRules;
     // The inlined helpers keep no state between injections, so the dedupe map
     // is created here, retained on the instance and passed explicitly. Nodes
     // reported before a re-apply are skipped, while nodes matched for the
     // first time by the new instance are still reported.
     const countedHits = previous?.countedHits ?? new WeakMap<Element, Set<string>>();
+
+    /**
+     * Elements removed by a `:remove()` rule of this or a previous apply.
+     * Retained on `window` — the injected function shares the document's
+     * ISOLATED world with the content script — so the content-script
+     * `CssHitsCounter` does not put them back into the page as probes.
+     */
+    const removedElements = (w[protocol.removedElementsKey] as WeakSet<Element> | undefined)
+        ?? new WeakSet<Element>();
+    w[protocol.removedElementsKey] = removedElements;
 
     /**
      * Hits collected by {@link beforeStyleApplied} during the current apply
@@ -156,6 +166,14 @@ export const extCssInjectedApply = (
      * @returns The same element (with the hit marker content cleared).
      */
     const beforeStyleApplied = (el: IAffectedElement): IAffectedElement => {
+        if (el.rules) {
+            for (const rule of el.rules) {
+                if (rule.style?.remove === 'true') {
+                    removedElements.add(el.node);
+                }
+            }
+        }
+
         const hits = cssHitsHelpers.collectExtendedCssHits(
             el,
             protocol.markerPrefix,
@@ -234,10 +252,12 @@ export const extCssInjectedApply = (
 
 /**
  * Self-contained ExtendedCSS disposal function injected into pages via
- * `chrome.scripting.executeScript({ func, args })` when the rule set is empty
- * for a document that already received an instance. Disposes the previously
- * retained ExtendedCss instance (if any): disconnects its MutationObserver and
- * reverts its styles, so stale observers and styles do not leak.
+ * `chrome.scripting.executeScript({ func, args })` when the rule set is empty.
+ * The disposal is unconditional — the background cannot tell whether the
+ * document still holds an instance — and is a no-op when it does not. Disposes
+ * the retained ExtendedCss instance when present: disconnects its
+ * MutationObserver and reverts its styles, so stale observers and styles do
+ * not leak.
  *
  * Like {@link extCssInjectedApply}, it MUST NOT reference any outer-scope
  * identifier; the instance key arrives via the `protocol` argument.
