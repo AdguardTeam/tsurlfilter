@@ -70,12 +70,12 @@ export interface PreregisteredScriptsManifest {
 
     /**
      * Expanded preregistered hostnames embedded in the shared bundle's embed
-     * gate. The runtime publishes this set for the ancestor-chain check, so
-     * the page and background predicates always use the same set. Absent in
-     * manifests generated before AG-60054; the runtime then falls back to the
-     * configured domains.
+     * gate. The runtime publishes this set for the top-level-site check, so
+     * the page and background predicates always use the same set. Required:
+     * a manifest without it cannot describe what its bundle gates, and the
+     * feature has no released generation to stay compatible with.
      */
-    hostnames?: string[];
+    hostnames: string[];
 }
 
 /**

@@ -48,9 +48,19 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  * `about:blank`/srcdoc frames too: the dynamic path treats such frames as
  * covered by their nearest HTTP ancestor's hostname, so the preregistered
  * files must actually be injected there as well — otherwise the rules
- * would be suppressed on both paths.
+ * would be suppressed on both paths. Coverage still requires the
+ * top-level site to be preregistered: see below.
  *
  * Hostnames not in the list keep the standard dynamic injection path.
+ *
+ * A frame is covered only when the top-level site belongs to the
+ * preregistered host set: the filtering state (allowlist, inverted
+ * allowlist) is tab-level, so the shared bundle installs a no-op shim when
+ * the top-level origin (`location.ancestorOrigins`) is outside the set, and
+ * the dynamic path applies the same rule to the published coverage.
+ * Third-party embeds under a foreign top therefore stay on the dynamic path,
+ * which can see the embedding site's filtering state. Intermediate frames do
+ * not participate.
  *
  * Known timing windows (accepted by design, self-healing on navigation):
  * - Documents are judged against the latest reported coverage, not the
@@ -76,10 +86,10 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  *   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for
  *   the host: rules registered on `*://youtube.com/*` still execute on
  *   `/embed/…` — tracked in AG-54564.
- * - With protection disabled on a site (or in inverted allowlist mode),
- *   YouTube embeds on it still run these scriptlets: the registration
- *   covers every frame of the host, while the dynamic path would inject
- *   nothing there — tracked in AG-60054.
+ * - A frame whose top-level document has an opaque origin (e.g. a
+ *   CSP-sandboxed top) is rejected by the page gate, but the background
+ *   still sees the top frame's URL and reports coverage, so covered rules
+ *   are not injected in its subframes.
  */
 export class PreregisteredScriptsService {
     /**
@@ -418,7 +428,7 @@ export class PreregisteredScriptsService {
         try {
             if (preregistrationEnabled && hostnames.length > 0) {
                 const manifest = await readManifest(scriptsPath);
-                publishedHostnames = manifest.hostnames ?? hostnames;
+                publishedHostnames = manifest.hostnames;
                 scripts = await PreregisteredScriptsService.buildDomainScripts(
                     hostnames,
                     scriptsPath,

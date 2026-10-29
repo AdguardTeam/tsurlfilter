@@ -18,6 +18,7 @@ import { engineApi } from '../../../../../src/lib/mv3/background/engine-api';
 import {
     CLEANUP_FILENAME,
     computeRuleHash,
+    expandHostnames,
     getRuleFilename,
     MANIFEST_FILENAME,
     MANIFEST_SCHEMA_VERSION,
@@ -161,13 +162,13 @@ const scriptletFilename = (name: string): string => `s-${name}.js`;
  * (404) manifest.
  * @param scriptletFiles Scriptlet name → per-function filename map.
  * Defaults to an empty map.
- * @param hostnames Expanded host set to embed in the manifest. Omitted in
- * manifests generated before AG-60054.
+ * @param hostnames Expanded host set to embed in the manifest. Defaults to
+ * the configured domains; `null` omits the field to simulate a broken build.
  */
 const setupManifest = (
     hashes: string[] | null,
     scriptletFiles?: Record<string, string>,
-    hostnames?: string[],
+    hostnames: string[] | null = expandHostnames(['youtube.com']),
 ): void => {
     // sinon-chrome exposes getURL via a getter — replace the whole global.
     const getURL = vi.fn((p: string) => `chrome-extension://test/${p}`);
@@ -1232,7 +1233,7 @@ describe('PreregisteredScriptsService', () => {
             await setupRulesWithManifest({ 'youtube.com': [rule] });
 
             // The shared bundle embeds the generation's host set; it is the
-            // source of truth for the ancestor-chain predicate, even when the
+            // source of truth for the top-level predicate, even when the
             // runtime config expands to a different list.
             setupManifest(
                 [await computeRuleHash(rule)],

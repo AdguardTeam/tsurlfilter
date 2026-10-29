@@ -46,6 +46,7 @@ describe('readManifest', () => {
             schemaVersion: MANIFEST_SCHEMA_VERSION,
             hashes: ['0123456789abcdef'],
             scriptletFiles: { 'set-cookie': 's-set-cookie.js' },
+            hostnames: ['youtube.com', 'www.youtube.com'],
         };
         stubManifestFetch(body);
 
@@ -131,11 +132,49 @@ describe('readManifest', () => {
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('s-*.js');
     });
 
+    it('throws when "hostnames" is missing, so the gate set is never guessed', async () => {
+        stubManifestFetch({
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: [],
+            scriptletFiles: {},
+        });
+
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hostnames"');
+    });
+
+    it('throws when "hostnames" is empty or not plain hostnames', async () => {
+        stubManifestFetch({
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: [],
+            scriptletFiles: {},
+            hostnames: [],
+        });
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hostnames"');
+
+        for (const hostnames of [
+            'youtube.com',
+            ['Example.COM'],
+            ['example.com:443'],
+            ['https://example.com'],
+        ]) {
+            clearManifestCache();
+            stubManifestFetch({
+                schemaVersion: MANIFEST_SCHEMA_VERSION,
+                hashes: [],
+                scriptletFiles: {},
+                hostnames,
+            });
+            // eslint-disable-next-line no-await-in-loop
+            await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hostnames"');
+        }
+    });
+
     it('passes an abort signal to fetch, so a hung request cannot stall the sync', async () => {
         stubManifestFetch({
             schemaVersion: MANIFEST_SCHEMA_VERSION,
             hashes: [],
             scriptletFiles: {},
+            hostnames: ['youtube.com'],
         });
 
         await readManifest(SCRIPTS_PATH);
@@ -157,6 +196,7 @@ describe('readManifest', () => {
             schemaVersion: MANIFEST_SCHEMA_VERSION,
             hashes: [],
             scriptletFiles: {},
+            hostnames: ['youtube.com'],
         });
 
         await readManifest(SCRIPTS_PATH);
@@ -173,6 +213,7 @@ describe('readManifest', () => {
             schemaVersion: MANIFEST_SCHEMA_VERSION,
             hashes: [],
             scriptletFiles: {},
+            hostnames: ['youtube.com'],
         };
         stubManifestFetch(body);
 
