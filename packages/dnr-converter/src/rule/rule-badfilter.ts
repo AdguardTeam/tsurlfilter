@@ -26,6 +26,11 @@ interface BadfilterTarget {
     readonly permittedDomains: string[] | null;
     readonly restrictedDomains: string[] | null;
     /**
+     * Permitted `$domain` entries as written in the rule text, before any
+     * badfilter narrowed the rule. Equal to `permittedDomains` for a parsed rule.
+     */
+    readonly originalPermittedDomains?: string[] | null;
+    /**
      * Rule text as written in the filter list, before conversion to AG syntax.
      */
     readonly originalText: string;
@@ -209,23 +214,25 @@ export class RuleBadfilter {
             return { kind: BadfilterNegationKind.None };
         }
 
+        const writtenPermittedDomains = targetRule.originalPermittedDomains ?? targetRule.permittedDomains;
+
         // A missing list matches any domain, so the other list is cancelled
         // everywhere. When the target rule has no `$domain`, MV2 does not cancel
         // it everywhere: this branch keeps the whole-rule cancellation, which is
         // a known limitation of the converter.
-        if (badfilterRule.permittedDomains === null || targetRule.permittedDomains === null) {
+        if (badfilterRule.permittedDomains === null || writtenPermittedDomains === null) {
             return { kind: BadfilterNegationKind.Full };
         }
 
         // MV2 negates only when the two lists share an identically written
         // entry. A wildcard entry does not intersect a concrete entry there,
         // even when it covers it.
-        if (!RuleBadfilter.haveIntersection(targetRule.permittedDomains, badfilterRule.permittedDomains)) {
+        if (!RuleBadfilter.haveIntersection(writtenPermittedDomains, badfilterRule.permittedDomains)) {
             return { kind: BadfilterNegationKind.None };
         }
 
         const { permittedDomains, excludedDomains } = RuleBadfilter.narrowDomains(
-            currentPermittedDomains ?? targetRule.permittedDomains,
+            currentPermittedDomains ?? writtenPermittedDomains,
             badfilterRule.permittedDomains,
         );
 
@@ -236,7 +243,7 @@ export class RuleBadfilter {
         // No entry was removed and no entry needs an exclusion, so the two
         // lists do not overlap.
         if (
-            permittedDomains.length === (currentPermittedDomains ?? targetRule.permittedDomains).length
+            permittedDomains.length === (currentPermittedDomains ?? writtenPermittedDomains).length
             && excludedDomains.length === 0
         ) {
             return { kind: BadfilterNegationKind.None };

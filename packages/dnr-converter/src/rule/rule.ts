@@ -255,6 +255,13 @@ interface RuleOverrides {
     readonly restrictedDomains?: readonly string[];
 
     /**
+     * Permitted `$domain` entries as written in the rule text. A narrowed copy
+     * keeps the original list here, so a `$badfilter` intersection check still
+     * compares the written text.
+     */
+    readonly originalPermittedDomains?: readonly string[];
+
+    /**
      * Priority for the copy. A badfiltered rule keeps the priority of the rule
      * it narrows, because MV2 does not change the weight of that rule.
      */
@@ -318,6 +325,15 @@ export class Rule {
      * Permitted (non-negated) domains from the `$domain` modifier.
      */
     readonly permittedDomains: string[] | null = null;
+
+    /**
+     * Permitted `$domain` entries as written in the rule text.
+     *
+     * For a narrowed copy, this keeps the list of the original rule, so the
+     * `$badfilter` intersection check still compares the written rule text.
+     * Equal to {@link Rule.permittedDomains} for a parsed rule.
+     */
+    readonly originalPermittedDomains: string[] | null = null;
 
     /**
      * Restricted (negated) domains from the `$domain` modifier.
@@ -841,6 +857,9 @@ export class Rule {
         this.hash = fastHash(pattern);
         this.allowlist = isAllowlist;
         this.priority = overrides?.priority ?? RulePriority.calculate(meta, isAllowlist);
+        this.originalPermittedDomains = overrides?.originalPermittedDomains
+            ? [...overrides.originalPermittedDomains]
+            : this.permittedDomains;
         this.permittedResourceTypes = [...permittedResourceTypesSet];
         this.restrictedResourceTypes = [...restrictedResourceTypesSet];
     }
@@ -1030,7 +1049,11 @@ export class Rule {
             this.index,
             this.node,
             this.originalText,
-            { permittedDomains, priority: this.priority },
+            {
+                permittedDomains,
+                originalPermittedDomains: this.originalPermittedDomains ?? this.permittedDomains ?? undefined,
+                priority: this.priority,
+            },
         );
     }
 
@@ -1071,6 +1094,7 @@ export class Rule {
             {
                 permittedDomains: this.permittedDomains,
                 restrictedDomains: excludedDomains,
+                originalPermittedDomains: this.originalPermittedDomains ?? this.permittedDomains ?? undefined,
                 priority: this.priority,
             },
         );

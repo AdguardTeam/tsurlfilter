@@ -463,6 +463,14 @@ describe('Rule', () => {
                 .toBe(targetRule.priority);
         });
 
+        it('keeps the written permitted list for the badfilter intersection check', () => {
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+            const narrowed = targetRule.withPermittedDomains(['bar.com']);
+
+            expect(narrowed.permittedDomains).toEqual(['bar.com']);
+            expect(narrowed.originalPermittedDomains).toEqual(['foo.com', 'bar.com']);
+        });
+
         it('throws when the rule has no permitted $domain list', () => {
             const [targetRule] = Rule.createFromText(1, 0, '||example.com^');
 
@@ -493,6 +501,7 @@ describe('Rule', () => {
             expect(narrowed).not.toBe(targetRule);
             expect(narrowed.permittedDomains).toEqual(['bar.com']);
             expect(narrowed.restrictedDomains).toEqual(['sub.bar.com']);
+            expect(narrowed.originalPermittedDomains).toEqual(['bar.com']);
             expect(narrowed.originalText).toBe(targetRule.originalText);
             expect(narrowed.hash).toBe(targetRule.hash);
             expect(narrowed.priority).toBe(targetRule.priority);
