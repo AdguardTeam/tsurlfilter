@@ -159,12 +159,18 @@ export class CssHitsCounter {
     private countedProbes = new WeakSet<Element>();
 
     /**
-     * Elements intentionally removed by ExtendedCss.
+     * Elements ExtendedCss removed with a `:remove()` rule; never restore
+     * them. MV2 records them on this instance, MV3 in the injected function's
+     * `window` set (the shared ISOLATED world), which wins when it exists.
      *
-     * ExtendedCss reports hits for them synchronously before removal, so the
-     * counter must not restore these detached elements to the DOM.
+     * @returns Elements removed by ExtendedCss.
      */
-    private extendedCssRemovedElements = new WeakSet<Element>();
+    private get extendedCssRemovedElements(): WeakSet<Element> {
+        return (window as unknown as Record<string, WeakSet<Element> | undefined>)[EXTCSS_REMOVED_ELEMENTS_KEY]
+            ?? this.instanceExtendedCssRemovedElements;
+    }
+
+    private instanceExtendedCssRemovedElements = new WeakSet<Element>();
 
     /**
      * Number of counting attempts already performed for each pending probe.
@@ -407,29 +413,6 @@ export class CssHitsCounter {
     }
 
     /**
-     * Checks whether ExtendedCss removed the element with a `:remove()` rule.
-     *
-     * In MV2 the ExtendedCss callback fills
-     * {@link extendedCssRemovedElements}. In MV3 ExtendedCss runs in the
-     * background-injected function, which records the removed nodes on
-     * `window` — the injected function and the content script share the
-     * document's ISOLATED world — so the counter reads that set as well.
-     *
-     * @param element Element to check.
-     *
-     * @returns True if ExtendedCss removed the element.
-     */
-    private isRemovedByExtendedCss(element: Element): boolean {
-        if (this.extendedCssRemovedElements.has(element)) {
-            return true;
-        }
-
-        const w = window as unknown as Record<string, WeakSet<Element> | undefined>;
-
-        return w[EXTCSS_REMOVED_ELEMENTS_KEY]?.has(element) ?? false;
-    }
-
-    /**
      * Starts counting process.
      */
     private startCounter(): void {
@@ -644,7 +627,7 @@ export class CssHitsCounter {
 
                         // Elements removed by ExtendedCss are reported by it,
                         // so they must not be put back into the page.
-                        if (this.isRemovedByExtendedCss(node)) {
+                        if (this.extendedCssRemovedElements.has(node)) {
                             continue;
                         }
 
@@ -1080,7 +1063,7 @@ export class CssHitsCounter {
 
                 // ExtendedCss already reported the hit and removed the
                 // element itself, so it must not be put back.
-                if (this.isRemovedByExtendedCss(element)) {
+                if (this.extendedCssRemovedElements.has(element)) {
                     settledProbes.add(probe);
                     continue;
                 }
