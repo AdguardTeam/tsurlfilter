@@ -15,6 +15,7 @@ import { type AppInterface, type MessageHandler } from '../../common/app';
 import { type RegistrationResult } from '../../common/canvas-protection/contracts';
 import { CanvasProtectionController } from '../../common/canvas-protection/controller';
 import { CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
+import { CollectHitStatsNotifier } from '../../common/collect-hit-stats';
 import { ALLOWLIST_FILTER_ID, BLOCKING_TRUSTED_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
@@ -357,6 +358,8 @@ export class TsWebExtension implements AppInterface<
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
+        const previousCollectStats = this.configuration?.settings.collectStats;
+
         // IMPORTANT: This call should always be made before any other operations for
         // proper logging and error handling.
         TsWebExtension.updateLogLevel(config.logLevel);
@@ -527,6 +530,11 @@ export class TsWebExtension implements AppInterface<
         await WebRequestApi.flushMemoryCache();
 
         documentBlockingService.configure(config);
+
+        if (previousCollectStats !== undefined
+            && previousCollectStats !== this.configuration.settings.collectStats) {
+            CollectHitStatsNotifier.notify(this.configuration.settings.collectStats);
+        }
 
         logger.trace('[tsweb.TsWebExtension.configure]: end');
 
@@ -874,7 +882,12 @@ export class TsWebExtension implements AppInterface<
             throw new Error('Configuration not set');
         }
 
+        const previousCollectStats = this.configuration.settings.collectStats;
         this.configuration.settings.collectStats = isCollectStats;
+
+        if (previousCollectStats !== isCollectStats) {
+            CollectHitStatsNotifier.notify(isCollectStats);
+        }
     }
 
     /**

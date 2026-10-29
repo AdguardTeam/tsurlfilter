@@ -5,6 +5,7 @@ import { type AppInterface, type MessageHandler } from '../../common/app';
 import { type RegistrationResult } from '../../common/canvas-protection/contracts';
 import { CanvasProtectionController } from '../../common/canvas-protection/controller';
 import { type CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
+import { CollectHitStatsNotifier } from '../../common/collect-hit-stats';
 import { type FilteringLog, type FilteringLogEvent } from '../../common/filtering-log';
 import { type EventChannel } from '../../common/utils/channels';
 import { logger } from '../../common/utils/logger';
@@ -237,6 +238,7 @@ export class TsWebExtension implements AppInterface<
             throw new Error('App is not started!');
         }
 
+        const previousCollectStats = this.configuration.settings.collectStats;
         const configuration = configurationMV2Validator.parse(config);
 
         TsWebExtension.updateLogLevel(configuration.logLevel);
@@ -250,6 +252,10 @@ export class TsWebExtension implements AppInterface<
 
         await WebRequestApi.flushMemoryCache();
         await this.stealthApi.updateWebRtcPrivacyPermissions();
+
+        if (previousCollectStats !== this.configuration.settings.collectStats) {
+            CollectHitStatsNotifier.notify(this.configuration.settings.collectStats);
+        }
 
         return {
             conversionErrors: result.conversionErrors,
@@ -400,7 +406,12 @@ export class TsWebExtension implements AppInterface<
      * @throws Error if {@link configuration} not set.
      */
     public setCollectHitStats(isCollectStats: boolean): void {
+        const previousCollectStats = this.configuration.settings.collectStats;
         this.configuration.settings.collectStats = isCollectStats;
+
+        if (previousCollectStats !== isCollectStats) {
+            CollectHitStatsNotifier.notify(isCollectStats);
+        }
     }
 
     /**

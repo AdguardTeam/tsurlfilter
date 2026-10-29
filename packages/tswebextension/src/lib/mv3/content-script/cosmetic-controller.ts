@@ -1,5 +1,6 @@
 import { type ExtCssConfiguration, ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
 
+import { CollectHitStatsListener } from '../../common/content-script/collect-hit-stats';
 import { CssHitsCounter } from '../../common/content-script/css-hits-counter';
 import { PendingProbesCollector } from '../../common/content-script/pending-probes-collector';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
@@ -38,17 +39,28 @@ export class CosmeticController {
     private pendingProbesCollector = new PendingProbesCollector();
 
     /**
+     * Latest hit stats collection state received from the background.
+     *
+     * `null` means that no update has been received yet, so the state from
+     * {@link ContentScriptCosmeticData.areHitsStatsCollected} is used.
+     */
+    private collectHitStatsEnabled: boolean | null = null;
+
+    /**
      * Creates new {@link CosmeticController} instance.
      */
     constructor() {
         this.process = this.process.bind(this);
         this.beforeStyleApplied = this.beforeStyleApplied.bind(this);
+        this.onCollectHitStatsChange = this.onCollectHitStatsChange.bind(this);
     }
 
     /**
      * Init cosmetic processing.
      */
     public init(): void {
+        CollectHitStatsListener.listen(this.onCollectHitStatsChange);
+
         // Start observing the DOM before the asynchronous cosmetic data
         // request, so that elements created and removed during the document
         // loading are not missed by the CSS hits counter.
@@ -116,6 +128,10 @@ export class CosmeticController {
             this.cssHitsCounter = CosmeticController.createCssHitsCounter(
                 this.pendingProbesCollector,
             );
+
+            if (this.collectHitStatsEnabled === false) {
+                this.cssHitsCounter.pause();
+            }
         } else {
             this.pendingProbesCollector.stop();
         }
@@ -171,6 +187,36 @@ export class CosmeticController {
             .map((sel) => `${sel} ${HIDING_STYLE}`)
             .join('\n');
         (document.head || document.documentElement).appendChild(style);
+    }
+
+    /**
+     * Applies a hit stats collection change received from the background.
+     *
+     * @param isCollectStats Whether CSS hits must be collected.
+     */
+    private onCollectHitStatsChange(isCollectStats: boolean): void {
+        this.collectHitStatsEnabled = isCollectStats;
+
+        if (!this.cssHitsCounter) {
+            if (isCollectStats) {
+                // The counter is not created yet. Restart the collector only
+                // while it still covers the loading window.
+                if (document.readyState === 'loading') {
+                    this.pendingProbesCollector.start();
+                }
+            } else {
+                this.pendingProbesCollector.stop();
+            }
+
+            return;
+        }
+
+        if (isCollectStats) {
+            this.cssHitsCounter.resume();
+            return;
+        }
+
+        this.cssHitsCounter.pause();
     }
 
     /**

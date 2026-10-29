@@ -23,6 +23,7 @@ import {
     CanvasAvailabilityStatus,
     CanvasRegistrationStatus,
 } from '../../../../src/lib/common/canvas-protection/constants';
+import { CollectHitStatsNotifier } from '../../../../src/lib/common/collect-hit-stats';
 import { type Message } from '../../../../src/lib/common/message';
 import { canvasDeliveryChannel } from '../../../../src/lib/mv2/background/api';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
@@ -112,6 +113,23 @@ describe('TsWebExtension', () => {
             expect(result.conversionErrors).toEqual(mockErrors);
         });
 
+        it('should notify content scripts when configure changes collectStats', async () => {
+            await instance.initStorage();
+            await instance.start(config);
+            const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+            await instance.configure({
+                ...config,
+                settings: {
+                    ...config.settings,
+                    collectStats: false,
+                },
+            });
+
+            expect(notifySpy).toHaveBeenCalledWith(false);
+            notifySpy.mockRestore();
+        });
+
         it('should be updated correctly and return conversion errors', async () => {
             const mockErrors: never[] = [];
             vi.spyOn(engineApi, 'startEngine').mockResolvedValue({ conversionErrors: mockErrors });
@@ -186,6 +204,24 @@ describe('TsWebExtension', () => {
             instance.setCollectHitStats(expected);
 
             expect(instance.configuration.settings.collectStats).toBe(expected);
+        });
+
+        it('should notify content scripts when collectStats changes', () => {
+            const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+            instance.setCollectHitStats(false);
+
+            expect(notifySpy).toHaveBeenCalledWith(false);
+            notifySpy.mockRestore();
+        });
+
+        it('should not notify content scripts when collectStats does not change', () => {
+            const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+            instance.setCollectHitStats(true);
+
+            expect(notifySpy).not.toHaveBeenCalled();
+            notifySpy.mockRestore();
         });
 
         it('should update stealthModeEnabled correctly', async () => {

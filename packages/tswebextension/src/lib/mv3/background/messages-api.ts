@@ -115,12 +115,25 @@ export class MessagesApi {
             case MessageType.SaveCssHitsStats: {
                 return this.handleSaveCssHitsStats(sender, message.payload);
             }
+            case MessageType.GetCollectHitStats: {
+                return MessagesApi.handleGetCollectHitStats();
+            }
             default: {
                 logger.error('[tsweb.MessagesApi.handleMessage]: did not found handler for message');
             }
         }
 
         return undefined;
+    }
+
+    /**
+     * Handles a request for the current hit stats collection state.
+     *
+     * @returns Whether CSS hits must be collected, or `null` if the app is not
+     * configured yet.
+     */
+    private static handleGetCollectHitStats(): boolean | null {
+        return appContext.configuration?.settings.collectStats ?? null;
     }
 
     /**

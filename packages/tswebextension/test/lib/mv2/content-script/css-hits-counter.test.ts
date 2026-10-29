@@ -1803,4 +1803,243 @@ describe('CssHitsCounter', () => {
             vi.useRealTimers();
         }
     });
+
+    it('stops counting mutations while paused and counts them after resume', () => {
+        const restoreMutationObserver = mockMutationObserver();
+
+        const style = document.createElement('style');
+        style.textContent = "div.pause-bait { display: none !important; --adguard-hit: 'adguard30%3B30' !important; }";
+        document.head.appendChild(style);
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            const getBaitHits = (): unknown[] => onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 30);
+
+            counter.pause();
+
+            const pausedBait = document.createElement('div');
+            pausedBait.className = 'pause-bait';
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [pausedBait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(getBaitHits()).toHaveLength(0);
+
+            counter.resume();
+
+            const resumedBait = document.createElement('div');
+            resumedBait.className = 'pause-bait';
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [resumedBait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(getBaitHits()).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            style.remove();
+            restoreMutationObserver();
+        }
+    });
+
+    it('stops the collector and timers on pause and restarts them on resume while loading', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+        const readyState = 'loading';
+        Object.defineProperty(document, 'readyState', {
+            configurable: true,
+            get: () => readyState,
+        });
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.collector-pause-bait',
+            "{ display: none !important; --adguard-hit: 'adguard31%3B31' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        try {
+            const collector = new PendingProbesCollector();
+            collector.start();
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, { pendingProbesCollector: collector });
+
+            counter.pause();
+
+            expect(collector.isObserving).toBe(false);
+            expect(vi.getTimerCount()).toBe(0);
+
+            counter.resume();
+
+            expect(collector.isObserving).toBe(true);
+
+            const bait = document.createElement('div');
+            bait.className = 'collector-pause-bait';
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            vi.advanceTimersByTime(1000);
+
+            const hits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 31);
+            expect(hits).toHaveLength(1);
+            expect(bait.parentNode).toBeNull();
+
+            counter.stop();
+        } finally {
+            delete (document as unknown as { readyState?: string }).readyState;
+            style.remove();
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
+    it('restarts its own observer on resume while loading without a collector', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+        const readyState = 'loading';
+        Object.defineProperty(document, 'readyState', {
+            configurable: true,
+            get: () => readyState,
+        });
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.own-observer-bait',
+            "{ display: none !important; --adguard-hit: 'adguard35%3B35' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            // The constructor attaches the counter's own observer while
+            // loading when no collector is provided.
+            expect(MutationObserverMock.last).toBeDefined();
+
+            counter.pause();
+            expect(MutationObserverMock.last!.isDisconnected).toBe(true);
+
+            counter.resume();
+
+            const bait = document.createElement('div');
+            bait.className = 'own-observer-bait';
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            const hits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 35);
+            expect(hits).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            delete (document as unknown as { readyState?: string }).readyState;
+            style.remove();
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
+    it('reports hits from an interrupted full scan after resume', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.rollback-bait',
+            "{ display: none !important; --adguard-hit: 'adguard40%3B40' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        const container = document.createElement('div');
+        for (let i = 0; i < 60; i += 1) {
+            const bait = document.createElement('div');
+            bait.className = 'rollback-bait';
+            container.appendChild(bait);
+        }
+        document.body.appendChild(container);
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            // The first batch has already written its hits to `hitsStorage`,
+            // but the scan has not completed and reported them.
+            counter.pause();
+            counter.resume();
+
+            vi.advanceTimersByTime(1000);
+
+            const hits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 40);
+            expect(hits).toHaveLength(60);
+
+            counter.stop();
+        } finally {
+            container.remove();
+            style.remove();
+            restoreFixtureMarkers();
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
+    it('keeps blanking ExtendedCss markers while paused', () => {
+        const restoreMutationObserver = mockMutationObserver();
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+        const onCssHitsFound = vi.fn();
+        const counter = new CssHitsCounter(onCssHitsFound);
+
+        try {
+            counter.pause();
+
+            const rule = { style: { content: 'adguard32;32' } };
+            counter.countAffectedByExtendedCss({
+                rules: [rule],
+                node: document.getElementById('testDiv')!,
+            });
+
+            expect(rule.style.content).toBe('');
+            expect(onCssHitsFound).not.toHaveBeenCalled();
+
+            counter.resume();
+
+            const resumedRule = { style: { content: 'adguard32;32' } };
+            counter.countAffectedByExtendedCss({
+                rules: [resumedRule],
+                node: document.getElementById('testDiv')!,
+            });
+
+            expect(resumedRule.style.content).toBe('');
+            expect(onCssHitsFound).toHaveBeenCalledTimes(1);
+
+            counter.stop();
+        } finally {
+            restoreFixtureMarkers();
+            restoreMutationObserver();
+        }
+    });
 });

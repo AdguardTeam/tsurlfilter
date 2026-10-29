@@ -18,6 +18,16 @@ vi.mock('../../../../src/lib/mv2/background/api', () => ({
     cookieFiltering: {},
 }));
 
+vi.mock('../../../../src/lib/mv2/background/app-context', () => ({
+    appContext: {
+        configuration: {
+            settings: {
+                collectStats: true,
+            },
+        },
+    },
+}));
+
 vi.mock('../../../../src/lib/mv2/background/assistant', () => ({
     Assistant: {
         onCreateRule: { dispatch: vi.fn() },
@@ -61,6 +71,20 @@ const createSender = (frameId?: number, url?: string): any => ({
 });
 
 describe('MessagesApi', () => {
+    describe('handleGetCollectHitStats', () => {
+        it('returns the configured collectStats value', async () => {
+            const messagesApi = new MessagesApi({} as any, {} as any);
+
+            const result = await messagesApi.handleMessage({
+                handlerName: MESSAGE_HANDLER_NAME,
+                type: MessageType.GetCollectHitStats,
+                payload: null,
+            }, {} as any);
+
+            expect(result).toBe(true);
+        });
+    });
+
     describe('handleSaveCssHitsStats', () => {
         let publishEvent: ReturnType<typeof vi.fn>;
         let getTabFrame: ReturnType<typeof vi.fn>;

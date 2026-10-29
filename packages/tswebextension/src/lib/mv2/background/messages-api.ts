@@ -24,6 +24,7 @@ import { getRuleTextsByIndex } from '../../common/utils/rule-text-provider';
 import { getDomain } from '../../common/utils/url';
 
 import { cookieFiltering, engineApi } from './api';
+import { appContext } from './app-context';
 import { Assistant } from './assistant';
 import { CosmeticApi } from './cosmetic-api';
 import { RequestBlockingApi } from './request';
@@ -101,10 +102,23 @@ export class MessagesApi {
             case MessageType.SaveCssHitsStats: {
                 return this.handleSaveCssHitsStats(sender, message.payload);
             }
+            case MessageType.GetCollectHitStats: {
+                return this.handleGetCollectHitStats();
+            }
             default:
         }
 
         return undefined;
+    }
+
+    /**
+     * Handles a request for the current hit stats collection state.
+     *
+     * @returns Whether CSS hits must be collected, or `null` if the app is not
+     * configured yet.
+     */
+    private handleGetCollectHitStats(): boolean | null {
+        return appContext.configuration?.settings.collectStats ?? null;
     }
 
     /**

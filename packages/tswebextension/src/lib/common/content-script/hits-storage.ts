@@ -25,6 +25,17 @@ export class HitsStorage {
     }
 
     /**
+     * Returns the rule stored for the element.
+     *
+     * @param element Html element.
+     *
+     * @returns Stored rule, or `undefined` if the element is not counted.
+     */
+    public getCounted(element: object): string | undefined {
+        return this.map.get(element);
+    }
+
+    /**
      * Stores rule-element info in storage.
      *
      * @param element Html element.
@@ -32,5 +43,14 @@ export class HitsStorage {
      */
     public setCounted(element: object, rule: string): void {
         this.map.set(element, rule);
+    }
+
+    /**
+     * Removes the stored rule for the element.
+     *
+     * @param element Html element.
+     */
+    public deleteCounted(element: object): void {
+        this.map.delete(element);
     }
 }

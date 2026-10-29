@@ -8,8 +8,10 @@ import {
     describe,
     expect,
     it,
+    type MockInstance,
     vi,
 } from 'vitest';
+import browser from 'webextension-polyfill';
 
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
@@ -347,6 +349,186 @@ describe('short-lived probes', () => {
 
             expect(collectorObserver.isDisconnected).toBe(true);
         } finally {
+            restoreMutationObserver();
+        }
+    });
+});
+
+describe('collect hit stats changes', () => {
+    afterEach(() => {
+        // Remove listeners registered by controllers created in this file.
+        // eslint-disable-next-line no-underscore-dangle
+        (browser.runtime.onMessage as unknown as { _listeners: unknown[] })._listeners = [];
+    });
+
+    /**
+     * Returns stats with the given filter id from `SaveCssHitsStats` messages.
+     *
+     * @param sendAppMessageSpy Spy on `sendAppMessage`.
+     * @param filterId Filter id to select.
+     *
+     * @returns Collected stats.
+     */
+    const getBaitStats = (
+        sendAppMessageSpy: MockInstance,
+        filterId: number,
+    ): Array<{ filterId: number; ruleIndex: number }> => {
+        return sendAppMessageSpy.mock.calls
+            .map(([message]) => message as { type: MessageType; payload: unknown })
+            .filter((message) => message.type === MessageType.SaveCssHitsStats)
+            .flatMap((message) => message.payload as Array<{ filterId: number; ruleIndex: number }>)
+            .filter((stat) => stat.filterId === filterId);
+    };
+
+    /**
+     * Triggers a runtime message as the background would.
+     *
+     * @param message Message to trigger.
+     */
+    const triggerRuntimeMessage = (message: unknown): void => {
+        (browser.runtime.onMessage as unknown as {
+            trigger: (value: unknown) => void;
+        }).trigger(message);
+    };
+
+    it('pauses and resumes the counter on messages', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.controller-pause-bait',
+            "{ display: none !important; --adguard-hit: 'adguard33%3B33' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        try {
+            const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockResolvedValue({
+                    isAppStarted: true,
+                    areHitsStatsCollected: true,
+                    extCssRules: [],
+                    nativeCssSelectors: null,
+                });
+
+            const cosmeticController = new CosmeticController();
+            cosmeticController.init();
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: false },
+            });
+
+            const pausedBait = document.createElement('div');
+            pausedBait.className = 'controller-pause-bait';
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [pausedBait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(getBaitStats(sendAppMessageSpy, 33)).toHaveLength(0);
+
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: true },
+            });
+
+            const resumedBait = document.createElement('div');
+            resumedBait.className = 'controller-pause-bait';
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [resumedBait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(getBaitStats(sendAppMessageSpy, 33)).toHaveLength(1);
+        } finally {
+            style.remove();
+            restoreMutationObserver();
+        }
+    });
+
+    it('applies a message received before the counter is created', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.controller-early-bait',
+            "{ display: none !important; --adguard-hit: 'adguard34%3B34' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        let resolveCosmeticData!: (value: ContentScriptCosmeticData) => void;
+        const cosmeticDataPromise = new Promise<ContentScriptCosmeticData>((resolve) => {
+            resolveCosmeticData = resolve;
+        });
+
+        try {
+            const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockReturnValue(cosmeticDataPromise);
+
+            const cosmeticController = new CosmeticController();
+            cosmeticController.init();
+
+            const collectorObserver = MutationObserverMock.last!;
+
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: false },
+            });
+
+            // The collector must stop even before the counter is created.
+            expect(collectorObserver.isDisconnected).toBe(true);
+
+            resolveCosmeticData({
+                isAppStarted: true,
+                areHitsStatsCollected: true,
+                extCssRules: [],
+                nativeCssSelectors: null,
+            });
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            const pausedBait = document.createElement('div');
+            pausedBait.className = 'controller-early-bait';
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [pausedBait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(getBaitStats(sendAppMessageSpy, 34)).toHaveLength(0);
+
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: true },
+            });
+
+            const resumedBait = document.createElement('div');
+            resumedBait.className = 'controller-early-bait';
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [resumedBait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(getBaitStats(sendAppMessageSpy, 34)).toHaveLength(1);
+        } finally {
+            style.remove();
             restoreMutationObserver();
         }
     });

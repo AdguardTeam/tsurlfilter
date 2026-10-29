@@ -36,9 +36,9 @@ tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
 # shared chunk added or renamed by the bundler is included instead of silently
 # dropping out of the sum. The smoke builder's CJS bundle tree-shakes the
 # collector, so its size is not the shipped size either.
-# Current payload: 69,704 bytes. Raise this only when a genuine size increase
+# Current payload: 74,995 bytes. Raise this only when a genuine size increase
 # lands, never to silence a regression.
-max_size=70000
+max_size=75500
 package_dist="node_modules/@adguard/tswebextension/dist"
 if ! filesize=$(node measure-payload.mjs "$package_dist/css-hits-counter.js"); then
     echo "Failed to measure the shipped css-hits-counter payload"

@@ -20,6 +20,11 @@ vi.mock('../../../../src/lib/mv3/background/engine-api', () => ({
 vi.mock('../../../../src/lib/mv3/background/app-context', () => ({
     appContext: {
         isStorageInitialized: true,
+        configuration: {
+            settings: {
+                collectStats: true,
+            },
+        },
     },
 }));
 
@@ -66,6 +71,20 @@ const createSender = (frameId?: number, url?: string): any => ({
 });
 
 describe('MessagesApi', () => {
+    describe('handleGetCollectHitStats', () => {
+        it('returns the configured collectStats value', async () => {
+            const messagesApi = new MessagesApi({} as any, {} as any, {} as any);
+
+            const result = await messagesApi.handleMessage({
+                handlerName: MESSAGE_HANDLER_NAME,
+                type: MessageType.GetCollectHitStats,
+                payload: null,
+            }, {} as any);
+
+            expect(result).toBe(true);
+        });
+    });
+
     describe('handleSaveCssHitsStats', () => {
         let publishEvent: ReturnType<typeof vi.fn>;
         let getTabFrame: ReturnType<typeof vi.fn>;
