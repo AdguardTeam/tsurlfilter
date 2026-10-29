@@ -16,6 +16,8 @@ import {
 
 import { logger } from '../../common/utils/logger';
 
+import { getSourceRuleIdsList } from './source-rule-ids';
+
 /**
  * Narrows {@link ConversionResult} for the dynamic ruleset use case:
  * `declarativeRulesToCancel` is always present (required, not optional) because
@@ -119,14 +121,17 @@ export default class DynamicRulesApi {
      *
      * @param conversionResult Regular dynamic conversion result.
      * @param rebuiltCspRules Rebuilt dynamic CSP rules.
+     * @param cspRuleset Source rule set of the rebuilt CSP rules, used to
+     * report source rule ids.
      *
      * @returns CSP rules that fit, limitations for omitted rules and the final
      * counts of dynamic rules.
      */
-    public static limitRebuiltCspRules(
+    public static async limitRebuiltCspRules(
         conversionResult: DynamicConversionResult,
         rebuiltCspRules: DeclarativeRule[],
-    ): LimitedCspRules {
+        cspRuleset?: IRulesetWithSourceMap,
+    ): Promise<LimitedCspRules> {
         const rules: DeclarativeRule[] = [];
         let totalCount = conversionResult.ruleset.getSafeRulesCount()
             + conversionResult.ruleset.getUnsafeRulesCount();
@@ -168,7 +173,7 @@ export default class DynamicRulesApi {
         if (excludedTotalIds.length > 0) {
             limitations.push(new TooManyRulesError(
                 `Rebuilt CSP rules exceed the dynamic rules limit: ${excludedTotalIds.length} rules were omitted`,
-                excludedTotalIds,
+                await getSourceRuleIdsList(cspRuleset, excludedTotalIds),
                 DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_RULES,
                 excludedTotalIds.length,
             ));
@@ -176,7 +181,7 @@ export default class DynamicRulesApi {
         if (excludedUnsafeIds.length > 0) {
             limitations.push(new TooManyUnsafeRulesError(
                 `Rebuilt CSP rules exceed the unsafe dynamic limit: ${excludedUnsafeIds.length} rules were omitted`,
-                excludedUnsafeIds,
+                await getSourceRuleIdsList(cspRuleset, excludedUnsafeIds),
                 DynamicRulesApi.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES,
                 excludedUnsafeIds.length,
             ));
@@ -184,7 +189,7 @@ export default class DynamicRulesApi {
         if (excludedRegexpIds.length > 0) {
             limitations.push(new TooManyRegexpRulesError(
                 `Rebuilt CSP rules exceed the dynamic regexp limit: ${excludedRegexpIds.length} rules were omitted`,
-                excludedRegexpIds,
+                await getSourceRuleIdsList(cspRuleset, excludedRegexpIds),
                 DynamicRulesApi.MAX_NUMBER_OF_REGEX_RULES,
                 excludedRegexpIds.length,
             ));
@@ -344,7 +349,11 @@ export default class DynamicRulesApi {
         // so exceeding a limit here must not fail the whole configuration.
         const limitedCspRules = rebuiltCspRules === undefined
             ? rebuiltCspRules
-            : DynamicRulesApi.limitRebuiltCspRules(conversionResult, rebuiltCspRules).rules;
+            : (await DynamicRulesApi.limitRebuiltCspRules(
+                conversionResult,
+                rebuiltCspRules,
+                cspRuleset,
+            )).rules;
         const {
             rules,
             sourceMap,

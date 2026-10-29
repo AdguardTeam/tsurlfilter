@@ -28,7 +28,7 @@ export { type ConversionResult } from './filter-converter/conversion-result';
 export { Filter } from './filter/filter';
 export { type IFilter } from './filter/types';
 export { type IRulesHashMap, RulesHashMap, type HashWithSource } from './ruleset/rules-hash-map';
-export { type ISourceMap } from './ruleset/source-map';
+export { type ISourceMap, type SourceRuleIdxAndFilterId } from './ruleset/source-map';
 export {
     UnavailableFilterSourceError,
     UnavailableRulesetSourceError,
@@ -60,6 +60,7 @@ export {
 export {
     type LimitationError,
     MaxScannedRulesError,
+    TooManyError,
     TooManyRegexpRulesError,
     TooManyUnsafeRulesError,
     TooManyRulesError,

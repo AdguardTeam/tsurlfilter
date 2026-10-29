@@ -30,6 +30,7 @@ import DynamicRulesApi, { type ConversionResult, type DynamicRulesCounts } from 
 import { engineApi } from './engine-api';
 import { extSessionStorage } from './ext-session-storage';
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
+import { mergeLimitations } from './limitations';
 import { MessagesApi } from './messages-api';
 import { RequestEvents } from './request/events/request-events';
 import { RulesetsLoaderApi } from './rulesets-loader-api';
@@ -524,18 +525,19 @@ export class TsWebExtension implements AppInterface<
             );
             res.cspRules = { errors: cspRules.staticErrors };
 
-            const limitedDynamicCspRules = DynamicRulesApi.limitRebuiltCspRules(
+            const limitedDynamicCspRules = await DynamicRulesApi.limitRebuiltCspRules(
                 dynamicRules,
                 cspRules.dynamicRules,
+                cspRules.ruleset,
             );
 
             res.dynamicRules = {
                 ...dynamicRules,
                 counts: limitedDynamicCspRules.counts,
-                limitations: [
+                limitations: mergeLimitations([
                     ...dynamicRules.limitations,
                     ...limitedDynamicCspRules.limitations,
-                ],
+                ]),
                 errors: dynamicRules.errors.concat(cspRules.dynamicErrors),
             };
             res.limitations = res.dynamicRules.limitations;

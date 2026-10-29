@@ -12,6 +12,23 @@ import {
 
 import { logger } from '../../common/utils/logger';
 
+import { getSourceRuleIds } from './source-rule-ids';
+
+/**
+ * Declarative rule omitted due to the browser quotas.
+ */
+type ExcludedRule = {
+    /**
+     * Id of the rule set the rule belongs to.
+     */
+    rulesetId: string;
+
+    /**
+     * Declarative rule id.
+     */
+    ruleId: number;
+};
+
 /**
  * Reserved stealth rule ids for the DNR.
  */
@@ -199,14 +216,14 @@ export class SessionRulesApi {
         );
 
         let availableId = SessionRulesApi.MIN_DECLARATIVE_RULE_ID + 1;
-        const excludedByUnsafeLimitIds: number[] = [];
-        const excludedByRegexpLimitIds: number[] = [];
+        const excludedByUnsafeLimitRules: ExcludedRule[] = [];
+        const excludedByRegexpLimitRules: ExcludedRule[] = [];
 
         // Reset id for each rule via saving its source and check the limits.
         unsafeRulesFromStaticFilters.forEach(({ rulesetId, rules }) => {
             rules.forEach((rule) => {
                 if (availableId > SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES) {
-                    excludedByUnsafeLimitIds.push(rule.id);
+                    excludedByUnsafeLimitRules.push({ rulesetId, ruleId: rule.id });
                     ignoredRules.get(rulesetId)?.push(rule.id);
 
                     return;
@@ -217,7 +234,7 @@ export class SessionRulesApi {
                     regexpRulesCounter += 1;
 
                     if (regexpRulesCounter > SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES) {
-                        excludedByRegexpLimitIds.push(rule.id);
+                        excludedByRegexpLimitRules.push({ rulesetId, ruleId: rule.id });
                         ignoredRules.get(rulesetId)?.push(rule.id);
 
                         return;
@@ -247,21 +264,46 @@ export class SessionRulesApi {
             logger.debug(`[tsweb.SessionRulesApi.updateSessionRules]: Some session rules were ignored due to the limit of ${SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES} (current count of unsafe rules: ${unsafeRulesFromEnabledRulesets}) or limit of ${SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES} regex rules (current count of regex rules: ${regexpRulesCounter}): \n`, stringifiedIgnoredRules);
         }
 
+        const rulesetsById = new Map<string, IRulesetWithSourceMap>();
+        if (cspRuleset) {
+            rulesetsById.set(cspRuleset.getId(), cspRuleset);
+        }
+        enabledStaticRulesets.forEach((ruleset) => {
+            rulesetsById.set(ruleset.getId(), ruleset);
+        });
+
+        /**
+         * Maps omitted declarative rules to source rule ids.
+         *
+         * @param rules Omitted rules with their rule set ids.
+         *
+         * @returns Source rule ids.
+         */
+        const toSourceRuleIds = async (rules: ExcludedRule[]): Promise<number[]> => {
+            const ids = await Promise.all(rules.map(async ({ rulesetId, ruleId }) => {
+                const ruleset = rulesetsById.get(rulesetId);
+
+                return ruleset ? getSourceRuleIds(ruleset, ruleId) : [ruleId];
+            }));
+
+            return ids.flat();
+        };
+
         const limitations: LimitationError[] = [];
-        if (excludedByUnsafeLimitIds.length > 0) {
+        if (excludedByUnsafeLimitRules.length > 0) {
             limitations.push(new TooManyUnsafeRulesError(
-                `Session rules exceed the unsafe rules limit: ${excludedByUnsafeLimitIds.length} rules were omitted`,
-                excludedByUnsafeLimitIds,
+                `Session rules exceed the unsafe rules limit: ${excludedByUnsafeLimitRules.length} rules were omitted`,
+                await toSourceRuleIds(excludedByUnsafeLimitRules),
                 SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES,
-                excludedByUnsafeLimitIds.length,
+                excludedByUnsafeLimitRules.length,
             ));
         }
-        if (excludedByRegexpLimitIds.length > 0) {
+        if (excludedByRegexpLimitRules.length > 0) {
             limitations.push(new TooManyRegexpRulesError(
-                `Session rules exceed the regexp rules limit: ${excludedByRegexpLimitIds.length} rules were omitted`,
-                excludedByRegexpLimitIds,
+                `Session rules exceed the regexp rules limit: ${excludedByRegexpLimitRules.length} rules were omitted`,
+                await toSourceRuleIds(excludedByRegexpLimitRules),
                 SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES,
-                excludedByRegexpLimitIds.length,
+                excludedByRegexpLimitRules.length,
             ));
         }
 

@@ -363,7 +363,7 @@ describe('DynamicRulesApi', () => {
                 { maxNumberOfDynamicRules: 1 },
             );
 
-            const limitedCspRules = DynamicRulesApi.limitRebuiltCspRules(
+            const limitedCspRules = await DynamicRulesApi.limitRebuiltCspRules(
                 conversionResult,
                 cspResult.dynamicRules,
             );
@@ -390,6 +390,35 @@ describe('DynamicRulesApi', () => {
             delete browser.declarativeNetRequest;
         });
 
+        it('reports source rule ids of omitted rebuilt CSP rules', async () => {
+            const { conversionResult, cspResult } = await prepareCspConversion(
+                [
+                    '||ads.example^',
+                    "||example.com^$csp=script-src 'none'",
+                ],
+                { maxNumberOfDynamicRules: 1 },
+            );
+
+            const limitedCspRules = await DynamicRulesApi.limitRebuiltCspRules(
+                conversionResult,
+                cspResult.dynamicRules,
+                cspResult.ruleset,
+            );
+
+            const [omitted] = cspResult.dynamicRules;
+            const sourceIndexes = await cspResult.ruleset.getSourceRuleIndexes(omitted.id);
+            const limitation = limitedCspRules.limitations[0] as TooManyRulesError;
+
+            expect(limitation).toBeInstanceOf(TooManyRulesError);
+            expect(limitation.numberOfExcludedDeclarativeRules).toBe(1);
+            expect(limitation.excludedRulesIds)
+                .toEqual(sourceIndexes.map(({ sourceRuleIndex }) => sourceRuleIndex));
+            expect(limitation.excludedRulesIds).not.toEqual([omitted.id]);
+
+            // @ts-ignore
+            delete browser.declarativeNetRequest;
+        });
+
         it('omits rebuilt CSP rules that exceed the unsafe dynamic limit', async () => {
             const { conversionResult, cspResult } = await prepareCspConversion(
                 [
@@ -399,7 +428,7 @@ describe('DynamicRulesApi', () => {
                 { maxNumberOfUnsafeDynamicRules: 0 },
             );
 
-            const limitedCspRules = DynamicRulesApi.limitRebuiltCspRules(
+            const limitedCspRules = await DynamicRulesApi.limitRebuiltCspRules(
                 conversionResult,
                 cspResult.dynamicRules,
             );
@@ -423,7 +452,7 @@ describe('DynamicRulesApi', () => {
                 ],
             );
 
-            const limitedCspRules = DynamicRulesApi.limitRebuiltCspRules(
+            const limitedCspRules = await DynamicRulesApi.limitRebuiltCspRules(
                 conversionResult,
                 cspResult.dynamicRules,
             );
