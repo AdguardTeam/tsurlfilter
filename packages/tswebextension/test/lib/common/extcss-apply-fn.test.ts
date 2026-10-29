@@ -373,10 +373,10 @@ describe('extCssInjectedApply — CSS hits stats', () => {
 
         await new Promise((resolve) => { setTimeout(resolve, 0); });
 
-        expect(sendMessageSpy).toHaveBeenCalledTimes(2);
-        const elements = sendMessageSpy.mock.calls.map(
-            (call: any[]) => (call[0] as any).payload[0].element,
-        );
+        // Both hits of one apply batch travel in a single message.
+        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+        const elements = (sendMessageSpy.mock.calls[0][0] as any).payload
+            .map((hit: any) => hit.element);
         expect(elements).toEqual(['<div id="first" class="ad">', '<div id="second" class="ad">']);
     });
 

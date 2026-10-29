@@ -111,4 +111,23 @@ describe('configuration validator', () => {
             message: "Unrecognized key(s) in object: 'beep'",
         }], null, 2));
     });
+    it('accepts optional canvas opt-in without changing legacy defaults', () => {
+        const input = {
+            ...validConfiguration,
+            settings: {
+                ...validConfiguration.settings,
+                stealth: { ...validConfiguration.settings.stealth, protectCanvas: true },
+            },
+        };
+        expect(configurationMV2Validator.parse(input)).toEqual(input);
+        expect(configurationMV2Validator.parse(validConfiguration).settings.stealth)
+            .not.toHaveProperty('protectCanvas');
+        expect(() => configurationMV2Validator.parse({
+            ...input, canvasProtectionPolicy: {},
+        }))
+            .toThrow();
+        expect(() => configurationMV2Validator.parse({
+            ...input, settings: { ...input.settings, stealth: { ...input.settings.stealth, protectCanvas: 'true' } },
+        })).toThrow();
+    });
 });

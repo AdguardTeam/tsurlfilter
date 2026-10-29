@@ -241,4 +241,30 @@ describe('extcss-code serializer', () => {
             payload: [{ filterId: 1, ruleIndex: 2, element: '<div class="ad">' }],
         });
     });
+
+    it('applies uBO action pseudo-classes from the serialized code', () => {
+        // The MV2 content script no longer instantiates ExtendedCss, so the
+        // action pseudo-classes are applied only through this code string.
+        document.body.innerHTML = '<a id="link" href="https://example.org/" onclick="void 0" class="ads ad-1 other">link</a>';
+
+        runInThisContext(serializeExtCssForCode(
+            [
+                'a:remove-attr(href)',
+                'a:remove-attr(/^on[a-z]+$/)',
+                'a:remove-class(ads)',
+                'a:remove-class(/^ad-[0-9]+$/)',
+            ],
+            false,
+            EXTCSS_PROTOCOL,
+        ));
+
+        const link = document.getElementById('link') as HTMLAnchorElement;
+        expect(link.hasAttribute('href')).toBe(false);
+        expect(link.hasAttribute('onclick')).toBe(false);
+        expect(link.classList.contains('ads')).toBe(false);
+        expect(link.classList.contains('ad-1')).toBe(false);
+        // Unrelated classes and the element itself are kept
+        expect(link.classList.contains('other')).toBe(true);
+        expect(link.style.getPropertyValue('display')).toEqual('');
+    });
 });

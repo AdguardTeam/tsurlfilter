@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added opt-in canvas protection for Chromium MV3, Chromium MV2 and Firefox
+  MV2 with `stealth.protectCanvas` and methods to update protection.
+  Exceptions are compiled from filter rules and the allowlist, including
+  `$stealth=fingerprinting` and `$document`, with host boundaries preserved
+  and inverted wildcard entries covering one level below the domain, as frame
+  matching does. The filtering log shows the `$stealth` exception that keeps
+  a document native [AdguardBrowserExtension#3475].
+- Exported `CSS_HITS_MARKER_PREFIX` and `CSS_HITS_MARKER_PROPERTY`, the prefix
+  and the `--adguard-hit` custom property that encode CSS hits.
+
 ### Changed
 
 - Updated `@types/webextension-polyfill` to `0.12.6`, which adds Firefox 153+
@@ -15,11 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   documentation now reflects that document tracking works the same in Firefox 153+
   as in Chromium. Consumers compiling against the published declarations must use
   `@types/webextension-polyfill` >= 0.12.6, since the previous alias is gone.
-- HTML filtering `:contains()` arguments are now handled with CoreLibs
-  semantics (via [@adguard/tsurlfilter]): wrapping quotes of any kind are
-  literal characters of the matched text, unbalanced arguments (e.g.
-  `$$script:contains((function(g,b,a,c,e,d)`) are matched as-is, and
-  `/regexp/`-looking arguments keep their regexp semantics.
+- Updated [@adguard/extended-css] to `v2.3.0`, which adds support for uBlock Origin
+  `:remove-attr()` and `:remove-class()` pseudo-classes [AdguardBrowserExtension#3538].
 - ExtendedCSS rules in MV2 and MV3 are now applied solely by the background
   injection path — removed from the content scripts (`GetCosmeticData`
   returns `extCssRules: null`, `@adguard/extended-css` is no longer
@@ -34,16 +43,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- In MV3, native CSS selector repair and native CSS hit counting being
-  skipped for documents that loaded before the background engine started:
-  the content script now retries `GetCosmeticData` while the background
-  answers `undefined`, instead of giving up on the first response.
-- ExtendedCSS hits are now counted for every element matched by a rule, in MV2
-  and MV3. Previously only the first element matched by a rule was counted and
-  elements matched later were not.
-- Malformed CSS hit markers no longer break cosmetic application in MV2: a
-  `URIError` from `decodeURIComponent` is treated as a non-matching marker
-  instead of propagating.
+- Filtering log now records CSS hits for elements that pages add and remove
+  while the page is loading, e.g. anti-adblock bait elements created by a
+  script in `<head>`.
+- `CssHitsCounter` now applies its documented `elementToString` default
+  (`true`) when the option is omitted or `undefined`; previously an options
+  object without this property disabled element stringification.
+- In MV3, `$domain` did not match the target hostname of a document request.
+  A document request started by the browser (new tab page, address bar,
+  bookmark, reload) has no initiator, so a rule such as
+  `*$document,csp=script-src-attr 'none',domain=example.com` did not work on the
+  first page load. The conversion now adds a `main_frame` rule with
+  `requestDomains` for such rules. Affected rules now consume two declarative
+  rules, and two regex-rule slots when a `$removeparam` rule generates a
+  regexp, so they count against the rule and regex budgets.
 - In MV3, static filters, custom filters and user rules were handed to the
   converter already converted by the extension, so `$badfilter` rules from those
   sources were compared by the converted text instead of the text as written and
@@ -56,11 +69,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   request classification for such hosts.
 - Browsing session from incognito window sometimes leaks to normal window when
   "delete third-party cookies" option is enabled [AdguardBrowserExtension#3553].
+- Inverted allowlist entries with uppercase letters not matching their sites.
+- `$stealth` exception rules shown as `<dynamic rule text is not specified>`
+  instead of their text in the MV3 filtering log.
+- HTML filtering rules with `:-abp-contains()` and `:has-text()` now work,
+  and HTML filtering rules with an empty `:contains()` argument are now
+  rejected (via [@adguard/tsurlfilter]).
+- In MV3, cosmetic rules prepared for the previous document could be applied
+  to a new document committed into the same frame (e.g. after a speculative
+  request or a prerender activation); cosmetics are now recalculated on
+  `onCommitted` when the document id changes.
+- In MV3, native CSS selector repair and native CSS hit counting being
+  skipped for documents that loaded before the background engine started:
+  the content script now retries `GetCosmeticData` while the background
+  answers `undefined`, instead of giving up on the first response.
+- ExtendedCSS hits are now counted for every element matched by a rule, in MV2
+  and MV3. Previously only the first element matched by a rule was counted and
+  elements matched later were not.
+- Malformed CSS hit markers no longer break cosmetic application in MV2: a
+  `URIError` from `decodeURIComponent` is treated as a non-matching marker
+  instead of propagating.
 
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
+[AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475
+[AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
 [AdguardBrowserExtension#3553]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3553
 
 ### Security
+
+## [6.0.1] - 2026-10-15
+
+### Changed
+
+- HTML filtering `:contains()` arguments are now handled with CoreLibs
+  semantics (via [@adguard/tsurlfilter]): wrapping quotes of any kind are
+  literal characters of the matched text, unbalanced arguments (e.g.
+  `$$script:contains((function(g,b,a,c,e,d)`) are matched as-is, and
+  `/regexp/`-looking arguments keep their regexp semantics.
+- Updated [@adguard/agtree] to `v4.3.0`.
+- Updated [@adguard/tsurlfilter] to `v6.0.4`.
+
+[6.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v6.0.1
 
 ## [6.0.0] - 2026-09-29
 

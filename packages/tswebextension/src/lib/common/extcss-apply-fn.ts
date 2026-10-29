@@ -1,6 +1,6 @@
 import { type ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
 
-import type { cssHitsHelpers as cssHitsHelpersImpl } from './content-script/utils/css-hits-helpers';
+import type { cssHitsHelpers as cssHitsHelpersImpl, ExtendedCssHit } from './content-script/utils/css-hits-helpers';
 import type applyExtendedCssImpl from './extcss-inject-src';
 import { type ExtCssProtocol } from './message-constants';
 
@@ -134,6 +134,43 @@ export const extCssInjectedApply = (
     const countedHits = previous?.countedHits ?? new WeakMap<Element, Set<string>>();
 
     /**
+     * Hits collected by {@link beforeStyleApplied} during the current apply
+     * batch, reported to the background in one message.
+     *
+     * `beforeStyleApplied` runs once per affected element, so reporting each
+     * call on its own would send one message per matched element on a heavy
+     * page. The hits are accumulated and flushed once per microtask batch
+     * instead: the whole synchronous `apply()` pass becomes one message, while
+     * hits matched later by the `MutationObserver` are still reported.
+     */
+    const pendingHits: ExtendedCssHit[] = [];
+
+    /**
+     * Whether a {@link flushHits} call is already scheduled for the current
+     * batch.
+     */
+    let flushScheduled = false;
+
+    /**
+     * Reports the hits accumulated so far to the background in a single
+     * message and starts a new batch.
+     *
+     * @returns The `sendMessage` result, so the caller can swallow both a
+     * synchronous throw and an async rejection.
+     */
+    const flushHits = (): unknown => {
+        flushScheduled = false;
+
+        const payload = pendingHits.splice(0, pendingHits.length);
+
+        return chrome.runtime.sendMessage({
+            handlerName: protocol.handlerName,
+            type: protocol.messageType,
+            payload,
+        });
+    };
+
+    /**
      * CSS-hits callback. Uses the inlined `cssHitsHelpers` (defined above by
      * the build-time helpers inliner) — the SAME source that MV2's
      * `CssHitsCounter` uses — so both manifest versions collect hits one way.
@@ -153,21 +190,23 @@ export const extCssInjectedApply = (
         );
 
         if (hits.length > 0) {
-            // Defer the call into a microtask so a synchronous throw
-            // (e.g. "Extension context invalidated" during extension
-            // reload) becomes a caught rejection rather than escaping
-            // into beforeStyleApplied → applyStyle → element hiding
-            // disruption. An async sendMessage rejection (e.g.
-            // "Receiving end does not exist") is also swallowed.
-            Promise.resolve()
-                .then(() => chrome.runtime.sendMessage({
-                    handlerName: protocol.handlerName,
-                    type: protocol.messageType,
-                    payload: hits,
-                }))
-                .catch(() => {
-                    /* ignore */
-                });
+            pendingHits.push(...hits);
+
+            if (!flushScheduled) {
+                flushScheduled = true;
+
+                // Defer the call into a microtask so a synchronous throw
+                // (e.g. "Extension context invalidated" during extension
+                // reload) becomes a caught rejection rather than escaping
+                // into beforeStyleApplied → applyStyle → element hiding
+                // disruption. An async sendMessage rejection (e.g.
+                // "Receiving end does not exist") is also swallowed.
+                Promise.resolve()
+                    .then(flushHits)
+                    .catch(() => {
+                        /* ignore */
+                    });
+            }
         }
 
         return el;

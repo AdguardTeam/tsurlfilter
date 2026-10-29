@@ -357,6 +357,14 @@ example.org##.banner
 <br/>
 Doesn't support regexps and wildcard domains except exact wildcard TLD
 domains such as example.*, which are expanded to popular TLDs.
+For a document request started by the browser (new tab page, address bar,
+bookmark, reload), an additional rule matches `$domain` against the target
+hostname. It is not created when the rule has `$third-party` or
+`$~third-party`, when a permitted `$to` meets a permitted `$domain`, when a
+`$domain`, `$to`, or `$denyallow` value is not representable in DNR, or for
+a `$domain` with permitted domains and a domain-specific or regexp pattern.
+An excluded-only `$domain` still matches a browser-started request to an
+excluded domain.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -729,6 +737,35 @@ example 7
       ]
     },
     "priority": 151
+  },
+  {
+    "id": 1097103048,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "remove",
+          "header": "Set-Cookie"
+        }
+      ],
+      "requestHeaders": [
+        {
+          "operation": "remove",
+          "header": "Cookie"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "*",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "requestDomains": [
+        "example.org",
+        "example.com"
+      ]
+    },
+    "priority": 151
   }
 ]
 ```
@@ -755,6 +792,23 @@ example 8
       ],
       "resourceTypes": [
         "main_frame"
+      ]
+    },
+    "priority": 251
+  },
+  {
+    "id": 360225795,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "requestDomains": [
+        "example.org",
+        "example.com"
       ]
     },
     "priority": 251
@@ -3179,6 +3233,29 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
       ]
     },
     "priority": 151
+  },
+  {
+    "id": 553919359,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Permissions-Policy",
+          "value": "oversized-images=()\\, sync-script=()\\, unsized-media=()"
+        }
+      ]
+    },
+    "condition": {
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "requestDomains": [
+        "example.org",
+        "example.com"
+      ]
+    },
+    "priority": 151
   }
 ]
 ```
@@ -3909,6 +3986,27 @@ $removeheader=location,domain=example.com
       ]
     },
     "priority": 201
+  },
+  {
+    "id": 1434543935,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "header": "location",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "requestDomains": [
+        "example.com"
+      ]
+    },
+    "priority": 201
   }
 ]
 ```
@@ -4307,7 +4405,10 @@ example 4
 Converted to DNR redirect rules with regexSubstitution. Full-URL replacements
 are passed through directly. Path-only replacements are wrapped so the origin
 is preserved. Multi-stage pipelines (multiple substitutions separated by `|`)
-produce one DNR rule per stage.
+produce one DNR rule per stage. `$urltransform` rules do not get the
+additional target-hostname `main_frame` rule, so a `$domain` with permitted
+domains does not match document navigations started by the browser. An
+excluded-only `$domain` still matches them through the base rule.
 <br/>
 <b>Examples:</b>
 <br/>

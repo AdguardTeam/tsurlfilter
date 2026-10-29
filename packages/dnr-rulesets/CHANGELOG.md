@@ -16,12 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Removed Polish Anti Adblock Filters (ID 238) from the MV3 rulesets
-  (`chromium-mv3`, `edge-mv3`, `opera-mv3`) and updated
-  `tasks/validator-data.json` accordingly, because the filter is no longer
+  (`chromium-mv3`, `edge-mv3`, `opera-mv3`), because the filter is no longer
   present in the filters metadata on `filters.adtidy.org`.
 
 ### Fixed
 
+- Fixed rules with `$domain` not matching document navigations started by the
+  browser (new tab page, address bar, bookmark, reload). The MV3 rulesets now
+  contain an additional `main_frame` rule with `requestDomains` for such rules,
+  so `$csp`, `$removeheader`, `$removeparam` and allowlist rules with `$domain`
+  work on the first page load. Affected rules now consume two declarative
+  rules, and two regex-rule slots when a `$removeparam` rule generates a
+  regexp, so they count against the rule and regex budgets.
 - Fixed `dnr-rulesets load` failing to copy packaged assets and returning a
   successful exit status after copy errors.
 

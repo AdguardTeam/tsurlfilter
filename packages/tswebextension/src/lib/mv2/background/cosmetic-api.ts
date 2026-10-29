@@ -10,7 +10,7 @@ import { logger } from '../../common/utils/logger';
 import { engineApi, tabsApi } from './api';
 import { appContext } from './app-context';
 import { serializeExtCssDisposeForCode, serializeExtCssForCode } from './extcss-code';
-import { buildScriptText } from './injection-helper';
+import { buildScriptText, InjectionGuard } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { type ExtCssFrameData, type FrameMV2 } from './tabs/frame';
 import { TabsApi } from './tabs/tabs-api';
@@ -74,7 +74,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         return TabsApi.injectScript(
             tabId,
             frameId,
-            buildScriptText(scriptText, appContext.startTimeMs),
+            buildScriptText(scriptText, appContext.startTimeMs, InjectionGuard.Scriptlets),
         );
     }
 

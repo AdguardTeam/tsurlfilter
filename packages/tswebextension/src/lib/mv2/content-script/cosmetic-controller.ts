@@ -1,4 +1,5 @@
 import { CssHitsCounter } from '../../common/content-script/css-hits-counter';
+import { PendingProbesCollector } from '../../common/content-script/pending-probes-collector';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
 import { MessageType } from '../../common/message-constants';
@@ -27,6 +28,16 @@ export class CosmeticController {
     private tries = 0;
 
     /**
+     * Module that collects statistics about the usage of native CSS rules.
+     */
+    private cssHitsCounter?: CssHitsCounter;
+
+    /**
+     * Collects short-lived elements created before the counter initialization.
+     */
+    private pendingProbesCollector = new PendingProbesCollector();
+
+    /**
      * Creates new {@link CosmeticController} instance.
      */
     constructor() {
@@ -39,6 +50,10 @@ export class CosmeticController {
     public init(): void {
         const elementCollapser = new ElementCollapser();
         elementCollapser.start();
+        // Start observing the DOM before the asynchronous cosmetic data
+        // request, so that elements created and removed during the document
+        // loading are not missed by the CSS hits counter.
+        this.pendingProbesCollector.start();
         this.process();
     }
 
@@ -46,16 +61,26 @@ export class CosmeticController {
      * Sends {@link MessageType.GetCosmeticData} message to background and process response.
      */
     private async process(): Promise<void> {
-        const res = await sendAppMessage({
-            type: MessageType.GetCosmeticData,
-            payload: {
-                documentUrl: window.location.href,
-            },
-        });
+        try {
+            const res = await sendAppMessage({
+                type: MessageType.GetCosmeticData,
+                payload: {
+                    documentUrl: window.location.href,
+                },
+            });
 
-        if (res) {
-            this.applyCosmetic(res);
+            if (res) {
+                this.applyCosmetic(res);
+                return;
+            }
+        } catch (e) {
+            this.pendingProbesCollector.stop();
+            throw e;
         }
+
+        // Without a response the counter is never created, so the collected
+        // probes will never be counted: stop observing the DOM.
+        this.pendingProbesCollector.stop();
     }
 
     /**
@@ -92,7 +117,11 @@ export class CosmeticController {
         }
 
         if (areHitsStatsCollected) {
-            CosmeticController.createCssHitsCounter();
+            this.cssHitsCounter = CosmeticController.createCssHitsCounter(
+                this.pendingProbesCollector,
+            );
+        } else {
+            this.pendingProbesCollector.stop();
         }
 
         CosmeticController.repairNativeCss(nativeCssSelectors);
@@ -136,14 +165,16 @@ export class CosmeticController {
     /**
      * Create new {@link CssHitsCounter} instance.
      *
+     * @param pendingProbesCollector Collector of short-lived elements.
+     *
      * @returns CssHitsCounter instance.
      */
-    private static createCssHitsCounter(): CssHitsCounter {
+    private static createCssHitsCounter(pendingProbesCollector: PendingProbesCollector): CssHitsCounter {
         return new CssHitsCounter((stats) => {
             sendAppMessage({
                 type: MessageType.SaveCssHitsStats,
                 payload: stats,
             });
-        });
+        }, { pendingProbesCollector });
     }
 }

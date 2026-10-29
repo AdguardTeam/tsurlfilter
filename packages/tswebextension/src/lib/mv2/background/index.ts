@@ -11,7 +11,27 @@ export {
     getRuleSourceText,
 } from '@adguard/tsurlfilter';
 
-export * from './api';
+export {
+    allowlist,
+    stealthApi,
+    engineApi,
+    documentApi,
+    tabsApi,
+    cosmeticFrameProcessor,
+    documentBlockingService,
+    messagesApi,
+    resourcesService,
+    redirectsService,
+    paramsService,
+    urlTransformService,
+    cspService,
+    removeHeadersService,
+    permissionsPolicyService,
+    cookieFiltering,
+    contentFiltering,
+    removeParamInjectionService,
+    createTsWebExtension,
+} from './api';
 export * from './app';
 export * from './ext-session-storage';
 export * from './tabs';
@@ -22,3 +42,14 @@ export { companiesDbService } from '../../common/companies-db-service';
 export { StealthActions } from '../../common/stealth-actions';
 export { MESSAGE_HANDLER_NAME } from '../../common/message-constants';
 export { type LocalScriptRules } from './services/local-script-rules-service';
+
+export {
+    type RegistrationOperationOutcome,
+    type RegistrationResult,
+} from '../../common/canvas-protection/contracts';
+export {
+    CanvasAvailabilityStatus,
+    CanvasOperationStatus,
+    CanvasRegistrationOperation,
+    CanvasRegistrationStatus,
+} from '../../common/canvas-protection/constants';

@@ -1,4 +1,5 @@
 import { CssHitsCounter } from '../../common/content-script/css-hits-counter';
+import { PendingProbesCollector } from '../../common/content-script/pending-probes-collector';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
 import { MessageType } from '../../common/message-constants';
@@ -19,34 +20,58 @@ import { HIDING_STYLE } from '../../mv2/common/hidden-style';
  */
 export class CosmeticController {
     /**
-     * Retry timeout for {@link MessageType.GetCosmeticData} request to the
-     * background, in milliseconds.
+     * Base retry timeout for {@link MessageType.GetCosmeticData} request to
+     * the background, in milliseconds. The delay doubles on every retry until
+     * it reaches {@link MAX_GET_COSMETIC_DATA_RETRY_TIMEOUT_MS}.
      */
     private static readonly GET_COSMETIC_DATA_RETRY_TIMEOUT_MS = 100;
 
     /**
-     * Max number of {@link MessageType.GetCosmeticData} retries before giving
-     * up. At {@link GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} intervals this covers
-     * ~20s of startup.
+     * Upper bound for the {@link MessageType.GetCosmeticData} retry delay, in
+     * milliseconds.
      */
-    private static readonly MAX_GET_COSMETIC_DATA_TRIES = 200;
+    private static readonly MAX_GET_COSMETIC_DATA_RETRY_TIMEOUT_MS = 5000;
+
+    /**
+     * Max number of {@link MessageType.GetCosmeticData} retries before giving
+     * up. With the doubling delay capped at
+     * {@link MAX_GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} this covers ~26s of
+     * startup with 11 requests instead of a fixed 200-request burst.
+     */
+    private static readonly MAX_GET_COSMETIC_DATA_TRIES = 10;
 
     /**
      * Number of {@link MessageType.GetCosmeticData} requests sent so far.
      */
-    private static tries = 0;
+    private tries = 0;
 
     /**
      * Module that collects statistics about the usage of native CSS rules.
      * Created at most once per document (see {@link process}).
      */
-    private static cssHitsCounter?: CssHitsCounter;
+    private cssHitsCounter?: CssHitsCounter;
+
+    /**
+     * Collects short-lived elements created before the counter initialization.
+     */
+    private pendingProbesCollector = new PendingProbesCollector();
+
+    /**
+     * Creates new {@link CosmeticController} instance.
+     */
+    constructor() {
+        this.process = this.process.bind(this);
+    }
 
     /**
      * Init cosmetic processing.
      */
-    public static init(): void {
-        CosmeticController.process();
+    public init(): void {
+        // Start observing the DOM before the asynchronous cosmetic data
+        // request, so that elements created and removed during the document
+        // loading are not missed by the CSS hits counter.
+        this.pendingProbesCollector.start();
+        this.process();
     }
 
     /**
@@ -57,68 +82,105 @@ export class CosmeticController {
      * loads (a common startup race — the service worker is still
      * initializing). In that case the response is `undefined` (the message
      * handler returns nothing until the engine is started). This method
-     * retries after {@link GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} until the engine
-     * reports `isAppStarted`, so the native-CSS repair — which only the
+     * retries with a doubling delay until the engine reports `isAppStarted`,
+     * so the native-CSS repair — which only the
      * content script can perform — is not permanently skipped for documents
      * that loaded during startup. Without this retry, an invalid grouped
      * native selector dropped by the browser would never be re-injected for
      * such pages.
      */
-    private static async process(): Promise<void> {
-        // `sendAppMessage` returns `any`; annotate the awaited response so the
-        // cosmetic-data fields below are checked against the background
-        // contract.
-        const res: ContentScriptCosmeticData | undefined = await sendAppMessage({
-            type: MessageType.GetCosmeticData,
-            payload: {
-                documentUrl: window.location.href,
-            },
-        });
+    private async process(): Promise<void> {
+        let res: ContentScriptCosmeticData | undefined;
+
+        try {
+            // `sendAppMessage` returns `any`; annotate the awaited response so
+            // the cosmetic-data fields below are checked against the
+            // background contract.
+            res = await sendAppMessage({
+                type: MessageType.GetCosmeticData,
+                payload: {
+                    documentUrl: window.location.href,
+                },
+            });
+        } catch (e) {
+            this.pendingProbesCollector.stop();
+            throw e;
+        }
 
         // Retry while the background engine is not ready (startup race).
         // The response is `undefined` until `tsWebExtension.isStarted`, and
         // `isAppStarted` is false until the app finishes initializing.
         if ((!res || !res.isAppStarted)
-            && CosmeticController.tries < CosmeticController.MAX_GET_COSMETIC_DATA_TRIES
+            && this.tries < CosmeticController.MAX_GET_COSMETIC_DATA_TRIES
         ) {
-            CosmeticController.tries += 1;
             setTimeout(
-                CosmeticController.process,
-                CosmeticController.GET_COSMETIC_DATA_RETRY_TIMEOUT_MS,
+                this.process,
+                CosmeticController.getRetryTimeout(this.tries),
             );
+            this.tries += 1;
             return;
         }
 
-        if (res) {
-            // Native-only CSS hits counting: reads the `--adguard-hit`
-            // custom property from computed styles. Extended-CSS-rule hits
-            // are reported separately by the background-injected
-            // `extCssInjectedApply` callback, so this counter reads ONLY
-            // native CSS markers.
-            // Created at most once per document — repeated `process()` runs
-            // (e.g. after retries or re-init) must not duplicate the counter
-            // and its MutationObserver.
-            if (res.areHitsStatsCollected && !CosmeticController.cssHitsCounter) {
-                CosmeticController.cssHitsCounter = CosmeticController.createCssHitsCounter();
-            }
-
-            CosmeticController.repairNativeCss(res.nativeCssSelectors);
+        if (!res) {
+            // Without a response the counter is never created, so the
+            // collected probes will never be counted: stop observing the DOM.
+            this.pendingProbesCollector.stop();
+            return;
         }
+
+        // Native-only CSS hits counting: reads the `--adguard-hit` custom
+        // property from computed styles. ExtendedCSS-rule hits are reported
+        // separately by the background-injected `extCssInjectedApply`
+        // callback, so this counter reads ONLY native CSS markers.
+        // Created at most once per document — repeated `process()` runs
+        // (e.g. after retries or re-init) must not duplicate the counter
+        // and its MutationObserver.
+        if (res.areHitsStatsCollected) {
+            if (!this.cssHitsCounter) {
+                this.cssHitsCounter = CosmeticController.createCssHitsCounter(
+                    this.pendingProbesCollector,
+                );
+            }
+        } else {
+            this.pendingProbesCollector.stop();
+        }
+
+        CosmeticController.repairNativeCss(res.nativeCssSelectors);
+    }
+
+    /**
+     * Returns the delay before the next {@link MessageType.GetCosmeticData}
+     * retry: {@link GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} doubled on every
+     * attempt, capped at {@link MAX_GET_COSMETIC_DATA_RETRY_TIMEOUT_MS}. The
+     * backoff keeps a permanent `undefined` response (e.g. the app was
+     * stopped) from producing a fixed burst of retries.
+     *
+     * @param tries Number of retries already made.
+     *
+     * @returns Delay in milliseconds.
+     */
+    private static getRetryTimeout(tries: number): number {
+        return Math.min(
+            CosmeticController.GET_COSMETIC_DATA_RETRY_TIMEOUT_MS * 2 ** tries,
+            CosmeticController.MAX_GET_COSMETIC_DATA_RETRY_TIMEOUT_MS,
+        );
     }
 
     /**
      * Creates a new {@link CssHitsCounter} instance reporting counted hits
      * to the background.
      *
+     * @param pendingProbesCollector Collector of short-lived elements.
+     *
      * @returns CssHitsCounter instance.
      */
-    private static createCssHitsCounter(): CssHitsCounter {
+    private static createCssHitsCounter(pendingProbesCollector: PendingProbesCollector): CssHitsCounter {
         return new CssHitsCounter((stats) => {
             sendAppMessage({
                 type: MessageType.SaveCssHitsStats,
                 payload: stats,
             });
-        });
+        }, { pendingProbesCollector });
     }
 
     /**
