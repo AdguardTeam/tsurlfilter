@@ -229,8 +229,9 @@ export default class DynamicRulesApi {
      * limitations. @see {@link ConversionResult}.
      *
      * @throws Error if the conversion produces no results (empty filter list).
-     * @throws Error if declarativeNetRequest.updateDynamicRules() receives invalid rules
-     * e.g. with non-ASCII `urlFilter` value.
+     * @throws Error if declarativeNetRequest.updateDynamicRules() receives
+     * invalid rules, e.g. a `urlFilter` rejected by the DNR validation or a
+     * `regexFilter` unsupported by RE2.
      * Details: {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-RuleCondition-urlFilter}.
      */
     public static async updateDynamicFiltering(

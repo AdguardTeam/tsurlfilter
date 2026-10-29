@@ -45,14 +45,17 @@
 ! display this in the declarative filtering log, as declarative rules are canceled.
 !
 ! ### Problem 1
-! But the current algorithm does not cover rules with `$domain` intersections, for example,
+! A `$domain` intersection is handled only partially: a rule with `$badfilter`
+! cancels the matching rule when the domain lists intersect, but the whole
+! declarative rule is disabled, not only the intersecting domains. For example,
 ! for these two rules:
 ! ```adblock
 ! /some$domain=example.com|example.org
 ! /some$domain=example.com,badfilter
 ! ```
-! A rule with `$badfilter` will fully negate the first rule and the output array of
-! declarative rules will be empty.
+! The rule with `$badfilter` fully negates the first rule and the output array of
+! declarative rules will be empty, including `example.org`. Rules with negated
+! domains are compared by the whole text.
 !
 ! ### Problem 2
 ! ~~Previously, `$removeparam` rules with identical conditions were merged into a
@@ -72,7 +75,6 @@
 ! 1. `$redirect`
 ! 1. `$removeparam`
 ! 1. `$removeheader`
-! 1. `$csp`
 !
 ! ## $document
 ! During the conversion process, the exception with the `$document` modifier is expanded
@@ -509,7 +511,8 @@ $cookie=/__utm[a-z]/
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
-! Allowlist rules are not supported
+! Exceptions are supported for exact conditions and clean domain exclusions;
+! path-level subtraction is not expressible in DNR
 ! <br/>
 ! Rules with the same matching condition are combined into one, but only within
 ! the scope of one static filter or within the scope of all dynamic rules
