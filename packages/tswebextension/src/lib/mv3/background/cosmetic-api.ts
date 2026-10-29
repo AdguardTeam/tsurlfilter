@@ -559,13 +559,30 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const tasks: Promise<void>[] = [];
 
+        // Remote rules and CSS do not depend on preregistered coverage:
+        // queue them before the coverage lookup, which may need an IPC round
+        // trip to the frame tree. `remoteRules` only ever contains custom
+        // and user filter rules, which preregistered scripts (local filters
+        // only) never cover.
+        tasks.push(
+            CosmeticApi.applyRemoteCosmeticRules(
+                tabId,
+                frameId,
+                frameContext.preparedCosmeticResult.remoteRules,
+            ),
+        );
+
+        if (shouldApplyCss) {
+            tasks.push(
+                CosmeticApi.applyCss(tabId, frameId, frameContext.preparedCosmeticResult.cssText),
+            );
+        }
+
         // Skip dynamic injection of the rules covered by preregistered
         // content scripts — injecting them again would cause
         // double execution. Rules missing from the covered set (degraded at
         // sync time, or added to the registration after a pre-existing page
-        // loaded) still go through the dynamic path. `remoteRules` below
-        // doesn't need this guard: it only ever contains custom/user filter
-        // rules, which preregistered scripts (local filters only) never cover.
+        // loaded) still go through the dynamic path.
         const coveredRules = await getCoveredRules(tabId, frameContext, getFrameContext, preExistingDocument);
 
         const { localRules } = frameContext.preparedCosmeticResult;
@@ -603,20 +620,6 @@ export class CosmeticApi extends CosmeticApiCommon {
                     ),
                 );
             }
-        }
-
-        tasks.push(
-            CosmeticApi.applyRemoteCosmeticRules(
-                tabId,
-                frameId,
-                frameContext.preparedCosmeticResult.remoteRules,
-            ),
-        );
-
-        if (shouldApplyCss) {
-            tasks.push(
-                CosmeticApi.applyCss(tabId, frameId, frameContext.preparedCosmeticResult.cssText),
-            );
         }
 
         return Promise.allSettled(tasks);

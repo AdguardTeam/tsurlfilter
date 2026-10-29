@@ -122,17 +122,18 @@ const makeFrameContext = (
  *
  * @param frames Frame descriptors: frame id, parent frame id and URL.
  *
- * @returns Resolver for `tabsApi.getFrameContext`.
+ * @returns Resolver for `tabsApi.getFrameContext`. A pruned frame is
+ * missing from the map, so the resolver returns `undefined` for it.
  */
 const makeFrameChain = (
     frames: Array<{ frameId: number; parentFrameId: number; url: string }>,
-): ((frameId: number) => object) => {
+): ((frameId: number) => object | undefined) => {
     const byId = new Map(frames.map((frame) => [
         frame.frameId,
         { ...makeFrameContext(frame.url), ...frame },
     ]));
 
-    return (frameId: number) => byId.get(frameId) as object;
+    return (frameId: number) => byId.get(frameId);
 };
 
 /**
@@ -378,7 +379,7 @@ describe('CosmeticApi — preregistered script rules', () => {
             expect(localRules.rawRules[0]).toBe(pathRule);
         });
 
-        describe('preregistered coverage', () => {
+        describe('top-level gate', () => {
             beforeEach(() => {
                 chrome.webNavigation.getAllFrames.reset();
             });
@@ -641,7 +642,7 @@ describe('CosmeticApi — preregistered script rules', () => {
             appContext.preregisteredScriptRules = new Map([
                 ['example.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])],
             ]);
-            appContext.preregisteredHostnames = new Set(['example.com']);
+            appContext.preregisteredHostnames = new Set(['youtube.com', 'example.com']);
 
             // youtube.com should now be un-preregistered
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(

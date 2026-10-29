@@ -3,6 +3,7 @@ import {
     describe,
     expect,
     it,
+    vi,
 } from 'vitest';
 
 import { appContext } from '../../../../../src/lib/mv3/background/app-context';
@@ -107,6 +108,56 @@ describe('resolveCoverageHost', () => {
             HOSTS,
             async () => new Map(),
         )).resolves.toBeNull();
+    });
+
+    it('ignores a cached top frame that belongs to another document', async () => {
+        // The top frame context is overwritten at navigation start, before
+        // the navigation commits: a navigation that never commits leaves the
+        // new URL on the cached top while the old page stays. The document id
+        // ties the child to the document it actually belongs to.
+        const staleTop = { ...frame(0, 'https://example.com/'), documentId: 'new-document' };
+        const liveTop = { ...frame(0, 'https://youtube.com/watch'), documentId: 'old-document' };
+
+        await expect(resolveCoverageHost(
+            1,
+            { ...frame(2, 'https://youtube.com/embed', 0), parentDocumentId: 'old-document' },
+            () => staleTop,
+            HOSTS,
+            async () => new Map([[0, liveTop]]),
+        )).resolves.toBe('youtube.com');
+    });
+
+    it('trusts a cached top frame that belongs to the same document', async () => {
+        const top = { ...frame(0, 'https://youtube.com/watch'), documentId: 'doc-1' };
+        const getFrameTree = vi.fn(async () => new Map([[0, frame(0, 'https://example.com/')]]));
+
+        await expect(resolveCoverageHost(
+            1,
+            { ...frame(2, 'https://youtube.com/embed', 0), parentDocumentId: 'doc-1' },
+            () => top,
+            HOSTS,
+            getFrameTree,
+        )).resolves.toBe('youtube.com');
+
+        expect(getFrameTree).not.toHaveBeenCalled();
+    });
+
+    it('stops before the top frame when the nearest host has no coverage', async () => {
+        // Nothing is registered for `example.com`, so the top-level origin
+        // cannot make the frame covered: the walk must not pay for the frame
+        // tree round trip.
+        const getFrameTree = vi.fn(async () => new Map());
+
+        await expect(resolveCoverageHost(
+            1,
+            frame(2, 'https://example.com/ad', 0),
+            () => undefined,
+            HOSTS,
+            getFrameTree,
+            () => false,
+        )).resolves.toBeNull();
+
+        expect(getFrameTree).not.toHaveBeenCalled();
     });
 });
 
