@@ -480,13 +480,23 @@ describe('collect hit stats changes', () => {
 
             const collectorObserver = MutationObserverMock.last!;
 
+            const earlyBait = document.createElement('div');
+            earlyBait.className = 'controller-early-bait';
+            collectorObserver.trigger([{
+                addedNodes: [earlyBait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
             triggerRuntimeMessage({
                 handlerName: 'tsWebExtension',
                 type: MessageType.SetCollectHitStats,
                 payload: { isCollectStats: false },
             });
 
-            // The collector must stop even before the counter is created.
+            // The collector must stop even before the counter is created, and
+            // its pending probes must not be reported by the counter.
             expect(collectorObserver.isDisconnected).toBe(true);
 
             resolveCosmeticData({
@@ -499,15 +509,6 @@ describe('collect hit stats changes', () => {
             await new Promise((resolve) => {
                 setTimeout(resolve, 20);
             });
-
-            const pausedBait = document.createElement('div');
-            pausedBait.className = 'controller-early-bait';
-            MutationObserverMock.last!.trigger([{
-                addedNodes: [pausedBait],
-                removedNodes: [],
-                type: 'childList',
-                target: document.body,
-            } as unknown as MutationRecord]);
 
             expect(getBaitStats(sendAppMessageSpy, 34)).toHaveLength(0);
 
@@ -526,7 +527,57 @@ describe('collect hit stats changes', () => {
                 target: document.body,
             } as unknown as MutationRecord]);
 
+            // Only the fresh bait is counted. The early bait was cleared when
+            // the collector stopped.
             expect(getBaitStats(sendAppMessageSpy, 34)).toHaveLength(1);
+        } finally {
+            style.remove();
+            restoreMutationObserver();
+        }
+    });
+
+    it('creates the counter when collection is enabled after cosmetic data was applied', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.controller-live-enable-bait',
+            "{ display: none !important; --adguard-hit: 'adguard36%3B36' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        try {
+            const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockResolvedValue({
+                    isAppStarted: true,
+                    areHitsStatsCollected: false,
+                    extCssRules: [],
+                    nativeCssSelectors: null,
+                });
+
+            const cosmeticController = new CosmeticController();
+            cosmeticController.init();
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: true },
+            });
+
+            const bait = document.createElement('div');
+            bait.className = 'controller-live-enable-bait';
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(getBaitStats(sendAppMessageSpy, 36)).toHaveLength(1);
         } finally {
             style.remove();
             restoreMutationObserver();

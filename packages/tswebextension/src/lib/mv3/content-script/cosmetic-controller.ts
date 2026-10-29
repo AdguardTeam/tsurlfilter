@@ -47,6 +47,14 @@ export class CosmeticController {
     private collectHitStatsEnabled: boolean | null = null;
 
     /**
+     * Whether the cosmetic data response has been applied.
+     *
+     * Used to create the counter when collection is enabled after the response
+     * has already been applied without a counter.
+     */
+    private cosmeticDataApplied = false;
+
+    /**
      * Creates new {@link CosmeticController} instance.
      */
     constructor() {
@@ -100,7 +108,8 @@ export class CosmeticController {
      * If {@link cosmeticData.isAppStarted} is false, retry
      * request after {@link GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} milliseconds.
      * Else apply extended css rules from {@link cosmeticData.extCssText}
-     * and enable {@link CssHitsCounter} if {@link cosmeticData.areHitsStatsCollected} is true.
+     * and enable {@link CssHitsCounter} if the effective hit stats collection
+     * state is true.
      *
      * @param cosmeticData Response cosmetic data from background.
      */
@@ -124,17 +133,18 @@ export class CosmeticController {
             return;
         }
 
-        if (areHitsStatsCollected) {
+        // A state message may be newer than the cosmetic data response.
+        const collectStats = this.collectHitStatsEnabled ?? areHitsStatsCollected;
+
+        if (collectStats) {
             this.cssHitsCounter = CosmeticController.createCssHitsCounter(
                 this.pendingProbesCollector,
             );
-
-            if (this.collectHitStatsEnabled === false) {
-                this.cssHitsCounter.pause();
-            }
         } else {
             this.pendingProbesCollector.stop();
         }
+
+        this.cosmeticDataApplied = true;
 
         CosmeticController.repairNativeCss(nativeCssSelectors);
 
@@ -146,7 +156,7 @@ export class CosmeticController {
             cssRules: extCssRules,
         };
 
-        if (areHitsStatsCollected) {
+        if (collectStats) {
             extendedCssConfig.beforeStyleApplied = this.beforeStyleApplied;
         }
 
@@ -199,9 +209,15 @@ export class CosmeticController {
 
         if (!this.cssHitsCounter) {
             if (isCollectStats) {
-                // The counter is not created yet. Restart the collector only
-                // while it still covers the loading window.
-                if (document.readyState === 'loading') {
+                if (this.cosmeticDataApplied) {
+                    // The cosmetic data was applied without a counter, e.g.
+                    // because collection was disabled at that moment.
+                    this.cssHitsCounter = CosmeticController.createCssHitsCounter(
+                        this.pendingProbesCollector,
+                    );
+                } else if (document.readyState === 'loading') {
+                    // The counter is not created yet. Restart the collector
+                    // only while it still covers the loading window.
                     this.pendingProbesCollector.start();
                 }
             } else {
