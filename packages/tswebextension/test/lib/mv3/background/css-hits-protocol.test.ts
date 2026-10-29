@@ -12,8 +12,8 @@ import {
 } from 'vitest';
 
 import { ElementUtils } from '../../../../src/lib/common/content-script/utils/element-utils';
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
 import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-apply-fn';
+import { EXTCSS_PROTOCOL } from '../../../../src/lib/mv3/background/extcss-protocol';
 import { resetExtCssState } from '../helpers';
 
 /**

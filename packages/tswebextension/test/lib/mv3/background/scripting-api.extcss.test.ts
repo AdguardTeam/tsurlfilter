@@ -6,7 +6,7 @@ import {
     vi,
 } from 'vitest';
 
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
+import { EXTCSS_PROTOCOL } from '../../../../src/lib/mv3/background/extcss-protocol';
 import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
 
 describe('ScriptingApi.executeExtCss', () => {

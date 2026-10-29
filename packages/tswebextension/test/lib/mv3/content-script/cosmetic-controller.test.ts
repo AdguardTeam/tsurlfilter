@@ -136,15 +136,38 @@ describe('MV3 CosmeticController — native CSS repair', () => {
 
         CosmeticController.init();
 
-        // Advance well beyond 200 retries × 100ms (~20s) — the loop gives up.
-        await vi.advanceTimersByTimeAsync(25_000);
+        // Advance well beyond the whole backoff window (11 requests, ~26s).
+        await vi.advanceTimersByTimeAsync(30_000);
 
-        // 1 initial call + 200 retries while tries < MAX_GET_COSMETIC_DATA_TRIES
-        // (200): tries 0..199 retry, tries 200 falls through and stops.
-        expect(sendAppMessageMock).toHaveBeenCalledTimes(201);
+        // 1 initial call + 10 retries while tries < MAX_GET_COSMETIC_DATA_TRIES
+        // (10): tries 0..9 retry, tries 10 falls through and stops.
+        expect(sendAppMessageMock).toHaveBeenCalledTimes(11);
 
         // No style was injected (the engine never became ready).
         expect(document.querySelector('style')).toBeNull();
+    });
+
+    it('backs off between retries instead of using a fixed interval', async () => {
+        vi.useFakeTimers();
+        document.head.innerHTML = '';
+        // A permanent `undefined` response, e.g. the app was stopped.
+        sendAppMessageMock.mockResolvedValue(undefined);
+
+        CosmeticController.init();
+
+        await vi.advanceTimersByTimeAsync(0);
+        expect(sendAppMessageMock).toHaveBeenCalledTimes(1);
+
+        // First retry after the base timeout.
+        await vi.advanceTimersByTimeAsync(100);
+        expect(sendAppMessageMock).toHaveBeenCalledTimes(2);
+
+        // Second retry after 200ms, not another 100ms.
+        await vi.advanceTimersByTimeAsync(100);
+        expect(sendAppMessageMock).toHaveBeenCalledTimes(2);
+
+        await vi.advanceTimersByTimeAsync(100);
+        expect(sendAppMessageMock).toHaveBeenCalledTimes(3);
     });
 
     it('still repairs invalid native CSS selectors', async () => {

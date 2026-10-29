@@ -19,17 +19,25 @@ import { HIDING_STYLE } from '../../mv2/common/hidden-style';
  */
 export class CosmeticController {
     /**
-     * Retry timeout for {@link MessageType.GetCosmeticData} request to the
-     * background, in milliseconds.
+     * Base retry timeout for {@link MessageType.GetCosmeticData} request to
+     * the background, in milliseconds. The delay doubles on every retry until
+     * it reaches {@link MAX_GET_COSMETIC_DATA_RETRY_TIMEOUT_MS}.
      */
     private static readonly GET_COSMETIC_DATA_RETRY_TIMEOUT_MS = 100;
 
     /**
-     * Max number of {@link MessageType.GetCosmeticData} retries before giving
-     * up. At {@link GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} intervals this covers
-     * ~20s of startup.
+     * Upper bound for the {@link MessageType.GetCosmeticData} retry delay, in
+     * milliseconds.
      */
-    private static readonly MAX_GET_COSMETIC_DATA_TRIES = 200;
+    private static readonly MAX_GET_COSMETIC_DATA_RETRY_TIMEOUT_MS = 5000;
+
+    /**
+     * Max number of {@link MessageType.GetCosmeticData} retries before giving
+     * up. With the doubling delay capped at
+     * {@link MAX_GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} this covers ~26s of
+     * startup with 11 requests instead of a fixed 200-request burst.
+     */
+    private static readonly MAX_GET_COSMETIC_DATA_TRIES = 10;
 
     /**
      * Number of {@link MessageType.GetCosmeticData} requests sent so far.
@@ -57,8 +65,8 @@ export class CosmeticController {
      * loads (a common startup race — the service worker is still
      * initializing). In that case the response is `undefined` (the message
      * handler returns nothing until the engine is started). This method
-     * retries after {@link GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} until the engine
-     * reports `isAppStarted`, so the native-CSS repair — which only the
+     * retries with a doubling delay until the engine reports `isAppStarted`,
+     * so the native-CSS repair — which only the
      * content script can perform — is not permanently skipped for documents
      * that loaded during startup. Without this retry, an invalid grouped
      * native selector dropped by the browser would never be re-injected for
@@ -81,11 +89,11 @@ export class CosmeticController {
         if ((!res || !res.isAppStarted)
             && CosmeticController.tries < CosmeticController.MAX_GET_COSMETIC_DATA_TRIES
         ) {
-            CosmeticController.tries += 1;
             setTimeout(
                 CosmeticController.process,
-                CosmeticController.GET_COSMETIC_DATA_RETRY_TIMEOUT_MS,
+                CosmeticController.getRetryTimeout(CosmeticController.tries),
             );
+            CosmeticController.tries += 1;
             return;
         }
 
@@ -104,6 +112,24 @@ export class CosmeticController {
 
             CosmeticController.repairNativeCss(res.nativeCssSelectors);
         }
+    }
+
+    /**
+     * Returns the delay before the next {@link MessageType.GetCosmeticData}
+     * retry: {@link GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} doubled on every
+     * attempt, capped at {@link MAX_GET_COSMETIC_DATA_RETRY_TIMEOUT_MS}. The
+     * backoff keeps a permanent `undefined` response (e.g. the app was
+     * stopped) from producing a fixed burst of retries.
+     *
+     * @param tries Number of retries already made.
+     *
+     * @returns Delay in milliseconds.
+     */
+    private static getRetryTimeout(tries: number): number {
+        return Math.min(
+            CosmeticController.GET_COSMETIC_DATA_RETRY_TIMEOUT_MS * 2 ** tries,
+            CosmeticController.MAX_GET_COSMETIC_DATA_RETRY_TIMEOUT_MS,
+        );
     }
 
     /**

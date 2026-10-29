@@ -10,8 +10,8 @@ import {
     it,
 } from 'vitest';
 
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
 import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-apply-fn';
+import { EXTCSS_PROTOCOL } from '../../../../src/lib/mv3/background/extcss-protocol';
 import { resetExtCssState } from '../helpers';
 
 // Large rule set: "hundreds of ExtCSS rules". 500 is well above

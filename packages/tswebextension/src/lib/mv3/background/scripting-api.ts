@@ -1,10 +1,9 @@
 import { type Source } from '@adguard/scriptlets';
 import { type ScriptletData } from '@adguard/tsurlfilter';
 
-import { EXTCSS_PROTOCOL } from '../../common/message-constants';
-
 import { appContext } from './app-context';
 import { extCssInjectedApply, extCssInjectedDispose } from './extcss-apply-fn';
+import { EXTCSS_PROTOCOL } from './extcss-protocol';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
 
 /**

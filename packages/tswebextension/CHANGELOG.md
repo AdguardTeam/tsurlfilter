@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Exported `CSS_HITS_MARKER_PREFIX` and `CSS_HITS_MARKER_PROPERTY`, the prefix
+  and the `--adguard-hit` custom property that encode CSS hits.
+
 ### Changed
 
 - Updated `@types/webextension-polyfill` to `0.12.6`, which adds Firefox 153+
@@ -21,8 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `$$script:contains((function(g,b,a,c,e,d)`) are matched as-is, and
   `/regexp/`-looking arguments keep their regexp semantics.
 - ExtendedCSS rules in MV3 are now applied by the background service worker
-  via `chrome.scripting.executeScript` instead of the content script. The MV2
-  path is unchanged.
+  via `chrome.scripting.executeScript` instead of the content script. In MV2,
+  the content script still applies ExtendedCSS rules.
 
 ### Deprecated
 
@@ -30,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- In MV3, cosmetic rules prepared for the previous document could be applied
+  to a new document committed into the same frame (e.g. after a speculative
+  request or a prerender activation); cosmetics are now recalculated on
+  `onCommitted` when the document id changes.
 - In MV3, native CSS selector repair and native CSS hit counting being
   skipped for documents that loaded before the background engine started:
   the content script now retries `GetCosmeticData` while the background
