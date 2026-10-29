@@ -17,11 +17,6 @@ import {
 } from './constants';
 
 /**
- * Opener of a regex modifier value (`=/`).
- */
-const REGEX_VALUE_OPENER = `${MODIFIER_ASSIGN_OPERATOR}${REGEX_MARKER}`;
-
-/**
  * A `=/.../` regex value region.
  *
  * `start` is the index of the opening `/`, `end` is one past the closing `/`.
@@ -29,8 +24,8 @@ const REGEX_VALUE_OPENER = `${MODIFIER_ASSIGN_OPERATOR}${REGEX_MARKER}`;
 export type RegexValueRegion = readonly [start: number, end: number];
 
 /**
- * Shared result for ranges without a `=/` sequence, so the common path does
- * not allocate.
+ * Shared result for ranges without a regex value, so the common path does not
+ * allocate.
  */
 const NO_REGEX_VALUE_REGIONS: readonly RegexValueRegion[] = [];
 
@@ -53,8 +48,24 @@ function isModifierNameChar(code: number): boolean {
 }
 
 /**
+ * Checks whether the character code is a space or a tab.
+ *
+ * The structural modifier parser skips these between the modifier separator,
+ * the optional `~`, the name, and the `=`, so the region scan must skip them
+ * too.
+ *
+ * @param code Character code to check.
+ *
+ * @returns `true` for a space or a tab.
+ */
+function isHorizontalWhitespace(code: number): boolean {
+    return code === 0x20 || code === 0x09;
+}
+
+/**
  * Checks whether the `=` at `index` assigns a value to a modifier name, i.e.
- * it belongs to `$name=`, `,name=`, `$~name=`, or `,~name=`.
+ * it belongs to `$name=`, `,name=`, `$~name=`, or `,~name=`, with optional
+ * spaces or tabs around the `~` and before the `=`.
  *
  * This keeps a `=/` sequence that belongs to the rule pattern (for example
  * `?ver=/` or `combo/f=/`) from being mistaken for a regex value opener.
@@ -68,18 +79,35 @@ function isModifierNameChar(code: number): boolean {
 function isModifierAssignment(rule: string, index: number, start: number): boolean {
     let i = index - 1;
 
+    // Whitespace is allowed between the modifier name and `=`.
+    while (i >= start && isHorizontalWhitespace(rule.charCodeAt(i))) {
+        i -= 1;
+    }
+
+    const nameEnd = i;
+
     while (i >= start && isModifierNameChar(rule.charCodeAt(i))) {
         i -= 1;
     }
 
-    // The `=` must directly follow at least one name character.
-    if (i === index - 1) {
+    // The `=` must follow at least one name character.
+    if (i === nameEnd) {
         return false;
+    }
+
+    // Whitespace is allowed between the optional `~` and the name.
+    while (i >= start && isHorizontalWhitespace(rule.charCodeAt(i))) {
+        i -= 1;
     }
 
     // Optional negation marker before the name.
     if (rule[i] === NEGATION_MARKER) {
         i -= 1;
+
+        // Whitespace is allowed between the separator and `~`.
+        while (i >= start && isHorizontalWhitespace(rule.charCodeAt(i))) {
+            i -= 1;
+        }
     }
 
     return i >= start && (rule[i] === DOLLAR_SIGN || rule[i] === COMMA);
@@ -103,21 +131,16 @@ function isModifierAssignment(rule: string, index: number, start: number): boole
  * @param end Exclusive scan end.
  *
  * @returns Regions in ascending order, or a shared empty array when the range
- *   contains no `=/` sequence.
+ *   contains no regex value.
  */
 export function collectRegexValueRegions(
     rule: string,
     start = 0,
     end = rule.length,
 ): readonly RegexValueRegion[] {
-    // Most rules have no regex value at all, so avoid allocating a result
-    // array for them.
-    const firstOpener = rule.indexOf(REGEX_VALUE_OPENER, start);
-    if (firstOpener === -1 || firstOpener + 1 >= end) {
-        return NO_REGEX_VALUE_REGIONS;
-    }
-
-    const regions: RegexValueRegion[] = [];
+    // Most rules have no regex value at all, so allocate the result array
+    // lazily and return the shared empty array for them.
+    let regions: RegexValueRegion[] | null = null;
 
     for (let i = start; i < end; i += 1) {
         if (rule[i] === BACKSLASH) {
@@ -169,12 +192,12 @@ export function collectRegexValueRegions(
             }
         }
 
-        regions.push([opening, regionEnd]);
+        (regions ??= []).push([opening, regionEnd]);
 
         // Skip past the region so `=/` sequences inside it are not treated
         // as separate regions.
         i = regionEnd - 1;
     }
 
-    return regions;
+    return regions ?? NO_REGEX_VALUE_REGIONS;
 }

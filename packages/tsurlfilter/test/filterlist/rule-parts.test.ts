@@ -265,10 +265,46 @@ describe('getRuleParts', () => {
             .toBe('replace=/(.\\$)/\\$1.banner-maxia/,stylesheet');
     });
 
-    test('returns null when every $ is inside a regex literal', () => {
+    test('keeps the whole rule as the pattern when every $ is inside a regex literal', () => {
         // There is no modifier separator here: both `$` are regex anchors.
-        // The scanner returns -1, and the rule must not be sliced at -1.
-        expect(getRuleParts('/a$/b$/')).toBeNull();
+        // `-1` means "no modifier list", so the whole rule stays the pattern.
+        const rule = '/a$/b$/';
+        const parts = getRuleParts(rule) as NetworkRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Network);
+        expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe(rule);
+    });
+
+    test('keeps a regex rule with escaped $ and no modifier list', () => {
+        // `/a\$b\$c/` has two escaped `$` and no modifier list. Returning
+        // `null` here made the engine drop a rule that RuleFactory parses.
+        const rule = '/a\\$b\\$c/';
+        const parts = getRuleParts(rule) as NetworkRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Network);
+        expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe(rule);
+    });
+
+    test('parses a regex value with whitespace after the separator', () => {
+        const rule = '||example.com^$ replace=/a$b/';
+        const parts = getRuleParts(rule) as NetworkRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Network);
+        expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe('||example.com^');
+        expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe(' replace=/a$b/');
+    });
+
+    test('parses a regex value with whitespace before the assignment', () => {
+        const rule = '||example.com^$replace =/a$b/';
+        const parts = getRuleParts(rule) as NetworkRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Network);
+        expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe('||example.com^');
+        expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe('replace =/a$b/');
     });
 
     test('finds the separator in a long rule with many $ inside a regex', () => {

@@ -77,4 +77,28 @@ describe('collectRegexValueRegions', () => {
             [rule.indexOf('/x'), rule.lastIndexOf('/') + 1],
         ]);
     });
+
+    test('accepts whitespace after the separator', () => {
+        const rule = '||example.com^$ replace=/a$b/';
+
+        expect(collectRegexValueRegions(rule)).toEqual([
+            [rule.indexOf('/a'), rule.lastIndexOf('/') + 1],
+        ]);
+    });
+
+    test('accepts whitespace before the assignment', () => {
+        const rule = '||example.com^$replace =/a$b/';
+
+        expect(collectRegexValueRegions(rule)).toEqual([
+            [rule.indexOf('/a'), rule.lastIndexOf('/') + 1],
+        ]);
+    });
+
+    test('accepts whitespace around a negated modifier name', () => {
+        const rule = '||example.com^$ ~removeparam =/x$y/';
+
+        expect(collectRegexValueRegions(rule)).toEqual([
+            [rule.indexOf('/x'), rule.lastIndexOf('/') + 1],
+        ]);
+    });
 });

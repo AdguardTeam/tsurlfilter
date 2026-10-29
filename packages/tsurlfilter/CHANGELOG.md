@@ -53,6 +53,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A `=/` sequence in a rule pattern (for example `?ver=/` or `combo/f=/`) is
   no longer mistaken for the start of a regex modifier value, so such rules
   keep their modifier list instead of being split at the wrong `$`.
+- Pattern-only rules whose `$` characters are all escaped or inside a regex
+  literal (for example `/a\$b\$c/`) are no longer dropped during rule
+  splitting; they keep the whole rule as the pattern.
 - HTML filtering rules with deprecated `[min-length]` / `[max-length]`
   values above the PCRE2 quantifier limit (65535) now convert to a
   PCRE2-safe regular expression split into fixed-count lookaheads and

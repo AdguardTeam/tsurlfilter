@@ -149,6 +149,14 @@ describe('RuleFactory regex value handling', () => {
         expect(rule.getPattern()).toBe('||x-trojmiasto.pl/combo/f=/_style/');
         expect(rule.getAdvancedModifierValue()).toBe('/(.\\$)/\\$1.banner-maxia/');
     });
+
+    it('keeps a regex rule with escaped $ and no modifiers', () => {
+        const text = '/a\\$b\\$c/';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe(text);
+    });
 });
 
 describe('RuleFactory cosmetic content parity', () => {

@@ -79,6 +79,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   start of a regex modifier value, so rules whose pattern contains `?ver=/` or
   `combo/f=/` keep their modifier list instead of being parsed as a plain
   blocking rule.
+- Whitespace around a regex modifier assignment (`$ replace=/.../`,
+  `$replace =/.../`, `$ ~removeparam =/.../`) is now honored when locating
+  regex values, matching the structural modifier parser.
 - Leading whitespace before an AdGuard `[$...]` modifier list is ignored, so an
   indented rule no longer parses the modifier list as part of the domain list.
 - Trailing whitespace is no longer part of a network rule pattern. A rule with

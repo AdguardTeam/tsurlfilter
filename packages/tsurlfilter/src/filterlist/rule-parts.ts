@@ -787,10 +787,19 @@ export function getRuleParts(rule: string, ignoreCosmetics = false, ignoreHosts 
     if (dollarCount > 1 && rule.indexOf('/', lastDollarIndex) !== -1) {
         const separatorIndex = findNetworkRuleSeparatorIndex(rule);
 
-        // Every `$` is escaped or inside a regex value, so the rule has no
-        // modifier list. Treat it as invalid instead of slicing at `-1`.
+        // `-1` means every `$` is escaped or inside a regex literal, i.e. the
+        // rule has no modifier list. Keep the whole rule as the pattern, as
+        // the `dollarCount === 0` branch does, instead of slicing at `-1`.
         if (separatorIndex === -1) {
-            return null;
+            const allowlist = rule.startsWith(NETWORK_RULE_ALLOWLIST_MARKER, realStart);
+
+            return {
+                category: RuleCategory.Network,
+                allowlist,
+                patternStart: allowlist ? realStart + NETWORK_RULE_ALLOWLIST_MARKER_LENGTH : realStart,
+                patternEnd: realEnd,
+                text: rule,
+            };
         }
 
         lastDollarIndex = separatorIndex;

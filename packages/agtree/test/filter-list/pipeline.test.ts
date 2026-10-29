@@ -406,4 +406,22 @@ describe('FilterListPipeline', () => {
         expect(ast.children).toHaveLength(rules.length);
         expect(elapsed).toBeLessThan(5_000);
     });
+
+    test('parses a long list of rules without regex values in linear time', () => {
+        // Regression: the `=/` bail-out used `indexOf` without an `end`
+        // bound, so every rule with a `$` scanned ahead to the next regex
+        // value anywhere in the list. 150k such rules made parsing quadratic.
+        const rules: string[] = [];
+        for (let i = 0; i < 150_000; i += 1) {
+            rules.push(`||example${i}.com^$script,third-party`);
+        }
+        const source = rules.join('\n');
+
+        const started = performance.now();
+        const ast = pipeline.parse(source);
+        const elapsed = performance.now() - started;
+
+        expect(ast.children).toHaveLength(rules.length);
+        expect(elapsed).toBeLessThan(5_000);
+    }, 20_000);
 });

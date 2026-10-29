@@ -207,6 +207,28 @@ describe('parseNetworkRule', () => {
             expect(ModifierParser.getName(source, d, 0)).toBe('replace');
             expect(ModifierParser.getName(source, d, 1)).toBe('stylesheet');
         });
+
+        test('whitespace after the separator before a regex modifier', () => {
+            const source = '||example.com^$ replace=/a$b/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.com^');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('replace');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/a$b/');
+        });
+
+        test('whitespace before a regex modifier assignment', () => {
+            const source = '||example.com^$replace =/a$b/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.com^');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('replace');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/a$b/');
+        });
     });
 
     describe('modifier parsing', () => {

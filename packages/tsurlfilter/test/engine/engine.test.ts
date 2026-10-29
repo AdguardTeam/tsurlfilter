@@ -57,6 +57,22 @@ describe('Engine Tests', () => {
         expect(result.stealthRules).toBeNull();
     });
 
+    it('keeps a regex rule with escaped $ and no modifiers', () => {
+        // Regression: `getRuleParts` treated the `-1` separator index as an
+        // invalid rule and dropped `/a\$b\$c/`, while `RuleFactory` parsed it.
+        const ruleText = '/a\\$b\\$c/';
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: ruleText,
+                },
+            ],
+        });
+
+        expect(engine.getRulesCount()).toBe(1);
+    });
+
     it('works if frame matches rule', () => {
         const ruleText = '@@||example.org$document';
         const rules = [ruleText];
