@@ -1215,6 +1215,41 @@ describe('RulesConverter', () => {
             expect(result.limitations![0]).toBeInstanceOf(TooManyUnsafeRulesError);
         });
 
+        it('counts only the rules the total limit drops', () => {
+            const declarativeRules = [
+                createDeclarativeRule(1, 'unsafe1.com'),
+                createDeclarativeRule(2, 'unsafe2.com'),
+                createDeclarativeRule(3, 'unsafe3.com'),
+                createDeclarativeRule(4, 'safe1.com'),
+                createDeclarativeRule(5, 'safe2.com'),
+                createDeclarativeRule(6, 'safe3.com'),
+            ];
+            const sourceMapValues = declarativeRules.map((rule, index) => (
+                createSource(rule.id, (index + 1) * 10, (index + 1) * 100)
+            ));
+            const converted = createConvertedRules(declarativeRules, sourceMapValues);
+
+            // The first three rules are unsafe, the last three are safe.
+            isSafeRuleMocked.mockImplementation((rule) => rule.id >= 4);
+
+            // @ts-expect-error Accessing private method for testing
+            const result = RulesConverter.checkLimitations(
+                converted,
+                3, // maxNumberOfRules
+                1, // maxNumberOfUnsafeRules
+            );
+
+            // The unsafe limit drops two rules, so four rules reach the total
+            // limit. It keeps three and drops one.
+            expect(result.declarativeRules.map((r) => r.id)).toEqual([1, 4, 5]);
+
+            const totalLimitError = result.limitations!.find(
+                (limitation) => limitation instanceof TooManyRulesError,
+            ) as TooManyRulesError;
+            expect(totalLimitError.numberOfExcludedDeclarativeRules).toBe(1);
+            expect(totalLimitError.message).toContain('4 exceeds the limit provided - 3');
+        });
+
         it('should enforce maximum number of regex rules limit', () => {
             const declarativeRules = [
                 createDeclarativeRule(1, 'example.com'), // non-regex
