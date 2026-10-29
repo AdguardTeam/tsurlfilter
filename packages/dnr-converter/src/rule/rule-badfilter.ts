@@ -31,6 +31,11 @@ interface BadfilterTarget {
      */
     readonly originalPermittedDomains?: string[] | null;
     /**
+     * Restricted `$domain` entries as written in the rule text, before any
+     * badfilter added exclusions. Equal to `restrictedDomains` for a parsed rule.
+     */
+    readonly originalRestrictedDomains?: string[] | null;
+    /**
      * Rule text as written in the filter list, before conversion to AG syntax.
      */
     readonly originalText: string;
@@ -269,11 +274,13 @@ export class RuleBadfilter {
     /**
      * Checks whether a `$badfilter` rule disables the target rule only partially.
      *
-     * This is the case when at least one of the two rules restricts itself by
-     * `$domain` and neither rule negates a domain: negated domains cannot be
-     * expressed as an intersection, so such rules are compared by the whole text
-     * instead. A rule without `$domain` restricts nothing, so it keeps cancelling
-     * the other rule everywhere the two rules overlap.
+     * This is the case when at least one of the two rules has a permitted
+     * `$domain` list and neither rule negates a domain **in its text**: negated
+     * domains cannot be expressed as an intersection, so such rules are compared
+     * by the whole text instead. Exclusions that earlier badfilters added to a
+     * narrowed copy do not count, because the badfilter comparison follows the
+     * written rule text. A rule without `$domain` restricts nothing, so it keeps
+     * cancelling the other rule everywhere the two rules overlap.
      *
      * @param badfilterRule The rule that carries the `$badfilter` modifier.
      * @param targetRule The rule to test for negation.
@@ -281,9 +288,19 @@ export class RuleBadfilter {
      * @returns True when the partial cancellation case applies.
      */
     private static isPartialDomainCase(badfilterRule: BadfilterTarget, targetRule: BadfilterTarget): boolean {
-        return (targetRule.permittedDomains !== null || badfilterRule.permittedDomains !== null)
-            && targetRule.restrictedDomains === null
-            && badfilterRule.restrictedDomains === null;
+        const targetPermittedDomains = targetRule.originalPermittedDomains !== undefined
+            ? targetRule.originalPermittedDomains
+            : targetRule.permittedDomains;
+        const targetRestrictedDomains = targetRule.originalRestrictedDomains !== undefined
+            ? targetRule.originalRestrictedDomains
+            : targetRule.restrictedDomains;
+        const badfilterRestrictedDomains = badfilterRule.originalRestrictedDomains !== undefined
+            ? badfilterRule.originalRestrictedDomains
+            : badfilterRule.restrictedDomains;
+
+        return (targetPermittedDomains !== null || badfilterRule.permittedDomains !== null)
+            && targetRestrictedDomains === null
+            && badfilterRestrictedDomains === null;
     }
 
     /**

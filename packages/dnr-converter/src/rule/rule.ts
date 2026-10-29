@@ -262,6 +262,13 @@ interface RuleOverrides {
     readonly originalPermittedDomains?: readonly string[];
 
     /**
+     * Restricted `$domain` entries as written in the rule text. A narrowed copy
+     * keeps the original list here, so a partial badfilter still compares the
+     * written text instead of the exclusions that earlier badfilters added.
+     */
+    readonly originalRestrictedDomains?: readonly string[] | null;
+
+    /**
      * Priority for the copy. A badfiltered rule keeps the priority of the rule
      * it narrows, because MV2 does not change the weight of that rule.
      */
@@ -341,6 +348,16 @@ export class Rule {
      * Restricted (negated) domains from the `$domain` modifier.
      */
     readonly restrictedDomains: string[] | null = null;
+
+    /**
+     * Restricted `$domain` entries as written in the rule text.
+     *
+     * For a narrowed copy, this keeps the list of the original rule, so a
+     * partial badfilter still compares the written text instead of the
+     * exclusions that earlier badfilters added. Equal to
+     * {@link Rule.restrictedDomains} for a parsed rule.
+     */
+    readonly originalRestrictedDomains: string[] | null = null;
 
     /**
      * Permitted destination domains from the `$to` modifier.
@@ -862,6 +879,18 @@ export class Rule {
         this.originalPermittedDomains = overrides?.originalPermittedDomains
             ? [...overrides.originalPermittedDomains]
             : this.permittedDomains;
+
+        const originalRestrictedDomains = overrides?.originalRestrictedDomains;
+        let originalRestrictedDomainsCopy: string[] | null;
+        if (originalRestrictedDomains === undefined) {
+            originalRestrictedDomainsCopy = this.restrictedDomains;
+        } else if (originalRestrictedDomains === null) {
+            originalRestrictedDomainsCopy = null;
+        } else {
+            originalRestrictedDomainsCopy = [...originalRestrictedDomains];
+        }
+        this.originalRestrictedDomains = originalRestrictedDomainsCopy;
+
         this.permittedResourceTypes = [...permittedResourceTypesSet];
         this.restrictedResourceTypes = [...restrictedResourceTypesSet];
     }
@@ -1053,7 +1082,9 @@ export class Rule {
             this.originalText,
             {
                 permittedDomains,
+                restrictedDomains: this.restrictedDomains ?? undefined,
                 originalPermittedDomains: this.originalPermittedDomains ?? this.permittedDomains ?? undefined,
+                originalRestrictedDomains: this.originalRestrictedDomains,
                 priority: this.priority,
             },
         );
@@ -1062,18 +1093,19 @@ export class Rule {
     /**
      * Creates a copy of this rule with additional restricted `$domain` entries.
      *
-     * Used by {@link Rule.applyBadfilters} when a badfilter cancels a subdomain
-     * of a kept permitted domain. The text as written in the filter list, the
-     * pattern hash and the priority stay unchanged, so a `$badfilter` rule keeps
-     * matching this rule by the same text.
+     * Merges the entries with the exclusions that earlier badfilters added. Used
+     * by {@link Rule.applyBadfilters} when a badfilter cancels a subdomain of a
+     * kept permitted domain. The text as written in the filter list, the pattern
+     * hash and the priority stay unchanged, so a `$badfilter` rule keeps matching
+     * this rule by the same text.
      *
      * @param excludedDomains Domains to exclude from the permitted `$domain`
      *   list.
      *
      * @returns A copy of this rule with the given restricted domains.
      *
-     * @throws `Error` when this rule has no permitted `$domain` list or already
-     *   has restricted domains.
+     * @throws `Error` when this rule has no permitted `$domain` list or has
+     *   restricted `$domain` entries in its text.
      */
     public withExcludedDomains(excludedDomains: readonly string[]): Rule {
         if (excludedDomains.length === 0) {
@@ -1084,9 +1116,14 @@ export class Rule {
             throw new Error('Cannot add excluded domains to a rule without a permitted $domain list');
         }
 
-        if (this.restrictedDomains !== null) {
+        if (this.originalRestrictedDomains !== null) {
             throw new Error('Cannot add excluded domains to a rule with restricted domains');
         }
+
+        const mergedExcludedDomains = [...new Set([
+            ...(this.restrictedDomains ?? []),
+            ...excludedDomains,
+        ])];
 
         return new Rule(
             this.filterListId,
@@ -1095,8 +1132,9 @@ export class Rule {
             this.originalText,
             {
                 permittedDomains: this.permittedDomains,
-                restrictedDomains: excludedDomains,
+                restrictedDomains: mergedExcludedDomains,
                 originalPermittedDomains: this.originalPermittedDomains ?? this.permittedDomains ?? undefined,
+                originalRestrictedDomains: this.originalRestrictedDomains,
                 priority: this.priority,
             },
         );

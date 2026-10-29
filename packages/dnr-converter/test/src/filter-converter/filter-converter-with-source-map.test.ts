@@ -248,6 +248,29 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['sub.bar.com']);
         });
 
+        it('applies an in-list badfilter after a scan-time exclusion', async () => {
+            const filter = createFilter([
+                '||example.com^$domain=foo.com|bar.com|baz.com',
+                '||example.com^$domain=baz.com,badfilter',
+            ]);
+            const [badfilterRule] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=foo.com|sub.bar.com,badfilter',
+            );
+
+            const [{ ruleset, errors }] = await converter.convert(
+                [filter],
+                { withSourceMap: true, badFilterRules: [badfilterRule] },
+            );
+
+            const declarativeRules = await ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['bar.com']);
+            expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['sub.bar.com']);
+        });
+
         it('drops a rule that a $domain badfilter cancels for every domain', async () => {
             const filter = createFilter(['||example.com^$domain=foo.com']);
             const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com,badfilter');
