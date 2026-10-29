@@ -13,12 +13,13 @@ import browser from 'webextension-polyfill';
 
 import { CanvasAvailabilityStatus } from '../../../../src/lib/common/canvas-protection/constants';
 import { CanvasProtectionRegistration } from '../../../../src/lib/common/canvas-protection/registration';
+import { CollectHitStatsNotifier } from '../../../../src/lib/common/collect-hit-stats';
 import { MemoryStorage } from '../../../../src/lib/common/storage/core';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { TsWebExtension } from '../../../../src/lib/mv3/background/app';
 import { appContext } from '../../../../src/lib/mv3/background/app-context';
 import { ChromiumCanvasRegistration } from '../../../../src/lib/mv3/background/canvas-registration';
-import { type ConfigurationMV3 } from '../../../../src/lib/mv3/background/configuration';
+import { type ConfigurationMV3, type ConfigurationMV3Context } from '../../../../src/lib/mv3/background/configuration';
 import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
 import { extSessionStorage, type SessionStorageSchema } from '../../../../src/lib/mv3/background/ext-session-storage';
@@ -202,5 +203,85 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
             await instance.initStorage();
             expect(remove).toHaveBeenCalledOnce();
         });
+    });
+});
+
+describe('TsWebExtension MV3 collect hit stats notifications', () => {
+    let instance: TsWebExtension;
+
+    beforeEach(() => {
+        vi.stubGlobal('crypto', webcrypto);
+        vi.spyOn(CanvasProtectionRegistration.prototype, 'apply').mockResolvedValue({} as never);
+        appContext.isStorageInitialized = true;
+        appContext.configuration = undefined;
+        instance = new TsWebExtension();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    /**
+     * Supplies browser boundaries without loading ruleset files.
+     */
+    const prepareConfigure = (): void => {
+        vi.spyOn(configureBoundaries, 'syncRulesetsWithIdb').mockResolvedValue(undefined);
+        vi.spyOn(configureBoundaries, 'getFiltersUpdateInfo').mockResolvedValue({
+            staticFilters: [], customFilters: [], filtersIdsToEnable: [], filtersIdsToDisable: [],
+        });
+        vi.spyOn(configureBoundaries, 'loadStaticRulesets').mockResolvedValue([]);
+        vi.spyOn(FiltersApi, 'updateFiltering').mockResolvedValue({ errors: [] });
+        vi.spyOn(StealthService, 'applySettings').mockResolvedValue({} as never);
+        vi.spyOn(CspService, 'addCspReportBlockingRule').mockResolvedValue(undefined);
+        Object.defineProperty(browser, 'declarativeNetRequest', {
+            configurable: true, value: { getEnabledRulesets: vi.fn().mockResolvedValue([]) },
+        });
+        vi.spyOn(DynamicRulesApi, 'updateDynamicFiltering').mockResolvedValue({
+            ruleset: { unloadContent: vi.fn() }, declarativeRulesToCancel: [],
+        } as never);
+    };
+
+    it('does not notify on the first configure', async () => {
+        prepareConfigure();
+        const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+        await instance.configure(getConfigurationMv3Fixture());
+
+        expect(notifySpy).not.toHaveBeenCalled();
+    });
+
+    it('notifies when configure changes collectStats', async () => {
+        prepareConfigure();
+        const config = getConfigurationMv3Fixture();
+        await instance.configure(config);
+        const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+        await instance.configure({
+            ...config,
+            settings: {
+                ...config.settings,
+                collectStats: false,
+            },
+        });
+
+        expect(notifySpy).toHaveBeenCalledTimes(1);
+        expect(notifySpy).toHaveBeenCalledWith(false);
+    });
+
+    it('notifies setCollectHitStats only on an actual change', () => {
+        instance.configuration = {
+            settings: {
+                collectStats: true,
+            },
+        } as ConfigurationMV3Context;
+        const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+        instance.setCollectHitStats(false);
+        instance.setCollectHitStats(false);
+        instance.setCollectHitStats(true);
+
+        expect(notifySpy).toHaveBeenCalledTimes(2);
+        expect(notifySpy).toHaveBeenNthCalledWith(1, false);
+        expect(notifySpy).toHaveBeenNthCalledWith(2, true);
     });
 });
