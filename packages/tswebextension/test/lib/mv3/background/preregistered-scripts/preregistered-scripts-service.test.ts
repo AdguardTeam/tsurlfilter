@@ -1244,6 +1244,14 @@ describe('PreregisteredScriptsService', () => {
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
             expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
+
+            // The runtime expansion also covers `www.youtube.com`, but the
+            // page gate only knows the manifest host: registering the alias
+            // would run its rules at `document_start` on its own top-level
+            // pages while the background reports no coverage there, and the
+            // dynamic path would inject the same rules again.
+            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(scripts.map((script) => script.id)).toEqual(['youtube.com']);
         });
 
         it('awaits an in-flight sync before clearing in the no-config path', async () => {

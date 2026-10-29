@@ -150,11 +150,9 @@ export class PreregisteredScriptsService {
 
         if (PreregisteredScriptsService.isNamespaceEmpty()) {
             appContext.preregisteredScriptRules = new Map();
-            // Pre-existing pages already received the boot files at
-            // document_start: keep their host set resolvable.
-            appContext.preregisteredHostnames = new Set(
-                appContext.preregisteredScriptRulesAtBoot?.keys() ?? [],
-            );
+            // The empty guard proves the boot snapshot holds no hostnames
+            // either, so no page can be covered by a registration.
+            appContext.preregisteredHostnames = new Set();
 
             return;
         }
@@ -332,15 +330,22 @@ export class PreregisteredScriptsService {
      * registrations already ran at `document_start`.
      *
      * @param coverage Coverage map that is being republished.
+     * @param generationHostnames Host set of the artifact generation, when it
+     * was read before the failure: the page gate uses that set, not the
+     * runtime expansion.
      */
-    private static publishFallbackHostnames(coverage: Map<string, Set<string>>): void {
+    private static publishFallbackHostnames(
+        coverage: Map<string, Set<string>>,
+        generationHostnames?: readonly string[],
+    ): void {
         if (appContext.preregisteredHostnames !== undefined) {
             return;
         }
 
-        const configured = appContext.preregisteredScripts
-            ? expandHostnames(appContext.preregisteredScripts.domains)
-            : [];
+        const configured = generationHostnames
+            ?? (appContext.preregisteredScripts
+                ? expandHostnames(appContext.preregisteredScripts.domains)
+                : []);
 
         appContext.preregisteredHostnames = new Set(
             configured.length > 0 ? configured : coverage.keys(),
@@ -417,9 +422,14 @@ export class PreregisteredScriptsService {
     ): Promise<Map<string, Set<string>>> {
         const hostnames = expandHostnames(domains);
         // The shared bundle embeds the host set of the generation it was
-        // built for; prefer it over the runtime expansion so the page gate
-        // and this predicate can never disagree about the set.
+        // built for, and the page gate uses exactly that set: it is the only
+        // source for the coverage predicate, so the two sides cannot
+        // disagree about the set.
         let publishedHostnames: readonly string[] = hostnames;
+        let registeredHostnames: readonly string[] = hostnames;
+        // Set only when the manifest was read: a failed read means the
+        // generation's set is unknown, so the fallback must not claim it.
+        let generationHostnames: readonly string[] | undefined;
 
         // A failure here leaves the previous registrations active, so the
         // last published coverage still describes them.
@@ -429,8 +439,24 @@ export class PreregisteredScriptsService {
             if (preregistrationEnabled && hostnames.length > 0) {
                 const manifest = await readManifest(scriptsPath);
                 publishedHostnames = manifest.hostnames;
+                generationHostnames = manifest.hostnames;
+
+                // Register only the hosts the page gate covers. A host that
+                // is registered but missing from the manifest set runs its
+                // rules at `document_start` on its own top-level pages while
+                // the background reports no coverage there, so the dynamic
+                // path injects the same rules again — and `#%#` rules are
+                // not idempotent.
+                const gateHosts = new Set(manifest.hostnames);
+                registeredHostnames = hostnames.filter((hostname) => gateHosts.has(hostname));
+                const skippedHostnames = hostnames.filter((hostname) => !gateHosts.has(hostname));
+
+                if (skippedHostnames.length > 0) {
+                    logger.warn(`[tsweb.PreregisteredScriptsService.doSync]: ${skippedHostnames.length} configured hostname(s) are missing from the manifest host set, not registering them`, skippedHostnames);
+                }
+
                 scripts = await PreregisteredScriptsService.buildDomainScripts(
-                    hostnames,
+                    [...registeredHostnames],
                     scriptsPath,
                     manifest,
                 );
@@ -457,7 +483,7 @@ export class PreregisteredScriptsService {
 
             const fallback = PreregisteredScriptsService.getFallbackCoverage();
             appContext.preregisteredScriptRules = fallback;
-            PreregisteredScriptsService.publishFallbackHostnames(fallback);
+            PreregisteredScriptsService.publishFallbackHostnames(fallback, generationHostnames);
 
             return fallback;
         }
@@ -483,7 +509,7 @@ export class PreregisteredScriptsService {
                 : deriveCoverage(scripts);
             appContext.preregisteredScriptRules = coveredRules;
 
-            logger.info(`[tsweb.PreregisteredScriptsService.doSync]: Synced preregistered scripts: ${coveredRules.size}/${hostnames.length} hostnames covered`);
+            logger.info(`[tsweb.PreregisteredScriptsService.doSync]: Synced preregistered scripts: ${coveredRules.size}/${registeredHostnames.length} hostnames covered`);
 
             return coveredRules;
         } catch (e) {
