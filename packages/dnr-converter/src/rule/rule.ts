@@ -241,7 +241,7 @@ export const REMOVEHEADER_COMPATIBLE_MODIFIERS: ReadonlySet<string> = new Set([
 
 /**
  * Overrides for a {@link Rule} copy created by
- * {@link Rule.withPermittedDomains}.
+ * {@link Rule.withPermittedDomains} or {@link Rule.withExcludedDomains}.
  */
 interface RuleOverrides {
     /**
@@ -271,8 +271,10 @@ interface RuleOverrides {
 /**
  * Parsed and normalized network filtering rule.
  *
- * Instances are created exclusively via the static factory methods
- * {@link Rule.createFromText} and {@link Rule.parseFromNode}.
+ * Parsed instances are created via the static factory methods
+ * {@link Rule.createFromText} and {@link Rule.parseFromNode}. Narrowed copies
+ * are created via {@link Rule.withPermittedDomains} and
+ * {@link Rule.withExcludedDomains}.
  */
 export class Rule {
     /**
