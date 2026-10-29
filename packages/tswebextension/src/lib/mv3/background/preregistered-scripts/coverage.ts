@@ -8,6 +8,12 @@ import { appContext } from '../app-context';
 import { computeRuleHashCached } from './hasher';
 
 /**
+ * Minimal frame shape the ancestor walk needs: the fields available both
+ * from the cached frame contexts and from `webNavigation.getAllFrames`.
+ */
+type FrameNode = Pick<FrameMV3, 'frameId' | 'parentFrameId' | 'url'>;
+
+/**
  * Looks up a frame context by tab and frame id.
  */
 export type FrameContextLookup = (tabId: number, frameId: number) => FrameMV3 | undefined;
@@ -15,7 +21,7 @@ export type FrameContextLookup = (tabId: number, frameId: number) => FrameMV3 | 
 /**
  * Reads the live frame tree of a tab.
  */
-export type FrameTreeLookup = (tabId: number) => Promise<Map<number, FrameMV3> | undefined>;
+export type FrameTreeLookup = (tabId: number) => Promise<Map<number, FrameNode> | undefined>;
 
 /**
  * Rules whose hash failure has already been logged. Hashing failures are
@@ -81,7 +87,7 @@ const getLiveFrameTree: FrameTreeLookup = async (tabId) => {
 
         return new Map(frames.map(({ frameId, parentFrameId, url }) => [
             frameId,
-            { frameId, parentFrameId, url } as unknown as FrameMV3,
+            { frameId, parentFrameId, url },
         ]));
     } catch (e) {
         logger.debug('[tsweb.coverage]: failed to read the frame tree', e);
@@ -116,10 +122,10 @@ export const resolveCoverageHost = async (
     getFrameTree: FrameTreeLookup = getLiveFrameTree,
 ): Promise<string | null> => {
     const visited = new Set<number>();
-    let current: FrameMV3 | undefined = frameContext;
+    let current: FrameNode | undefined = frameContext;
     let coverageHost: string | null = null;
     let topHost: string | null = null;
-    let liveFrames: Map<number, FrameMV3> | undefined;
+    let liveFrames: Map<number, FrameNode> | undefined;
 
     while (current) {
         // Broken parent chains must not loop forever.
@@ -139,7 +145,7 @@ export const resolveCoverageHost = async (
             break;
         }
 
-        const { parentFrameId }: FrameMV3 = current;
+        const { parentFrameId }: FrameNode = current;
         const cachedParent = getFrameContext(tabId, parentFrameId);
 
         if (cachedParent) {
@@ -150,7 +156,7 @@ export const resolveCoverageHost = async (
         // Pruned cache: resolve the parent from the live tree.
         // eslint-disable-next-line no-await-in-loop
         liveFrames ??= await getFrameTree(tabId);
-        const liveParent: FrameMV3 | undefined = liveFrames?.get(parentFrameId);
+        const liveParent: FrameNode | undefined = liveFrames?.get(parentFrameId);
         if (!liveParent) {
             return null;
         }
