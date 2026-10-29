@@ -147,6 +147,7 @@ import {
     toASCII,
 } from '../utils/string';
 
+import { ActionKind, selectActionKinds } from './action-kind';
 import { type ConvertedRules } from './converted-rules';
 
 /**
@@ -608,75 +609,89 @@ export class RegularRuleConverter {
      * @throws Error {@link UnsupportedModifierError} when a `$removeparam` value cannot be URI-decoded.
      */
     private getAction(rule: Rule): RuleAction {
-        if (rule.allowlist) {
-            if (rule.isFilteringDisabled() && RegularRuleConverter.isCompatibleWithAllowAllRequests(rule)) {
-                return { type: RuleActionType.AllowAllRequests };
-            }
+        const kinds = selectActionKinds(rule);
 
-            return { type: RuleActionType.Allow };
-        }
-
-        if (rule.isModifierEnabled(OPTION_NAMES.REDIRECT)) {
-            const redirectAction = this.getRedirectAction(rule);
-            if (redirectAction) {
-                return {
-                    type: RuleActionType.Redirect,
-                    redirect: redirectAction,
-                };
+        for (let i = 0; i < kinds.length; i += 1) {
+            const action = this.buildAction(rule, kinds[i]);
+            if (action) {
+                return action;
             }
         }
 
-        if (rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
-            const removeParamRedirectAction = RegularRuleConverter.getRemoveParamRedirectAction(rule);
-            if (removeParamRedirectAction) {
-                return {
-                    type: RuleActionType.Redirect,
-                    redirect: removeParamRedirectAction,
-                };
+        return { type: RuleActionType.Block };
+    }
+
+    /**
+     * Builds the action of the given kind for a rule.
+     *
+     * @param rule {@link Rule} to build an action for.
+     * @param kind Action kind to build.
+     *
+     * @returns Action or `null` when the modifier cannot produce it, so the
+     * next kind in {@link selectActionKinds} is used.
+     */
+    private buildAction(rule: Rule, kind: ActionKind): RuleAction | null {
+        switch (kind) {
+            case ActionKind.Allow: {
+                if (rule.isFilteringDisabled() && RegularRuleConverter.isCompatibleWithAllowAllRequests(rule)) {
+                    return { type: RuleActionType.AllowAllRequests };
+                }
+
+                return { type: RuleActionType.Allow };
             }
-        }
+            case ActionKind.Redirect: {
+                const redirectAction = this.getRedirectAction(rule);
 
-        if (rule.isModifierEnabled(OPTION_NAMES.REMOVEHEADER)) {
-            const modifyHeadersAction = RegularRuleConverter.getModifyHeadersAction(rule);
-
-            if (modifyHeadersAction?.requestHeaders) {
-                return {
-                    type: RuleActionType.ModifyHeaders,
-                    requestHeaders: modifyHeadersAction.requestHeaders,
-                };
+                return redirectAction
+                    ? { type: RuleActionType.Redirect, redirect: redirectAction }
+                    : null;
             }
+            case ActionKind.RemoveParamRedirect: {
+                const removeParamRedirectAction = RegularRuleConverter.getRemoveParamRedirectAction(rule);
 
-            if (modifyHeadersAction?.responseHeaders) {
-                return {
-                    type: RuleActionType.ModifyHeaders,
-                    responseHeaders: modifyHeadersAction.responseHeaders,
-                };
+                return removeParamRedirectAction
+                    ? { type: RuleActionType.Redirect, redirect: removeParamRedirectAction }
+                    : null;
             }
-        }
+            case ActionKind.RemoveHeader: {
+                const modifyHeadersAction = RegularRuleConverter.getModifyHeadersAction(rule);
 
-        if (rule.isModifierEnabled(OPTION_NAMES.CSP)) {
-            const headersAction = RegularRuleConverter.getAddingCspHeadersAction(rule);
-            if (headersAction) {
-                return {
-                    type: RuleActionType.ModifyHeaders,
-                    responseHeaders: [headersAction],
-                };
+                if (modifyHeadersAction?.requestHeaders) {
+                    return {
+                        type: RuleActionType.ModifyHeaders,
+                        requestHeaders: modifyHeadersAction.requestHeaders,
+                    };
+                }
+
+                if (modifyHeadersAction?.responseHeaders) {
+                    return {
+                        type: RuleActionType.ModifyHeaders,
+                        responseHeaders: modifyHeadersAction.responseHeaders,
+                    };
+                }
+
+                return null;
             }
-        }
+            case ActionKind.Csp: {
+                const headersAction = RegularRuleConverter.getAddingCspHeadersAction(rule);
 
-        if (rule.isModifierEnabled(OPTION_NAMES.PERMISSIONS)) {
-            const headersAction = RegularRuleConverter.getAddingPermissionsHeadersAction(rule);
-            if (headersAction) {
-                return {
-                    type: RuleActionType.ModifyHeaders,
-                    responseHeaders: [headersAction],
-                };
+                return headersAction
+                    ? { type: RuleActionType.ModifyHeaders, responseHeaders: [headersAction] }
+                    : null;
             }
-        }
+            case ActionKind.Permissions: {
+                const headersAction = RegularRuleConverter.getAddingPermissionsHeadersAction(rule);
 
-        if (rule.isModifierEnabled(OPTION_NAMES.COOKIE)) {
-            const removeCookieHeaders = RegularRuleConverter.getRemovingCookieHeadersAction(rule);
-            if (removeCookieHeaders) {
+                return headersAction
+                    ? { type: RuleActionType.ModifyHeaders, responseHeaders: [headersAction] }
+                    : null;
+            }
+            case ActionKind.Cookie: {
+                const removeCookieHeaders = RegularRuleConverter.getRemovingCookieHeadersAction(rule);
+                if (!removeCookieHeaders) {
+                    return null;
+                }
+
                 const { responseHeaders, requestHeaders } = removeCookieHeaders;
 
                 return {
@@ -685,9 +700,10 @@ export class RegularRuleConverter {
                     requestHeaders,
                 };
             }
+            default: {
+                return { type: RuleActionType.Block };
+            }
         }
-
-        return { type: RuleActionType.Block };
     }
 
     /**

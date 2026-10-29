@@ -120,6 +120,19 @@ describe('CspRulesResolver.resolve', () => {
         });
     });
 
+    it('does not let a value-less exception override an important rule', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',important",
+            '@@||example.com^$csp',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
     it('accepts an exception for a different CSP value as a safe no-op', () => {
         const rules = createRules(
             "||example.com^$csp=script-src 'none'",

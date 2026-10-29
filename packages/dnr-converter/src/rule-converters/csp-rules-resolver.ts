@@ -5,6 +5,7 @@ import { type Rule } from '../rule/rule';
 import { RuleDeclarativeValidator } from '../rule/rule-validator';
 import { prepareASCII } from '../utils/string';
 
+import { isCspRule } from './action-kind';
 import { coversCondition, coversNonUrlConditions, isDomainCovered } from './csp-condition-coverage';
 import { RegularRuleConverter } from './regular-rule-converter';
 
@@ -60,9 +61,9 @@ export class CspRulesResolver {
     /**
      * Checks whether an exception applies to the blocking rule's CSP value.
      *
-     * An exception without a value applies to any value; a valued exception
-     * applies only when it has a strictly higher priority than the blocking
-     * rule and both values are equal.
+     * A valued exception applies only when both values are equal. An exception
+     * without a value applies to any value, but only when it outranks the
+     * blocking rule: `$important` must win over a regular allowlist rule.
      *
      * @param exceptionRule CSP exception rule.
      * @param blockingRule Blocking CSP rule.
@@ -70,13 +71,13 @@ export class CspRulesResolver {
      * @returns `true` if the exception applies to the blocking rule's value.
      */
     private static hasApplicableValue(exceptionRule: Rule, blockingRule: Rule): boolean {
+        if (exceptionRule.priority <= blockingRule.priority) {
+            return false;
+        }
+
         const exceptionValue = exceptionRule.advancedModifierValue;
         if (!exceptionValue) {
             return true;
-        }
-
-        if (exceptionRule.priority <= blockingRule.priority) {
-            return false;
         }
 
         return exceptionValue === blockingRule.advancedModifierValue;
@@ -376,7 +377,7 @@ export class CspRulesResolver {
      * @returns Remaining rules and exception resolution details.
      */
     public static resolve(rules: Rule[]): CspRulesResolution {
-        const cspRules = rules.filter((rule) => rule.isModifierEnabled(OPTION_NAMES.CSP));
+        const cspRules = rules.filter(isCspRule);
         const blockingRules = cspRules.filter((rule) => !rule.allowlist);
         const exceptionRules = cspRules.filter((rule) => rule.allowlist);
         const processableExceptions = exceptionRules.filter(CspRulesResolver.isProcessableException);

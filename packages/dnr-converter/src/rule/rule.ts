@@ -684,6 +684,20 @@ export class Rule {
                     break;
 
                 case OPTION_NAMES.CSP:
+                    this.enabledModifiers.add(name);
+                    this.advancedModifierName = rawName;
+                    this.advancedModifierValue = value || null;
+                    // Only an allowlist `$csp` may omit the directive: it means
+                    // "cancel the CSP rules of the matching scope". A blocking
+                    // rule without a directive would silently degrade into a
+                    // plain blocking rule, so it is rejected, like in tsurlfilter.
+                    if (!isAllowlist && !value) {
+                        throw new SyntaxError(
+                            'Invalid $csp rule: CSP directive must not be empty',
+                        );
+                    }
+                    break;
+
                 case OPTION_NAMES.COOKIE:
                 case OPTION_NAMES.REPLACE:
                 case OPTION_NAMES.JSONPRUNE:

@@ -110,6 +110,7 @@ import { type IFilter } from '../filter/types';
 import { OPTION_NAMES } from '../rule/option-names';
 import { type Rule } from '../rule/rule';
 import { type ConvertedRules } from '../rule-converters';
+import { isCspRule } from '../rule-converters/action-kind';
 import { RulesConverter } from '../rule-converters/rules-converter';
 import { RulesScanner, type ScannedFilter } from '../rules-scanner';
 import { RulesHashMap } from '../ruleset/rules-hash-map';
@@ -322,7 +323,7 @@ export class FilterConverter {
         } = await RulesScanner.scanFilters(
             relevantFilters,
             (rule) => (
-                rule.isModifierEnabled(OPTION_NAMES.CSP)
+                isCspRule(rule)
                 || rule.isModifierEnabled(OPTION_NAMES.BADFILTER)
             ),
             undefined,
@@ -506,7 +507,7 @@ export class FilterConverter {
             }
 
             return !excludeCspRules
-                || !rule.isModifierEnabled(OPTION_NAMES.CSP)
+                || !isCspRule(rule)
                 || rule.isModifierEnabled(OPTION_NAMES.BADFILTER);
         };
     }

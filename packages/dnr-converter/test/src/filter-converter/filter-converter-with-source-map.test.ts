@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { RuleActionType } from '../../../src/declarative-rule';
 import {
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRulesError,
@@ -260,15 +261,47 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
         });
 
-        it('reports a blocking rule which fails the preflight only once', async () => {
+        it('leaves a rule with a higher-priority action to the regular pass', async () => {
             const filter = createFilter([
                 "||example.com^$csp=script-src 'none',redirect=noopjs",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter], '/resources');
+
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('leaves a rule combining $csp with $cookie to the regular pass', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',cookie",
             ], 1);
 
             const { ruleset, errors } = await converter.convertCspRules([filter]);
 
             expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('reports a blocking rule with an empty $csp directive', async () => {
+            const filter = createFilter(['||example.com^$csp'], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
             expect(errors).toHaveLength(1);
+        });
+
+        it('accepts an allowlist rule with an empty $csp directive', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none'",
+                '@@||example.com^$csp',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+            expect(errors).toHaveLength(0);
         });
     });
 
@@ -301,6 +334,43 @@ describe('FilterConverter (withSourceMap: true)', () => {
             });
 
             expect(errors).toHaveLength(0);
+        });
+
+        it('keeps a rule combining $csp with $redirect in the regular conversion', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',redirect=noopjs",
+            ], 1);
+
+            const [{ ruleset, errors }] = await converter.convert([filter], {
+                excludeCspRules: true,
+                withSourceMap: true,
+                resourcesPath: '/resources',
+            });
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action).toEqual({
+                type: RuleActionType.Redirect,
+                redirect: { extensionPath: '/resources/noopjs.js' },
+            });
+        });
+
+        it('keeps a rule combining $csp with $cookie in the regular conversion', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',cookie",
+            ], 1);
+
+            const [{ ruleset, errors }] = await converter.convert([filter], {
+                excludeCspRules: true,
+                withSourceMap: true,
+            });
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action.type).toBe(RuleActionType.ModifyHeaders);
+            expect(declarativeRules[0].action.responseHeaders).toBeDefined();
         });
 
         it('reports a broken CSP rule when CSP rules are not excluded', async () => {
