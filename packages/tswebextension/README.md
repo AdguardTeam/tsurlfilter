@@ -382,9 +382,13 @@ Known limitations:
   host: rules registered on `*://youtube.com/*` still execute on `/embed/…`.
   Tracked in AG-54564.
 - The embed gate reads `location.ancestorOrigins`, which is Blink-only; the
-  preregistered path is not supported on other engines. A top-level document
-  with an opaque origin (e.g. a CSP sandbox) is rejected by the page gate,
-  while the background still sees its URL — the only remaining divergence.
+  preregistered path is not supported on other engines. A frame whose
+  top-level document has an opaque origin (e.g. a CSP-sandboxed top) is
+  rejected by the page gate — the top document itself passes it, but its
+  subframes see the top origin as `null` and install the no-op shim — while
+  the background still sees the top URL and reports coverage, so covered
+  rules are not injected in those subframes. Aligning the two sides needs a
+  cross-repo signal.
 - `$url`-modified rules are never preregistered: the engine is queried per
   hostname root, so they stay on the dynamic injection path.
 - A page that started before a sync removed a `#%#` JS rule can execute it
