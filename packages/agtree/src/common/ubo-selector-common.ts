@@ -5,6 +5,8 @@ export const UboPseudoName = {
     MatchesMedia: 'matches-media',
     MatchesPath: 'matches-path',
     Remove: 'remove',
+    RemoveAttr: 'remove-attr',
+    RemoveClass: 'remove-class',
     Style: 'style',
 } as const;
 

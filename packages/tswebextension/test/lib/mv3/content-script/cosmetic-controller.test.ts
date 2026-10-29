@@ -14,8 +14,8 @@ import { CosmeticController } from '../../../../src/lib/mv3/content-script/cosme
 
 const { sendAppMessageMock, cssHitsCounterCtorSpy } = vi.hoisted(() => ({
     sendAppMessageMock: vi.fn(),
-    // Used as a constructor (`new CssHitsCounter(cb)`); a plain vi.fn() can be
-    // `new`-ed and records its constructor call arguments.
+    // Used as a constructor (`new CssHitsCounter(cb, options)`); a plain
+    // vi.fn() can be `new`-ed and records its constructor call arguments.
     cssHitsCounterCtorSpy: vi.fn(),
 }));
 vi.mock('../../../../src/lib/common/content-script/send-app-message', () => ({
@@ -49,13 +49,6 @@ describe('MV3 CosmeticController — native CSS repair', () => {
     afterEach(() => {
         vi.useRealTimers();
         vi.restoreAllMocks();
-        // The static retry counter persists across tests (module-level state);
-        // reset it so retry assertions are independent.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (CosmeticController as any).tries = 0;
-        // Same for the retained native CssHitsCounter instance.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (CosmeticController as any).cssHitsCounter = undefined;
         sendAppMessageMock.mockReset();
         cssHitsCounterCtorSpy.mockClear();
     });
@@ -77,7 +70,8 @@ describe('MV3 CosmeticController — native CSS repair', () => {
                 nativeCssSelectors: ['.some-sel'],
             });
 
-        CosmeticController.init();
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
 
         // First call returns isAppStarted:false → schedules a 100ms retry.
         await vi.advanceTimersByTimeAsync(0);
@@ -113,7 +107,8 @@ describe('MV3 CosmeticController — native CSS repair', () => {
                 nativeCssSelectors: ['.some-sel'],
             });
 
-        CosmeticController.init();
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
 
         await vi.advanceTimersByTimeAsync(0);
         expect(sendAppMessageMock).toHaveBeenCalledTimes(1);
@@ -134,7 +129,8 @@ describe('MV3 CosmeticController — native CSS repair', () => {
             nativeCssSelectors: null,
         });
 
-        CosmeticController.init();
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
 
         // Advance well beyond the whole backoff window (11 requests, ~26s).
         await vi.advanceTimersByTimeAsync(30_000);
@@ -153,7 +149,8 @@ describe('MV3 CosmeticController — native CSS repair', () => {
         // A permanent `undefined` response, e.g. the app was stopped.
         sendAppMessageMock.mockResolvedValue(undefined);
 
-        CosmeticController.init();
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
 
         await vi.advanceTimersByTimeAsync(0);
         expect(sendAppMessageMock).toHaveBeenCalledTimes(1);
@@ -180,7 +177,8 @@ describe('MV3 CosmeticController — native CSS repair', () => {
             nativeCssSelectors: ['.some-sel'],
         });
 
-        CosmeticController.init();
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
         await vi.advanceTimersByTimeAsync(0);
 
         const style = document.querySelector('style');
@@ -205,6 +203,10 @@ describe('MV3 CosmeticController — native CSS repair', () => {
         // absent.
         expect(CONTROLLER_SRC).toContain('GET_COSMETIC_DATA_RETRY_TIMEOUT_MS');
         expect(CONTROLLER_SRC).toContain('MAX_GET_COSMETIC_DATA_TRIES');
+        // The probe collector of the target branch must survive the merge: the
+        // counter is created with it, so short-lived elements seen before the
+        // counter exists are still reported.
+        expect(CONTROLLER_SRC).toContain('pendingProbesCollector');
     });
 });
 
@@ -212,11 +214,6 @@ describe('MV3 CosmeticController — native CssHitsCounter', () => {
     afterEach(() => {
         vi.useRealTimers();
         vi.restoreAllMocks();
-        // Reset module-level static state between tests (see the block above).
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (CosmeticController as any).tries = 0;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (CosmeticController as any).cssHitsCounter = undefined;
         sendAppMessageMock.mockReset();
         cssHitsCounterCtorSpy.mockClear();
     });
@@ -231,10 +228,15 @@ describe('MV3 CosmeticController — native CssHitsCounter', () => {
             nativeCssSelectors: null,
         });
 
-        CosmeticController.init();
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
         await vi.advanceTimersByTimeAsync(0);
 
         expect(cssHitsCounterCtorSpy).toHaveBeenCalledTimes(1);
+        // The counter must receive the probe collector of the controller.
+        expect(cssHitsCounterCtorSpy.mock.calls[0][1]).toEqual({
+            pendingProbesCollector: expect.anything(),
+        });
     });
 
     it('does NOT create a CssHitsCounter when areHitsStatsCollected is false', async () => {
@@ -247,7 +249,8 @@ describe('MV3 CosmeticController — native CssHitsCounter', () => {
             nativeCssSelectors: null,
         });
 
-        CosmeticController.init();
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
         await vi.advanceTimersByTimeAsync(0);
 
         expect(cssHitsCounterCtorSpy).not.toHaveBeenCalled();
@@ -263,7 +266,8 @@ describe('MV3 CosmeticController — native CssHitsCounter', () => {
             nativeCssSelectors: null,
         });
 
-        CosmeticController.init();
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
         await vi.advanceTimersByTimeAsync(0);
 
         expect(cssHitsCounterCtorSpy).toHaveBeenCalledTimes(1);
@@ -288,14 +292,13 @@ describe('MV3 CosmeticController — native CssHitsCounter', () => {
             nativeCssSelectors: null,
         });
 
-        CosmeticController.init();
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
         await vi.advanceTimersByTimeAsync(0);
         expect(cssHitsCounterCtorSpy).toHaveBeenCalledTimes(1);
 
         // A second init() (same document) must not create another counter.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (CosmeticController as any).tries = 0;
-        CosmeticController.init();
+        cosmeticController.init();
         await vi.advanceTimersByTimeAsync(0);
 
         expect(cssHitsCounterCtorSpy).toHaveBeenCalledTimes(1);

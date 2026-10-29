@@ -1,4 +1,5 @@
 import { CssHitsCounter } from '../../common/content-script/css-hits-counter';
+import { PendingProbesCollector } from '../../common/content-script/pending-probes-collector';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
 import { MessageType } from '../../common/message-constants';
@@ -42,19 +43,35 @@ export class CosmeticController {
     /**
      * Number of {@link MessageType.GetCosmeticData} requests sent so far.
      */
-    private static tries = 0;
+    private tries = 0;
 
     /**
      * Module that collects statistics about the usage of native CSS rules.
      * Created at most once per document (see {@link process}).
      */
-    private static cssHitsCounter?: CssHitsCounter;
+    private cssHitsCounter?: CssHitsCounter;
+
+    /**
+     * Collects short-lived elements created before the counter initialization.
+     */
+    private pendingProbesCollector = new PendingProbesCollector();
+
+    /**
+     * Creates new {@link CosmeticController} instance.
+     */
+    constructor() {
+        this.process = this.process.bind(this);
+    }
 
     /**
      * Init cosmetic processing.
      */
-    public static init(): void {
-        CosmeticController.process();
+    public init(): void {
+        // Start observing the DOM before the asynchronous cosmetic data
+        // request, so that elements created and removed during the document
+        // loading are not missed by the CSS hits counter.
+        this.pendingProbesCollector.start();
+        this.process();
     }
 
     /**
@@ -72,46 +89,63 @@ export class CosmeticController {
      * native selector dropped by the browser would never be re-injected for
      * such pages.
      */
-    private static async process(): Promise<void> {
-        // `sendAppMessage` returns `any`; annotate the awaited response so the
-        // cosmetic-data fields below are checked against the background
-        // contract.
-        const res: ContentScriptCosmeticData | undefined = await sendAppMessage({
-            type: MessageType.GetCosmeticData,
-            payload: {
-                documentUrl: window.location.href,
-            },
-        });
+    private async process(): Promise<void> {
+        let res: ContentScriptCosmeticData | undefined;
+
+        try {
+            // `sendAppMessage` returns `any`; annotate the awaited response so
+            // the cosmetic-data fields below are checked against the
+            // background contract.
+            res = await sendAppMessage({
+                type: MessageType.GetCosmeticData,
+                payload: {
+                    documentUrl: window.location.href,
+                },
+            });
+        } catch (e) {
+            this.pendingProbesCollector.stop();
+            throw e;
+        }
 
         // Retry while the background engine is not ready (startup race).
         // The response is `undefined` until `tsWebExtension.isStarted`, and
         // `isAppStarted` is false until the app finishes initializing.
         if ((!res || !res.isAppStarted)
-            && CosmeticController.tries < CosmeticController.MAX_GET_COSMETIC_DATA_TRIES
+            && this.tries < CosmeticController.MAX_GET_COSMETIC_DATA_TRIES
         ) {
             setTimeout(
-                CosmeticController.process,
-                CosmeticController.getRetryTimeout(CosmeticController.tries),
+                this.process,
+                CosmeticController.getRetryTimeout(this.tries),
             );
-            CosmeticController.tries += 1;
+            this.tries += 1;
             return;
         }
 
-        if (res) {
-            // Native-only CSS hits counting: reads the `--adguard-hit`
-            // custom property from computed styles. Extended-CSS-rule hits
-            // are reported separately by the background-injected
-            // `extCssInjectedApply` callback, so this counter reads ONLY
-            // native CSS markers.
-            // Created at most once per document — repeated `process()` runs
-            // (e.g. after retries or re-init) must not duplicate the counter
-            // and its MutationObserver.
-            if (res.areHitsStatsCollected && !CosmeticController.cssHitsCounter) {
-                CosmeticController.cssHitsCounter = CosmeticController.createCssHitsCounter();
-            }
-
-            CosmeticController.repairNativeCss(res.nativeCssSelectors);
+        if (!res) {
+            // Without a response the counter is never created, so the
+            // collected probes will never be counted: stop observing the DOM.
+            this.pendingProbesCollector.stop();
+            return;
         }
+
+        // Native-only CSS hits counting: reads the `--adguard-hit` custom
+        // property from computed styles. ExtendedCSS-rule hits are reported
+        // separately by the background-injected `extCssInjectedApply`
+        // callback, so this counter reads ONLY native CSS markers.
+        // Created at most once per document — repeated `process()` runs
+        // (e.g. after retries or re-init) must not duplicate the counter
+        // and its MutationObserver.
+        if (res.areHitsStatsCollected) {
+            if (!this.cssHitsCounter) {
+                this.cssHitsCounter = CosmeticController.createCssHitsCounter(
+                    this.pendingProbesCollector,
+                );
+            }
+        } else {
+            this.pendingProbesCollector.stop();
+        }
+
+        CosmeticController.repairNativeCss(res.nativeCssSelectors);
     }
 
     /**
@@ -136,15 +170,17 @@ export class CosmeticController {
      * Creates a new {@link CssHitsCounter} instance reporting counted hits
      * to the background.
      *
+     * @param pendingProbesCollector Collector of short-lived elements.
+     *
      * @returns CssHitsCounter instance.
      */
-    private static createCssHitsCounter(): CssHitsCounter {
+    private static createCssHitsCounter(pendingProbesCollector: PendingProbesCollector): CssHitsCounter {
         return new CssHitsCounter((stats) => {
             sendAppMessage({
                 type: MessageType.SaveCssHitsStats,
                 payload: stats,
             });
-        });
+        }, { pendingProbesCollector });
     }
 
     /**

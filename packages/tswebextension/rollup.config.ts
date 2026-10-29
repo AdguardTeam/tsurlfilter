@@ -12,6 +12,8 @@ import externals from 'rollup-plugin-node-externals';
 // (loaded via `--configPlugin @rollup/plugin-swc`) resolves exact file paths but
 // does not append the `.ts` extension to extensionless specifiers.
 // eslint-disable-next-line import/extensions -- see NOTE above
+import { canvasEngineSource } from './tasks/canvas-engine-plugin.ts';
+// eslint-disable-next-line import/extensions -- see NOTE above
 import { inlineCssHitsHelpers } from './tasks/inline-css-hits-helpers.ts';
 // eslint-disable-next-line import/extensions -- see NOTE above
 import { inlineExtCssBundle } from './tasks/inline-extcss-bundle.ts';
@@ -93,6 +95,7 @@ const tswebextensionConfig: RollupOptions = {
         moduleSideEffects: false,
     },
     plugins: [
+        canvasEngineSource(),
         ...commonPlugins,
     ],
 };

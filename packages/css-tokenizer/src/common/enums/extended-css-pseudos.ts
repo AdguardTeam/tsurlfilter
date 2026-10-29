@@ -12,5 +12,7 @@ export const enum ExtendedCssPseudo {
     MatchesCss = 'matches-css',
     MatchesCssAfter = 'matches-css-after',
     MatchesCssBefore = 'matches-css-before',
+    RemoveAttr = 'remove-attr',
+    RemoveClass = 'remove-class',
     Xpath = 'xpath',
 }

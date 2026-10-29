@@ -11,7 +11,7 @@ import { type Source } from '@adguard/scriptlets';
 
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
-import { type CosmeticRule } from '../../src/rules/cosmetic-rule';
+import { type CosmeticRule, HtmlSpecialSelectorName } from '../../src/rules/cosmetic-rule';
 import { RULE_INDEX_NONE } from '../../src/rules/rule';
 import { createCosmeticRule } from '../helpers/rule-creator';
 
@@ -652,6 +652,18 @@ describe('CosmeticRule.CSS', () => {
         cssRule = createCosmeticRule(ruleText, 0);
         expect(cssRule).toBeDefined();
         expect(cssRule.getContent()).toBe(selector);
+
+        selector = '.some-class:remove-attr(href)';
+        ruleText = `example.org##${selector}`;
+        cssRule = createCosmeticRule(ruleText, 0);
+        expect(cssRule).toBeDefined();
+        expect(cssRule.getContent()).toBe(selector);
+
+        selector = '.some-class:remove-class(ads)';
+        ruleText = `example.org##${selector}`;
+        cssRule = createCosmeticRule(ruleText, 0);
+        expect(cssRule).toBeDefined();
+        expect(cssRule.getContent()).toBe(selector);
     });
 
     it('throws error on invalid pseudo class', () => {
@@ -862,6 +874,19 @@ describe('Extended css rule', () => {
 
     expect(rule.isExtendedCss()).toBeTruthy();
     expect(rule.getContent()).toEqual('div { background-color: #333!important; }');
+
+    it.each([
+        ['example.org##a:remove-attr(href)', 'a:remove-attr(href)'],
+        ['example.org##a:remove-attr(/^data-[0-9]+$/)', 'a:remove-attr(/^data-[0-9]+$/)'],
+        ['example.org##a:remove-attr(/^data-.{2}$/)', 'a:remove-attr(/^data-.{2}$/)'],
+        ['example.org##div:remove-class(ads)', 'div:remove-class(ads)'],
+        ['example.org##div:remove-class(/^ad-[0-9]+$/)', 'div:remove-class(/^ad-[0-9]+$/)'],
+    ])('treats %s as an extended CSS rule', (text, expectedContent) => {
+        const extendedRule = createCosmeticRule(text, 0);
+
+        expect(extendedRule.isExtendedCss()).toBeTruthy();
+        expect(extendedRule.getContent()).toEqual(expectedContent);
+    });
 
     it('does not confuses extended css rules with script rules', () => {
         // eslint-disable-next-line max-len
@@ -1133,6 +1158,73 @@ describe('HTML filtering rules (content rules)', () => {
                 specialSelectors: [{
                     name: 'contains',
                     value: 'some text',
+                }],
+            }]],
+        });
+    });
+
+    it('throws error when contains argument is empty', () => {
+        expect(() => createCosmeticRule('example.org$$div:contains()', 0)).toThrow(
+            "'contains' pseudo-class requires a non-empty argument",
+        );
+    });
+
+    it('throws error when -abp-contains argument is empty', () => {
+        expect(() => createCosmeticRule('example.org$$div:-abp-contains()', 0)).toThrow(
+            "'-abp-contains' pseudo-class requires a non-empty argument",
+        );
+    });
+
+    it('throws error when has-text argument is empty', () => {
+        expect(() => createCosmeticRule('example.org$$div:has-text()', 0)).toThrow(
+            "'has-text' pseudo-class requires a non-empty argument",
+        );
+    });
+
+    it('throws error when has-text argument is missing', () => {
+        expect(() => createCosmeticRule('example.org$$div:has-text', 0)).toThrow(
+            "'has-text' pseudo-class requires an argument",
+        );
+    });
+
+    it('correctly parses html rules - contains with a single space argument', () => {
+        // A single space is a valid argument and must not be treated as empty
+        const rule = createCosmeticRule('example.org$$div:contains( )', 0);
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div',
+                specialSelectors: [{
+                    name: HtmlSpecialSelectorName.Contains,
+                    value: ' ',
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - -abp-contains alias', () => {
+        const rule = createCosmeticRule('example.org$$script:-abp-contains(foo)', 0);
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [{
+                    name: HtmlSpecialSelectorName.Contains,
+                    value: 'foo',
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - has-text alias', () => {
+        const rule = createCosmeticRule('example.org$$script:has-text(foo)', 0);
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [{
+                    name: HtmlSpecialSelectorName.Contains,
+                    value: 'foo',
                 }],
             }]],
         });

@@ -21,8 +21,8 @@
         "noEmit": true,
         // Allow importing local `.ts` files with an explicit extension. Rollup's
         // config bundler (loaded via `--configPlugin @rollup/plugin-swc`) only
-        // resolves exact file paths for `.ts` modules, so the build helper
-        // `tasks/inline-extcss-bundle.ts` is imported with its extension.
+        // resolves exact file paths for `.ts` modules, so the build helpers in
+        // `tasks/` are imported with their extensions.
         "allowImportingTsExtensions": true,
         "baseUrl": ".",
         "paths": {

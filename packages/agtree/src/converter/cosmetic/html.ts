@@ -53,9 +53,9 @@ import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
  * which compiles `:contains(/.../)` patterns with PCRE2, and PCRE2 rejects
  * quantifier numbers greater than 65535 ("quantifier too large" error).
  *
- * Note: the AdGuard `[max-length]` attribute itself defaults to 8192 (8 KB)
- * when not specified, but it is handled natively by CoreLibs and is not
- * affected by the PCRE2 quantifier limit.
+ * Note: this bound applies to the generated regular expression only.
+ * The `[max-length]` and `[min-length]` attribute values are not bounded
+ * by it: products apply those attributes natively, without PCRE2.
  *
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}
  * @see {@link https://www.pcre.org/current/doc/html/pcre2limits.html}
@@ -745,8 +745,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - for multiple `[min-length]` selectors, the largest value is selected;
      * - for multiple `[max-length]` selectors, the smallest value is selected.
      *
-     * Logs a warning when duplicate length selectors are found.
-     *
      * @param selectors Child selectors of a complex selector to scan.
      *
      * @returns Resolved length constraints,
@@ -803,20 +801,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
         if (minValues.length > 1) {
             min = Math.max(...minValues);
-            // eslint-disable-next-line no-console
-            console.warn(
-                `Multiple [min-length] selectors found among: [${minValues.join(', ')}]. Selected largest: ${min}.`,
-            );
         } else if (minValues.length === 1) {
             [min] = minValues;
         }
 
         if (maxValues.length > 1) {
             max = Math.min(...maxValues);
-            // eslint-disable-next-line no-console
-            console.warn(
-                `Multiple [max-length] selectors found among: [${maxValues.join(', ')}]. Selected smallest: ${max}.`,
-            );
         } else if (maxValues.length === 1) {
             [max] = maxValues;
         }

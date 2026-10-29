@@ -15,6 +15,7 @@ import {
     StealthOptionName,
 } from '@adguard/tsurlfilter';
 
+import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';
 import { ContentType } from '../../../../../src/lib/common/request-type';
 import { StealthActions } from '../../../../../src/lib/common/stealth-actions';
 import { nanoid } from '../../../../../src/lib/common/utils/nanoid';
@@ -258,6 +259,66 @@ describe('Stealth service', () => {
                 expect(stealthActions & StealthActions.BlockChromeClientData).toBeTruthy();
                 expect(stealthActions & StealthActions.BlockChromeClientData).toBeTruthy();
                 expect(stealthActions & StealthActions.HideReferrer).toBeFalsy();
+            });
+        });
+
+        describe('canvas protection exceptions', () => {
+            beforeEach(() => {
+                appContext.configuration.settings.stealth.protectCanvas = true;
+            });
+
+            /**
+             * Processes a request and returns the stealth exceptions published for it.
+             *
+             * @param rules Rules matching the request.
+             * @param requestType Type of the request.
+             *
+             * @returns Applied rule texts of the published event, if any.
+             */
+            const publishedExceptions = (
+                rules: string[],
+                requestType: RequestType = RequestType.Document,
+            ): string[] | undefined => {
+                filteringLog.publishEvent.mockClear();
+                const service = new StealthService(appContext, filteringLog, mockEngineApi);
+                const context = {
+                    ...getContextWithHeaders([], rules.map((rule) => createNetworkRule(rule, 1))),
+                    requestType,
+                };
+                service.processRequestHeaders(context);
+                const event = filteringLog.publishEvent.mock.calls
+                    .map(([published]) => published)
+                    .find(({ type }) => type === FilteringEventType.StealthAllowlistAction);
+                return event?.data.rules.map(({ appliedRuleText }: { appliedRuleText: string }) => appliedRuleText);
+            };
+
+            it.each([RequestType.Document, RequestType.SubDocument])(
+                'publishes the exception that keeps a document native: %s',
+                (requestType) => {
+                    expect(publishedExceptions(['@@||example.org^$stealth=fingerprinting'], requestType))
+                        .toEqual(['@@||example.org^$stealth=fingerprinting']);
+                },
+            );
+
+            it('publishes a $stealth exception without options only when it disables canvas protection', () => {
+                expect(publishedExceptions(['@@||example.org^$stealth'])).toEqual(['@@||example.org^$stealth']);
+                expect(publishedExceptions(['@@||example.org$stealth'])).toBeUndefined();
+            });
+
+            it('publishes one event with a stealth option disabled by the same exception', () => {
+                appContext.configuration.settings.stealth.hideReferrer = true;
+                expect(publishedExceptions(['@@||example.org^$stealth=referrer|fingerprinting']))
+                    .toEqual(['@@||example.org^$stealth=referrer|fingerprinting']);
+            });
+
+            it.each([
+                ['protection off', ['@@||example.org^$stealth=fingerprinting'], RequestType.Document, false],
+                ['another option', ['@@||example.org^$stealth=referrer'], RequestType.Document, true],
+                ['a path', ['@@||example.org/path$stealth=fingerprinting'], RequestType.Document, true],
+                ['a script', ['@@||example.org^$stealth=fingerprinting'], RequestType.Script, true],
+            ] as const)('publishes nothing for %s', (name, rules, requestType, protectCanvas) => {
+                appContext.configuration.settings.stealth.protectCanvas = protectCanvas;
+                expect(publishedExceptions([...rules], requestType)).toBeUndefined();
             });
         });
 

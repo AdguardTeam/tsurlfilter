@@ -26,3 +26,18 @@ headless Chromium.
 ```sh
 pnpm --filter @adguard/tswebextension test:e2e
 ```
+
+## Verify canvas protection
+
+The `canvas-native` project compares native behavior with the installed
+wrappers in headless Chromium and Firefox, without a consumer extension. It
+is part of the default `vitest run`, so both Playwright browsers must be
+installed:
+
+```sh
+pnpm --filter @adguard/tswebextension exec playwright install chromium firefox
+pnpm --filter @adguard/tswebextension exec vitest run --project canvas-native
+```
+
+It does not load an extension, so registration, early delivery and
+private-window behavior need a manual check on a built extension.
