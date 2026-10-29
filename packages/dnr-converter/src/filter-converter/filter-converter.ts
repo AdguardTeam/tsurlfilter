@@ -168,7 +168,6 @@ export class FilterConverter {
      */
     private static readonly CSP_RAW_MODIFIER_NAMES = [
         OPTION_NAMES.CSP,
-        OPTION_NAMES.BADFILTER,
         ...getModifierAliases(OPTION_NAMES.CSP),
     ];
 
