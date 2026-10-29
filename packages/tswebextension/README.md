@@ -381,14 +381,19 @@ Known limitations:
   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for the
   host: rules registered on `*://youtube.com/*` still execute on `/embed/…`.
   Tracked in AG-54564.
-- The embed gate reads `location.ancestorOrigins`, which is Blink-only; the
-  preregistered path is not supported on other engines. A frame whose
-  top-level document has an opaque origin (e.g. a CSP-sandboxed top) is
-  rejected by the page gate — the top document itself passes it, but its
-  subframes see the top origin as `null` and install the no-op shim — while
-  the background still sees the top URL and reports coverage, so covered
-  rules are not injected in those subframes. Aligning the two sides needs a
-  cross-repo signal.
+- The preregistered path is currently Chromium-only. The embed gate reads
+  `location.ancestorOrigins`, available in Blink and, since Firefox 148, in
+  Gecko, but the artifacts, the registrations and the background predicate
+  are built for Chromium MV3. A frame whose top-level document has an opaque
+  origin (e.g. a CSP-sandboxed top) is rejected by the page gate — the top
+  document itself passes it, but its subframes see the top origin as `null`
+  and install the no-op shim — while the background still sees the top URL
+  and reports coverage, so covered rules are not injected in those subframes.
+  Aligning the two sides needs a cross-repo signal.
+- An `about:blank` top opened with `window.open('')` from a preregistered
+  page inherits the opener's origin: its embeds pass the page gate, while the
+  background stops at the `about:blank` URL, treats the top as opaque and
+  injects dynamically — the same rules run twice.
 - `$url`-modified rules are never preregistered: the engine is queried per
   hostname root, so they stay on the dynamic injection path.
 - A page that started before a sync removed a `#%#` JS rule can execute it

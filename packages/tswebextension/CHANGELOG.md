@@ -17,7 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A frame is covered only when the top-level site belongs to the configured
   host set, so a preregistered host's frame under a foreign top-level site
   stays on the dynamic path; the manifest carries the same host set
-  (`hostnames`).
+  (`hostnames`). Only the manifest's host set is registered, so the page gate
+  and the background always agree on which host is covered, and the top frame
+  is resolved by document id, so a navigation that never commits cannot leave
+  the previous page judged against the new top URL.
 - Public utilities for hashing preregistered rules and resolving stable
   script filenames. They are exported from
   `@adguard/tswebextension/mv3/preregistered-scripts/build-contract`.

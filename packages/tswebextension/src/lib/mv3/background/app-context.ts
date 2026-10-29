@@ -59,12 +59,13 @@ export class AppContext {
     public preregisteredScriptRules?: Map<string, Set<string>>;
 
     /**
-     * Normalized hostnames of the preregistered artifact generation: the
-     * shared bundle's embed-gate set (the build manifest is preferred over
-     * the runtime expansion). A frame is covered only when the top-level site
-     * belongs to this set, so an embed under a foreign top stays on the
-     * dynamic injection path. Plain (non-persisted) field: it lives for one
-     * service-worker lifetime.
+     * Published host set: the hostnames the page gate covers. A frame is
+     * covered only when its top-level site belongs to this set, so an embed
+     * under a foreign top stays on the dynamic injection path. Sources, in
+     * order of preference: the build manifest of the generation being synced,
+     * the configured domains when the manifest could not be read, and the
+     * boot registration keys when only persisted registrations remain. Plain
+     * (non-persisted) field: it lives for one service-worker lifetime.
      */
     public preregisteredHostnames?: Set<string>;
 
