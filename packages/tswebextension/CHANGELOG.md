@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - In MV3, `$badfilter` rules with `$domain` cancelled the whole target rule
-  instead of only the domains present in both lists. Such a rule now keeps
+  instead of only the domains that the badfilter covers. Such a rule now keeps
   applying on the other domains. A target rule without `$domain` is still
   cancelled completely. A `$badfilter` from a dynamic ruleset still disables a
   whole rule from a static ruleset, because DNR cannot disable a rule for a part
