@@ -78,7 +78,7 @@ Table of content:
                 - [retrieveRuleNode](#retrieverulenode)
                 - [getMessageHandler()](#getmessagehandler)
                 - [setFilteringEnabled() (MV2 only)](#setfilteringenabled-mv2-only)
-                - [setCollectHitStats() (MV2 only)](#setcollecthitstats-mv2-only)
+                - [setCollectHitStats()](#setcollecthitstats)
                 - [setDebugScriptlets()](#setdebugscriptlets)
                 - [setStealthModeEnabled() (MV2 only)](#setstealthmodeenabled-mv2-only)
                 - [setSelfDestructFirstPartyCookies() (MV2 only)](#setselfdestructfirstpartycookies-mv2-only)
@@ -840,11 +840,15 @@ Also updates webRTC privacy.network settings on demand and flushes browser in-me
 
 Throws error if [configuration](#configuration) is not set.
 
-##### setCollectHitStats() (MV2 only)
+##### setCollectHitStats()
 
 type: `(isCollectStats: boolean) => void`
 
-Updates [collectStats](#collectstats) configuration value without re-initialization of engine.
+Updates [collectStats](#collectstats) configuration value without
+re-initialization of engine.
+
+The new value is propagated to content scripts. CSS hits collection is
+paused or resumed in already-open tabs without a reload.
 
 Throws error if [configuration](#configuration) is not set.
 
