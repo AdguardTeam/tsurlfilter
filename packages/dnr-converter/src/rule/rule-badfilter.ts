@@ -132,8 +132,9 @@ export enum BadfilterNegationKind {
     Full = 'full',
 
     /**
-     * The badfilter rule cancels the target rule only for the domains present in
-     * both `$domain` lists.
+     * The badfilter rule cancels the target rule only for the domains that the
+     * badfilter covers: a target entry it covers is removed, and a badfilter
+     * entry that a kept target entry still covers is excluded.
      */
     Partial = 'partial',
 }
