@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Inherited the updated `@adguard/dnr-converter` behavior: `$badfilter` compares
+  the whole modifier list as written, and `$csp` exceptions are supported for
+  exact conditions and clean domain exclusions. Rebuilt CSP rules replace only
+  the CSP rules stored in the metadata, so rule sets must be built with
+  `exclude-unsafe-rules`; otherwise the static copy of a CSP rule stays in the
+  rule set and a `$csp` exception has no effect.
+
 ### Deprecated
 
 ### Removed
