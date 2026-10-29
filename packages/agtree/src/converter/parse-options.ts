@@ -33,3 +33,15 @@ export const CONVERTER_PARSE_OPTIONS: Readonly<ParseOptions> = Object.freeze({
     parseCssSelectorList: true,
     parseCssDeclarationList: true,
 });
+
+/**
+ * Fallback parser detail level for HTML filtering rule bodies which the
+ * parser cannot parse. Such bodies are left raw, so the converter's tolerant
+ * fallback can keep the rule as-is instead of throwing during parsing.
+ *
+ * Other parse options stay the same as in {@link CONVERTER_PARSE_OPTIONS}.
+ */
+export const CONVERTER_PARSE_OPTIONS_RAW_HTML_BODIES: Readonly<ParseOptions> = Object.freeze({
+    ...CONVERTER_PARSE_OPTIONS,
+    parseHtmlFilteringRuleBodies: false,
+});

@@ -6,6 +6,7 @@ import { RuleParserPipeline } from '../../ast-builder/rule-parser';
 import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';
 import { createNetworkRuleNode } from '../../ast-utils/network-rules';
 import { isUboResponseHeaderRemovalRuleBody } from '../../common/ubo-html-filtering-body-common';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
     type AnyRule,
@@ -69,11 +70,29 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
         if (rule.body.type === 'Raw') {
             // Re-parse the full rule to get the parsed body
             const pipeline = new RuleParserPipeline();
-            const parsedRule = pipeline.parse(
-                `##^${rule.body.value}`,
-                { parseHtmlFilteringRuleBodies: true },
-            ) as HtmlFilteringRule;
-            body = parsedRule.body as HtmlFilteringRuleBody;
+            try {
+                const parsedRule = pipeline.parse(
+                    `##^${rule.body.value}`,
+                    { parseHtmlFilteringRuleBodies: true },
+                ) as HtmlFilteringRule;
+                body = parsedRule.body as HtmlFilteringRuleBody;
+            } catch (error) {
+                // A parse error does not necessarily mean that this is not a
+                // uBO responseheader(...) rule. `tryParseResponseHeader()`
+                // throws for a malformed responseheader(...) body: an
+                // unbalanced or missing closing parenthesis, an empty
+                // argument, or trailing content after the closing
+                // parenthesis. An invalid CSS selector list of another raw
+                // body also throws here. Hand the rule to the main HTML
+                // filtering rule converter for further handling instead: it
+                // keeps rules with special selectors as-is, and throws for
+                // genuinely invalid rules.
+                if (error instanceof AdblockSyntaxError) {
+                    return createNodeConversionResult([rule], false);
+                }
+
+                throw error;
+            }
         } else {
             body = rule.body as HtmlFilteringRuleBody;
         }

@@ -646,4 +646,182 @@ describe('Html rule selector', () => {
         const notMatchedNoFlags = selector.getMatchedElements(document);
         expect(notMatchedNoFlags).toHaveLength(0);
     });
+
+    it('checks special selector :contains() - converted length range above the PCRE2 limit', () => {
+        // The converter splits [min-length]/[max-length] bounds above 65535
+        // into fixed-count lookaheads, so the pattern works in both PCRE2
+        // and JavaScript.
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$script[tag-content="omi-service"][min-length="20000"][max-length="150000"]',
+        );
+        expect(convertedRuleText).toBe(
+            'example.org$$script:contains(omi-service):contains(/^(?=.{20000})(?!(?:.{65535}){2}.{18931}).*/s)',
+        );
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        // In range: 50000 chars, contains "omi-service"
+        document.body.innerHTML = `
+        <script id="matched">omi-service${'x'.repeat(50000 - 'omi-service'.length)}</script>
+        `;
+
+        const matched = selector.getMatchedElements(document);
+        expect(matched).toHaveLength(1);
+        expect(matched[0].id).toBe('matched');
+
+        // Too short: 19999 chars (< 20000 minimum)
+        document.body.innerHTML = `
+        <script id="not-matched-short">omi-service${'x'.repeat(19999 - 'omi-service'.length)}</script>
+        `;
+
+        const notMatchedShort = selector.getMatchedElements(document);
+        expect(notMatchedShort).toHaveLength(0);
+
+        // Too long: 150001 chars (> 150000 maximum)
+        document.body.innerHTML = `
+        <script id="not-matched-long">omi-service${'x'.repeat(150001 - 'omi-service'.length)}</script>
+        `;
+
+        const notMatchedLong = selector.getMatchedElements(document);
+        expect(notMatchedLong).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - unbalanced argument is kept as-is (CoreLibs parity)', () => {
+        // Unbalanced arguments are parsed leniently and kept as-is, no
+        // quoting is inserted; the matcher treats the raw text between the
+        // parentheses as a literal substring
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$script:contains((function(g,b,a,c,e,d))',
+        );
+        expect(convertedRuleText).toBe('example.org$$script:contains((function(g,b,a,c,e,d))');
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        document.body.innerHTML = `
+        <script id="matched">(function(g,b,a,c,e,d){ return 1; })</script>
+        `;
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements[0].id).toBe('matched');
+
+        // Content without the plain text must NOT match
+        document.body.innerHTML = `
+        <script id="not-matched">var somethingElse = true;</script>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - converted from descendant :has-text() keeps the boundary', () => {
+        // The descendant combinator before `:has-text()` must survive the
+        // conversion — without it the converted rule would match the whole
+        // ancestor element instead of the matching descendant
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$div :has-text(/foo[)]/)',
+        );
+        expect(convertedRuleText).toBe('example.org$$div :contains(/foo[)]/)');
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        document.body.innerHTML = `
+        <div><span id="matched">foo)</span><p>keep</p></div>
+        `;
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements[0].id).toBe('matched');
+    });
+
+    it('checks special selector :contains() - regexp argument keeps regexp semantics', () => {
+        // A `/regexp/` argument is compiled to a RegExp; the rule is kept
+        // as-is, no quoting is inserted
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            String.raw`example.org$$script:contains(/window\.open\([^)]*\);\s*\w+\.focus/)`,
+        );
+        expect(convertedRuleText).toBe(
+            String.raw`example.org$$script:contains(/window\.open\([^)]*\);\s*\w+\.focus/)`,
+        );
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        document.body.innerHTML = `
+        <script id="matched">window.open("https://example.org");  popup.focus();</script>
+        `;
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements[0].id).toBe('matched');
+
+        // The literal regexp source text must NOT match if regexp semantics are preserved
+        // (it would match if the argument were treated as a plain string)
+        document.body.innerHTML = String.raw`
+        <script id="not-matched">/window\.open\([^)]*\);\s*\w+\.focus/</script>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - converted from [tag-content] with literal single quotes', () => {
+        // The apostrophes of the `[tag-content]` value are part of the text to match:
+        // the converted rule must not match content without them
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$script[tag-content="\'advert\'"]',
+        );
+        expect(convertedRuleText).toBe('example.org$$script:contains(\'advert\')');
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        document.body.innerHTML = `
+        <script id="matched">var x = 'advert';</script>
+        `;
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements[0].id).toBe('matched');
+
+        // Content without the apostrophes must NOT match
+        document.body.innerHTML = `
+        <script id="not-matched">var x = advert;</script>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - converted from [tag-content] with literal double quotes', () => {
+        // The literal double quotes of the `[tag-content]` value are kept as-is
+        // in the converted rule; the matcher treats them as literal characters
+        // of the text to match (CoreLibs parity)
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$script[tag-content=\'"advert"\']',
+        );
+        expect(convertedRuleText).toBe('example.org$$script:contains("advert")');
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        document.body.innerHTML = `
+        <script id="matched">var x = "advert";</script>
+        `;
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements[0].id).toBe('matched');
+
+        // Content without the double quotes must NOT match
+        document.body.innerHTML = `
+        <script id="not-matched">var x = advert;</script>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
 });

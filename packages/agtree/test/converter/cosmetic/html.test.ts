@@ -76,20 +76,141 @@ describe('HtmlRuleConverter', () => {
 
                     // `[min-length]` and `[max-length]` combined - tag-content before length selectors
                     {
-                        actual: '$$script[tag-content="text"][min-length="100000"][max-length="360000"]',
-                        expected: ['$$script:contains(text):contains(/^(?=.{100000,360000}$).*/s)'],
+                        actual: '$$script[tag-content="text"][min-length="10000"][max-length="60000"]',
+                        expected: ['$$script:contains(text):contains(/^(?=.{10000,60000}$).*/s)'],
                     },
 
                     // `[min-length]` and `[max-length]` combined - tag-content after length selectors
                     {
-                        actual: '$$script[tag-content="Flags."][min-length="20000"][max-length="300000"]',
-                        expected: ['$$script:contains(Flags.):contains(/^(?=.{20000,300000}$).*/s)'],
+                        actual: '$$script[tag-content="Flags."][min-length="20000"][max-length="60000"]',
+                        expected: ['$$script:contains(Flags.):contains(/^(?=.{20000,60000}$).*/s)'],
                     },
 
                     // `[min-length]` and `[max-length]` combined - max-length appears before min-length
                     {
-                        actual: '$$script[max-length="300000"][min-length="20000"]',
-                        expected: ['$$script:contains(/^(?=.{20000,300000}$).*/s)'],
+                        actual: '$$script[max-length="60000"][min-length="20000"]',
+                        expected: ['$$script:contains(/^(?=.{20000,60000}$).*/s)'],
+                    },
+
+                    // `[min-length]` and `[max-length]` at the PCRE2 quantifier limit
+                    {
+                        actual: '$$div[min-length="65535"][max-length="65535"]',
+                        expected: ['$$div:contains(/^(?=.{65535,65535}$).*/s)'],
+                    },
+
+                    // `[min-length]` above the PCRE2 quantifier limit is split into a
+                    // fixed-count lookahead, so CoreLibs and tsurlfilter can both use it
+                    {
+                        actual: '$$div[min-length="65536"]',
+                        expected: ['$$div:contains(/^(?=.{65535}.).*/s)'],
+                    },
+
+                    // `[max-length]` above the PCRE2 quantifier limit is split into a
+                    // negative fixed-count lookahead
+                    {
+                        actual: '$$div[max-length="65536"]',
+                        expected: ['$$div:contains(/^(?!.{65535}.{2}).*/s)'],
+                    },
+
+                    // both bounds above the PCRE2 quantifier limit
+                    {
+                        actual: '$$div[min-length="65536"][max-length="150000"]',
+                        expected: ['$$div:contains(/^(?=.{65535}.)(?!(?:.{65535}){2}.{18931}).*/s)'],
+                    },
+
+                    // real-world rule with a length range above the PCRE2 limit:
+                    // the literal stays standalone, the length range is split
+                    {
+                        actual: '$$script[tag-content="omi-service"][min-length="20000"][max-length="150000"]',
+                        expected: [
+                            // eslint-disable-next-line max-len
+                            '$$script:contains(omi-service):contains(/^(?=.{20000})(?!(?:.{65535}){2}.{18931}).*/s)',
+                        ],
+                    },
+
+                    // a split length range inside a merged regex keeps the
+                    // split lookaheads in front of the glob lookahead
+                    {
+                        actual: '$$script[wildcard="*track*"][min-length="20000"][max-length="150000"]',
+                        expected: [
+                            // eslint-disable-next-line max-len
+                            '$$script:contains(/^(?=.{20000})(?!(?:.{65535}){2}.{18931})(?=.*track.*$).*/s)',
+                        ],
+                    },
+
+                    // `[tag-content]` with an unbalanced value + `[max-length]`: such a literal cannot
+                    // be emitted as a standalone `:contains()` chained before the length regex, because
+                    // CoreLibs' scanner would swallow the chain separator `:` into the unbalanced
+                    // argument - both constraints are merged into a single regex `:contains()`
+                    {
+                        actual: 'example.com$$script[tag-content="$(\'#alert\').on(\'click\'"][max-length="250"]',
+                        expected: [
+                            // eslint-disable-next-line max-len
+                            'example.com$$script:contains(/^(?=.{0,250}$)(?=.*\\$\\(\'#alert\'\\)\\.on\\(\'click\').*/s)',
+                        ],
+                    },
+
+                    // `[tag-content]` with an unbalanced value + `[min-length]` + `[max-length]`
+                    {
+                        actual: '$$div[tag-content=")"][min-length="2"][max-length="9"]',
+                        expected: ['$$div:contains(/^(?=.{2,9}$)(?=.*\\)).*/s)'],
+                    },
+
+                    // `[tag-content]` with a leading slash (regex-looking) value + `[max-length]`:
+                    // a leading `/` is also chain-unsafe, so the literal is merged into the regex
+                    {
+                        actual: '$$script[tag-content="/abc"][max-length="10"]',
+                        expected: ['$$script:contains(/^(?=.{0,10}$)(?=.*\\/abc).*/s)'],
+                    },
+
+                    // `[wildcard]` + `[max-length]`: only one regex `:contains()` is allowed, so the
+                    // glob and the length constraint are merged into a single regex
+                    {
+                        actual: 'example.com$$script[wildcard="*track*banner*"][max-length="22000"]',
+                        expected: [
+                            'example.com$$script:contains(/^(?=.{0,22000}$)(?=.*track.*banner.*$).*/s)',
+                        ],
+                    },
+
+                    // `[wildcard]` + `[min-length]` + `[max-length]`
+                    {
+                        actual: '$$script[wildcard="*adcashMacros*zoneSett*"][min-length="2000"][max-length="25000"]',
+                        expected: ['$$script:contains(/^(?=.{2000,25000}$)(?=.*adcashMacros.*zoneSett.*$).*/s)'],
+                    },
+
+                    // `[wildcard]` + chain-unsafe `[tag-content]` without length constraints
+                    {
+                        actual: '$$script[wildcard="*a/b*"][tag-content="x(y"]',
+                        expected: ['$$script:contains(/^(?=.*a\\/b.*$)(?=.*x\\(y).*/s)'],
+                    },
+
+                    // chain-safe `[tag-content]` + `[wildcard]` + `[min-length]`: the literal is
+                    // emitted standalone, while the glob and the length constraint are merged
+                    {
+                        actual: '$$script[tag-content="safe"][wildcard="*gl*b*"][min-length="1"]',
+                        expected: ['$$script:contains(safe):contains(/^(?=.{1,}$)(?=.*gl.*b.*$).*/s)'],
+                    },
+
+                    // special attributes on a leaf selector with combinators: the merged `:contains()`
+                    // is appended to the leaf selector, not to the whole selector
+                    {
+                        actual: 'example.net$$div > span[tag-content="kid("][max-length="9"]',
+                        expected: ['example.net$$div > span:contains(/^(?=.{0,9}$)(?=.*kid\\().*/s)'],
+                    },
+
+                    // special attributes on a non-leaf selector with combinators: the constraint
+                    // stays on the compound selector it belongs to, not on the descendant
+                    {
+                        actual: '$$div[tag-content="a"] > span',
+                        expected: ['$$div:contains(a) > span'],
+                    },
+                    {
+                        actual: '$$div[min-length="10"] > span',
+                        expected: ['$$div:contains(/^(?=.{10,}$).*/s) > span'],
+                    },
+                    {
+                        actual: '$$div[tag-content="a"] > span[tag-content="b"]',
+                        expected: ['$$div:contains(a) > span:contains(b)'],
                     },
 
                     // `[tag-content]` special attribute selector
@@ -98,10 +219,28 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(example)'],
                     },
 
-                    // `[tag-content]` special attribute selector - multiple usages
+                    // `[tag-content]` special attribute selector - multiple usages are merged into
+                    // a single regex `:contains()`, with each literal as a lookahead: CoreLibs allows
+                    // at most one literal `:contains()` per selector
                     {
                         actual: '$$div[tag-content="a"][tag-content="b"]',
-                        expected: ['$$div:contains(a):contains(b)'],
+                        expected: ['$$div:contains(/^(?=.*a)(?=.*b).*/s)'],
+                    },
+
+                    // `[tag-content]` with a single-quoted value — the quotes are part of the
+                    // text to match and are emitted raw as literal characters
+                    // (CoreLibs parity: `:contains()` arguments are never unquoted)
+                    {
+                        actual: '$$script[tag-content="\'advert\'"]',
+                        expected: ['$$script:contains(\'advert\')'],
+                    },
+
+                    // `[tag-content]` with a double-quoted value — the literal quotes are
+                    // emitted raw as literal characters of the text to match
+                    // (CoreLibs parity: `:contains()` arguments are never unquoted)
+                    {
+                        actual: '$$script[tag-content=\'"advert"\']',
+                        expected: ['$$script:contains("advert")'],
                     },
 
                     // `[wildcard]` special attribute selector
@@ -110,10 +249,12 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/^.*example.*$/s)'],
                     },
 
-                    // `[wildcard]` special attribute selector - multiple usages
+                    // `[wildcard]` special attribute selector - multiple usages are merged into
+                    // a single regex `:contains()`, with each glob as a lookahead: CoreLibs allows
+                    // at most one regex `:contains()` per selector
                     {
                         actual: '$$div[wildcard="*example*"][wildcard="*test*"]',
-                        expected: ['$$div:contains(/^.*example.*$/s):contains(/^.*test.*$/s)'],
+                        expected: ['$$div:contains(/^(?=.*example.*$)(?=.*test.*$).*/s)'],
                     },
 
                     // `:contains()` special pseudo-class selector (leave as-is)
@@ -151,28 +292,43 @@ describe('HtmlRuleConverter', () => {
                         shouldConvert: false,
                     },
 
+                    // `:has-text()` special pseudo-class selector (uBlock alias, documented synonym of `:contains()`)
+                    // https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules--contains
+                    {
+                        actual: '$$div:has-text(example)',
+                        expected: ['$$div:contains(example)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - regexp argument
+                    {
+                        actual: '$$div:has-text(/ex.*ple/i)',
+                        expected: ['$$div:contains(/ex.*ple/i)'],
+                    },
+
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]',
                         expected: ['$$div:contains(a):contains(/^.*example.*$/s)'],
                     },
 
-                    // `[tag-content]` and `:contains()` special simple selectors - mixed usage
+                    // `[tag-content]` and `:contains()` special simple selectors - mixed usage:
+                    // pre-existing `:contains()` pseudo-classes keep their position, and the special
+                    // attribute pseudo-classes are appended after them
                     {
                         actual: '$$div[tag-content="a"]:contains(b)',
-                        expected: ['$$div:contains(a):contains(b)'],
+                        expected: ['$$div:contains(b):contains(a)'],
                     },
 
                     // `[wildcard]` and `:contains()` special simple selectors - mixed usage
                     {
                         actual: '$$div[wildcard="*example*"]:contains(b)',
-                        expected: ['$$div:contains(/^.*example.*$/s):contains(b)'],
+                        expected: ['$$div:contains(b):contains(/^.*example.*$/s)'],
                     },
 
                     // `[tag-content]`, `[wildcard]` and `:contains()` special simple selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]:contains(b)',
-                        expected: ['$$div:contains(a):contains(/^.*example.*$/s):contains(b)'],
+                        expected: ['$$div:contains(b):contains(a):contains(/^.*example.*$/s)'],
                     },
 
                     // `[tag-content]` with `""` escaped double quotes - simple case
@@ -328,12 +484,6 @@ describe('HtmlRuleConverter', () => {
                         input: '$$:contains()',
                         error: "Special pseudo-class selector 'contains' requires an argument",
                     },
-
-                    // invalid simple selector - mixed syntax (uBlock special pseudo-class selector)
-                    {
-                        input: '$$div:has-text(example)',
-                        error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
-                    },
                 ])("should not convert '$input'", ({ input, error }) => {
                     if (typeof input !== 'string') {
                         expect(() => {
@@ -394,6 +544,142 @@ describe('HtmlRuleConverter', () => {
                         actual: '$$script[tag-content="{""zone_id"":"""]',
                         expected: ['$$script:contains({"zone_id":")'],
                     },
+
+                    // `[tag-content]` with a single-quoted value — the quotes are part of the
+                    // text to match and are emitted raw as literal characters
+                    {
+                        actual: '$$script[tag-content="\'advert\'"]',
+                        expected: ['$$script:contains(\'advert\')'],
+                    },
+
+                    // `[tag-content]` with a double-quoted value — the literal quotes are
+                    // emitted raw as literal characters of the text to match
+                    {
+                        actual: '$$script[tag-content=\'"advert"\']',
+                        expected: ['$$script:contains("advert")'],
+                    },
+
+                    // `:contains()` with unbalanced parentheses in the argument — parsed
+                    // leniently (CoreLibs parity) and kept as-is, no quoting is inserted
+                    {
+                        actual: '$$script:contains((function(g,b,a,c,e,d))',
+                        expected: ['$$script:contains((function(g,b,a,c,e,d))'],
+                        shouldConvert: false,
+                    },
+
+                    // `:contains()` with an unterminated string in the argument — parsed
+                    // leniently (CoreLibs parity) and kept as-is, no quoting is inserted
+                    {
+                        actual: "$$div[style=\"display: none !important;\"]:contains('ed2k://)",
+                        expected: ["$$div[style=\"display: none !important;\"]:contains('ed2k://)"],
+                        shouldConvert: false,
+                    },
+
+                    // `[tag-content]` with a triple-quoted value (`""` doubling for
+                    // the quotes of the text to match) in a later attribute selector —
+                    // converted, the quoted literal is chain-unsafe, so it is merged
+                    // with `[max-length]` into a single regex `:contains()`
+                    {
+                        // eslint-disable-next-line max-len
+                        actual: 'example.net$$li[class="hasimage"][tag-content="""NativeAdHeadlineItemViewModel"""][max-length="2000"]',
+                        expected: [
+                            // eslint-disable-next-line max-len
+                            'example.net$$li[class="hasimage"]:contains(/^(?=.{0,2000}$)(?=.*"NativeAdHeadlineItemViewModel").*/s)',
+                        ],
+                    },
+
+                    // `:contains()` with a regexp containing square brackets — parsed
+                    // leniently (CoreLibs parity) and kept as-is, no quoting is inserted
+                    {
+                        actual: 'example.org$$script:contains(/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/)',
+                        expected: ['example.org$$script:contains(/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/)'],
+                        shouldConvert: false,
+                    },
+
+                    // `:contains()` with unbalanced braces in the argument — parsed
+                    // leniently (CoreLibs parity) and kept as-is, no quoting is inserted
+                    {
+                        // eslint-disable-next-line max-len
+                        actual: '~example.org$$script:contains(||!navigator.platform){setTimeout(function () {w.location.href=url)',
+                        // eslint-disable-next-line max-len
+                        expected: ['~example.org$$script:contains(||!navigator.platform){setTimeout(function () {w.location.href=url)'],
+                        shouldConvert: false,
+                    },
+
+                    // `:has-text()` with unbalanced parentheses in the argument —
+                    // parsed leniently, converted to `:contains()` with the raw argument
+                    {
+                        actual: '$$script:has-text((function(g,b,a,c,e,d))',
+                        expected: ['$$script:contains((function(g,b,a,c,e,d))'],
+                    },
+
+                    // `:has-text()` preceded by a descendant combinator — parsed
+                    // leniently, converted to `:contains()` with the combinator
+                    // boundary preserved, so the pseudo-class applies to the
+                    // descendant, not to the compound selector before the space
+                    {
+                        actual: '$$div :has-text(/foo[)]/)',
+                        expected: ['$$div :contains(/foo[)]/)'],
+                    },
+
+                    // `:has-text()` argument with trailing whitespace — the
+                    // whitespace is part of the matched text, so it is kept
+                    {
+                        actual: '$$div:has-text(foo )',
+                        expected: ['$$div:contains(foo )'],
+                    },
+
+                    // `:has-text()` whitespace-only argument — the whitespace
+                    // is part of the matched text, so the argument is not empty
+                    {
+                        actual: '$$div:has-text( )',
+                        expected: ['$$div:contains( )'],
+                    },
+
+                    // `:has-text()` argument with an escaped closing parenthesis
+                    // — the trailing `\)` is an `Escaped` token, but its last
+                    // character closes the argument, as in CoreLibs
+                    {
+                        actual: String.raw`$$script:has-text(foo\)`,
+                        expected: [String.raw`$$script:contains(foo\)`],
+                    },
+
+                    // `:has-text()` as the whole body (empty prefix) — parsed
+                    // leniently and converted to `:contains()`
+                    {
+                        actual: '$$:has-text((function(g,b,a,c,e,d))',
+                        expected: ['$$:contains((function(g,b,a,c,e,d))'],
+                    },
+
+                    // `:has-text()` after a trailing explicit combinator — parsed
+                    // leniently, the combinator stays in front of the pseudo-class
+                    {
+                        actual: '$$div > :has-text((function(g,b,a,c,e,d))',
+                        expected: ['$$div > :contains((function(g,b,a,c,e,d))'],
+                    },
+
+                    // `:-abp-contains()` with unbalanced parentheses in the argument —
+                    // parsed leniently (CoreLibs parity) and kept as-is: the alias is
+                    // supported as-is, no quoting is inserted
+                    {
+                        actual: '$$script:-abp-contains((function(g,b,a,c,e,d))',
+                        expected: ['$$script:-abp-contains((function(g,b,a,c,e,d))'],
+                        shouldConvert: false,
+                    },
+
+                    // Invalid selector with `[tag-content]` — kept as-is both with and
+                    // without whitespace around `=` (the marker check tolerates attribute
+                    // whitespace, so both spellings are treated alike)
+                    {
+                        actual: '$$div[tag-content="a"]x',
+                        expected: ['$$div[tag-content="a"]x'],
+                        shouldConvert: false,
+                    },
+                    {
+                        actual: '$$div[tag-content = "a" ]x',
+                        expected: ['$$div[tag-content = "a" ]x'],
+                        shouldConvert: false,
+                    },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperlyNew(HtmlRuleConverter, 'convertToAdg');
                 });
@@ -420,6 +706,51 @@ describe('HtmlRuleConverter', () => {
                         input: '##^[attr="value"]div',
                         error: 'Type selector must be first in the compound selector',
                     },
+
+                    // Parsing error without special selectors - must still be rejected
+                    {
+                        input: 'example.com$$div[class="hotword-container"]com^',
+                        error: 'Type selector is already set for the compound selector',
+                    },
+
+                    // Parsing error with a `contains(` / `has-text(` substring inside
+                    // an attribute value (not a special pseudo-class selector) - must
+                    // still be rejected, i.e. the tolerant fallback must not be triggered
+                    {
+                        input: 'example.com$$div[data-x="contains(foo',
+                        error: 'Unterminated string in attribute selector value',
+                    },
+                    {
+                        input: 'example.com$$div[data-x="has-text(foo',
+                        error: 'Unterminated string in attribute selector value',
+                    },
+
+                    // Same as above, but with the full `:contains(` / `[tag-content=`
+                    // markers inside quoted attribute text — the marker scan skips
+                    // quoted text, so the fallback is not triggered
+                    {
+                        input: 'example.com$$div[data-x=":contains(foo"]com',
+                        error: 'Type selector is already set for the compound selector',
+                    },
+                    {
+                        input: 'example.com$$div[data-x="a[tag-content=b',
+                        error: 'Unterminated string in attribute selector value',
+                    },
+
+                    // The repaired body parses successfully, but the conversion
+                    // rejects the mixed uBO pseudo-class — the error must surface
+                    // instead of being hidden by the tolerant fallback
+                    {
+                        input: '$$div:min-text-length(5):contains(eval(function(p,a,c)',
+                        error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
+                    },
+
+                    // Same for invalid length values: they must surface
+                    // instead of being hidden by the tolerant fallback
+                    {
+                        input: '$$div[min-length="abc"]:contains((foo)',
+                        error: "Value of special attribute selector 'min-length' must be an integer, got 'abc'",
+                    },
                 ])("should not convert '$input'", ({ input, error }) => {
                     if (typeof input !== 'string') {
                         expect(() => {
@@ -443,16 +774,34 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
                     },
 
-                    // `:min-text-length()` special pseudo-class selector (max is conversion default)
+                    // `:min-text-length()` special pseudo-class selector: the
+                    // argument is a lower bound only, with no upper bound
                     {
                         actual: '##^div:min-text-length(10)',
-                        expected: ['$$div:contains(/^(?=.{10,262144}$).*/s)'],
+                        expected: ['$$div:contains(/^(?=.{10,}$).*/s)'],
                     },
 
-                    // `:min-text-length()` special pseudo-class selector (max is conversion default) - multiple usages
+                    // `:min-text-length()` special pseudo-class selector - multiple usages
                     {
                         actual: '##^div:min-text-length(10):min-text-length(20)',
-                        expected: ['$$div:contains(/^(?=.{10,262144}$).*/s):contains(/^(?=.{20,262144}$).*/s)'],
+                        expected: ['$$div:contains(/^(?=.{10,}$).*/s):contains(/^(?=.{20,}$).*/s)'],
+                    },
+
+                    // `:min-text-length()` special pseudo-class selector - argument at the PCRE2 quantifier limit
+                    {
+                        actual: '##^div:min-text-length(65535)',
+                        expected: ['$$div:contains(/^(?=.{65535,}$).*/s)'],
+                    },
+
+                    // `:min-text-length()` special pseudo-class selector - argument above the
+                    // PCRE2 quantifier limit is split into a fixed-count lookahead
+                    {
+                        actual: '##^div:min-text-length(65536)',
+                        expected: ['$$div:contains(/^(?=.{65535}.).*/s)'],
+                    },
+                    {
+                        actual: '##^div:min-text-length(150000)',
+                        expected: ['$$div:contains(/^(?=(?:.{65535}){2}.{18930}).*/s)'],
                     },
 
                     // `:has-text()` special pseudo-class selector
@@ -649,7 +998,7 @@ describe('HtmlRuleConverter', () => {
                     },
                     {
                         actual: '##^div:min-text-length(10)',
-                        expected: ['$$div:contains(/^(?=.{10,262144}$).*/s)'],
+                        expected: ['$$div:contains(/^(?=.{10,}$).*/s)'],
                     },
                     {
                         actual: '##^div:has-text(example)',
@@ -676,7 +1025,6 @@ describe('HtmlRuleConverter', () => {
                         // eslint-disable-next-line max-len
                         error: "Argument of special pseudo-class selector 'min-text-length' must be a positive integer, got '-1'",
                     },
-
                     // Parsing errors
                     {
                         input: '##^[attr="value"]div',
@@ -791,6 +1139,31 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div:contains(/ex.*ple/i)',
                         expected: ['##^div:has-text(/ex.*ple/i)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - native uBlock
+                    // syntax, kept as-is instead of a mixed-syntax error
+                    {
+                        actual: '$$div:has-text(example)',
+                        expected: ['##^div:has-text(example)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - regexp argument is kept as-is
+                    {
+                        actual: '$$div:has-text(/ex.*ple/i)',
+                        expected: ['##^div:has-text(/ex.*ple/i)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - multiple usages
+                    {
+                        actual: '$$div:has-text(a):has-text(b)',
+                        expected: ['##^div:has-text(a):has-text(b)'],
+                    },
+
+                    // `:has-text()` and `[tag-content]` special selectors - mixed usage
+                    {
+                        actual: '$$div[tag-content="a"]:has-text(b)',
+                        expected: ['##^div:has-text(a):has-text(b)'],
                     },
 
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
@@ -958,12 +1331,6 @@ describe('HtmlRuleConverter', () => {
                         input: '$$:contains()',
                         error: "Special pseudo-class selector 'contains' requires an argument",
                     },
-
-                    // invalid simple selector - mixed syntax (uBlock special pseudo-class selector)
-                    {
-                        input: '$$div:has-text(example)',
-                        error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
-                    },
                 ])("should not convert '$input'", ({ input, error }) => {
                     if (typeof input !== 'string') {
                         expect(() => {
@@ -1005,6 +1372,14 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div:contains(example)',
                         expected: ['##^div:has-text(example)'],
+                    },
+                    {
+                        actual: '$$div:has-text(example)',
+                        expected: ['##^div:has-text(example)'],
+                    },
+                    {
+                        actual: '$$div:has-text(/ex.*ple/i)',
+                        expected: ['##^div:has-text(/ex.*ple/i)'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperlyNew(HtmlRuleConverter, 'convertToUbo');

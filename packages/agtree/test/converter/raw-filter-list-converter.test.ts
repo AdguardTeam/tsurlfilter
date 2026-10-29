@@ -129,6 +129,15 @@ describe('RawFilterListConverter (regression)', () => {
         expect(tolerant().converted).toBe(expectedFilterListContent);
     });
 
+    test('keeps unparseable HTML filtering rules with special selectors as-is in strict mode', () => {
+        const input = 'example.com$$div[tag-content="a"]x';
+
+        const result = RawFilterListConverter.convertToAdg(input, { tolerant: false });
+
+        expect(result.converted).toBe(input);
+        expect(result.isConverted).toBe(false);
+    });
+
     test('convertToAdg should convert a modifier on a rule followed by another rule', () => {
         // Regression: the `$` separator of the first rule must be detected even
         // though a line break (belonging to the next rule) follows `$3p`.

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import type { HtmlFilteringRule } from '../../../src/nodes';
+import type { HtmlFilteringRule, HtmlFilteringRuleBody } from '../../../src/nodes';
 import { SYNTAX_ADG, SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();
@@ -435,6 +435,192 @@ describe('RuleParser — HTML filtering rules', () => {
                     },
                 },
             });
+        });
+    });
+
+    describe('ADG — lenient special pseudo-class arguments (CoreLibs parity)', () => {
+        /**
+         * Parses an ADG rule in parsed mode and returns the parsed body.
+         *
+         * @param source Rule source.
+         *
+         * @returns Parsed HTML filtering rule body.
+         */
+        const parseBody = (source: string): HtmlFilteringRuleBody => {
+            const ast = parser.parse(source, {
+                isLocIncluded: true,
+                parseHtmlFilteringRuleBodies: true,
+            }) as HtmlFilteringRule;
+
+            return ast.body as HtmlFilteringRuleBody;
+        };
+
+        test('script:contains((function(g,b,a,c,e,d)) — unbalanced argument is taken raw', () => {
+            const source = '$$script:contains((function(g,b,a,c,e,d))';
+            const body = parseBody(source);
+
+            expect(body).toMatchObject({
+                type: 'HtmlFilteringRuleBody',
+                selectorList: {
+                    type: 'SelectorList',
+                    children: [{
+                        type: 'ComplexSelector',
+                        children: [
+                            {
+                                type: 'TypeSelector',
+                                value: 'script',
+                            },
+                            {
+                                type: 'PseudoClassSelector',
+                                name: {
+                                    type: 'Value',
+                                    value: 'contains',
+                                },
+                                argument: {
+                                    type: 'Value',
+                                    value: '(function(g,b,a,c,e,d)',
+                                },
+                            },
+                        ],
+                    }],
+                },
+            });
+
+            const { selectorList } = body;
+            const [complexSelector] = selectorList.children;
+            const [, pseudoClassSelector] = complexSelector.children;
+
+            // The appended pseudo-class extends the parent ranges
+            expect(complexSelector.end).toBe(source.length);
+            expect(selectorList.end).toBe(source.length);
+            expect(pseudoClassSelector.start).toBe(source.indexOf(':contains'));
+            expect(pseudoClassSelector.end).toBe(source.length);
+        });
+
+        test("div[style=\"display: none !important;\"]:contains('ed2k://) — unterminated string is taken raw", () => {
+            const source = "$$div[style=\"display: none !important;\"]:contains('ed2k://)";
+            const body = parseBody(source);
+
+            expect(body).toMatchObject({
+                type: 'HtmlFilteringRuleBody',
+                selectorList: {
+                    type: 'SelectorList',
+                    children: [{
+                        type: 'ComplexSelector',
+                        children: [
+                            {
+                                type: 'TypeSelector',
+                                value: 'div',
+                            },
+                            {
+                                type: 'AttributeSelector',
+                                name: {
+                                    type: 'Value',
+                                    value: 'style',
+                                },
+                                value: {
+                                    type: 'Value',
+                                    value: 'display: none !important;',
+                                },
+                            },
+                            {
+                                type: 'PseudoClassSelector',
+                                name: {
+                                    type: 'Value',
+                                    value: 'contains',
+                                },
+                                argument: {
+                                    type: 'Value',
+                                    value: "'ed2k://",
+                                },
+                            },
+                        ],
+                    }],
+                },
+            });
+
+            const { selectorList } = body;
+            const [complexSelector] = selectorList.children;
+
+            expect(complexSelector.end).toBe(source.length);
+            expect(selectorList.end).toBe(source.length);
+        });
+
+        test('script:contains(/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/) — regexp with brackets is taken raw', () => {
+            const source = String.raw`$$script:contains(/window\.open\([^)]*\);\s*\w+\.focus/)`;
+            const body = parseBody(source);
+
+            expect(body).toMatchObject({
+                type: 'HtmlFilteringRuleBody',
+                selectorList: {
+                    type: 'SelectorList',
+                    children: [{
+                        type: 'ComplexSelector',
+                        children: [
+                            {
+                                type: 'TypeSelector',
+                                value: 'script',
+                            },
+                            {
+                                type: 'PseudoClassSelector',
+                                name: {
+                                    type: 'Value',
+                                    value: 'contains',
+                                },
+                                argument: {
+                                    type: 'Value',
+                                    value: String.raw`/window\.open\([^)]*\);\s*\w+\.focus/`,
+                                },
+                            },
+                        ],
+                    }],
+                },
+            });
+        });
+
+        test('div :has-text(/foo[)]/) — descendant combinator before the special pseudo-class is preserved', () => {
+            const source = '$$div :has-text(/foo[)]/)';
+            const body = parseBody(source);
+
+            expect(body).toMatchObject({
+                type: 'HtmlFilteringRuleBody',
+                selectorList: {
+                    type: 'SelectorList',
+                    children: [{
+                        type: 'ComplexSelector',
+                        children: [
+                            {
+                                type: 'TypeSelector',
+                                value: 'div',
+                            },
+                            {
+                                type: 'SelectorCombinator',
+                                value: ' ',
+                            },
+                            {
+                                type: 'PseudoClassSelector',
+                                name: {
+                                    type: 'Value',
+                                    value: 'has-text',
+                                },
+                                argument: {
+                                    type: 'Value',
+                                    value: '/foo[)]/',
+                                },
+                            },
+                        ],
+                    }],
+                },
+            });
+
+            const { selectorList } = body;
+            const [complexSelector] = selectorList.children;
+            const [, combinator] = complexSelector.children;
+
+            expect(combinator.start).toBe(source.indexOf(' :'));
+            expect(combinator.end).toBe(source.indexOf(' :') + 1);
+            expect(complexSelector.end).toBe(source.length);
+            expect(selectorList.end).toBe(source.length);
         });
     });
 

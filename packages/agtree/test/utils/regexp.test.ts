@@ -205,8 +205,63 @@ describe('RegExpUtils', () => {
                     max: null,
                     expected: '/^(?=.{0,}$).*/s',
                 },
+                {
+                    // boundary: both bounds still fit into the PCRE2 limit
+                    min: 65535,
+                    max: 65535,
+                    expected: '/^(?=.{65535,65535}$).*/s',
+                },
+                {
+                    // lower bound above the PCRE2 limit is split
+                    min: 65536,
+                    max: null,
+                    expected: '/^(?=.{65535}.).*/s',
+                },
+                {
+                    // upper bound above the PCRE2 limit is split
+                    min: null,
+                    max: 65536,
+                    expected: '/^(?!.{65535}.{2}).*/s',
+                },
+                {
+                    // both bounds above the PCRE2 limit are split
+                    min: 20000,
+                    max: 150000,
+                    expected: '/^(?=.{20000})(?!(?:.{65535}){2}.{18931}).*/s',
+                },
+                {
+                    min: 65536,
+                    max: 150000,
+                    expected: '/^(?=.{65535}.)(?!(?:.{65535}){2}.{18931}).*/s',
+                },
+                {
+                    min: null,
+                    max: 360000,
+                    expected: '/^(?!(?:.{65535}){5}.{32326}).*/s',
+                },
             ])('should return correct length regex for min: $min and max: $max', ({ min, max, expected }) => {
                 expect(RegExpUtils.getLengthRegexp(min, max)).toBe(expected);
+            });
+
+            test.each([
+                { min: 65536, max: null },
+                { min: null, max: 65536 },
+                { min: 20000, max: 150000 },
+                { min: 65536, max: 150000 },
+                { min: null, max: 360000 },
+                { min: null, max: 4294836225 },
+                { min: 9007199254740991, max: null },
+            ])('should keep every quantifier within the PCRE2 limit for min: $min and max: $max', ({ min, max }) => {
+                const regexp = RegExpUtils.getLengthRegexp(min, max);
+                const quantifiers = [...regexp.matchAll(/\{(\d+)(?:,(\d*))?\}/g)];
+
+                quantifiers.forEach((match) => {
+                    expect(Number(match[1])).toBeLessThanOrEqual(65535);
+
+                    if (match[2]) {
+                        expect(Number(match[2])).toBeLessThanOrEqual(65535);
+                    }
+                });
             });
         });
 
@@ -296,6 +351,68 @@ describe('RegExpUtils', () => {
                     max: null,
                     actual: 'a'.repeat(100),
                     expected: true,
+                },
+
+                // bounds above the PCRE2 quantifier limit are split
+                {
+                    min: 20000,
+                    max: 150000,
+                    actual: 'a'.repeat(19999),
+                    expected: false,
+                },
+                {
+                    min: 20000,
+                    max: 150000,
+                    actual: 'a'.repeat(20000),
+                    expected: true,
+                },
+                {
+                    min: 20000,
+                    max: 150000,
+                    actual: 'a'.repeat(150000),
+                    expected: true,
+                },
+                {
+                    min: 20000,
+                    max: 150000,
+                    actual: 'a'.repeat(150001),
+                    expected: false,
+                },
+                {
+                    min: 65536,
+                    max: null,
+                    actual: 'a'.repeat(65535),
+                    expected: false,
+                },
+                {
+                    min: 65536,
+                    max: null,
+                    actual: 'a'.repeat(65536),
+                    expected: true,
+                },
+                {
+                    min: null,
+                    max: 65536,
+                    actual: 'a'.repeat(65536),
+                    expected: true,
+                },
+                {
+                    min: null,
+                    max: 65536,
+                    actual: 'a'.repeat(65537),
+                    expected: false,
+                },
+                {
+                    min: 20000,
+                    max: 360000,
+                    actual: 'a'.repeat(360000),
+                    expected: true,
+                },
+                {
+                    min: 20000,
+                    max: 360000,
+                    actual: 'a'.repeat(360001),
+                    expected: false,
                 },
 
                 // matching new lines
