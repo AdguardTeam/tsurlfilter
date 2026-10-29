@@ -41,7 +41,7 @@ export const SEMICOLON = ';';
  * Single source of truth shared by the marker emitters
  * (`CosmeticApiCommon.NATIVE_MARKER` / `EXTENDED_MARKER`), the marker
  * readers (`CssHitsCounter`), and the MV3 injection protocol constants
- * (`EXTCSS_PROTOCOL` in `message-constants.ts`).
+ * (`EXTCSS_PROTOCOL` in `mv3/background/extcss-protocol.ts`).
  */
 export const CSS_HITS_MARKER_PREFIX = 'adguard';
 
