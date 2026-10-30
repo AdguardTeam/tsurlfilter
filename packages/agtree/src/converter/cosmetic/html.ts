@@ -97,6 +97,15 @@ const AdgPseudoClasses = {
 } as const;
 
 /**
+ * AdGuard alias of the `:contains()` pseudo-class.
+ *
+ * Note: the alias is not converted yet (see AG-61400), so the converter
+ * keeps it as-is. It is listed here to validate its argument in the same
+ * way as the argument of `:contains()`.
+ */
+const ADG_CONTAINS_ALIAS = '-abp-contains';
+
+/**
  * Set of {@link UboPseudoClasses}.
  */
 const SUPPORTED_UBO_PSEUDO_CLASSES = new Set<string>([
@@ -1061,11 +1070,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     }
 
                     case 'PseudoClassSelector': {
+                        const name = selector.name.value;
+                        const isSupported = SUPPORTED_ADG_PSEUDO_CLASSES.has(name)
+                            || SUPPORTED_UBO_PSEUDO_CLASSES.has(name);
+
+                        // `:-abp-contains()` is an AdGuard alias of `:contains()`.
+                        // It is not converted yet (see AG-61400), so the selector
+                        // is kept as-is, but its argument is validated below.
+                        const isContainsAlias = name === ADG_CONTAINS_ALIAS;
+
                         // Not a special pseudo-class selector - clone as-is after the switch
-                        if (
-                            !SUPPORTED_ADG_PSEUDO_CLASSES.has(selector.name.value)
-                            && !SUPPORTED_UBO_PSEUDO_CLASSES.has(selector.name.value)
-                        ) {
+                        if (!isSupported && !isContainsAlias) {
                             break;
                         }
 
@@ -1073,11 +1088,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         if (!selector.argument || selector.argument.value === EMPTY) {
                             throw new RuleConversionError(sprintf(
                                 ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED,
-                                selector.name.value,
+                                name,
                             ));
                         }
 
-                        const name = selector.name.value;
+                        // The `:-abp-contains()` alias is kept as-is for now (see AG-61400)
+                        if (isContainsAlias) {
+                            break;
+                        }
+
                         const argument = selector.argument.value;
 
                         // Invoke callback and:

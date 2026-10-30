@@ -22,6 +22,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- The HTML filtering rule converter now rejects `:-abp-contains()` with a
+  missing or empty argument, the same as `:contains()`.
+
 ### Security
 
 ## [4.3.0] - 2026-10-14

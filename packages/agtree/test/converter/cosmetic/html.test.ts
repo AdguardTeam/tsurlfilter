@@ -237,6 +237,14 @@ describe('HtmlRuleConverter', () => {
                         shouldConvert: false,
                     },
 
+                    // `:-abp-contains()` special pseudo-class selector (AdGuard alias of
+                    // `:contains()`, leave as-is for now - see AG-61400)
+                    {
+                        actual: '$$div:-abp-contains(foo)',
+                        expected: ['$$div:-abp-contains(foo)'],
+                        shouldConvert: false,
+                    },
+
                     // `:has-text()` special pseudo-class selector (uBlock alias, documented synonym of `:contains()`)
                     // https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules--contains
                     {
@@ -428,6 +436,20 @@ describe('HtmlRuleConverter', () => {
                     {
                         input: '$$:contains()',
                         error: "Special pseudo-class selector 'contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // with an empty argument
+                    {
+                        input: '$$div:-abp-contains()',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // without an argument
+                    {
+                        input: '$$div:-abp-contains',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
                     },
                 ])("should not convert '$input'", ({ input, error }) => {
                     if (typeof input !== 'string') {
@@ -1053,6 +1075,13 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div:has-text(/ex.*ple/i)'],
                     },
 
+                    // `:-abp-contains()` special pseudo-class selector (AdGuard alias of
+                    // `:contains()`, kept as-is for now - see AG-61400)
+                    {
+                        actual: '$$div:-abp-contains(foo)',
+                        expected: ['##^div:-abp-contains(foo)'],
+                    },
+
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]',
@@ -1217,6 +1246,20 @@ describe('HtmlRuleConverter', () => {
                     {
                         input: '$$:contains()',
                         error: "Special pseudo-class selector 'contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // with an empty argument
+                    {
+                        input: '$$div:-abp-contains()',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // without an argument
+                    {
+                        input: '$$div:-abp-contains',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
                     },
 
                     // invalid simple selector - mixed syntax (uBlock special pseudo-class selector)
