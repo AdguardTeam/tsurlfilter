@@ -347,12 +347,16 @@ dynamic path. Documents that loaded before the current service worker
 started are judged against the boot snapshot of the registrations that
 existed then; later documents use the last published coverage.
 
-Coverage also requires the top-level site to belong to the configured host
+Coverage also requires the top-level site to belong to the published host
 set: the filtering state (allowlist, inverted allowlist) is tab-level, so a
 preregistered host's frame embedded under a foreign top (for example, a
 YouTube embed on an allowlisted third-party site) stays on the dynamic
 injection path, which is the only side that can see the embedding site's
-filtering state. Intermediate frames do not participate.
+filtering state. Intermediate frames do not participate. The set is the
+manifest's, not the runtime expansion: a configured hostname that the
+manifest does not list is skipped with a warning, because the page gate
+would shim every frame of it while the background reports no coverage, and
+its rules would run twice.
 
 At runtime, each configured hostname (plus its `www.` alias) is matched
 against the engine with `$path` ignored, the matching rules are hashed, and
