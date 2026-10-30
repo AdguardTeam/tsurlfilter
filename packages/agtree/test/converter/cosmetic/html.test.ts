@@ -74,6 +74,25 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/^(?=.{0,100}$).*/s)'],
                     },
 
+                    // `[min-length]` special attribute selector - leading whitespace is accepted
+                    // (CoreLibs parses the value with `strtoimax`, which skips leading spaces)
+                    {
+                        actual: '$$div[min-length=" 5"]',
+                        expected: ['$$div:contains(/^(?=.{5,}$).*/s)'],
+                    },
+
+                    // `[min-length]` special attribute selector - leading plus is accepted
+                    {
+                        actual: '$$div[min-length="+5"]',
+                        expected: ['$$div:contains(/^(?=.{5,}$).*/s)'],
+                    },
+
+                    // `[max-length]` special attribute selector - leading whitespace is accepted
+                    {
+                        actual: '$$div[max-length=" 100"]',
+                        expected: ['$$div:contains(/^(?=.{0,100}$).*/s)'],
+                    },
+
                     // `[min-length]` and `[max-length]` combined into a single :contains()
                     {
                         actual: '$$div[min-length="10"][max-length="100"]',
@@ -458,6 +477,14 @@ describe('HtmlRuleConverter', () => {
                         input: '$$[min-length="-1"]',
                         // eslint-disable-next-line max-len
                         error: "Value of special attribute selector 'min-length' must be a positive integer, got '-1'",
+                    },
+
+                    // invalid special attribute selector - trailing whitespace is not
+                    // accepted by CoreLibs' `strtoimax` parsing of the value
+                    {
+                        input: '$$[min-length="5 "]',
+                        // eslint-disable-next-line max-len
+                        error: "Value of special attribute selector 'min-length' must be an integer, got '5 '",
                     },
 
                     // invalid special pseudo-class selector - argument missing
@@ -896,6 +923,14 @@ describe('HtmlRuleConverter', () => {
                         error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got ' '",
                     },
 
+                    // invalid special pseudo-class selector - padded argument is not a
+                    // plain decimal number, unlike the attribute selectors (uBO parity)
+                    {
+                        input: '##^:min-text-length( 5 )',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got ' 5 '",
+                    },
+
                     // invalid special pseudo-class selector - non-decimal number
                     {
                         input: '##^:min-text-length(1e2)',
@@ -1036,6 +1071,17 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div[min-length="10"]',
                         expected: ['##^div:min-text-length(10)'],
+                    },
+
+                    // `[min-length]` special attribute selector - the value is normalized
+                    // for uBlock, which accepts only digits
+                    {
+                        actual: '$$div[min-length=" 5"]',
+                        expected: ['##^div:min-text-length(5)'],
+                    },
+                    {
+                        actual: '$$div[min-length="+5"]',
+                        expected: ['##^div:min-text-length(5)'],
                     },
 
                     // `[min-length]` special attribute selector - multiple usages

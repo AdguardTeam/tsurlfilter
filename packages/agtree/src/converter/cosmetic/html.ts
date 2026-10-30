@@ -63,6 +63,27 @@ import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 const ADG_HTML_CONVERSION_MAX_LENGTH = 65535;
 
 /**
+ * Pattern for the value of the `[min-length]` and `[max-length]` special
+ * attribute selectors.
+ *
+ * CoreLibs parses these values with `strtoimax(value, &end, 10)`, so leading
+ * whitespace and a leading `+` are accepted, while trailing whitespace and
+ * other number formats are not: `" 5"` and `"+5"` are valid, `"5 "` and
+ * `"1e2"` are not.
+ */
+const ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN = /^\s*\+?\d+$/;
+
+/**
+ * Pattern for the argument of the uBlock `:min-text-length()` special
+ * pseudo-class.
+ *
+ * In uBlock, the argument is validated with a digits-only pattern
+ * (`compileInteger` in its static-filtering-parser), so `( 5 )` and `(1e2)`
+ * are rejected.
+ */
+const UBO_MIN_TEXT_LENGTH_ARGUMENT_PATTERN = /^\d+$/;
+
+/**
  * Supported special pseudo-classes from uBlock.
  *
  * Note: If new pseudo-classes are added here, ensure to update
@@ -465,6 +486,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     value,
                     ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
                     ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
+                    ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
                 );
 
                 // It's safe to cast to number here after validation
@@ -587,6 +609,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     argument,
                     ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT,
                     ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE,
+                    UBO_MIN_TEXT_LENGTH_ARGUMENT_PATTERN,
                 );
 
                 // It's safe to cast to number here after validation
@@ -663,7 +686,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
             }
 
             // `[min-length="min"]` -> `:min-text-length(min)`
-            // direct conversion, no changes to value
             case AdgAttributeSelectors.MinLength: {
                 // Validate length value
                 HtmlRuleConverter.assertValidLengthValue(
@@ -671,11 +693,16 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     value,
                     ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
                     ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
+                    ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
                 );
 
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.MinTextLength,
-                    value,
+                    // uBlock validates the argument with a digits-only pattern,
+                    // so emit the normalized number instead of the raw value,
+                    // which may contain leading whitespace or a plus sign
+                    // (e.g. `" 5"` -> `5`).
+                    String(Number(value)),
                 );
             }
 
@@ -783,6 +810,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 value,
                 ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
                 ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
+                ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
             );
 
             if (name === AdgAttributeSelectors.MinLength) {
@@ -1457,6 +1485,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * @param value Value to parse.
      * @param notIntErrorMessage Error message when the value is not an integer.
      * @param notPositiveErrorMessage Error message when the value is not positive.
+     * @param valuePattern Pattern that the value must match to be an integer.
      *
      * @throws If the value is not a valid number or not positive.
      */
@@ -1465,19 +1494,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
         value: string,
         notIntErrorMessage: string,
         notPositiveErrorMessage: string,
+        valuePattern: RegExp,
     ): void {
         const parsed = Number(value);
 
-        if (Number.isNaN(parsed)) {
-            throw new RuleConversionError(
-                sprintf(
-                    notIntErrorMessage,
-                    name,
-                    value,
-                ),
-            );
-        }
-
+        // A negative value is a valid number, but not a valid length. Check it
+        // before the pattern check to keep the dedicated error message.
         if (parsed < 0) {
             throw new RuleConversionError(
                 sprintf(
@@ -1488,13 +1510,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
             );
         }
 
-        // uBO validates `:min-text-length()` arguments with `/^\d+$/`
-        // (compileInteger in its static-filtering-parser.js). Without the
-        // digits check a whitespace-only argument — e.g. `:min-text-length( )`,
-        // which the parser now keeps as-is instead of trimming — would pass
-        // Number() validation as 0 and convert into a match-all `:contains()`
-        // regex.
-        if (!/^\d+$/.test(value)) {
+        // The pattern is stricter than `Number()`: it also rejects `NaN`
+        // (`abc`), `1e2`, `Infinity` and whitespace-only values.
+        if (!valuePattern.test(value)) {
             throw new RuleConversionError(
                 sprintf(
                     notIntErrorMessage,
