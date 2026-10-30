@@ -56,6 +56,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pattern-only rules whose `$` characters are all escaped or inside a regex
   literal (for example `/a\$b\$c/`) are no longer dropped during rule
   splitting; they keep the whole rule as the pattern.
+- A `,name=/` sequence in a rule pattern no longer opens a regex value, so
+  `||example.com/a,b=/c$removeparam=/x/` keeps its modifier list instead of
+  being parsed as a plain pattern.
 - HTML filtering native selectors now keep literal double quotes in
   attribute values: `$$div[data-x="""a"""]` now builds
   `div[data-x="\"a\""]` instead of `div[data-x="a"]`, and

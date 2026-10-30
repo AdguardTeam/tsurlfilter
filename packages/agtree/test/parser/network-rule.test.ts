@@ -229,6 +229,17 @@ describe('parseNetworkRule', () => {
             expect(ModifierParser.getName(source, d, 0)).toBe('replace');
             expect(ModifierParser.getValue(source, d, 0)).toBe('/a$b/');
         });
+
+        test('comma-separated =/ in the pattern does not open a regex value', () => {
+            const source = '||example.com/a,b=/c$removeparam=/x/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.com/a,b=/c');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('removeparam');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/x/');
+        });
     });
 
     describe('modifier parsing', () => {

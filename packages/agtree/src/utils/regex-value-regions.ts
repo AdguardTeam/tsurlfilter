@@ -67,16 +67,27 @@ function isHorizontalWhitespace(code: number): boolean {
  * it belongs to `$name=`, `,name=`, `$~name=`, or `,~name=`, with optional
  * spaces or tabs around the `~` and before the `=`.
  *
- * This keeps a `=/` sequence that belongs to the rule pattern (for example
- * `?ver=/` or `combo/f=/`) from being mistaken for a regex value opener.
+ * A comma starts a modifier only after the modifier list has begun, so
+ * `,name=` is accepted only when `seenSeparator` is `true`. This keeps a
+ * `,name=/` sequence in the rule pattern from opening a regex value.
+ *
+ * This also keeps a `=/` sequence that belongs to the rule pattern (for
+ * example `?ver=/` or `combo/f=/`) from being mistaken for a regex value
+ * opener.
  *
  * @param rule Rule text, or a source string containing the rule.
  * @param index Index of the `=`.
  * @param start Inclusive scan start.
+ * @param seenSeparator Whether the scan has already seen an unescaped `$`.
  *
  * @returns `true` if the `=` follows a modifier name.
  */
-function isModifierAssignment(rule: string, index: number, start: number): boolean {
+function isModifierAssignment(
+    rule: string,
+    index: number,
+    start: number,
+    seenSeparator: boolean,
+): boolean {
     let i = index - 1;
 
     // Whitespace is allowed between the modifier name and `=`.
@@ -110,7 +121,16 @@ function isModifierAssignment(rule: string, index: number, start: number): boole
         }
     }
 
-    return i >= start && (rule[i] === DOLLAR_SIGN || rule[i] === COMMA);
+    if (i < start) {
+        return false;
+    }
+
+    if (rule[i] === DOLLAR_SIGN) {
+        return true;
+    }
+
+    // A comma separates modifiers only after the `$` separator.
+    return seenSeparator && rule[i] === COMMA;
 }
 
 /**
@@ -142,16 +162,27 @@ export function collectRegexValueRegions(
     // lazily and return the shared empty array for them.
     let regions: RegexValueRegion[] | null = null;
 
+    // A comma starts a modifier only after the `$` separator, so track
+    // whether the scan has reached the modifier list yet.
+    let seenSeparator = false;
+
     for (let i = start; i < end; i += 1) {
         if (rule[i] === BACKSLASH) {
             i += 1;
             continue;
         }
 
+        // An unescaped `$` starts the modifier list. A `$` followed by `/`
+        // is a regex end anchor, not a separator.
+        if (rule[i] === DOLLAR_SIGN && rule[i + 1] !== REGEX_MARKER) {
+            seenSeparator = true;
+            continue;
+        }
+
         if (i + 1 >= end
             || rule[i] !== MODIFIER_ASSIGN_OPERATOR
             || rule[i + 1] !== REGEX_MARKER
-            || !isModifierAssignment(rule, i, start)) {
+            || !isModifierAssignment(rule, i, start, seenSeparator)) {
             continue;
         }
 

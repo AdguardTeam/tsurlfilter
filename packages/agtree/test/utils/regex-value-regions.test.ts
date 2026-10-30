@@ -101,4 +101,12 @@ describe('collectRegexValueRegions', () => {
             [rule.indexOf('/x'), rule.lastIndexOf('/') + 1],
         ]);
     });
+
+    test('ignores a comma-separated =/ sequence before the separator', () => {
+        const rule = '||example.com/a,b=/c$removeparam=/x/';
+
+        expect(collectRegexValueRegions(rule)).toEqual([
+            [rule.indexOf('/x'), rule.lastIndexOf('/') + 1],
+        ]);
+    });
 });

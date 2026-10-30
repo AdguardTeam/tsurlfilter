@@ -157,6 +157,15 @@ describe('RuleFactory regex value handling', () => {
         expect(rule).toBeInstanceOf(NetworkRule);
         expect(rule.getPattern()).toBe(text);
     });
+
+    it('parses a rule whose pattern contains a comma followed by =/', () => {
+        const text = '||example.com/a,b=/c$removeparam=/x/';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe('||example.com/a,b=/c');
+        expect(rule.getAdvancedModifierValue()).toBe('/x/');
+    });
 });
 
 describe('RuleFactory cosmetic content parity', () => {

@@ -84,6 +84,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Whitespace around a regex modifier assignment (`$ replace=/.../`,
   `$replace =/.../`, `$ ~removeparam =/.../`) is now honored when locating
   regex values, matching the structural modifier parser.
+- A `,name=/` sequence in a network rule pattern is no longer treated as a
+  modifier assignment: a comma starts a modifier only after the `$`
+  separator, so `||example.com/a,b=/c$removeparam=/x/` keeps its modifier
+  list.
 - Leading whitespace before an AdGuard `[$...]` modifier list is ignored, so an
   indented rule no longer parses the modifier list as part of the domain list.
 - Trailing whitespace is no longer part of a network rule pattern. A rule with

@@ -307,6 +307,18 @@ describe('getRuleParts', () => {
         expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe('replace =/a$b/');
     });
 
+    test('parses a rule whose pattern contains a comma followed by =/', () => {
+        // A comma starts a modifier only after the `$` separator, so
+        // `a,b=/c` is part of the pattern here.
+        const rule = '||example.com/a,b=/c$removeparam=/x/';
+        const parts = getRuleParts(rule) as NetworkRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Network);
+        expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe('||example.com/a,b=/c');
+        expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe('removeparam=/x/');
+    });
+
     test('finds the separator in a long rule with many $ inside a regex', () => {
         // Regression: the per-`$` backward/forward scan was quadratic here.
         // `a$` is repeated rather than `$` so the value does not contain `$$`,
