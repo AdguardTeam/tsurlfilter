@@ -37,6 +37,7 @@ import {
     EMPTY,
     EQUALS,
     OPEN_SQUARE_BRACKET,
+    REGEX_MARKER,
     SINGLE_QUOTE,
     SLASH,
 } from '../../utils/constants';
@@ -376,14 +377,42 @@ export class HtmlRuleConverter extends RuleConverterBase {
             throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
         }
 
+        // Set when a special attribute selector cannot be represented in
+        // uBlock without changing its matching semantics. uBlock cannot mix
+        // AdGuard-only selectors into a rule body, so the whole rule is kept
+        // as-is instead of emitting a rule that matches other elements.
+        let isUnconvertible = false;
+
+        const onSpecialAttributeSelector: OnSpecialAttributeSelectorCallback = (name, value) => {
+            if (
+                (name === AdgAttributeSelectors.TagContent
+                    || name === AdgAttributeSelectors.Wildcard)
+                && HtmlRuleConverter.containsHtmlMarkup(value)
+            ) {
+                isUnconvertible = true;
+                return false;
+            }
+
+            return HtmlRuleConverter.convertSpecialAttributeSelectorAdgToUbo(name, value);
+        };
+
         // Convert body
         const convertedBody = HtmlRuleConverter.convertBody(
             rule.body,
             AdgHtmlFilteringBodyParser,
             UboHtmlFilteringBodyGenerator,
-            HtmlRuleConverter.convertSpecialAttributeSelectorAdgToUbo,
+            onSpecialAttributeSelector,
             HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToUbo,
         );
+
+        if (isUnconvertible) {
+            // A selector list is a union of complex selectors, and special
+            // attribute selectors cannot be mixed into a uBlock rule body, so
+            // dropping only the unconvertible complex selectors would change
+            // the rule. Keep the original rule as a native HTML filtering
+            // selector instead.
+            return createNodeConversionResult([rule], false);
+        }
 
         return createNodeConversionResult(
             [{
@@ -628,14 +657,40 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
+     * Checks whether a special attribute selector value contains HTML markup
+     * characters (`<` or `>`).
+     *
+     * AdGuard `[tag-content]` and `[wildcard]` match the element HTML
+     * (`innerHTML`), while uBlock `:has-text()` matches the element text
+     * (`textContent`). Tags exist only in the HTML, so a value that contains
+     * markup can never be found in uBlock's `textContent`, i.e. the converted
+     * rule would match nothing. Such rules are kept as-is instead.
+     *
+     * @param value Value of the special attribute selector.
+     *
+     * @returns `true` if the value contains HTML markup, otherwise `false`.
+     */
+    private static containsHtmlMarkup(value: string): boolean {
+        return value.includes('<') || value.includes('>');
+    }
+
+    /**
      * Handles special attribute selectors during AdGuard to uBlock conversion:
-     * - `[tag-content="content"]` -> `:has-text(content)`
-     *   direct conversion, no changes to value
-     * - `[wildcard="*content*"]` -> `:has-text(/*.content*./s)`
-     *   convert search pattern to regular expression
+     * - `[tag-content="content"]` -> `:has-text(/content/)`
+     *   The literal is escaped and emitted as a regular expression. A plain
+     *   uBlock `:has-text()` argument is matched case-insensitively, while
+     *   AdGuard `[tag-content]` is case-sensitive. Only the `i` flag is
+     *   accepted by uBlock, so a regexp without flags stays case-sensitive.
+     * - `[wildcard="*content*"]` -> `:has-text(/^[\s\S]*content[\s\S]*$/)`
+     *   convert search pattern to a uBlock-compatible regular expression:
+     *   uBlock accepts only the `i` flag, so the dot-all `s` flag cannot be
+     *   used and `[\s\S]` replaces the dots.
      * - `[min-length="min"]` -> `:min-text-length(min)`
      *   direct conversion, no changes to value
      * - `[max-length]` is skipped.
+     *
+     * Note: values that contain HTML markup are not passed to this method,
+     * see {@link HtmlRuleConverter.containsHtmlMarkup}.
      *
      * @param name Name of the special attribute selector.
      * @param value Value of the special attribute selector.
@@ -644,21 +699,21 @@ export class HtmlRuleConverter extends RuleConverterBase {
      */
     private static convertSpecialAttributeSelectorAdgToUbo(name: string, value: string): SimpleSelector | false {
         switch (name) {
-            // `[tag-content="content"]` -> `:has-text(content)`
-            // direct conversion, no changes to value
+            // `[tag-content="content"]` -> `:has-text(/content/)`
+            // the escaped literal is a case-sensitive regexp in uBlock
             case AdgAttributeSelectors.TagContent: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.HasText,
-                    value,
+                    `${REGEX_MARKER}${RegExpUtils.escapeRegexSpecials(value)}${REGEX_MARKER}`,
                 );
             }
 
-            // `[wildcard="*content*"] -> `:has-text(/*.content*./s)`
-            // convert search pattern to regular expression
+            // `[wildcard="*content*"]` -> `:has-text(/^[\s\S]*content[\s\S]*$/)`
+            // convert search pattern to a uBlock-compatible regular expression
             case AdgAttributeSelectors.Wildcard: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.HasText,
-                    RegExpUtils.globToRegExp(value),
+                    RegExpUtils.globToUboRegExp(value),
                 );
             }
 

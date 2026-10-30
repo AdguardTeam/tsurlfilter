@@ -356,4 +356,36 @@ describe('RegExpUtils', () => {
             expect(RegExpUtils.globToRegExp(actual)).toBe(expected);
         });
     });
+
+    describe('globToUboRegExp', () => {
+        test.each([
+            {
+                actual: '*example*text*',
+                expected: '/^[\\s\\S]*example[\\s\\S]*text[\\s\\S]*$/',
+            },
+            {
+                // The escaped literal dot stays as-is
+                actual: '*example*$*.com',
+                expected: '/^[\\s\\S]*example[\\s\\S]*\\$[\\s\\S]*\\.com$/',
+            },
+            {
+                actual: '*[test]*{test}*',
+                expected: '/^[\\s\\S]*\\[test\\][\\s\\S]*\\{test\\}[\\s\\S]*$/',
+            },
+        ])("should return '$expected' for glob '$actual'", ({ actual, expected }) => {
+            expect(RegExpUtils.globToUboRegExp(actual)).toBe(expected);
+        });
+
+        test('should not emit the `s` or `i` flag', () => {
+            const regexpText = RegExpUtils.globToUboRegExp('*ads*');
+
+            expect(regexpText.endsWith('/')).toBe(true);
+            expect(regexpText.endsWith('/s')).toBe(false);
+            expect(regexpText.endsWith('/i')).toBe(false);
+
+            // The generated regexp is valid and matches across lines
+            const source = regexpText.slice(1, -1);
+            expect(new RegExp(source).test('line1\nads\nline2')).toBe(true);
+        });
+    });
 });

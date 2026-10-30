@@ -22,6 +22,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- ADG→uBO conversion of HTML filtering `[tag-content]` and `[wildcard]`
+  attribute selectors now produces rules that match the same elements:
+  `[tag-content]` becomes a case-sensitive escaped `:has-text()` regexp,
+  `[wildcard]` becomes a uBlock-compatible regexp that uses `[\s\S]`
+  instead of the unsupported dot-all `s` flag, and rules with HTML markup in
+  these values are kept as-is because uBlock matches `textContent`.
+
 ### Security
 
 ## [4.3.0] - 2026-10-14

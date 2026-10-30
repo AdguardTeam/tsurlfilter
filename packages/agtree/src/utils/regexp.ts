@@ -352,4 +352,59 @@ export class RegExpUtils {
     public static globToRegExp(glob: string): string {
         return `${REGEX_MARKER + GlobToRegExp(glob).source + REGEX_MARKER}s`;
     }
+
+    /**
+     * Converts a glob pattern to a uBlock-compatible RegExp string with
+     * slashes and no flags.
+     *
+     * Note that uBlock accepts only the `i` flag in a `:has-text()` regexp
+     * argument (its `regexFromString()` matches `/^\/(.+)\/([i]?)$/`), so
+     * the dot-all `s` flag used by {@link RegExpUtils.globToRegExp} cannot be
+     * emitted. To keep the glob semantics, where `*` and `?` may cross line
+     * breaks, each unescaped dot is replaced with a `[\s\S]` character
+     * class, which matches any character including line terminators. Without
+     * the `i` flag, the resulting regexp is case-sensitive, like AdGuard
+     * globs.
+     *
+     * @param glob Glob pattern to convert.
+     *
+     * @returns RegExp string compatible with uBlock.
+     *
+     * @example
+     * // Returns '/^[\\s\\S]*foo[\\s\\S]*bar[\\s\\S]*$'
+     * RegExpUtils.globToUboRegExp('*foo*bar*');
+     */
+    public static globToUboRegExp(glob: string): string {
+        const { source } = GlobToRegExp(glob);
+
+        let convertedSource = EMPTY;
+        let isInCharClass = false;
+
+        for (let i = 0; i < source.length; i += 1) {
+            const char = source[i];
+
+            // Copy an escaped character as-is, e.g. `\.` is a literal dot
+            if (char === ESCAPE_CHARACTER) {
+                convertedSource += char + (source[i + 1] ?? EMPTY);
+                i += 1;
+                continue;
+            }
+
+            if (char === OPEN_SQUARE_BRACKET) {
+                isInCharClass = true;
+            } else if (char === CLOSE_SQUARE_BRACKET) {
+                isInCharClass = false;
+            } else if (char === DOT && !isInCharClass) {
+                // Unescaped dots come from `*` (`.*`) and `?` (`.`). Replace
+                // them with an equivalent that also matches line terminators,
+                // because uBlock does not support the `s` flag.
+                convertedSource += '[\\s\\S]';
+                continue;
+            }
+
+            convertedSource += char;
+        }
+
+        return `${REGEX_MARKER}${convertedSource}${REGEX_MARKER}`;
+    }
 }
