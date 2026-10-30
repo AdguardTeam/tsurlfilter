@@ -35,6 +35,80 @@ describe('Html rule selector', () => {
         expect(notMatchedElements).toHaveLength(0);
     });
 
+    it('checks non-root selector with child combinator still matches', () => {
+        document.body.innerHTML = `
+        <script id="matched">foo</script>
+        <script id="not-matched">bar</script>
+        `;
+
+        const ruleText = 'example.org$$body > script:contains(foo)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('matched');
+    });
+
+    it('checks complex selector starting with html (child combinator)', () => {
+        document.body.innerHTML = `
+        <script id="matched">foo</script>
+        <script id="not-matched">bar</script>
+        `;
+
+        const ruleText = 'example.org$$html > body > script:contains(foo)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('matched');
+    });
+
+    it('checks complex selector starting with html (descendant)', () => {
+        document.body.innerHTML = `
+        <div id="matched"></div>
+        <span class="not-div"></span>
+        `;
+
+        const ruleText = 'example.org$$html div';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('matched');
+    });
+
+    it('checks complex selector starting with :root', () => {
+        document.body.innerHTML = `
+        <div id="matched"></div>
+        <span class="not-div"></span>
+        `;
+
+        const ruleText = 'example.org$$:root div';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('matched');
+    });
+
+    it('checks rule with html selector alone', () => {
+        document.body.innerHTML = `
+        <div id="not-matched"></div>
+        `;
+
+        const ruleText = 'example.org$$html';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0]).toBe(document.documentElement);
+    });
+
     it('checks complex selector with combinators (descendant)', () => {
         document.body.innerHTML = `
         <div class="container">
