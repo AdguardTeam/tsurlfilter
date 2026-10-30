@@ -1230,6 +1230,33 @@ describe('HTML filtering rules (content rules)', () => {
         });
     });
 
+    it('correctly parses html rules - regexp-like [tag-content] value stays literal', () => {
+        // `[tag-content="/ads/"]` matches the literal substring `/ads/`, not
+        // the regexp /ads/. The converter escapes the value, so `:contains()`
+        // compiles an escaped regexp and the literal text is matched
+        // (CoreLibs parity).
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$div[tag-content="/ads/"]',
+        );
+
+        expect(convertedRuleText).toBe(String.raw`example.org$$div:contains(/\/ads\//)`);
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selectorList = rule.getHtmlSelectorList();
+        const { specialSelectors } = selectorList!.selectors[0][0];
+
+        expect(specialSelectors).toHaveLength(1);
+        expect(specialSelectors[0].name).toBe(HtmlSpecialSelectorName.Contains);
+
+        const { value } = specialSelectors[0];
+        expect(value).toBeInstanceOf(RegExp);
+
+        // The literal substring `/ads/` matches
+        expect((value as RegExp).test('text with /ads/ inside')).toBe(true);
+        // The bare word `ads` does not match
+        expect((value as RegExp).test('text with only ads inside')).toBe(false);
+    });
+
     it('correctly parses html rules - contains with quoted regexp argument (literal)', () => {
         // A quoted regexp-lookalike is NOT a regexp: the wrapping quotes
         // are literal characters of the matched text (CoreLibs parity)

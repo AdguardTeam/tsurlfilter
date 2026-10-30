@@ -164,6 +164,40 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(example)'],
                     },
 
+                    // `[tag-content]` with a value that looks like a regexp literal: the value is a
+                    // literal substring, so it is emitted as an escaped regexp and stays literal
+                    {
+                        actual: '$$div[tag-content="/ads/"]',
+                        expected: [String.raw`$$div:contains(/\/ads\//)`],
+                    },
+
+                    // `[tag-content]` with a regexp-like value containing regexp specials: the
+                    // backslash is preserved and escaped together with the other special characters
+                    {
+                        actual: String.raw`$$div[tag-content="/a\d+/"]`,
+                        expected: [String.raw`$$div:contains(/\/a\\d\+\//)`],
+                    },
+
+                    // `[tag-content]` with a regexp-like value and a flag tail: `SimpleRegex.fromLiteral()`
+                    // treats it as a regexp literal too, so it is escaped as well
+                    {
+                        actual: '$$div[tag-content="/ads/i"]',
+                        expected: [String.raw`$$div:contains(/\/ads\/i/)`],
+                    },
+
+                    // `[tag-content]` with a leading slash but no closing slash: not a regexp literal,
+                    // so the raw value is kept
+                    {
+                        actual: '$$div[tag-content="/ads"]',
+                        expected: ['$$div:contains(/ads)'],
+                    },
+
+                    // `[tag-content]` with a plain value: the raw value is kept
+                    {
+                        actual: '$$div[tag-content="ads"]',
+                        expected: ['$$div:contains(ads)'],
+                    },
+
                     // `[tag-content]` special attribute selector - multiple usages are merged into
                     // a single regex `:contains()`, with each literal as a lookahead: CoreLibs allows
                     // at most one literal `:contains()` per selector

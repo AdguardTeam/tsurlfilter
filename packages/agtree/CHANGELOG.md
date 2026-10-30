@@ -22,6 +22,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `[tag-content]` values that look like regular expressions, e.g.
+  `/ads/`, are now escaped when converted to a standalone
+  `:contains()` argument during ADG→ADG conversion, so they still
+  match the literal text.
+
 ### Security
 
 ## [4.3.0] - 2026-10-14

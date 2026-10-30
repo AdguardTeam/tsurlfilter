@@ -32,6 +32,7 @@ import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering
 import { AdblockSyntax } from '../../utils/adblockers';
 import {
     BACKSLASH,
+    CLOSE_SQUARE_BRACKET,
     COLON,
     DOUBLE_QUOTE,
     EMPTY,
@@ -410,10 +411,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Handles special attribute selectors during AdGuard to AdGuard conversion:
      * - `[tag-content="content"]` -> `:contains(content)`
-     *   direct conversion, no changes to value. The value is emitted raw:
-     *   any quotes in it are literal characters of the text to match, not
-     *   a transport encoding to strip later. This mirrors CoreLibs, which
-     *   never unquotes `:contains()` arguments.
+     *   direct conversion, no changes to value. Any quotes in the value are
+     *   literal characters of the text to match, not a transport encoding to
+     *   strip later. This mirrors CoreLibs, which never unquotes `:contains()`
+     *   arguments. For AdGuard to AdGuard conversion the value is emitted by
+     *   {@link HtmlRuleConverter.appendSpecialAttributePseudoClasses}, which
+     *   turns a value that looks like a regular expression literal into an
+     *   escaped regular expression, so that it still matches literally.
      * - `[wildcard="*content*"]` -> `:contains(/*.content*./s)`
      *   convert search pattern to regular expression
      * - `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/s)`
@@ -1151,7 +1155,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * pseudo-class ("chain-safe"):
      *
      * - it must not be empty and must not start with a slash — a leading `/`
-     *   makes the argument look like a regular expression to CoreLibs;
+     *   makes the argument look like a regular expression to CoreLibs. Such a
+     *   value is still valid as the only special selector, and
+     *   {@link HtmlRuleConverter.appendSpecialAttributePseudoClasses} emits it
+     *   as an escaped regular expression so that it matches literally;
      * - it must not contain quotes, parentheses, brackets, braces,
      *   backslashes or colons — CoreLibs' special pseudo-class argument
      *   scanner splits a `:contains()` chain at the next free `:`, and any
@@ -1175,6 +1182,66 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
+     * Checks whether a `[tag-content]` value would be compiled into a `RegExp`
+     * by `:contains()` consumers, i.e. whether it looks like a regular
+     * expression literal.
+     *
+     * The detection mirrors {@link SimpleRegex.fromLiteral} from
+     * `@adguard/tsurlfilter`, which decides whether the emitted `:contains()`
+     * argument becomes a `RegExp`:
+     *
+     * - the value starts with `/`;
+     * - a later `/` exists that is not escaped by a backslash and is not inside
+     *   a `[...]` character class;
+     * - the text between the slashes is not empty;
+     * - `new RegExp(pattern, flags)` compiles without throwing, where `flags`
+     *   is the text after the closing slash (possibly empty).
+     *
+     * The check is kept in sync with `SimpleRegex.fromLiteral()` on purpose:
+     * `@adguard/agtree` must not depend on `@adguard/tsurlfilter`.
+     *
+     * @param value `[tag-content]` value to check.
+     *
+     * @returns `true` if the value looks like a regular expression literal,
+     * otherwise `false`.
+     */
+    private static isRegexpLikeLiteral(value: string): boolean {
+        if (value.length < 2 || !value.startsWith(SLASH)) {
+            return false;
+        }
+
+        let pattern = '';
+        let flags = '';
+        let inCharClass = false;
+
+        for (let i = 1; i < value.length; i += 1) {
+            const char = value.charAt(i);
+            if (char === OPEN_SQUARE_BRACKET && value[i - 1] !== BACKSLASH) {
+                inCharClass = true;
+            } else if (char === CLOSE_SQUARE_BRACKET && value[i - 1] !== BACKSLASH) {
+                inCharClass = false;
+            } else if (char === SLASH && value[i - 1] !== BACKSLASH && !inCharClass) {
+                pattern = value.slice(1, i);
+                flags = value.slice(i + 1);
+                break;
+            }
+        }
+
+        // An empty pattern is not a regular expression literal
+        if (!pattern) {
+            return false;
+        }
+
+        try {
+            // eslint-disable-next-line no-new
+            new RegExp(pattern, flags);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
      * Emits the pseudo-classes converted from the deferred special attribute
      * selectors ([tag-content], [wildcard], [min-length], [max-length]) of a
      * single complex selector, honoring the constraints of CoreLibs' HTML
@@ -1186,7 +1253,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *   `[max-length="..."]` as two regex `:contains()` pseudo-classes;
      * - a literal `:contains()` may be chained in front of a single regex
      *   `:contains()` only when it is chain-safe, see
-     *   {@link HtmlRuleConverter.isChainSafeLiteral}.
+     *   {@link HtmlRuleConverter.isChainSafeLiteral};
+     * - a standalone `[tag-content]` value that looks like a regular expression
+     *   literal (e.g. `/ads/`) is emitted as an escaped regular expression
+     *   (e.g. `/\/ads\//`), because `:contains()` consumers compile such an
+     *   argument into a `RegExp` and the `[tag-content]` value must stay a
+     *   literal substring match — see
+     *   {@link HtmlRuleConverter.isRegexpLikeLiteral}.
      *
      * Combinations which cannot be represented as such a chain — an unsafe
      * literal plus any regex-like constraint, or several regex-like
@@ -1238,9 +1311,19 @@ export class HtmlRuleConverter extends RuleConverterBase {
             && (literalChainSafe || !needsRegexContains);
 
         if (emitLiteralStandalone) {
+            const literal = tagContentValues[0];
+
+            // A value that looks like a regular expression literal must be
+            // emitted as an escaped regular expression: `:contains()`
+            // consumers compile such an argument into a `RegExp`, but a
+            // `[tag-content]` value is always a literal substring match.
+            const argument = HtmlRuleConverter.isRegexpLikeLiteral(literal)
+                ? `${SLASH}${RegExpUtils.escapeRegexSpecials(literal)}${SLASH}`
+                : literal;
+
             convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
                 AdgPseudoClasses.Contains,
-                tagContentValues[0],
+                argument,
             ));
         }
 
