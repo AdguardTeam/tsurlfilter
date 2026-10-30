@@ -235,6 +235,26 @@ describe('Html rule selector', () => {
         expect(notMatchedElements).toHaveLength(0);
     });
 
+    it.each(['g', 'y'])('checks special selector :contains() - regexp with %s flag matches statelessly', (flag) => {
+        document.body.innerHTML = `
+        <div id="contains-regexp-${flag}-1" class="test-class">foo</div>
+        <div id="contains-regexp-${flag}-2" class="test-class">foo</div>
+        <div id="contains-regexp-${flag}-3" class="test-class">foo</div>
+        `;
+
+        const ruleText = `example.org$$div:contains(/foo/${flag})`;
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(3);
+        expect(matchedElements!.map((element) => element.id)).toEqual([
+            `contains-regexp-${flag}-1`,
+            `contains-regexp-${flag}-2`,
+            `contains-regexp-${flag}-3`,
+        ]);
+    });
+
     it('checks special selector :contains() - converted from [wildcard]', () => {
         document.body.innerHTML = `
         <div id="contains-wildcard" class="test-class">Welcome to AdGuard!</div>

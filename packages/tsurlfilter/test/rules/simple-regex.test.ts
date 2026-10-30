@@ -190,7 +190,7 @@ describe('SimpleRegex.patternFromString', () => {
 describe('SimpleRegex.fromLiteral', () => {
     test.each([
         { input: '/test/', output: /test/ },
-        { input: '/test/gi', output: /test/gi },
+        { input: '/test/gi', output: /test/i },
         { input: 'plain string', output: 'plain string' },
         { input: '/unclosed', output: '/unclosed' },
         { input: '/invalid/xyz', output: '/invalid/xyz' },
@@ -204,6 +204,37 @@ describe('SimpleRegex.fromLiteral', () => {
         } else {
             expect(result).toEqual(output);
         }
+    });
+
+    test.each([
+        { input: '/foo/g', expectedFlags: '' },
+        { input: '/foo/y', expectedFlags: '' },
+        { input: '/foo/gi', expectedFlags: 'i' },
+        { input: '/foo/is', expectedFlags: 'is' },
+        { input: '/foo/gims', expectedFlags: 'is' },
+        { input: '/foo/mu', expectedFlags: 'u' },
+        { input: '/foo/gu', expectedFlags: 'u' },
+        { input: '/foo/v', expectedFlags: 'v' },
+    ])("keeps only the 'i', 's', 'u', and 'v' flags for '$input'", ({ input, expectedFlags }) => {
+        const result = SimpleRegex.fromLiteral(input);
+
+        expect(result).toBeInstanceOf(RegExp);
+        expect((result as RegExp).flags).toBe(expectedFlags);
+    });
+
+    it('keeps the `u` flag so that Unicode properties are parsed', () => {
+        const result = SimpleRegex.fromLiteral('/\\p{L}+/u') as RegExp;
+
+        expect(result.flags).toBe('u');
+        expect(result.test('абв')).toBe(true);
+    });
+
+    it('does not advance lastIndex on repeated test() calls', () => {
+        const result = SimpleRegex.fromLiteral('/foo/g') as RegExp;
+
+        expect(result.test('foo')).toBe(true);
+        expect(result.test('foo')).toBe(true);
+        expect(result.test('foo')).toBe(true);
     });
 });
 

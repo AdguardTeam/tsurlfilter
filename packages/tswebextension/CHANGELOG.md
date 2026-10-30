@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTML filtering `:contains()` regexp arguments now ignore all flags except
+  `i`, `s`, and the Unicode flags `u` and `v`. Matching is stateless and does
+  not depend on the previously matched element (via [@adguard/tsurlfilter]).
 - HTML filtering rules with `:-abp-contains()` and `:has-text()` now work,
   and HTML filtering rules with an empty `:contains()` argument are now
   rejected (via [@adguard/tsurlfilter]).
