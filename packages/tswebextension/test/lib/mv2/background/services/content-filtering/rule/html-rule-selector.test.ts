@@ -193,6 +193,36 @@ describe('Html rule selector', () => {
         expect(notMatchedElements).toHaveLength(0);
     });
 
+    it('checks special selector :contains() - spaces around a quoted argument', () => {
+        document.body.innerHTML = `
+        <div id="contains-quoted" class="test-class">text "foo" text</div>
+        `;
+
+        const ruleText = 'example.org$$div:contains( "foo" )';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('contains-quoted');
+
+        // No space after the closing quote
+        document.body.innerHTML = `
+        <div id="no-space-after" class="test-class">text "foo"text</div>
+        `;
+
+        const noSpaceAfterElements = selector.getMatchedElements(document);
+        expect(noSpaceAfterElements).toHaveLength(0);
+
+        // No quotes around the text
+        document.body.innerHTML = `
+        <div id="no-quotes" class="test-class">text foo text</div>
+        `;
+
+        const noQuotesElements = selector.getMatchedElements(document);
+        expect(noQuotesElements).toHaveLength(0);
+    });
+
     it('checks special selector :contains() - regexp', () => {
         document.body.innerHTML = `
         <div id="contains-regexp" class="test-class">User123 logged in.</div>
