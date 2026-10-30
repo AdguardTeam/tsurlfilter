@@ -28,6 +28,7 @@ import {
     CHILD_FIELD_SOURCE_START,
     NO_VALUE,
 } from '../../../parser/css/selector-list/constants';
+import { DOUBLE_QUOTE } from '../../../utils/constants';
 import { ValueAstBuilder } from '../../misc/value';
 
 /**
@@ -41,6 +42,15 @@ import { ValueAstBuilder } from '../../misc/value';
  * For quoted attribute values the parser stores offsets that already
  * exclude the surrounding quote characters, so `source.slice()` yields the
  * unquoted content directly.
+ *
+ * In a double-quoted value, the legacy AdGuard `""` escape is decoded to a
+ * single `"`, and single-quoted values keep `""` as two literal double
+ * quotes. This decoding applies to AdGuard HTML filtering mode only: only
+ * `AdgHtmlFilteringParser` runs `SelectorListParser` with `isAdg`. Other
+ * selector lists keep no `""` in a value, because the standard scanner
+ * processes both quote characters itself.
+ *
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#tag-content}
  *
  * @param source Original source string.
  * @param data Int32Array buffer with parsed data.
@@ -92,6 +102,13 @@ export function buildAttributeSelector(
     ) as Value<AttributeSelectorOperatorValue>;
 
     const value = ValueAstBuilder.parse(source, valueStart, valueEnd, isLocIncluded);
+
+    // Value offsets exclude the quotes, so the opening quote is at
+    // `valueStart - 1`. The legacy AdGuard `""` escape applies to
+    // double-quoted values only; see the function JSDoc.
+    if (source[valueStart - 1] === DOUBLE_QUOTE) {
+        value.value = value.value.replace(/""/g, DOUBLE_QUOTE);
+    }
 
     const node: AttributeSelectorWithValue = {
         type: NodeType.AttributeSelector,

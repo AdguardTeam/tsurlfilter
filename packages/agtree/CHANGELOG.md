@@ -58,6 +58,23 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   quotes within the value (e.g. `[tag-content='"advert"']` →
   `:contains("advert")`) are literal characters of the text to match,
   not a transport encoding to strip later, mirroring CoreLibs.
+- Legacy `""` double-quote escaping in HTML filtering attribute values is
+  now decoded only for double-quoted values, and exactly once. A
+  single-quoted value such as `$$div[tag-content='x===""']` now converts
+  to `$$div:contains(x==="")` instead of collapsing the two literal
+  double quotes into one. A normal attribute selector next to a special
+  one, e.g. `$$div[data-x="a""b"][tag-content="c""d"]`, now converts to
+  `$$div[data-x="a""b"]:contains(c"d)` instead of doubling the `""`
+  escape. The same rule applies to `[wildcard]` values.
+- The `value` of a double-quoted attribute selector in the AST now holds
+  the decoded text: `$$div[data-x="a""b"]` gives `a"b` instead of `a""b`.
+  As a result, parsing and then generating such a rule no longer doubles
+  the `""` escape. Attribute values are quoted unconditionally when
+  generated, so a value that starts and ends with a literal double quote
+  keeps it: `$$div[data-x='"a"']` now converts to
+  `$$div[data-x="""a"""]`, and to `##^div[data-x="\"a\""]` in uBlock
+  syntax, instead of `$$div[data-x="a"]`. This changes the AST built by
+  `5.0.0-alpha.0`.
 - AdGuard HTML filtering rules whose bodies cannot be parsed as CSS
   selector lists, even leniently, are now kept as-is during conversion
   instead of throwing a parse error, e.g. `[tag-content]` with escaped

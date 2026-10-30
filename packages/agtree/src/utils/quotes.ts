@@ -320,87 +320,7 @@ export class QuoteUtils {
      * @note This function is intended to be used on whole attribute selector or whole selector strings.
      */
     public static escapeAttributeDoubleQuotes(selector: string): string {
-        const nestingBlockPairs = new Map<string, string>([
-            [OPEN_PARENTHESIS, CLOSE_PARENTHESIS],
-            [OPEN_SQUARE_BRACKET, CLOSE_SQUARE_BRACKET],
-            [SINGLE_QUOTE, SINGLE_QUOTE],
-            [DOUBLE_QUOTE, DOUBLE_QUOTE],
-            [BACKTICK_QUOTE, BACKTICK_QUOTE],
-        ]);
-        const nestingBlockStack: string[] = [];
-        const buffer: string[] = [];
-
-        for (let i = 0; i < selector.length; i += 1) {
-            const char = selector[i];
-
-            // Check if we are inside of an attribute selector's value
-            if (
-                // nesting will be 2 levels deep if we are inside of attribute selector's value
-                nestingBlockStack.length === 2
-                // and the outer block is an attribute selector
-                && nestingBlockStack[0] === CLOSE_SQUARE_BRACKET
-                // and the inner block is a double quote
-                && nestingBlockStack[1] === DOUBLE_QUOTE
-            ) {
-                // We found `""` inside of attribute selector's value
-                if (
-                    char === DOUBLE_QUOTE
-                    && selector[i + 1] === DOUBLE_QUOTE
-                ) {
-                    // Convert `""` to `\"`
-                    buffer.push(ESCAPE_CHARACTER);
-                    buffer.push(DOUBLE_QUOTE);
-
-                    // Skip the next double quote
-                    i += 1;
-
-                    continue;
-                }
-
-                // An unpaired double quote closes the attribute selector's
-                // value, so the nesting state should be left. Otherwise, an
-                // attribute selector that follows a quoted one (e.g. the
-                // `[tag-content]` in `[class="a"][tag-content="b""c"]`) would
-                // still be handled as lying inside the first selector's value,
-                // so the `""` doubling there would be paired with shifted
-                // quotes and escaped incorrectly.
-                if (char === DOUBLE_QUOTE) {
-                    nestingBlockStack.pop();
-                    buffer.push(char);
-                    continue;
-                }
-
-                // Normal character inside of attribute selector's value
-                buffer.push(char);
-                continue;
-            }
-
-            // Handle entering nesting blocks
-            if (
-                nestingBlockPairs.has(char)
-                && selector[i - 1] !== ESCAPE_CHARACTER
-            ) {
-                nestingBlockStack.push(nestingBlockPairs.get(char)!);
-                buffer.push(char);
-                continue;
-            }
-
-            // Handle exiting nesting blocks
-            if (
-                nestingBlockStack.length > 0
-                && char === nestingBlockStack[nestingBlockStack.length - 1]
-                && selector[i - 1] !== ESCAPE_CHARACTER
-            ) {
-                nestingBlockStack.pop();
-                buffer.push(char);
-                continue;
-            }
-
-            // Normal character
-            buffer.push(char);
-        }
-
-        return buffer.join(EMPTY);
+        return QuoteUtils.processAttributeDoubleQuotes(selector, true);
     }
 
     /**
@@ -425,6 +345,27 @@ export class QuoteUtils {
      * @note This function is intended to be used on whole attribute selector or whole selector strings.
      */
     public static unescapeAttributeDoubleQuotes(selector: string): string {
+        return QuoteUtils.processAttributeDoubleQuotes(selector, false);
+    }
+
+    /**
+     * Walks a selector and converts double-quote pairs inside attribute
+     * selector values only, without touching the rest of the selector.
+     *
+     * When `isEscaping` is `true`, a legacy `""` pair becomes `\"`, which is
+     * valid CSS. Otherwise an escaped `\"` pair becomes the legacy `""`.
+     *
+     * The scanner tracks the nesting blocks (parentheses, square brackets,
+     * quotes, backticks), so a pair is converted only when it is inside an
+     * attribute selector value.
+     *
+     * @param selector CSS selector string.
+     * @param isEscaping Conversion direction: `true` for `""` -> `\"`,
+     * `false` for `\"` -> `""`.
+     *
+     * @returns Converted CSS selector.
+     */
+    private static processAttributeDoubleQuotes(selector: string, isEscaping: boolean): string {
         const nestingBlockPairs = new Map<string, string>([
             [OPEN_PARENTHESIS, CLOSE_PARENTHESIS],
             [OPEN_SQUARE_BRACKET, CLOSE_SQUARE_BRACKET],
@@ -447,16 +388,24 @@ export class QuoteUtils {
                 // and the inner block is a double quote
                 && nestingBlockStack[1] === DOUBLE_QUOTE
             ) {
-                // We found `\"` inside of attribute selector's value
-                if (
-                    char === ESCAPE_CHARACTER
-                    && selector[i + 1] === DOUBLE_QUOTE
-                ) {
-                    // Convert `\"` to `""`
-                    buffer.push(DOUBLE_QUOTE);
-                    buffer.push(DOUBLE_QUOTE);
+                // We found `""` (or `\"`, depending on the direction)
+                // inside of attribute selector's value
+                const isPair = isEscaping
+                    ? char === DOUBLE_QUOTE && selector[i + 1] === DOUBLE_QUOTE
+                    : char === ESCAPE_CHARACTER && selector[i + 1] === DOUBLE_QUOTE;
 
-                    // Skip the next double quote
+                if (isPair) {
+                    if (isEscaping) {
+                        // Convert `""` to `\"`
+                        buffer.push(ESCAPE_CHARACTER);
+                        buffer.push(DOUBLE_QUOTE);
+                    } else {
+                        // Convert `\"` to `""`
+                        buffer.push(DOUBLE_QUOTE);
+                        buffer.push(DOUBLE_QUOTE);
+                    }
+
+                    // Skip the next character of the pair
                     i += 1;
 
                     continue;
@@ -465,10 +414,10 @@ export class QuoteUtils {
                 // An unpaired double quote closes the attribute selector's
                 // value, so the nesting state should be left. Otherwise, an
                 // attribute selector that follows a quoted one (e.g. the
-                // `[tag-content]` in `[class="a"][tag-content="b\"c"]`) would
+                // `[tag-content]` in `[class="a"][tag-content="b""c"]`) would
                 // still be handled as lying inside the first selector's value,
-                // so the `\"` escaping there would be paired with shifted
-                // quotes and unescaped incorrectly.
+                // so the quote pair there would be read with shifted quotes
+                // and converted incorrectly.
                 if (char === DOUBLE_QUOTE) {
                     nestingBlockStack.pop();
                     buffer.push(char);

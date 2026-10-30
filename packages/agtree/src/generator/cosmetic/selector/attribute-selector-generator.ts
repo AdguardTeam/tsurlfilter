@@ -1,11 +1,12 @@
 import { type AttributeSelector } from '../../../nodes';
 import {
     CLOSE_SQUARE_BRACKET,
+    DOUBLE_QUOTE,
     EMPTY,
     OPEN_SQUARE_BRACKET,
     SPACE,
 } from '../../../utils/constants';
-import { QuoteType, QuoteUtils } from '../../../utils/quotes';
+import { QuoteUtils } from '../../../utils/quotes';
 import { BaseGenerator } from '../../base-generator';
 import { ValueGenerator } from '../../misc/value-generator';
 
@@ -30,7 +31,14 @@ export class AttributeSelectorGenerator extends BaseGenerator {
             result.push(ValueGenerator.generate(node.operator));
 
             const generatedValue = ValueGenerator.generate(node.value);
-            const quotedValue = QuoteUtils.setStringQuoteType(generatedValue, QuoteType.Double);
+
+            // AST values never include their quotes, so the value is always
+            // quoted again. `QuoteUtils.setStringQuoteType()` cannot be used
+            // here: it keeps a value that starts and ends with a double quote
+            // as an already quoted one, which loses those literal quotes.
+            const quotedValue = DOUBLE_QUOTE
+                + QuoteUtils.escapeUnescapedOccurrences(generatedValue, DOUBLE_QUOTE)
+                + DOUBLE_QUOTE;
             result.push(quotedValue);
 
             if (node.flag) {

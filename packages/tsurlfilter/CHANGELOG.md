@@ -44,6 +44,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTML filtering native selectors now keep literal double quotes in
+  attribute values: `$$div[data-x="""a"""]` now builds
+  `div[data-x="\"a\""]` instead of `div[data-x="a"]`, and
+  `$$div[data-x='\"a\"']` keeps its quotes as well. Previously a value
+  that starts and ends with a quote was treated as an already quoted one,
+  so the quotes were lost.
 - Empty `:contains()` arguments in HTML filtering rules are now rejected.
 - `:-abp-contains()` and `:has-text()` are now treated as aliases of
   `:contains()` in HTML filtering rules.
