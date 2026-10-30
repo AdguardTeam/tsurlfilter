@@ -620,4 +620,58 @@ describe('Test cosmetic engine - HTML filtering rules', () => {
         expect(result.Html.specific).toHaveLength(1);
         expect(result.Html.generic).toHaveLength(0);
     });
+
+    it('checks cosmetic HTML exceptions with unquoted attribute bodies', () => {
+        const rule = 'example.org$$div[class=ad]';
+        const exceptionRule = 'example.org$@$div[class=ad]';
+        const rulesLocal = [
+            rule,
+            exceptionRule,
+        ];
+        const rawFilterListLocal = rulesLocal.join('\n');
+        const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rawFilterListLocal)]);
+        const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
+        expect(result.Html.specific).toHaveLength(0);
+        expect(result.Html.generic).toHaveLength(0);
+    });
+
+    it.each([
+        ['example.org$$div[class=ad]', 'example.org$@$div[class="ad"]'],
+        ['example.org$$div[class="ad"]', 'example.org$@$div[class=ad]'],
+    ])('cancels HTML rule %s with equivalent quoted-body exception %s', (rule, exceptionRule) => {
+        const rawFilterListLocal = [rule, exceptionRule].join('\n');
+        const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rawFilterListLocal)]);
+        const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
+        expect(result.Html.specific).toHaveLength(0);
+        expect(result.Html.generic).toHaveLength(0);
+    });
+
+    it.each([
+        ['example.org$$div:-abp-contains(foo)', 'example.org$@$div:contains(foo)'],
+        ['example.org$$div:contains(foo)', 'example.org$@$div:-abp-contains(foo)'],
+        ['example.org$$div:has-text(foo)', 'example.org$@$div:contains(foo)'],
+        ['example.org$$div:contains(foo)', 'example.org$@$div:has-text(foo)'],
+        ['example.org$$div:has-text(foo)', 'example.org$@$div:-abp-contains(foo)'],
+        ['example.org$$div:-abp-contains(foo)', 'example.org$@$div:has-text(foo)'],
+    ])('cancels HTML rule %s with equivalent special pseudo-class exception %s', (rule, exceptionRule) => {
+        const rawFilterListLocal = [rule, exceptionRule].join('\n');
+        const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rawFilterListLocal)]);
+        const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
+        expect(result.Html.specific).toHaveLength(0);
+        expect(result.Html.generic).toHaveLength(0);
+    });
+
+    it('does not normalize special pseudo-class names inside a raw :contains() argument', () => {
+        const rule = 'example.org$$div:contains(:-abp-contains(foo))';
+        const exceptionRule = 'example.org$@$div:contains(:has-text(foo))';
+        const rulesLocal = [
+            rule,
+            exceptionRule,
+        ];
+        const rawFilterListLocal = rulesLocal.join('\n');
+        const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rawFilterListLocal)]);
+        const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
+        expect(result.Html.specific).toHaveLength(1);
+        expect(result.Html.generic).toHaveLength(0);
+    });
 });

@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Empty `:contains()` arguments in HTML filtering rules are now rejected.
 - `:-abp-contains()` and `:has-text()` are now treated as aliases of
   `:contains()` in HTML filtering rules.
+- HTML filtering exception rules now cancel blocking rules with an equivalent
+  body, regardless of attribute value quoting and of the `:contains()`,
+  `:-abp-contains()`, and `:has-text()` aliases (AG-61475).
 
 ### Security
 
