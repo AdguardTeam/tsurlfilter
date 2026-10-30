@@ -8,7 +8,7 @@ import {
 } from 'vitest';
 
 import { extCssInjectedApply, extCssInjectedDispose } from '../../../../src/lib/common/extcss-apply-fn';
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
+import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';

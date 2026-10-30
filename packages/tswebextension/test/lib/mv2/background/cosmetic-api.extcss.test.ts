@@ -7,7 +7,7 @@ import {
     vi,
 } from 'vitest';
 
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
+import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { tabsApi } from '../../../../src/lib/mv2/background/api';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
@@ -290,6 +290,33 @@ describe('CosmeticApi.applyExtCss', () => {
 
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
         expect(frameContext.extCssApplied).toBe(true);
+    });
+
+    it('keeps the in-flight marker while a retry is pending', async () => {
+        vi.useFakeTimers();
+
+        try {
+            const frameContext = makeFrameContext(makePrepared(
+                ['.ad:has(.child) { display: none !important; }'],
+            ));
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+            vi.mocked(TabsApi.injectScript)
+                .mockRejectedValue(new Error('Missing host permission'));
+
+            // The attempt fails and schedules its retry, so the marker must
+            // stay set: an event arriving in the gap would otherwise send the
+            // same payload again and start a second chain.
+            await CosmeticApi.applyExtCss(1, 0);
+
+            expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+            expect(frameContext.extCssInjectionVersion).toBeDefined();
+
+            await CosmeticApi.applyExtCss(1, 0);
+
+            expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('logs at debug after the retry budget', async () => {

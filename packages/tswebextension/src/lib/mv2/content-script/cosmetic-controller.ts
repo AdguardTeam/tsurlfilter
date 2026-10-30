@@ -28,11 +28,6 @@ export class CosmeticController {
     private tries = 0;
 
     /**
-     * Module that collects statistics about the usage of native CSS rules.
-     */
-    private cssHitsCounter?: CssHitsCounter;
-
-    /**
      * Collects short-lived elements created before the counter initialization.
      */
     private pendingProbesCollector = new PendingProbesCollector();
@@ -117,9 +112,7 @@ export class CosmeticController {
         }
 
         if (areHitsStatsCollected) {
-            this.cssHitsCounter = CosmeticController.createCssHitsCounter(
-                this.pendingProbesCollector,
-            );
+            CosmeticController.createCssHitsCounter(this.pendingProbesCollector);
         } else {
             this.pendingProbesCollector.stop();
         }

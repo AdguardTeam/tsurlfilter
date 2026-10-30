@@ -2,7 +2,7 @@ import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
 import { USER_FILTER_ID } from '../../common/constants';
 import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParams } from '../../common/cosmetic-api';
-import { EXTCSS_PROTOCOL } from '../../common/message-constants';
+import { EXTCSS_PROTOCOL } from '../../common/extcss-protocol';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { CssCapabilities } from '../../common/utils/css-capabilities';
 import { logger } from '../../common/utils/logger';
@@ -480,8 +480,9 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         // An injection for this document is already in flight, so a second one
-        // would send the same payload again and start its own retry chain.
-        if (frameContext.extCssInjectionVersion === extCssDocumentVersion) {
+        // would send the same payload again and start its own retry chain. A
+        // retry continues the chain it belongs to and must pass this check.
+        if (tries === 0 && frameContext.extCssInjectionVersion === extCssDocumentVersion) {
             return;
         }
 
@@ -498,7 +499,13 @@ export class CosmeticApi extends CosmeticApiCommon {
             tries,
         );
 
-        if (frameContext.extCssInjectionVersion === extCssDocumentVersion) {
+        // Keep the marker until the chain ends: a failed attempt schedules its
+        // retry after a delay, and an event arriving in that gap must not start
+        // a second chain. The last attempt has no retry, so it clears the
+        // marker and lets a later event try again.
+        if (frameContext.extCssInjectionVersion === extCssDocumentVersion
+            && (isInjected || tries >= CosmeticApi.INJECTION_MAX_TRIES)
+        ) {
             frameContext.extCssInjectionVersion = undefined;
         }
 

@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { extCssInjectedApply } from '../../../src/lib/common/extcss-apply-fn';
-import { EXTCSS_PROTOCOL } from '../../../src/lib/common/message-constants';
+import { EXTCSS_PROTOCOL } from '../../../src/lib/common/extcss-protocol';
 import { serializeExtCssForCode } from '../../../src/lib/mv2/background/extcss-code';
 
 import { APPLY_FN_MAX_BYTES } from './extcss-payload-size';

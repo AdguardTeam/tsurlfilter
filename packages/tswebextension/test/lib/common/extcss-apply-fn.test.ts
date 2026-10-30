@@ -12,7 +12,7 @@ import {
 } from 'vitest';
 
 import { extCssInjectedApply, extCssInjectedDispose } from '../../../src/lib/common/extcss-apply-fn';
-import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../src/lib/common/message-constants';
+import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../src/lib/common/extcss-protocol';
 
 import { resetExtCssState } from './helpers';
 
@@ -166,15 +166,38 @@ describe('extCssInjectedApply — re-apply in the same document', () => {
         const w = window as unknown as Record<string, unknown>;
         const retainedBefore = w[EXTCSS_PROTOCOL.instanceKey];
 
-        // MV2 re-injects the same rule strings for every completed request in
-        // Firefox. dispose() would revert the element to its pre-extCSS
-        // `cssText` snapshot, so a real re-apply would drop `color` and re-run
-        // the whole engine.
+        // The background records an applied rule set and skips it, but a
+        // frame with no context has no state to record, and the content script
+        // can ask for its data again, so the payload still guards itself.
+        // dispose() would revert the element to its pre-extCSS `cssText`
+        // snapshot, so a real re-apply would drop `color` and re-run the whole
+        // engine.
         extCssInjectedApply(rules, false, EXTCSS_PROTOCOL);
 
         expect(w[EXTCSS_PROTOCOL.instanceKey]).toBe(retainedBefore);
         expect(ad.style.getPropertyValue('color')).toBe('red');
         expect(ad.style.getPropertyValue('display')).toBe('none');
+    });
+
+    it('hands `:remove()` nodes over to the content script', () => {
+        document.body.innerHTML = '<div class="ad">ad</div>';
+
+        const ad = document.querySelector('.ad') as HTMLElement;
+
+        // Statistics on: the callback is only registered for the counter, and
+        // the counter is only created when the stats are collected.
+        extCssInjectedApply(['.ad:remove()'], true, EXTCSS_PROTOCOL);
+
+        // The engine removes the node itself, so the counter must not put it
+        // back as a probe. It reads the node from this shared set, because the
+        // payload runs outside the counter.
+        expect(ad.parentNode).toBeNull();
+
+        const w = window as unknown as Record<string, WeakSet<Element> | undefined>;
+        const removedElements = w[EXTCSS_PROTOCOL.removedElementsKey];
+
+        expect(removedElements).toBeInstanceOf(WeakSet);
+        expect(removedElements?.has(ad)).toBe(true);
     });
 });
 
@@ -485,6 +508,8 @@ describe('extCssInjectedApply — CSS hits stats', () => {
             messageType: 'customCssHitsType',
             // eslint-disable-next-line no-underscore-dangle -- deliberate test marker key
             instanceKey: '__customExtCss',
+            // eslint-disable-next-line no-underscore-dangle -- deliberate test marker key
+            removedElementsKey: '__customExtCssRemovedElements',
         } as unknown as ExtCssProtocol;
         const customMarkerRule = '.ad:has(.child) { display: none !important; '
             + 'content: \'custommarker1%3B2\' !important; }';

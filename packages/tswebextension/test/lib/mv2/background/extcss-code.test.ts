@@ -16,7 +16,7 @@ import {
     vi,
 } from 'vitest';
 
-import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../../src/lib/common/message-constants';
+import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../../src/lib/common/extcss-protocol';
 import { serializeExtCssDisposeForCode, serializeExtCssForCode } from '../../../../src/lib/mv2/background/extcss-code';
 import { APPLY_FN_MAX_BYTES } from '../../common/extcss-payload-size';
 

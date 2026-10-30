@@ -43,8 +43,8 @@ pnpm --filter @adguard/tswebextension test:e2e:firefox
 ```
 
 `pnpm test`, `pnpm test:ci`, and `pnpm test:prod` load only
-`vitest.config.ts`, so they stay Chromium-only. The Firefox specs run in the
-Docker CI stage.
+`vitest.config.ts`, so they do not run the `*.firefox.spec.ts` specs. Those
+run in the Docker CI stage.
 
 ## Verify canvas protection
 

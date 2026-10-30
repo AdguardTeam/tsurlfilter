@@ -1,6 +1,7 @@
 import { type IAffectedElement } from '@adguard/extended-css';
 
 import { CSS_HITS_MARKER_PREFIX, CSS_HITS_MARKER_PROPERTY, SEMICOLON } from '../constants';
+import { EXTCSS_PROTOCOL } from '../extcss-protocol';
 import { type RuleInfoBasic } from '../rule-info';
 
 import { HitsStorage } from './hits-storage';
@@ -156,14 +157,6 @@ export class CssHitsCounter {
      * may be applied later.
      */
     private countedProbes = new WeakSet<Element>();
-
-    /**
-     * Elements intentionally removed by ExtendedCss.
-     *
-     * ExtendedCss reports hits for them synchronously before removal, so the
-     * counter must not restore these detached elements to the DOM.
-     */
-    private extendedCssRemovedElements = new WeakSet<Element>();
 
     /**
      * Number of counting attempts already performed for each pending probe.
@@ -388,7 +381,7 @@ export class CssHitsCounter {
             // reports hits only, so the removal is tracked here.
             for (const rule of affectedEl.rules) {
                 if (rule.style?.remove === 'true') {
-                    this.extendedCssRemovedElements.add(affectedEl.node);
+                    CssHitsCounter.getExtendedCssRemovedElements().add(affectedEl.node);
                 }
             }
 
@@ -620,7 +613,7 @@ export class CssHitsCounter {
 
                         // Elements removed by ExtendedCss are reported by it,
                         // so they must not be put back into the page.
-                        if (this.extendedCssRemovedElements.has(node)) {
+                        if (CssHitsCounter.getExtendedCssRemovedElements().has(node)) {
                             continue;
                         }
 
@@ -1056,7 +1049,7 @@ export class CssHitsCounter {
 
                 // ExtendedCss already reported the hit and removed the
                 // element itself, so it must not be put back.
-                if (this.extendedCssRemovedElements.has(element)) {
+                if (CssHitsCounter.getExtendedCssRemovedElements().has(element)) {
                     settledProbes.add(probe);
                     continue;
                 }
@@ -1271,6 +1264,33 @@ export class CssHitsCounter {
      */
     private static getProbeRestoreTarget(target: Node): Node | null {
         return target instanceof Element && target.isConnected ? target : null;
+    }
+
+    /**
+     * Returns the set of elements that the background-injected ExtendedCss
+     * payload removed from the page for `:remove()` rules.
+     *
+     * The payload runs outside this class but in the same isolated world, so
+     * the set is shared through `window` under the protocol key. It is read on
+     * every check instead of captured once: the payload may fill it after the
+     * counter has started. The set is created here when nothing has filled it
+     * yet, and the payload reuses it when it later injects.
+     *
+     * ExtendedCss reports hits for these nodes synchronously before removal,
+     * so the counter must not restore these detached elements to the DOM.
+     *
+     * @returns The shared weak set of removed elements.
+     */
+    private static getExtendedCssRemovedElements(): WeakSet<Element> {
+        const w = window as unknown as Record<string, WeakSet<Element> | undefined>;
+        let removedElements = w[EXTCSS_PROTOCOL.removedElementsKey];
+
+        if (!removedElements) {
+            removedElements = new WeakSet<Element>();
+            w[EXTCSS_PROTOCOL.removedElementsKey] = removedElements;
+        }
+
+        return removedElements;
     }
 
     /**

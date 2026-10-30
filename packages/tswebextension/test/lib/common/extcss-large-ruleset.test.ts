@@ -11,7 +11,7 @@ import {
 } from 'vitest';
 
 import { extCssInjectedApply } from '../../../src/lib/common/extcss-apply-fn';
-import { EXTCSS_PROTOCOL } from '../../../src/lib/common/message-constants';
+import { EXTCSS_PROTOCOL } from '../../../src/lib/common/extcss-protocol';
 
 import { resetExtCssState } from './helpers';
 

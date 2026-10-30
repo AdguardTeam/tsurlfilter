@@ -7,7 +7,7 @@ import {
     vi,
 } from 'vitest';
 
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
+import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
 import { tabsApi } from '../../../../src/lib/mv2/background/api';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { type ConfigurationMV2Context } from '../../../../src/lib/mv2/background/configuration';

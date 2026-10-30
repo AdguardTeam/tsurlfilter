@@ -1,5 +1,5 @@
 import { extCssInjectedApply, extCssInjectedDispose } from '../../common/extcss-apply-fn';
-import { type ExtCssProtocol } from '../../common/message-constants';
+import { type ExtCssProtocol } from '../../common/extcss-protocol';
 
 /**
  * Replaces raw U+2028 and U+2029 line separators in JSON text with their

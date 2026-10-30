@@ -2,7 +2,7 @@ import { type ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
 
 import type { cssHitsHelpers as cssHitsHelpersImpl, ExtendedCssHit } from './content-script/utils/css-hits-helpers';
 import type applyExtendedCssImpl from './extcss-inject-src';
-import { type ExtCssProtocol } from './message-constants';
+import { type ExtCssProtocol } from './extcss-protocol';
 
 // Type-only decls for symbols supplied by build-time inlining (see the
 // inlineExtCssBundle plugin). Erased at runtime; they exist only so the source
@@ -119,6 +119,17 @@ export const extCssInjectedApply = (
 
     __INLINE_EXTCSS_BUNDLE__();
 
+    // Nodes this payload removes for `:remove()` rules, shared with the
+    // content script through `window` (the key arrives via `protocol`, so no
+    // free identifier). `CssHitsCounter` re-inserts short-lived elements to
+    // count them, so it must know which ones ExtendedCss took out of the page
+    // itself — otherwise it puts them back. The set is read lazily there, so a
+    // counter that starts before this injection still sees the late entries,
+    // and a re-apply reuses the same set.
+    const store = window as unknown as Record<string, WeakSet<Element> | undefined>;
+    const removedElements = store[protocol.removedElementsKey] ?? new WeakSet<Element>();
+    store[protocol.removedElementsKey] = removedElements;
+
     // Inlined CSS-hits helpers — the SAME source used by MV2's
     // `ElementUtils` and `CssHitsCounter`. Defines a local `cssHitsHelpers`
     // object with `collectExtendedCssHits()` so the `beforeStyleApplied`
@@ -182,6 +193,17 @@ export const extCssInjectedApply = (
      * @returns The same element (with the hit marker content cleared).
      */
     const beforeStyleApplied = (el: IAffectedElement): IAffectedElement => {
+        // ExtendedCss removes the node itself for `:remove()` rules, and it
+        // calls this callback first. Record the node before that, so the
+        // counter does not queue it as a probe and put it back into the page.
+        if (el.node && el.rules) {
+            for (let i = 0; i < el.rules.length; i += 1) {
+                if (el.rules[i]?.style?.remove === 'true') {
+                    removedElements.add(el.node);
+                }
+            }
+        }
+
         const hits = cssHitsHelpers.collectExtendedCssHits(
             el,
             protocol.markerPrefix,
