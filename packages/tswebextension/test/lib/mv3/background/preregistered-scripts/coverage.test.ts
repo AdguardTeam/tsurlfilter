@@ -31,24 +31,32 @@ const frame = (frameId: number, url: string, parentFrameId = -1): FrameMV3 => ({
 describe('resolveCoverageHost', () => {
     const HOSTS = new Set(['youtube.com', 'www.youtube.com']);
 
+    /**
+     * Treats every host as covered; the early exit is tested separately.
+     *
+     * @returns Always true.
+     */
+    const COVERED = (): boolean => true;
+
     it('returns the lower-cased host of an http frame', async () => {
         await expect(resolveCoverageHost(
             1,
             frame(0, 'https://YouTube.com/watch'),
             () => undefined,
             HOSTS,
+            COVERED,
         )).resolves.toBe('youtube.com');
     });
 
     it('walks up to the nearest http ancestor of an opaque frame', async () => {
         const parent = frame(0, 'https://youtube.com/');
 
-        await expect(resolveCoverageHost(1, frame(2, 'about:blank', 0), () => parent, HOSTS))
+        await expect(resolveCoverageHost(1, frame(2, 'about:blank', 0), () => parent, HOSTS, COVERED))
             .resolves.toBe('youtube.com');
     });
 
     it('returns null when the chain has no http ancestor', async () => {
-        await expect(resolveCoverageHost(1, frame(2, 'about:blank', 0), () => undefined, HOSTS))
+        await expect(resolveCoverageHost(1, frame(2, 'about:blank', 0), () => undefined, HOSTS, COVERED))
             .resolves.toBeNull();
     });
 
@@ -60,6 +68,7 @@ describe('resolveCoverageHost', () => {
             frame(2, 'https://youtube.com/embed', 0),
             () => top,
             HOSTS,
+            COVERED,
         )).resolves.toBeNull();
     });
 
@@ -74,6 +83,7 @@ describe('resolveCoverageHost', () => {
             frame(2, 'https://youtube.com/embed', 1),
             (_tabId, id) => (id === 1 ? middle : top),
             HOSTS,
+            COVERED,
         )).resolves.toBe('youtube.com');
     });
 
@@ -85,6 +95,7 @@ describe('resolveCoverageHost', () => {
             frame(2, 'https://youtube.com/embed', 0),
             () => top,
             HOSTS,
+            COVERED,
         )).resolves.toBeNull();
     });
 
@@ -96,6 +107,7 @@ describe('resolveCoverageHost', () => {
             frame(2, 'https://youtube.com/embed', 0),
             () => undefined,
             HOSTS,
+            COVERED,
             async () => new Map([[0, liveTop]]),
         )).resolves.toBe('youtube.com');
     });
@@ -106,16 +118,17 @@ describe('resolveCoverageHost', () => {
             frame(2, 'https://youtube.com/embed', 0),
             () => undefined,
             HOSTS,
+            COVERED,
             async () => new Map(),
         )).resolves.toBeNull();
     });
 
-    it('ignores a cached top frame that belongs to another document', async () => {
-        // The top frame context is overwritten at navigation start, before
-        // the navigation commits: a navigation that never commits leaves the
-        // new URL on the cached top while the old page stays. The document id
-        // ties the child to the document it actually belongs to.
-        const staleTop = { ...frame(0, 'https://example.com/'), documentId: 'new-document' };
+    it('does not trust a cached top frame left over from navigation start', async () => {
+        // The top frame context is rewritten at navigation start, before the
+        // commit, and that write carries no document id. A navigation that
+        // never commits leaves the foreign URL on the cached top while the old
+        // page stays, and the child still points at the old document.
+        const staleTop = frame(0, 'https://example.com/');
         const liveTop = { ...frame(0, 'https://youtube.com/watch'), documentId: 'old-document' };
 
         await expect(resolveCoverageHost(
@@ -123,6 +136,7 @@ describe('resolveCoverageHost', () => {
             { ...frame(2, 'https://youtube.com/embed', 0), parentDocumentId: 'old-document' },
             () => staleTop,
             HOSTS,
+            COVERED,
             async () => new Map([[0, liveTop]]),
         )).resolves.toBe('youtube.com');
     });
@@ -136,6 +150,7 @@ describe('resolveCoverageHost', () => {
             { ...frame(2, 'https://youtube.com/embed', 0), parentDocumentId: 'doc-1' },
             () => top,
             HOSTS,
+            COVERED,
             getFrameTree,
         )).resolves.toBe('youtube.com');
 
@@ -153,8 +168,8 @@ describe('resolveCoverageHost', () => {
             frame(2, 'https://example.com/ad', 0),
             () => undefined,
             HOSTS,
-            getFrameTree,
             () => false,
+            getFrameTree,
         )).resolves.toBeNull();
 
         expect(getFrameTree).not.toHaveBeenCalled();
