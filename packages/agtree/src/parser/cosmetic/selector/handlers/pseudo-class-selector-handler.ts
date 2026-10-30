@@ -80,24 +80,16 @@ export class PseudoClassSelectorHandler {
 
         // If it's a function, parse its argument
         if (isFunction) {
-            // Save the function token's balance level for finding the matching close parenthesis
-            const functionBalance = stream.getBalance();
-
             // The argument is the raw text between the parentheses, with no
             // trimming (CoreLibs parity), so it starts right after the
             // opening parenthesis, whitespace included.
             const argumentStart = token.end;
 
-            // Advance pseudo-class selector name token
-            stream.advance();
-
-            // Skip to the closing parenthesis at the matching balance level.
-            // `skipUntilBalanced` cannot be used here: it skips until the
-            // balance of the *current* token minus one, while the current
-            // token may be nested deeper than the function (e.g. `[` in
-            // `:not([class])` has balance 2), so it would stop at the inner
-            // `]` instead of the closing `)`.
-            stream.skipUntil(TokenType.CloseParenthesis, functionBalance - 1);
+            // Skip to the closing parenthesis. The function token is still the
+            // current token here, so `skipUntilBalanced()` uses the function's
+            // balance level and stops at the matching `)` even if the argument
+            // contains nested balanced pairs, e.g. `:not([class])`.
+            stream.skipUntilBalanced();
 
             // Get closing parenthesis token
             token = stream.getOrFail();
