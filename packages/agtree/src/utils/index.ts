@@ -40,3 +40,4 @@ export {
 } from './quotes';
 export { type Position, PositionProvider } from './position-provider';
 export { RuleCategorizer } from './categorizer';
+export { SPECIAL_PSEUDO_CLASS_NAMES } from './special-pseudo-classes';

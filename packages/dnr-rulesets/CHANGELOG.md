@@ -25,6 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   domains that the badfilter covers, so the built MV3 rulesets keep rules that
   were previously removed for every domain. A target rule without `$domain` is
   still cancelled completely.
+- Fixed rules with `$domain` not matching document navigations started by the
+  browser (new tab page, address bar, bookmark, reload). The MV3 rulesets now
+  contain an additional `main_frame` rule with `requestDomains` for such rules,
+  so `$csp`, `$removeheader`, `$removeparam` and allowlist rules with `$domain`
+  work on the first page load. Affected rules now consume two declarative
+  rules, and two regex-rule slots when a `$removeparam` rule generates a
+  regexp, so they count against the rule and regex budgets.
 - Fixed `dnr-rulesets load` failing to copy packaged assets and returning a
   successful exit status after copy errors.
 

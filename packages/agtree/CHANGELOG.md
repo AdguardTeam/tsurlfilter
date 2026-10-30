@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `SPECIAL_PSEUDO_CLASS_NAMES` is now exported, so consumers can use the
+  same list of special pseudo-class names as the parser and the converter.
 - Added the `fingerprinting` value for the `$stealth` modifier.
 - Support for uBlock Origin `:remove-attr()` and `:remove-class()` pseudo-classes
   in element hiding and CSS injection rule conversion. Like `:remove()`, they
@@ -86,7 +88,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   chain, so e.g.
   `aces.gg$$script[tag-content="$('#alert').on('click'"][max-length="250"]`
   now converts to
-  `aces.gg$$script:contains(/^(?=.{0,250}$)(?=.*\$\('#alert'\)\.on\('click').*/s)`
+  `aces.gg$$script:contains(/^(?=.{0,250}$)(?=.*\$\(#alert\'\)\.on\('click).*/s)`
   instead of the CoreLibs-rejected
   `aces.gg$$script:contains($('#alert').on('click'):contains(/^(?=.{0,250}$).*/s)`.
   Multiple `[tag-content]` values and multiple `[wildcard]` globs are

@@ -27,7 +27,7 @@ import {
 import { ResourcesPathError } from '../../../src/errors/converter-options-errors';
 import { re2Validator } from '../../../src/re2-regexp/re2-validator';
 import { OPTION_NAMES } from '../../../src/rule/option-names';
-import { type Rule } from '../../../src/rule/rule';
+import { Rule } from '../../../src/rule/rule';
 import { type ConvertedRules } from '../../../src/rule-converters';
 import { RegularRuleConverter } from '../../../src/rule-converters/regular-rule-converter';
 import { createRuleMock } from '../../mocks/rule';
@@ -1444,6 +1444,239 @@ describe('RuleConverter', () => {
                 action: { type: RuleActionType.Block },
                 condition: {},
             });
+        });
+    });
+
+    describe('additional main_frame rule', () => {
+        const filterListId = 1;
+
+        /**
+         * Converts a single rule text into declarative rules.
+         *
+         * @param text Rule text.
+         * @param index Rule index.
+         *
+         * @returns Converted declarative rules.
+         */
+        const convert = async (text: string, index = 0): Promise<DeclarativeRule[]> => {
+            const [rule] = Rule.createFromText(filterListId, index, text);
+            // @ts-expect-error Accessing protected member for test purposes
+            const result = await converter.convertRules(filterListId, [rule], new Set<number>());
+            expect(result.errors).toHaveLength(0);
+            return result.declarativeRules;
+        };
+
+        it('adds a main_frame rule with requestDomains for a document CSP rule', async () => {
+            const rules = await convert("*$document,csp=script-src-attr 'none',domain=example.com");
+
+            expect(rules).toHaveLength(2);
+            expect(rules[0].condition).toMatchObject({
+                initiatorDomains: ['example.com'],
+                resourceTypes: [ResourceType.MainFrame],
+            });
+            expect(rules[1].condition).toMatchObject({
+                resourceTypes: [ResourceType.MainFrame],
+                requestDomains: ['example.com'],
+            });
+            expect(rules[1].condition.initiatorDomains).toBeUndefined();
+            expect(rules[1].action).toEqual(rules[0].action);
+            expect(rules[1].priority).toBe(rules[0].priority);
+            expect(rules[1].id).not.toBe(rules[0].id);
+        });
+
+        it('moves excluded domains to excludedRequestDomains', async () => {
+            const rules = await convert('*$document,domain=~example.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[0].condition.excludedInitiatorDomains).toEqual(['example.com']);
+            expect(rules[1].condition).toMatchObject({
+                resourceTypes: [ResourceType.MainFrame],
+                excludedRequestDomains: ['example.com'],
+            });
+            expect(rules[1].condition.initiatorDomains).toBeUndefined();
+            expect(rules[1].condition.excludedInitiatorDomains).toBeUndefined();
+        });
+
+        it('keeps permitted and excluded domains in the additional rule', async () => {
+            const rules = await convert('*$document,domain=example.com|~sub.example.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].condition.requestDomains).toEqual(['example.com']);
+            expect(rules[1].condition.excludedRequestDomains).toEqual(['sub.example.com']);
+        });
+
+        it('adds a rule for an excluded-only list with a domain-specific pattern', async () => {
+            const rules = await convert('||example.com^$document,domain=~foo.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].condition).toMatchObject({
+                resourceTypes: [ResourceType.MainFrame],
+                excludedRequestDomains: ['foo.com'],
+            });
+            expect(rules[1].condition.initiatorDomains).toBeUndefined();
+        });
+
+        it('merges $denyallow exclusions into the additional rule', async () => {
+            const rules = await convert('*$document,denyallow=foo.com,domain=example.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].condition).toMatchObject({
+                requestDomains: ['example.com'],
+                excludedRequestDomains: ['foo.com'],
+                resourceTypes: [ResourceType.MainFrame],
+            });
+        });
+
+        it('merges a negated $to into the additional rule', async () => {
+            const rules = await convert('*$document,to=~foo.com,domain=example.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].condition).toMatchObject({
+                requestDomains: ['example.com'],
+                excludedRequestDomains: ['foo.com'],
+            });
+        });
+
+        it('keeps a permitted $to when $domain has only excluded domains', async () => {
+            const rules = await convert('*$document,to=foo.com,domain=~bar.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].condition).toMatchObject({
+                requestDomains: ['foo.com'],
+                excludedRequestDomains: ['bar.com'],
+            });
+        });
+
+        it('does not add a rule when an unrepresentable $to is set', async () => {
+            const rules = await convert('*$document,to=/foo/,domain=example.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule for an excluded-only list with an unrepresentable $to', async () => {
+            const rules = await convert('*$document,to=/foo/,domain=~bar.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule when an unrepresentable $denyallow is set', async () => {
+            const rules = await convert('*$document,denyallow=*.example.com,domain=example.com');
+
+            expect(rules).toHaveLength(1);
+        });
+
+        it('does not add a rule when $domain contains a regex', async () => {
+            const rules = await convert('*$document,domain=example.com|~/^ads\\./');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('adds a rule for an allowlist document rule', async () => {
+            const rules = await convert('@@$document,domain=example.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].action).toEqual({ type: RuleActionType.AllowAllRequests });
+            expect(rules[1].condition).toEqual({
+                resourceTypes: [ResourceType.MainFrame],
+                requestDomains: ['example.com'],
+            });
+        });
+
+        it('does not add a rule for a domain-specific pattern', async () => {
+            const rules = await convert("||example.com^$csp=frame-src 'none',domain=foo.com");
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.initiatorDomains).toEqual(['foo.com']);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule when a domain-specific pattern has permitted domains', async () => {
+            const rules = await convert('||example.com^$document,domain=example.com|~sub.example.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.initiatorDomains).toEqual(['example.com']);
+            expect(rules[0].condition.excludedInitiatorDomains).toEqual(['sub.example.com']);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule when $third-party is set', async () => {
+            const rules = await convert('*$document,third-party,domain=example.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition).toMatchObject({
+                domainType: DomainType.ThirdParty,
+                initiatorDomains: ['example.com'],
+                resourceTypes: [ResourceType.MainFrame],
+            });
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule when $~third-party is set', async () => {
+            const rules = await convert('*$document,~third-party,domain=example.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition).toMatchObject({
+                domainType: DomainType.FirstParty,
+                initiatorDomains: ['example.com'],
+                resourceTypes: [ResourceType.MainFrame],
+            });
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule when permitted $to and $domain are both set', async () => {
+            const rules = await convert('*$document,to=foo.com,domain=example.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.requestDomains).toEqual(['foo.com']);
+        });
+
+        it('does not add a rule when the rule does not target main_frame', async () => {
+            const rules = await convert('*$script,domain=foo.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule for a regex pattern', async () => {
+            vi.spyOn(re2Validator, 'isRegexSupported').mockResolvedValue(true);
+
+            const rules = await convert('/banner\\d+/$document,domain=foo.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('adds a rule for an excluded-only list with a regex pattern', async () => {
+            vi.spyOn(re2Validator, 'isRegexSupported').mockResolvedValue(true);
+
+            const rules = await convert('/banner\\d+/$document,domain=~foo.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].condition).toMatchObject({
+                resourceTypes: [ResourceType.MainFrame],
+                excludedRequestDomains: ['foo.com'],
+            });
+        });
+
+        it('maps both rules to the source rule', async () => {
+            const index = 7;
+            const [rule] = Rule.createFromText(
+                filterListId,
+                index,
+                "*$document,csp=script-src-attr 'none',domain=example.com",
+            );
+
+            // @ts-expect-error Accessing protected member for test purposes
+            const result = await converter.convertRules(filterListId, [rule], new Set<number>());
+
+            expect(result.sourceMapValues).toEqual(result.declarativeRules.map(({ id }) => ({
+                declarativeRuleId: id,
+                sourceRuleIndex: index,
+                filterId: filterListId,
+            })));
         });
     });
 
