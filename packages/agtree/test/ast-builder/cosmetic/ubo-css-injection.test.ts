@@ -2,7 +2,14 @@ import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import { AdgCssInjectionGenerator } from '../../../src/generator/css/adg-css-injection-generator';
-import type { CssInjectionRule, CssInjectionRuleBody, Raw } from '../../../src/nodes';
+import type {
+    AttributeSelectorWithValue,
+    CssDeclarationList,
+    CssInjectionRule,
+    CssInjectionRuleBody,
+    Raw,
+    SelectorList,
+} from '../../../src/nodes';
 import { SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();
@@ -316,6 +323,125 @@ describe('UboCssInjectionAstBuilder — CSS sub-parsing options', () => {
         }) as CssInjectionRule;
 
         expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: declarationList });
+    });
+});
+
+describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
+    const options = {
+        isLocIncluded: true,
+        parseCssSelectorList: true,
+        parseCssDeclarationList: true,
+    };
+
+    test('attribute and declaration locations point into the original rule', () => {
+        const src = "example.com##div[title='ab']:style(color:red)";
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const attribute = selectorList.children[0].children[1] as AttributeSelectorWithValue;
+
+        expect(attribute.type).toBe('AttributeSelector');
+        expect(attribute).toMatchObject({ start: 16, end: 28 });
+        expect(attribute.name).toMatchObject({ value: 'title', start: 17, end: 22 });
+        expect(attribute.operator).toMatchObject({ value: '=', start: 22, end: 23 });
+        expect(attribute.value).toMatchObject({ value: 'ab', start: 24, end: 26 });
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+        const declaration = declarationList.children[0];
+
+        expect(declaration).toMatchObject({ start: 35, end: 44 });
+        expect(declaration.property).toMatchObject({ value: 'color', start: 35, end: 40 });
+        expect(declaration.value).toMatchObject({ value: 'red', start: 41, end: 44 });
+
+        // Container spans stay unchanged: full body / :style() value range.
+        expect(selectorList.start).toBe(13);
+        expect(selectorList.end).toBe(src.length);
+        expect(declarationList.start).toBe(35);
+        expect(declarationList.end).toBe(44);
+    });
+
+    test(':matches-path() modifier is skipped by child locations', () => {
+        const src = "example.com##:matches-path(/x) div[title='ab']:style(color:red)";
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const complex = selectorList.children[0];
+        const attribute = complex.children[1] as AttributeSelectorWithValue;
+
+        // The excised modifier and the trimmed leading space are removed,
+        // so the complex selector starts at offset 31.
+        expect(complex).toMatchObject({ start: 31, end: 46 });
+        expect(complex.children[0]).toMatchObject({
+            type: 'TypeSelector',
+            value: 'div',
+            start: 31,
+            end: 34,
+        });
+        expect(attribute.value).toMatchObject({ value: 'ab', start: 42, end: 44 });
+        expect(attribute.value.start).toBe(src.indexOf("'ab'") + 1);
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+        const declaration = declarationList.children[0];
+
+        expect(declaration).toMatchObject({ start: 53, end: 62 });
+        expect(declaration.property).toMatchObject({ value: 'color', start: 53, end: 58 });
+        expect(declaration.value).toMatchObject({ value: 'red', start: 59, end: 62 });
+        expect(declaration.property.start).toBe(src.indexOf('color'));
+
+        expect(selectorList.start).toBe(13);
+        expect(selectorList.end).toBe(src.length);
+        expect(declarationList.start).toBe(53);
+        expect(declarationList.end).toBe(62);
+    });
+
+    test('two kept ranges around an excised :matches-media() modifier', () => {
+        const src = '##div:matches-media((min-width: 100px)) .foo:style(color:red)';
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const complex = selectorList.children[0];
+        const classSelector = complex.children.find((child) => child.type === 'ClassSelector');
+
+        expect(complex).toMatchObject({ start: 2, end: 44 });
+        expect(complex.children[0]).toMatchObject({
+            type: 'TypeSelector',
+            value: 'div',
+            start: 2,
+            end: 5,
+        });
+        expect(classSelector).toMatchObject({ value: 'foo', start: 40, end: 44 });
+        expect(classSelector?.start).toBe(src.indexOf('.foo'));
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+        const declaration = declarationList.children[0];
+
+        expect(declaration).toMatchObject({ start: 51, end: 60 });
+        expect(declaration.property).toMatchObject({ value: 'color', start: 51, end: 56 });
+        expect(declaration.value).toMatchObject({ value: 'red', start: 57, end: 60 });
+        expect(declaration.property.start).toBe(src.indexOf('color'));
+
+        expect(selectorList.start).toBe(2);
+        expect(selectorList.end).toBe(src.length);
+        expect(declarationList.start).toBe(51);
+        expect(declarationList.end).toBe(60);
+    });
+
+    test('pseudo-class name and argument locations are remapped', () => {
+        const src = '##div:not(.ad):style(color:red)';
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const pseudo = selectorList.children[0].children[1];
+
+        expect(pseudo).toMatchObject({
+            type: 'PseudoClassSelector',
+            start: 5,
+            end: 14,
+        });
+        expect(pseudo).toMatchObject({
+            name: { value: 'not', start: 6, end: 9 },
+            argument: { value: '.ad', start: 10, end: 13 },
+        });
     });
 });
 

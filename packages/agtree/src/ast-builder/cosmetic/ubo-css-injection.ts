@@ -1,4 +1,4 @@
-/* eslint-disable no-bitwise */
+/* eslint-disable no-bitwise, no-param-reassign */
 
 /**
  * @file CSS injection cosmetic rule AST builder for uBO rules.
@@ -27,6 +27,7 @@ import type {
     DomainList,
     Modifier,
     ModifierList,
+    Node,
     Raw,
     SelectorList,
     Value,
@@ -95,6 +96,133 @@ function ensureSubParserContext(): { tokenizer: Tokenizer; ctx: ParserContext } 
         subCtx = createParserContext(SUB_PARSE_TOKEN_CAPACITY, 1);
     }
     return { tokenizer: subTokenizer, ctx: subCtx };
+}
+
+/**
+ * Map from character offsets in the cleaned selector text to character
+ * offsets in the original rule source.
+ *
+ * `offsets[i]` is the source offset of `cleanedSelector[i]`.
+ */
+type SelectorOffsetMap = readonly number[];
+
+/**
+ * Translate a start offset from the cleaned selector text to the original
+ * rule source. The offset is clamped to the map length.
+ *
+ * @param offsets Offset map of the cleaned selector text.
+ * @param offset Start offset in the cleaned selector text.
+ *
+ * @returns Start offset in the original rule source.
+ */
+function mapStartOffset(offsets: SelectorOffsetMap, offset: number): number {
+    if (offsets.length === 0) {
+        return offset;
+    }
+
+    const index = offset < offsets.length ? offset : offsets.length - 1;
+
+    return offsets[index];
+}
+
+/**
+ * Translate an exclusive end offset from the cleaned selector text to the
+ * original rule source. The offset is clamped to the map length.
+ *
+ * @param offsets Offset map of the cleaned selector text.
+ * @param offset Exclusive end offset in the cleaned selector text.
+ *
+ * @returns Exclusive end offset in the original rule source.
+ */
+function mapEndOffset(offsets: SelectorOffsetMap, offset: number): number {
+    if (offsets.length === 0) {
+        return offset;
+    }
+
+    if (offset <= 0) {
+        return offsets[0];
+    }
+
+    const index = offset - 1 < offsets.length ? offset - 1 : offsets.length - 1;
+
+    return offsets[index] + 1;
+}
+
+/**
+ * Remap the location of a node from cleaned-selector offsets to original
+ * source offsets. Nodes without a location stay unchanged.
+ *
+ * @param node AST node whose location must be remapped.
+ * @param offsets Offset map of the cleaned selector text.
+ */
+function remapNodeLocation(node: Node, offsets: SelectorOffsetMap): void {
+    if (node.start !== undefined) {
+        node.start = mapStartOffset(offsets, node.start);
+    }
+
+    if (node.end !== undefined) {
+        node.end = mapEndOffset(offsets, node.end);
+    }
+}
+
+/**
+ * Remap the locations of all child nodes of a sub-parsed selector list.
+ * The `SelectorList` node itself keeps its absolute range, which already
+ * covers the full rule body.
+ *
+ * @param selectorList Sub-parsed selector list AST node.
+ * @param offsets Offset map of the cleaned selector text.
+ */
+function remapSelectorLocations(selectorList: SelectorList, offsets: SelectorOffsetMap): void {
+    for (let i = 0; i < selectorList.children.length; i += 1) {
+        const complex = selectorList.children[i];
+        remapNodeLocation(complex, offsets);
+
+        for (let j = 0; j < complex.children.length; j += 1) {
+            const child = complex.children[j];
+            remapNodeLocation(child, offsets);
+
+            switch (child.type) {
+                case NodeType.AttributeSelector: {
+                    remapNodeLocation(child.name, offsets);
+                    if ('operator' in child) {
+                        remapNodeLocation(child.operator, offsets);
+                        remapNodeLocation(child.value, offsets);
+                        if (child.flag !== undefined) {
+                            remapNodeLocation(child.flag, offsets);
+                        }
+                    }
+                    break;
+                }
+                case NodeType.PseudoClassSelector: {
+                    remapNodeLocation(child.name, offsets);
+                    if (child.argument !== undefined) {
+                        remapNodeLocation(child.argument, offsets);
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+/**
+ * Shift the location of a node by a constant source offset. Nodes without
+ * a location stay unchanged.
+ *
+ * @param node AST node whose location must be shifted.
+ * @param delta Offset to add to the node location.
+ */
+function shiftNodeLocation(node: Node, delta: number): void {
+    if (node.start !== undefined) {
+        node.start += delta;
+    }
+
+    if (node.end !== undefined) {
+        node.end += delta;
+    }
 }
 
 /**
@@ -255,26 +383,51 @@ export class UboCssInjectionAstBuilder {
         // build cleaned selector text (modifier ranges excised, trimmed)
         // srcRanges are sorted left-to-right because the scanner records them
         // sequentially.
+        // When locations and selector sub-parsing are requested, also record
+        // the source offset of every cleaned-selector character so the
+        // sub-parser locations can be remapped to the original rule source.
+        const collectOffsets = isLocIncluded && parseCssSelectorList;
+        const selectorOffsets: number[] = [];
         let cleanedSelector = '';
         let cursor = bodyStart;
         for (let i = 0; i < srcRanges.length; i += 1) {
             const [rStart, rEnd] = srcRanges[i];
             if (cursor < rStart) {
-                cleanedSelector += source.slice(cursor, rStart);
+                const chunk = source.slice(cursor, rStart);
+                if (collectOffsets) {
+                    for (let k = 0; k < chunk.length; k += 1) {
+                        selectorOffsets.push(cursor + k);
+                    }
+                }
+                cleanedSelector += chunk;
             }
             cursor = rEnd;
         }
         if (cursor < bodyEnd) {
-            cleanedSelector += source.slice(cursor, bodyEnd);
+            const chunk = source.slice(cursor, bodyEnd);
+            if (collectOffsets) {
+                for (let k = 0; k < chunk.length; k += 1) {
+                    selectorOffsets.push(cursor + k);
+                }
+            }
+            cleanedSelector += chunk;
         }
-        cleanedSelector = cleanedSelector.trim();
+
+        if (collectOffsets) {
+            const trimmedLeadingLength = cleanedSelector.length - cleanedSelector.trimStart().length;
+            cleanedSelector = cleanedSelector.trim();
+            selectorOffsets.splice(0, trimmedLeadingLength);
+            selectorOffsets.length = cleanedSelector.length;
+        } else {
+            cleanedSelector = cleanedSelector.trim();
+        }
 
         const selectorList: SelectorList | Raw = UboCssInjectionAstBuilder.buildSelector(
             cleanedSelector,
             bodyStart,
             bodyEnd,
             isLocIncluded,
-            source,
+            collectOffsets ? selectorOffsets : undefined,
             parseCssSelectorList,
         );
 
@@ -352,7 +505,8 @@ export class UboCssInjectionAstBuilder {
      * @param bodyStart Start offset of the body in the source.
      * @param bodyEnd End offset of the body in the source.
      * @param isLocIncluded Whether to include location info.
-     * @param source Source string.
+     * @param offsets Map from cleaned-selector offsets to original source offsets.
+     * Undefined when locations are disabled or selector sub-parsing is off.
      * @param parseCss Whether to sub-parse into a `SelectorList` node.
      *
      * @returns Raw or SelectorList node for the selector list.
@@ -362,7 +516,7 @@ export class UboCssInjectionAstBuilder {
         bodyStart: number,
         bodyEnd: number,
         isLocIncluded: boolean,
-        source: string,
+        offsets: SelectorOffsetMap | undefined,
         parseCss: boolean,
     ): SelectorList | Raw {
         if (!parseCss || cleanedSelector.length === 0) {
@@ -382,7 +536,7 @@ export class UboCssInjectionAstBuilder {
 
             SelectorListParser.parse(ctx, 0, ctx.tokenCount, 0, DEFAULT_MAX_COMPLEX);
 
-            return SelectorListAstBuilder.parse(
+            const selectorList = SelectorListAstBuilder.parse(
                 cleanedSelector,
                 ctx.data,
                 0,
@@ -391,6 +545,12 @@ export class UboCssInjectionAstBuilder {
                 bodyEnd,
                 { isLocIncluded },
             );
+
+            if (offsets) {
+                remapSelectorLocations(selectorList, offsets);
+            }
+
+            return selectorList;
         }) ?? UboCssInjectionAstBuilder.buildRaw(cleanedSelector, bodyStart, bodyEnd, isLocIncluded);
     }
 
@@ -441,7 +601,7 @@ export class UboCssInjectionAstBuilder {
 
             DeclarationListParser.parse(ctx, 0, ctx.tokenCount, 0, DEFAULT_MAX_DECLARATIONS);
 
-            return DeclarationListAstBuilder.parse(
+            const declarationList = DeclarationListAstBuilder.parse(
                 declText,
                 ctx.data,
                 0,
@@ -450,6 +610,20 @@ export class UboCssInjectionAstBuilder {
                 valueEnd,
                 { isLocIncluded },
             );
+
+            if (isLocIncluded) {
+                // The declaration text is a contiguous slice of the source
+                // starting at valueStart, so child locations are relative to
+                // that slice and must be shifted back.
+                for (let i = 0; i < declarationList.children.length; i += 1) {
+                    const declaration = declarationList.children[i];
+                    shiftNodeLocation(declaration, valueStart);
+                    shiftNodeLocation(declaration.property, valueStart);
+                    shiftNodeLocation(declaration.value, valueStart);
+                }
+            }
+
+            return declarationList;
         }) ?? UboCssInjectionAstBuilder.buildRaw(declText, valueStart, valueEnd, isLocIncluded);
     }
 
