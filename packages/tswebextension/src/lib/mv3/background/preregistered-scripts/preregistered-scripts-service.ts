@@ -72,24 +72,8 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  *   removed `#%#` JS rule is not harmless — see Known limitations.
  *   Pre-existing tabs are judged against the boot snapshot.
  *
- * Known limitations:
- * - Scriptlet executions are deduped by rule hash, unlike the dynamic
- *   path — both paths rely on scriptlets being idempotent.
- * - A page that started before a sync removed a `#%#` JS rule can execute
- *   it twice: the preregistered file already ran it, and the dynamic path
- *   runs it again because the coordination set dedupes only within one
- *   registration execution and `cleanup` deletes it before page scripts
- *   run. Arbitrary JS is not idempotent.
- * - `$url`-modified rules are never preregistered (the engine is queried
- *   per hostname root) and stay on the dynamic injection path.
- * - `$document`/`$jsinject` exceptions below the root path (e.g.
- *   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for
- *   the host: rules registered on `*://youtube.com/*` still execute on
- *   `/embed/…` — tracked in AG-54564.
- * - A frame whose top-level document has an opaque origin (e.g. a
- *   CSP-sandboxed top) is rejected by the page gate, but the background
- *   still sees the top frame's URL and reports coverage, so covered rules
- *   are not injected in its subframes.
+ * Known limitations are listed in the package README together with the
+ * other preregistration constraints; this comment does not repeat them.
  */
 export class PreregisteredScriptsService {
     /**
@@ -421,15 +405,14 @@ export class PreregisteredScriptsService {
         scriptsPath: string,
     ): Promise<Map<string, Set<string>>> {
         const hostnames = expandHostnames(domains);
-        // The shared bundle embeds the host set of the generation it was
-        // built for, and the page gate uses exactly that set: it is the only
-        // source for the coverage predicate, so the two sides cannot
-        // disagree about the set.
-        let publishedHostnames: readonly string[] = hostnames;
-        let registeredHostnames: readonly string[] = hostnames;
-        // Set only when the manifest was read: a failed read means the
-        // generation's set is unknown, so the fallback must not claim it.
+        // Host set of the artifact generation, known once the manifest is
+        // read. When it is, the published set is the manifest's, not the
+        // runtime expansion: the expansion only decides which hosts to
+        // register.
         let generationHostnames: readonly string[] | undefined;
+        // Hosts the registrations are built for: the gate-covered subset of
+        // the runtime expansion.
+        let registeredHostnames: readonly string[] = [];
 
         // A failure here leaves the previous registrations active, so the
         // last published coverage still describes them.
@@ -438,7 +421,6 @@ export class PreregisteredScriptsService {
         try {
             if (preregistrationEnabled && hostnames.length > 0) {
                 const manifest = await readManifest(scriptsPath);
-                publishedHostnames = manifest.hostnames;
                 generationHostnames = manifest.hostnames;
 
                 // Register only the hosts the page gate covers. A host that
@@ -456,7 +438,7 @@ export class PreregisteredScriptsService {
                 }
 
                 scripts = await PreregisteredScriptsService.buildDomainScripts(
-                    [...registeredHostnames],
+                    registeredHostnames,
                     scriptsPath,
                     manifest,
                 );
@@ -494,7 +476,7 @@ export class PreregisteredScriptsService {
         // even when preregistration is disabled: the boot snapshot may still
         // describe pre-existing pages, and the coverage map short-circuits
         // when there are no active registrations.
-        appContext.preregisteredHostnames = new Set(publishedHostnames);
+        appContext.preregisteredHostnames = new Set(generationHostnames ?? hostnames);
 
         // Report exactly what is registered, not what the sync attempted:
         // after a partial failure the browser still holds the previous
@@ -539,7 +521,7 @@ export class PreregisteredScriptsService {
      * actual coverage is read separately from the active registrations.
      */
     private static async buildDomainScripts(
-        hostnames: string[],
+        hostnames: readonly string[],
         scriptsPath: string,
         manifest: PreregisteredScriptsManifest,
     ): Promise<ContentScriptDescriptor[]> {

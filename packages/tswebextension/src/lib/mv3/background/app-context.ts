@@ -61,10 +61,11 @@ export class AppContext {
     /**
      * Published host set: the hostnames the page gate covers. A frame is
      * covered only when its top-level site belongs to this set, so an embed
-     * under a foreign top stays on the dynamic injection path. Sources, in
-     * order of preference: the build manifest of the generation being synced,
-     * the configured domains when the manifest could not be read, and the
-     * boot registration keys when only persisted registrations remain. Plain
+     * under a foreign top stays on the dynamic injection path. Sources: the
+     * generation manifest when the sync read it; otherwise the runtime
+     * expansion (preregistration is off, or the manifest is unreadable);
+     * after a failed first sync the configured domains or the coverage keys;
+     * after a successful clear the boot registration keys. Plain
      * (non-persisted) field: it lives for one service-worker lifetime.
      */
     public preregisteredHostnames?: Set<string>;

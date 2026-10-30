@@ -1197,11 +1197,14 @@ describe('PreregisteredScriptsService', () => {
             );
         });
 
-        it('publishes the configured hostname set when the first sync fails', async () => {
+        it('publishes the generation host set when the first sync fails', async () => {
             appContext.preregisteredScripts = { domains: ['youtube.com'], path: SCRIPTS_PATH };
             appContext.preregisteredScriptRulesAtBoot = new Map([
                 ['youtube.com', new Set(['0123456789abcdef'])],
             ]);
+            // The manifest must be readable, otherwise the sync is never
+            // reached: the failure under test is the sync, not the read.
+            setupManifest([], {}, ['youtube.com']);
             vi.mocked(ContentScriptManager.sync).mockRejectedValueOnce(new Error('invalid namespace'));
 
             const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
@@ -1212,16 +1215,15 @@ describe('PreregisteredScriptsService', () => {
             expect(result).toEqual(new Map([
                 ['youtube.com', new Set(['0123456789abcdef'])],
             ]));
-            expect(appContext.preregisteredHostnames).toEqual(
-                new Set(['youtube.com', 'www.youtube.com']),
-            );
+            // The generation's set, not the runtime expansion, which would
+            // also cover `www.youtube.com`.
+            expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
         });
 
-        it('falls back to the coverage keys when the first sync fails without a config', async () => {
+        it('falls back to the coverage keys when the manifest cannot be read', async () => {
             appContext.preregisteredScriptRulesAtBoot = new Map([
                 ['youtube.com', new Set(['0123456789abcdef'])],
             ]);
-            vi.mocked(ContentScriptManager.sync).mockRejectedValueOnce(new Error('invalid namespace'));
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
@@ -1230,7 +1232,9 @@ describe('PreregisteredScriptsService', () => {
 
         it('publishes the host set embedded in the manifest', async () => {
             const rule = mockScriptletRule('set-cookie', []);
-            await setupRulesWithManifest({ 'youtube.com': [rule] });
+            // Both hosts carry the rule, so only the manifest filter can keep
+            // the alias out of the registrations.
+            await setupRulesWithManifest({ 'youtube.com': [rule], 'www.youtube.com': [rule] });
 
             // The shared bundle embeds the generation's host set; it is the
             // source of truth for the top-level predicate, even when the
