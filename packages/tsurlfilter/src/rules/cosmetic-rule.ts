@@ -13,17 +13,17 @@ import {
     DomainUtils,
     type ParseOptions,
     PIPE_MODIFIER_SEPARATOR,
-    QuoteType,
     QuoteUtils,
     RegExpUtils,
     RuleParserPipeline,
     type SelectorCombinatorValue,
+    SPECIAL_PSEUDO_CLASS_NAMES,
 } from '@adguard/agtree';
 import { AdgScriptletInjectionBodyGenerator, CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
 import { scriptlets, type Source } from '@adguard/scriptlets';
 import { isValidScriptletName } from '@adguard/scriptlets/validators';
 
-import { EMPTY_STRING, WILDCARD } from '../common/constants';
+import { DOUBLE_QUOTE, EMPTY_STRING, WILDCARD } from '../common/constants';
 import { getErrorMessage } from '../common/error';
 import { config } from '../configuration';
 import { DomainModifier } from '../modifiers/domain-modifier';
@@ -121,6 +121,17 @@ export enum HtmlSpecialSelectorName {
      */
     Contains = 'contains',
 }
+
+/**
+ * Pseudo-class names that are treated as aliases of
+ * {@link HtmlSpecialSelectorName.Contains} in HTML filtering rules.
+ *
+ * The list comes from AGTree, which uses it to parse the raw-text argument of
+ * these pseudo-classes. Reusing it keeps both lists in sync: a name added to
+ * AGTree is handled here as well instead of silently staying in the native
+ * selector.
+ */
+const HTML_CONTAINS_SELECTOR_NAMES: ReadonlySet<string> = new Set(SPECIAL_PSEUDO_CLASS_NAMES);
 
 /**
  * Represents processed special selector used in HTML filtering rules.
@@ -471,7 +482,8 @@ export class CosmeticRule implements IRule {
     /**
      * Returns HTML filtering rule selector list.
      *
-     * @returns HTML filtering rule selector list or `null` if the rule is not an HTML filtering rule.
+     * @returns HTML filtering rule selector list, or `null` if the rule is not an HTML
+     * filtering rule or its body is not parsed into AST nodes.
      */
     public getHtmlSelectorList(): HtmlSelectorList | null {
         return this.htmlSelectorList;
@@ -600,10 +612,10 @@ export class CosmeticRule implements IRule {
      *
      * @param ruleNode Cosmetic rule node to process.
      *
-     * @returns Processed {@link HtmlSelectorList} or `null` if the rule is not an HTML filtering rule.
+     * @returns Processed {@link HtmlSelectorList}, or `null` if the rule is not an HTML
+     * filtering rule or its body is not parsed into AST nodes.
      *
-     * @throws Error if the rule body is not parsed into AST nodes.
-     * @throws Error if special selector is missing a value.
+     * @throws Error if a special selector argument is missing or empty.
      * @throws Error if an unsupported simple selector type is encountered.
      */
     private static processHtmlSelectorList(ruleNode: AnyCosmeticRule): HtmlSelectorList | null {
@@ -666,13 +678,19 @@ export class CosmeticRule implements IRule {
                         if ('value' in simpleSelectorNode) {
                             currentNativeSelector += simpleSelectorNode.operator.value;
 
-                            // It's safe to set double quotes here, as AGTree removes any existing quotes
-                            // from the attribute value and unescapes it, so we just need to quote it properly
-                            // again and escape any double quotes in the value
-                            currentNativeSelector += QuoteUtils.setStringQuoteType(
-                                simpleSelectorNode.value.value,
-                                QuoteType.Double,
-                            );
+                            // AGTree removes the quotes from an attribute value,
+                            // so the value is always quoted again, and any
+                            // double quotes in it are escaped.
+                            // `QuoteUtils.setStringQuoteType()` cannot be used
+                            // here: it keeps a value that starts and ends with
+                            // a double quote as an already quoted one, which
+                            // loses those literal quotes.
+                            currentNativeSelector += DOUBLE_QUOTE
+                                + QuoteUtils.escapeUnescapedOccurrences(
+                                    simpleSelectorNode.value.value,
+                                    DOUBLE_QUOTE,
+                                )
+                                + DOUBLE_QUOTE;
 
                             if (simpleSelectorNode.flag) {
                                 currentNativeSelector += ` ${simpleSelectorNode.flag.value}`;
@@ -684,11 +702,19 @@ export class CosmeticRule implements IRule {
 
                     // if it's a pseudo-class selector, we need to check if it's a special one
                     // if yes, we add it to the special selectors list, otherwise we add it to the native selector
-                    case 'PseudoClassSelector':
-                        if (simpleSelectorNode.name.value === HtmlSpecialSelectorName.Contains) {
-                            if (!simpleSelectorNode.argument) {
+                    case 'PseudoClassSelector': {
+                        const { name, argument } = simpleSelectorNode;
+
+                        if (HTML_CONTAINS_SELECTOR_NAMES.has(name.value)) {
+                            if (!argument) {
                                 throw new Error(
-                                    `'${HtmlSpecialSelectorName.Contains}' pseudo-class requires an argument`,
+                                    `'${name.value}' pseudo-class requires an argument`,
+                                );
+                            }
+
+                            if (argument.value.length === 0) {
+                                throw new Error(
+                                    `'${name.value}' pseudo-class requires a non-empty argument`,
                                 );
                             }
 
@@ -708,15 +734,16 @@ export class CosmeticRule implements IRule {
                                 // (`/.../flags`) is compiled to a RegExp by
                                 // `SimpleRegex.fromLiteral`, anything else is
                                 // matched as a literal substring.
-                                value: SimpleRegex.fromLiteral(simpleSelectorNode.argument.value),
+                                value: SimpleRegex.fromLiteral(argument.value),
                             });
                         } else {
-                            currentNativeSelector += `:${simpleSelectorNode.name.value}`;
-                            if (simpleSelectorNode.argument) {
-                                currentNativeSelector += `(${simpleSelectorNode.argument.value})`;
+                            currentNativeSelector += `:${name.value}`;
+                            if (argument) {
+                                currentNativeSelector += `(${argument.value})`;
                             }
                         }
                         break;
+                    }
 
                     // This case is handled after the switch
                     case 'SelectorCombinator':
@@ -845,8 +872,10 @@ export class CosmeticRule implements IRule {
                     break;
 
                 case CosmeticRuleType.HtmlFilteringRule:
-                    // AGTree won't allow invalid selector lists (both in parser and converter)
-                    // thus we don't need to validate them here
+                    // AGTree won't allow structurally invalid selector lists, so the
+                    // list itself is not validated here. Special selector arguments
+                    // (e.g. an empty `:contains()` one) are accepted by the parser and
+                    // checked in `processHtmlSelectorList()` instead.
                     break;
 
                 case CosmeticRuleType.JsInjectionRule:

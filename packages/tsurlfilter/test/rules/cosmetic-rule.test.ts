@@ -11,7 +11,7 @@ import { type Source } from '@adguard/scriptlets';
 
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
-import { type CosmeticRule } from '../../src/rules/cosmetic-rule';
+import { type CosmeticRule, HtmlSpecialSelectorName } from '../../src/rules/cosmetic-rule';
 import { RULE_INDEX_NONE } from '../../src/rules/rule';
 import { createCosmeticRule } from '../helpers/rule-creator';
 
@@ -1097,6 +1097,73 @@ describe('HTML filtering rules (content rules)', () => {
         });
     });
 
+    it('throws error when contains argument is empty', () => {
+        expect(() => createCosmeticRule('example.org$$div:contains()', 0)).toThrow(
+            "'contains' pseudo-class requires a non-empty argument",
+        );
+    });
+
+    it('throws error when -abp-contains argument is empty', () => {
+        expect(() => createCosmeticRule('example.org$$div:-abp-contains()', 0)).toThrow(
+            "'-abp-contains' pseudo-class requires a non-empty argument",
+        );
+    });
+
+    it('throws error when has-text argument is empty', () => {
+        expect(() => createCosmeticRule('example.org$$div:has-text()', 0)).toThrow(
+            "'has-text' pseudo-class requires a non-empty argument",
+        );
+    });
+
+    it('throws error when has-text argument is missing', () => {
+        expect(() => createCosmeticRule('example.org$$div:has-text', 0)).toThrow(
+            "'has-text' pseudo-class requires an argument",
+        );
+    });
+
+    it('correctly parses html rules - contains with a single space argument', () => {
+        // A single space is a valid argument and must not be treated as empty
+        const rule = createCosmeticRule('example.org$$div:contains( )', 0);
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div',
+                specialSelectors: [{
+                    name: HtmlSpecialSelectorName.Contains,
+                    value: ' ',
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - -abp-contains alias', () => {
+        const rule = createCosmeticRule('example.org$$script:-abp-contains(foo)', 0);
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [{
+                    name: HtmlSpecialSelectorName.Contains,
+                    value: 'foo',
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - has-text alias', () => {
+        const rule = createCosmeticRule('example.org$$script:has-text(foo)', 0);
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [{
+                    name: HtmlSpecialSelectorName.Contains,
+                    value: 'foo',
+                }],
+            }]],
+        });
+    });
+
     it('correctly parses html rules - contains with unbalanced argument', () => {
         // `:contains()` arguments with unbalanced parentheses are parsed
         // leniently by AGTree (CoreLibs parity): the raw text between the
@@ -1250,6 +1317,26 @@ describe('HTML filtering rules (content rules)', () => {
         expect(rule.getHtmlSelectorList()).toEqual({
             selectors: [[{
                 nativeSelector: 'div[attr1="value1"][attr2*="value" i][attr3]',
+                specialSelectors: [],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - attribute values with literal double quotes', () => {
+        // `""` in a double-quoted value is the legacy escape of one `"`,
+        // while quotes inside a single-quoted value (or next to an escaped
+        // one) are literal characters. Such a value must not be treated as
+        // an already quoted one, otherwise the literal quotes are lost.
+        // eslint-disable-next-line max-len
+        const contentPart = 'div[data-x="""a"""][data-y=\'"a"\'][data-z="a""b"]';
+        const domainPart = 'example.org';
+        const ruleText = `${domainPart}$$${contentPart}`;
+        const rule = createCosmeticRule(ruleText, 0);
+
+        expect(rule.getType()).toBe(CosmeticRuleType.HtmlFilteringRule);
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div[data-x="\\"a\\""][data-y="\\"a\\""][data-z="a\\"b"]',
                 specialSelectors: [],
             }]],
         });
