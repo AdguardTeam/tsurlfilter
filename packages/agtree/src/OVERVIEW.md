@@ -1,6 +1,6 @@
 # Parsing pipeline overview
 
-The pipeline parser is structured as three sequential, allocation-free stages:
+The pipeline parser is structured as three sequential stages:
 
 ```text
 source string
@@ -20,7 +20,10 @@ source string
 
 All three stages share the same pre-allocated buffers that are reused across
 calls. The only heap allocations that happen are in the final AST builder
-stage, when AST objects and their `value` strings are created.
+stage, when AST objects and their `value` strings are created. The one
+exception is `collectRegexValueRegions()`, which allocates a small region
+array while structurally parsing a network rule that carries a `=/…/` regex
+value.
 
 > The v5 pipeline API is documented in the [package README](../README.md#quick-start).
 
@@ -481,10 +484,11 @@ Offset   Size    Region
 ──────────────────────────────────────────────────────────────────────
 0        5       Network rule header (NR_*) — for cosmetic rules, the
                  first 5 slots of the 7-slot CR header
-5        448     Modifier records (64 × stride 7). Cosmetic records start
-                 at slot 7, so slots 5-6 hold the rest of the CR header.
-                 uBO modifier records for element-hiding rules occupy
-                 [7..34] (4 × stride 7).
+5        448     Modifier records (64 × stride 7 — the region is sized for
+                 the largest, uBO, stride; network and AdGuard records use
+                 stride 5). Cosmetic records start at slot 7, so slots 5-6
+                 hold the rest of the CR header. uBO modifier records for
+                 element-hiding rules occupy [7..34] (4 × stride 7).
 453      384     Domain records (128 × stride 3)
 837      128     Scriptlet body data
 ──────────────────────────────────────────────────────────────────────

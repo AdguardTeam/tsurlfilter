@@ -73,6 +73,48 @@ describe('Engine Tests', () => {
         expect(engine.getRulesCount()).toBe(1);
     });
 
+    it('matches a rule with whitespace before the modifier separator', () => {
+        // Regression: `getRuleParts` kept the space in the pattern, so the
+        // engine loaded the rule but never matched it.
+        const ruleText = '/ads/banner.js $script';
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: ruleText,
+                },
+            ],
+        });
+
+        expect(engine.getRulesCount()).toBe(1);
+
+        const request = new Request('https://example.com/ads/banner.js', '', RequestType.Script);
+        const result = engine.matchRequest(request);
+
+        expect(result.basicRule).not.toBeNull();
+    });
+
+    it('matches a regex rule ending in $/', () => {
+        // Regression: `getRuleParts` split at the `$` before the final `/`,
+        // so the engine loaded a rule that could never match.
+        const ruleText = '/ads\\/banner\\.js$/';
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: ruleText,
+                },
+            ],
+        });
+
+        expect(engine.getRulesCount()).toBe(1);
+
+        const request = new Request('https://example.com/ads/banner.js', '', RequestType.Document);
+        const result = engine.matchRequest(request);
+
+        expect(result.basicRule).not.toBeNull();
+    });
+
     it('works if frame matches rule', () => {
         const ruleText = '@@||example.org$document';
         const rules = [ruleText];

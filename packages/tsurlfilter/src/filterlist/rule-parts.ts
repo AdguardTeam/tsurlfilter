@@ -781,10 +781,16 @@ export function getRuleParts(rule: string, ignoreCosmetics = false, ignoreHosts 
         };
     }
 
-    // When multiple `$` characters appear and at least one `/` follows the
-    // last `$` (indicating a regex value like `$replace=/a$b/good/`),
-    // use the backward regex-aware scanner to find the real separator.
-    if (dollarCount > 1 && rule.indexOf('/', lastDollarIndex) !== -1) {
+    // Enter the regex-aware scan when the fast split would be wrong:
+    // - several `$` and a `/` after the last one (a regex value like
+    //   `$replace=/a$b/good/`), or
+    // - the last `$` is a regex end anchor (`$/`) or an escaped `$` (`\$`),
+    //   which is not a separator at all.
+    if (
+        (dollarCount > 1 && rule.indexOf('/', lastDollarIndex) !== -1)
+        || rule[lastDollarIndex + 1] === REGEX_MARKER
+        || rule[lastDollarIndex - 1] === ESCAPE
+    ) {
         const separatorIndex = findNetworkRuleSeparatorIndex(rule);
 
         // `-1` means every `$` is escaped or inside a regex literal, i.e. the
@@ -814,7 +820,8 @@ export function getRuleParts(rule: string, ignoreCosmetics = false, ignoreHosts 
         category: RuleCategory.Network,
         allowlist,
         patternStart: allowlist ? realStart + NETWORK_RULE_ALLOWLIST_MARKER_LENGTH : realStart,
-        patternEnd: lastDollarIndex,
+        // Whitespace before the `$` separator is not part of the pattern.
+        patternEnd: findPrevNonWhitespace(rule, lastDollarIndex),
         modifiersStart: modifierListStart,
         modifiersEnd: modifierListEnd,
         text: rule,

@@ -30,6 +30,23 @@ export type RegexValueRegion = readonly [start: number, end: number];
 const NO_REGEX_VALUE_REGIONS: readonly RegexValueRegion[] = [];
 
 /**
+ * Checks whether the character code can start a modifier name.
+ *
+ * The structural modifier parser accepts a leading letter, digit, or
+ * underscore; a hyphen is only allowed after the first character.
+ *
+ * @param code Character code to check.
+ *
+ * @returns `true` for a modifier-name start character.
+ */
+function isModifierNameStartChar(code: number): boolean {
+    return (code >= 0x41 && code <= 0x5a) // A-Z
+        || (code >= 0x61 && code <= 0x7a) // a-z
+        || (code >= 0x30 && code <= 0x39) // 0-9
+        || code === 0x5f; // _
+}
+
+/**
  * Checks whether the character code belongs to a modifier name.
  *
  * Modifier names are `[A-Za-z0-9_-]*`, the same character set the structural
@@ -40,11 +57,7 @@ const NO_REGEX_VALUE_REGIONS: readonly RegexValueRegion[] = [];
  * @returns `true` for a modifier-name character.
  */
 function isModifierNameChar(code: number): boolean {
-    return (code >= 0x41 && code <= 0x5a) // A-Z
-        || (code >= 0x61 && code <= 0x7a) // a-z
-        || (code >= 0x30 && code <= 0x39) // 0-9
-        || code === 0x5f // _
-        || code === 0x2d; // -
+    return isModifierNameStartChar(code) || code === 0x2d; // -
 }
 
 /**
@@ -78,7 +91,8 @@ function isHorizontalWhitespace(code: number): boolean {
  * @param rule Rule text, or a source string containing the rule.
  * @param index Index of the `=`.
  * @param start Inclusive scan start.
- * @param seenSeparator Whether the scan has already seen an unescaped `$`.
+ * @param seenSeparator Whether the scan has already seen an unescaped `$`
+ *   that can start a modifier list.
  *
  * @returns `true` if the `=` follows a modifier name.
  */
@@ -125,12 +139,10 @@ function isModifierAssignment(
         return false;
     }
 
-    if (rule[i] === DOLLAR_SIGN) {
-        return true;
-    }
-
-    // A comma separates modifiers only after the `$` separator.
-    return seenSeparator && rule[i] === COMMA;
+    // Both branches require the modifier list to have started: a `$` inside
+    // the pattern (for example an escaped `\$`) must not open a region, and a
+    // comma separates modifiers only after the separator.
+    return seenSeparator && (rule[i] === DOLLAR_SIGN || rule[i] === COMMA);
 }
 
 /**
@@ -172,10 +184,17 @@ export function collectRegexValueRegions(
             continue;
         }
 
-        // An unescaped `$` starts the modifier list. A `$` followed by `/`
-        // is a regex end anchor, not a separator.
-        if (rule[i] === DOLLAR_SIGN && rule[i + 1] !== REGEX_MARKER) {
-            seenSeparator = true;
+        // An unescaped `$` starts the modifier list only when a modifier can
+        // follow it (a name-start character, `~`, space or tab). A `$` before
+        // `|`, `/`, `=` or the end of the rule is part of the pattern.
+        if (rule[i] === DOLLAR_SIGN) {
+            const next = rule.charCodeAt(i + 1);
+
+            if (isModifierNameStartChar(next)
+                || rule[i + 1] === NEGATION_MARKER
+                || isHorizontalWhitespace(next)) {
+                seenSeparator = true;
+            }
             continue;
         }
 

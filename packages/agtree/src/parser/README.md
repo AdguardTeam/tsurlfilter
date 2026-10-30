@@ -93,6 +93,8 @@ allocate during the structural parse:
 - Identifier matching uses `regionEquals` / `regionEqualsCI` to avoid
   building temporary strings.
 - AST allocation is deferred to `src/ast-builder/`.
+- The one exception is `collectRegexValueRegions()`, which allocates a small
+  region array for a network rule that carries a `=/…/` regex value.
 
 See [`../../AGENTS.md`](../../AGENTS.md) for the package-wide
 contribution rules.

@@ -159,12 +159,37 @@ describe('RuleFactory regex value handling', () => {
     });
 
     it('parses a rule whose pattern contains a comma followed by =/', () => {
-        const text = '||example.com/a,b=/c$removeparam=/x/';
+        const text = '||example.com/a,b=/c$removeparam=/x$y/';
         const rule = RuleFactory.createRule(text, 0) as NetworkRule;
 
         expect(rule).toBeInstanceOf(NetworkRule);
         expect(rule.getPattern()).toBe('||example.com/a,b=/c');
-        expect(rule.getAdvancedModifierValue()).toBe('/x/');
+        expect(rule.getAdvancedModifierValue()).toBe('/x$y/');
+    });
+
+    it('keeps a regex pattern ending in $/', () => {
+        const text = '/ads\\/banner\\.js$/';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe(text);
+    });
+
+    it('keeps a regex pattern with an escaped $', () => {
+        const text = '/a\\$b/';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe(text);
+    });
+
+    it('keeps the separator in a rule with an escaped $ in the modifier value', () => {
+        const text = '/foo.php$removeparam=a\\$b';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe('/foo.php');
+        expect(rule.getAdvancedModifierValue()).toBe('a\\$b');
     });
 });
 

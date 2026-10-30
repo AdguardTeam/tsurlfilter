@@ -5,7 +5,7 @@
  * the AST converter would change.
  */
 
-import { NetworkRuleDataReader, type ParserContext, RuleKind } from '../parser';
+import { ModifierListParser, type ParserContext, RuleKind } from '../parser';
 
 /**
  * Decides whether a scanned rule is a conversion candidate.
@@ -23,7 +23,7 @@ import { NetworkRuleDataReader, type ParserContext, RuleKind } from '../parser';
  */
 export function isConversionCandidate(kind: RuleKind, ctx: ParserContext): boolean {
     if (kind === RuleKind.Network) {
-        return NetworkRuleDataReader.getModifierCount(ctx) > 0;
+        return ModifierListParser.getCount(ctx.data) > 0;
     }
     // Cosmetic (RuleKind.Cosmetic) and Comment (RuleKind.Comment).
     return true;

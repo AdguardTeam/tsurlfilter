@@ -223,7 +223,7 @@ export class NetworkRuleParser implements StructuralParser {
     }
 
     /**
-     * Find network separator ($) scanning backwards using lastIndexOf.
+     * Find network separator ($) scanning backwards within the rule range.
      *
      * @param ctx Parser context.
      * @param searchStart First token index to consider.
@@ -241,9 +241,15 @@ export class NetworkRuleParser implements StructuralParser {
         let regionIndex = -1;
 
         while (i > searchStart) {
-            i = types.lastIndexOf(TokenType.DollarSign, i - 1);
+            // Bounded backward scan. `lastIndexOf` would walk before
+            // `searchStart` — through the whole token buffer for a rule
+            // without a `$`.
+            i -= 1;
+            while (i >= searchStart && types[i] !== TokenType.DollarSign) {
+                i -= 1;
+            }
 
-            if (i === -1 || i < searchStart) {
+            if (i < searchStart) {
                 break;
             }
 

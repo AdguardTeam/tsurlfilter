@@ -109,4 +109,20 @@ describe('collectRegexValueRegions', () => {
             [rule.indexOf('/x'), rule.lastIndexOf('/') + 1],
         ]);
     });
+
+    test('ignores an escaped $ before a =/', () => {
+        const rule = '/foo\\$b=/$removeparam=/x/';
+
+        expect(collectRegexValueRegions(rule)).toEqual([
+            [rule.indexOf('/x'), rule.lastIndexOf('/') + 1],
+        ]);
+    });
+
+    test('ignores a $ that cannot start a modifier before a ,name=/', () => {
+        const rule = '/foo$|bar,b=/$removeparam=/x/';
+
+        expect(collectRegexValueRegions(rule)).toEqual([
+            [rule.indexOf('/x'), rule.lastIndexOf('/') + 1],
+        ]);
+    });
 });

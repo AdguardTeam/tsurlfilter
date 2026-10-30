@@ -240,6 +240,28 @@ describe('parseNetworkRule', () => {
             expect(ModifierParser.getName(source, d, 0)).toBe('removeparam');
             expect(ModifierParser.getValue(source, d, 0)).toBe('/x/');
         });
+
+        test('escaped $ before =/ in the pattern does not open a regex value', () => {
+            const source = '/foo\\$b=/$removeparam=/x/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('/foo\\$b=/');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('removeparam');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/x/');
+        });
+
+        test('$ before | does not start a modifier list', () => {
+            const source = '/foo$|bar,b=/$removeparam=/x/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('/foo$|bar,b=/');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('removeparam');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/x/');
+        });
     });
 
     describe('modifier parsing', () => {

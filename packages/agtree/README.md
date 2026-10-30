@@ -186,7 +186,8 @@ See the `BREAKING` entries in the [changelog](CHANGELOG.md) for the full list.
 
 Structural parsers use reusable buffers with hard caps (`src/limits.ts`):
 262,144 tokens, 65,536 modifiers, 65,536 domains and 65,536 scriptlet-body
-slots per rule. Exceeding a cap raises `CapacityOverflowError`.
+slots per rule. Exceeding a hard cap raises `CapacityOverflowError`; a
+configured, non-growable capacity is reported as a plain `Error`.
 
 `FilterListPipeline` parses in tolerant mode by default: invalid rules become
 `InvalidRule` nodes instead of aborting the list. Pass
