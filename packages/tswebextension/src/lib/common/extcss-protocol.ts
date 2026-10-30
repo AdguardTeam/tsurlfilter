@@ -4,10 +4,13 @@
  *
  * Kept out of the `common` barrel (`common/index.ts`) on purpose: the values
  * are an implementation detail of the injected payload and its handover to the
- * content script, not part of the package API.
+ * content script, so the published package does not expose an injection
+ * protocol that consumers could start to depend on. Import it directly from the
+ * background modules that need it.
  */
 
 import { CSS_HITS_MARKER_PREFIX } from './constants';
+import { EXTCSS_REMOVED_ELEMENTS_KEY } from './content-script/extcss-removed-elements';
 import { MESSAGE_HANDLER_NAME, MessageType } from './message-constants';
 
 /**
@@ -47,9 +50,9 @@ export type ExtCssProtocol = {
     instanceKey: typeof EXTCSS_INSTANCE_KEY;
 
     /**
-     * `window` key under which the injected function keeps the set of nodes it
-     * removed from the page for `:remove()` rules. The content script reads the
-     * same set, so its forced-probe pass never puts such a node back.
+     * `window` key under which the injected function records the elements it
+     * removed with a `:remove()` rule, so the content-script CSS-hits counter
+     * does not put them back into the page as probes.
      */
     removedElementsKey: typeof EXTCSS_REMOVED_ELEMENTS_KEY;
 };
@@ -60,13 +63,6 @@ export type ExtCssProtocol = {
  * {@link EXTCSS_PROTOCOL} fails the type check.
  */
 const EXTCSS_INSTANCE_KEY = '__adguardExtCss' as const;
-
-/**
- * Canonical `window` key under which the injected function keeps the set of
- * nodes it removed for `:remove()` rules. Typed as a literal so a typo in
- * {@link EXTCSS_PROTOCOL} fails the type check.
- */
-const EXTCSS_REMOVED_ELEMENTS_KEY = '__adguardExtCssRemovedElements' as const;
 
 /**
  * Canonical {@link ExtCssProtocol} values passed by `ScriptingApi` as

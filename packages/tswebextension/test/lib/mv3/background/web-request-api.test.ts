@@ -520,4 +520,30 @@ describe('WebRequestApi MV3 onCommitted', () => {
         });
         expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).not.toHaveBeenCalled();
     });
+
+    it('ignores a prerender commit', () => {
+        // A prerender commit arrives for the same tab and frame with a
+        // different document id, but it belongs to a hidden document.
+        // `handleFrame` skips its recalculation, so touching the frame context
+        // here would drop the visible document's prepared state and leave the
+        // page without cosmetics if the prerender is discarded.
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
+            url: 'https://visible.example/',
+            documentId: 'visible-document-id',
+        } as any);
+
+        (WebRequestApi as any).onCommitted({
+            tabId: 1,
+            frameId: 0,
+            parentFrameId: -1,
+            documentId: 'prerendered-document-id',
+            url: 'https://prerendered.example/',
+            timeStamp: 456,
+            documentLifecycle: DocumentLifecycle.Prerender,
+        });
+
+        expect(vi.mocked(tabsApi.updateFrameContext)).not.toHaveBeenCalled();
+        expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).not.toHaveBeenCalled();
+        expect(vi.mocked(CosmeticApi.applyCosmeticRules)).not.toHaveBeenCalled();
+    });
 });

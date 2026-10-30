@@ -88,7 +88,7 @@ describe('ScriptingApi.executeExtCss', () => {
             handlerName: 'tsWebExtension',
             messageType: 'saveCssHitsStats',
             instanceKey: '__adguardExtCss',
-            removedElementsKey: '__adguardExtCssRemovedElements',
+            removedElementsKey: '__adguardExtCssRemoved',
         });
     });
 

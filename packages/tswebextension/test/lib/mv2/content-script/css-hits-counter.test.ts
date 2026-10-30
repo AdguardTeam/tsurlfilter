@@ -10,6 +10,7 @@ import {
 } from 'vitest';
 
 import { CssHitsCounter } from '../../../../src/lib';
+import { EXTCSS_REMOVED_ELEMENTS_KEY } from '../../../../src/lib/common/content-script/extcss-removed-elements';
 import {
     MAX_PENDING_PROBES,
     type PendingProbe,
@@ -363,6 +364,39 @@ describe('CssHitsCounter', () => {
 
         counter.stop();
         style.remove();
+    });
+
+    it('does not restore a probe removed by an ExtendedCSS :remove() rule (MV3)', () => {
+        // In MV3 ExtendedCss runs in the background-injected function, so the
+        // counter's own `countAffectedByExtendedCss` callback never runs. The
+        // injected function records the removed nodes on `window`; the counter
+        // must read that set, otherwise the pending probes pass puts the ad
+        // back into the page and ExtendedCss removes it again on every retry.
+        const bait = document.createElement('div');
+        bait.className = 'removed-bait';
+
+        const removed = new WeakSet<Element>();
+        removed.add(bait);
+        (window as unknown as Record<string, WeakSet<Element>>)[EXTCSS_REMOVED_ELEMENTS_KEY] = removed;
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, {
+                pendingProbes: [{
+                    element: bait,
+                    target: document.body,
+                    previousSibling: null,
+                    nextSibling: null,
+                }],
+            });
+
+            expect(bait.parentNode).toBeNull();
+            expect(document.body.contains(bait)).toBe(false);
+
+            counter.stop();
+        } finally {
+            delete (window as unknown as Record<string, unknown>)[EXTCSS_REMOVED_ELEMENTS_KEY];
+        }
     });
 
     it('restores a pending probe at its original position', () => {

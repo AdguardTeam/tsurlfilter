@@ -89,11 +89,11 @@ export const extCssInjectedApply = (
         countedHits?: WeakMap<Element, Set<string>>;
     };
 
-    const w = window as unknown as Record<string, RetainedExtCss | null | undefined>;
+    const w = window as unknown as Record<string, unknown>;
 
     // The key arrives via `protocol` — a module-scope const would be an
     // unresolved free identifier in the page's ISOLATED world.
-    const previous = w[protocol.instanceKey];
+    const previous = w[protocol.instanceKey] as RetainedExtCss | null | undefined;
     const previousRules = previous?.cssRules;
 
     // Re-applying the rule strings the retained instance was built from is a
@@ -119,17 +119,6 @@ export const extCssInjectedApply = (
 
     __INLINE_EXTCSS_BUNDLE__();
 
-    // Nodes this payload removes for `:remove()` rules, shared with the
-    // content script through `window` (the key arrives via `protocol`, so no
-    // free identifier). `CssHitsCounter` re-inserts short-lived elements to
-    // count them, so it must know which ones ExtendedCss took out of the page
-    // itself — otherwise it puts them back. The set is read lazily there, so a
-    // counter that starts before this injection still sees the late entries,
-    // and a re-apply reuses the same set.
-    const store = window as unknown as Record<string, WeakSet<Element> | undefined>;
-    const removedElements = store[protocol.removedElementsKey] ?? new WeakSet<Element>();
-    store[protocol.removedElementsKey] = removedElements;
-
     // Inlined CSS-hits helpers — the SAME source used by MV2's
     // `ElementUtils` and `CssHitsCounter`. Defines a local `cssHitsHelpers`
     // object with `collectExtendedCssHits()` so the `beforeStyleApplied`
@@ -143,6 +132,16 @@ export const extCssInjectedApply = (
     // reported before a re-apply are skipped, while nodes matched for the
     // first time by the new instance are still reported.
     const countedHits = previous?.countedHits ?? new WeakMap<Element, Set<string>>();
+
+    /**
+     * Elements removed by a `:remove()` rule of this or a previous apply.
+     * Retained on `window` — the injected function shares the document's
+     * ISOLATED world with the content script — so the content-script
+     * `CssHitsCounter` does not put them back into the page as probes.
+     */
+    const removedElements = (w[protocol.removedElementsKey] as WeakSet<Element> | undefined)
+        ?? new WeakSet<Element>();
+    w[protocol.removedElementsKey] = removedElements;
 
     /**
      * Hits collected by {@link beforeStyleApplied} during the current apply
@@ -196,9 +195,9 @@ export const extCssInjectedApply = (
         // ExtendedCss removes the node itself for `:remove()` rules, and it
         // calls this callback first. Record the node before that, so the
         // counter does not queue it as a probe and put it back into the page.
-        if (el.node && el.rules) {
-            for (let i = 0; i < el.rules.length; i += 1) {
-                if (el.rules[i]?.style?.remove === 'true') {
+        if (el.rules) {
+            for (const rule of el.rules) {
+                if (rule.style?.remove === 'true') {
                     removedElements.add(el.node);
                 }
             }
@@ -286,9 +285,11 @@ export const extCssInjectedApply = (
  * In MV3 it is injected with `chrome.scripting.executeScript({ func, args })`.
  * In MV2 it is serialized into a code string for
  * `browser.tabs.executeScript({ code })`. It runs when the rule set is empty
- * for a document that already received an instance. It disposes the previously
- * retained ExtendedCss instance (if any): disconnects its MutationObserver and
- * reverts its styles, so stale observers and styles do not leak.
+ * and disposes the previously retained ExtendedCss instance (if any):
+ * disconnects its MutationObserver and reverts its styles, so stale observers
+ * and styles do not leak. The disposal is unconditional — a caller cannot tell
+ * whether the document still holds an instance — and is a no-op when it does
+ * not.
  *
  * Like {@link extCssInjectedApply}, it MUST NOT reference any outer-scope
  * identifier; the instance key arrives via the `protocol` argument.
