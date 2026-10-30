@@ -44,6 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Empty `:contains()` arguments in HTML filtering rules are now rejected.
+- `:-abp-contains()` and `:has-text()` are now treated as aliases of
+  `:contains()` in HTML filtering rules.
 - HTML filtering rules with deprecated `[min-length]` / `[max-length]`
   values above the PCRE2 quantifier limit (65535) now convert to a
   PCRE2-safe regular expression split into fixed-count lookaheads and

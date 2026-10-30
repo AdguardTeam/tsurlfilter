@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `SPECIAL_PSEUDO_CLASS_NAMES` is now exported, so consumers can use the
+  same list of special pseudo-class names as the parser and the converter.
 - `:has-text()` is now accepted as a synonym of `:contains()` in AdGuard
   HTML filtering rules during ADG→ADG conversion.
 

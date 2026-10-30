@@ -41,6 +41,7 @@ export {
 export { type Position, PositionProvider } from './position-provider';
 export { hasNativeCssPseudoClass } from './css';
 export { RuleCategorizer } from './categorizer';
+export { SPECIAL_PSEUDO_CLASS_NAMES } from './special-pseudo-classes';
 export {
     cloneAgentCommentRule,
     cloneAppList,
