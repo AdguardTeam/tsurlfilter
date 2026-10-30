@@ -16,16 +16,20 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- `:min-text-length()` now accepts only plain decimal digits, matching uBlock:
+  rules such as `##^div:min-text-length( 5 )` and
+  `##^div:min-text-length(1e2)` are no longer converted.
+
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
-- The whitespace around a quoted pseudo-class selector argument is no longer
-  trimmed: the argument is the raw text between the pseudo-class parentheses,
-  so HTML filtering rules like `$$div:contains( "foo" )` keep the spaces
-  around the quoted text, matching CoreLibs.
+- Pseudo-class selector arguments are no longer trimmed: the argument is the
+  raw text between the pseudo-class parentheses, e.g. `$$div:contains( "foo" )`
+  keeps the spaces around the quoted text, and `:not( .a )` keeps the spaces
+  around the inner selector. This matches CoreLibs.
 
 ### Security
 
