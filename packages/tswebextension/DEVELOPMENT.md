@@ -105,7 +105,8 @@ pnpm test:coverage
 # Run smoke tests (exports validation + Rollup builder)
 pnpm test:smoke
 
-# Run the Chromium browser-mode e2e specs
+# Run the browser-mode e2e specs (browser: Chromium;
+# canvas-native: Chromium and Firefox)
 pnpm test:e2e
 
 # Run the Firefox browser-mode e2e specs

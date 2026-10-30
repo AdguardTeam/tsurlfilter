@@ -309,7 +309,7 @@ describe('CosmeticApi.applyExtCss', () => {
             await CosmeticApi.applyExtCss(1, 0);
 
             expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
-            expect(frameContext.extCssInjectionVersion).toBeDefined();
+            expect(frameContext.extCssInjectionMarker).toBeDefined();
 
             await CosmeticApi.applyExtCss(1, 0);
 
@@ -317,6 +317,45 @@ describe('CosmeticApi.applyExtCss', () => {
         } finally {
             vi.useRealTimers();
         }
+    });
+
+    it('keeps the marker of a newer injection when an older one resolves', async () => {
+        const frameContext = makeFrameContext(makePrepared(
+            ['.ad:has(.child) { display: none !important; }'],
+        ));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        let resolveFirst!: () => void;
+        let resolveSecond!: () => void;
+        vi.mocked(TabsApi.injectScript)
+            .mockImplementationOnce(() => new Promise<void>((resolve) => {
+                resolveFirst = resolve;
+            }))
+            .mockImplementationOnce(() => new Promise<void>((resolve) => {
+                resolveSecond = resolve;
+            }));
+
+        const first = CosmeticApi.applyExtCss(1, 0);
+
+        // A same-URL commit keeps the context and bumps the document version,
+        // so the commit handler starts its own injection for the new document.
+        frameContext.extCssDocumentVersion += 1;
+
+        const second = CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
+
+        resolveFirst();
+        await first;
+
+        // The first injection belongs to the previous document, so it must not
+        // release the marker of the second one.
+        expect(frameContext.extCssInjectionMarker).toBeDefined();
+
+        resolveSecond();
+        await second;
+
+        expect(frameContext.extCssInjectionMarker).toBeUndefined();
     });
 
     it('logs at debug after the retry budget', async () => {

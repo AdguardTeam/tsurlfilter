@@ -139,6 +139,18 @@ describe('CosmeticApi.getContentScriptData', () => {
         expect(applyExtCssSpy).not.toHaveBeenCalled();
     });
 
+    it('does not inject the on-demand rules while the app is not started', () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        appContext.isAppStarted = false;
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
+        vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
+        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue();
+
+        CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+
+        expect(injectSpy).not.toHaveBeenCalled();
+    });
+
     it('still returns native CSS selectors for content-script repair', () => {
         const selectors = ['.ad', '.banner'];
         const getNativeCssSelectorsSpy = vi

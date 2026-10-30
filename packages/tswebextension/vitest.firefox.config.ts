@@ -8,8 +8,9 @@ import { inlineExtCssBundle } from './tasks/inline-extcss-bundle';
  * Firefox-only browser-mode configuration for the MV2 ExtCSS code string.
  *
  * Kept separate from `vitest.config.ts` so that `pnpm test`, `pnpm test:ci`,
- * and `pnpm test:prod` stay Chromium-only. The spec installs its own `chrome`
- * stub, so no `setupFiles` are needed.
+ * and `pnpm test:prod` do not run the `*.firefox.spec.ts` specs (the
+ * `canvas-native` project, which also runs in Firefox, is unaffected). The
+ * spec installs its own `chrome` stub, so no `setupFiles` are needed.
  */
 export default defineConfig({
     plugins: [inlineExtCssBundle(), inlineCssHitsHelpers()],

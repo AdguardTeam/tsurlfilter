@@ -231,9 +231,12 @@ export class CosmeticApi extends CosmeticApiCommon {
                 tabsApi.updateFrameContext(tabId, frameId, {
                     extCssData: { extCssRules, areHitsStatsCollected },
                 });
-            } else if (extCssRules) {
+            } else if (isAppStarted && extCssRules) {
                 // Nothing else reaches a frame without a context, so apply the
-                // on-demand rules from here.
+                // on-demand rules from here. Such a frame exists only during
+                // startup, and the startup pass creates the contexts and
+                // applies the rules, so waiting avoids re-sending the payload
+                // on every content-script retry.
                 CosmeticApi.injectExtCssWithoutContext(
                     tabId,
                     frameId,
@@ -482,11 +485,17 @@ export class CosmeticApi extends CosmeticApiCommon {
         // An injection for this document is already in flight, so a second one
         // would send the same payload again and start its own retry chain. A
         // retry continues the chain it belongs to and must pass this check.
-        if (tries === 0 && frameContext.extCssInjectionVersion === extCssDocumentVersion) {
+        if (tries === 0
+            && frameContext.extCssInjectionMarker?.documentVersion === extCssDocumentVersion
+        ) {
             return;
         }
 
-        frameContext.extCssInjectionVersion = extCssDocumentVersion;
+        // The marker object identifies this call, so a call whose await
+        // outlives a commit cannot release the marker of the call that
+        // replaced it.
+        const marker = { documentVersion: extCssDocumentVersion };
+        frameContext.extCssInjectionMarker = marker;
 
         const isInjected = await CosmeticApi.injectWithRetry(
             () => TabsApi.injectScript(tabId, frameId, code),
@@ -503,10 +512,10 @@ export class CosmeticApi extends CosmeticApiCommon {
         // retry after a delay, and an event arriving in that gap must not start
         // a second chain. The last attempt has no retry, so it clears the
         // marker and lets a later event try again.
-        if (frameContext.extCssInjectionVersion === extCssDocumentVersion
+        if (frameContext.extCssInjectionMarker === marker
             && (isInjected || tries >= CosmeticApi.INJECTION_MAX_TRIES)
         ) {
-            frameContext.extCssInjectionVersion = undefined;
+            frameContext.extCssInjectionMarker = undefined;
         }
 
         // The frame context is replaced on navigation, so a write to the

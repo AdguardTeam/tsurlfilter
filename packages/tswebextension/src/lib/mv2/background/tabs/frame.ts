@@ -69,12 +69,13 @@ export class FrameMV2 extends FrameCommon {
     public extCssDocumentVersion = 0;
 
     /**
-     * Version of the document an ExtendedCSS injection is in flight for, if
-     * any.
+     * ExtendedCSS injection that is in flight for this context, if any.
      *
      * Injection events can arrive before the previous injection resolves. The
      * marker stops them from sending the same payload again and from starting
-     * their own retry chain.
+     * their own retry chain. It also identifies the call that owns it, so a
+     * stale injection cannot release the marker of a newer one, and its
+     * document version lets a commit start its own injection.
      */
-    public extCssInjectionVersion?: number;
+    public extCssInjectionMarker?: { documentVersion: number };
 }

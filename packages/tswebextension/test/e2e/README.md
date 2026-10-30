@@ -30,7 +30,8 @@ headless Chromium. The Firefox project is configured in
 
 ## Running
 
-Run the Chromium specs:
+Run the browser-mode e2e specs, which also include the `canvas-native`
+project, so both Playwright browsers are needed:
 
 ```sh
 pnpm --filter @adguard/tswebextension test:e2e

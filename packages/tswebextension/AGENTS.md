@@ -76,7 +76,9 @@ packages/tswebextension/
 - `pnpm test:common` — run common tests only
 - `pnpm test:coverage` — run tests with V8 coverage
 - `pnpm test:smoke` — run smoke tests (exports validation + Rollup builder)
-- `pnpm test:e2e` — run the Chromium browser-mode e2e specs (`browser` project)
+- `pnpm test:e2e` — run the browser-mode e2e specs: the `browser` project in
+  headless Chromium plus the `canvas-native` project in headless Chromium and
+  Firefox. Prerequisite: `npx playwright install chromium firefox`.
 - `pnpm test:e2e:firefox` — run the Firefox browser-mode e2e specs via
   `vitest.firefox.config.ts`. Prerequisite: `npx playwright install firefox`.
   This is a separate gate: `test:prod` does not include it.
@@ -179,7 +181,8 @@ You MUST follow the following rules for EVERY task that you perform:
 
    **Rationale**: Prevents MV2-specific mocks from interfering with MV3 tests
    and vice versa. The Firefox specs need their own config so that `pnpm test`,
-   `test:ci`, and `test:prod` stay Chromium-only.
+   `test:ci`, and `test:prod` do not run the `*.firefox.spec.ts` specs (the
+   `canvas-native` project, which also runs in Firefox, is unaffected).
 
 2. **Smoke tests** validate that published exports resolve correctly and the
    package can be bundled via Rollup. Located in `test/smoke/` and
