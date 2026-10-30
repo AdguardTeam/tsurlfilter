@@ -6,6 +6,15 @@
  */
 
 /**
+ * AdGuard alias of the `:contains()` pseudo-class.
+ *
+ * Note: the alias has no dedicated conversion yet (see AG-61400), so the
+ * HTML filtering rule converter keeps it as-is. The name lives here to keep
+ * a single source of truth for all special pseudo-class names.
+ */
+export const CONTAINS_ALIAS_PSEUDO_CLASS_NAME = '-abp-contains';
+
+/**
  * Names of the special pseudo-classes which take a raw-text argument —
  * arbitrary text matched against the element content, which may contain
  * unbalanced parentheses, quotes or slashes without any escaping.
@@ -22,6 +31,6 @@
  */
 export const SPECIAL_PSEUDO_CLASS_NAMES = [
     'contains',
-    '-abp-contains',
+    CONTAINS_ALIAS_PSEUDO_CLASS_NAME,
     'has-text',
 ] as const;

@@ -866,6 +866,20 @@ describe('HtmlRuleConverter', () => {
                         error: "Special pseudo-class selector 'has-text' requires an argument",
                     },
 
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // with an empty argument
+                    {
+                        input: '##^div:-abp-contains()',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // without an argument
+                    {
+                        input: '##^div:-abp-contains',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
+                    },
+
                     // invalid special pseudo-class selector - length value not number
                     {
                         input: '##^:min-text-length(abc)',
@@ -1076,7 +1090,9 @@ describe('HtmlRuleConverter', () => {
                     },
 
                     // `:-abp-contains()` special pseudo-class selector (AdGuard alias of
-                    // `:contains()`, kept as-is for now - see AG-61400)
+                    // `:contains()`). The alias is not mapped to `:has-text()` yet
+                    // (see AG-61400), so the selector is kept as-is. This is the known
+                    // interim output; the expectation must change with AG-61400.
                     {
                         actual: '$$div:-abp-contains(foo)',
                         expected: ['##^div:-abp-contains(foo)'],
