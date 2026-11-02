@@ -22,12 +22,17 @@ export class CollectHitStatsNotifier {
      * expected and are ignored.
      *
      * @param isCollectStats Whether CSS hits must be collected.
+     * @param resolveForTab Optional resolver of the effective state for a tab,
+     * e.g. to disable collection on allowlisted pages.
      *
-     * @returns Promise resolved when the notification is sent.
+     * @returns Promise resolved when the notifications have been queued.
      */
-    public static notify(isCollectStats: boolean): Promise<void> {
+    public static notify(
+        isCollectStats: boolean,
+        resolveForTab?: (tabId: number) => boolean,
+    ): Promise<void> {
         CollectHitStatsNotifier.pending = CollectHitStatsNotifier.pending
-            .then(() => CollectHitStatsNotifier.send(isCollectStats))
+            .then(() => CollectHitStatsNotifier.send(isCollectStats, resolveForTab))
             .catch((e) => {
                 logger.debug('[tsweb.CollectHitStatsNotifier.notify]: cannot notify content scripts: ', e);
             });
@@ -38,27 +43,36 @@ export class CollectHitStatsNotifier {
     /**
      * Sends the current hit stats collection state to every frame of every tab.
      *
+     * Delivery is not awaited: the content-script listener returns nothing, and
+     * a frozen renderer must not block later notifications.
+     *
      * @param isCollectStats Whether CSS hits must be collected.
+     * @param resolveForTab Optional resolver of the effective state for a tab.
      */
-    private static async send(isCollectStats: boolean): Promise<void> {
+    private static async send(
+        isCollectStats: boolean,
+        resolveForTab?: (tabId: number) => boolean,
+    ): Promise<void> {
         const tabs: Tabs.Tab[] = await browser.tabs.query({});
 
-        const message = {
-            handlerName: MESSAGE_HANDLER_NAME,
-            type: MessageType.SetCollectHitStats,
-            payload: { isCollectStats },
-        };
-
-        await Promise.all(tabs.map(async (tab) => {
+        tabs.forEach((tab) => {
             if (typeof tab.id !== 'number') {
                 return;
             }
 
-            try {
-                await browser.tabs.sendMessage(tab.id, message);
-            } catch {
+            const effectiveCollectStats = resolveForTab
+                ? resolveForTab(tab.id)
+                : isCollectStats;
+
+            const message = {
+                handlerName: MESSAGE_HANDLER_NAME,
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: effectiveCollectStats },
+            };
+
+            browser.tabs.sendMessage(tab.id, message).catch(() => {
                 // Tabs without content scripts reject the message.
-            }
-        }));
+            });
+        });
     }
 }

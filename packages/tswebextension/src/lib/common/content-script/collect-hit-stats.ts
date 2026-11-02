@@ -1,7 +1,6 @@
 /**
  * @file Contains the content script listener for hit stats collection
- * changes. It uses a simple type guard instead of zod to keep the content
- * script bundle small.
+ * changes.
  */
 
 import browser from 'webextension-polyfill';
@@ -22,19 +21,10 @@ type SetCollectHitStatsMessage = {
 };
 
 /**
- * Checks whether a value is an object with the given property.
- *
- * @param value Value to check.
- * @param property Property name.
- *
- * @returns True if the value is an object and has the property.
- */
-const hasProperty = (value: unknown, property: string): value is Record<string, unknown> => {
-    return typeof value === 'object' && value !== null && property in value;
-};
-
-/**
  * Checks whether a message changes the hit stats collection state.
+ *
+ * The message is sent by our background script, so its payload shape is
+ * trusted; only the handler name and type are checked.
  *
  * @param message Message to check.
  *
@@ -42,16 +32,14 @@ const hasProperty = (value: unknown, property: string): value is Record<string, 
  * message.
  */
 const isSetCollectHitStatsMessage = (message: unknown): message is SetCollectHitStatsMessage => {
-    if (!hasProperty(message, 'handlerName')
-        || message.handlerName !== MESSAGE_HANDLER_NAME
-        || !hasProperty(message, 'type')
-        || message.type !== MessageType.SetCollectHitStats
-        || !hasProperty(message, 'payload')
-        || !hasProperty(message.payload, 'isCollectStats')) {
+    if (typeof message !== 'object' || message === null) {
         return false;
     }
 
-    return typeof message.payload.isCollectStats === 'boolean';
+    const candidate = message as Partial<SetCollectHitStatsMessage>;
+
+    return candidate.handlerName === MESSAGE_HANDLER_NAME
+        && candidate.type === MessageType.SetCollectHitStats;
 };
 
 /**
@@ -83,7 +71,8 @@ export class CollectHitStatsListener {
         // A message sent while the page was in bfcache may be lost, so ask
         // the background for the current state after a restore.
         window.addEventListener('pageshow', (event) => {
-            if (!event.persisted) {
+            // Ignore synthetic pageshow events dispatched by the page itself.
+            if (!event.persisted || !event.isTrusted) {
                 return;
             }
 

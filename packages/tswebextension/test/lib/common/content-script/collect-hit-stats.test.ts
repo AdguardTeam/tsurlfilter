@@ -47,9 +47,7 @@ describe('CollectHitStatsListener', () => {
         const pageshowListener = addEventListenerSpy.mock.calls
             .find(([type]) => type === 'pageshow')?.[1] as EventListener;
 
-        const event = new Event('pageshow') as Event & { persisted: boolean };
-        event.persisted = true;
-        pageshowListener(event);
+        pageshowListener({ persisted: true, isTrusted: true } as unknown as Event);
 
         await new Promise((resolve) => {
             setTimeout(resolve, 0);
@@ -60,6 +58,47 @@ describe('CollectHitStatsListener', () => {
             payload: null,
         });
         expect(onChange).toHaveBeenCalledWith(false);
+    });
+
+    it('ignores synthetic pageshow events', async () => {
+        const onChange = vi.fn();
+        const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
+        const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+            .mockResolvedValue(true);
+
+        CollectHitStatsListener.listen(onChange);
+
+        const pageshowListener = addEventListenerSpy.mock.calls
+            .find(([type]) => type === 'pageshow')?.[1] as EventListener;
+
+        pageshowListener({ persisted: true, isTrusted: false } as unknown as Event);
+
+        await new Promise((resolve) => {
+            setTimeout(resolve, 0);
+        });
+
+        expect(sendAppMessageSpy).not.toHaveBeenCalled();
+    });
+
+    it('ignores a null sync response', async () => {
+        const onChange = vi.fn();
+        const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
+        const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+            .mockResolvedValue(null);
+
+        CollectHitStatsListener.listen(onChange);
+
+        const pageshowListener = addEventListenerSpy.mock.calls
+            .find(([type]) => type === 'pageshow')?.[1] as EventListener;
+
+        pageshowListener({ persisted: true, isTrusted: true } as unknown as Event);
+
+        await new Promise((resolve) => {
+            setTimeout(resolve, 0);
+        });
+
+        expect(sendAppMessageSpy).toHaveBeenCalled();
+        expect(onChange).not.toHaveBeenCalled();
     });
 
     it('ignores a sync response older than a received message', async () => {
@@ -78,9 +117,7 @@ describe('CollectHitStatsListener', () => {
         const pageshowListener = addEventListenerSpy.mock.calls
             .find(([type]) => type === 'pageshow')?.[1] as EventListener;
 
-        const event = new Event('pageshow') as Event & { persisted: boolean };
-        event.persisted = true;
-        pageshowListener(event);
+        pageshowListener({ persisted: true, isTrusted: true } as unknown as Event);
 
         // A newer state arrives while the sync request is still in flight.
         browser.runtime.onMessage.trigger({

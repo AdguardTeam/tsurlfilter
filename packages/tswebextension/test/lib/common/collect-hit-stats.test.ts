@@ -36,6 +36,37 @@ describe('CollectHitStatsNotifier', () => {
         await expect(CollectHitStatsNotifier.notify(false)).resolves.toBeUndefined();
     });
 
+    it('uses the effective state resolver for each tab', async () => {
+        browser.tabs.query.resolves([{ id: 1 }, { id: 2 }]);
+        browser.tabs.sendMessage.resolves();
+
+        await CollectHitStatsNotifier.notify(true, (tabId) => tabId === 1);
+
+        expect(browser.tabs.sendMessage.args.map(([, message]) => message)).toEqual([
+            {
+                handlerName: MESSAGE_HANDLER_NAME,
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: true },
+            },
+            {
+                handlerName: MESSAGE_HANDLER_NAME,
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: false },
+            },
+        ]);
+    });
+
+    it('does not wait for delivery to a frozen tab', async () => {
+        browser.tabs.query.resolves([{ id: 1 }]);
+        browser.tabs.sendMessage.returns(new Promise(() => {}));
+
+        await expect(CollectHitStatsNotifier.notify(true)).resolves.toBeUndefined();
+        await expect(CollectHitStatsNotifier.notify(false)).resolves.toBeUndefined();
+
+        expect(browser.tabs.query.callCount).toBe(2);
+        expect(browser.tabs.sendMessage.callCount).toBe(2);
+    });
+
     it('sends notifications in call order', async () => {
         let queryCall = 0;
         browser.tabs.query.callsFake(async () => {

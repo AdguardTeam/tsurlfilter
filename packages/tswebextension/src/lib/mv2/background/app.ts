@@ -238,11 +238,13 @@ export class TsWebExtension implements AppInterface<
             throw new Error('App is not started!');
         }
 
-        const previousCollectStats = this.configuration.settings.collectStats;
         const configuration = configurationMV2Validator.parse(config);
 
         TsWebExtension.updateLogLevel(configuration.logLevel);
 
+        // Take the value right before the assignment so the comparison at the
+        // end of configure() sees any live `setCollectHitStats()` change.
+        const previousCollectStats = this.configuration.settings.collectStats;
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 
         this.documentBlockingService.configure(configuration);
@@ -254,7 +256,10 @@ export class TsWebExtension implements AppInterface<
         await this.stealthApi.updateWebRtcPrivacyPermissions();
 
         if (previousCollectStats !== this.configuration.settings.collectStats) {
-            CollectHitStatsNotifier.notify(this.configuration.settings.collectStats);
+            CollectHitStatsNotifier.notify(
+                this.configuration.settings.collectStats,
+                (tabId) => this.isCollectStatsEnabledForTab(tabId),
+            );
         }
 
         return {
@@ -408,10 +413,32 @@ export class TsWebExtension implements AppInterface<
     public setCollectHitStats(isCollectStats: boolean): void {
         const previousCollectStats = this.configuration.settings.collectStats;
         this.configuration.settings.collectStats = isCollectStats;
+        // The setting is changed in place, but the session storage saves only
+        // an assigned configuration.
+        this.configuration = this.configuration!;
 
         if (previousCollectStats !== isCollectStats) {
-            CollectHitStatsNotifier.notify(isCollectStats);
+            CollectHitStatsNotifier.notify(
+                isCollectStats,
+                (tabId) => this.isCollectStatsEnabledForTab(tabId),
+            );
         }
+    }
+
+    /**
+     * Returns the effective hit stats collection state for a tab.
+     *
+     * @param tabId Tab identifier.
+     *
+     * @returns True if hits must be collected for the tab.
+     */
+    private isCollectStatsEnabledForTab(tabId: number): boolean {
+        const { collectStats } = this.configuration.settings;
+        const tabContext = this.tabsApi.getTabContext(tabId);
+        const isDocumentAllowlisted = !!tabContext?.mainFrameRule
+            && tabContext.mainFrameRule.isFilteringDisabled();
+
+        return collectStats && !isDocumentAllowlisted;
     }
 
     /**

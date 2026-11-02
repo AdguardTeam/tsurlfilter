@@ -265,7 +265,7 @@ describe('TsWebExtension MV3 collect hit stats notifications', () => {
         });
 
         expect(notifySpy).toHaveBeenCalledTimes(1);
-        expect(notifySpy).toHaveBeenCalledWith(false);
+        expect(notifySpy).toHaveBeenCalledWith(false, expect.any(Function));
     });
 
     it('notifies setCollectHitStats only on an actual change', () => {
@@ -281,7 +281,7 @@ describe('TsWebExtension MV3 collect hit stats notifications', () => {
         instance.setCollectHitStats(true);
 
         expect(notifySpy).toHaveBeenCalledTimes(2);
-        expect(notifySpy).toHaveBeenNthCalledWith(1, false);
-        expect(notifySpy).toHaveBeenNthCalledWith(2, true);
+        expect(notifySpy).toHaveBeenNthCalledWith(1, false, expect.any(Function));
+        expect(notifySpy).toHaveBeenNthCalledWith(2, true, expect.any(Function));
     });
 });

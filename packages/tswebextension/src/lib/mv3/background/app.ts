@@ -358,8 +358,6 @@ export class TsWebExtension implements AppInterface<
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        const previousCollectStats = this.configuration?.settings.collectStats;
-
         // IMPORTANT: This call should always be made before any other operations for
         // proper logging and error handling.
         TsWebExtension.updateLogLevel(config.logLevel);
@@ -519,6 +517,10 @@ export class TsWebExtension implements AppInterface<
             await TsWebExtension.removeAllFilteringRules();
         }
 
+        // Take the value right before the assignment: a live
+        // `setCollectHitStats()` call may have changed it during the awaits
+        // above, and the comparison below must see that change.
+        const previousCollectStats = this.configuration?.settings.collectStats;
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
         res.canvasProtection = await this.canvasProtection.apply();
 
@@ -533,7 +535,10 @@ export class TsWebExtension implements AppInterface<
 
         if (previousCollectStats !== undefined
             && previousCollectStats !== this.configuration.settings.collectStats) {
-            CollectHitStatsNotifier.notify(this.configuration.settings.collectStats);
+            CollectHitStatsNotifier.notify(
+                this.configuration.settings.collectStats,
+                (tabId) => TsWebExtension.isCollectStatsEnabledForTab(tabId),
+            );
         }
 
         logger.trace('[tsweb.TsWebExtension.configure]: end');
@@ -884,10 +889,32 @@ export class TsWebExtension implements AppInterface<
 
         const previousCollectStats = this.configuration.settings.collectStats;
         this.configuration.settings.collectStats = isCollectStats;
+        // The setting is changed in place, but the session storage saves only
+        // an assigned configuration.
+        this.configuration = this.configuration!;
 
         if (previousCollectStats !== isCollectStats) {
-            CollectHitStatsNotifier.notify(isCollectStats);
+            CollectHitStatsNotifier.notify(
+                isCollectStats,
+                (tabId) => TsWebExtension.isCollectStatsEnabledForTab(tabId),
+            );
         }
+    }
+
+    /**
+     * Returns the effective hit stats collection state for a tab.
+     *
+     * @param tabId Tab identifier.
+     *
+     * @returns True if hits must be collected for the tab.
+     */
+    private static isCollectStatsEnabledForTab(tabId: number): boolean {
+        const collectStats = appContext.configuration?.settings.collectStats || false;
+        const tabContext = tabsApi.getTabContext(tabId);
+        const isDocumentAllowlisted = !!tabContext?.mainFrameRule
+            && tabContext.mainFrameRule.isFilteringDisabled();
+
+        return collectStats && !isDocumentAllowlisted;
     }
 
     /**

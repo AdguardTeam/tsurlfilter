@@ -126,7 +126,7 @@ describe('TsWebExtension', () => {
                 },
             });
 
-            expect(notifySpy).toHaveBeenCalledWith(false);
+            expect(notifySpy).toHaveBeenCalledWith(false, expect.any(Function));
             notifySpy.mockRestore();
         });
 
@@ -211,7 +211,7 @@ describe('TsWebExtension', () => {
 
             instance.setCollectHitStats(false);
 
-            expect(notifySpy).toHaveBeenCalledWith(false);
+            expect(notifySpy).toHaveBeenCalledWith(false, expect.any(Function));
             notifySpy.mockRestore();
         });
 
