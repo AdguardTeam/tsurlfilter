@@ -29,12 +29,12 @@ interface BadfilterTarget {
      * Permitted `$domain` entries as written in the rule text, before any
      * badfilter narrowed the rule. Equal to `permittedDomains` for a parsed rule.
      */
-    readonly originalPermittedDomains?: string[] | null;
+    readonly originalPermittedDomains: string[] | null;
     /**
      * Restricted `$domain` entries as written in the rule text, before any
      * badfilter added exclusions. Equal to `restrictedDomains` for a parsed rule.
      */
-    readonly originalRestrictedDomains?: string[] | null;
+    readonly originalRestrictedDomains: string[] | null;
     /**
      * Rule text as written in the filter list, before conversion to AG syntax.
      */
@@ -288,19 +288,9 @@ export class RuleBadfilter {
      * @returns True when the partial cancellation case applies.
      */
     private static isPartialDomainCase(badfilterRule: BadfilterTarget, targetRule: BadfilterTarget): boolean {
-        const targetPermittedDomains = targetRule.originalPermittedDomains !== undefined
-            ? targetRule.originalPermittedDomains
-            : targetRule.permittedDomains;
-        const targetRestrictedDomains = targetRule.originalRestrictedDomains !== undefined
-            ? targetRule.originalRestrictedDomains
-            : targetRule.restrictedDomains;
-        const badfilterRestrictedDomains = badfilterRule.originalRestrictedDomains !== undefined
-            ? badfilterRule.originalRestrictedDomains
-            : badfilterRule.restrictedDomains;
-
-        return (targetPermittedDomains !== null || badfilterRule.permittedDomains !== null)
-            && targetRestrictedDomains === null
-            && badfilterRestrictedDomains === null;
+        return (targetRule.permittedDomains !== null || badfilterRule.permittedDomains !== null)
+            && targetRule.originalRestrictedDomains === null
+            && badfilterRule.restrictedDomains === null;
     }
 
     /**
