@@ -69,8 +69,8 @@ export interface SourceMapConverterOptions extends BaseFilterConverterOptions {
      * When provided, `convert()` builds an internal hash map from these rules
      * and drops any dynamic rules that they cancel completely, or narrows the
      * `$domain` list of a partly cancelled rule, **before** conversion
-     * (scan-time skip). This avoids the N-to-1 grouping problem that would
-     * arise if the skip were applied post-conversion.
+     * (scan-time application). This avoids the N-to-1 grouping problem that
+     * would arise if it were applied post-conversion.
      *
      * Only valid in source-map mode (enforced by the discriminated union).
      */
