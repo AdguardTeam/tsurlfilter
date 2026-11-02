@@ -266,7 +266,7 @@ interface RuleOverrides {
      * keeps the original list here, so a partial badfilter still compares the
      * written text instead of the exclusions that earlier badfilters added.
      */
-    readonly originalRestrictedDomains?: readonly string[] | null;
+    readonly originalRestrictedDomains?: string[] | null;
 
     /**
      * Priority for the copy. A badfiltered rule keeps the priority of the rule
@@ -880,16 +880,9 @@ export class Rule {
             ? [...overrides.originalPermittedDomains]
             : this.permittedDomains;
 
-        const originalRestrictedDomains = overrides?.originalRestrictedDomains;
-        let originalRestrictedDomainsCopy: string[] | null;
-        if (originalRestrictedDomains === undefined) {
-            originalRestrictedDomainsCopy = this.restrictedDomains;
-        } else if (originalRestrictedDomains === null) {
-            originalRestrictedDomainsCopy = null;
-        } else {
-            originalRestrictedDomainsCopy = [...originalRestrictedDomains];
-        }
-        this.originalRestrictedDomains = originalRestrictedDomainsCopy;
+        this.originalRestrictedDomains = overrides?.originalRestrictedDomains !== undefined
+            ? overrides.originalRestrictedDomains
+            : this.restrictedDomains;
 
         this.permittedResourceTypes = [...permittedResourceTypesSet];
         this.restrictedResourceTypes = [...restrictedResourceTypesSet];
