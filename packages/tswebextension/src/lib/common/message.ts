@@ -41,6 +41,7 @@ export type ProcessShouldCollapsePayload = z.infer<typeof processShouldCollapseP
  */
 export const getExtendedCssPayloadValidator = z.object({
     documentUrl: z.string(),
+    reapplyHits: z.boolean().optional(),
 }).strict();
 
 /**
@@ -53,6 +54,7 @@ export type GetExtendedCssPayloadValidator = z.infer<typeof getExtendedCssPayloa
  */
 export const getCosmeticDataPayloadValidator = z.object({
     documentUrl: z.string(),
+    reapplyHits: z.boolean().optional(),
 }).strict();
 
 /**

@@ -42,6 +42,16 @@ type LogJsRulesParamsMv3 = LogJsRulesParams & {
  */
 export class CosmeticApi extends CosmeticApiCommon {
     /**
+     * Last prepared cosmetic result whose marked native CSS was injected after
+     * live enable, keyed by the frame context.
+     *
+     * The frame context is unique per frame, while `preparedCosmeticResult`
+     * can be shared by URL-less child frames. The value allows a new prepared
+     * result to be injected without repeating it for the same document.
+     */
+    private static markedCssInjected = new WeakMap<object, object>();
+
+    /**
      * This is STEP 3: All previously matched script rules are processed and filtered:
      * Scriptlet and JS rules from pre-built filters (previously collected, pre-built and passed to the engine)
      * are going to be executed as functions via chrome.scripting API,
@@ -217,8 +227,9 @@ export class CosmeticApi extends CosmeticApiCommon {
         // Do not collect hits stats if website is allowlisted
         const isDocumentAllowlisted = !!tabContext.mainFrameRule
             && tabContext.mainFrameRule.isFilteringDisabled();
+        const effectiveCollectStats = areHitsStatsCollected && !isDocumentAllowlisted;
 
-        data.areHitsStatsCollected = data.areHitsStatsCollected && !isDocumentAllowlisted;
+        data.areHitsStatsCollected = effectiveCollectStats;
 
         const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
@@ -227,7 +238,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         data.extCssRules = CosmeticApi.getExtCssRules(
             cosmeticResult,
             {
-                areHitsStatsCollected,
+                areHitsStatsCollected: effectiveCollectStats,
                 // always true for MV3
                 // since minimum version of mv3 browser already supports :has()
                 isNativeHasSupported: true,
@@ -238,6 +249,66 @@ export class CosmeticApi extends CosmeticApiCommon {
             cosmeticResult,
             { isNativeHasSupported: true },
         );
+
+        return data;
+    }
+
+    /**
+     * Re-applies marked native CSS after collection is enabled on an open page.
+     *
+     * The original stylesheet was injected without markers when the page was
+     * loaded with collection disabled. The marked copy is added, so filtering
+     * behavior is unchanged.
+     *
+     * @param frameUrl Frame url.
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     *
+     * @returns Content script data with marked ExtendedCss rules.
+     */
+    public static async reapplyMarkedCosmeticData(
+        frameUrl: string,
+        tabId: number,
+        frameId: number,
+    ): Promise<ContentScriptCosmeticData> {
+        const data = CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+
+        if (!data.areHitsStatsCollected) {
+            return data;
+        }
+
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+        if (!frameContext) {
+            return data;
+        }
+
+        const injectionKey = frameContext.preparedCosmeticResult ?? frameContext;
+
+        if (CosmeticApi.markedCssInjected.get(frameContext) === injectionKey) {
+            return data;
+        }
+
+        const tabContext = tabsApi.getTabContext(tabId);
+        if (!tabContext?.info.url) {
+            return data;
+        }
+
+        const cosmeticResult = engineApi.matchCosmetic(
+            createFrameMatchQuery(frameUrl, frameId, tabContext),
+        );
+        const cssText = CosmeticApi.getCssText(cosmeticResult, {
+            areHitsStatsCollected: true,
+            isNativeHasSupported: true,
+        });
+
+        if (cssText) {
+            try {
+                await ScriptingApi.insertCSS({ cssText, tabId, frameId });
+                CosmeticApi.markedCssInjected.set(frameContext, injectionKey);
+            } catch (e) {
+                logger.info(`[tsweb.CosmeticApi.reapplyMarkedCosmeticData]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
+            }
+        }
 
         return data;
     }

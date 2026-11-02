@@ -12,13 +12,80 @@ import {
 } from 'vitest';
 import browser from 'webextension-polyfill';
 
+import { CosmeticResult } from '@adguard/tsurlfilter';
+
 import * as SendMessageModule from '../../../../src/lib/common/content-script/send-app-message';
 import { type ContentScriptCosmeticData } from '../../../../src/lib/common/cosmetic-api';
 import { MessageType } from '../../../../src/lib/common/message-constants';
-import { CosmeticController } from '../../../../src/lib/mv3/content-script/cosmetic-controller';
+import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
+import {
+    CosmeticController as CosmeticControllerMV2,
+} from '../../../../src/lib/mv2/content-script/cosmetic-controller';
+import {
+    CosmeticController as CosmeticControllerMV3,
+} from '../../../../src/lib/mv3/content-script/cosmetic-controller';
 import { mockMutationObserver, MutationObserverMock } from '../../../helpers/mutation-observer';
+import { createCosmeticRule } from '../../../helpers/rule-creator';
 
-describe('short-lived probes', () => {
+vi.mock('../../../../src/lib/common/content-script/send-app-message', () => {
+    const module = vi.importActual('../../../../src/lib/common/content-script/send-app-message');
+    return module;
+});
+
+/**
+ * Controllers under test.
+ */
+const controllers = [
+    ['MV2', CosmeticControllerMV2],
+    ['MV3', CosmeticControllerMV3],
+] as const;
+
+afterEach(() => {
+    // Remove listeners registered by controllers created in this file.
+    // eslint-disable-next-line no-underscore-dangle
+    (browser.runtime.onMessage as unknown as { _listeners: unknown[] })._listeners = [];
+    vi.restoreAllMocks();
+});
+
+/**
+ * Creates cosmetic result for elemhide rules.
+ *
+ * @param rules Element hiding rules.
+ *
+ * @returns Element hiding rules cosmetic result.
+ */
+const getElemhideCosmeticResult = (rules: string[]): CosmeticResult => {
+    const cosmeticResult = new CosmeticResult();
+    rules.forEach((rule) => {
+        cosmeticResult.elementHiding.append(createCosmeticRule(rule, 0));
+    });
+    return cosmeticResult;
+};
+
+/**
+ * Returns cosmetic data based on `rules`.
+ *
+ * @param rules Element hiding rules.
+ * @param areHitsStatsCollected Flag for hits counter.
+ *
+ * @returns Cosmetic data object.
+ */
+const getCosmeticData = (rules: string[], areHitsStatsCollected: boolean): ContentScriptCosmeticData => {
+    const cosmeticResult = getElemhideCosmeticResult(rules);
+    const extCssRules = CosmeticApi.getExtCssRules(
+        cosmeticResult,
+        {
+            areHitsStatsCollected,
+        },
+    );
+    return {
+        isAppStarted: true,
+        areHitsStatsCollected,
+        extCssRules,
+        nativeCssSelectors: null,
+    };
+};
+describe.each(controllers)('%s short-lived probes', (_name, CosmeticController) => {
     it('starts collecting probes before the cosmetic data request and reports them', async () => {
         const restoreMutationObserver = mockMutationObserver();
 
@@ -122,7 +189,7 @@ describe('short-lived probes', () => {
     });
 });
 
-describe('collect hit stats changes', () => {
+describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticController) => {
     afterEach(() => {
         // Remove listeners registered by controllers created in this file.
         // eslint-disable-next-line no-underscore-dangle
@@ -304,23 +371,44 @@ describe('collect hit stats changes', () => {
         }
     });
 
-    it('creates the counter when collection is enabled after cosmetic data was applied', async () => {
+    it('re-applies marked data when collection is enabled after cosmetic data was applied', async () => {
         const restoreMutationObserver = mockMutationObserver();
 
-        const style = document.createElement('style');
-        style.textContent = [
+        const markedStyle = document.createElement('style');
+        markedStyle.textContent = [
             'div.controller-live-enable-bait',
             "{ display: none !important; --adguard-hit: 'adguard36%3B36' !important; }",
         ].join(' ');
-        document.head.appendChild(style);
+
+        const bait = document.createElement('div');
+        bait.className = 'controller-live-enable-bait';
+        document.body.appendChild(bait);
 
         try {
             const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
-                .mockResolvedValue({
-                    isAppStarted: true,
-                    areHitsStatsCollected: false,
-                    extCssRules: [],
-                    nativeCssSelectors: null,
+                .mockImplementation(async (message) => {
+                    const isReapply = message.type === MessageType.GetCosmeticData
+                        && (message.payload as { reapplyHits?: boolean }).reapplyHits;
+
+                    if (isReapply) {
+                        // Simulate the background re-injecting marked native
+                        // CSS while the page is already open.
+                        document.head.appendChild(markedStyle);
+
+                        return {
+                            isAppStarted: true,
+                            areHitsStatsCollected: true,
+                            extCssRules: [],
+                            nativeCssSelectors: null,
+                        };
+                    }
+
+                    return {
+                        isAppStarted: true,
+                        areHitsStatsCollected: false,
+                        extCssRules: [],
+                        nativeCssSelectors: null,
+                    };
                 });
 
             const cosmeticController = new CosmeticController();
@@ -336,18 +424,59 @@ describe('collect hit stats changes', () => {
                 payload: { isCollectStats: true },
             });
 
-            const bait = document.createElement('div');
-            bait.className = 'controller-live-enable-bait';
-            MutationObserverMock.last!.trigger([{
-                addedNodes: [bait],
-                removedNodes: [],
-                type: 'childList',
-                target: document.body,
-            } as unknown as MutationRecord]);
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
 
+            expect(sendAppMessageSpy).toHaveBeenCalledWith(expect.objectContaining({
+                type: MessageType.GetCosmeticData,
+                payload: expect.objectContaining({ reapplyHits: true }),
+            }));
             expect(getBaitStats(sendAppMessageSpy, 36)).toHaveLength(1);
         } finally {
-            style.remove();
+            bait.remove();
+            markedStyle.remove();
+            restoreMutationObserver();
+        }
+    });
+
+    it('re-applies marked ExtendedCss rules on live enable', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+        document.body.innerHTML = '<div id="live-ext-bait" class="ad_header">text</div>';
+
+        const rules = ['#?#.ad_header:contains(text)'];
+
+        try {
+            const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockImplementation(async (message) => {
+                    const isReapply = message.type === MessageType.GetCosmeticData
+                        && (message.payload as { reapplyHits?: boolean }).reapplyHits;
+
+                    return getCosmeticData(rules, !!isReapply);
+                });
+
+            const cosmeticController = new CosmeticController();
+            cosmeticController.init();
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: true },
+            });
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            // The marked ExtendedCss rule must be applied to the element that
+            // was already in the document when collection was enabled.
+            expect(getBaitStats(sendAppMessageSpy, 0).length).toBeGreaterThan(0);
+        } finally {
+            document.body.innerHTML = '';
             restoreMutationObserver();
         }
     });

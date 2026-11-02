@@ -116,7 +116,7 @@ export class MessagesApi {
                 return this.handleSaveCssHitsStats(sender, message.payload);
             }
             case MessageType.GetCollectHitStats: {
-                return MessagesApi.handleGetCollectHitStats();
+                return this.handleGetCollectHitStats(sender);
             }
             default: {
                 logger.error('[tsweb.MessagesApi.handleMessage]: did not found handler for message');
@@ -129,11 +129,27 @@ export class MessagesApi {
     /**
      * Handles a request for the current hit stats collection state.
      *
-     * @returns Whether CSS hits must be collected, or `null` if the app is not
-     * configured yet.
+     * @param sender Message sender.
+     *
+     * @returns Whether CSS hits must be collected for the sender frame, or
+     * `null` if the app is not configured yet.
      */
-    private static handleGetCollectHitStats(): boolean | null {
-        return appContext.configuration?.settings.collectStats ?? null;
+    private handleGetCollectHitStats(
+        sender: browser.Runtime.MessageSender,
+    ): boolean | null {
+        const collectStats = appContext.configuration?.settings.collectStats;
+        if (collectStats === undefined) {
+            return null;
+        }
+
+        const tabId = sender.tab?.id;
+        const tabContext = typeof tabId === 'number'
+            ? this.tabsApi.getTabContext(tabId)
+            : undefined;
+        const isDocumentAllowlisted = !!tabContext?.mainFrameRule
+            && tabContext.mainFrameRule.isFilteringDisabled();
+
+        return collectStats && !isDocumentAllowlisted;
     }
 
     /**
@@ -144,10 +160,10 @@ export class MessagesApi {
      *
      * @returns Content script data for applying cosmetic rules or null if no data.
      */
-    private handleGetCosmeticData(
+    private async handleGetCosmeticData(
         sender: browser.Runtime.MessageSender,
         payload?: unknown,
-    ): ContentScriptCosmeticData | undefined {
+    ): Promise<ContentScriptCosmeticData | undefined> {
         logger.trace('[tsweb.MessagesApi.handleGetCosmeticData]: received call: ', payload);
         if (!payload || !sender?.tab?.id) {
             return undefined;
@@ -169,6 +185,10 @@ export class MessagesApi {
 
         if (!frameId) {
             frameId = MAIN_FRAME_ID;
+        }
+
+        if (res.data.reapplyHits) {
+            return CosmeticApi.reapplyMarkedCosmeticData(res.data.documentUrl, tabId, frameId);
         }
 
         return CosmeticApi.getContentScriptData(res.data.documentUrl, tabId, frameId);

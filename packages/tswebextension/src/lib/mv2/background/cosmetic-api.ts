@@ -49,6 +49,16 @@ export class CosmeticApi extends CosmeticApiCommon {
     private static readonly INJECTION_MAX_TRIES = 100;
 
     /**
+     * Last prepared cosmetic result whose marked native CSS was injected after
+     * live enable, keyed by the frame context.
+     *
+     * The frame context is unique per frame, while `preparedCosmeticResult`
+     * can be shared by URL-less child frames. The value allows a new prepared
+     * result to be injected without repeating it for the same document.
+     */
+    private static markedCssInjected = new WeakMap<object, object>();
+
+    /**
      * Applies scripts from a cosmetic result. It is possible inject a script
      * only once, because after the first inject, we set a flag in an isolated
      * copy of the window and all next calls to `buildScriptText` will return
@@ -195,6 +205,13 @@ export class CosmeticApi extends CosmeticApiCommon {
             return data;
         }
 
+        // Do not collect hits stats if website is allowlisted.
+        const isDocumentAllowlisted = !!tabContext.mainFrameRule
+            && tabContext.mainFrameRule.isFilteringDisabled();
+        const effectiveCollectStats = areHitsStatsCollected && !isDocumentAllowlisted;
+
+        data.areHitsStatsCollected = effectiveCollectStats;
+
         let cosmeticResult;
 
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
@@ -213,7 +230,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         data.extCssRules = CosmeticApi.getExtCssRules(
             cosmeticResult,
             {
-                areHitsStatsCollected,
+                areHitsStatsCollected: effectiveCollectStats,
                 isNativeHasSupported,
             },
         );
@@ -222,6 +239,66 @@ export class CosmeticApi extends CosmeticApiCommon {
             cosmeticResult,
             { isNativeHasSupported },
         );
+
+        return data;
+    }
+
+    /**
+     * Re-applies marked native CSS after collection is enabled on an open page.
+     *
+     * The original stylesheet was injected without markers when the page was
+     * loaded with collection disabled. The marked copy is added in user origin,
+     * so filtering behavior is unchanged.
+     *
+     * @param frameUrl Frame url.
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     *
+     * @returns Content script data with marked ExtendedCss rules.
+     */
+    public static async reapplyMarkedCosmeticData(
+        frameUrl: string,
+        tabId: number,
+        frameId: number,
+    ): Promise<ContentScriptCosmeticData> {
+        const data = CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+
+        if (!data.areHitsStatsCollected) {
+            return data;
+        }
+
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+        if (!frameContext) {
+            return data;
+        }
+
+        const injectionKey = frameContext.preparedCosmeticResult
+            ?? frameContext.cosmeticResult
+            ?? frameContext;
+
+        if (CosmeticApi.markedCssInjected.get(frameContext) === injectionKey) {
+            return data;
+        }
+
+        const { cosmeticResult } = frameContext;
+        if (!cosmeticResult) {
+            return data;
+        }
+
+        const isNativeHasSupported = CssCapabilities.isNativeHasPseudoClassSupported();
+        const cssText = CosmeticApi.getCssText(cosmeticResult, {
+            areHitsStatsCollected: true,
+            isNativeHasSupported,
+        });
+
+        if (cssText) {
+            try {
+                await CosmeticApi.injectCss(tabId, frameId, cssText);
+                CosmeticApi.markedCssInjected.set(frameContext, injectionKey);
+            } catch (e) {
+                logger.info(`[tsweb.CosmeticApi.reapplyMarkedCosmeticData]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
+            }
+        }
 
         return data;
     }

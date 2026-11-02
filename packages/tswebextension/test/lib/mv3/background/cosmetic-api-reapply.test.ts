@@ -1,0 +1,135 @@
+import {
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
+
+import { CosmeticResult } from '@adguard/tsurlfilter';
+
+import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
+import { createCosmeticRule } from '../../../helpers/rule-creator';
+
+const {
+    appContextMock,
+    tabsApiMock,
+    engineApiMock,
+    insertCSSMock,
+} = vi.hoisted(() => ({
+    appContextMock: {
+        isStorageInitialized: true,
+        isAppStarted: true,
+        configuration: {
+            settings: {
+                collectStats: true,
+            },
+        },
+    },
+    tabsApiMock: {
+        getTabContext: vi.fn(),
+        getFrameContext: vi.fn(),
+    },
+    engineApiMock: {
+        matchCosmetic: vi.fn(),
+    },
+    insertCSSMock: vi.fn(),
+}));
+
+vi.mock('../../../../src/lib/mv3/background/app-context', () => ({
+    appContext: appContextMock,
+}));
+
+vi.mock('../../../../src/lib/mv3/background/engine-api', () => ({
+    engineApi: engineApiMock,
+}));
+
+vi.mock('../../../../src/lib/mv3/tabs/tabs-api', () => ({
+    tabsApi: tabsApiMock,
+}));
+
+vi.mock('../../../../src/lib/mv3/background/scripting-api', () => ({
+    ScriptingApi: {
+        insertCSS: insertCSSMock,
+    },
+}));
+
+vi.mock('../../../../src/lib/common/utils/create-frame-match-query', () => ({
+    createFrameMatchQuery: (): Record<string, unknown> => ({}),
+}));
+
+describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
+    const TAB_ID = 1;
+    const FRAME_ID = 0;
+
+    let cosmeticResult: CosmeticResult;
+
+    beforeEach(() => {
+        appContextMock.configuration.settings.collectStats = true;
+        insertCSSMock.mockReset();
+        insertCSSMock.mockResolvedValue(undefined);
+        tabsApiMock.getTabContext.mockReset();
+        tabsApiMock.getFrameContext.mockReset();
+        tabsApiMock.getTabContext.mockReturnValue({
+            info: { url: 'https://example.org/' },
+            mainFrameRule: { isFilteringDisabled: (): boolean => false },
+        });
+
+        cosmeticResult = new CosmeticResult();
+        cosmeticResult.elementHiding.append(createCosmeticRule('example.org##.banner', 0, 0));
+        cosmeticResult.elementHiding.append(createCosmeticRule('example.org#?#.banner:has(> .ad)', 0, 1));
+        engineApiMock.matchCosmetic.mockReturnValue(cosmeticResult);
+
+        tabsApiMock.getFrameContext.mockReturnValue({
+            preparedCosmeticResult: { cssText: 'unmarked' },
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('injects marked native CSS and returns marked ExtendedCss rules', async () => {
+        const data = await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(data.areHitsStatsCollected).toBe(true);
+        expect(data.extCssRules?.some((rule) => rule.includes('adguard'))).toBe(true);
+        expect(insertCSSMock).toHaveBeenCalledTimes(1);
+        expect(insertCSSMock).toHaveBeenCalledWith(expect.objectContaining({
+            cssText: expect.stringContaining('--adguard-hit'),
+            tabId: TAB_ID,
+            frameId: FRAME_ID,
+        }));
+    });
+
+    it('does not inject the marked CSS twice for the same prepared result', async () => {
+        await CosmeticApi.reapplyMarkedCosmeticData('https://example.org/', TAB_ID, FRAME_ID);
+        await CosmeticApi.reapplyMarkedCosmeticData('https://example.org/', TAB_ID, FRAME_ID);
+
+        expect(insertCSSMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not inject marked CSS for an allowlisted document', async () => {
+        tabsApiMock.getTabContext.mockReturnValue({
+            info: { url: 'https://example.org/' },
+            mainFrameRule: { isFilteringDisabled: (): boolean => true },
+        });
+        tabsApiMock.getFrameContext.mockReturnValue({
+            preparedCosmeticResult: { cssText: 'unmarked-allowlisted' },
+        });
+
+        const data = await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(data.areHitsStatsCollected).toBe(false);
+        expect(insertCSSMock).not.toHaveBeenCalled();
+    });
+});

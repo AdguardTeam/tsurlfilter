@@ -83,6 +83,24 @@ describe('MessagesApi', () => {
 
             expect(result).toBe(true);
         });
+
+        it('returns false for an allowlisted tab', async () => {
+            const tabsApi = {
+                getTabContext: vi.fn().mockReturnValue({
+                    info: { url: TAB_URL },
+                    mainFrameRule: { isFilteringDisabled: () => true },
+                }),
+            };
+            const messagesApi = new MessagesApi(tabsApi as any, {} as any);
+
+            const result = await messagesApi.handleMessage({
+                handlerName: MESSAGE_HANDLER_NAME,
+                type: MessageType.GetCollectHitStats,
+                payload: null,
+            }, createSender(0));
+
+            expect(result).toBe(false);
+        });
     });
 
     describe('handleSaveCssHitsStats', () => {
