@@ -16,7 +16,10 @@ import {
     USER_FILTER_ID,
 } from '../../../../src/lib/common/constants';
 import { CspRulesManager } from '../../../../src/lib/mv3/background/csp-rules-manager';
-import DynamicRulesApi, { type DynamicRulesSnapshot } from '../../../../src/lib/mv3/background/dynamic-rules-api';
+import DynamicRulesApi, {
+    type DynamicConversionResult,
+    type DynamicRulesSnapshot,
+} from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import { createFilter } from '../helpers';
 
 /**
@@ -123,7 +126,6 @@ const prepareCspConversion = async (
         [],
         [],
         undefined,
-        true,
     );
     const cspResult = await CspRulesManager.build([], [userFilter]);
 
@@ -132,6 +134,27 @@ const prepareCspConversion = async (
         conversionResult,
         cspResult,
     };
+};
+
+/**
+ * Prepares dynamic rules and applies them without rebuilt CSP rules.
+ *
+ * @param args Arguments of {@link DynamicRulesApi.prepareDynamicFiltering}.
+ *
+ * @returns Prepared and applied dynamic conversion result.
+ */
+const updateDynamicFiltering = async (
+    ...args: Parameters<typeof DynamicRulesApi.prepareDynamicFiltering>
+): Promise<DynamicConversionResult> => {
+    const conversionResult = await DynamicRulesApi.prepareDynamicFiltering(...args);
+    await DynamicRulesApi.applyDynamicFiltering(
+        conversionResult,
+        args[4],
+        [],
+        conversionResult.ruleset,
+    );
+
+    return conversionResult;
 };
 
 describe('DynamicRulesApi', () => {
@@ -162,7 +185,7 @@ describe('DynamicRulesApi', () => {
 
             mockDeclarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_RULES = 1;
 
-            let conversionResult = await DynamicRulesApi.updateDynamicFiltering(
+            let conversionResult = await updateDynamicFiltering(
                 createFilter([allowlistRule], ALLOWLIST_FILTER_ID),
                 createFilter([trustedDomainsException], BLOCKING_TRUSTED_FILTER_ID),
                 createFilter([userRule], USER_FILTER_ID),
@@ -177,7 +200,7 @@ describe('DynamicRulesApi', () => {
 
             mockDeclarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_RULES = 2;
 
-            conversionResult = await DynamicRulesApi.updateDynamicFiltering(
+            conversionResult = await updateDynamicFiltering(
                 createFilter([allowlistRule], ALLOWLIST_FILTER_ID),
                 createFilter([], BLOCKING_TRUSTED_FILTER_ID),
                 createFilter([userRule], USER_FILTER_ID),
@@ -193,7 +216,7 @@ describe('DynamicRulesApi', () => {
             expect(declarativeRules[1].condition.urlFilter).toBe('example.org');
 
             // same as previous but with trusted domains exception
-            conversionResult = await DynamicRulesApi.updateDynamicFiltering(
+            conversionResult = await updateDynamicFiltering(
                 createFilter([allowlistRule], ALLOWLIST_FILTER_ID),
                 createFilter([trustedDomainsException], BLOCKING_TRUSTED_FILTER_ID),
                 createFilter([userRule], USER_FILTER_ID),
@@ -212,7 +235,7 @@ describe('DynamicRulesApi', () => {
 
             mockDeclarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_RULES = 3;
 
-            conversionResult = await DynamicRulesApi.updateDynamicFiltering(
+            conversionResult = await updateDynamicFiltering(
                 createFilter([allowlistRule], ALLOWLIST_FILTER_ID),
                 createFilter([], BLOCKING_TRUSTED_FILTER_ID),
                 createFilter([userRule], USER_FILTER_ID),
@@ -230,7 +253,7 @@ describe('DynamicRulesApi', () => {
 
             mockDeclarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_RULES = 4;
 
-            conversionResult = await DynamicRulesApi.updateDynamicFiltering(
+            conversionResult = await updateDynamicFiltering(
                 createFilter([allowlistRule], ALLOWLIST_FILTER_ID),
                 createFilter([trustedDomainsException], BLOCKING_TRUSTED_FILTER_ID),
                 createFilter([userRule], USER_FILTER_ID),
@@ -281,7 +304,7 @@ describe('DynamicRulesApi', () => {
                 '||example.org^$badfilter',
             ];
 
-            const { ruleset } = await DynamicRulesApi.updateDynamicFiltering(
+            const { ruleset } = await updateDynamicFiltering(
                 createFilter([], ALLOWLIST_FILTER_ID),
                 createFilter([], BLOCKING_TRUSTED_FILTER_ID),
                 createFilter(userRules, USER_FILTER_ID),
@@ -305,7 +328,7 @@ describe('DynamicRulesApi', () => {
 
             // A second conversion mirrors a re-`configure()` and must again
             // produce non-empty metadata on the fresh ruleset.
-            const secondResult = await DynamicRulesApi.updateDynamicFiltering(
+            const secondResult = await updateDynamicFiltering(
                 createFilter([], ALLOWLIST_FILTER_ID),
                 createFilter([], BLOCKING_TRUSTED_FILTER_ID),
                 createFilter(userRules, USER_FILTER_ID),
@@ -465,7 +488,7 @@ describe('DynamicRulesApi', () => {
             delete browser.declarativeNetRequest;
         });
 
-        it('omits rebuilt CSP rules that exceed the limit instead of failing', async () => {
+        it('rejects rebuilt CSP rules that were not fitted into the quota', async () => {
             const {
                 mockDeclarativeNetRequest,
                 conversionResult,
@@ -478,19 +501,17 @@ describe('DynamicRulesApi', () => {
                 { maxNumberOfDynamicRules: 1 },
             );
 
-            // Rebuilt CSP rules are passed without pre-limiting on purpose: the
-            // merge must fit them into the quota instead of failing the apply.
+            // Fitting the rebuilt CSP rules into the remaining quota is the
+            // job of `limitRebuiltCspRules()`, so unfitted rules must not be
+            // applied silently.
             await expect(DynamicRulesApi.applyDynamicFiltering(
                 conversionResult,
                 [],
                 cspResult.dynamicRules,
                 cspResult.ruleset,
-            )).resolves.toBeDefined();
+            )).rejects.toThrow('Dynamic rules limit exceeded');
 
-            expect(mockDeclarativeNetRequest.updateDynamicRules).toHaveBeenCalledWith({
-                removeRuleIds: [100],
-                addRules: [expect.objectContaining({ action: { type: 'block' } })],
-            });
+            expect(mockDeclarativeNetRequest.updateDynamicRules).not.toHaveBeenCalled();
 
             // @ts-ignore
             delete browser.declarativeNetRequest;
@@ -529,6 +550,8 @@ describe('DynamicRulesApi', () => {
             const snapshot = await DynamicRulesApi.applyDynamicFiltering(
                 conversionResult,
                 [{ getId: () => 'ruleset_1' } as IRulesetWithSourceMap],
+                [],
+                conversionResult.ruleset,
             );
             DynamicRulesApi.sourceMapForCspRules.clear();
 

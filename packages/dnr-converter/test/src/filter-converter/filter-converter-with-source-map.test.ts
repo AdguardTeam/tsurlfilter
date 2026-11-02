@@ -44,6 +44,42 @@ describe('FilterConverter (withSourceMap: true)', () => {
     const withSourceMapOptions = { withSourceMap: true } as const;
 
     describe('convertCspRules', () => {
+        it('reports a failed blocker once and keeps it out of resolution', async () => {
+            // `$cookie` makes the rule a regular-pass rule, so the blocker is
+            // rejected by the preflight and cannot cancel anything.
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',cookie=foo",
+                '@@||example.com^$csp',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+
+            expect(errors).toHaveLength(1);
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('skips an unreadable filter and reports it instead of failing', async () => {
+            const unreadableFilter: IFilter = {
+                getId: () => 1,
+                getRuleByIndex: async () => '',
+                getContent: async () => {
+                    throw new Error('offline');
+                },
+                unloadContent: () => {},
+            };
+            const blockingFilter = createFilter([
+                "||example.com^$csp=script-src 'none'",
+            ], 2);
+
+            const { ruleset, errors } = await converter.convertCspRules([
+                unreadableFilter,
+                blockingFilter,
+            ]);
+
+            expect(errors).toHaveLength(1);
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(1);
+        });
+
         it('converts a cross-filter CSP exception to excludedRequestDomains', async () => {
             const blockingFilter = createFilter([
                 "$csp=script-src 'none'",

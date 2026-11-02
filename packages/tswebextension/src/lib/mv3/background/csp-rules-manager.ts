@@ -73,9 +73,12 @@ export class CspRulesManager {
         const staticRules: DeclarativeRule[] = [];
         const dynamicRules: DeclarativeRule[] = [];
 
+        // Only the filter of each source is needed, so the source map is read
+        // instead of the rule text: it neither splits the filter content nor
+        // rebuilds the whole offset map on every configuration.
         const rulesWithSources = await Promise.all(declarativeRules.map(async (rule) => ({
             rule,
-            sources: await conversionResult.ruleset.getRulesById(rule.id),
+            sources: await conversionResult.ruleset.getSourceRuleIndexes(rule.id),
         })));
 
         rulesWithSources.forEach(({ rule, sources }) => {

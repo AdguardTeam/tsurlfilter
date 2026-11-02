@@ -9,19 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added partial `$csp` exception support for exact conditions and clean domain
-  exclusions, including a focused runtime CSP conversion API. The standalone CSP
-  conversion parses only candidate lines — those containing `csp`, `badfilter`
-  or a `csp` alias as a modifier — instead of the whole filter list, and rejects
-  an invalid `resourcesPath`.
-- `ComputedWithSourceMapOptions` type for callers that compute `withSourceMap`
-  at runtime — now includes every source-map-only option.
-- `UnexpectedConversionError` and `RuleScanError` are now exported: the first
-  can be reported in `dynamicRules.errors`, the second keeps the filter id and
-  the offset of a rule which failed to parse.
+- Partial `$csp` exception support for exact conditions and clean domain
+  exclusions, including a standalone CSP conversion API which resolves
+  exceptions across all filters at once. It parses only candidate lines instead
+  of the whole filter list; the regular `convert()` still rejects an allowlist
+  `$csp` rule and owns `$badfilter` lines.
+- `TooManyError`, `isCspDeclarativeRule`, `UnexpectedConversionError`,
+  `RuleScanError` and `isRuleScanError` are now exported, so a limitation and a
+  scan error can be checked with `instanceof`. `IRulesetWithSourceMap` gained a
+  required `getSourceRuleIndexes()`, which maps a declarative rule id to source
+  rule indexes without reading the rule text, and `ComputedWithSourceMapOptions`
+  describes the source-map-only options.
 
 ### Changed
 
+- A blocking `$csp` rule without a directive is a parse error instead of a
+  plain block rule.
+- Merged `$csp` rules of the same filter deduplicate their directives.
 - `Rule.writtenKeys` is gone: `$badfilter` compares the rule text as written
   (`Rule.originalText`), so a rule no longer keeps a comparison key.
 
@@ -31,11 +35,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Non-ASCII characters in converted URL filters no longer break the Adblock
-  syntax: a hostname, including one after a `*` or `*.` wildcard, is converted
-  to punycode, while the rest of the pattern is percent-encoded. This covers
-  unanchored and scheme-prefixed patterns too, e.g. `example.com/путь` and
-  `пример.рф^`.
+- Non-ASCII values no longer break the conversion: a hostname in a URL filter is
+  converted to punycode, also after a `*` or `*.` wildcard and in unanchored or
+  scheme-prefixed patterns, the rest of the pattern is percent-encoded, and
+  `$domain`, `$to` and `$denyallow` values are lowercased before the punycode
+  conversion, so `ПРИМЕР.рф` and `пример.рф` give the same domain.
+- A `$csp` exception is applied only when it really covers the blocking rule:
+  the URL identity is compared field by field, and an exception which would
+  lose a part of its condition is rejected and reported instead of matching
+  more than written. An exception whose condition cannot be built at all, e.g. a
+  domain label punycode cannot encode, is reported the same way instead of
+  failing the whole conversion.
+- A filter whose content cannot be read no longer fails the whole conversion:
+  the standalone CSP pass skips it and reports an `UnavailableFilterSourceError`.
 - `$badfilter` incorrectly negated rules with different values of value-bearing
   modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
   `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when

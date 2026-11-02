@@ -32,6 +32,20 @@ describe('CspRulesManager', () => {
         expect(result.errors).toHaveLength(0);
     });
 
+    it('finds the rule source without splitting the filter text into lines', async () => {
+        // The parser also breaks lines on `\f`, while a text-based lookup
+        // splits on `\n` only, so reading the text would fail to find the
+        // source of the rule and fail the whole configuration.
+        const dynamicFilter = createFilter([
+            "! comment\f||example.com^$csp=script-src 'none'",
+        ], 10_000);
+
+        const result = await CspRulesManager.build([], [dynamicFilter]);
+
+        expect(result.dynamicRules).toHaveLength(1);
+        expect(result.staticRules).toHaveLength(0);
+    });
+
     it('reports unsupported exceptions from dynamic filters as dynamic errors', async () => {
         const staticFilter = createFilter([
             "||example.com^$csp=script-src 'none'",
@@ -69,15 +83,18 @@ describe('CspRulesManager', () => {
         expect(result.dynamicErrors).toEqual(result.errors);
     });
 
-    it('reports a parse error of a dynamic $badfilter rule as a dynamic error', async () => {
+    it('leaves a $badfilter line to the regular pass', async () => {
+        // `$badfilter` is not a CSP modifier any more, so the CSP pass does not
+        // select such a line and the regular conversion reports its errors.
         const dynamicFilter = createFilter([
             '||example.com^$badfilter,unknown',
         ], 10_000);
 
         const result = await CspRulesManager.build([], [dynamicFilter]);
 
-        expect(result.errors).toHaveLength(1);
-        expect(result.dynamicErrors).toEqual(result.errors);
+        expect(result.errors).toHaveLength(0);
+        expect(result.dynamicErrors).toHaveLength(0);
+        expect(result.dynamicRules).toHaveLength(0);
     });
 
     it('keeps parse errors of static CSP rules out of dynamic errors', async () => {

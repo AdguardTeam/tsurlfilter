@@ -27,6 +27,7 @@ import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Va
 import { CspRulesManager, type CspRulesResult } from './csp-rules-manager';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import DynamicRulesApi, { type ConversionResult, type DynamicRulesCounts } from './dynamic-rules-api';
+import { withDynamicRulesRollback } from './dynamic-rules-rollback';
 import { engineApi } from './engine-api';
 import { extSessionStorage } from './ext-session-storage';
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
@@ -46,11 +47,6 @@ import { WebRequestApi } from './web-request-api';
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult;
     staticFilters: IRulesetWithSourceMap[];
-    /**
-     * Limitations of dynamic rules omitted due to the browser quotas: regular
-     * conversion and rebuilt CSP rules.
-     */
-    limitations?: LimitationError[];
     /**
      * Session rules result.
      */
@@ -72,7 +68,9 @@ type ConfigurationResult = {
      * Dynamic rules conversion result.
      *
      * `counts` are the final counts of dynamic rules that fit the quotas:
-     * rebuilt CSP rules are already included.
+     * rebuilt CSP rules are already included. `limitations` are the
+     * limitations of the dynamic scope only, session rules report theirs in
+     * `sessionRules.limitations`.
      */
     dynamicRules?: ConversionResult & {
         counts: DynamicRulesCounts;
@@ -506,7 +504,6 @@ export class TsWebExtension implements AppInterface<
                 customFilters,
                 enabledStaticRulesets,
                 this.webAccessibleResourcesPath,
-                true,
             );
 
             const enabledStaticRulesetIds = new Set(enabledStaticRulesets.map((ruleset) => ruleset.getId()));
@@ -525,6 +522,14 @@ export class TsWebExtension implements AppInterface<
             );
             res.cspRules = { errors: cspRules.staticErrors };
 
+            if (res.cspRules.errors.length > 0) {
+                logger.warn(
+                    '[tsweb.TsWebExtension.applyFilteringConfiguration]: '
+                    + 'cannot convert some CSP rules of built-in filters:',
+                    res.cspRules.errors,
+                );
+            }
+
             const limitedDynamicCspRules = await DynamicRulesApi.limitRebuiltCspRules(
                 dynamicRules,
                 cspRules.dynamicRules,
@@ -540,7 +545,6 @@ export class TsWebExtension implements AppInterface<
                 ]),
                 errors: dynamicRules.errors.concat(cspRules.dynamicErrors),
             };
-            res.limitations = res.dynamicRules.limitations;
 
             const dynamicRulesSnapshot = await DynamicRulesApi.applyDynamicFiltering(
                 res.dynamicRules,
@@ -549,21 +553,28 @@ export class TsWebExtension implements AppInterface<
                 cspRules.ruleset,
             );
 
-            try {
-                const sessionLimitations = await SessionRulesApi.updateSessionRules(
+            const { declarativeRulesToCancel } = res.dynamicRules;
+            const sessionLimitations = await withDynamicRulesRollback(
+                dynamicRulesSnapshot,
+                () => SessionRulesApi.updateSessionRules(
                     enabledStaticRulesets,
-                    res.dynamicRules.declarativeRulesToCancel,
+                    declarativeRulesToCancel,
                     cspRules.staticRules,
                     cspRules.ruleset,
+                ),
+                (snapshot) => DynamicRulesApi.rollbackDynamicFiltering(snapshot),
+                (rollbackError) => logger.error(
+                    '[tsweb.TsWebExtension.applyFilteringConfiguration]: Cannot roll back dynamic rules:',
+                    rollbackError,
+                ),
+            );
+            res.sessionRules = { limitations: sessionLimitations };
+
+            if (sessionLimitations.length > 0) {
+                logger.warn(
+                    '[tsweb.TsWebExtension.applyFilteringConfiguration]: session rules were truncated:',
+                    sessionLimitations,
                 );
-                res.sessionRules = { limitations: sessionLimitations };
-            } catch (error) {
-                try {
-                    await DynamicRulesApi.rollbackDynamicFiltering(dynamicRulesSnapshot);
-                } catch (rollbackError) {
-                    logger.error('[tsweb.TsWebExtension.applyFilteringConfiguration]: Cannot roll back dynamic rules:', rollbackError);
-                }
-                throw error;
             }
 
             await CspService.addCspReportBlockingRule();

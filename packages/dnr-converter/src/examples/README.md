@@ -2868,7 +2868,10 @@ example 10
 <b>MV3 limitations:</b>
 <br/>
 Exceptions are supported for exact conditions and clean domain exclusions;
-path-level subtraction is not expressible in DNR
+path-level subtraction is not expressible in DNR. Exceptions are resolved
+only by the standalone CSP conversion (`convertCspRules()`): the regular
+`convert()` still rejects an allowlist `$csp` rule. Examples with exceptions
+below are converted by that pass, the rest by `convert()`.
 <br/>
 Rules with the same matching condition are combined into one, but only within
 the scope of one static filter or within the scope of all dynamic rules
@@ -2925,20 +2928,57 @@ example 1
 example 2
 
 ```adblock
-@@||example.org/page/*$csp=frame-src 'none'
+$csp=frame-src 'none'
+@@||cdn.example.org^$csp
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 499316868,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Content-Security-Policy",
+          "value": "frame-src 'none'"
+        }
+      ]
+    },
+    "condition": {
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "csp_report",
+        "media",
+        "websocket",
+        "webtransport",
+        "webbundle",
+        "other"
+      ],
+      "excludedRequestDomains": [
+        "cdn.example.org"
+      ]
+    },
+    "priority": 1
+  }
+]
 ```
-
-> ⚠️ Conversion errors: Network allowlist rule with $csp modifier is not supported
 example 3
 
 ```adblock
-@@||example.org/page/*$csp
+||example.org^$csp=frame-src 'none'
+@@||example.org^$csp
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
@@ -2946,8 +2986,6 @@ example 3
 ```json
 []
 ```
-
-> ⚠️ Conversion errors: Network allowlist rule with $csp modifier is not supported
 example 4
 
 ```adblock

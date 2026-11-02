@@ -970,4 +970,72 @@ describe('CspRulesResolver.resolve', () => {
             unsupportedExceptions: [],
         });
     });
+
+    it('does not let a url filter exception cancel a regexp blocker with the same text', () => {
+        const rules = createRules(
+            "/example.com/$csp=script-src 'none'",
+            '@@example.com$csp',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('rejects an exception which would lose a resource type inclusion', () => {
+        // The condition of `script,~image` keeps only `~image`, so the
+        // exception would look wide enough to cancel a `script,subdocument`
+        // blocker, which the written rule does not cover.
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',script,subdocument",
+            '@@||example.com^$csp,script,~image',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('rejects an exception combining $to exclusions with $denyallow', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',denyallow=x.example.com",
+            '@@||example.com^$csp,to=~sub.example.com,denyallow=x.example.com',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('cancels a blocker whose uppercase non-ASCII $domain differs in case only', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=пример.рф",
+            '@@||example.com^$csp,domain=ПРИМЕР.рф',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('reports an exception with an unencodable pattern domain instead of throwing', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none'",
+            `@@||${'a'.repeat(2000)}\u{10FFFF}.com^$csp`,
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
 });

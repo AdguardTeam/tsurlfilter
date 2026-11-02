@@ -512,7 +512,10 @@ $cookie=/__utm[a-z]/
 ! <b>MV3 limitations:</b>
 ! <br/>
 ! Exceptions are supported for exact conditions and clean domain exclusions;
-! path-level subtraction is not expressible in DNR
+! path-level subtraction is not expressible in DNR. Exceptions are resolved
+! only by the standalone CSP conversion (`convertCspRules()`): the regular
+! `convert()` still rejects an allowlist `$csp` rule. Examples with exceptions
+! below are converted by that pass, the rest by `convert()`.
 ! <br/>
 ! Rules with the same matching condition are combined into one, but only within
 ! the scope of one static filter or within the scope of all dynamic rules
@@ -523,9 +526,11 @@ $cookie=/__utm[a-z]/
 ! example 1
 ||example.org^$csp=frame-src 'none'
 ! example 2
-@@||example.org/page/*$csp=frame-src 'none'
+$csp=frame-src 'none'
+@@||cdn.example.org^$csp
 ! example 3
-@@||example.org/page/*$csp
+||example.org^$csp=frame-src 'none'
+@@||example.org^$csp
 ! example 4
 ||example.org^$csp=script-src 'self' 'unsafe-eval' http: https:
 ! example 5

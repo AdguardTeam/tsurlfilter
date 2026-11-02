@@ -21,21 +21,27 @@ export const getSourceRuleIds = async (
     try {
         const sources = await ruleset.getSourceRuleIndexes(declarativeRuleId);
 
-        if (sources.length === 0) {
-            return [declarativeRuleId];
+        if (sources.length > 0) {
+            return sources.map(({ sourceRuleIndex }) => sourceRuleIndex);
         }
 
-        return sources.map(({ sourceRuleIndex }) => sourceRuleIndex);
+        logger.warn(
+            '[tsweb.source-rule-ids]: No source is mapped for declarative rule:',
+            declarativeRuleId,
+            ruleset.getId(),
+        );
     } catch (e) {
-        logger.debug(
+        // The fallback returns a declarative id where a source id is expected,
+        // so the consumer must see it: `debug` is invisible in production.
+        logger.warn(
             '[tsweb.source-rule-ids]: Cannot map declarative rule:',
             declarativeRuleId,
             ruleset.getId(),
             e,
         );
-
-        return [declarativeRuleId];
     }
+
+    return [declarativeRuleId];
 };
 
 /**

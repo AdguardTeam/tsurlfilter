@@ -1,3 +1,4 @@
+import { type HeaderInfo } from '../declarative-rule/header-info';
 import {
     DomainType,
     RequestMethod,
@@ -41,48 +42,6 @@ const ALL_REQUEST_METHODS: readonly RequestMethod[] = Object.values(RequestMetho
 const ALL_RESOURCE_TYPES: readonly ResourceType[] = Object.values(ResourceType);
 
 /**
- * Canonicalizes a value for order-independent comparison.
- *
- * @param value Value to canonicalize.
- *
- * @returns Canonicalized value.
- */
-const canonicalize = (value: unknown): unknown => {
-    if (Array.isArray(value)) {
-        return value
-            .map((item) => canonicalize(item))
-            .sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
-    }
-
-    if (value !== null && typeof value === 'object') {
-        return Object.fromEntries(
-            Object.entries(value)
-                .sort(([left], [right]) => left.localeCompare(right))
-                .map(([key, item]) => [key, canonicalize(item)]),
-        );
-    }
-
-    return value;
-};
-
-/**
- * Creates a comparator which requires the given condition fields to be equal.
- *
- * @param fields Condition fields to compare.
- *
- * @returns Comparator of the given fields.
- */
-const createEqualityComparator = (
-    fields: readonly (keyof RuleCondition)[],
-): ConditionFieldCovers => (exceptionCondition, blockingCondition) => {
-    const exceptionValues = fields.map((field) => exceptionCondition[field]);
-    const blockingValues = fields.map((field) => blockingCondition[field]);
-
-    return JSON.stringify(canonicalize(exceptionValues))
-        === JSON.stringify(canonicalize(blockingValues));
-};
-
-/**
  * Checks whether one list of values contains all values of another one.
  *
  * @param superset List which may contain all values.
@@ -93,6 +52,41 @@ const createEqualityComparator = (
 const isSuperset = <T>(superset: readonly T[], subset: readonly T[]): boolean => (
     subset.every((value) => superset.includes(value))
 );
+
+/**
+ * Checks whether two lists contain the same values in any order.
+ *
+ * @param left First list.
+ * @param right Second list.
+ *
+ * @returns `true` if the lists are equal up to the order.
+ */
+const areEqualLists = <T>(left: readonly T[] | undefined, right: readonly T[] | undefined): boolean => {
+    if (left === undefined || right === undefined) {
+        return left === right;
+    }
+
+    return left.length === right.length
+        && isSuperset(left, right)
+        && isSuperset(right, left);
+};
+
+/**
+ * Checks whether an exception's URL identity equals a blocking rule's one.
+ *
+ * `urlFilter` and `regexFilter` are compared one by one: a value stays tied to
+ * its field, otherwise a url filter would cover a regexp with the same text.
+ *
+ * @param exceptionCondition Condition of the exception.
+ * @param blockingCondition Condition of the blocking rule.
+ *
+ * @returns `true` if both rules match the same URLs by construction.
+ */
+const coversUrlCondition = (
+    exceptionCondition: RuleCondition,
+    blockingCondition: RuleCondition,
+): boolean => exceptionCondition.urlFilter === blockingCondition.urlFilter
+    && exceptionCondition.regexFilter === blockingCondition.regexFilter;
 
 /**
  * Builds the set of values allowed by an inclusion/exclusion condition pair.
@@ -212,17 +206,14 @@ export const isDomainCovered = (domain: string, parentDomain: string): boolean =
  *
  * @returns `true` if the first domain list is a subset of the second.
  */
-const isDomainListSubset = (subset: unknown, superset: unknown): boolean => (
-    Array.isArray(subset)
-    && Array.isArray(superset)
-    && subset.every((domain) => (
-        typeof domain === 'string'
-        && superset.some((parentDomain) => (
-            typeof parentDomain === 'string'
-            && isDomainCovered(domain, parentDomain)
-        ))
-    ))
-);
+const isDomainListSubset = (
+    subset: readonly string[] | undefined,
+    superset: readonly string[] | undefined,
+): boolean => subset !== undefined
+    && superset !== undefined
+    && subset.every((domain) => superset.some((parentDomain) => (
+        isDomainCovered(domain, parentDomain)
+    )));
 
 /**
  * Checks whether one DNR header condition covers another.
@@ -232,33 +223,34 @@ const isDomainListSubset = (subset: unknown, superset: unknown): boolean => (
  *
  * @returns `true` if the second header condition covers the first.
  */
-const isHeaderInfoCovered = (header: unknown, coveringHeader: unknown): boolean => {
-    if (
-        header === null
-        || coveringHeader === null
-        || typeof header !== 'object'
-        || typeof coveringHeader !== 'object'
-    ) {
+const isHeaderInfoCovered = (header: HeaderInfo, coveringHeader: HeaderInfo): boolean => {
+    // Header names are case-insensitive in DNR, so the exception may spell them
+    // differently from the blocking rule.
+    if (header.header.toLowerCase() !== coveringHeader.header.toLowerCase()) {
         return false;
     }
 
-    const headerInfo = header as Record<string, unknown>;
-    const coveringHeaderInfo = coveringHeader as Record<string, unknown>;
-    if (
-        typeof headerInfo.header !== 'string'
-        || typeof coveringHeaderInfo.header !== 'string'
-        || headerInfo.header.toLowerCase() !== coveringHeaderInfo.header.toLowerCase()
-    ) {
-        return false;
-    }
-
-    const coveringHeaderHasValueRestrictions = coveringHeaderInfo.values !== undefined
-        || coveringHeaderInfo.excludedValues !== undefined;
+    const coveringHeaderHasValueRestrictions = coveringHeader.values !== undefined
+        || coveringHeader.excludedValues !== undefined;
 
     return !coveringHeaderHasValueRestrictions
-        || JSON.stringify(canonicalize(headerInfo))
-            === JSON.stringify(canonicalize(coveringHeaderInfo));
+        || (
+            areEqualLists(header.values, coveringHeader.values)
+            && areEqualLists(header.excludedValues, coveringHeader.excludedValues)
+        );
 };
+
+/**
+ * Checks whether two header conditions describe the same condition.
+ *
+ * @param header Header condition.
+ * @param otherHeader Header condition to compare with.
+ *
+ * @returns `true` if both conditions match the same headers.
+ */
+const isSameHeader = (header: HeaderInfo, otherHeader: HeaderInfo): boolean => (
+    isHeaderInfoCovered(header, otherHeader) && isHeaderInfoCovered(otherHeader, header)
+);
 
 /**
  * Checks whether each header condition is covered by another list.
@@ -268,13 +260,35 @@ const isHeaderInfoCovered = (header: unknown, coveringHeader: unknown): boolean 
  *
  * @returns `true` if the first header list is a subset of the second.
  */
-const isHeaderListSubset = (subset: unknown, superset: unknown): boolean => (
-    Array.isArray(subset)
-    && Array.isArray(superset)
-    && subset.every((header) => (
-        superset.some((coveringHeader) => isHeaderInfoCovered(header, coveringHeader))
-    ))
-);
+const isHeaderListSubset = (
+    subset: readonly HeaderInfo[] | undefined,
+    superset: readonly HeaderInfo[] | undefined,
+): boolean => subset !== undefined
+    && superset !== undefined
+    && subset.every((header) => superset.some((coveringHeader) => (
+        isHeaderInfoCovered(header, coveringHeader)
+    )));
+
+/**
+ * Checks whether each header condition list contains the same conditions.
+ *
+ * @param left First header list.
+ * @param right Second header list.
+ *
+ * @returns `true` if both lists describe the same headers.
+ */
+const areEqualHeaderLists = (
+    left: readonly HeaderInfo[] | undefined,
+    right: readonly HeaderInfo[] | undefined,
+): boolean => {
+    if (left === undefined || right === undefined) {
+        return left === right;
+    }
+
+    return left.length === right.length
+        && left.every((header) => right.some((otherHeader) => isSameHeader(header, otherHeader)))
+        && right.every((header) => left.some((otherHeader) => isSameHeader(header, otherHeader)));
+};
 
 /**
  * Checks whether an exception's domain list covers a blocking rule's one.
@@ -289,7 +303,10 @@ const isHeaderListSubset = (subset: unknown, superset: unknown): boolean => (
  *
  * @returns `true` if the exception's list covers the blocking rule's list.
  */
-const coversDomainList = (exceptionList: unknown, blockingList: unknown): boolean => (
+const coversDomainList = (
+    exceptionList: readonly string[] | undefined,
+    blockingList: readonly string[] | undefined,
+): boolean => (
     exceptionList === undefined || isDomainListSubset(blockingList, exceptionList)
 );
 
@@ -304,7 +321,10 @@ const coversDomainList = (exceptionList: unknown, blockingList: unknown): boolea
  *
  * @returns `true` if the exception excludes a subset of the blocking rule's list.
  */
-const coversExcludedDomains = (exceptionList: unknown, blockingList: unknown): boolean => (
+const coversExcludedDomains = (
+    exceptionList: readonly string[] | undefined,
+    blockingList: readonly string[] | undefined,
+): boolean => (
     exceptionList === undefined || isDomainListSubset(exceptionList, blockingList)
 );
 
@@ -322,7 +342,10 @@ const coversExcludedDomains = (exceptionList: unknown, blockingList: unknown): b
  *
  * @returns `true` if the exception's list covers the blocking rule's list.
  */
-const coversResponseHeaders = (exceptionHeaders: unknown, blockingHeaders: unknown): boolean => (
+const coversResponseHeaders = (
+    exceptionHeaders: readonly HeaderInfo[] | undefined,
+    blockingHeaders: readonly HeaderInfo[] | undefined,
+): boolean => (
     exceptionHeaders === undefined || isHeaderListSubset(blockingHeaders, exceptionHeaders)
 );
 
@@ -339,8 +362,8 @@ const coversResponseHeaders = (exceptionHeaders: unknown, blockingHeaders: unkno
 const CONDITION_COVERAGE: {
     readonly [K in keyof RuleCondition]-?: ConditionFieldCovers;
 } = {
-    urlFilter: createEqualityComparator(['urlFilter', 'regexFilter']),
-    regexFilter: createEqualityComparator(['urlFilter', 'regexFilter']),
+    urlFilter: coversUrlCondition,
+    regexFilter: coversUrlCondition,
     domainType: coversDomainType,
     initiatorDomains: (exceptionCondition, blockingCondition) => coversDomainList(
         exceptionCondition.initiatorDomains,
@@ -362,9 +385,18 @@ const CONDITION_COVERAGE: {
         exceptionCondition.responseHeaders,
         blockingCondition.responseHeaders,
     ),
-    excludedResponseHeaders: createEqualityComparator(['excludedResponseHeaders']),
-    tabIds: createEqualityComparator(['tabIds']),
-    excludedTabIds: createEqualityComparator(['excludedTabIds']),
+    excludedResponseHeaders: (exceptionCondition, blockingCondition) => areEqualHeaderLists(
+        exceptionCondition.excludedResponseHeaders,
+        blockingCondition.excludedResponseHeaders,
+    ),
+    tabIds: (exceptionCondition, blockingCondition) => areEqualLists(
+        exceptionCondition.tabIds,
+        blockingCondition.tabIds,
+    ),
+    excludedTabIds: (exceptionCondition, blockingCondition) => areEqualLists(
+        exceptionCondition.excludedTabIds,
+        blockingCondition.excludedTabIds,
+    ),
     requestMethods: coversRequestMethods,
     excludedRequestMethods: coversRequestMethods,
     resourceTypes: coversResourceTypes,

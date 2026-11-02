@@ -106,6 +106,7 @@ import {
     NegativeNumberOfRulesError,
     ResourcesPathError,
 } from '../errors/converter-options-errors';
+import { UnavailableFilterSourceError } from '../errors/unavailable-sources-errors';
 import { type IFilter } from '../filter/types';
 import { OPTION_NAMES } from '../rule/option-names';
 import { type Rule } from '../rule/rule';
@@ -287,10 +288,15 @@ export class FilterConverter {
     /**
      * Converts CSP rules from all provided filters into one ruleset.
      *
-     * Only candidate lines are parsed: a line must contain `csp`, `badfilter`
-     * or a `csp` alias as a modifier. The whole text is still split into lines,
-     * so the cost grows with the list size, while parsing stays proportional to
-     * the number of candidate lines.
+     * Only candidate lines are parsed: a line must contain `csp` or a `csp`
+     * alias as a modifier. `$badfilter` lines are not candidates: the regular
+     * pass owns them. The whole text is still split into lines, so the cost
+     * grows with the list size, while parsing stays proportional to the number
+     * of candidate lines.
+     *
+     * Allowlist `$csp` rules are resolved here only: the regular `convert()`
+     * rejects them, because an exception can only be applied when all filters
+     * are seen at once.
      *
      * @param filters Source filters.
      * @param resourcesPath Path to web-accessible resources.
@@ -320,7 +326,7 @@ export class FilterConverter {
             errors: scanErrors,
             filters: scannedFilters,
         } = await RulesScanner.scanFilters(
-            relevantFilters,
+            relevantFilters.filters,
             (rule) => (
                 isCspRule(rule)
                 || rule.isModifierEnabled(OPTION_NAMES.BADFILTER)
@@ -338,27 +344,46 @@ export class FilterConverter {
             convertedRules,
             badFilterRules,
         );
-        result.errors = scanErrors.concat(result.errors);
+        result.errors = [...relevantFilters.errors, ...scanErrors, ...result.errors];
 
         return result;
     }
 
     /**
-     * Filters out filters whose content cannot contain CSP or badfilter rules.
+     * Filters out filters whose content cannot contain CSP rules.
+     *
+     * A filter whose content cannot be read is skipped and reported, so one
+     * broken source does not fail the whole configuration.
      *
      * @param filters Source filters.
      *
-     * @returns Filters whose content mentions a CSP-related modifier.
+     * @returns Filters whose content mentions a CSP-related modifier and
+     * errors of unreadable filters.
      */
-    private static async filterCspFilters(filters: IFilter[]): Promise<IFilter[]> {
-        const filtersWithContent = await Promise.all(filters.map(async (filter) => ({
-            filter,
-            content: await filter.getContent(),
-        })));
+    private static async filterCspFilters(
+        filters: IFilter[],
+    ): Promise<{ filters: IFilter[]; errors: UnavailableFilterSourceError[] }> {
+        const errors: UnavailableFilterSourceError[] = [];
+        const filtersWithContent = await Promise.all(filters.map(async (filter) => {
+            try {
+                return { filter, content: await filter.getContent() };
+            } catch (error: unknown) {
+                errors.push(new UnavailableFilterSourceError(
+                    `Cannot read the content of the filter ${filter.getId()}, the CSP pass skipped it`,
+                    filter.getId(),
+                    error instanceof Error ? error : undefined,
+                ));
 
-        return filtersWithContent
-            .filter(({ content }) => FilterConverter.isCspRelatedText(content))
-            .map(({ filter }) => filter);
+                return { filter, content: null };
+            }
+        }));
+
+        return {
+            filters: filtersWithContent
+                .filter(({ content }) => content !== null && FilterConverter.isCspRelatedText(content))
+                .map(({ filter }) => filter),
+            errors,
+        };
     }
 
     /**

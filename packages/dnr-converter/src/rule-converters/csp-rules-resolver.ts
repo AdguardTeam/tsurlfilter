@@ -42,12 +42,17 @@ export class CspRulesResolver {
     /**
      * Checks whether a CSP exception can enter resolution.
      *
+     * An exception which would lose a part of its condition or whose condition
+     * cannot be built at all is not resolved: it is reported as unsupported
+     * instead of silently matching more than written.
+     *
      * @param exceptionRule CSP exception rule.
      *
      * @returns `true` if the exception can enter resolution.
      */
     private static isProcessableException(exceptionRule: Rule): boolean {
-        if (!RegularRuleConverter.areDomainConditionsRepresentable(exceptionRule)) {
+        if (!RegularRuleConverter.areDomainConditionsRepresentable(exceptionRule)
+            || !RegularRuleConverter.areConditionRestrictionsRepresentable(exceptionRule)) {
             return false;
         }
 
@@ -130,16 +135,18 @@ export class CspRulesResolver {
      * @returns Domain to compare, or `null` if it is not a valid domain.
      */
     private static normalizeDomain(rule: Rule, domain: string): string | null {
-        const asciiDomain = prepareASCII(domain);
+        // Punycode keeps the case of non-ASCII letters, so the domain is
+        // lowercased before the conversion to compare it with a host from a URL.
+        const normalizedDomain = prepareASCII(domain.toLowerCase());
 
         // Validation expects the canonical lowercased form.
-        if (!DomainUtils.isValidDomainOrHostname(asciiDomain.toLowerCase())) {
+        if (!DomainUtils.isValidDomainOrHostname(normalizedDomain)) {
             return null;
         }
 
         return rule.isModifierEnabled(OPTION_NAMES.MATCH_CASE)
-            ? asciiDomain
-            : asciiDomain.toLowerCase();
+            ? prepareASCII(domain)
+            : normalizedDomain;
     }
 
     /**
@@ -314,6 +321,30 @@ export class CspRulesResolver {
      * @returns Pair resolution result.
      */
     private static classifyPair(exceptionRule: Rule, blockingRule: Rule): CspPairResult {
+        try {
+            return CspRulesResolver.classifyProcessablePair(exceptionRule, blockingRule);
+        } catch {
+            // A condition which cannot be built, for example a domain with a
+            // label punycode cannot encode, must not fail the whole
+            // conversion: the pair is left untouched and the exception is
+            // reported as unsupported by `resolve()`.
+            return {
+                cancels: false,
+                excludedDomain: null,
+                safe: false,
+            };
+        }
+    }
+
+    /**
+     * Classifies a pair of rules whose conditions can be built.
+     *
+     * @param exceptionRule CSP exception rule.
+     * @param blockingRule Blocking CSP rule.
+     *
+     * @returns Pair resolution result.
+     */
+    private static classifyProcessablePair(exceptionRule: Rule, blockingRule: Rule): CspPairResult {
         const hasApplicableValue = CspRulesResolver.hasApplicableValue(exceptionRule, blockingRule);
         const cancels = hasApplicableValue
             && (

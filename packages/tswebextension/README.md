@@ -582,11 +582,11 @@ that **must be checked**:
 - **`cspRules.errors`**: Array of conversion errors of rebuilt CSP rules
   from built-in filters. Errors of user rules are reported in
   `dynamicRules.errors`, so the two channels are disjoint.
-- **`limitations`**: Array of limitation errors for dynamic rules omitted
-  due to the browser quotas: regular conversion and rebuilt CSP rules.
-  `dynamicRules.limitations` carries the same list.
+- **`dynamicRules.limitations`**: Array of limitation errors for dynamic rules
+  omitted due to the browser quotas: regular conversion and rebuilt CSP rules.
 - **`sessionRules.limitations`**: Array of limitation errors for session
-  rules omitted due to the browser quotas.
+  rules omitted due to the browser quotas. Session rules have their own quota,
+  so their limitations are never mixed into the dynamic counters.
 
 Rebuilt CSP rules replace only the CSP rules stored in the rule set metadata,
 so rule sets must be built with `exclude-unsafe-rules` (see
@@ -615,9 +615,14 @@ if (result.dynamicRules) {
     }
 }
 
+// Check CSP rules errors of built-in filters
+if (result.cspRules && result.cspRules.errors.length > 0) {
+    console.error('CSP rules conversion errors:', result.cspRules.errors);
+}
+
 // Check limitations
-if (result.limitations && result.limitations.length > 0) {
-    console.warn('Rules were omitted due to browser quotas:', result.limitations);
+if (result.dynamicRules && result.dynamicRules.limitations.length > 0) {
+    console.warn('Rules were omitted due to browser quotas:', result.dynamicRules.limitations);
 }
 if (result.sessionRules && result.sessionRules.limitations.length > 0) {
     console.warn('Session rules were omitted due to browser quotas:', result.sessionRules.limitations);

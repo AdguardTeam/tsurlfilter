@@ -110,6 +110,16 @@ describe('FilterConverter', () => {
             expect(declarativeRules[0].condition.urlFilter).toBe('xn--e1afmkfd.xn--p1ai^');
         });
 
+        it('reports a broken $badfilter line once in the regular pass', async () => {
+            // The CSP pass does not select `$badfilter` lines any more, so the
+            // regular conversion owns their errors.
+            const filter = createFilter(['||example.com^$badfilter,unknown']);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(errors).toHaveLength(1);
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
         it('converts a non-ASCII hostname of a wildcard subdomain to punycode', async () => {
             const filter = createFilter(['||*.пример.рф^']);
             const [{ ruleset }] = await converter.convert([filter]);

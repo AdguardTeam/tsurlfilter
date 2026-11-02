@@ -6,7 +6,11 @@ import {
     ResourceType,
     type RuleCondition,
 } from '../../../src/declarative-rule/rule-condition';
-import { coversNonUrlConditions, isDomainCovered } from '../../../src/rule-converters/csp-condition-coverage';
+import {
+    coversCondition,
+    coversNonUrlConditions,
+    isDomainCovered,
+} from '../../../src/rule-converters/csp-condition-coverage';
 
 /**
  * A request which a condition can match or not.
@@ -83,6 +87,10 @@ const CONDITION_FRAGMENTS: RuleCondition[] = [
     { resourceTypes: [ResourceType.Script], excludedInitiatorDomains: ['example.com'] },
     { requestMethods: [RequestMethod.Post], initiatorDomains: ['example.com'] },
     { excludedResourceTypes: [ResourceType.Image], responseHeaders: HEADER_CONDITIONS },
+    // Same header written with another case: DNR compares header names
+    // case-insensitively, so this condition must stay comparable with the
+    // lowercase one above.
+    { responseHeaders: [{ header: 'Set-Cookie', values: ['a'] }] },
 ];
 
 /**
@@ -271,5 +279,40 @@ describe('coversNonUrlConditions', () => {
             { requestDomains: ['a.com'] },
             { requestDomains: ['a.com', 'b.com'] },
         )).toBe(false);
+    });
+
+    it('compares header names case-insensitively when values are restricted', () => {
+        expect(coversNonUrlConditions(
+            { responseHeaders: [{ header: 'Set-Cookie', values: ['a'] }] },
+            { responseHeaders: [{ header: 'set-cookie', values: ['a'] }] },
+        )).toBe(true);
+        expect(coversNonUrlConditions(
+            { responseHeaders: [{ header: 'set-cookie', values: ['a'] }] },
+            { responseHeaders: [{ header: 'set-cookie', values: ['b'] }] },
+        )).toBe(false);
+    });
+});
+
+describe('coversCondition', () => {
+    it('keeps a url filter and a regexp filter in their own fields', () => {
+        expect(coversCondition(
+            { regexFilter: 'example\\.com' },
+            { urlFilter: 'example.com' },
+        )).toBe(false);
+        expect(coversCondition(
+            { urlFilter: 'example.com' },
+            { regexFilter: 'example\\.com' },
+        )).toBe(false);
+    });
+
+    it('reports identical URL conditions as covered', () => {
+        expect(coversCondition(
+            { urlFilter: '|https://a.com/' },
+            { urlFilter: '|https://a.com/' },
+        )).toBe(true);
+        expect(coversCondition(
+            { regexFilter: 'a\\.com' },
+            { regexFilter: 'a\\.com' },
+        )).toBe(true);
     });
 });

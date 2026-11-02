@@ -21,7 +21,7 @@ import { getSourceRuleIdsList } from './source-rule-ids';
 /**
  * Narrows {@link ConversionResult} for the dynamic ruleset use case:
  * `declarativeRulesToCancel` is always present (required, not optional) because
- * {@link DynamicRulesApi.updateDynamicFiltering} always computes it via
+ * {@link DynamicRulesApi.prepareDynamicFiltering} always computes it via
  * {@link FilterConverter.computeRulesToDisable}.
  */
 export type DynamicConversionResult = ConversionResult<IRulesetWithSourceMap> & {
@@ -207,56 +207,6 @@ export default class DynamicRulesApi {
     }
 
     /**
-     * Converts custom filters and user rules on the fly into a single merged
-     * rule set and applies it via the declarativeNetRequest API.
-     *
-     * Filters will combine into one in following order:
-     * - allowlistRules,
-     * - blockingPageTrustedFilter - created on the blocking page by user,
-     * - userRules,
-     * - customFilters.
-     *
-     * @param allowlistRules Filter with allowlist rules.
-     * @param blockingPageTrustedFilter Filter with blocking page trusted domains rules (badfiltered rules).
-     * @param userRules Filter with user rules.
-     * @param customFilters List of custom filters.
-     * @param enabledStaticRulesets List of enabled static rule sets to apply
-     * $badfilter rules from dynamic rules to static.
-     * @param resourcesPath String path to web accessible resources,
-     * relative to the extension root dir. Should start with leading slash '/'.
-     *
-     * @returns Converted dynamic rule set with rule set, errors and
-     * limitations. @see {@link ConversionResult}.
-     *
-     * @throws Error if the conversion produces no results (empty filter list).
-     * @throws Error if declarativeNetRequest.updateDynamicRules() receives
-     * invalid rules, e.g. a `urlFilter` rejected by the DNR validation or a
-     * `regexFilter` unsupported by RE2.
-     * Details: {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-RuleCondition-urlFilter}.
-     */
-    public static async updateDynamicFiltering(
-        allowlistRules: IFilter,
-        blockingPageTrustedFilter: IFilter,
-        userRules: IFilter,
-        customFilters: IFilter[],
-        enabledStaticRulesets: IRulesetWithSourceMap[],
-        resourcesPath?: string,
-    ): Promise<DynamicConversionResult> {
-        const conversionResult = await this.prepareDynamicFiltering(
-            allowlistRules,
-            blockingPageTrustedFilter,
-            userRules,
-            customFilters,
-            enabledStaticRulesets,
-            resourcesPath,
-        );
-
-        await this.applyDynamicFiltering(conversionResult, enabledStaticRulesets);
-
-        return conversionResult;
-    }
-
-    /**
      * Converts dynamic filters without changing browser DNR rules.
      *
      * @param allowlistRules Filter with allowlist rules.
@@ -265,7 +215,6 @@ export default class DynamicRulesApi {
      * @param customFilters List of custom filters.
      * @param enabledStaticRulesets Enabled static rulesets used for `$badfilter`.
      * @param resourcesPath Path to web-accessible resources.
-     * @param excludeCspRules Whether CSP rules will be rebuilt separately.
      *
      * @returns Prepared dynamic conversion result.
      */
@@ -276,7 +225,6 @@ export default class DynamicRulesApi {
         customFilters: IFilter[],
         enabledStaticRulesets: IRulesetWithSourceMap[],
         resourcesPath?: string,
-        excludeCspRules = false,
     ): Promise<DynamicConversionResult> {
         const filterList = [
             allowlistRules,
@@ -302,7 +250,9 @@ export default class DynamicRulesApi {
                 withSourceMap: true,
                 combine: true,
                 badFilterRules: staticBadFilterRules,
-                excludeCspRules,
+                // CSP rules are rebuilt globally by `CspRulesManager`, so the
+                // regular conversion leaves them out.
+                excludeCspRules: true,
             },
         );
 
@@ -330,7 +280,8 @@ export default class DynamicRulesApi {
      *
      * @param conversionResult Prepared dynamic rules.
      * @param enabledStaticRulesets Enabled static rulesets used for `$badfilter`.
-     * @param rebuiltCspRules Optional globally rebuilt dynamic CSP rules.
+     * @param rebuiltCspRules Globally rebuilt dynamic CSP rules that fit the
+     * quotas left after the regular conversion.
      * @param cspRuleset Source ruleset for rebuilt CSP rules.
      *
      * @returns Snapshot that can restore the previous browser rules.
@@ -338,27 +289,15 @@ export default class DynamicRulesApi {
     public static async applyDynamicFiltering(
         conversionResult: DynamicConversionResult,
         enabledStaticRulesets: IRulesetWithSourceMap[],
-        rebuiltCspRules?: DeclarativeRule[],
-        cspRuleset?: IRulesetWithSourceMap,
+        rebuiltCspRules: DeclarativeRule[],
+        cspRuleset: IRulesetWithSourceMap,
     ): Promise<DynamicRulesSnapshot> {
         const declarativeRules = await conversionResult.ruleset.getDeclarativeRules();
-        const rulesWithoutCsp = rebuiltCspRules === undefined
-            ? declarativeRules
-            : declarativeRules.filter((rule) => !isCspDeclarativeRule(rule));
-        // Fit rebuilt CSP rules into the quotas left after regular conversion.
-        // Omitted rules are reported by the caller through `limitRebuiltCspRules`,
-        // so exceeding a limit here must not fail the whole configuration.
-        const limitedCspRules = rebuiltCspRules === undefined
-            ? rebuiltCspRules
-            : (await DynamicRulesApi.limitRebuiltCspRules(
-                conversionResult,
-                rebuiltCspRules,
-                cspRuleset,
-            )).rules;
+        const rulesWithoutCsp = declarativeRules.filter((rule) => !isCspDeclarativeRule(rule));
         const {
             rules,
             sourceMap,
-        } = DynamicRulesApi.mergeCspRules(rulesWithoutCsp, limitedCspRules, cspRuleset);
+        } = DynamicRulesApi.mergeCspRules(rulesWithoutCsp, rebuiltCspRules, cspRuleset);
         DynamicRulesApi.validateRuleLimits(rules);
         const existingRules = await browser.declarativeNetRequest.getDynamicRules();
         const disabledStaticRuleIds = new Map(await Promise.all(enabledStaticRulesets.map(async (ruleset) => (
@@ -453,20 +392,9 @@ export default class DynamicRulesApi {
      */
     private static mergeCspRules(
         rules: DeclarativeRule[],
-        rebuiltCspRules?: DeclarativeRule[],
-        cspRuleset?: IRulesetWithSourceMap,
+        rebuiltCspRules: DeclarativeRule[],
+        cspRuleset: IRulesetWithSourceMap,
     ): { rules: DeclarativeRule[]; sourceMap: Map<number, [string, number]> } {
-        if (rebuiltCspRules === undefined) {
-            return {
-                rules,
-                sourceMap: new Map(),
-            };
-        }
-
-        if (!cspRuleset) {
-            throw new Error('CSP source ruleset is required for rebuilt dynamic CSP rules');
-        }
-
         const result = [...rules];
         const usedIds = new Set(result.map((rule) => rule.id));
         const sourceMap = new Map<number, [string, number]>();

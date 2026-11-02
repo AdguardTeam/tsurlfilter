@@ -276,9 +276,11 @@ export class RegularRuleConverter {
      * dropped; wildcard TLD domains (e.g. `example.*`) are expanded to the
      * popular TLD list.
      *
-     * Domains are lowercased: a host in a URL is always lowercased, so the case
-     * written in a modifier carries no meaning, while the condition arrays are
-     * also compared with each other by the CSP resolver.
+     * Domains are lowercased before the punycode conversion: punycode keeps the
+     * case of non-ASCII letters, so `ПРИМЕР.рф` and `пример.рф` would otherwise
+     * produce different `xn--` labels. A host in a URL is always lowercased, so
+     * the case written in a modifier carries no meaning, while the condition
+     * arrays are also compared with each other by the CSP resolver.
      *
      * @param domains Domains from network rule modifier.
      *
@@ -301,7 +303,7 @@ export class RegularRuleConverter {
             return [domain];
         }) ?? [];
 
-        return [...new Set(toASCII(expandedDomains).map((domain) => domain.toLowerCase()))];
+        return [...new Set(toASCII(expandedDomains.map((domain) => domain.toLowerCase())))];
     }
 
     /**
@@ -324,6 +326,29 @@ export class RegularRuleConverter {
             !isRegexPattern(domain)
             && (!domain.includes(MASK_ANY_CHARACTER) || RegularRuleConverter.isWildcardTldDomain(domain))
         )) ?? true);
+    }
+
+    /**
+     * Checks whether a condition keeps every restriction of the rule.
+     *
+     * {@link RegularRuleConverter.getCondition} stores one inclusion list per
+     * field, so a rule which combines an inclusion with an exclusion in the
+     * same field loses the inclusion: `$csp,script,~image` keeps only `~image`,
+     * and `$to=~a.com,denyallow=b.com` keeps only `$denyallow`. A CSP exception
+     * would then cancel more than written, so it must not be applied.
+     *
+     * @param rule Source rule.
+     *
+     * @returns `true` if the condition keeps all restrictions of the rule.
+     */
+    public static areConditionRestrictionsRepresentable(rule: Rule): boolean {
+        const hasPermittedResourceTypes = rule.permittedResourceTypes.length !== 0;
+        const hasRestrictedResourceTypes = rule.restrictedResourceTypes.length !== 0;
+        const hasRestrictedToDomains = (rule.restrictedToDomains?.length ?? 0) !== 0;
+        const hasDenyAllowDomains = (rule.denyAllowDomains?.length ?? 0) !== 0;
+
+        return !(hasPermittedResourceTypes && hasRestrictedResourceTypes)
+            && !(hasRestrictedToDomains && hasDenyAllowDomains);
     }
 
     /**

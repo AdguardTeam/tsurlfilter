@@ -6,6 +6,7 @@ import { RuleScanError } from '../errors/scan-errors';
 import { type IFilter } from '../filter/types';
 import { OPTION_NAMES } from '../rule/option-names';
 import { Rule } from '../rule/rule';
+import { copyString } from '../utils/string';
 
 /**
  * Interface that represents a scanned filter.
@@ -117,8 +118,9 @@ export class RulesScanner {
      * separately, not for cumulative scope of rules from all filters, because
      * it looks simpler and more predictable solution to prevent too long scan.
      * @param lineSelector If this function is specified, only lines matching it
-     * are parsed. It keeps the scan cost proportional to the number of
-     * candidate lines, and original offsets of the rules are preserved.
+     * are parsed. The content is still split into lines and every line is
+     * tested, so only the parsing cost is proportional to the number of
+     * candidate lines; original offsets of the rules are preserved.
      * @param skipErrorLineSelector If this function is specified, parse errors
      * of lines matching it are not reported. It is used when another pass owns
      * such lines and reports their errors itself.
@@ -236,7 +238,9 @@ export class RulesScanner {
 
         for (const line of content.split(RulesScanner.LINE_BREAK)) {
             if (lineSelector(line)) {
-                segments.push({ text: line, offset });
+                // The line is a slice of the whole content and keeps it alive,
+                // so it is copied before it is stored.
+                segments.push({ text: copyString(line), offset });
             }
 
             offset += line.length + RulesScanner.LINE_BREAK.length;

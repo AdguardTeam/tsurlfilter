@@ -71,8 +71,14 @@ MV3 limitations (inherent to the Declarative Net Request API) are:
 - `$important`, `$match-case`, `$method`, `$to`, `$denyallow`, `$header`
   (no regex values), `$all`
 - `$redirect` — allowlist rules not supported
-- `$csp` — exceptions are supported for exact conditions and clean domain
-  exclusions; path-level subtraction is not expressible in DNR
+- `$csp` — exceptions are supported only through `convertCspRules()`, which
+  sees all filters at once; the regular `convert()` still rejects an allowlist
+  `$csp` rule. Exceptions are supported for exact conditions and clean domain
+  exclusions; path-level subtraction is not expressible in DNR. A value-less
+  exception applies only when it outranks the blocking rule, so
+  `@@||example.com^$csp` does not cancel `||example.com^$csp=...,$important`;
+  this differs from MV2, where the value-less exception wins, and from what the
+  filtering log shows in MV3
 - `$removeparam`, `$removeheader`, `$permissions` — allowlist rules
   not supported; rules with identical conditions are combined only within the
   same filter, not across filters
@@ -316,17 +322,22 @@ const converter = new FilterConverter();
 
 const [regular] = await converter.convert(filters, {
     withSourceMap: true,
+    combine: true,
     excludeCspRules: true,
 });
 const csp = await converter.convertCspRules(filters, '/web-accessible-resources');
 ```
 
-Only candidate lines are parsed: a line must contain `csp`, `badfilter` or a
-`csp` alias as a modifier, so `csp` does not have to be the first modifier. The
-whole text is still split into lines, so the cost grows with the list size, while
-parsing stays proportional to the number of candidates. Exceptions that cannot be applied —
-for example path-level subtraction — are reported as conversion errors and
-leave the blocking rule active.
+Without `combine: true` the regular conversion returns one result per filter, so
+the destructuring above would keep only the first filter.
+
+Only candidate lines are parsed: a line must contain `csp` or a `csp` alias as a
+modifier, so `csp` does not have to be the first modifier. `$badfilter` lines are
+not candidates any more: the regular pass owns them. The whole text is still
+split into lines, so the cost grows with the list size, while parsing stays
+proportional to the number of candidates. Exceptions that cannot be applied — for
+example path-level subtraction — are reported as conversion errors and leave the
+blocking rule active.
 
 ### Compact ruleset file format
 

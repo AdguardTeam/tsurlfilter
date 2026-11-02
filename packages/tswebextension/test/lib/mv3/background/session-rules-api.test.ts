@@ -22,13 +22,24 @@ import { SessionRulesApi } from '../../../../src/lib/mv3/background/session-rule
  *
  * @param id Ruleset ID.
  * @param unsafeRules Unsafe DNR rules.
+ * @param sourceMap Source rule indexes by declarative rule id.
  *
  * @returns Minimal ruleset mock.
  */
-function createRuleset(id: string, unsafeRules: DeclarativeRule[]): IRulesetWithSourceMap {
+function createRuleset(
+    id: string,
+    unsafeRules: DeclarativeRule[],
+    sourceMap: Record<number, number[]> = {},
+): IRulesetWithSourceMap {
     return {
         getId: () => id,
         getUnsafeRules: async () => unsafeRules,
+        getSourceRuleIndexes: async (declarativeRuleId: number) => (
+            (sourceMap[declarativeRuleId] ?? []).map((sourceRuleIndex) => ({
+                sourceRuleIndex,
+                filterId: 1,
+            }))
+        ),
     } as IRulesetWithSourceMap;
 }
 
@@ -183,5 +194,65 @@ describe('SessionRulesApi', () => {
         expect(limitations).toHaveLength(1);
         expect(limitations[0]).toBeInstanceOf(TooManyRegexpRulesError);
         expect((limitations[0] as TooManyRegexpRulesError).excludedRulesIds).toEqual([regexpRule.id]);
+    });
+
+    it('reports source rule ids of omitted rules of a static ruleset', async () => {
+        const staticRule = {
+            id: 2,
+            action: { type: RuleActionType.ModifyHeaders },
+            condition: {},
+        } as DeclarativeRule;
+        const updateSessionRules = vi.fn().mockResolvedValue(undefined);
+
+        const declarativeNetRequest = {
+            getSessionRules: vi.fn().mockResolvedValue([]),
+            updateSessionRules,
+            MAX_NUMBER_OF_SESSION_RULES: 1,
+            MAX_NUMBER_OF_UNSAFE_SESSION_RULES: 1,
+            MAX_NUMBER_OF_REGEX_RULES: 1000,
+        } as unknown as typeof chrome.declarativeNetRequest;
+        chrome.declarativeNetRequest = declarativeNetRequest;
+        // @ts-expect-error(2540)
+        browser.declarativeNetRequest = declarativeNetRequest;
+
+        const limitations = await SessionRulesApi.updateSessionRules(
+            [createRuleset('ruleset_1', [staticRule], { [staticRule.id]: [101, 102] })],
+        );
+
+        expect(limitations).toHaveLength(1);
+        expect((limitations[0] as TooManyUnsafeRulesError).excludedRulesIds).toEqual([101, 102]);
+    });
+
+    it('reports source rule ids of omitted rebuilt CSP rules', async () => {
+        const cspRule = {
+            id: 3,
+            action: {
+                type: RuleActionType.ModifyHeaders,
+                responseHeaders: [{ header: 'Content-Security-Policy', operation: 'append' }],
+            },
+            condition: {},
+        } as DeclarativeRule;
+        const updateSessionRules = vi.fn().mockResolvedValue(undefined);
+
+        const declarativeNetRequest = {
+            getSessionRules: vi.fn().mockResolvedValue([]),
+            updateSessionRules,
+            MAX_NUMBER_OF_SESSION_RULES: 1,
+            MAX_NUMBER_OF_UNSAFE_SESSION_RULES: 1,
+            MAX_NUMBER_OF_REGEX_RULES: 1000,
+        } as unknown as typeof chrome.declarativeNetRequest;
+        chrome.declarativeNetRequest = declarativeNetRequest;
+        // @ts-expect-error(2540)
+        browser.declarativeNetRequest = declarativeNetRequest;
+
+        const limitations = await SessionRulesApi.updateSessionRules(
+            [],
+            undefined,
+            [cspRule],
+            createRuleset('_csp', [], { [cspRule.id]: [201] }),
+        );
+
+        expect(limitations).toHaveLength(1);
+        expect((limitations[0] as TooManyUnsafeRulesError).excludedRulesIds).toEqual([201]);
     });
 });

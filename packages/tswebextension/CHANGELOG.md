@@ -9,17 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added partial support for `$csp` exceptions in Manifest V3 across built-in,
-  custom, and user filters [AdguardBrowserExtension#2965].
-- Rebuilt CSP rules replace the previous rules atomically within each DNR
-  scope, fit into the remaining browser quotas, and the dynamic scope is
-  rolled back when the session update fails.
-- All limitations of the applied configuration — rules omitted due to the
-  browser quotas during conversion or CSP rules rebuilding — are reported in
-  `ConfigurationResult.limitations`; limitations of session rules are reported
-  separately in `ConfigurationResult.sessionRules.limitations`.
-- `ConfigurationResult.dynamicRules.counts` carries the final counts of dynamic
-  rules, rebuilt CSP rules included.
+- Partial support for `$csp` exceptions in Manifest V3 across built-in, custom,
+  and user filters [AdguardBrowserExtension#2965]: rebuilt CSP rules replace the
+  previous ones atomically within each DNR scope, are fitted into the quotas left
+  after the regular conversion, and the dynamic scope is rolled back when the
+  session update fails. Rule sets must be built with `exclude-unsafe-rules`,
+  otherwise the static copy of a CSP rule stays in the rule set and a `$csp`
+  exception has no effect.
+- `ConfigurationResult` reports what was dropped or failed: `cspRules.errors`
+  for built-in filters (user rules stay in `dynamicRules.errors`),
+  `dynamicRules.limitations` and `sessionRules.limitations` for the two separate
+  quotas, so the session overflow never reaches the dynamic counters, and
+  `dynamicRules.counts` with the final counts, rebuilt CSP rules included. Both
+  error channels and both limitation lists are logged by `configure()`.
+- `UnexpectedConversionError`, `RuleScanError` and `isRuleScanError` are now
+  re-exported, so consumers can check errors with `instanceof`.
 
 ### Changed
 
