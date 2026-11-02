@@ -60,7 +60,7 @@
 ! the output contains the first rule with `initiatorDomains` set to
 ! `["example.org"]`.
 !
-! Three cases are still not covered:
+! Four cases are still not covered:
 ! - a target rule without `$domain` is cancelled completely: the converter
 !   narrows only an existing permitted `$domain` list, although DNR could express
 !   the exclusion with `excludedInitiatorDomains`;
@@ -71,7 +71,13 @@
 !   rule cancels the remaining domains too;
 ! - wildcard-TLD entries (`example.*`) are expanded with a popular TLD list, so
 !   an entry outside that list is not covered, and the full public suffix list
-!   is not used.
+!   is not used;
+! - for a document rule, MV2 matches `$domain` on either end of the navigation,
+!   and the badfilter does too, while the narrowed rule matches only the end
+!   named by its remaining entries: with
+!   `*$document,csp=script-src 'none',domain=foo.com|bar.com` and the same rule
+!   with `domain=foo.com,badfilter`, MV2 cancels both `foo.com` → `bar.com`
+!   and `bar.com` → `foo.com`, while the narrowed rule still applies to both.
 !
 ! ### Problem 2
 ! ~~Previously, `$removeparam` rules with identical conditions were merged into a
