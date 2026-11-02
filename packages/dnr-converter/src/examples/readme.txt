@@ -41,7 +41,11 @@
 !
 ! <b> Please note </b> that in the current approach, the application of
 ! `$badfilter` rules affects the filtering process, but we do not currently
-! display this in the declarative filtering log, as declarative rules are canceled.
+! display the application in the declarative filtering log for rules that a
+! badfilter cancels completely, as declarative rules are canceled. A partly
+! cancelled rule stays in the ruleset with a narrowed `$domain` list, and the
+! declarative filtering log shows it with a condition that no longer matches
+! the written `$domain` list.
 !
 ! ### Problem 1
 ! When neither rule negates a domain (`~domain`) and the two `$domain` lists

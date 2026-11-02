@@ -110,7 +110,11 @@ The output contains the rule from filter 1, because the badfilter from filter
 
 <b> Please note </b> that in the current approach, the application of
 `$badfilter` rules affects the filtering process, but we do not currently
-display this in the declarative filtering log, as declarative rules are canceled.
+display the application in the declarative filtering log for rules that a
+badfilter cancels completely, as declarative rules are canceled. A partly
+cancelled rule stays in the ruleset with a narrowed `$domain` list, and the
+declarative filtering log shows it with a condition that no longer matches
+the written `$domain` list.
 
 <a name="mv3_specific_limitations__$badfilter__problem_1"></a>
 ### Problem 1
