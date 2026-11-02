@@ -141,18 +141,40 @@ describe('collectRegexValueRegions', () => {
             [rule.indexOf('/x'), rule.lastIndexOf('/') + 1],
         ]);
     });
+
+    test.each([
+        '/[a$b]/',
+        '/[$a-z]/',
+        '/a$b/',
+    ])('ignores a $ that cannot start a modifier list: %s', (rule) => {
+        expect(collectRegexValueRegions(rule)).toEqual([]);
+    });
 });
 
 describe('isModifierListStart', () => {
     test.each([
         ['||example.com^$script', true],
+        ['||example.com^$script,third-party', true],
         ['||example.com^$ third-party', true],
         ['||example.com^$~third-party', true],
+        ['||example.com^$script ', true],
         ['||example.com^$/x/', false],
         ['/foo$|bar/', false],
         ['/(ads\\.js$)/', false],
         ['/foo$', false],
+        ['/[a$b]/', false],
+        ['/[$a-z]/', false],
+        ['/a$b/', false],
+        ['||example.com^$script foo', false],
     ])('checks whether %s can start a modifier list', (rule, expected) => {
         expect(isModifierListStart(rule, rule.indexOf('$'))).toBe(expected);
+    });
+
+    test('treats the end of the scanned range as the end of the rule', () => {
+        const source = '||example.com^$script\n||example.org^';
+        const separatorIndex = source.indexOf('$');
+        const ruleEnd = source.indexOf('\n');
+
+        expect(isModifierListStart(source, separatorIndex, ruleEnd)).toBe(true);
     });
 });

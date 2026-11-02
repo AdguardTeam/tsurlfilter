@@ -140,6 +140,27 @@ describe('Engine Tests', () => {
         expect(result.basicRule).not.toBeNull();
     });
 
+    it('matches a regex rule whose pattern contains a literal $', () => {
+        // Regression: `$b` was treated as a modifier list, so the engine
+        // loaded the rule with the pattern `/[a` and never matched it.
+        const ruleText = '/[a$b]/';
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: ruleText,
+                },
+            ],
+        });
+
+        expect(engine.getRulesCount()).toBe(1);
+
+        const request = new Request('https://example.com/a', '', RequestType.Document);
+        const result = engine.matchRequest(request);
+
+        expect(result.basicRule).not.toBeNull();
+    });
+
     it('works if frame matches rule', () => {
         const ruleText = '@@||example.org$document';
         const rules = [ruleText];

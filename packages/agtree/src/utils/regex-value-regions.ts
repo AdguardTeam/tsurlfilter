@@ -78,22 +78,57 @@ function isHorizontalWhitespace(code: number): boolean {
 /**
  * Checks whether the `$` at `index` can start a modifier list.
  *
- * A modifier can follow the separator only if the next character is a
- * modifier-name start character, `~`, a space, or a tab. A `$` followed by
- * `/`, `|`, `)`, `=`, or the end of the rule is a regex anchor or a literal
- * character in the pattern, not a separator.
+ * The check mirrors `isPotentialNetModifier()` in the structural parser:
+ * whitespace is allowed between the separator and the optional `~`, between
+ * `~` and the name, and between the name and `,` or `=`, and the modifier name
+ * must end the rule or be followed by `,` or `=`. This keeps a `$` that is a
+ * regex anchor or a literal character in the pattern, e.g. `/[a$b]/`,
+ * `/[$a-z]/` or `/a$b/`, from being mistaken for a separator.
  *
  * @param rule Rule text, or a source string containing the rule.
  * @param index Index of the `$` character.
+ * @param end Exclusive end of the rule range. A modifier name that reaches
+ *   this index ends the rule, so trailing whitespace or a following rule in a
+ *   filter list does not hide a valid modifier list. Defaults to
+ *   `rule.length`.
  *
  * @returns `true` if a modifier can start right after the `$`.
  */
-export function isModifierListStart(rule: string, index: number): boolean {
-    const next = rule.charCodeAt(index + 1);
+export function isModifierListStart(rule: string, index: number, end: number = rule.length): boolean {
+    let i = index + 1;
 
-    return isModifierNameStartChar(next)
-        || rule[index + 1] === NEGATION_MARKER
-        || isHorizontalWhitespace(next);
+    // Whitespace is allowed between the separator and `~` or the name.
+    while (i < end && isHorizontalWhitespace(rule.charCodeAt(i))) {
+        i += 1;
+    }
+
+    if (i < end && rule[i] === NEGATION_MARKER) {
+        i += 1;
+
+        // Whitespace is allowed between `~` and the name.
+        while (i < end && isHorizontalWhitespace(rule.charCodeAt(i))) {
+            i += 1;
+        }
+    }
+
+    if (i >= end || !isModifierNameStartChar(rule.charCodeAt(i))) {
+        return false;
+    }
+
+    // Skip the modifier name.
+    i += 1;
+    while (i < end && isModifierNameChar(rule.charCodeAt(i))) {
+        i += 1;
+    }
+
+    // Whitespace is allowed between the name and `=` or the next `,`.
+    while (i < end && isHorizontalWhitespace(rule.charCodeAt(i))) {
+        i += 1;
+    }
+
+    // The structural parser accepts a modifier only when the name ends the
+    // rule or is followed by `,` or `=` (see `isPotentialNetModifier`).
+    return i >= end || rule[i] === COMMA || rule[i] === MODIFIER_ASSIGN_OPERATOR;
 }
 
 /**
@@ -206,11 +241,11 @@ export function collectRegexValueRegions(
             continue;
         }
 
-        // An unescaped `$` starts the modifier list only when a modifier can
-        // follow it. A `$` before `|`, `/`, `)` or the end of the rule is part
-        // of the pattern.
+        // An unescaped `$` starts the modifier list only when a valid modifier
+        // follows it. Otherwise it is part of the pattern (for example a regex
+        // anchor or a literal `$` inside a character class).
         if (rule[i] === DOLLAR_SIGN) {
-            if (isModifierListStart(rule, i)) {
+            if (isModifierListStart(rule, i, end)) {
                 seenSeparator = true;
             }
             continue;

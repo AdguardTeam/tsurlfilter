@@ -35,28 +35,30 @@ const MODIFIER_ASSIGN = '=';
  *   `$replace` replacement strings like `$1`).
  *
  * @param rule Network rule text.
+ * @param ruleEnd Exclusive end of the rule range. Defaults to `rule.length`.
  *
  * @returns The separator index, or `-1` if there is none.
  */
-const findNetworkRuleSeparatorIndex = (rule: string): number => {
+const findNetworkRuleSeparatorIndex = (rule: string, ruleEnd: number = rule.length): number => {
     let regions: readonly RegexValueRegion[] | null = null;
     let regionIndex = -1;
 
-    for (let i = rule.length - 1; i >= 0; i -= 1) {
+    for (let i = ruleEnd - 1; i >= 0; i -= 1) {
         if (rule[i] !== NETWORK_RULE_SEPARATOR) {
             continue;
         }
 
         // A `$` that cannot start a modifier list is a regex anchor or a
-        // literal character in the pattern (`$/`, `$|`, `$)`), never the
-        // separator. A `$` preceded by `\` is an escaped `$` inside a regex
-        // value (e.g. `$removeparam=/x\$y/`) and is never the separator.
-        if (!isModifierListStart(rule, i) || rule[i - 1] === ESCAPE) {
+        // literal character in the pattern (`$/`, `$|`, `$)`, `$b]`, etc.),
+        // never the separator. A `$` preceded by `\` is an escaped `$` inside
+        // a regex value (e.g. `$removeparam=/x\$y/`) and is never the
+        // separator.
+        if (!isModifierListStart(rule, i, ruleEnd) || rule[i - 1] === ESCAPE) {
             continue;
         }
 
         if (regions === null) {
-            regions = collectRegexValueRegions(rule);
+            regions = collectRegexValueRegions(rule, 0, ruleEnd);
             regionIndex = regions.length - 1;
         }
 
@@ -789,10 +791,10 @@ export function getRuleParts(rule: string, ignoreCosmetics = false, ignoreHosts 
     // - the last `$` is an escaped `$` (`\$`), which is not a separator.
     if (
         (dollarCount > 1 && rule.indexOf('/', lastDollarIndex) !== -1)
-        || !isModifierListStart(rule, lastDollarIndex)
+        || !isModifierListStart(rule, lastDollarIndex, realEnd)
         || rule[lastDollarIndex - 1] === ESCAPE
     ) {
-        const separatorIndex = findNetworkRuleSeparatorIndex(rule);
+        const separatorIndex = findNetworkRuleSeparatorIndex(rule, realEnd);
 
         // `-1` means every `$` is escaped or inside a regex literal, i.e. the
         // rule has no modifier list. Keep the whole rule as the pattern, as

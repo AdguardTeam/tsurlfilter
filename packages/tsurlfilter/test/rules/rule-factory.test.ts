@@ -215,6 +215,9 @@ describe('RuleFactory regex value handling', () => {
         '/(ads\\.js$)/',
         '/a\\.js$|b\\.js$/',
         '/\\/[a-f0-9]{32}\\.js(?:$|\\?)/',
+        '/[a$b]/',
+        '/[$a-z]/',
+        '/a$b/',
     ])('keeps a regex pattern whose $ cannot start a modifier list: %s', (text) => {
         const rule = RuleFactory.createRule(text, 0) as NetworkRule;
 
