@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The total declarative-rule limit counted rules that the unsafe-rule limit had
+  already dropped, so it could drop safe rules that fit and report a wrong
+  number of excluded rules. It now counts the rules that remain after the
+  unsafe limit.
+- `TooManyRulesError` and `TooManyUnsafeRulesError` shared one list of excluded
+  source rules, so each error listed rules excluded by the other limit. Each
+  error now reports only the rules that its own limit excludes.
 - `$domain` did not match the target hostname of a document request. Chrome
   matches `initiatorDomains` against the request initiator only, and a document
   request started by the browser (new tab page, address bar, bookmark, reload)

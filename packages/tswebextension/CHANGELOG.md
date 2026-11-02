@@ -34,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The MV3 rules-limits page could overcount unsafe rules, because the
+  excluded-rule list shared by the total and unsafe limit errors included rules
+  dropped by the other limit. Each limit error now carries only its own rules,
+  and the total limit no longer drops safe rules that the unsafe limit made
+  room for.
 - In MV3, `$badfilter` rules with `$domain` cancelled the whole target rule
   instead of only the domains that the badfilter covers. Such a rule now keeps
   applying on the other domains. A target rule without `$domain` is still
