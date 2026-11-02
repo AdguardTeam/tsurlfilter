@@ -1178,10 +1178,12 @@ describe('RulesConverter', () => {
             expect(result.declarativeRules.map((r) => r.id)).toEqual([1, 2, 4]);
             expect(result.sourceMapValues).toHaveLength(3);
             expect(result.limitations).toHaveLength(1);
-            expect(result.limitations![0]).toBeInstanceOf(TooManyUnsafeRulesError);
-            expect(result.limitations![0].message).toContain(
+            const unsafeLimitError = result.limitations![0] as TooManyUnsafeRulesError;
+            expect(unsafeLimitError).toBeInstanceOf(TooManyUnsafeRulesError);
+            expect(unsafeLimitError.message).toContain(
                 'too many unsafe rules remain: 2 exceeds the limit provided - 1',
             );
+            expect(unsafeLimitError.excludedRulesIds).toEqual([30]);
         });
 
         it('counts kept rules for the total limit when the unsafe limit drops rules first', () => {
@@ -1243,10 +1245,17 @@ describe('RulesConverter', () => {
             // limit. It keeps three and drops one.
             expect(result.declarativeRules.map((r) => r.id)).toEqual([1, 4, 5]);
 
+            const unsafeLimitError = result.limitations!.find(
+                (limitation) => limitation instanceof TooManyUnsafeRulesError,
+            ) as TooManyUnsafeRulesError;
+            expect(unsafeLimitError.numberOfExcludedDeclarativeRules).toBe(2);
+            expect(unsafeLimitError.excludedRulesIds).toEqual([20, 30]);
+
             const totalLimitError = result.limitations!.find(
                 (limitation) => limitation instanceof TooManyRulesError,
             ) as TooManyRulesError;
             expect(totalLimitError.numberOfExcludedDeclarativeRules).toBe(1);
+            expect(totalLimitError.excludedRulesIds).toEqual([60]);
             expect(totalLimitError.message).toContain('4 exceeds the limit provided - 3');
         });
 

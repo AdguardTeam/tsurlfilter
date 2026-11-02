@@ -444,7 +444,10 @@ export class RulesConverter {
         // Checks and, if necessary, trims the maximum number of rules
         if (maxNumberOfRules && declarativeRules.length > 0) {
             const filteredRules: DeclarativeRule[] = [];
-            const excludedRulesIds: number[] = [];
+            // Each error must list only the rules that its own limit dropped:
+            // the extension adds the unsafe list to the unsafe-rule count.
+            const unsafeExcludedRulesIds: number[] = [];
+            const totalExcludedRulesIds: number[] = [];
 
             let unsafeRulesCounter = 0;
             let totalLimitExceeded = false;
@@ -461,7 +464,7 @@ export class RulesConverter {
                             rule.id,
                             sourcesIndexLoader.get(),
                             errorsIndexLoader.get(),
-                            excludedRulesIds,
+                            unsafeExcludedRulesIds,
                         );
 
                         continue;
@@ -480,7 +483,7 @@ export class RulesConverter {
                     rule.id,
                     sourcesIndexLoader.get(),
                     errorsIndexLoader.get(),
-                    excludedRulesIds,
+                    totalExcludedRulesIds,
                 );
             }
 
@@ -491,7 +494,7 @@ export class RulesConverter {
                 const err = new TooManyUnsafeRulesError(
                     // eslint-disable-next-line max-len
                     `After conversion, too many unsafe rules remain: ${unsafeRulesCounter} exceeds the limit provided - ${maxNumberOfUnsafeRules}`,
-                    excludedRulesIds,
+                    unsafeExcludedRulesIds,
                     maxNumberOfUnsafeRules,
                     unsafeRulesCounter - maxNumberOfUnsafeRules,
                 );
@@ -503,7 +506,7 @@ export class RulesConverter {
                 const err = new TooManyRulesError(
                     // eslint-disable-next-line max-len
                     `After conversion, too many declarative rules remain: ${consideredRulesCount} exceeds the limit provided - ${maxNumberOfRules}`,
-                    excludedRulesIds,
+                    totalExcludedRulesIds,
                     maxNumberOfRules,
                     totalLimitExcludedCount,
                 );
