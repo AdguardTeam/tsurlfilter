@@ -218,7 +218,8 @@ describe('FilterConverter', () => {
             const declarativeRules = ruleset.getDeclarativeRules();
             expect(errors).toHaveLength(0);
             expect(declarativeRules).toHaveLength(1);
-            expect(declarativeRules[0].condition.initiatorDomains).toContain('example.com');
+            expect(declarativeRules[0].condition.initiatorDomains).not.toContain('example.com');
+            expect(declarativeRules[0].condition.initiatorDomains).toContain('example.org');
             expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['example.com']);
         });
 

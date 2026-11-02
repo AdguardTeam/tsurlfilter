@@ -740,14 +740,22 @@ export class RegularRuleConverter {
             condition.domainType = DomainType.FirstParty;
         }
 
-        // set `initiatorDomains`
+        // set `initiatorDomains` and `excludedInitiatorDomains`
         const permittedDomains = RegularRuleConverter.prepareDeclarativeDomains(rule.permittedDomains);
-        if (permittedDomains.length > 0) {
+        const excludedDomains = RegularRuleConverter.prepareDeclarativeDomains(rule.restrictedDomains);
+        const excludedDomainsSet = new Set(excludedDomains);
+        const initiatorDomains = permittedDomains.filter((domain) => !excludedDomainsSet.has(domain));
+
+        if (initiatorDomains.length > 0) {
+            condition.initiatorDomains = initiatorDomains;
+        } else if (permittedDomains.length > 0) {
+            // DNR gives `excludedInitiatorDomains` precedence over
+            // `initiatorDomains`, so keeping the overlap makes the rule match
+            // nothing. Dropping the last permitted entry would make the rule
+            // match every initiator except the excluded ones.
             condition.initiatorDomains = permittedDomains;
         }
 
-        // set `excludedInitiatorDomains`
-        const excludedDomains = RegularRuleConverter.prepareDeclarativeDomains(rule.restrictedDomains);
         if (excludedDomains.length > 0) {
             condition.excludedInitiatorDomains = excludedDomains;
         }

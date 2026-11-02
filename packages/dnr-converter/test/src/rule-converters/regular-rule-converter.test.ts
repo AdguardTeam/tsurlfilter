@@ -1063,6 +1063,30 @@ describe('RuleConverter', () => {
             expect(condition.initiatorDomains).toHaveLength(POPULAR_TLDS.length);
         });
 
+        it('drops an excluded entry from initiatorDomains', () => {
+            const rule = createRuleMock({
+                permittedDomains: ['example.*'],
+                restrictedDomains: ['example.com'],
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.initiatorDomains).not.toContain('example.com');
+            expect(condition.initiatorDomains).toContain('example.org');
+            expect(condition.initiatorDomains).toHaveLength(POPULAR_TLDS.length - 1);
+            expect(condition.excludedInitiatorDomains).toEqual(['example.com']);
+        });
+
+        it('keeps the overlap when every permitted entry is excluded', () => {
+            const rule = createRuleMock({
+                permittedDomains: ['example.com'],
+                restrictedDomains: ['example.com'],
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.initiatorDomains).toEqual(['example.com']);
+            expect(condition.excludedInitiatorDomains).toEqual(['example.com']);
+        });
+
         it('expands wildcard TLD restricted domains and skips regex domains', () => {
             const rule = createRuleMock({
                 restrictedDomains: ['a.com', 'b.*', '/(^|\\.)c\\.(com|org)$/'],
