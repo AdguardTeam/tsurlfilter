@@ -354,9 +354,10 @@ YouTube embed on an allowlisted third-party site) stays on the dynamic
 injection path, which is the only side that can see the embedding site's
 filtering state. Intermediate frames do not participate. The set is the
 manifest's, not the runtime expansion: a configured hostname that the
-manifest does not list is skipped with a warning, because the page gate
-would shim every frame of it while the background reports no coverage, and
-its rules would run twice.
+manifest does not list is skipped with a warning. Its rules would run twice —
+the top-level document is not gated (its `ancestorOrigins` is empty), so it
+runs them, while the background reports no coverage for the host and the
+dynamic path injects them again.
 
 At runtime, each configured hostname (plus its `www.` alias) is matched
 against the engine with `$path` ignored, the matching rules are hashed, and
@@ -381,6 +382,8 @@ path applied them, and an in-page execution failure is not observable.
 
 Known limitations:
 
+- Scriptlet executions are deduped by rule hash, unlike the dynamic path;
+  both paths rely on scriptlets being idempotent.
 - `$document`/`$jsinject` exceptions below the root path (e.g.
   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for the
   host: rules registered on `*://youtube.com/*` still execute on `/embed/…`.
