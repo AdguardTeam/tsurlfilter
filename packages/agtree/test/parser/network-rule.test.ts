@@ -230,6 +230,17 @@ describe('parseNetworkRule', () => {
             expect(ModifierParser.getValue(source, d, 0)).toBe('/a$b/');
         });
 
+        test('whitespace after a regex modifier assignment', () => {
+            const source = '||example.com^$replace= /(a)/$1/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.com^');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('replace');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/(a)/$1/');
+        });
+
         test('comma-separated =/ in the pattern does not open a regex value', () => {
             const source = '||example.com/a,b=/c$removeparam=/x/';
             const d = parse(source);

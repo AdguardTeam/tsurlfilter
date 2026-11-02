@@ -56,9 +56,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rule splitting now trims whitespace before the `$` separator from the
   pattern, so rules like `/ads/banner.js $script` match through the engine
   instead of loading with a pattern that includes the space.
-- Regex-only rules such as `/ads\/banner\.js$/`, `/a\$b/`, and
-  `/foo.php$removeparam=a\$b` are no longer split at a `$` that is an
-  escaped character or a regex anchor.
+- Rules are no longer split at a `$` that cannot start a modifier list:
+  regex-only rules such as `/ads\/banner\.js$/`, `/(ads\.js$)/`, and
+  `/\/[a-f0-9]{32}\.js(?:$|\?)/` keep the whole rule as the pattern, while
+  rules whose modifier value contains an escaped `$`, such as
+  `/foo.php$removeparam=a\$b`, keep their separator.
+- Regex values separated from `=` by spaces or tabs, such as
+  `$replace= /(a)/$1/` and `$removeparam= /x$y/`, are no longer split at a
+  `$` inside the value.
 - HTML filtering native selectors now keep literal double quotes in
   attribute values: `$$div[data-x="""a"""]` now builds
   `div[data-x="\"a\""]` instead of `div[data-x="a"]`, and

@@ -191,6 +191,36 @@ describe('RuleFactory regex value handling', () => {
         expect(rule.getPattern()).toBe('/foo.php');
         expect(rule.getAdvancedModifierValue()).toBe('a\\$b');
     });
+
+    it('parses a regex value with whitespace after the assignment', () => {
+        const text = '||example.com^$replace= /(a)/$1/';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe('||example.com^');
+        expect(rule.getAdvancedModifierValue()).toBe('/(a)/$1/');
+    });
+
+    it('parses a removeparam regex value with whitespace after the assignment', () => {
+        const text = '||example.com^$removeparam= /x$y/';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe('||example.com^');
+        expect(rule.getAdvancedModifierValue()).toBe('/x$y/');
+    });
+
+    it.each([
+        '/ads\\.js$|banner/',
+        '/(ads\\.js$)/',
+        '/a\\.js$|b\\.js$/',
+        '/\\/[a-f0-9]{32}\\.js(?:$|\\?)/',
+    ])('keeps a regex pattern whose $ cannot start a modifier list: %s', (text) => {
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe(text);
+    });
 });
 
 describe('RuleFactory cosmetic content parity', () => {

@@ -307,6 +307,36 @@ describe('getRuleParts', () => {
         expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe('replace =/a$b/');
     });
 
+    test('parses a regex value with whitespace after the assignment', () => {
+        const rule = '||example.com^$replace= /(a)/$1/';
+        const parts = getRuleParts(rule) as NetworkRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Network);
+        expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe('||example.com^');
+        expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe('replace= /(a)/$1/');
+    });
+
+    test('parses a removeparam regex value with whitespace after the assignment', () => {
+        const rule = '||example.com^$removeparam= /x$y/';
+        const parts = getRuleParts(rule) as NetworkRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Network);
+        expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe('||example.com^');
+        expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe('removeparam= /x$y/');
+    });
+
+    test('parses a regex value with a tab after the assignment', () => {
+        const rule = '||example.com^$removeparam=\t/x$y/';
+        const parts = getRuleParts(rule) as NetworkRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Network);
+        expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe('||example.com^');
+        expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe('removeparam=\t/x$y/');
+    });
+
     test('parses a rule whose pattern contains a comma followed by =/', () => {
         // A comma starts a modifier only after the `$` separator, so
         // `a,b=/c` is part of the pattern here. The `$y` inside the
@@ -366,6 +396,20 @@ describe('getRuleParts', () => {
         expect(parts!.category).toBe(RuleCategory.Network);
         expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe('/foo.php');
         expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe('removeparam=a\\$b');
+    });
+
+    test.each([
+        '/ads\\.js$|banner/',
+        '/(ads\\.js$)/',
+        '/a\\.js$|b\\.js$/',
+        '/\\/[a-f0-9]{32}\\.js(?:$|\\?)/',
+    ])('keeps a regex pattern whose $ cannot start a modifier list: %s', (rule) => {
+        const parts = getRuleParts(rule) as NetworkRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Network);
+        expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe(rule);
+        expect(parts!.modifiersStart).toBeUndefined();
     });
 
     test('finds the separator in a long rule with many $ inside a regex', () => {

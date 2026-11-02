@@ -5,7 +5,9 @@
  * `TokenType.LineBreak` tokens, and runs the structural parser for each
  * complete rule. Invokes a callback with the populated `ParserContext`.
  *
- * Zero heap allocation during scanning — only the callback may allocate.
+ * Scanning does not allocate on the common path. The callback may allocate,
+ * and `collectRegexValueRegions()` allocates a small region array while
+ * structurally parsing a network rule that carries a `=/…/` regex value.
  */
 
 /* eslint-disable no-bitwise */
@@ -377,8 +379,11 @@ export class FilterListScanner {
                     // rule callback, which would violate the one-callback-per-
                     // physical-line contract.
                     const [ruleEnd, nextStart] = findNextNewline(source, t.offset);
-                    // eslint-disable-next-line max-len
-                    const e = new Error(`Rule at offset ${pendingRuleSourceStart} exceeds the maximum token capacity of ${MAX_TOKEN_CAPACITY} tokens`);
+                    const e = new CapacityOverflowError(
+                        REGION_TOKENS,
+                        MAX_TOKEN_CAPACITY + 1,
+                        MAX_TOKEN_CAPACITY,
+                    );
                     if (onRuleError) {
                         onRuleError(e, pendingRuleSourceStart, ruleEnd);
                     } else {

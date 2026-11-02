@@ -15,6 +15,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   from `@adguard/agtree/utils`. They locate the `=/…/` regex value regions of
   a network rule, including the replacement part of `$replace`, without
   tokenizing the rule.
+- `isModifierListStart()` is exported from `@adguard/agtree/utils`. It
+  reports whether a `$` can start a modifier list, matching the structural
+  parser, so consumers can split network rules without tokenizing them.
 - `SPECIAL_PSEUDO_CLASS_NAMES` is now exported, so consumers can use the
   same list of special pseudo-class names as the parser and the converter.
 - `:has-text()` is now accepted as a synonym of `:contains()` in AdGuard
@@ -75,6 +78,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - A `$` inside a `$replace`/`$removeparam` regex value is no longer treated as
   the modifier separator, so `$replace=/a$b/good/` and
   `$removeparam=/x$y,z/` parse as a single modifier.
+- `collectRegexValueRegions()` accepts spaces and tabs between `=` and the
+  opening `/`, matching the structural modifier parser, so
+  `$replace= /(a)/$1/` and `$removeparam= /x$y/` parse as single values.
+- `FilterListScanner` now reports a token-buffer hard-cap overflow as
+  `CapacityOverflowError`, matching `RuleParserPipeline`, instead of a plain
+  `Error`.
 - Network rule separator detection no longer scans tokens before the rule
   start, so parsing rules without a `$` after a large rule no longer walks
   the whole token buffer.

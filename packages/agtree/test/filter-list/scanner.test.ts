@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
 
+import { CapacityOverflowError } from '../../src/errors/capacity-overflow-error';
 import { FilterListScanner } from '../../src/filter-list/scanner';
 import type { ScannedRuleInfo } from '../../src/filter-list/types';
+import { MAX_TOKEN_CAPACITY } from '../../src/limits';
 import { RuleKind } from '../../src/parser/rule';
 
 /**
@@ -270,6 +272,22 @@ describe('FilterListScanner', () => {
             expect(errStart).toBe(0);
             expect(errEnd).toBe(oversizedRule.length);
         });
+    });
+
+    test('reports a token hard-cap overflow as CapacityOverflowError', () => {
+        const hardCapScanner = new FilterListScanner({ tokenCapacity: 4, grow: true });
+        const oversizedRule = '.'.repeat(MAX_TOKEN_CAPACITY + 1);
+        let error: unknown;
+
+        hardCapScanner.scan(
+            oversizedRule,
+            () => {},
+            () => {},
+            (e) => { error = e; },
+        );
+
+        expect(error).toBeInstanceOf(CapacityOverflowError);
+        expect((error as CapacityOverflowError).region).toBe('tokens');
     });
 
     describe('data-buffer overflow (grow:false)', () => {

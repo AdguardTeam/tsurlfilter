@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { collectRegexValueRegions } from '../../src/utils/regex-value-regions';
+import { collectRegexValueRegions, isModifierListStart } from '../../src/utils/regex-value-regions';
 
 describe('collectRegexValueRegions', () => {
     test('covers the pattern and the replacement part', () => {
@@ -94,6 +94,22 @@ describe('collectRegexValueRegions', () => {
         ]);
     });
 
+    test('accepts whitespace after the assignment', () => {
+        const rule = '||example.com^$replace= /(a)/$1/';
+
+        expect(collectRegexValueRegions(rule)).toEqual([
+            [rule.indexOf('/('), rule.lastIndexOf('/') + 1],
+        ]);
+    });
+
+    test('accepts a tab after the assignment', () => {
+        const rule = '||example.com^$removeparam=\t/x$y/';
+
+        expect(collectRegexValueRegions(rule)).toEqual([
+            [rule.indexOf('/x'), rule.lastIndexOf('/') + 1],
+        ]);
+    });
+
     test('accepts whitespace around a negated modifier name', () => {
         const rule = '||example.com^$ ~removeparam =/x$y/';
 
@@ -124,5 +140,19 @@ describe('collectRegexValueRegions', () => {
         expect(collectRegexValueRegions(rule)).toEqual([
             [rule.indexOf('/x'), rule.lastIndexOf('/') + 1],
         ]);
+    });
+});
+
+describe('isModifierListStart', () => {
+    test.each([
+        ['||example.com^$script', true],
+        ['||example.com^$ third-party', true],
+        ['||example.com^$~third-party', true],
+        ['||example.com^$/x/', false],
+        ['/foo$|bar/', false],
+        ['/(ads\\.js$)/', false],
+        ['/foo$', false],
+    ])('checks whether %s can start a modifier list', (rule, expected) => {
+        expect(isModifierListStart(rule, rule.indexOf('$'))).toBe(expected);
     });
 });

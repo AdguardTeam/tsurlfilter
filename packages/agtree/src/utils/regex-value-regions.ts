@@ -76,6 +76,27 @@ function isHorizontalWhitespace(code: number): boolean {
 }
 
 /**
+ * Checks whether the `$` at `index` can start a modifier list.
+ *
+ * A modifier can follow the separator only if the next character is a
+ * modifier-name start character, `~`, a space, or a tab. A `$` followed by
+ * `/`, `|`, `)`, `=`, or the end of the rule is a regex anchor or a literal
+ * character in the pattern, not a separator.
+ *
+ * @param rule Rule text, or a source string containing the rule.
+ * @param index Index of the `$` character.
+ *
+ * @returns `true` if a modifier can start right after the `$`.
+ */
+export function isModifierListStart(rule: string, index: number): boolean {
+    const next = rule.charCodeAt(index + 1);
+
+    return isModifierNameStartChar(next)
+        || rule[index + 1] === NEGATION_MARKER
+        || isHorizontalWhitespace(next);
+}
+
+/**
  * Checks whether the `=` at `index` assigns a value to a modifier name, i.e.
  * it belongs to `$name=`, `,name=`, `$~name=`, or `,~name=`, with optional
  * spaces or tabs around the `~` and before the `=`.
@@ -149,8 +170,9 @@ function isModifierAssignment(
  * Collects the `=/.../` regex value regions of a rule in a single forward pass.
  *
  * A region opens only at a `=` that follows a modifier name (`$name=/…/` or
- * `,name=/…/`), so a `=/` sequence inside the rule pattern is ignored. A
- * region covers the pattern part and, when present, the replacement part
+ * `,name=/…/`), with optional spaces or tabs between `=` and the opening `/`,
+ * so a `=/` sequence inside the rule pattern is ignored. A region covers the
+ * pattern part and, when present, the replacement part
  * (`$replace=/(a)/$1/`). Escaped characters are skipped, and the replacement
  * scan stops at `,` because a comma starts the next modifier.
  *
@@ -185,14 +207,10 @@ export function collectRegexValueRegions(
         }
 
         // An unescaped `$` starts the modifier list only when a modifier can
-        // follow it (a name-start character, `~`, space or tab). A `$` before
-        // `|`, `/`, `=` or the end of the rule is part of the pattern.
+        // follow it. A `$` before `|`, `/`, `)` or the end of the rule is part
+        // of the pattern.
         if (rule[i] === DOLLAR_SIGN) {
-            const next = rule.charCodeAt(i + 1);
-
-            if (isModifierNameStartChar(next)
-                || rule[i + 1] === NEGATION_MARKER
-                || isHorizontalWhitespace(next)) {
+            if (isModifierListStart(rule, i)) {
                 seenSeparator = true;
             }
             continue;
@@ -200,13 +218,21 @@ export function collectRegexValueRegions(
 
         if (i + 1 >= end
             || rule[i] !== MODIFIER_ASSIGN_OPERATOR
-            || rule[i + 1] !== REGEX_MARKER
             || !isModifierAssignment(rule, i, start, seenSeparator)) {
             continue;
         }
 
-        // Opening `/` of the regex value.
-        const opening = i + 1;
+        // The structural modifier parser skips spaces and tabs between `=`
+        // and the value, so the opening `/` may not immediately follow `=`.
+        let opening = i + 1;
+        while (opening < end && isHorizontalWhitespace(rule.charCodeAt(opening))) {
+            opening += 1;
+        }
+
+        // Not a regex value.
+        if (opening >= end || rule[opening] !== REGEX_MARKER) {
+            continue;
+        }
 
         // Closing `/` of the pattern.
         let closing = opening + 1;

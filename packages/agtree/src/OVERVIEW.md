@@ -321,7 +321,8 @@ contributors **must** follow all of them when adding or modifying parsers.
 1. **Zero heap allocation in stages 1 and 2.**
    The tokenizer and structural parser stages MUST NOT call `new`, allocate
    arrays, or produce strings. All output goes into the pre-allocated
-   `ctx.data` buffer.
+   `ctx.data` buffer. The one exception is `collectRegexValueRegions()`, which
+   allocates a small region array for a network rule with a `=/…/` value.
 
 2. **Buffers grow on demand up to a hard cap.**
    Buffers are allocated at construction with a caller-chosen capacity. If a
