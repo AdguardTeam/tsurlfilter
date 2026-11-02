@@ -112,7 +112,7 @@ const createAssistantMessageListener = (): void => {
                 break;
             }
             default: {
-                logger.error(`[tsweb.assistant-inject]: not found handler for message type '${message.type}'`);
+                // Ignore message types handled by other content scripts.
             }
         }
     };
