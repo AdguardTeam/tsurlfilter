@@ -34,6 +34,7 @@ vi.mock('../../../../../src/lib/mv3/background/engine-api', () => ({
         matchCosmetic: vi.fn(),
         isLocalFilter: vi.fn(),
         isCosmeticRuleAllowlisted: vi.fn().mockReturnValue(false),
+        getEnabledLocalFiltersIds: vi.fn().mockReturnValue([]),
     },
 }));
 
@@ -142,6 +143,7 @@ const setupEngine = (
     vi.mocked(engineApi.isLocalFilter).mockImplementation(
         (filterListId: number) => localFilterIds.includes(filterListId),
     );
+    vi.mocked(engineApi.getEnabledLocalFiltersIds).mockReturnValue(localFilterIds);
 };
 
 /**
@@ -164,11 +166,13 @@ const scriptletFilename = (name: string): string => `s-${name}.js`;
  * Defaults to an empty map.
  * @param hostnames Expanded host set to embed in the manifest. Defaults to
  * the configured domains; `null` omits the field to simulate a broken build.
+ * @param conditions Filter id → conditions filename map.
  */
 const setupManifest = (
     hashes: string[] | null,
     scriptletFiles?: Record<string, string>,
     hostnames: string[] | null = expandHostnames(['youtube.com']),
+    conditions?: Record<string, string>,
 ): void => {
     // sinon-chrome exposes getURL via a getter — replace the whole global.
     const getURL = vi.fn((p: string) => `chrome-extension://test/${p}`);
@@ -189,6 +193,7 @@ const setupManifest = (
                 hashes,
                 scriptletFiles: scriptletFiles ?? {},
                 ...(hostnames ? { hostnames } : {}),
+                ...(conditions ? { conditions } : {}),
             }),
         };
     }));
@@ -572,6 +577,40 @@ describe('PreregisteredScriptsService', () => {
 
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
             expect(scripts[0].js).not.toContain(`${SCRIPTS_PATH}/${scriptletFilename('prevent-fetch')}`);
+        });
+    });
+
+    describe('sync — page-gate conditions', () => {
+        it('registers the conditions files of the enabled filters before the shared bundle', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            setupEngine({ 'youtube.com': [rule] }, [1, 3]);
+            setupManifest(
+                [await computeRuleHash(rule)],
+                { 'set-cookie': scriptletFilename('set-cookie') },
+                expandHostnames(['youtube.com']),
+                { 1: 'cond-1.js', 2: 'cond-2.js', 3: 'cond-3.js' },
+            );
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            // Only the enabled filters' files, sorted by filter id, ahead of
+            // the bundle whose gate reads them.
+            expect(scripts[0].js?.slice(0, 3)).toEqual([
+                `${SCRIPTS_PATH}/cond-1.js`,
+                `${SCRIPTS_PATH}/cond-3.js`,
+                `${SCRIPTS_PATH}/${SHARED_BUNDLE_FILENAME}`,
+            ]);
+        });
+
+        it('registers no conditions files when the manifest carries none', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            await setupRulesWithManifest({ 'youtube.com': [rule] });
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(scripts[0].js?.[0]).toBe(`${SCRIPTS_PATH}/${SHARED_BUNDLE_FILENAME}`);
         });
     });
 

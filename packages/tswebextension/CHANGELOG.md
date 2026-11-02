@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `@adguard/tswebextension/mv3/preregistered-scripts/build-contract`.
   The `manifest.json` format and filename contract are shared by the build and
   runtime.
+- The preregistered scripts manifest accepts an optional `conditions` map
+  (filter id → file name). The service registers the files of the enabled
+  filters before the shared bundle, so a filter's `$document`/`$jsinject`
+  exceptions stop applying when the filter is disabled.
 
 ### Changed
 

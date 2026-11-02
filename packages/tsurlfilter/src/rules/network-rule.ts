@@ -36,7 +36,7 @@ import {
     OPTIONS_DELIMITER,
 } from './network-rule-options';
 import { type NetworkRuleOption as NetworkRuleOptionType, OptionFlags } from './option-flags';
-import { Pattern } from './pattern';
+import { type MatchConditions, Pattern } from './pattern';
 import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
 import { SimpleRegex } from './simple-regex';
 
@@ -1091,6 +1091,26 @@ export class NetworkRule implements IRule {
             return false;
         }
 
+        if (!this.matchConditions(request)) {
+            return false;
+        }
+
+        return this.pattern.matchPattern(request, true);
+    }
+
+    /**
+     * Checks the rule's modifier conditions against a request without testing
+     * the pattern: `match()` is this check plus the shortcut prefilter and the
+     * pattern test.
+     *
+     * Used by build tools that ask "could this rule participate in the decision
+     * for this request" while the actual pattern is evaluated elsewhere.
+     *
+     * @param request Request to check.
+     *
+     * @returns True when every modifier condition holds.
+     */
+    public matchConditions(request: Request): boolean {
         if (this.isOptionEnabled(NetworkRuleOption.Method) && !this.matchMethod(request.method)) {
             return false;
         }
@@ -1154,7 +1174,17 @@ export class NetworkRule implements IRule {
             return false;
         }
 
-        return this.pattern.matchPattern(request, true);
+        return true;
+    }
+
+    /**
+     * Returns how the engine matches this rule's pattern, without matching a
+     * request.
+     *
+     * @returns Prepared pattern conditions.
+     */
+    public getMatchConditions(): MatchConditions {
+        return this.pattern.getMatchConditions();
     }
 
     /**

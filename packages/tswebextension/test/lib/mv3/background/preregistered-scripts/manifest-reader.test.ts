@@ -63,6 +63,33 @@ describe('readManifest', () => {
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('404');
     });
 
+    it('keeps the conditions map of the enabled filters', async () => {
+        const body = {
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: ['0123456789abcdef'],
+            scriptletFiles: {},
+            hostnames: ['youtube.com'],
+            conditions: { 2: 'cond-2.js' },
+        };
+        stubManifestFetch(body);
+
+        const manifest = await readManifest(SCRIPTS_PATH);
+
+        expect(manifest.conditions).toEqual({ 2: 'cond-2.js' });
+    });
+
+    it('throws when a conditions mapping is not a cond-*.js basename', async () => {
+        stubManifestFetch({
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: [],
+            scriptletFiles: {},
+            hostnames: ['youtube.com'],
+            conditions: { 2: '../cond-2.js' },
+        });
+
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('cond-*.js');
+    });
+
     it('throws on manifests written under another schema version', async () => {
         stubManifestFetch({
             schemaVersion: MANIFEST_SCHEMA_VERSION + 1,

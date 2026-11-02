@@ -3,6 +3,19 @@ import { type Request } from '../request';
 import { SimpleRegex } from './simple-regex';
 
 /**
+ * How the engine matches a rule pattern, resolved by `Pattern.prepare()`:
+ * `||host^` is compared by hostname, a pattern identical to its shortcut (or
+ * the `shortcut*` shape) is a substring search, everything else is a regex.
+ * `invalid` marks a pattern whose regex cannot be compiled — the engine never
+ * matches it.
+ */
+export type MatchConditions =
+    | { mode: 'hostname'; hostname: string }
+    | { mode: 'shortcut'; shortcut: string }
+    | { mode: 'regex'; source: string; flags: string }
+    | { mode: 'invalid' };
+
+/**
  * Rule pattern class.
  *
  * This class parses rule pattern text to simple fields.
@@ -234,5 +247,32 @@ export class Pattern {
         }
 
         return this.patternDomainSpecific;
+    }
+
+    /**
+     * Resolves how this pattern is matched, without matching a request.
+     *
+     * Consumers that replicate the engine's decision outside its process
+     * (build tools baking a page-side gate) need the same fast-path split the
+     * engine uses: a hostname comparison, a substring search or a regex.
+     *
+     * @returns Prepared pattern conditions.
+     */
+    public getMatchConditions(): MatchConditions {
+        this.prepare();
+
+        if (this.patternShortcut) {
+            return { mode: 'shortcut', shortcut: this.shortcut };
+        }
+
+        if (this.hostname !== undefined) {
+            return { mode: 'hostname', hostname: this.hostname };
+        }
+
+        if (this.regexInvalid || !this.regex) {
+            return { mode: 'invalid' };
+        }
+
+        return { mode: 'regex', source: this.regex.source, flags: this.regex.flags };
     }
 }

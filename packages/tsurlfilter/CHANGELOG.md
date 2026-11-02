@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Engine.getCosmeticResult()` accepts an `ignorePath` option, and
   `CosmeticRule.match()` — a new `ignorePath` parameter, both skipping the
   `$path` modifier check.
+- `NetworkRule.matchConditions()` — checks a rule's modifier conditions
+  without testing the pattern, for tools that replicate the engine's decision
+  outside its process.
+- `NetworkRule.getMatchConditions()` and `Pattern.getMatchConditions()` with
+  the `MatchConditions` type — describe how a pattern is matched (hostname,
+  shortcut or regex) without matching a request.
+- `MASK_ALLOWLIST`, `NETWORK_RULE_OPTIONS`, `OPTIONS_DELIMITER` and
+  `DomainModifier` are exported for build tools that need to re-apply the
+  engine's option parsing.
 
 ### Changed
 

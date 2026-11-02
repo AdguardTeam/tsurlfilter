@@ -34,6 +34,23 @@ export const getRuleFilename = (hash: string): string => {
 };
 
 /**
+ * Filename prefix of the per-filter conditions files: each file carries the
+ * network exceptions of one filter for the page gate.
+ */
+export const CONDITIONS_FILENAME_PREFIX = 'cond-';
+
+/**
+ * Returns the conditions filename for a filter id.
+ *
+ * @param filterId Filter id.
+ *
+ * @returns Conditions filename.
+ */
+export const getConditionsFilename = (filterId: number): string => {
+    return `${CONDITIONS_FILENAME_PREFIX}${filterId}.js`;
+};
+
+/**
  * Filename of the JSON manifest listing the per-rule hashes with matching
  * generated files.
  */
@@ -76,6 +93,15 @@ export interface PreregisteredScriptsManifest {
      * feature has no released generation to stay compatible with.
      */
     hostnames: string[];
+
+    /**
+     * Filter id → conditions filename (`cond-{filterId}.js`). Each file adds
+     * the network exceptions of one filter to the page gate of the shared
+     * bundle; the runtime includes only the files of enabled filters, so
+     * disabling a filter also drops its exceptions — the same way the engine
+     * stops applying them.
+     */
+    conditions?: Record<string, string>;
 }
 
 /**
@@ -118,6 +144,15 @@ export const SCRIPTLET_FUNCTION_FILENAME_PREFIX = 's-';
  */
 export const SCRIPTLET_FUNCTION_FILENAME_REGEX = new RegExp(
     `^${SCRIPTLET_FUNCTION_FILENAME_PREFIX}[A-Za-z0-9_-]+\\.js$`,
+);
+
+/**
+ * Matches per-filter conditions filenames (`cond-*.js`) that stay inside the
+ * artifacts directory. Derived from {@link CONDITIONS_FILENAME_PREFIX} so the
+ * build and runtime sides cannot drift apart.
+ */
+export const CONDITIONS_FILENAME_REGEX = new RegExp(
+    `^${CONDITIONS_FILENAME_PREFIX}[0-9]+\\.js$`,
 );
 
 /**

@@ -531,6 +531,11 @@ export class PreregisteredScriptsService {
      * generated file for them). A hostname with no surviving rules is not
      * registered.
      *
+     * The page-gate conditions of the enabled filters are registered before
+     * the shared bundle: their files append the network exceptions to the
+     * list the bundle's gate reads, so a disabled filter's exceptions stop
+     * applying.
+     *
      * @param hostnames Preregistered hostnames (already normalized).
      * @param scriptsPath Extension-relative path to preregistered scripts.
      * @param manifest Build-time manifest.
@@ -546,6 +551,17 @@ export class PreregisteredScriptsService {
         const manifestHashes = new Set(manifest.hashes);
         const sharedBundlePath = `${scriptsPath}/${SHARED_BUNDLE_FILENAME}`;
         const cleanupPath = `${scriptsPath}/${CLEANUP_FILENAME}`;
+
+        // Page-gate conditions of the enabled filters only: the gate must
+        // stop applying an exception as soon as its filter is disabled,
+        // exactly like the engine does. The files run before the shared
+        // bundle and append to its conditions list; their mutual order is
+        // irrelevant, the gate picks the winner by priority.
+        const conditions = manifest.conditions ?? {};
+        const conditionFiles = engineApi.getEnabledLocalFiltersIds()
+            .map((filterId) => conditions[String(filterId)])
+            .filter((filename): filename is string => typeof filename === 'string')
+            .map((filename) => `${scriptsPath}/${filename}`);
 
         const scripts: ContentScriptDescriptor[] = [];
         const degradedRules = new Set<string>();
@@ -650,6 +666,7 @@ export class PreregisteredScriptsService {
                     const ruleFiles = [...coveredHashes]
                         .map((hash) => `${scriptsPath}/${getRuleFilename(hash)}`);
                     const js = [
+                        ...conditionFiles,
                         sharedBundlePath,
                         ...[...scriptletFunctionFiles].sort(),
                         ...ruleFiles,

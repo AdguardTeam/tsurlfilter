@@ -1,6 +1,7 @@
 import { isPlainHostname } from '../../../common/utils/hostname';
 
 import {
+    CONDITIONS_FILENAME_REGEX,
     MANIFEST_FILENAME,
     MANIFEST_SCHEMA_VERSION,
     type PreregisteredScriptsManifest,
@@ -52,6 +53,7 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         hashes,
         scriptletFiles,
         hostnames,
+        conditions,
     } = value as Partial<PreregisteredScriptsManifest>;
 
     if (schemaVersion !== MANIFEST_SCHEMA_VERSION) {
@@ -72,10 +74,21 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         }
     }
 
-    if (!Array.isArray(hostnames)
-        || hostnames.length === 0
+    if (!Array.isArray(hostnames) || hostnames.length === 0
         || !hostnames.every((hostname) => typeof hostname === 'string' && isPlainHostname(hostname))) {
         throw new Error(`Malformed manifest at ${url}: "hostnames" must be a non-empty array of plain hostnames`);
+    }
+
+    if (conditions !== undefined) {
+        if (typeof conditions !== 'object' || conditions === null || Array.isArray(conditions)) {
+            throw new Error(`Malformed manifest at ${url}: "conditions" must be an object`);
+        }
+
+        for (const [filterId, file] of Object.entries(conditions)) {
+            if (typeof file !== 'string' || !CONDITIONS_FILENAME_REGEX.test(file)) {
+                throw new Error(`Malformed manifest at ${url}: filter "${filterId}" must map to a cond-*.js file name`);
+            }
+        }
     }
 
     return {
@@ -83,6 +96,7 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         hashes,
         scriptletFiles,
         hostnames,
+        ...(conditions ? { conditions } : {}),
     };
 };
 

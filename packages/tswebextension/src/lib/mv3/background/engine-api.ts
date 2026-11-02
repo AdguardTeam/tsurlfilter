@@ -355,6 +355,16 @@ export class EngineApi {
     }
 
     /**
+     * Returns the ids of the enabled local (built-in) filters the engine was
+     * created with. Custom filters and user rules are not included.
+     *
+     * @returns Enabled local filter ids.
+     */
+    public getEnabledLocalFiltersIds(): readonly number[] {
+        return this.localRulesFiltersIds;
+    }
+
+    /**
      * Checks if a JS/scriptlet rule is cancelled on a hostname by an allowlist
      * exception (user rules, custom filters).
      *
