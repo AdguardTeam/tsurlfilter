@@ -50,24 +50,33 @@ interface CssHitsCounterOptions {
      * is stopped together with the counter.
      */
     pendingProbesCollector?: PendingProbesCollector;
+
+    /**
+     * Start the counter in the paused state.
+     *
+     * Used when the applied cosmetic data already contains hit markers but
+     * collection is disabled: the ExtendedCss hook must blank the markers
+     * without reporting, and the counter is resumed later.
+     */
+    paused?: boolean;
 }
 
 /**
  * State of a full DOM scan.
  *
- * The full scan writes hits to {@link HitsStorage} batch by batch, but reports
- * them only when the scan completes. If the scan is interrupted, the written
- * entries must be rolled back, otherwise the next scan skips those hits and
- * they are never reported.
+ * The full scan keeps its hits apart from {@link HitsStorage} until it
+ * completes. An interrupted scan is simply discarded, and a mutation counted
+ * while the scan runs commits its own entry immediately, so a re-appended
+ * element is never lost to a rollback.
  */
 interface FullScanState {
     /**
-     * Hits written to {@link HitsStorage} by the scan.
+     * Hits found by the scan, keyed by element.
      */
-    writtenHits: Array<{
-        element: Element;
+    pendingHits: Map<Element, {
+        filterId: number;
+        ruleIndex: number;
         rule: string;
-        previousRule: string | undefined;
     }>;
 }
 
@@ -212,16 +221,28 @@ export class CssHitsCounter {
     private paused = false;
 
     /**
-     * Full scan generation. Incremented on pause and stop, so delayed batches
-     * from an interrupted scan do not report hits or reset the working flag.
-     */
-    private countGeneration = 0;
-
-    /**
-     * State of the running full scan, used to roll back its dedup entries when
-     * the scan is interrupted.
+     * State of the running full scan. Cleared by pause and stop, so delayed
+     * batches from an interrupted scan do not report hits.
      */
     private fullScan: FullScanState | null = null;
+
+    /**
+     * Parsed ExtendedCss markers keyed by the shared rule style object.
+     *
+     * The marker declaration is cleared after the first read to avoid painting
+     * the marker text. ExtendedCss reuses the rule object for every affected
+     * element, so the parsed value is kept here for elements affected later.
+     */
+    private extendedCssRuleMarkers = new WeakMap<object, {
+        filterId: number;
+        ruleIndex: number;
+    }>();
+
+    /**
+     * ExtendedCss hits found while the counter was paused. They are reported
+     * on resume, because the marker declaration is cleared when first read.
+     */
+    private pendingExtendedCssHits: ICountedElement[] = [];
 
     /**
      * Flag determining if we should convert elements to string, or not.
@@ -247,6 +268,8 @@ export class CssHitsCounter {
      * @param options CssHitsCounter options.
      */
     constructor(callback: (x: ICountedElement[]) => void, options?: CssHitsCounterOptions) {
+        this.paused = options?.paused ?? false;
+
         if (options) {
             const { elementToString, pendingProbes, pendingProbesCollector } = options;
             if (elementToString !== undefined) {
@@ -264,6 +287,10 @@ export class CssHitsCounter {
         }
 
         this.onCssHitsFoundCallback = callback;
+
+        if (this.paused) {
+            return;
+        }
 
         if (document.readyState === 'complete'
             || document.readyState === 'interactive') {
@@ -320,33 +347,6 @@ export class CssHitsCounter {
     }
 
     /**
-     * Rolls back dedup entries written by an interrupted full scan.
-     *
-     * Without the rollback the next scan would skip those elements as already
-     * counted, and their hits would never be reported.
-     */
-    private rollbackFullScan(): void {
-        const { fullScan } = this;
-        if (!fullScan) {
-            return;
-        }
-
-        this.fullScan = null;
-
-        fullScan.writtenHits.forEach(({ element, rule, previousRule }) => {
-            if (this.hitsStorage.getCounted(element) !== rule) {
-                return;
-            }
-
-            if (previousRule === undefined) {
-                this.hitsStorage.deleteCounted(element);
-            } else {
-                this.hitsStorage.setCounted(element, previousRule);
-            }
-        });
-    }
-
-    /**
      * Pauses css hits counting. The counter can be resumed with
      * {@link resume}. Use {@link stop} for final teardown.
      */
@@ -356,8 +356,7 @@ export class CssHitsCounter {
         }
 
         this.paused = true;
-        this.countGeneration += 1;
-        this.rollbackFullScan();
+        this.fullScan = null;
 
         if (this.observer) {
             this.observer.disconnect();
@@ -396,9 +395,19 @@ export class CssHitsCounter {
 
         this.paused = false;
 
+        const { pendingExtendedCssHits } = this;
+        this.pendingExtendedCssHits = [];
+        if (pendingExtendedCssHits.length > 0) {
+            this.onCssHitsFoundCallback(pendingExtendedCssHits);
+        }
+
         if (this.pendingProbesCollector) {
             this.bindPendingProbesCollector();
         }
+
+        // The constructor skips this while paused, so process the probes
+        // collected before and during the pause now.
+        this.countPendingProbes();
 
         if (document.readyState === 'loading') {
             // Mirror the constructor: with an active collector the counter's
@@ -421,8 +430,8 @@ export class CssHitsCounter {
      */
     public stop(): void {
         this.stopped = true;
-        this.countGeneration += 1;
-        this.rollbackFullScan();
+        this.fullScan = null;
+        this.pendingExtendedCssHits = [];
         this.onCssHitsFoundCallback = (): void => {};
 
         if (this.observer) {
@@ -519,38 +528,58 @@ export class CssHitsCounter {
      */
     public countAffectedByExtendedCss(affectedEl: IAffectedElement): IAffectedElement {
         if (affectedEl && affectedEl.rules && affectedEl.rules.length > 0) {
-            const result = [];
+            const result: ICountedElement[] = [];
 
             for (const rule of affectedEl.rules) {
                 if (rule.style?.remove === 'true') {
                     this.extendedCssRemovedElements.add(affectedEl.node);
                 }
 
-                if (rule.style && rule.style.content) {
-                    const ruleInfo = ElementUtils.parseExtendedStyleInfo(
+                if (!rule.style) {
+                    continue;
+                }
+
+                let ruleInfo = this.extendedCssRuleMarkers.get(rule.style);
+
+                if (!ruleInfo && rule.style.content) {
+                    const parsedRuleInfo = ElementUtils.parseExtendedStyleInfo(
                         rule.style.content,
                         CssHitsCounter.MARKER_PREFIX,
                     );
-                    if (ruleInfo === null) {
-                        continue;
-                    }
 
-                    const { filterId, ruleIndex } = ruleInfo;
-                    if (filterId !== undefined && ruleIndex !== undefined) {
-                        const element = this.elementToString
-                            ? ElementUtils.elementToString(affectedEl.node)
-                            : affectedEl.node;
-
-                        result.push({
-                            filterId,
-                            ruleIndex,
-                            element,
-                        });
+                    if (parsedRuleInfo
+                        && parsedRuleInfo.filterId !== undefined
+                        && parsedRuleInfo.ruleIndex !== undefined) {
+                        ruleInfo = {
+                            filterId: parsedRuleInfo.filterId,
+                            ruleIndex: parsedRuleInfo.ruleIndex,
+                        };
+                        this.extendedCssRuleMarkers.set(rule.style, ruleInfo);
 
                         // clear style content to avoid duplicate counting and
                         // to prevent the marker text from being painted.
                         rule.style.content = '';
                     }
+                }
+
+                if (!ruleInfo) {
+                    continue;
+                }
+
+                const element = this.elementToString
+                    ? ElementUtils.elementToString(affectedEl.node)
+                    : affectedEl.node;
+
+                const hit = {
+                    filterId: ruleInfo.filterId,
+                    ruleIndex: ruleInfo.ruleIndex,
+                    element,
+                };
+
+                if (this.paused) {
+                    this.pendingExtendedCssHits.push(hit);
+                } else {
+                    result.push(hit);
                 }
             }
 
@@ -622,9 +651,7 @@ export class CssHitsCounter {
         }
 
         this.countIsWorking = true;
-        this.countGeneration += 1;
-        const generation = this.countGeneration;
-        const fullScan: FullScanState = { writtenHits: [] };
+        const fullScan: FullScanState = { pendingHits: new Map() };
         this.fullScan = fullScan;
         const elements = document.querySelectorAll('*');
         this.countCssHitsBatch(
@@ -633,14 +660,30 @@ export class CssHitsCounter {
             CssHitsCounter.CSS_HITS_BATCH_SIZE,
             CssHitsCounter.CSS_HITS_BATCH_SIZE,
             [],
-            generation,
             fullScan,
-            (result: ICountedElement[]): void => {
-                if (generation !== this.countGeneration) {
+            (): void => {
+                if (this.fullScan !== fullScan) {
                     return;
                 }
 
                 this.fullScan = null;
+
+                const result: ICountedElement[] = [];
+                fullScan.pendingHits.forEach((hit, element) => {
+                    if (this.hitsStorage.isCounted(element, hit.rule)) {
+                        return;
+                    }
+
+                    this.hitsStorage.setCounted(element, hit.rule);
+
+                    result.push({
+                        filterId: hit.filterId,
+                        ruleIndex: hit.ruleIndex,
+                        element: this.elementToString
+                            ? ElementUtils.elementToString(element)
+                            : element,
+                    });
+                });
 
                 if (result.length > 0) {
                     this.onCssHitsFoundCallback(result);
@@ -663,8 +706,8 @@ export class CssHitsCounter {
      * @param end End of batch.
      * @param step Size of batch.
      * @param result Collection for save result.
-     * @param generation Generation of the full scan that scheduled the batch.
-     * @param fullScan State of the full scan, used for rollback on interruption.
+     * @param fullScan State of the full scan. An interrupted scan is discarded
+     * when pause() or stop() clears it.
      * @param callback Finish callback.
      */
     // eslint-disable-next-line max-len
@@ -674,13 +717,10 @@ export class CssHitsCounter {
         end: number,
         step: number,
         result: ICountedElement[],
-        generation: number,
         fullScan: FullScanState,
         callback: (x: ICountedElement[]) => void,
     ): void {
-        // An interrupted scan is rolled back by pause() or stop(), which are
-        // the only sources of a generation change.
-        if (this.stopped || this.paused || generation !== this.countGeneration) {
+        if (this.stopped || this.paused || this.fullScan !== fullScan) {
             return;
         }
 
@@ -696,7 +736,7 @@ export class CssHitsCounter {
 
         // Start next task with some delay
         window.setTimeout(() => {
-            this.countCssHitsBatch(elements, start, end, step, result, generation, fullScan, callback);
+            this.countCssHitsBatch(elements, start, end, step, result, fullScan, callback);
         }, CssHitsCounter.COUNT_CSS_HITS_BATCH_DELAY);
     }
 
@@ -742,11 +782,12 @@ export class CssHitsCounter {
             }
 
             if (fullScan) {
-                fullScan.writtenHits.push({
-                    element,
+                fullScan.pendingHits.set(element, {
+                    filterId,
+                    ruleIndex,
                     rule: ruleAndFilterString,
-                    previousRule: this.hitsStorage.getCounted(element),
                 });
+                continue;
             }
 
             this.hitsStorage.setCounted(element, ruleAndFilterString);

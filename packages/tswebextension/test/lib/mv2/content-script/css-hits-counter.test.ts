@@ -1985,8 +1985,8 @@ describe('CssHitsCounter', () => {
             const onCssHitsFound = vi.fn();
             const counter = new CssHitsCounter(onCssHitsFound);
 
-            // The first batch has already written its hits to `hitsStorage`,
-            // but the scan has not completed and reported them.
+            // The first batches have already recorded provisional hits, but
+            // the scan has not committed or reported them.
             counter.pause();
             counter.resume();
 
@@ -2007,7 +2007,69 @@ describe('CssHitsCounter', () => {
         }
     });
 
-    it('keeps blanking ExtendedCss markers while paused', () => {
+    it('commits a hit counted by a mutation before an interrupted scan is discarded', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.scan-mutation-bait',
+            "{ display: none !important; --adguard-hit: 'adguard41%3B41' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        const bait = document.createElement('div');
+        bait.className = 'scan-mutation-bait';
+        document.body.prepend(bait);
+
+        // Keep the first batch from finishing the scan, so the bait stays
+        // provisional when the mutation arrives.
+        const fillers = Array.from({ length: 40 }, () => document.createElement('div'));
+        fillers.forEach((filler) => document.body.appendChild(filler));
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            // The first scan batch has recorded the bait provisionally, so
+            // the mutation path must still commit and report it.
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 41)).toHaveLength(1);
+
+            // Remove the bait and interrupt the scan. The provisional entry
+            // is discarded, but the mutation-reported hit must survive.
+            bait.remove();
+            counter.pause();
+            counter.resume();
+
+            vi.advanceTimersByTime(1000);
+
+            const hits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 41);
+            expect(hits).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            bait.remove();
+            fillers.forEach((filler) => filler.remove());
+            style.remove();
+            restoreFixtureMarkers();
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
+    it('blanks ExtendedCss markers while paused and reports the hits on resume', () => {
         const restoreMutationObserver = mockMutationObserver();
         const restoreFixtureMarkers = removeFixtureMarkerElements();
         const onCssHitsFound = vi.fn();
@@ -2027,15 +2089,32 @@ describe('CssHitsCounter', () => {
 
             counter.resume();
 
-            const resumedRule = { style: { content: 'adguard32;32' } };
+            expect(onCssHitsFound).toHaveBeenCalledTimes(1);
+            expect(onCssHitsFound).toHaveBeenLastCalledWith([
+                expect.objectContaining({
+                    filterId: 32,
+                    ruleIndex: 32,
+                }),
+            ]);
+
+            // The same rule object is reused for a new element after the
+            // marker declaration was blanked.
+            const secondElement = document.createElement('div');
+            document.body.appendChild(secondElement);
             counter.countAffectedByExtendedCss({
-                rules: [resumedRule],
-                node: document.getElementById('testDiv')!,
+                rules: [rule],
+                node: secondElement,
             });
 
-            expect(resumedRule.style.content).toBe('');
-            expect(onCssHitsFound).toHaveBeenCalledTimes(1);
+            expect(onCssHitsFound).toHaveBeenCalledTimes(2);
+            expect(onCssHitsFound).toHaveBeenLastCalledWith([
+                expect.objectContaining({
+                    filterId: 32,
+                    ruleIndex: 32,
+                }),
+            ]);
 
+            secondElement.remove();
             counter.stop();
         } finally {
             restoreFixtureMarkers();

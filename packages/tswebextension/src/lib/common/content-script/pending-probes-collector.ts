@@ -323,6 +323,11 @@ export class PendingProbesCollector {
         this.onObservationEnded = null;
         this.disconnect();
         this.pendingProbes = [];
+        // A stopped collector may be started again, e.g. when collection is
+        // enabled after the page was loaded. Elements collected by the
+        // previous run must not be rejected as duplicates.
+        this.addedElements = new WeakSet<Element>();
+        this.collectedElements = new WeakSet<Element>();
     }
 
     /**

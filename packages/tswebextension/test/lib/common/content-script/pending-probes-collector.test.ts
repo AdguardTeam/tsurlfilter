@@ -355,6 +355,46 @@ describe('PendingProbesCollector', () => {
         expect(collector.takePendingProbes()).toHaveLength(0);
     });
 
+    it('re-collects an element after stop and start', () => {
+        const collector = new PendingProbesCollector();
+        collector.start();
+
+        const bait = document.createElement('div');
+        document.body.appendChild(bait);
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [bait],
+            target: document.body,
+        })]);
+        bait.remove();
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            removedNodes: [bait],
+            target: document.body,
+        })]);
+
+        expect(collector.takePendingProbes()).toHaveLength(1);
+
+        collector.stop();
+        collector.start();
+
+        // The previous run's dedup set must not reject the same element.
+        document.body.appendChild(bait);
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            addedNodes: [bait],
+            target: document.body,
+        })]);
+        bait.remove();
+        MutationObserverMock.last!.trigger([createMutationRecord({
+            removedNodes: [bait],
+            target: document.body,
+        })]);
+
+        const probes = collector.takePendingProbes();
+        expect(probes).toHaveLength(1);
+        expect(probes[0].element).toBe(bait);
+
+        collector.stop();
+    });
+
     it('processes mutation records that were not delivered before take', () => {
         const collector = new PendingProbesCollector();
         collector.start();
