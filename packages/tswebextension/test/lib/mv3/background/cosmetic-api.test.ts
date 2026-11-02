@@ -151,7 +151,7 @@ const makeFrameChain = (
  */
 const runCosmeticApply = async (
     coveredEntries: Array<[string, Set<string>]>,
-    frame: object | ((frameId: number) => object),
+    frame: object | ((frameId: number) => object | undefined),
     frameId = 0,
     preExistingDocument = false,
     hostnames: string[] = coveredEntries.map(([hostname]) => hostname),
@@ -380,22 +380,22 @@ describe('CosmeticApi — preregistered script rules', () => {
                 return applyLocal;
             };
 
+            it('does NOT skip local rules when the frame is embedded into a foreign site', async () => {
+                const applyLocal = await runChain([
+                    { frameId: 1, parentFrameId: 0, url: 'https://youtube.com/embed/abc' },
+                    { frameId: 0, parentFrameId: -1, url: 'https://example.com/' },
+                ], 1);
+
+                expect(applyLocal).toHaveBeenCalled();
+            });
+
             it.each([
-                [
-                    'the frame is embedded into a foreign site',
-                    [
-                        { frameId: 1, parentFrameId: 0, url: 'https://youtube.com/embed/abc' },
-                        { frameId: 0, parentFrameId: -1, url: 'https://example.com/' },
-                    ],
-                    false,
-                ],
                 [
                     'the top-level site is a preregistered host',
                     [
                         { frameId: 1, parentFrameId: 0, url: 'https://youtube.com/embed/abc' },
                         { frameId: 0, parentFrameId: -1, url: 'https://www.youtube.com/watch?v=1' },
                     ],
-                    true,
                 ],
                 [
                     // The filtering state is tab-level: an intermediate frame
@@ -407,16 +407,11 @@ describe('CosmeticApi — preregistered script rules', () => {
                         { frameId: 2, parentFrameId: 0, url: 'https://example.com/embed' },
                         { frameId: 0, parentFrameId: -1, url: 'https://youtube.com/watch?v=1' },
                     ],
-                    true,
                 ],
-            ])('skips local rules when %s', async (_case, frames, skipped) => {
+            ])('skips local rules when %s', async (_case, frames) => {
                 const applyLocal = await runChain(frames, 1);
 
-                if (skipped) {
-                    expect(applyLocal).not.toHaveBeenCalled();
-                } else {
-                    expect(applyLocal).toHaveBeenCalled();
-                }
+                expect(applyLocal).not.toHaveBeenCalled();
             });
 
             it('does NOT skip local rules when an intermediate ancestor is unknown', async () => {

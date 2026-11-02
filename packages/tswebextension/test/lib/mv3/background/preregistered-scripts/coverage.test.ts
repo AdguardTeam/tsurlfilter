@@ -141,6 +141,22 @@ describe('resolveCoverageHost', () => {
         )).resolves.toBe('youtube.com');
     });
 
+    it('does not trust a cached top frame from another committed document', async () => {
+        // Both ids are known and different: the cached context is a committed
+        // document, just not the one the child belongs to.
+        const staleTop = { ...frame(0, 'https://example.com/'), documentId: 'new-document' };
+        const liveTop = { ...frame(0, 'https://youtube.com/watch'), documentId: 'old-document' };
+
+        await expect(resolveCoverageHost(
+            1,
+            { ...frame(2, 'https://youtube.com/embed', 0), parentDocumentId: 'old-document' },
+            () => staleTop,
+            HOSTS,
+            COVERED,
+            async () => new Map([[0, liveTop]]),
+        )).resolves.toBe('youtube.com');
+    });
+
     it('trusts a cached top frame that belongs to the same document', async () => {
         const top = { ...frame(0, 'https://youtube.com/watch'), documentId: 'doc-1' };
         const getFrameTree = vi.fn(async () => new Map([[0, frame(0, 'https://example.com/')]]));

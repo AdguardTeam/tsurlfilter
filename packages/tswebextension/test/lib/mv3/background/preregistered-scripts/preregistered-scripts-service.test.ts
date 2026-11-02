@@ -1220,7 +1220,22 @@ describe('PreregisteredScriptsService', () => {
             expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
         });
 
-        it('falls back to the coverage keys when the manifest cannot be read', async () => {
+        it('falls back to the configured hostname set when the manifest cannot be read', async () => {
+            appContext.preregisteredScripts = { domains: ['youtube.com'], path: SCRIPTS_PATH };
+            appContext.preregisteredScriptRulesAtBoot = new Map([
+                ['youtube.com', new Set(['0123456789abcdef'])],
+            ]);
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            // Without a manifest the generation's set is unknown, so the
+            // dynamic path is matched against the configured expansion.
+            expect(appContext.preregisteredHostnames).toEqual(
+                new Set(['youtube.com', 'www.youtube.com']),
+            );
+        });
+
+        it('falls back to the coverage keys when the first sync fails without a config', async () => {
             appContext.preregisteredScriptRulesAtBoot = new Map([
                 ['youtube.com', new Set(['0123456789abcdef'])],
             ]);
