@@ -450,7 +450,6 @@ export class RulesConverter {
             const totalExcludedRulesIds: number[] = [];
 
             let unsafeRulesCounter = 0;
-            let totalLimitExceeded = false;
             let totalLimitExcludedCount = 0;
 
             for (let i = 0; i < declarativeRules.length; i += 1) {
@@ -476,7 +475,6 @@ export class RulesConverter {
                     continue;
                 }
 
-                totalLimitExceeded = true;
                 totalLimitExcludedCount += 1;
 
                 RulesConverter.removeTruncatedRuleSourcesAndErrors(
@@ -501,7 +499,7 @@ export class RulesConverter {
                 limitations.push(err);
             }
 
-            if (totalLimitExceeded) {
+            if (totalLimitExcludedCount > 0) {
                 const consideredRulesCount = filteredRules.length + totalLimitExcludedCount;
                 const err = new TooManyRulesError(
                     // eslint-disable-next-line max-len
