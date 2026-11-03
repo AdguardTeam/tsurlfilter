@@ -89,7 +89,12 @@ export function patchHistoryForRemoveParam(
             const lastSlash = rawValue.lastIndexOf('/');
             if (lastSlash > 0) {
                 const pattern = rawValue.substring(1, lastSlash);
-                const flags = rawValue.substring(lastSlash + 1);
+                // Drop `g` and `y`: they make `RegExp.test()` stateful
+                // because they advance `lastIndex`, and this regexp is
+                // reused for every parameter, so matching must be stateless
+                // (same approach as `SimpleRegex.fromLiteral()` and
+                // `cleanUrlParamByRegExp()` in `@adguard/tsurlfilter`).
+                const flags = rawValue.substring(lastSlash + 1).replace(/[gy]/g, '');
                 return { regex: new RegExp(pattern, flags), isNegated };
             }
             // Fallback: treat as literal

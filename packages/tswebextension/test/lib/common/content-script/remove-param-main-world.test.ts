@@ -196,6 +196,99 @@ describe('patchHistoryForRemoveParam', () => {
         expect(calledUrl).not.toContain('utm_medium');
     });
 
+    it.each(['g', 'y'])('removes all matching regexp params with the %s flag', (flag) => {
+        const descriptors: RemoveParamDescriptor[] = [
+            {
+                value: `/^utm_.*%2F/${flag}`,
+                isAllowlist: false,
+                isImportant: false,
+                filterId: 1,
+                ruleIndex: 0,
+                ruleText: `||example.com^$removeparam=/^utm_.*%2F/${flag}`,
+            },
+        ];
+
+        patchHistoryForRemoveParam(descriptors, TEST_NONCE, TEST_SECRET);
+        // Ignore any cleanup of the previous URL performed during patching.
+        mockReplaceState.mockClear();
+
+        window.history.pushState(
+            {},
+            '',
+            '/page?utm_source=foo%2Fbar&utm_medium=baz%2Fqux&safe=1',
+        );
+
+        expect(mockReplaceState).toHaveBeenCalled();
+        const calledUrl = mockReplaceState.mock.calls[0][2] as string;
+        expect(calledUrl).toContain('safe=1');
+        expect(calledUrl).not.toContain('utm_source');
+        expect(calledUrl).not.toContain('utm_medium');
+    });
+
+    it('removes params identically on repeated pushState navigations with the g flag', () => {
+        const descriptors: RemoveParamDescriptor[] = [
+            {
+                value: '/^utm_.*%2F/g',
+                isAllowlist: false,
+                isImportant: false,
+                filterId: 1,
+                ruleIndex: 0,
+                ruleText: '||example.com^$removeparam=/^utm_.*%2F/g',
+            },
+        ];
+
+        patchHistoryForRemoveParam(descriptors, TEST_NONCE, TEST_SECRET);
+        // Ignore any cleanup of the previous URL performed during patching.
+        mockReplaceState.mockClear();
+
+        window.history.pushState(
+            {},
+            '',
+            '/page?utm_source=foo%2Fbar&utm_medium=baz%2Fqux&safe=1',
+        );
+        window.history.pushState(
+            {},
+            '',
+            '/other?utm_source=foo%2Fbar&utm_medium=baz%2Fqux&safe=2',
+        );
+
+        expect(mockReplaceState).toHaveBeenCalledTimes(2);
+        const firstUrl = mockReplaceState.mock.calls[0][2] as string;
+        const secondUrl = mockReplaceState.mock.calls[1][2] as string;
+
+        expect(firstUrl).toContain('safe=1');
+        expect(firstUrl).not.toContain('utm_source');
+        expect(firstUrl).not.toContain('utm_medium');
+
+        expect(secondUrl).toContain('safe=2');
+        expect(secondUrl).not.toContain('utm_source');
+        expect(secondUrl).not.toContain('utm_medium');
+    });
+
+    it('inverts a negated regexp removeparam', () => {
+        const descriptors: RemoveParamDescriptor[] = [
+            {
+                value: '~/^keep_/',
+                isAllowlist: false,
+                isImportant: false,
+                filterId: 1,
+                ruleIndex: 0,
+                ruleText: '||example.com^$removeparam=~/^keep_/',
+            },
+        ];
+
+        patchHistoryForRemoveParam(descriptors, TEST_NONCE, TEST_SECRET);
+        // Ignore any cleanup of the previous URL performed during patching.
+        mockReplaceState.mockClear();
+
+        window.history.pushState({}, '', '/page?keep_a=1&drop_b=2');
+
+        expect(mockReplaceState).toHaveBeenCalled();
+        const calledUrl = mockReplaceState.mock.calls[0][2] as string;
+        expect(calledUrl).toContain('keep_a=1');
+        expect(calledUrl).not.toContain('drop_b');
+    });
+
     it('preserves hash fragment with bare removeparam', () => {
         const descriptors: RemoveParamDescriptor[] = [
             {
