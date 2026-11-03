@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Rule.applyBadfilters()` applies `$badfilter` rules to a rule and returns the
+  narrowed copy, or `null` when a badfilter cancels the rule completely.
+  `Rule.withPermittedDomains()` and `Rule.withExcludedDomains()` create copies
+  with a different `$domain` list, and `Rule.originalPermittedDomains` and
+  `Rule.originalRestrictedDomains` keep the `$domain` entries as written in the
+  rule text.
+
 ### Changed
 
 - `Rule.writtenKeys` is gone: `$badfilter` compares the rule text as written
