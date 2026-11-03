@@ -470,13 +470,21 @@ export class PreregisteredScriptsService {
             return fallback;
         }
 
-        // The registrations now describe this hostname set; publish it for
-        // the dynamic path's top-level check. A failed sync keeps the
-        // previous registrations, so it keeps the previous set too. Published
-        // even when preregistration is disabled: the boot snapshot may still
-        // describe pre-existing pages, and the coverage map short-circuits
-        // when there are no active registrations.
-        appContext.preregisteredHostnames = new Set(generationHostnames ?? hostnames);
+        // Publish the host set that describes the live registrations; the
+        // dynamic path's top-level check is matched against it. Only the
+        // generation's set counts: the page gate gates on it, so publishing
+        // the runtime expansion when the manifest was not read would let the
+        // background report coverage for a frame the gate shims, and the
+        // covered rules would not run. Without a manifest the previous set is
+        // kept — a failed sync leaves the registrations it describes active —
+        // and on the first sync the boot registrations are the only
+        // description available, their hosts being a subset of the gate set.
+        appContext.preregisteredHostnames = new Set(
+            generationHostnames
+            ?? appContext.preregisteredHostnames
+            ?? appContext.preregisteredScriptRulesAtBoot?.keys()
+            ?? [],
+        );
 
         // Report exactly what is registered, not what the sync attempted:
         // after a partial failure the browser still holds the previous

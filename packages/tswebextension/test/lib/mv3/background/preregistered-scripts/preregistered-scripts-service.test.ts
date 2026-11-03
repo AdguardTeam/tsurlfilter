@@ -1273,6 +1273,27 @@ describe('PreregisteredScriptsService', () => {
             expect(scripts.map((script) => script.id)).toEqual(['youtube.com']);
         });
 
+        it('keeps the generation host set when preregistration is disabled', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            await setupRulesWithManifest({ 'youtube.com': [rule] });
+            setupManifest(
+                [await computeRuleHash(rule)],
+                { 'set-cookie': scriptletFilename('set-cookie') },
+                ['youtube.com'],
+            );
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
+
+            // With preregistration disabled the manifest is not read, and the
+            // expansion also covers `www.youtube.com`. Publishing it would
+            // claim coverage for a host whose frames the page gate shims, so
+            // the set that describes the live registrations is kept.
+            await PreregisteredScriptsService.sync(false, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
+        });
+
         it('awaits an in-flight sync before clearing in the no-config path', async () => {
             await setupRulesWithManifest({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
 
