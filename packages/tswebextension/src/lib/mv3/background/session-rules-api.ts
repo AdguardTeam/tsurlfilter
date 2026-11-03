@@ -104,6 +104,21 @@ export class SessionRulesApi {
     }
 
     /**
+     * How many unsafe session rules can actually be applied: the quota minus
+     * the ids reserved for stealth rules, because the first unsafe rule gets
+     * `MIN_DECLARATIVE_RULE_ID + 1` and ids stop at
+     * `MAX_NUMBER_OF_UNSAFE_SESSION_RULES`.
+     *
+     * Reported in the limitation error, so the counters of the warning
+     * describe the reachable count rather than an id which cannot be taken.
+     *
+     * @returns Maximum number of unsafe session rules which can be applied.
+     */
+    private static get MAX_APPLICABLE_UNSAFE_SESSION_RULES(): number {
+        return SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES - SessionRulesApi.MIN_DECLARATIVE_RULE_ID;
+    }
+
+    /**
      * Set the stealth rule to the ruleset.
      * If the rule with the same id already exists, it will be replaced.
      *
@@ -289,7 +304,7 @@ export class SessionRulesApi {
             limitations.push(new TooManyUnsafeRulesError(
                 `Session rules exceed the unsafe rules limit: ${excludedByUnsafeLimitRules.length} rules were omitted`,
                 await toSourceRuleIds(excludedByUnsafeLimitRules),
-                SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES,
+                SessionRulesApi.MAX_APPLICABLE_UNSAFE_SESSION_RULES,
                 excludedByUnsafeLimitRules.length,
             ));
         }

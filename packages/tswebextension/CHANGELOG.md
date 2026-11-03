@@ -43,6 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- An overflow of the unsafe session rules reports how many of them can be
+  applied (the quota minus the ids reserved for stealth rules) instead of the
+  raw quota, so the counters of the limits warning are exact.
 - A CSP rule of an unreadable filter is reported in the channel of that filter
   instead of being dropped from both: the error is classified by its filter id,
   not by its kind only.

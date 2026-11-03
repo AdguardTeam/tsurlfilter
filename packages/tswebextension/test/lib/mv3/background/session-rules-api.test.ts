@@ -139,6 +139,9 @@ describe('SessionRulesApi', () => {
         } as DeclarativeRule;
         const updateSessionRules = vi.fn().mockResolvedValue(undefined);
 
+        // Ids 1..6 are reserved for stealth rules, so a quota of 7 holds one
+        // unsafe rule and the error must report that reachable count, not the
+        // quota.
         const declarativeNetRequest = {
             getSessionRules: vi.fn().mockResolvedValue([]),
             updateSessionRules,
@@ -164,6 +167,8 @@ describe('SessionRulesApi', () => {
         expect(limitations).toHaveLength(1);
         expect(limitations[0]).toBeInstanceOf(TooManyUnsafeRulesError);
         expect((limitations[0] as TooManyUnsafeRulesError).excludedRulesIds).toEqual([staticRule.id]);
+        expect((limitations[0] as TooManyUnsafeRulesError).numberOfMaximumRules).toBe(1);
+        expect((limitations[0] as TooManyUnsafeRulesError).numberOfExcludedDeclarativeRules).toBe(1);
     });
 
     it('reports a limitation when the session regexp quota is exhausted', async () => {
