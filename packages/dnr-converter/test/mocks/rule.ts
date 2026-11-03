@@ -211,6 +211,8 @@ export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
         node,
         pattern,
         originalText,
+        originalPermittedDomains: permittedDomains,
+        originalRestrictedDomains: restrictedDomains,
         allowlist,
         hash,
         priority,
