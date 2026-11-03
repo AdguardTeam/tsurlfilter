@@ -467,6 +467,11 @@ List of hostnames or domains of sites, which should be excluded
 from blocking or which should be included in blocking depending
 on the value of [allowlistInverted](#allowlistinverted) setting value.
 
+A plain entry such as `example.com` covers that host and its `www.` subdomain,
+while a `*.example.com` entry covers the domain and all its subdomains. An entry
+never covers a host that only starts with it: `example.com` does not cover
+`example.community`. In MV3, every entry also covers subdomains.
+
 #### trustedDomains
 
 type: `string[]`

@@ -31,6 +31,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Allowlist rules generated for a domain are now anchored to the URL host, so an
+  entry for `example.com` no longer disables filtering on hosts that only start
+  with it, e.g. `example.community` or `example.com.evil.org`, and no longer
+  matches a URL that merely contains `//example.com` in its path or query. A
+  `*.example.com` entry keeps the same host boundary, so it no longer covers such
+  hosts either.
+- Allowlist entries are lowercased and their regexp metacharacters are escaped, a
+  URL with credentials or a root label dot (`https://user:pass@example.com/`,
+  `https://example.com./`) is matched by its host, and a bare `*.` entry is
+  rejected instead of producing a rule that matched every URL.
 - `$badfilter` incorrectly negated rules with different values of value-bearing
   modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
   `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when
