@@ -319,7 +319,7 @@ describe('Allowlist Api', () => {
 
     describe('getAllowlistRules matching in MV3 for a wildcard entry', () => {
         const matchingCases = [
-            // The `*.` twin covers the subdomains of a wildcard TLD entry.
+            // A wildcard entry covers the hosts it describes, and its `*.` twin adds their subdomains.
             { entries: ['example.*'], url: 'https://example.com/' },
             { entries: ['example.*'], url: 'https://sub.example.org/' },
             { entries: ['*example.com'], url: 'https://myexample.com/' },
