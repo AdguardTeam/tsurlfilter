@@ -385,14 +385,16 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
     /**
      * Handles special attribute selectors during AdGuard to AdGuard conversion:
-     * - `[tag-content="content"]` -> `:contains(content)`
-     *   direct conversion, the value is emitted raw
-     * - `[wildcard="*content*"]` -> `:contains(/^.*content.*$/s)`
-     *   convert search pattern to regular expression
      * - `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/s)`
      *   converts to a length-matching regular expression.
      * - `[max-length="max"]` -> `:contains(/^(?=.{0,max}$).*\/s)`
      *   converts to a length-matching regular expression.
+     *
+     * `[tag-content]` and `[wildcard]` are not handled here: for AdGuard rules
+     * {@link HtmlRuleConverter.convertBody} always gets
+     * `shouldMergeSpecialAttributeSelectors`, so these selectors take the
+     * deferred path and are emitted by
+     * {@link HtmlRuleConverter.appendSpecialAttributePseudoClasses}.
      *
      * Note: This attribute selector to pseudo-class selector conversion
      * is needed because AdGuard special attribute selectors are going
@@ -405,31 +407,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
      */
     private static convertSpecialAttributeSelectorAdgToAdg(name: string, value: string): SimpleSelector {
         switch (name) {
-            // `[tag-content="content"]` -> `:contains(content)`
-            case AdgAttributeSelectors.TagContent: {
-                // The value is emitted raw: quotes within the value are
-                // literal characters to match, not a transport encoding —
-                // same as CoreLibs, which never unquotes `:contains()`
-                // arguments. Only the legacy `""` escape convention is
-                // decoded, since the parser keeps it in the raw value.
-                return HtmlRuleConverter.getPseudoClassSelectorNode(
-                    AdgPseudoClasses.Contains,
-                    HtmlRuleConverter.unescapeAttributeValueDoubleQuotes(value),
-                );
-            }
-
-            // `[wildcard="*content*"]` -> `:contains(/^.*content.*$/s)`
-            // convert search pattern to regular expression
-            // Unescape legacy `""` double-quote escaping before converting to regexp
-            case AdgAttributeSelectors.Wildcard: {
-                return HtmlRuleConverter.getPseudoClassSelectorNode(
-                    AdgPseudoClasses.Contains,
-                    RegExpUtils.globToRegExp(
-                        HtmlRuleConverter.unescapeAttributeValueDoubleQuotes(value),
-                    ),
-                );
-            }
-
             // `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/s)`
             // `[max-length="max"]` -> `:contains(/^(?=.{0,max}$).*\/s)`
             // converts to a length-matching regular expression. Bounds above
@@ -617,23 +594,19 @@ export class HtmlRuleConverter extends RuleConverterBase {
     private static convertSpecialAttributeSelectorAdgToUbo(name: string, value: string): SimpleSelector | false {
         switch (name) {
             // `[tag-content="content"]` -> `:has-text(content)`
-            // Unescape legacy `""` double-quote escaping before creating the node
             case AdgAttributeSelectors.TagContent: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.HasText,
-                    HtmlRuleConverter.unescapeAttributeValueDoubleQuotes(value),
+                    value,
                 );
             }
 
             // `[wildcard="*content*"]` -> `:has-text(/^.*content.*$/s)`
             // convert search pattern to regular expression
-            // Unescape legacy `""` double-quote escaping before converting to regexp
             case AdgAttributeSelectors.Wildcard: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.HasText,
-                    RegExpUtils.globToRegExp(
-                        HtmlRuleConverter.unescapeAttributeValueDoubleQuotes(value),
-                    ),
+                    RegExpUtils.globToRegExp(value),
                 );
             }
 
@@ -1034,13 +1007,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
                             // are emitted after the selector loop.
                             onSpecialAttributeSelectorDeferred?.();
                             if (name === AdgAttributeSelectors.TagContent) {
-                                deferredTagContentValues.push(
-                                    HtmlRuleConverter.unescapeAttributeValueDoubleQuotes(value),
-                                );
+                                deferredTagContentValues.push(value);
                             } else {
-                                deferredWildcardValues.push(
-                                    HtmlRuleConverter.unescapeAttributeValueDoubleQuotes(value),
-                                );
+                                deferredWildcardValues.push(value);
                             }
                             continue;
                         }
@@ -1476,24 +1445,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 errorMessage,
             ));
         }
-    }
-
-    /**
-     * Unescapes legacy `""` double-quote escaping in attribute selector values
-     * (used by `[tag-content]` and `[wildcard]`), converting `""` to `"`.
-     *
-     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#tag-content}
-     *
-     * @param value Raw attribute selector value potentially containing `""` sequences.
-     *
-     * @returns Unescaped value with `""` replaced by `"`.
-     *
-     * @note Double quotes are handled by the parser,
-     * this function is only needed to unescape legacy `""` escaping
-     * in the raw value before processing it further.
-     */
-    private static unescapeAttributeValueDoubleQuotes(value: string): string {
-        return value.replace(/""/g, '"');
     }
 
     /**

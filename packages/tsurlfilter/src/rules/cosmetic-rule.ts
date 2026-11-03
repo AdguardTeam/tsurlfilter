@@ -13,7 +13,6 @@ import {
     DomainUtils,
     type ParseOptions,
     PIPE_MODIFIER_SEPARATOR,
-    QuoteType,
     QuoteUtils,
     RegExpUtils,
     RuleParserPipeline,
@@ -24,7 +23,7 @@ import { AdgScriptletInjectionBodyGenerator, CosmeticRuleBodyGenerator } from '@
 import { scriptlets, type Source } from '@adguard/scriptlets';
 import { isValidScriptletName } from '@adguard/scriptlets/validators';
 
-import { EMPTY_STRING, WILDCARD } from '../common/constants';
+import { DOUBLE_QUOTE, EMPTY_STRING, WILDCARD } from '../common/constants';
 import { getErrorMessage } from '../common/error';
 import { config } from '../configuration';
 import { DomainModifier } from '../modifiers/domain-modifier';
@@ -679,13 +678,19 @@ export class CosmeticRule implements IRule {
                         if ('value' in simpleSelectorNode) {
                             currentNativeSelector += simpleSelectorNode.operator.value;
 
-                            // It's safe to set double quotes here, as AGTree removes any existing quotes
-                            // from the attribute value and unescapes it, so we just need to quote it properly
-                            // again and escape any double quotes in the value
-                            currentNativeSelector += QuoteUtils.setStringQuoteType(
-                                simpleSelectorNode.value.value,
-                                QuoteType.Double,
-                            );
+                            // AGTree removes the quotes from an attribute value,
+                            // so the value is always quoted again, and any
+                            // double quotes in it are escaped.
+                            // `QuoteUtils.setStringQuoteType()` cannot be used
+                            // here: it keeps a value that starts and ends with
+                            // a double quote as an already quoted one, which
+                            // loses those literal quotes.
+                            currentNativeSelector += DOUBLE_QUOTE
+                                + QuoteUtils.escapeUnescapedOccurrences(
+                                    simpleSelectorNode.value.value,
+                                    DOUBLE_QUOTE,
+                                )
+                                + DOUBLE_QUOTE;
 
                             if (simpleSelectorNode.flag) {
                                 currentNativeSelector += ` ${simpleSelectorNode.flag.value}`;

@@ -1322,6 +1322,26 @@ describe('HTML filtering rules (content rules)', () => {
         });
     });
 
+    it('correctly parses html rules - attribute values with literal double quotes', () => {
+        // `""` in a double-quoted value is the legacy escape of one `"`,
+        // while quotes inside a single-quoted value (or next to an escaped
+        // one) are literal characters. Such a value must not be treated as
+        // an already quoted one, otherwise the literal quotes are lost.
+        // eslint-disable-next-line max-len
+        const contentPart = 'div[data-x="""a"""][data-y=\'"a"\'][data-z="a""b"]';
+        const domainPart = 'example.org';
+        const ruleText = `${domainPart}$$${contentPart}`;
+        const rule = createCosmeticRule(ruleText, 0);
+
+        expect(rule.getType()).toBe(CosmeticRuleType.HtmlFilteringRule);
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div[data-x="\\"a\\""][data-y="\\"a\\""][data-z="a\\"b"]',
+                specialSelectors: [],
+            }]],
+        });
+    });
+
     it('correctly parses html rules - combined min/max length regex (converted form)', () => {
         // Convert from raw [min-length][max-length] syntax first
         const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(

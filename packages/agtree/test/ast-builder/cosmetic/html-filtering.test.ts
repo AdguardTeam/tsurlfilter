@@ -401,7 +401,7 @@ describe('RuleParser — HTML filtering rules', () => {
             });
         });
 
-        test('ADG double-quote escaping: [attr="value with \\"\\"\\" quotes"]', () => {
+        test('ADG double-quote escaping: [attr="value with "" quotes"]', () => {
             const ast = parser.parse('$$[attr="value with "" quotes"]', {
                 isLocIncluded: true,
                 parseHtmlFilteringRuleBodies: true,
@@ -428,7 +428,48 @@ describe('RuleParser — HTML filtering rules', () => {
                                 },
                                 value: {
                                     type: 'Value',
+                                    value: 'value with " quotes',
+                                    // the offsets still cover the raw `""`
+                                    start: 9,
+                                    end: 29,
+                                },
+                            }],
+                        }],
+                    },
+                },
+            });
+        });
+
+        test('ADG double-quote escaping does not apply to a single-quoted value', () => {
+            const ast = parser.parse('$$[attr=\'value with "" quotes\']', {
+                isLocIncluded: true,
+                parseHtmlFilteringRuleBodies: true,
+            }) as HtmlFilteringRule;
+
+            expect(ast).toMatchObject({
+                type: 'HtmlFilteringRule',
+                syntax: SYNTAX_ADG,
+                body: {
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: {
+                        type: 'SelectorList',
+                        children: [{
+                            type: 'ComplexSelector',
+                            children: [{
+                                type: 'AttributeSelector',
+                                name: {
+                                    type: 'Value',
+                                    value: 'attr',
+                                },
+                                operator: {
+                                    type: 'Value',
+                                    value: '=',
+                                },
+                                value: {
+                                    type: 'Value',
                                     value: 'value with "" quotes',
+                                    start: 9,
+                                    end: 29,
                                 },
                             }],
                         }],
