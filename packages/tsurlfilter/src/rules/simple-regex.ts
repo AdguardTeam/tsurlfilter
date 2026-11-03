@@ -543,16 +543,31 @@ export class SimpleRegex {
         let flags = '';
         let inCharClass = false;
 
+        // Number of consecutive backslashes right before the current character.
+        // A character is escaped only when this number is odd, so an escaped
+        // backslash (a backslash pair) does not escape the next character.
+        let precedingBackslashes = 0;
+
         for (let i = 1; i < literal.length; i += 1) {
             const char = literal.charAt(i);
-            if (char === '[' && literal[i - 1] !== '\\') {
-                inCharClass = true;
-            } else if (char === ']' && literal[i - 1] !== '\\') {
-                inCharClass = false;
-            } else if (literal[i] === '/' && literal[i - 1] !== '\\' && !inCharClass) {
-                pattern = literal.slice(1, i);
-                flags = literal.slice(i + 1);
-                break;
+            const isEscaped = precedingBackslashes % 2 === 1;
+
+            if (!isEscaped) {
+                if (char === '[') {
+                    inCharClass = true;
+                } else if (char === ']') {
+                    inCharClass = false;
+                } else if (char === '/' && !inCharClass) {
+                    pattern = literal.slice(1, i);
+                    flags = literal.slice(i + 1);
+                    break;
+                }
+            }
+
+            if (char === '\\') {
+                precedingBackslashes += 1;
+            } else {
+                precedingBackslashes = 0;
             }
         }
 

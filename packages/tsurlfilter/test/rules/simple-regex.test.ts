@@ -197,6 +197,10 @@ describe('SimpleRegex.fromLiteral', () => {
         { input: '/[a-z]+/i', output: /[a-z]+/i },
         { input: '/(unclosed/i', output: '/(unclosed/i' },
         { input: '/[/]/', output: /[/]/ },
+        { input: String.raw`/foo\\/`, output: /foo\\/ },
+        { input: String.raw`/[\\]/`, output: /[\\]/ },
+        { input: String.raw`/[\\]/i`, output: /[\\]/i },
+        { input: String.raw`/foo\/bar/`, output: /foo\/bar/ },
     ])("returns '$output' for '$input'", ({ input, output }) => {
         const result = SimpleRegex.fromLiteral(input);
         if (typeof result === 'string') {
@@ -220,6 +224,27 @@ describe('SimpleRegex.fromLiteral', () => {
 
         expect(result).toBeInstanceOf(RegExp);
         expect((result as RegExp).flags).toBe(expectedFlags);
+    });
+
+    it('matches a string that ends with a backslash when the delimiter follows an escaped backslash', () => {
+        const result = SimpleRegex.fromLiteral(String.raw`/foo\\/`);
+
+        expect(result).toBeInstanceOf(RegExp);
+        expect((result as RegExp).test('foo\\')).toBe(true);
+    });
+
+    it('matches a single backslash from a character class with an escaped backslash', () => {
+        const result = SimpleRegex.fromLiteral(String.raw`/[\\]/`);
+
+        expect(result).toBeInstanceOf(RegExp);
+        expect((result as RegExp).test('\\')).toBe(true);
+    });
+
+    it('matches an escaped forward slash inside the pattern', () => {
+        const result = SimpleRegex.fromLiteral(String.raw`/foo\/bar/`);
+
+        expect(result).toBeInstanceOf(RegExp);
+        expect((result as RegExp).test('foo/bar')).toBe(true);
     });
 
     it('keeps the `u` flag so that Unicode properties are parsed', () => {
