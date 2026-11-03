@@ -178,11 +178,19 @@ describe('HtmlRuleConverter', () => {
                         expected: [String.raw`$$div:contains(/\/a\\d\+\//)`],
                     },
 
-                    // `[tag-content]` with a regexp-like value and a flag tail: `SimpleRegex.fromLiteral()`
-                    // treats it as a regexp literal too, so it is escaped as well
+                    // `[tag-content]` with a regexp-like value and a flag tail: the argument still
+                    // has the regexp literal shape, so it is escaped as well
                     {
                         actual: '$$div[tag-content="/ads/i"]',
                         expected: [String.raw`$$div:contains(/\/ads\/i/)`],
+                    },
+
+                    // `[tag-content]` with a PCRE2-only regexp literal: `/a++/` is valid PCRE2
+                    // but invalid JavaScript, and CoreLibs compiles `:contains()` with PCRE2,
+                    // so the value must be escaped as well
+                    {
+                        actual: '$$div[tag-content="/a++/"]',
+                        expected: [String.raw`$$div:contains(/\/a\+\+\//)`],
                     },
 
                     // `[tag-content]` with a leading slash but no closing slash: not a regexp literal,

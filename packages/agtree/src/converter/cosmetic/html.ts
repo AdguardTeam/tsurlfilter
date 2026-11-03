@@ -1182,38 +1182,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Checks whether a `[tag-content]` value would be compiled into a `RegExp`
-     * by `:contains()` consumers, i.e. whether it looks like a regular
-     * expression literal.
-     *
-     * The literal shape is parsed by {@link RegExpUtils.parseRegexLiteral},
-     * which is shared with `SimpleRegex.fromLiteral()` in
-     * `@adguard/tsurlfilter`. The pattern must also compile with the
-     * JavaScript `RegExp` constructor, because the HTML filtering engine
-     * compiles it that way.
-     *
-     * @param value `[tag-content]` value to check.
-     *
-     * @returns `true` if the value looks like a regular expression literal,
-     * otherwise `false`.
-     */
-    private static isRegexpLikeLiteral(value: string): boolean {
-        const parts = RegExpUtils.parseRegexLiteral(value);
-
-        if (parts === null) {
-            return false;
-        }
-
-        try {
-            // eslint-disable-next-line no-new
-            new RegExp(parts.pattern, parts.flags);
-            return true;
-        } catch {
-            return false;
-        }
-    }
-
-    /**
      * Emits the pseudo-classes converted from the deferred special attribute
      * selectors ([tag-content], [wildcard], [min-length], [max-length]) of a
      * single complex selector, honoring the constraints of CoreLibs' HTML
@@ -1231,7 +1199,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *   (e.g. `/\/ads\//`), because `:contains()` consumers compile such an
      *   argument into a `RegExp` and the `[tag-content]` value must stay a
      *   literal substring match — see
-     *   {@link HtmlRuleConverter.isRegexpLikeLiteral}.
+     *   {@link RegExpUtils.parseRegexLiteral}.
      *
      * Combinations which cannot be represented as such a chain — an unsafe
      * literal plus any regex-like constraint, or several regex-like
@@ -1289,7 +1257,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // emitted as an escaped regular expression: `:contains()`
             // consumers compile such an argument into a `RegExp`, but a
             // `[tag-content]` value is always a literal substring match.
-            const argument = HtmlRuleConverter.isRegexpLikeLiteral(literal)
+            // CoreLibs compiles the argument with PCRE2, which accepts
+            // patterns that JavaScript rejects (e.g. `/a++/`), so the check
+            // uses the literal shape, not JavaScript RegExp validity.
+            const argument = RegExpUtils.parseRegexLiteral(literal) !== null
                 ? `${SLASH}${RegExpUtils.escapeRegexSpecials(literal)}${SLASH}`
                 : literal;
 

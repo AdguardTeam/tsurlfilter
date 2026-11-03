@@ -25,10 +25,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
-- `[tag-content]` values that look like regular expressions, e.g.
-  `/ads/`, are now escaped when converted to a standalone
-  `:contains()` argument during ADG→ADG conversion, so they still
-  match the literal text.
+- `[tag-content]` values that look like regular expressions, e.g. `/ads/`,
+  are now escaped when converted to a standalone `:contains()` argument
+  during ADG→ADG conversion, so they still match the literal text. The
+  check uses the literal shape, so PCRE2-only patterns such as `/a++/` are
+  escaped as well.
 
 ### Security
 
