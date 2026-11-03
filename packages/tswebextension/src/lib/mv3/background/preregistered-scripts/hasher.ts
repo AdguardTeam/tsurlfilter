@@ -102,6 +102,16 @@ export interface PreregisteredScriptsManifest {
      * stops applying them.
      */
     conditions?: Record<string, string>;
+
+    /**
+     * Filter id → fingerprint of that filter's page exceptions, the ones its
+     * conditions file was baked from (`computePageExceptionsFingerprint`).
+     * The runtime recomputes the map for the enabled filters and compares: a
+     * mismatch means the lists changed since the generation, and applying
+     * stale exceptions would disable pages the engine does not disable (or
+     * miss new ones), so preregistration falls back to the dynamic path.
+     */
+    pageExceptions: Record<string, string>;
 }
 
 /**

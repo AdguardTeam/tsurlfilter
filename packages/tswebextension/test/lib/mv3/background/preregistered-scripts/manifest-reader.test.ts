@@ -47,6 +47,7 @@ describe('readManifest', () => {
             hashes: ['0123456789abcdef'],
             scriptletFiles: { 'set-cookie': 's-set-cookie.js' },
             hostnames: ['youtube.com', 'www.youtube.com'],
+            pageExceptions: { 2: '0123456789abcdef' },
         };
         stubManifestFetch(body);
 
@@ -69,6 +70,7 @@ describe('readManifest', () => {
             hashes: ['0123456789abcdef'],
             scriptletFiles: {},
             hostnames: ['youtube.com'],
+            pageExceptions: { 2: '0123456789abcdef' },
             conditions: { 2: 'cond-2.js' },
         };
         stubManifestFetch(body);
@@ -196,12 +198,38 @@ describe('readManifest', () => {
         }
     });
 
+    it('throws when "pageExceptions" is missing, so a stale gate is never trusted', async () => {
+        stubManifestFetch({
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: [],
+            scriptletFiles: {},
+            hostnames: ['youtube.com'],
+        });
+
+        // Without the fingerprint the runtime cannot tell whether the baked
+        // exceptions still describe the loaded filters.
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"pageExceptions"');
+    });
+
+    it('throws when a page-exceptions entry is not a fingerprint', async () => {
+        stubManifestFetch({
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: [],
+            scriptletFiles: {},
+            hostnames: ['youtube.com'],
+            pageExceptions: { 2: '' },
+        });
+
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"2"');
+    });
+
     it('passes an abort signal to fetch, so a hung request cannot stall the sync', async () => {
         stubManifestFetch({
             schemaVersion: MANIFEST_SCHEMA_VERSION,
             hashes: [],
             scriptletFiles: {},
             hostnames: ['youtube.com'],
+            pageExceptions: { 2: '0123456789abcdef' },
         });
 
         await readManifest(SCRIPTS_PATH);
@@ -224,6 +252,7 @@ describe('readManifest', () => {
             hashes: [],
             scriptletFiles: {},
             hostnames: ['youtube.com'],
+            pageExceptions: { 2: '0123456789abcdef' },
         });
 
         await readManifest(SCRIPTS_PATH);
@@ -241,6 +270,7 @@ describe('readManifest', () => {
             hashes: [],
             scriptletFiles: {},
             hostnames: ['youtube.com'],
+            pageExceptions: { 2: '0123456789abcdef' },
         };
         stubManifestFetch(body);
 

@@ -38,6 +38,31 @@ vi.mock('../../../../../src/lib/mv3/background/engine-api', () => ({
     },
 }));
 
+/**
+ * Fingerprints the mocked runtime computes for the loaded filters. Tests that
+ * want a stale generation set a different value in the manifest.
+ */
+const DEFAULT_FINGERPRINT = 'aabbccddeeff0011';
+
+const RUNTIME_PAGE_EXCEPTIONS: Record<string, string> = { 1: DEFAULT_FINGERPRINT };
+
+const fingerprintState = vi.hoisted(() => ({ value: { 1: 'aabbccddeeff0011' } as Record<string, string> }));
+
+vi.mock('../../../../../src/lib/mv3/background/preregistered-scripts/exception-fingerprint', () => ({
+    // Every loaded filter gets a fingerprint, so only the explicit overrides
+    // in a test look stale.
+    computePageExceptionsFingerprint: vi.fn(async (lists: Array<{ filterId: number }>) => (
+        Object.fromEntries(lists.map(({ filterId }) => [
+            String(filterId),
+            fingerprintState.value[String(filterId)] ?? 'aabbccddeeff0011',
+        ]))
+    )),
+}));
+
+vi.mock('../../../../../src/lib/common/storage/filters', () => ({
+    FiltersStorage: { getRawFilterList: vi.fn(async () => '') },
+}));
+
 vi.mock('../../../../../src/lib/mv3/background/document-api', () => ({
     DocumentApi: {
         matchFrame: vi.fn().mockReturnValue(null),
@@ -167,12 +192,21 @@ const scriptletFilename = (name: string): string => `s-${name}.js`;
  * @param hostnames Expanded host set to embed in the manifest. Defaults to
  * the configured domains; `null` omits the field to simulate a broken build.
  * @param conditions Filter id → conditions filename map.
+ * @param pageExceptions Filter id → fingerprint map of the baked page
+ * exceptions. Defaults to the map a consistent build produces for the enabled
+ * filters; a different value simulates a stale generation.
  */
 const setupManifest = (
     hashes: string[] | null,
     scriptletFiles?: Record<string, string>,
     hostnames: string[] | null = expandHostnames(['youtube.com']),
     conditions?: Record<string, string>,
+    pageExceptions: Record<string, string> = Object.fromEntries(
+        vi.mocked(engineApi.getEnabledLocalFiltersIds)().map((id) => [
+            String(id),
+            RUNTIME_PAGE_EXCEPTIONS[String(id)] ?? DEFAULT_FINGERPRINT,
+        ]),
+    ),
 ): void => {
     // sinon-chrome exposes getURL via a getter — replace the whole global.
     const getURL = vi.fn((p: string) => `chrome-extension://test/${p}`);
@@ -194,6 +228,7 @@ const setupManifest = (
                 scriptletFiles: scriptletFiles ?? {},
                 ...(hostnames ? { hostnames } : {}),
                 ...(conditions ? { conditions } : {}),
+                pageExceptions,
             }),
         };
     }));
@@ -332,9 +367,27 @@ describe('PreregisteredScriptsService', () => {
             ]);
         });
 
+        it('falls back to dynamic injection when the page exceptions of an enabled filter are stale', async () => {
+            const rule = mockScriptletRule('set-cookie', ['a', 'b']);
+            await setupRulesWithManifest({ 'youtube.com': [rule] });
+
+            // The lists changed since the generation: the baked conditions
+            // files describe exceptions the engine no longer has.
+            setupManifest(
+                [await computeRuleHash(rule)],
+                { 'set-cookie': scriptletFilename('set-cookie') },
+                undefined,
+                undefined,
+                { 1: 'ffffffffffffffff' },
+            );
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(result.size).toBe(0);
+            expect(ContentScriptManager.sync).toHaveBeenCalledWith('preregistered', []);
+        });
+
         it('does not treat prototype properties as scriptlet function files', async () => {
-            // A manifest cannot have an own `__proto__` key in practice:
-            // assigning it through a plain object literal sets the prototype.
             // The lookup must not resolve the inherited member and mark the
             // rule as covered with a file that cannot exist.
             const rule = mockScriptletRule('__proto__', []);

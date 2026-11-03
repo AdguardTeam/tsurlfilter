@@ -1,9 +1,11 @@
+import { FiltersStorage } from '../../../common/storage/filters';
 import { logger } from '../../../common/utils/logger';
 import { appContext } from '../app-context';
 import { type PreregisteredScriptsConfig } from '../configuration';
 import { type ContentScriptDescriptor, ContentScriptManager } from '../content-script-manager';
 import { engineApi } from '../engine-api';
 
+import { computePageExceptionsFingerprint, type PreregisteredFilterList } from './exception-fingerprint';
 import {
     CLEANUP_FILENAME,
     computeRuleHashCached,
@@ -37,6 +39,31 @@ const HOST_LOOKUP_BATCH_SIZE = 8;
  */
 const domainToMatchPatterns = (hostname: string): string[] => {
     return [`*://${hostname}/*`];
+};
+
+/**
+ * What a sync registers for the shipped generation.
+ */
+type RegistrationPlan = {
+    /**
+     * Host set to publish for the dynamic path's coverage check.
+     */
+    publishedHostnames: readonly string[];
+
+    /**
+     * Hostnames the descriptors cover.
+     */
+    registeredHostnames: readonly string[];
+
+    /**
+     * Host set of the generation, `undefined` when the manifest was not read.
+     */
+    generationHostnames: readonly string[] | undefined;
+
+    /**
+     * Descriptors to register; empty when the generation is not trusted.
+     */
+    scripts: ContentScriptDescriptor[];
 };
 
 /**
@@ -421,48 +448,21 @@ export class PreregisteredScriptsService {
         scriptsPath: string,
     ): Promise<Map<string, Set<string>>> {
         const hostnames = expandHostnames(domains);
-        // The shared bundle embeds the host set of the generation it was
-        // built for, and the page gate uses exactly that set: it is the only
-        // source for the coverage predicate, so the two sides cannot
-        // disagree about the set.
-        let publishedHostnames: readonly string[] = hostnames;
-        let registeredHostnames: readonly string[] = hostnames;
-        // Set only when the manifest was read: a failed read means the
-        // generation's set is unknown, so the fallback must not claim it.
-        let generationHostnames: readonly string[] | undefined;
-
-        // A failure here leaves the previous registrations active, so the
-        // last published coverage still describes them.
-        let scripts: ContentScriptDescriptor[] = [];
+        // Defaults for a sync that registers nothing: the dynamic path covers
+        // every configured host.
+        let plan: RegistrationPlan = {
+            publishedHostnames: hostnames,
+            registeredHostnames: hostnames,
+            generationHostnames: undefined,
+            scripts: [],
+        };
 
         try {
             if (preregistrationEnabled && hostnames.length > 0) {
-                const manifest = await readManifest(scriptsPath);
-                publishedHostnames = manifest.hostnames;
-                generationHostnames = manifest.hostnames;
-
-                // Register only the hosts the page gate covers. A host that
-                // is registered but missing from the manifest set runs its
-                // rules at `document_start` on its own top-level pages while
-                // the background reports no coverage there, so the dynamic
-                // path injects the same rules again — and `#%#` rules are
-                // not idempotent.
-                const gateHosts = new Set(manifest.hostnames);
-                registeredHostnames = hostnames.filter((hostname) => gateHosts.has(hostname));
-                const skippedHostnames = hostnames.filter((hostname) => !gateHosts.has(hostname));
-
-                if (skippedHostnames.length > 0) {
-                    logger.warn(`[tsweb.PreregisteredScriptsService.doSync]: ${skippedHostnames.length} configured hostname(s) are missing from the manifest host set, not registering them`, skippedHostnames);
-                }
-
-                scripts = await PreregisteredScriptsService.buildDomainScripts(
-                    [...registeredHostnames],
-                    scriptsPath,
-                    manifest,
-                );
+                plan = await PreregisteredScriptsService.resolveRegistrationPlan(hostnames, scriptsPath);
             }
 
-            const scriptsKey = PreregisteredScriptsService.getScriptsKey(scripts);
+            const scriptsKey = PreregisteredScriptsService.getScriptsKey(plan.scripts);
 
             if (scriptsKey === appContext.preregisteredScriptsKey) {
                 logger.debug('[tsweb.PreregisteredScriptsService.doSync]: Descriptors unchanged, skipping the sync');
@@ -470,20 +470,20 @@ export class PreregisteredScriptsService {
                 appContext.preregisteredScriptsRegistered = true;
                 const { errors } = await ContentScriptManager.sync(
                     PREREGISTERED_SCRIPTS_NAMESPACE,
-                    scripts,
+                    plan.scripts,
                 );
 
                 appContext.preregisteredScriptsKey = errors.length === 0
                     ? scriptsKey
                     : undefined;
-                appContext.preregisteredScriptsRegistered = errors.length > 0 || scripts.length > 0;
+                appContext.preregisteredScriptsRegistered = errors.length > 0 || plan.scripts.length > 0;
             }
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.doSync]: Sync failed, keeping the previous coverage', e);
 
             const fallback = PreregisteredScriptsService.getFallbackCoverage();
             appContext.preregisteredScriptRules = fallback;
-            PreregisteredScriptsService.publishFallbackHostnames(fallback, generationHostnames);
+            PreregisteredScriptsService.publishFallbackHostnames(fallback, plan.generationHostnames);
 
             return fallback;
         }
@@ -494,7 +494,7 @@ export class PreregisteredScriptsService {
         // even when preregistration is disabled: the boot snapshot may still
         // describe pre-existing pages, and the coverage map short-circuits
         // when there are no active registrations.
-        appContext.preregisteredHostnames = new Set(publishedHostnames);
+        appContext.preregisteredHostnames = new Set(plan.publishedHostnames);
 
         // Report exactly what is registered, not what the sync attempted:
         // after a partial failure the browser still holds the previous
@@ -506,10 +506,10 @@ export class PreregisteredScriptsService {
         try {
             const coveredRules = appContext.preregisteredScriptsKey === undefined
                 ? await readActiveRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE)
-                : deriveCoverage(scripts);
+                : deriveCoverage(plan.scripts);
             appContext.preregisteredScriptRules = coveredRules;
 
-            logger.info(`[tsweb.PreregisteredScriptsService.doSync]: Synced preregistered scripts: ${coveredRules.size}/${registeredHostnames.length} hostnames covered`);
+            logger.info(`[tsweb.PreregisteredScriptsService.doSync]: Synced preregistered scripts: ${coveredRules.size}/${plan.registeredHostnames.length} hostnames covered`);
 
             return coveredRules;
         } catch (e) {
@@ -520,6 +520,118 @@ export class PreregisteredScriptsService {
 
             return empty;
         }
+    }
+
+    /**
+     * Resolves what a sync registers for the shipped generation.
+     *
+     * The conditions files carry network exceptions baked at build time, and
+     * they stay correct only while the filter lists they were built from are
+     * still loaded. The build stores a fingerprint of that exception set in
+     * the manifest; when it no longer matches the loaded lists, applying the
+     * baked exceptions would disable pages the engine filters normally (and
+     * miss new ones), so nothing is registered and every host stays on the
+     * dynamic path, where the engine decides.
+     *
+     * A configured host missing from the manifest host set is not registered
+     * either: the shared bundle's embed gate trusts that set only, so the
+     * background would report no coverage for the host while its rules still
+     * ran at `document_start` — and `#%#` rules are not idempotent.
+     *
+     * @param hostnames Configured hostnames, expanded.
+     * @param scriptsPath Extension-relative path to preregistered scripts.
+     *
+     * @returns Host sets to publish and the descriptors to register.
+     */
+    private static async resolveRegistrationPlan(
+        hostnames: readonly string[],
+        scriptsPath: string,
+    ): Promise<RegistrationPlan> {
+        const manifest = await readManifest(scriptsPath);
+        const staleFilters = await PreregisteredScriptsService.findStalePageExceptionFilters(manifest);
+
+        if (staleFilters) {
+            logger.warn(
+                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: Page exceptions changed since the'
+                + ' generation, falling back to dynamic injection until the next full generation',
+                staleFilters,
+            );
+
+            return {
+                publishedHostnames: [],
+                registeredHostnames: [],
+                generationHostnames: [],
+                scripts: [],
+            };
+        }
+
+        const gateHosts = new Set(manifest.hostnames);
+        const registeredHostnames = hostnames.filter((hostname) => gateHosts.has(hostname));
+        const skippedHostnames = hostnames.filter((hostname) => !gateHosts.has(hostname));
+
+        if (skippedHostnames.length > 0) {
+            logger.warn(
+                `[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: ${skippedHostnames.length}`
+                + ' configured hostname(s) are missing from the manifest host set, not registering them',
+                skippedHostnames,
+            );
+        }
+
+        return {
+            publishedHostnames: manifest.hostnames,
+            registeredHostnames,
+            generationHostnames: manifest.hostnames,
+            scripts: await PreregisteredScriptsService.buildDomainScripts(
+                [...registeredHostnames],
+                scriptsPath,
+                manifest,
+            ),
+        };
+    }
+
+    /**
+     * Lists the filters whose baked page exceptions no longer describe the
+     * loaded lists.
+     *
+     * The build writes a fingerprint per filter into the manifest; the same
+     * map is recomputed here for the enabled filters. A filter without a
+     * baked entry counts as stale too — its exceptions were not baked at all,
+     * so nothing describes them. A read failure counts as stale: applying
+     * exceptions to rules the engine does not have would disable pages it
+     * filters normally, while falling back to the dynamic path only loses
+     * `document_start` timing.
+     *
+     * @param manifest Build-time manifest.
+     *
+     * @returns Ids of the filters whose baked exceptions must not be applied,
+     * or `null` when the baked exceptions describe the loaded lists.
+     */
+    private static async findStalePageExceptionFilters(
+        manifest: PreregisteredScriptsManifest,
+    ): Promise<string[] | null> {
+        const filterIds = engineApi.getEnabledLocalFiltersIds();
+        const contents = await Promise.all(
+            filterIds.map((filterId) => FiltersStorage.getRawFilterList(filterId).catch(() => undefined)),
+        );
+
+        if (contents.some((content) => content === undefined)) {
+            return filterIds
+                .filter((_, index) => contents[index] === undefined)
+                .map(String);
+        }
+
+        const lists: PreregisteredFilterList[] = filterIds.map((filterId, index) => ({
+            filterId,
+            content: contents[index] ?? '',
+        }));
+
+        const runtime = await computePageExceptionsFingerprint(lists);
+
+        const stale = Object.entries(runtime)
+            .filter(([filterId, fingerprint]) => manifest.pageExceptions[filterId] !== fingerprint)
+            .map(([filterId]) => filterId);
+
+        return stale.length > 0 ? stale : null;
     }
 
     /**

@@ -30,6 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (filter id → file name). The service registers the files of the enabled
   filters before the shared bundle, so a filter's `$document`/`$jsinject`
   exceptions stop applying when the filter is disabled.
+- The manifest now carries `pageExceptions` — a map of filter id to a
+  fingerprint of the allowlist rules that filter's conditions file was baked
+  from, computed by `computePageExceptionsFingerprint()`. The service recomputes
+  it for the enabled filters and falls back to dynamic injection when one of
+  them does not match, so exceptions baked from lists that have since changed
+  are never applied; a filter disabled at runtime has no conditions file
+  registered and is not compared.
 
 ### Changed
 

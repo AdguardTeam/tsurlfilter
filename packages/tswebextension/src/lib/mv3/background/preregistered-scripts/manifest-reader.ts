@@ -54,6 +54,7 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         scriptletFiles,
         hostnames,
         conditions,
+        pageExceptions,
     } = value as Partial<PreregisteredScriptsManifest>;
 
     if (schemaVersion !== MANIFEST_SCHEMA_VERSION) {
@@ -91,11 +92,22 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         }
     }
 
+    if (typeof pageExceptions !== 'object' || pageExceptions === null || Array.isArray(pageExceptions)) {
+        throw new Error(`Malformed manifest at ${url}: "pageExceptions" must be a filter id → fingerprint object`);
+    }
+
+    for (const [filterId, fingerprint] of Object.entries(pageExceptions)) {
+        if (typeof fingerprint !== 'string' || fingerprint.length === 0) {
+            throw new Error(`Malformed manifest at ${url}: filter "${filterId}" must map to a fingerprint`);
+        }
+    }
+
     return {
         schemaVersion,
         hashes,
         scriptletFiles,
         hostnames,
+        pageExceptions,
         ...(conditions ? { conditions } : {}),
     };
 };
@@ -125,7 +137,9 @@ const fetchManifest = async (scriptsPath: string): Promise<PreregisteredScriptsM
 /**
  * Fetches the build-time manifest shipped next to the artifacts. It lists
  * the rule hashes with matching generated files, the scriptlet name →
- * function-file map and the embed-gate hostname set.
+ * function-file map, the embed-gate hostname set, the conditions files of the
+ * filters that carry page exceptions and the fingerprint those exceptions
+ * were baked from.
  *
  * The manifest is this package's own build output, but it is still
  * validated: a missing, unreadable, malformed, or version-mismatched

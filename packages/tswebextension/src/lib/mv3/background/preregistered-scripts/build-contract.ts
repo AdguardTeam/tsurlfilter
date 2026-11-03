@@ -22,3 +22,5 @@ export {
     SHARED_BUNDLE_FILENAME,
 } from './hasher';
 export type { PreregisteredScriptsManifest } from './hasher';
+export { computePageExceptionsFingerprint } from './exception-fingerprint';
+export type { PreregisteredFilterList } from './exception-fingerprint';
