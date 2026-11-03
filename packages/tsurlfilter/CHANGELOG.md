@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTML filtering exception rules now cancel blocking rules with an equivalent
   body, regardless of attribute value quoting and of the `:contains()`,
   `:-abp-contains()`, and `:has-text()` aliases.
+- Spaces around a quoted HTML filtering `:contains()` argument are no longer
+  trimmed (via [@adguard/agtree]): the argument is the raw text between the
+  pseudo-class parentheses, so `$$div:contains( "foo" )` now matches the text
+  `"foo"` with a space on each side.
 
 ### Security
 
