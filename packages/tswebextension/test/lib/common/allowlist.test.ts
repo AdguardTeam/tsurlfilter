@@ -20,14 +20,19 @@ import { getConfigurationMv3Fixture } from '../mv3/fixtures/configuration';
  * makes the domain match the URL host, the optional credentials and the optional `www.`
  * subdomain.
  */
-const DOMAIN_RULE_START = String.raw`@@/^(?:https?|wss?)://(?:[^/\\?#]*@)?(www\.)?`;
+const DOMAIN_RULE_START = String.raw`@@/^(?:https?|wss?):\/\/(?:[^\/\\?#]*@)?(www\.)?`;
 
 /**
  * End of the rule generated for an entry without the `*.` prefix: the host end — an optional root
  * label dot, an optional port, the path, the query, the fragment or the end of the URL — and the
  * modifiers.
  */
-const DOMAIN_RULE_END = String.raw`(?:\.)?(?::\d*)?(?:[/\\?#]|$)/$document,important`;
+const DOMAIN_RULE_END = String.raw`(?:\.)?(?::\d*)?(?:[\/\\?#]|$)/$document,important`;
+
+/**
+ * Wildcard of an entry: any characters of the host, but not the authority delimiters.
+ */
+const DOMAIN_WILDCARD = String.raw`[^\/\\?#@]*`;
 
 /**
  * Creates an engine with the given allowlist rules, the way the application loads them.
@@ -145,11 +150,11 @@ describe('Allowlist Api', () => {
                 },
                 {
                     domain: 'example.*',
-                    expected: `${DOMAIN_RULE_START}example\\..*${DOMAIN_RULE_END}`,
+                    expected: `${DOMAIN_RULE_START}example\\.${DOMAIN_WILDCARD}${DOMAIN_RULE_END}`,
                 },
                 {
                     domain: 'example.*.com',
-                    expected: `${DOMAIN_RULE_START}example\\..*\\.com${DOMAIN_RULE_END}`,
+                    expected: `${DOMAIN_RULE_START}example\\.${DOMAIN_WILDCARD}\\.com${DOMAIN_RULE_END}`,
                 },
                 {
                     domain: '*.example.com',
@@ -161,15 +166,15 @@ describe('Allowlist Api', () => {
                 },
                 {
                     domain: '*example.com',
-                    expected: `${DOMAIN_RULE_START}.*example\\.com${DOMAIN_RULE_END}`,
+                    expected: `${DOMAIN_RULE_START}${DOMAIN_WILDCARD}example\\.com${DOMAIN_RULE_END}`,
                 },
                 {
                     domain: 'example*.com',
-                    expected: `${DOMAIN_RULE_START}example.*\\.com${DOMAIN_RULE_END}`,
+                    expected: `${DOMAIN_RULE_START}example${DOMAIN_WILDCARD}\\.com${DOMAIN_RULE_END}`,
                 },
                 {
                     domain: 'exam*ple.com',
-                    expected: `${DOMAIN_RULE_START}exam.*ple\\.com${DOMAIN_RULE_END}`,
+                    expected: `${DOMAIN_RULE_START}exam${DOMAIN_WILDCARD}ple\\.com${DOMAIN_RULE_END}`,
                 },
                 {
                     domain: '*.example*.com',
@@ -256,6 +261,46 @@ describe('Allowlist Api', () => {
 
         it.each(notMatchingCases)('does not match $url', ({ url }) => {
             expect(engine.matchFrame(url)).toBeNull();
+        });
+    });
+
+    describe('getAllowlistRules matching in MV3 for an entry without a domain', () => {
+        /**
+         * Builds an engine the way MV3 configures the allowlist for the given entries.
+         *
+         * @param entries Allowlist entries.
+         *
+         * @returns Engine with the generated rules.
+         */
+        const createMv3Engine = (entries: string[]): Engine => {
+            const config = getConfigurationMv3Fixture();
+
+            config.allowlist = entries;
+            config.settings.allowlistEnabled = true;
+
+            const allowlistApi = new AllowlistApi();
+            allowlistApi.configure(config);
+
+            return createEngine(allowlistApi.getAllowlistRules() ?? '');
+        };
+
+        it('does not allowlist anything for a bare `*` entry', () => {
+            const engine = createMv3Engine(['*']);
+
+            expect(engine.matchFrame('https://a.com/')).toBeNull();
+            expect(engine.matchFrame('https://www.a.com/')).toBeNull();
+        });
+
+        it('does not allowlist anything for a bare `**` entry', () => {
+            const engine = createMv3Engine(['**']);
+
+            expect(engine.matchFrame('https://a.com/')).toBeNull();
+        });
+
+        it('keeps the documented full wildcard `*.*`', () => {
+            const engine = createMv3Engine(['*.*']);
+
+            expect(engine.matchFrame('https://a.com/')).not.toBeNull();
         });
     });
 });

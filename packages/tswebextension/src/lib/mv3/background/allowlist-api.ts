@@ -1,4 +1,5 @@
 import { PIPE_MODIFIER_SEPARATOR } from '@adguard/agtree';
+import { createAllowlistRuleNode } from '@adguard/tsurlfilter';
 
 import { type AllowlistConfiguration, Allowlist as CommonAllowlist } from '../../common/allowlist';
 import { getUpperLevelDomain } from '../../common/utils/url';
@@ -23,6 +24,15 @@ export class AllowlistApi extends CommonAllowlist {
          * DNR will match all subdomains of the domain by default.
          */
         const domainWithSubDomainsMask = configuration.allowlist.reduce<string[]>((acc, domain) => {
+            /**
+             * An entry without a domain produces no rule, and its `*.` twin would become the
+             * full wildcard `*.*`, which allowlists every site. Such an entry is dropped here,
+             * so MV3 behaves like MV2.
+             */
+            if (createAllowlistRuleNode(domain) === null) {
+                return acc;
+            }
+
             acc.push(domain);
 
             if (!domain.startsWith('*.')) {

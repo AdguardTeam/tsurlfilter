@@ -39,8 +39,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   hosts either.
 - Allowlist entries are lowercased and their regexp metacharacters are escaped, a
   URL with credentials or a root label dot (`https://user:pass@example.com/`,
-  `https://example.com./`) is matched by its host, and a bare `*.` entry is
-  rejected instead of producing a rule that matched every URL.
+  `https://example.com./`) is matched by its host, and entries without a domain — a
+  bare `*.`, `*` or `**` — are rejected instead of producing a rule that matched
+  every URL (`*.`) or only URLs containing `www.` (`*`).
+- A `*` inside an allowlist entry now matches within the host only, so `example.*`
+  no longer allowlists `https://example.com@evil.org/` and `*example.com` no longer
+  matches `https://evil.org//example.com/`.
 - `$badfilter` incorrectly negated rules with different values of value-bearing
   modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
   `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when

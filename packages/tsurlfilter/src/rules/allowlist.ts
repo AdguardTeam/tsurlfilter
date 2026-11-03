@@ -11,14 +11,15 @@ import { SimpleRegex } from './simple-regex';
 const REQUEST_SCHEME = 'https?|wss?';
 
 /**
- * Credentials of the URL authority, ending at its last `@`.
+ * Credentials of the URL authority, ending at its last `@`. The slashes are escaped so the
+ * generated rule stays splittable on an unescaped `/`.
  */
-const AUTHORITY_CREDENTIALS = String.raw`[^/\\?#]*@`;
+const AUTHORITY_CREDENTIALS = String.raw`[^\/\\?#]*@`;
 
 /**
  * Start of the URL up to the host.
  */
-const URL_START = `^(?:${REQUEST_SCHEME})://(?:${AUTHORITY_CREDENTIALS})?`;
+const URL_START = `^(?:${REQUEST_SCHEME}):\\/\\/(?:${AUTHORITY_CREDENTIALS})?`;
 
 /**
  * Optional `www.` subdomain of the entry.
@@ -38,7 +39,13 @@ const PORT = String.raw`(?::\d*)?`;
 /**
  * Everything that ends the host: path, query, fragment, backslash or the end of the URL.
  */
-const HOST_BOUNDARY = String.raw`(?:[/\\?#]|$)`;
+const HOST_BOUNDARY = String.raw`(?:[\/\\?#]|$)`;
+
+/**
+ * Wildcard of an entry: any characters of the host, but never the authority delimiters, so a
+ * `*` cannot move the match to another host or into the path.
+ */
+const HOST_WILDCARD = String.raw`[^\/\\?#@]*`;
 
 /**
  * Checks whether the entry covers the domain together with all its subdomains.
@@ -72,17 +79,17 @@ const stripWwwPrefix = (domain: string): string => (
 );
 
 /**
- * Escapes the regexp special characters of the entry and turns `*` back into a wildcard.
+ * Escapes the regexp special characters of the entry and turns `*` back into a host wildcard.
  *
  * @param domain Normalized allowlist entry.
  *
  * @returns Domain as a regexp fragment.
  */
-const escapeDomainForRegexp = (domain: string): string => replaceAll(
-    SimpleRegex.escapeRegexSpecials(domain),
-    '\\*',
-    SimpleRegex.REGEX_ANY_CHARACTER,
-);
+const escapeDomainForRegexp = (domain: string): string => {
+    const escapedDomain = replaceAll(SimpleRegex.escapeRegexSpecials(domain), '/', '\\/');
+
+    return replaceAll(escapedDomain, '\\*', HOST_WILDCARD);
+};
 
 /**
  * Builds a pattern that covers the domain and all its subdomains.

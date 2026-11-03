@@ -12,14 +12,19 @@ const FILTER_LIST_ID = 100;
  * Beginning of the rule generated for an entry without the `*.` prefix: the URL start, which
  * makes the domain match the URL host, the optional credentials and the optional `www.` subdomain.
  */
-const RULE_START = String.raw`@@/^(?:https?|wss?)://(?:[^/\\?#]*@)?(www\.)?`;
+const RULE_START = String.raw`@@/^(?:https?|wss?):\/\/(?:[^\/\\?#]*@)?(www\.)?`;
 
 /**
  * End of the rule generated for an entry without the `*.` prefix: the host end — an optional root
  * label dot, an optional port, the path, the query, the fragment or the end of the URL — and the
  * modifiers.
  */
-const RULE_END = String.raw`(?:\.)?(?::\d*)?(?:[/\\?#]|$)/$document,important`;
+const RULE_END = String.raw`(?:\.)?(?::\d*)?(?:[\/\\?#]|$)/$document,important`;
+
+/**
+ * Wildcard of an entry: any characters of the host, but not the authority delimiters.
+ */
+const WILDCARD = String.raw`[^\/\\?#@]*`;
 
 /**
  * Builds an engine with the allowlist rule generated for the given domain, the way consumers
@@ -48,9 +53,9 @@ describe('RuleFactory.createAllowlistRule', () => {
             { domain: 'www.example.com', expected: `${RULE_START}example\\.com${RULE_END}` },
             { domain: 'EXAMPLE.COM', expected: `${RULE_START}example\\.com${RULE_END}` },
             { domain: 'sub.example.com', expected: `${RULE_START}sub\\.example\\.com${RULE_END}` },
-            { domain: 'example.*', expected: `${RULE_START}example\\..*${RULE_END}` },
-            { domain: '*example.*', expected: `${RULE_START}.*example\\..*${RULE_END}` },
-            { domain: '*example.com', expected: `${RULE_START}.*example\\.com${RULE_END}` },
+            { domain: 'example.*', expected: `${RULE_START}example\\.${WILDCARD}${RULE_END}` },
+            { domain: '*example.*', expected: `${RULE_START}${WILDCARD}example\\.${WILDCARD}${RULE_END}` },
+            { domain: '*example.com', expected: `${RULE_START}${WILDCARD}example\\.com${RULE_END}` },
             // Regexp metacharacters of the entry are escaped, so the entry stays a literal host.
             { domain: 'example(+).com', expected: `${RULE_START}example\\(\\+\\)\\.com${RULE_END}` },
             { domain: '*.example.com', expected: String.raw`@@||example.com^$document,important` },
@@ -135,6 +140,10 @@ describe('RuleFactory.createAllowlistRule', () => {
             { domain: '*.example.com', url: 'https://sub.example.community/' },
             { domain: '*.example.com', url: 'https://example.com.evil.org/' },
             { domain: '*example.com', url: 'https://myexample.community/' },
+            // A wildcard stays within the host: it cannot reach the userinfo or the path.
+            { domain: 'example.*', url: 'https://example.com@evil.org/' },
+            { domain: '*example.com', url: 'https://evil.org//example.com/' },
+            { domain: '*example.com', url: 'https://user@evil.org/?x=example.com' },
         ];
 
         it.each(cases)('does not match $url for $domain', ({ domain, url }) => {
