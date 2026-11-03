@@ -16,11 +16,28 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- `:min-text-length()` now accepts only plain decimal digits, matching uBlock:
+  rules such as `##^div:min-text-length( 5 )` and
+  `##^div:min-text-length(1e2)` are no longer converted.
+- `[min-length]` and `[max-length]` values are validated the same way now:
+  only digits are accepted, preceded by optional whitespace and an optional
+  `+`, matching CoreLibs' `strtoimax` parsing, so `"1e2"`, `"1.5"` and
+  `"5 "` are no longer converted.
+
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- Pseudo-class selector arguments are no longer trimmed: the argument is the
+  raw text between the pseudo-class parentheses, e.g. `$$div:contains( "foo" )`
+  keeps the spaces around the quoted text, and `:not( .a )` keeps the spaces
+  around the inner selector. This matches CoreLibs.
+- ADG→uBO conversion no longer emits a `:contains()` rule that uBlock Origin
+  drops when characters follow the closing quote: e.g.
+  `$$div:contains("foo" )` now throws a conversion error instead of becoming
+  `##^div:has-text("foo" )`.
 
 ### Security
 
