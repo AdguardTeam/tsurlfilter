@@ -198,6 +198,13 @@ describe('SimpleRegex.fromLiteral', () => {
         { input: '/(unclosed/i', output: '/(unclosed/i' },
         { input: '/[/]/', output: /[/]/ },
         { input: '/a\\/b/', output: /a\/b/ },
+        // A slash after an escaped backslash is not escaped, so the literal is
+        // parsed and compiled
+        { input: String.raw`/a\\/`, output: /a\\/ },
+        // The `]` after an escaped backslash closes the character class
+        { input: String.raw`/a[\\]b/`, output: /a[\\]b/ },
+        // An escaped backslash before the delimiter, with flags after it
+        { input: String.raw`/foo\\/i`, output: /foo\\/i },
         // An empty pattern is not treated as a regular expression literal
         { input: '//', output: '//' },
         // Valid PCRE2 but invalid JavaScript: the engine cannot compile it

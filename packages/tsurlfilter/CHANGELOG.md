@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `SimpleRegex.fromLiteral()` now parses regexp literals with an escaped
+  backslash before the closing slash, e.g. `/a\\/`, and with an escaped
+  backslash inside a character class, e.g. `/a[\\]b/`. The parser now tracks
+  the escape state instead of checking the previous character only, so it
+  compiles such literals to a `RegExp` instead of returning them as plain
+  text.
 - `:contains()` regexp arguments in HTML filtering rules now ignore all
   flags except `i`, `s`, and the Unicode flags `u` and `v`. Matching is
   stateless and does not depend on the previously matched element.

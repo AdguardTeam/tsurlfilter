@@ -114,8 +114,9 @@ export class RegExpUtils {
      * compiles in JavaScript. The literal must have this shape:
      *
      * - it starts with `/`;
-     * - a later `/` exists that is not escaped by a backslash and is not inside
-     *   a `[...]` character class;
+     * - a later `/` exists that is not escaped and is not inside a `[...]`
+     *   character class. The parser tracks the escape state, so the second
+     *   backslash of `\\` does not escape a following `/` or `]`;
      * - the pattern between the delimiters is not empty.
      *
      * The shape check is independent of the JavaScript `RegExp` parser on
@@ -136,15 +137,38 @@ export class RegExpUtils {
             return null;
         }
 
+        let escaped = false;
         let inCharClass = false;
 
         for (let i = 1; i < literal.length; i += 1) {
             const char = literal.charAt(i);
-            if (char === OPEN_SQUARE_BRACKET && literal[i - 1] !== ESCAPE_CHARACTER) {
+
+            // The previous backslash escapes this character, so it cannot
+            // open a character class, close a character class, or close the
+            // literal. Check the escape state instead of the previous
+            // character alone: in `\\` the second backslash is escaped, so a
+            // slash or a bracket that follows it is not escaped.
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+
+            if (char === ESCAPE_CHARACTER) {
+                escaped = true;
+                continue;
+            }
+
+            if (char === OPEN_SQUARE_BRACKET) {
                 inCharClass = true;
-            } else if (char === CLOSE_SQUARE_BRACKET && literal[i - 1] !== ESCAPE_CHARACTER) {
+                continue;
+            }
+
+            if (char === CLOSE_SQUARE_BRACKET) {
                 inCharClass = false;
-            } else if (char === SLASH && literal[i - 1] !== ESCAPE_CHARACTER && !inCharClass) {
+                continue;
+            }
+
+            if (char === SLASH && !inCharClass) {
                 const pattern = literal.slice(1, i);
 
                 // An empty pattern is not a regular expression literal

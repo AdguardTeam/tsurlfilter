@@ -86,6 +86,26 @@ describe('RegExpUtils', () => {
             },
             // A slash inside a character class does not close the literal
             { actual: '/[/]/', expected: { pattern: '[/]', flags: '' } },
+            // A backslash escapes only the next character: here `\\` is an
+            // escaped backslash, so the slash after it closes the literal
+            {
+                actual: String.raw`/a\\/`,
+                expected: { pattern: String.raw`a\\`, flags: '' },
+            },
+            // Same for a character class: the `]` after an escaped backslash
+            // closes the class, and the literal continues
+            {
+                actual: String.raw`/a[\\]b/`,
+                expected: { pattern: String.raw`a[\\]b`, flags: '' },
+            },
+            // An escaped backslash does not stop a following `[` from opening
+            // a character class
+            {
+                actual: String.raw`/a\\[b]/`,
+                expected: { pattern: String.raw`a\\[b]`, flags: '' },
+            },
+            // The only slash after an escaped backslash is escaped as well
+            { actual: String.raw`/a\\`, expected: null },
         ])('parseRegexLiteral should parse \'$actual\'', ({ actual, expected }) => {
             expect(RegExpUtils.parseRegexLiteral(actual)).toEqual(expected);
         });

@@ -204,6 +204,22 @@ describe('HtmlRuleConverter', () => {
                         expected: [String.raw`$$div:contains(/\/ads\/i/)`],
                     },
 
+                    // `[tag-content]` with an escaped backslash before the closing slash: the
+                    // backslash escapes the next backslash, not the slash, so the value still
+                    // has the regexp literal shape and is escaped as well
+                    {
+                        actual: String.raw`$$div[tag-content="/a\\/"]`,
+                        expected: [String.raw`$$div:contains(/\/a\\\\\//)`],
+                    },
+
+                    // `[tag-content]` with an escaped backslash inside a character class: the
+                    // `]` after it closes the class, so the value still has the regexp literal
+                    // shape and is escaped as well
+                    {
+                        actual: String.raw`$$div[tag-content="/a[\\]b/"]`,
+                        expected: [String.raw`$$div:contains(/\/a\[\\\\\]b\//)`],
+                    },
+
                     // `[tag-content]` with a PCRE2-only regexp literal: `/a++/` is valid PCRE2
                     // but invalid JavaScript, and CoreLibs compiles `:contains()` with PCRE2,
                     // so the value must be escaped as well
