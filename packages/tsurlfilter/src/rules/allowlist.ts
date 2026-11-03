@@ -22,14 +22,19 @@ const AUTHORITY_CREDENTIALS = String.raw`[^\/\\?#]*@`;
 const URL_START = `^(?:${REQUEST_SCHEME}):\\/\\/(?:${AUTHORITY_CREDENTIALS})?`;
 
 /**
- * Optional `www.` subdomain of the entry.
+ * Optional `www.` subdomain of the entry. It is spelled with character classes on purpose:
+ * `SimpleRegex.extractRegexpShortcut()` treats the content of an optional group as a mandatory
+ * literal and picks `www.` as the rule shortcut when the domain is not longer than it, which makes
+ * an entry for `t.me` match only `https://www.t.me/`. Character classes are skipped by the
+ * extractor, so the shortcut stays the domain itself.
  */
-const WWW_PREFIX = String.raw`(www\.)?`;
+const WWW_PREFIX = String.raw`(?:[w]{3}[.])?`;
 
 /**
- * Optional dot of the root label, grouped to keep the pattern shortcut intact.
+ * Optional dot of the root label. The character class keeps the extractor from picking a bare `.`
+ * as the shortcut of a single-character domain such as `a`.
  */
-const ROOT_LABEL_DOT = String.raw`(?:\.)?`;
+const ROOT_LABEL_DOT = String.raw`(?:[.])?`;
 
 /**
  * Optional port, digits only.
@@ -49,9 +54,10 @@ const HOST_WILDCARD = String.raw`[^\/\\?#@]*`;
 
 /**
  * Subdomains before the entry domain, each ending with a dot. The character class excludes dots
- * and the authority delimiters, so the labels stay separate and cannot reach another host.
+ * and the authority delimiters, so the labels stay separate and cannot reach another host, and the
+ * bracketed dot keeps the extractor from picking it as the rule shortcut.
  */
-const SUBDOMAIN_LABELS = String.raw`(?:[^\/\\?#@.]+\.)*`;
+const SUBDOMAIN_LABELS = String.raw`(?:[^\/\\?#@.]+[.])*`;
 
 /**
  * Checks whether the entry covers the domain together with all its subdomains.
@@ -85,12 +91,34 @@ const isFullWildcard = (domain: string): boolean => /^\*+$/.test(domain);
 /**
  * Removes the `www.` prefix, which the generated rule matches anyway.
  *
- * @param domain Normalized allowlist entry.
+ * @param domain Lowercased host of the entry.
  *
- * @returns Entry without the `www.` prefix.
+ * @returns Host without the prefix, or the host itself when the prefix is the part that describes
+ * it, as in `www.*`. A bare `www.` yields an empty string, so the entry is rejected.
  */
-const stripWwwPrefix = (domain: string): string => (
-    domain.startsWith('www.') ? domain.substring(4) : domain
+const stripWwwPrefix = (domain: string): string => {
+    if (!domain.startsWith('www.')) {
+        return domain;
+    }
+
+    const withoutPrefix = domain.substring('www.'.length);
+
+    // `www.*` describes the hosts under `www.`: without the prefix the entry would be a bare
+    // wildcard, which describes no host at all.
+    return withoutPrefix === '' || hasConcreteLabel(withoutPrefix) ? withoutPrefix : domain;
+};
+
+/**
+ * Normalizes an allowlist entry to the domain it describes: lower case, without the path, which an
+ * imported or an old entry may carry, and without the `www.` prefix that the generated rule covers
+ * anyway.
+ *
+ * @param entry Allowlist entry.
+ *
+ * @returns Domain of the entry, or an empty string if the entry has no domain.
+ */
+export const normalizeAllowlistDomain = (entry: string): string => (
+    stripWwwPrefix(entry.toLowerCase().split('/')[0].trim())
 );
 
 /**
@@ -163,7 +191,7 @@ const createDomainPattern = (domain: string): null | string => {
  * @returns Allowlist rule node, or null if the entry contains no domain.
  */
 export const createAllowlistRuleNode = (domain: string): null | NetworkRule => {
-    const preparedDomain = stripWwwPrefix(domain.toLowerCase());
+    const preparedDomain = normalizeAllowlistDomain(domain);
 
     if (!preparedDomain) {
         return null;

@@ -20,14 +20,14 @@ import { getConfigurationMv3Fixture } from '../mv3/fixtures/configuration';
  * makes the domain match the URL host, the optional credentials and the optional `www.`
  * subdomain.
  */
-const DOMAIN_RULE_START = String.raw`@@/^(?:https?|wss?):\/\/(?:[^\/\\?#]*@)?(www\.)?`;
+const DOMAIN_RULE_START = String.raw`@@/^(?:https?|wss?):\/\/(?:[^\/\\?#]*@)?(?:[w]{3}[.])?`;
 
 /**
  * End of the rule generated for an entry without the `*.` prefix: the host end — an optional root
  * label dot, an optional port, the path, the query, the fragment or the end of the URL — and the
  * modifiers.
  */
-const DOMAIN_RULE_END = String.raw`(?:\.)?(?::\d*)?(?:[\/\\?#]|$)/$document,important`;
+const DOMAIN_RULE_END = String.raw`(?:[.])?(?::\d*)?(?:[\/\\?#]|$)/$document,important`;
 
 /**
  * Wildcard of an entry: any characters of the host, but not the authority delimiters.
@@ -38,7 +38,7 @@ const DOMAIN_WILDCARD = String.raw`[^\/\\?#@]*`;
  * Beginning of the rule generated for an entry with the `*.` prefix: the URL start and the
  * subdomains, each ending with a dot.
  */
-const SUBDOMAIN_RULE_START = String.raw`@@/^(?:https?|wss?):\/\/(?:[^\/\\?#]*@)?(?:[^\/\\?#@.]+\.)*`;
+const SUBDOMAIN_RULE_START = String.raw`@@/^(?:https?|wss?):\/\/(?:[^\/\\?#]*@)?(?:[^\/\\?#@.]+[.])*`;
 
 /**
  * Creates an engine with the given allowlist rules, the way the application loads them.
@@ -90,6 +90,16 @@ describe('Allowlist Api', () => {
             { input: ['sub.example.com'], expected: ['sub.example.com'] },
             { input: ['www.sub.example.com'], expected: ['sub.example.com'] },
             { input: ['www.sub.sub.example.com'], expected: ['sub.sub.example.com'] },
+            // A path is not a part of an entry: settings import and old profiles may carry one.
+            { input: ['example.com/path'], expected: ['example.com'] },
+            { input: ['www.example.com/path?query'], expected: ['example.com'] },
+            // `www.*` describes the hosts under `www.`, so the prefix is kept.
+            { input: ['www.*'], expected: ['www.*'] },
+            // Entries that produce no rule are dropped, so no consumer sees a match-all domain.
+            { input: ['*'], expected: [] },
+            { input: ['**'], expected: [] },
+            { input: ['*.'], expected: [] },
+            { input: ['www.', 'example.com'], expected: ['example.com'] },
         ];
 
         it.each(cases)('should parse $input to $expected for MV2', ({ input, expected }) => {
@@ -336,6 +346,44 @@ describe('Allowlist Api', () => {
             { entries: ['*example.com'], url: 'https://example.com@evil.org/' },
             { entries: ['*example.com'], url: 'https://evil.org//example.com/' },
             { entries: ['*example.com'], url: 'https://evil.org/?url=//example.com/' },
+        ];
+
+        it.each(notMatchingCases)('does not match $url for $entries', ({ entries, url }) => {
+            expect(createMv3Engine(entries).matchFrame(url)).toBeNull();
+        });
+    });
+
+    describe('getAllowlistRules matching for short and www entries', () => {
+        const matchingCases = [
+            // A short domain must not lose its own rule to the `www.` group of the pattern.
+            { entries: ['t.me'], url: 'https://t.me/' },
+            { entries: ['t.me'], url: 'https://www.t.me/' },
+            { entries: ['a'], url: 'https://a/' },
+            { entries: ['*.a'], url: 'https://a/' },
+        ];
+
+        it.each(matchingCases)('matches $url for $entries', ({ entries, url }) => {
+            const config = getConfigurationMv2Fixture();
+
+            config.allowlist = entries;
+            config.settings.allowlistEnabled = true;
+
+            const mv2Allowlist = new Allowlist();
+            mv2Allowlist.configure(config);
+
+            expect(createEngine(mv2Allowlist.getAllowlistRules() ?? '').matchFrame(url)).not.toBeNull();
+            expect(createMv3Engine(entries).matchFrame(url)).not.toBeNull();
+        });
+
+        it('builds the MV3 twin from the normalized entry', () => {
+            // `www.example.com` is normalized to `example.com` first, so the twin covers the real
+            // subdomains instead of `*.www.example.com`.
+            expect(createMv3Engine(['www.example.com']).matchFrame('https://sub.example.com/')).not.toBeNull();
+        });
+
+        const notMatchingCases = [
+            { entries: ['t.me'], url: 'https://evil.org//t.me/' },
+            { entries: ['t.me'], url: 'https://t.me.evil.org/' },
         ];
 
         it.each(notMatchingCases)('does not match $url for $entries', ({ entries, url }) => {

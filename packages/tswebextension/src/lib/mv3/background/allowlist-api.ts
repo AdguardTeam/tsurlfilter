@@ -1,5 +1,4 @@
 import { PIPE_MODIFIER_SEPARATOR } from '@adguard/agtree';
-import { createAllowlistRuleNode } from '@adguard/tsurlfilter';
 
 import { type AllowlistConfiguration, Allowlist as CommonAllowlist } from '../../common/allowlist';
 import { getUpperLevelDomain } from '../../common/utils/url';
@@ -22,31 +21,12 @@ export class AllowlistApi extends CommonAllowlist {
          * For MV3 we add "*." for each domain to make matching algorithm
          * same as in DNR engine: requestDomains and excludedRequestDomains in
          * DNR will match all subdomains of the domain by default.
+         *
+         * The twins are built from the normalized entries that produce a rule, so an entry without
+         * a domain cannot turn into the full wildcard `*`, and MV3 behaves like MV2.
          */
-        const domainWithSubDomainsMask = configuration.allowlist.reduce<string[]>((acc, entry) => {
-            /**
-             * The entry is normalized the same way `super.configure()` does it, so the check and
-             * the `*.` twin below see exactly what reaches the engine.
-             */
-            const domain = entry.trim();
-
-            /**
-             * An entry without a domain produces no rule, and its `*.` twin would become the
-             * full wildcard `*.*`, which allowlists every site. Such an entry is dropped here,
-             * so MV3 behaves like MV2.
-             */
-            if (createAllowlistRuleNode(domain) === null) {
-                return acc;
-            }
-
-            acc.push(domain);
-
-            if (!domain.startsWith('*.')) {
-                acc.push(`*.${domain}`);
-            }
-
-            return acc;
-        }, []);
+        const domainWithSubDomainsMask = CommonAllowlist.prepareDomains(configuration.allowlist)
+            .flatMap((domain) => (domain.startsWith('*.') ? [domain] : [domain, `*.${domain}`]));
 
         super.configure({
             ...configuration,

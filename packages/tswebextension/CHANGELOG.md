@@ -42,12 +42,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   entry still covers the domain with all its subdomains but no longer covers
   hosts that only start with it; in MV3, the `*.` twin added to every entry keeps
   subdomains covered.
-- In MV3, an allowlist entry without a domain — a bare `*`, `**` or `*.`, padded
-  with spaces or not — no longer adds the `*.` twin, which turned into the full
-  wildcard and disabled filtering on every site. Such entries are ignored, exactly
-  as in MV2; the documented `*.*` full wildcard keeps working. The twin of a
-  wildcard entry stays within the host as well, so `example.*` no longer allowlists
-  `https://example.com@evil.org/`.
+- An allowlist entry that produces no rule — a bare `*`, `**` or `*.`, padded with
+  spaces or not — is now dropped when the allowlist is configured, so in MV3 it no
+  longer adds the `*.` twin, which turned into the full wildcard and disabled
+  filtering on every site, and in MV2 the canvas protection policy no longer turns
+  it into a match-all exclusion. The documented `*.*` full wildcard keeps working.
+  The twin of a wildcard entry stays within the host as well, so `example.*` no
+  longer allowlists `https://example.com@evil.org/`.
+- The MV3 `*.` twin is now built from the normalized entry, so `www.example.com`
+  covers `sub.example.com` through it, like the DNR rule for the same entry, and a
+  path in an entry is ignored the same way as in MV2.
 - Filtering log now records CSS hits for elements that pages add and remove
   while the page is loading, e.g. anti-adblock bait elements created by a
   script in `<head>`.

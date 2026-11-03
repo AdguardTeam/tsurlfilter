@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { Engine } from '../../src/engine/engine';
+import { normalizeAllowlistDomain } from '../../src/rules/allowlist';
 import { RuleFactory } from '../../src/rules/rule-factory';
 
 /**
@@ -12,20 +13,20 @@ const FILTER_LIST_ID = 100;
  * Beginning of the rule generated for an entry without the `*.` prefix: the URL start, which
  * makes the domain match the URL host, the optional credentials and the optional `www.` subdomain.
  */
-const RULE_START = String.raw`@@/^(?:https?|wss?):\/\/(?:[^\/\\?#]*@)?(www\.)?`;
+const RULE_START = String.raw`@@/^(?:https?|wss?):\/\/(?:[^\/\\?#]*@)?(?:[w]{3}[.])?`;
 
 /**
  * Beginning of the rule generated for an entry with the `*.` prefix: the URL start and the
  * subdomains, each ending with a dot.
  */
-const SUBDOMAIN_RULE_START = String.raw`@@/^(?:https?|wss?):\/\/(?:[^\/\\?#]*@)?(?:[^\/\\?#@.]+\.)*`;
+const SUBDOMAIN_RULE_START = String.raw`@@/^(?:https?|wss?):\/\/(?:[^\/\\?#]*@)?(?:[^\/\\?#@.]+[.])*`;
 
 /**
  * End of the rule generated for an entry without the `*.` prefix: the host end — an optional root
  * label dot, an optional port, the path, the query, the fragment or the end of the URL — and the
  * modifiers.
  */
-const RULE_END = String.raw`(?:\.)?(?::\d*)?(?:[\/\\?#]|$)/$document,important`;
+const RULE_END = String.raw`(?:[.])?(?::\d*)?(?:[\/\\?#]|$)/$document,important`;
 
 /**
  * Wildcard of an entry: any characters of the host, but not the authority delimiters.
@@ -51,6 +52,27 @@ const createEngine = (domain: string): Engine => {
         }],
     });
 };
+
+describe('normalizeAllowlistDomain', () => {
+    const cases = [
+        { entry: 'example.com', expected: 'example.com' },
+        { entry: 'EXAMPLE.COM', expected: 'example.com' },
+        { entry: '  Example.COM \t', expected: 'example.com' },
+        { entry: 'www.example.com', expected: 'example.com' },
+        // A path is not a part of an entry: settings import and old profiles may still carry one.
+        { entry: 'example.com/path?query#fragment', expected: 'example.com' },
+        { entry: 'www.example.com/path', expected: 'example.com' },
+        // `www.*` describes the hosts under `www.`, so the prefix is the part that defines it.
+        { entry: 'www.*', expected: 'www.*' },
+        // A bare `www.` has no domain at all.
+        { entry: 'www.', expected: '' },
+        { entry: '', expected: '' },
+    ];
+
+    it.each(cases)('normalizes "$entry" to "$expected"', ({ entry, expected }) => {
+        expect(normalizeAllowlistDomain(entry)).toStrictEqual(expected);
+    });
+});
 
 describe('RuleFactory.createAllowlistRule', () => {
     describe('generates a rule for a domain entry', () => {
@@ -124,6 +146,20 @@ describe('RuleFactory.createAllowlistRule', () => {
             { domain: '*example.com', url: 'https://myexample.com/' },
             { domain: '*.*', url: 'https://a.com/' },
             { domain: '*.*', url: 'https://example.com.community/' },
+            // A short domain is covered by its own rule: the pattern shortcut must stay the domain.
+            { domain: 't.me', url: 'https://t.me/' },
+            { domain: 'x.ai', url: 'https://x.ai/' },
+            { domain: 'ab.*', url: 'https://ab.co/' },
+            { domain: 'a', url: 'https://a/' },
+            { domain: '*.a', url: 'https://a/' },
+            { domain: '*.a', url: 'https://sub.a/' },
+            // A path is not a part of an entry: it is cut, so the whole site stays covered.
+            { domain: 'example.com/', url: 'https://example.com/page' },
+            { domain: 'example.com/path', url: 'https://example.com/other' },
+            { domain: '*.example.com/', url: 'https://sub.example.com/page' },
+            // `www.*` describes the hosts under `www.`.
+            { domain: 'www.*', url: 'https://www.example.com/' },
+            { domain: 'www.*', url: 'https://www.a/' },
         ];
 
         it.each(cases)('matches $url for $domain', ({ domain, url }) => {
@@ -165,6 +201,11 @@ describe('RuleFactory.createAllowlistRule', () => {
             { domain: '*example.com', url: 'https://user@evil.org/?x=example.com' },
             // The `*.` twin added by MV3 reaches the same branch, so it is covered by the same rows.
             { domain: '*.example.com', url: 'https://example.com@evil.org/' },
+            // A short domain keeps its host boundary as well.
+            { domain: 't.me', url: 'https://evil.org//t.me/' },
+            { domain: '*.a', url: 'https://evil.org//a/' },
+            // `www.*` covers the hosts under `www.`, not the bare domain.
+            { domain: 'www.*', url: 'https://example.com/' },
         ];
 
         it.each(cases)('does not match $url for $domain', ({ domain, url }) => {
