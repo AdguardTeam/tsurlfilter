@@ -144,6 +144,19 @@ const SUPPORTED_ADG_PSEUDO_CLASSES = new Set<string>([
 ]);
 
 /**
+ * HTML raw text elements, whose `innerHTML` equals `textContent`.
+ *
+ * The content of these elements is text rather than a tree of child nodes,
+ * and HTML serialization writes it literally. Thus `<` and `>` in a
+ * `[tag-content]` or `[wildcard]` value stay literal characters in both
+ * `innerHTML` and `textContent`, so the value can still match in uBlock
+ * `:has-text()`, which tests `textContent`.
+ *
+ * @see {@link https://html.spec.whatwg.org/multipage/syntax.html#raw-text-elements}
+ */
+const RAW_TEXT_ELEMENTS = new Set<string>(['script', 'style']);
+
+/**
  * Markers of special pseudo-class selectors with raw-text arguments,
  * used to detect special selector markers in raw (unparseable) HTML
  * filtering rule bodies. Derived from {@link SPECIAL_PSEUDO_CLASS_NAMES},
@@ -210,11 +223,18 @@ export const ERROR_MESSAGES = {
  *
  * @param name Name of the special attribute selector.
  * @param value Value of the special attribute selector.
+ * @param typeSelector Lowercase type selector of the compound selector that
+ * contains the special attribute selector, or `null` if the compound selector
+ * has no type selector.
  *
  * @returns A {@link SimpleSelector} to add to the current complex selector,
  * or `false` to skip it, or `true` to keep it as-is.
  */
-type OnSpecialAttributeSelectorCallback = (name: string, value: string) => SimpleSelector | boolean;
+type OnSpecialAttributeSelectorCallback = (
+    name: string,
+    value: string,
+    typeSelector: string | null,
+) => SimpleSelector | boolean;
 
 /**
  * Callback type for handling special pseudo-class selectors during selector list conversion.
@@ -405,11 +425,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
         // as-is instead of emitting a rule that matches other elements.
         let isUnconvertible = false;
 
-        const onSpecialAttributeSelector: OnSpecialAttributeSelectorCallback = (name, value) => {
+        const onSpecialAttributeSelector: OnSpecialAttributeSelectorCallback = (name, value, typeSelector) => {
+            // The markup check does not apply to raw text elements: their
+            // `innerHTML` equals `textContent`, so markup characters in the
+            // value are still present in the text that uBlock matches.
             if (
                 (name === AdgAttributeSelectors.TagContent
                     || name === AdgAttributeSelectors.Wildcard)
                 && HtmlRuleConverter.containsHtmlMarkup(value)
+                && !HtmlRuleConverter.isRawTextElement(typeSelector)
             ) {
                 isUnconvertible = true;
                 return false;
@@ -690,12 +714,34 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * markup can never be found in uBlock's `textContent`, i.e. the converted
      * rule would match nothing. Such rules are kept as-is instead.
      *
+     * Exception: for raw text elements the two strings are equal, see
+     * {@link HtmlRuleConverter.isRawTextElement}.
+     *
      * @param value Value of the special attribute selector.
      *
      * @returns `true` if the value contains HTML markup, otherwise `false`.
      */
     private static containsHtmlMarkup(value: string): boolean {
         return value.includes('<') || value.includes('>');
+    }
+
+    /**
+     * Checks whether the type selector refers to an HTML raw text element.
+     *
+     * For raw text elements (`script`, `style`) the element content is text,
+     * not a tree of child nodes, so `innerHTML` and `textContent` are equal.
+     * A `[tag-content]` or `[wildcard]` value with markup characters can
+     * therefore still match in uBlock `:has-text()`, which tests
+     * `textContent`.
+     *
+     * @param typeSelector Type selector of the compound selector, or `null`
+     * if the compound selector has no type selector.
+     *
+     * @returns `true` if the type selector refers to a raw text element,
+     * otherwise `false`.
+     */
+    private static isRawTextElement(typeSelector: string | null): boolean {
+        return typeSelector !== null && RAW_TEXT_ELEMENTS.has(typeSelector);
     }
 
     /**
@@ -714,8 +760,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *   accepts only digits (e.g. `" 5"` and `"+5"` become `5`)
      * - `[max-length]` is skipped.
      *
-     * Note: values that contain HTML markup are not passed to this method,
-     * see {@link HtmlRuleConverter.containsHtmlMarkup}.
+     * Note: values that contain HTML markup are passed to this method only
+     * for raw text elements, where `innerHTML` equals `textContent`; for
+     * other elements such rules are kept as-is, see
+     * {@link HtmlRuleConverter.containsHtmlMarkup} and
+     * {@link HtmlRuleConverter.isRawTextElement}.
      *
      * @param name Name of the special attribute selector.
      * @param value Value of the special attribute selector.
@@ -830,6 +879,41 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 ));
             }
         }
+    }
+
+    /**
+     * Returns the lowercase type selector of the compound selector that
+     * contains the simple selector at the given index.
+     *
+     * A compound selector starts after a combinator, and a type selector,
+     * when present, is its first simple selector.
+     *
+     * @param selectors Child selectors of a complex selector.
+     * @param index Index of the simple selector within the complex selector.
+     *
+     * @returns Lowercase type selector, or `null` if the compound selector
+     * has no type selector.
+     */
+    private static getCompoundTypeSelector(
+        selectors: (SimpleSelector | SelectorCombinator)[],
+        index: number,
+    ): string | null {
+        let compoundStart = 0;
+
+        for (let i = index - 1; i >= 0; i -= 1) {
+            if (selectors[i].type === 'SelectorCombinator') {
+                compoundStart = i + 1;
+                break;
+            }
+        }
+
+        const firstSelector = selectors[compoundStart];
+
+        if (firstSelector.type !== 'TypeSelector') {
+            return null;
+        }
+
+        return firstSelector.value.toLowerCase();
     }
 
     /**
@@ -1098,6 +1182,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                         const name = selector.name.value;
                         const { value } = selector.value;
+                        const typeSelector = HtmlRuleConverter.getCompoundTypeSelector(selectors, j);
 
                         // [tag-content] and [wildcard] are deferred in ADG→ADG
                         // conversion: their emission may need to be merged with
@@ -1115,7 +1200,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                             // discard the single-attribute pseudo-class it
                             // returns — the actual nodes are emitted after the
                             // selector loop.
-                            onSpecialAttributeSelector(name, value);
+                            onSpecialAttributeSelector(name, value, typeSelector);
                             if (name === AdgAttributeSelectors.TagContent) {
                                 deferredTagContentValues.push(value);
                             } else {
@@ -1138,7 +1223,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                             // the merged one is emitted after the selector loop,
                             // possibly combined with the other deferred
                             // constraints.
-                            onSpecialAttributeSelector(name, value);
+                            onSpecialAttributeSelector(name, value, typeSelector);
                             continue;
                         }
 
@@ -1146,7 +1231,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         // - add returned simple selector if it's not boolean
                         // - skip adding if returned value is false
                         // - keep original simple selector if returned value is true
-                        const result = onSpecialAttributeSelector(name, value);
+                        const result = onSpecialAttributeSelector(name, value, typeSelector);
                         if (typeof result !== 'boolean') {
                             convertedSelectors.push(result);
                             continue;

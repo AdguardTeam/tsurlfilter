@@ -1158,6 +1158,43 @@ describe('HtmlRuleConverter', () => {
                         shouldConvert: false,
                     },
 
+                    // `[tag-content]` value with HTML markup on a raw text element -
+                    // `innerHTML` equals `textContent` for `script`, so the value is
+                    // convertible
+                    {
+                        actual: '$$script[tag-content="document.write(\'<div>\')"]',
+                        expected: ["##^script:has-text(/document\\.write\\('<div>'\\)/)"],
+                    },
+
+                    // the raw text element is the compound selector with the special
+                    // attribute, not necessarily the first one
+                    {
+                        actual: '$$div > script[tag-content="<div>"]',
+                        expected: ['##^div > script:has-text(/<div>/)'],
+                    },
+
+                    // a type selector followed by other simple selectors still
+                    // identifies the raw text element
+                    {
+                        actual: '$$script.ad[tag-content="<div>"]',
+                        expected: ['##^script.ad:has-text(/<div>/)'],
+                    },
+
+                    // HTML tag names are case-insensitive, so an uppercase type
+                    // selector also identifies a raw text element
+                    {
+                        actual: '$$SCRIPT[tag-content="<div>"]',
+                        expected: ['##^SCRIPT:has-text(/<div>/)'],
+                    },
+
+                    // a compound selector without a type selector has an unknown
+                    // element type, so the markup fallback still applies
+                    {
+                        actual: '$$[tag-content="<span>ads</span>"]',
+                        expected: ['$$[tag-content="<span>ads</span>"]'],
+                        shouldConvert: false,
+                    },
+
                     // `[wildcard]` special attribute selector - uBlock accepts only
                     // the `i` flag, so `[\\s\\S]` replaces the dot-all dots
                     {
@@ -1179,6 +1216,14 @@ describe('HtmlRuleConverter', () => {
                         actual: '$$div[wildcard="*<span>*"]',
                         expected: ['$$div[wildcard="*<span>*"]'],
                         shouldConvert: false,
+                    },
+
+                    // `[wildcard]` value with HTML markup on a raw text element -
+                    // `innerHTML` equals `textContent` for `style`, so the value is
+                    // convertible
+                    {
+                        actual: '$$style[wildcard="*<div>*"]',
+                        expected: ['##^style:has-text(/^[\\s\\S]*<div>[\\s\\S]*$/)'],
                     },
 
                     // `:contains()` special pseudo-class selector
@@ -1551,7 +1596,8 @@ describe('HtmlRuleConverter', () => {
                     expect(regexp.test('prefix\nads\nmid')).toBe(false);
                 });
 
-                // Markup in the value can never be found in `textContent`
+                // Markup in the value cannot be found in the `textContent` of
+                // an element that has child nodes
                 test('should keep rules with markup in [tag-content] as-is', () => {
                     const ruleText = '$$div[tag-content="<span>ads</span>"]';
                     const rule = RuleParser.parse(
@@ -1564,6 +1610,18 @@ describe('HtmlRuleConverter', () => {
                     expect(conversionResult.isConverted).toBe(false);
                     expect(conversionResult.result).toHaveLength(1);
                     expect(conversionResult.result[0]).toBe(rule);
+                });
+
+                // `innerHTML` equals `textContent` for script, so a value with
+                // markup is present in the text that uBlock matches
+                test('should convert markup in [tag-content] for script', () => {
+                    const ruleText = convertToUboText('$$script[tag-content="document.write(\'<div>\')"]');
+
+                    expect(ruleText).toBe("##^script:has-text(/document\\.write\\('<div>'\\)/)");
+
+                    const regexp = extractHasTextRegexp(ruleText);
+
+                    expect(regexp.test("document.write('<div>')")).toBe(true);
                 });
             });
 

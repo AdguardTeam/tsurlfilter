@@ -35,7 +35,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `[tag-content]` becomes a case-sensitive escaped `:has-text()` regexp,
   `[wildcard]` becomes a uBlock-compatible regexp that uses `[\s\S]`
   instead of the unsupported dot-all `s` flag, and rules with HTML markup in
-  these values are kept as-is because uBlock matches `textContent`.
+  these values are kept as-is because uBlock matches `textContent`, except
+  for raw text elements (`script`, `style`), where `innerHTML` equals
+  `textContent`.
 - Pseudo-class selector arguments are no longer trimmed: the argument is the
   raw text between the pseudo-class parentheses, e.g. `$$div:contains( "foo" )`
   keeps the spaces around the quoted text, and `:not( .a )` keeps the spaces
