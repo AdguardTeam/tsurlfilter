@@ -44,6 +44,21 @@ export const REGEX_NEGATION_PREFIX = '^((?!';
 export const REGEX_NEGATION_SUFFIX = ').)*$';
 
 /**
+ * Parts of a regular expression literal in the `/pattern/flags` form.
+ */
+export interface RegexLiteralParts {
+    /**
+     * Pattern between the delimiters.
+     */
+    pattern: string;
+
+    /**
+     * Flags after the closing delimiter, possibly an empty string.
+     */
+    flags: string;
+}
+
+/**
  * Special RegExp symbols.
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-escape
@@ -89,6 +104,63 @@ export class RegExpUtils {
             && trimmedPattern.startsWith(REGEX_MARKER)
             && trimmedPattern.endsWith(REGEX_MARKER)
             && trimmedPattern[REGEX_MARKER.length - 2] !== ESCAPE_CHARACTER;
+    }
+
+    /**
+     * Splits a regular expression literal in the `/pattern/flags` form into
+     * its pattern and flags.
+     *
+     * The parser checks only the shape of the literal, not whether the pattern
+     * compiles in JavaScript. The literal must have this shape:
+     *
+     * - it starts with `/`;
+     * - a later `/` exists that is not escaped by a backslash and is not inside
+     *   a `[...]` character class;
+     * - the pattern between the delimiters is not empty.
+     *
+     * The shape check is independent of the JavaScript `RegExp` parser on
+     * purpose. AdGuard CoreLibs compiles `:contains(/.../)` arguments with
+     * PCRE2, which accepts patterns that JavaScript rejects, e.g. `/a++/`.
+     *
+     * @param literal String to parse.
+     *
+     * @returns Pattern and flags, or `null` if the string is not a regular
+     * expression literal.
+     *
+     * @example
+     * // Returns `{ pattern: 'foo.*bar', flags: 'i' }`
+     * RegExpUtils.parseRegexLiteral('/foo.*bar/i');
+     */
+    public static parseRegexLiteral(literal: string): RegexLiteralParts | null {
+        if (literal.length < 2 || !literal.startsWith(SLASH)) {
+            return null;
+        }
+
+        let inCharClass = false;
+
+        for (let i = 1; i < literal.length; i += 1) {
+            const char = literal.charAt(i);
+            if (char === OPEN_SQUARE_BRACKET && literal[i - 1] !== ESCAPE_CHARACTER) {
+                inCharClass = true;
+            } else if (char === CLOSE_SQUARE_BRACKET && literal[i - 1] !== ESCAPE_CHARACTER) {
+                inCharClass = false;
+            } else if (char === SLASH && literal[i - 1] !== ESCAPE_CHARACTER && !inCharClass) {
+                const pattern = literal.slice(1, i);
+
+                // An empty pattern is not a regular expression literal
+                if (!pattern) {
+                    return null;
+                }
+
+                return {
+                    pattern,
+                    flags: literal.slice(i + 1),
+                };
+            }
+        }
+
+        // No closing slash was found
+        return null;
     }
 
     /**

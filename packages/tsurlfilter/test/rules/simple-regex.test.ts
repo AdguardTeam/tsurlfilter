@@ -197,6 +197,11 @@ describe('SimpleRegex.fromLiteral', () => {
         { input: '/[a-z]+/i', output: /[a-z]+/i },
         { input: '/(unclosed/i', output: '/(unclosed/i' },
         { input: '/[/]/', output: /[/]/ },
+        { input: '/a\\/b/', output: /a\/b/ },
+        // An empty pattern is not treated as a regular expression literal
+        { input: '//', output: '//' },
+        // Valid PCRE2 but invalid JavaScript: the engine cannot compile it
+        { input: '/a++/', output: '/a++/' },
     ])("returns '$output' for '$input'", ({ input, output }) => {
         const result = SimpleRegex.fromLiteral(input);
         if (typeof result === 'string') {

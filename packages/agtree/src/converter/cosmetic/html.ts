@@ -32,7 +32,6 @@ import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering
 import { AdblockSyntax } from '../../utils/adblockers';
 import {
     BACKSLASH,
-    CLOSE_SQUARE_BRACKET,
     COLON,
     DOUBLE_QUOTE,
     EMPTY,
@@ -1155,8 +1154,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * pseudo-class ("chain-safe"):
      *
      * - it must not be empty and must not start with a slash — a leading `/`
-     *   makes the argument look like a regular expression to CoreLibs. Such a
-     *   value is still valid as the only special selector, and
+     *   may make the argument look like a regular expression to CoreLibs. A
+     *   value that looks like a regular expression literal is still valid as
+     *   the only special selector, and
      *   {@link HtmlRuleConverter.appendSpecialAttributePseudoClasses} emits it
      *   as an escaped regular expression so that it matches literally;
      * - it must not contain quotes, parentheses, brackets, braces,
@@ -1186,19 +1186,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * by `:contains()` consumers, i.e. whether it looks like a regular
      * expression literal.
      *
-     * The detection mirrors {@link SimpleRegex.fromLiteral} from
-     * `@adguard/tsurlfilter`, which decides whether the emitted `:contains()`
-     * argument becomes a `RegExp`:
-     *
-     * - the value starts with `/`;
-     * - a later `/` exists that is not escaped by a backslash and is not inside
-     *   a `[...]` character class;
-     * - the text between the slashes is not empty;
-     * - `new RegExp(pattern, flags)` compiles without throwing, where `flags`
-     *   is the text after the closing slash (possibly empty).
-     *
-     * The check is kept in sync with `SimpleRegex.fromLiteral()` on purpose:
-     * `@adguard/agtree` must not depend on `@adguard/tsurlfilter`.
+     * The literal shape is parsed by {@link RegExpUtils.parseRegexLiteral},
+     * which is shared with `SimpleRegex.fromLiteral()` in
+     * `@adguard/tsurlfilter`. The pattern must also compile with the
+     * JavaScript `RegExp` constructor, because the HTML filtering engine
+     * compiles it that way.
      *
      * @param value `[tag-content]` value to check.
      *
@@ -1206,35 +1198,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * otherwise `false`.
      */
     private static isRegexpLikeLiteral(value: string): boolean {
-        if (value.length < 2 || !value.startsWith(SLASH)) {
-            return false;
-        }
+        const parts = RegExpUtils.parseRegexLiteral(value);
 
-        let pattern = '';
-        let flags = '';
-        let inCharClass = false;
-
-        for (let i = 1; i < value.length; i += 1) {
-            const char = value.charAt(i);
-            if (char === OPEN_SQUARE_BRACKET && value[i - 1] !== BACKSLASH) {
-                inCharClass = true;
-            } else if (char === CLOSE_SQUARE_BRACKET && value[i - 1] !== BACKSLASH) {
-                inCharClass = false;
-            } else if (char === SLASH && value[i - 1] !== BACKSLASH && !inCharClass) {
-                pattern = value.slice(1, i);
-                flags = value.slice(i + 1);
-                break;
-            }
-        }
-
-        // An empty pattern is not a regular expression literal
-        if (!pattern) {
+        if (parts === null) {
             return false;
         }
 
         try {
             // eslint-disable-next-line no-new
-            new RegExp(pattern, flags);
+            new RegExp(parts.pattern, parts.flags);
             return true;
         } catch {
             return false;

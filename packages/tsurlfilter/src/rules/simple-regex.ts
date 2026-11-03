@@ -1,4 +1,6 @@
 /* eslint-disable prefer-regex-literals */
+import { RegExpUtils } from '@adguard/agtree';
+
 import { logger } from '../utils/logger';
 import {
     findNextUnescapedIndex,
@@ -522,6 +524,10 @@ export class SimpleRegex {
     /**
      * Converts a string representation of a regular expression into a RegExp object.
      *
+     * The literal shape is parsed by {@link RegExpUtils.parseRegexLiteral},
+     * which is shared with the agtree converter so that both sides detect
+     * regular expression literals in the same way.
+     *
      * Only the flags `i`, `s`, `u`, and `v` are kept. The `g` and `y` flags
      * make `RegExp.test()` stateful because they advance `lastIndex`, so they
      * are dropped to keep matching stateless. The `u` and `v` flags are kept
@@ -534,37 +540,17 @@ export class SimpleRegex {
      * @returns A RegExp object if the input is a valid regular expression literal, otherwise the original string.
      */
     public static fromLiteral(literal: string): string | RegExp {
-        // Early check for regexp marker
-        if (literal.length < 2 || !literal.startsWith('/')) {
-            return literal;
-        }
+        const parts = RegExpUtils.parseRegexLiteral(literal);
 
-        let pattern = '';
-        let flags = '';
-        let inCharClass = false;
-
-        for (let i = 1; i < literal.length; i += 1) {
-            const char = literal.charAt(i);
-            if (char === '[' && literal[i - 1] !== '\\') {
-                inCharClass = true;
-            } else if (char === ']' && literal[i - 1] !== '\\') {
-                inCharClass = false;
-            } else if (literal[i] === '/' && literal[i - 1] !== '\\' && !inCharClass) {
-                pattern = literal.slice(1, i);
-                flags = literal.slice(i + 1);
-                break;
-            }
-        }
-
-        // Didn't find the ending slash
-        if (!pattern) {
+        // Not a regular expression literal
+        if (parts === null) {
             return literal;
         }
 
         try {
             // Compile the original literal first. This keeps the fallback for
             // invalid literals, including invalid or duplicate flags.
-            const regexp = new RegExp(pattern, flags);
+            const regexp = new RegExp(parts.pattern, parts.flags);
 
             // Keep only the flags the HTML filtering engine supports. `g` and
             // `y` make `RegExp.test()` stateful because they advance

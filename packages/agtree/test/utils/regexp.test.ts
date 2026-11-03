@@ -66,6 +66,31 @@ describe('RegExpUtils', () => {
         });
     });
 
+    describe('parseRegexLiteral', () => {
+        test.each([
+            // Not regular expression literals
+            { actual: '', expected: null },
+            { actual: '/', expected: null },
+            { actual: '//', expected: null },
+            { actual: 'plain string', expected: null },
+            { actual: '/unclosed', expected: null },
+            { actual: ' /test/', expected: null },
+            // Regular expression literals
+            { actual: '/test/', expected: { pattern: 'test', flags: '' } },
+            { actual: '/test/gi', expected: { pattern: 'test', flags: 'gi' } },
+            // Valid PCRE2, invalid JavaScript: the shape check does not compile
+            { actual: '/a++/', expected: { pattern: 'a++', flags: '' } },
+            {
+                actual: String.raw`/a\/b/`,
+                expected: { pattern: String.raw`a\/b`, flags: '' },
+            },
+            // A slash inside a character class does not close the literal
+            { actual: '/[/]/', expected: { pattern: '[/]', flags: '' } },
+        ])('parseRegexLiteral should parse \'$actual\'', ({ actual, expected }) => {
+            expect(RegExpUtils.parseRegexLiteral(actual)).toEqual(expected);
+        });
+    });
+
     describe('negateRegexPattern', () => {
         test.each([
             {

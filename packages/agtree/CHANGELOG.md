@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `RegExpUtils.parseRegexLiteral()` is now exported, so consumers can split
+  a `/pattern/flags` literal into its parts without JavaScript `RegExp`
+  validation.
 - `SPECIAL_PSEUDO_CLASS_NAMES` is now exported, so consumers can use the
   same list of special pseudo-class names as the parser and the converter.
 
