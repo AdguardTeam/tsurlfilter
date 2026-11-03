@@ -129,6 +129,15 @@ describe('FilterConverter', () => {
             expect(declarativeRules[0].condition.urlFilter).toBe('*.xn--e1afmkfd.xn--p1ai^');
         });
 
+        it('converts a non-ASCII hostname with an internal wildcard to punycode', async () => {
+            const filter = createFilter(['||foo*.пример.рф^']);
+            const [{ ruleset }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.urlFilter).toBe('||foo*.xn--e1afmkfd.xn--p1ai^');
+        });
+
         it('converts value-less $removeparam into a strip-all-query redirect, not a block', async () => {
             const filter = createFilter(['||example.org^$removeparam']);
             const [{ ruleset, errors }] = await converter.convert([filter]);

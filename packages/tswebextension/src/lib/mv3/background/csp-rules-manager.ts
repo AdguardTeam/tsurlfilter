@@ -87,9 +87,15 @@ export class CspRulesManager {
             }
 
             const hasStaticSource = sources.some(({ filterId }) => staticFilterIds.has(filterId));
-            const hasDynamicSource = sources.some(({ filterId }) => !staticFilterIds.has(filterId));
+            const hasDynamicSource = sources.some(({ filterId }) => dynamicFilterIds.has(filterId));
             if (hasStaticSource && hasDynamicSource) {
                 throw new Error(`Rebuilt CSP rule ${rule.id} combines static and dynamic sources`);
+            }
+
+            // A source which belongs to neither set would be classified as
+            // dynamic here and then dropped by both error channels.
+            if (!hasStaticSource && !hasDynamicSource) {
+                throw new Error(`Rebuilt CSP rule ${rule.id} has no known source filter`);
             }
 
             if (hasStaticSource) {

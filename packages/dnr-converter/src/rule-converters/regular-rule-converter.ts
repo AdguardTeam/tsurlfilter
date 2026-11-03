@@ -246,7 +246,10 @@ export class RegularRuleConverter {
         const wildcard = wildcardMatch ? wildcardMatch[0] : '';
         rest = rest.substring(wildcard.length);
 
-        const hostnameEndIndex = rest.search(/[\^/*|?:]/);
+        // A `*` inside the hostname is a wildcard, not a separator, so a
+        // pattern like `||foo*.пример.рф^` keeps the whole hostname and is
+        // converted to punycode as a whole.
+        const hostnameEndIndex = rest.search(/[\^/|?:]/);
         const hostname = hostnameEndIndex === -1 ? rest : rest.substring(0, hostnameEndIndex);
         const suffix = hostnameEndIndex === -1 ? '' : rest.substring(hostnameEndIndex);
 
