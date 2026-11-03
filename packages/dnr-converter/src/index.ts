@@ -30,6 +30,7 @@ export { type IFilter } from './filter/types';
 export { type IRulesHashMap, RulesHashMap, type HashWithSource } from './ruleset/rules-hash-map';
 export { type ISourceMap, type SourceRuleIdxAndFilterId } from './ruleset/source-map';
 export {
+    isUnavailableFilterSourceError,
     UnavailableFilterSourceError,
     UnavailableRulesetSourceError,
 } from './errors/unavailable-sources-errors';

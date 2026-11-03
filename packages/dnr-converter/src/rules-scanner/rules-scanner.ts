@@ -64,6 +64,43 @@ interface ScannedRulesWithErrors {
 type LineSelector = (line: string) => boolean;
 
 /**
+ * Options of {@link RulesScanner.scanFilters}.
+ *
+ * An options object is used instead of positional parameters because the
+ * scanner takes two selectors of the same type: a swap would compile.
+ */
+export interface ScanFiltersOptions {
+    /**
+     * Applied to each rule after it has been parsed and transformed. It is
+     * needed for example to apply `$badfilter`: to exclude negated rules from
+     * the array of rules that will be returned.
+     */
+    filterFn?: (rule: Rule) => boolean;
+
+    /**
+     * Maximum number of network rules to scan, all other rules will be ignored.
+     * It is applied to each filter separately, not to the cumulative scope of
+     * rules from all filters, because it looks simpler and more predictable
+     * solution to prevent too long scan.
+     */
+    maxScannedRules?: number;
+
+    /**
+     * If specified, only lines matching it are parsed. The content is still
+     * split into lines and every line is tested, so only the parsing cost is
+     * proportional to the number of candidate lines; original offsets of the
+     * rules are preserved.
+     */
+    lineSelector?: LineSelector;
+
+    /**
+     * If specified, parse errors of lines matching it are not reported. It is
+     * used when another pass owns such lines and reports their errors itself.
+     */
+    skipErrorLineSelector?: LineSelector;
+}
+
+/**
  * Segment of filter content selected for parsing.
  */
 interface LineSegment {
@@ -109,30 +146,13 @@ export class RulesScanner {
      * Scans the list of filters for network rules.
      *
      * @param filters List of {@link IFilter}.
-     * @param filterFn If this function is specified, it will be applied to each
-     * rule after it has been parsed and transformed. This function is needed
-     * for example to apply `$badfilter`: to exclude negated rules from the array
-     * of rules that will be returned.
-     * @param maxScannedRules Maximum number of network rules to
-     * scan, all other rules will be ignored. It will be applied to each filter
-     * separately, not for cumulative scope of rules from all filters, because
-     * it looks simpler and more predictable solution to prevent too long scan.
-     * @param lineSelector If this function is specified, only lines matching it
-     * are parsed. The content is still split into lines and every line is
-     * tested, so only the parsing cost is proportional to the number of
-     * candidate lines; original offsets of the rules are preserved.
-     * @param skipErrorLineSelector If this function is specified, parse errors
-     * of lines matching it are not reported. It is used when another pass owns
-     * such lines and reports their errors itself.
+     * @param options Scan options, see {@link ScanFiltersOptions}.
      *
      * @returns Result object of {@link ScannedFiltersWithErrors}.
      */
     public static async scanFilters(
         filters: IFilter[],
-        filterFn?: (r: Rule) => boolean,
-        maxScannedRules?: number,
-        lineSelector?: LineSelector,
-        skipErrorLineSelector?: LineSelector,
+        options: ScanFiltersOptions = {},
     ): Promise<ScannedFiltersWithErrors> {
         const result: ScannedFiltersWithErrors = {
             errors: [],
@@ -143,13 +163,7 @@ export class RulesScanner {
             const filter = filters[i];
 
             // eslint-disable-next-line no-await-in-loop
-            const { errors, rules } = await RulesScanner.scanRules(
-                filter,
-                filterFn,
-                maxScannedRules,
-                lineSelector,
-                skipErrorLineSelector,
-            );
+            const { errors, rules } = await RulesScanner.scanRules(filter, options);
             const badFilterRules = rules.filter(RulesScanner.isBadFilterRule);
 
             result.errors = result.errors.concat(errors);
@@ -168,30 +182,17 @@ export class RulesScanner {
      * and tries to convert each line into {@link Rule}.
      *
      * @param filter From which filter the rules should be scanned.
-     * @param filterFn If this function is specified, it will be applied to each
-     * rule after it has been parsed and transformed. This function is needed
-     * for example to apply `$badfilter`: to exclude negated rules from the array
-     * of rules that will be returned.
-     * @param maxScannedRules Maximum number of network rules to
-     * scan, all other rules will be ignored and an error {@link MaxScannedRulesError}
-     * will be added to the list of result errors.
-     * @param lineSelector If this function is specified, only lines matching it
-     * are parsed, and their original offsets are preserved.
-     * @param skipErrorLineSelector If this function is specified, parse errors
-     * of lines matching it are not reported.
+     * @param options Scan options, see {@link ScanFiltersOptions}.
      *
      * @returns Result object of {@link ScannedRulesWithErrors}.
      */
     private static async scanRules(
         filter: IFilter,
-        filterFn?: (r: Rule) => boolean,
-        maxScannedRules?: number,
-        lineSelector?: LineSelector,
-        skipErrorLineSelector?: LineSelector,
+        options: ScanFiltersOptions,
     ): Promise<ScannedRulesWithErrors> {
         const filterId = filter.getId();
         const content = await filter.getContent();
-        const segments = RulesScanner.getSegments(content, lineSelector);
+        const segments = RulesScanner.getSegments(content, options.lineSelector);
 
         const result: ScannedRulesWithErrors = {
             errors: [],
@@ -203,9 +204,9 @@ export class RulesScanner {
                 result,
                 filterId,
                 segment,
-                filterFn,
-                maxScannedRules,
-                skipErrorLineSelector,
+                options.filterFn,
+                options.maxScannedRules,
+                options.skipErrorLineSelector,
             );
 
             if (isLimitReached) {

@@ -19,9 +19,9 @@ import { getSourceRuleIds } from './source-rule-ids';
  */
 type ExcludedRule = {
     /**
-     * Id of the rule set the rule belongs to.
+     * Rule set the rule belongs to.
      */
-    rulesetId: string;
+    ruleset: IRulesetWithSourceMap;
 
     /**
      * Declarative rule id.
@@ -171,10 +171,13 @@ export class SessionRulesApi {
 
         // Rebuilt static CSP rules replace the stale CSP rules from the static
         // rulesets, so they are applied first and keep quota priority.
-        const unsafeRulesFromStaticFilters: { rulesetId: string; rules: DeclarativeRule[] }[] = [];
+        const unsafeRulesFromStaticFilters: {
+            ruleset: IRulesetWithSourceMap;
+            rules: DeclarativeRule[];
+        }[] = [];
         if (rebuiltCspRules !== undefined && cspRuleset) {
             unsafeRulesFromStaticFilters.push({
-                rulesetId: cspRuleset.getId(),
+                ruleset: cspRuleset,
                 rules: rebuiltCspRules,
             });
         }
@@ -188,7 +191,7 @@ export class SessionRulesApi {
                 const activeRules = rules.filter((rule) => !rulesToRemove.includes(rule.id));
 
                 return {
-                    rulesetId: r.getId(),
+                    ruleset: r,
                     rules: rebuiltCspRules === undefined
                         ? activeRules
                         : activeRules.filter((rule) => !isCspDeclarativeRule(rule)),
@@ -212,7 +215,7 @@ export class SessionRulesApi {
         // TODO: Add separated counters for these in ruleset.
         let regexpRulesCounter = 0;
         const ignoredRules = new Map<string, number[]>(
-            unsafeRulesFromStaticFilters.map(({ rulesetId }) => [rulesetId, []]),
+            unsafeRulesFromStaticFilters.map(({ ruleset }) => [ruleset.getId(), []]),
         );
 
         let availableId = SessionRulesApi.MIN_DECLARATIVE_RULE_ID + 1;
@@ -220,10 +223,12 @@ export class SessionRulesApi {
         const excludedByRegexpLimitRules: ExcludedRule[] = [];
 
         // Reset id for each rule via saving its source and check the limits.
-        unsafeRulesFromStaticFilters.forEach(({ rulesetId, rules }) => {
+        unsafeRulesFromStaticFilters.forEach(({ ruleset, rules }) => {
+            const rulesetId = ruleset.getId();
+
             rules.forEach((rule) => {
                 if (availableId > SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES) {
-                    excludedByUnsafeLimitRules.push({ rulesetId, ruleId: rule.id });
+                    excludedByUnsafeLimitRules.push({ ruleset, ruleId: rule.id });
                     ignoredRules.get(rulesetId)?.push(rule.id);
 
                     return;
@@ -234,7 +239,7 @@ export class SessionRulesApi {
                     regexpRulesCounter += 1;
 
                     if (regexpRulesCounter > SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES) {
-                        excludedByRegexpLimitRules.push({ rulesetId, ruleId: rule.id });
+                        excludedByRegexpLimitRules.push({ ruleset, ruleId: rule.id });
                         ignoredRules.get(rulesetId)?.push(rule.id);
 
                         return;
@@ -261,30 +266,20 @@ export class SessionRulesApi {
                 })
                 .join(';\n');
 
-            logger.debug(`[tsweb.SessionRulesApi.updateSessionRules]: Some session rules were ignored due to the limit of ${SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES} (current count of unsafe rules: ${unsafeRulesFromEnabledRulesets}) or limit of ${SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES} regex rules (current count of regex rules: ${regexpRulesCounter}): \n`, stringifiedIgnoredRules);
+            logger.debug(`[tsweb.SessionRulesApi.updateSessionRules]: Some session rules were ignored due to the limit of ${SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES} (current count of unsafe rules: ${unsafeRulesFromEnabledRulesets.length}) or limit of ${SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES} regex rules (current count of regex rules: ${regexpRulesCounter}): \n`, stringifiedIgnoredRules);
         }
-
-        const rulesetsById = new Map<string, IRulesetWithSourceMap>();
-        if (cspRuleset) {
-            rulesetsById.set(cspRuleset.getId(), cspRuleset);
-        }
-        enabledStaticRulesets.forEach((ruleset) => {
-            rulesetsById.set(ruleset.getId(), ruleset);
-        });
 
         /**
          * Maps omitted declarative rules to source rule ids.
          *
-         * @param rules Omitted rules with their rule set ids.
+         * @param rules Omitted rules with their rule sets.
          *
          * @returns Source rule ids.
          */
         const toSourceRuleIds = async (rules: ExcludedRule[]): Promise<number[]> => {
-            const ids = await Promise.all(rules.map(async ({ rulesetId, ruleId }) => {
-                const ruleset = rulesetsById.get(rulesetId);
-
-                return ruleset ? getSourceRuleIds(ruleset, ruleId) : [ruleId];
-            }));
+            const ids = await Promise.all(rules.map(({ ruleset, ruleId }) => (
+                getSourceRuleIds(ruleset, ruleId)
+            )));
 
             return ids.flat();
         };

@@ -6,6 +6,7 @@ import {
     type IRulesetWithSourceMap,
     isConversionError,
     isRuleScanError,
+    isUnavailableFilterSourceError,
 } from '@adguard/dnr-converter';
 
 /**
@@ -115,7 +116,11 @@ export class CspRulesManager {
     }
 
     /**
-     * Filters conversion and scan errors by the filters they belong to.
+     * Filters conversion, scan and source errors by the filters they belong to.
+     *
+     * Every error which carries a filter id must be routed here: an unreadable
+     * filter reports an error without a parsed rule, so classifying it by the
+     * error kind alone would drop it from both channels.
      *
      * @param errors Errors of the CSP conversion.
      * @param filterIds Ids of the filters to keep.
@@ -131,7 +136,11 @@ export class CspRulesManager {
                 return filterIds.has(error.rule.filterListId);
             }
 
-            return isRuleScanError(error) && filterIds.has(error.filterId);
+            if (isRuleScanError(error) || isUnavailableFilterSourceError(error)) {
+                return filterIds.has(error.filterId);
+            }
+
+            return false;
         });
     }
 }

@@ -567,7 +567,13 @@ export class TsWebExtension implements AppInterface<
                     '[tsweb.TsWebExtension.applyFilteringConfiguration]: Cannot roll back dynamic rules:',
                     rollbackError,
                 ),
-            );
+            ).catch((error: unknown) => {
+                // The previous rules stay in effect, so the listener which was
+                // stopped before the update must be restarted as well.
+                declarativeFilteringLog.restore();
+
+                throw error;
+            });
             res.sessionRules = { limitations: sessionLimitations };
 
             if (sessionLimitations.length > 0) {

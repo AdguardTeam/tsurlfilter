@@ -15,17 +15,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of the whole filter list; the regular `convert()` still rejects an allowlist
   `$csp` rule and owns `$badfilter` lines.
 - `TooManyError`, `isCspDeclarativeRule`, `UnexpectedConversionError`,
-  `RuleScanError` and `isRuleScanError` are now exported, so a limitation and a
-  scan error can be checked with `instanceof`. `IRulesetWithSourceMap` gained a
-  required `getSourceRuleIndexes()`, which maps a declarative rule id to source
-  rule indexes without reading the rule text, and `ComputedWithSourceMapOptions`
-  describes the source-map-only options.
+  `RuleScanError`, `isRuleScanError` and `isUnavailableFilterSourceError` are now
+  exported, so an error can be checked with `instanceof`.
+  `IRulesetWithSourceMap` gained a required `getSourceRuleIndexes()`, which maps
+  a declarative rule id to source rule indexes without reading the rule text, and
+  `ComputedWithSourceMapOptions` describes the source-map-only options.
+- `Rule.cspDirective` keeps the `$csp` directive in a dedicated field, and
+  `CspRulesResolver.getUnprocessableReason()` returns why an exception cannot be
+  applied.
+- `RulesScanner.scanFilters()` takes a `ScanFiltersOptions` object: the scanner
+  used to accept two selectors of the same type positionally, so a swap
+  compiled.
 
 ### Changed
 
 - A blocking `$csp` rule without a directive is a parse error instead of a
-  plain block rule.
-- Merged `$csp` rules of the same filter deduplicate their directives.
+  plain block rule, and so are a `$csp` directive which mentions `report-uri` or
+  `report-to`, and a value-less `$permissions` or `$removeheader`: such rules
+  used to degrade into a plain blocking rule or to send violation reports to a
+  third-party host.
+- Merged `$csp` rules of the same filter deduplicate their directives. Rules
+  whose directives conflict are no longer merged: CSP applies only the first
+  copy of a repeated directive, so the merge silently dropped the second
+  policy, while two headers enforce both.
 - `Rule.writtenKeys` is gone: `$badfilter` compares the rule text as written
   (`Rule.originalText`), so a rule no longer keeps a comparison key.
 
@@ -48,6 +60,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   failing the whole conversion.
 - A filter whose content cannot be read no longer fails the whole conversion:
   the standalone CSP pass skips it and reports an `UnavailableFilterSourceError`.
+- The `$csp` directive is no longer replaced by a following value-bearing
+  advanced modifier: `$csp=script-src 'none',urltransform=/a/b/` used to emit a
+  CSP header with `/a/b/`, and `$redirect=noopjs,csp=x` redirected to the wrong
+  resource.
+- A `$csp` exception is recognized when its pattern ends right after the domain
+  (`@@||example.com$csp`), and a url filter is compared case-insensitively when
+  the exception is not marked with `$match-case`, like DNR matches it.
 - `$badfilter` incorrectly negated rules with different values of value-bearing
   modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
   `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when

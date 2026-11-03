@@ -45,10 +45,11 @@ describe('FilterConverter (withSourceMap: true)', () => {
 
     describe('convertCspRules', () => {
         it('reports a failed blocker once and keeps it out of resolution', async () => {
-            // `$cookie` makes the rule a regular-pass rule, so the blocker is
-            // rejected by the preflight and cannot cancel anything.
+            // `$removeparam` makes the blocker incompatible with the CSP
+            // conversion, so the preflight rejects it and it cannot cancel
+            // anything.
             const filter = createFilter([
-                "||example.com^$csp=script-src 'none',cookie=foo",
+                "||example.com^$csp=script-src 'none',removeparam=x",
                 '@@||example.com^$csp',
             ], 1);
 

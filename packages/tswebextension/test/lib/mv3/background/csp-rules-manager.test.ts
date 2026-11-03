@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { type IFilter, isUnavailableFilterSourceError } from '@adguard/dnr-converter';
+
 import { CspRulesManager } from '../../../../src/lib/mv3/background/csp-rules-manager';
 import { createFilter } from '../helpers';
 
@@ -122,5 +124,38 @@ describe('CspRulesManager', () => {
         expect(result.staticErrors).toHaveLength(1);
         expect(result.dynamicErrors).toHaveLength(1);
         expect(result.staticErrors[0]).not.toBe(result.dynamicErrors[0]);
+    });
+
+    it('reports an unreadable static filter in the static channel', async () => {
+        const unreadableFilter: IFilter = {
+            getId: () => 3,
+            getRuleByIndex: async () => '',
+            getContent: async () => {
+                throw new Error('filter source is offline');
+            },
+            unloadContent: () => {},
+        };
+
+        const result = await CspRulesManager.build([unreadableFilter], []);
+
+        expect(result.staticErrors).toHaveLength(1);
+        expect(result.dynamicErrors).toHaveLength(0);
+        expect(isUnavailableFilterSourceError(result.staticErrors[0])).toBe(true);
+    });
+
+    it('reports an unreadable dynamic filter in the dynamic channel', async () => {
+        const unreadableFilter: IFilter = {
+            getId: () => 10_005,
+            getRuleByIndex: async () => '',
+            getContent: async () => {
+                throw new Error('filter source is offline');
+            },
+            unloadContent: () => {},
+        };
+
+        const result = await CspRulesManager.build([], [unreadableFilter]);
+
+        expect(result.dynamicErrors).toHaveLength(1);
+        expect(result.staticErrors).toHaveLength(0);
     });
 });

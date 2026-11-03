@@ -111,22 +111,107 @@ export class CspConverter extends RegularRuleConverter {
      * @returns Merged CSP header value.
      */
     private static mergeCspValues(currentValue: string, valueToMerge: string): string {
-        const splitDirectives = (value: string) => value
-            .split(';')
-            .map((directive) => directive.trim())
-            .filter((directive) => directive.length > 0);
+        const directives = CspConverter.splitDirectives(currentValue);
+        const knownNames = new Set(directives.map((directive) => (
+            CspConverter.getDirectiveName(directive)
+        )));
 
-        const directives = splitDirectives(currentValue);
-        const knownDirectives = new Set(directives);
+        CspConverter.splitDirectives(valueToMerge).forEach((directive) => {
+            const name = CspConverter.getDirectiveName(directive);
 
-        splitDirectives(valueToMerge).forEach((directive) => {
-            if (!knownDirectives.has(directive)) {
-                knownDirectives.add(directive);
+            if (!knownNames.has(name)) {
+                knownNames.add(name);
                 directives.push(directive);
             }
         });
 
         return directives.join('; ');
+    }
+
+    /**
+     * Splits a CSP header value into directives.
+     *
+     * @param value CSP header value.
+     *
+     * @returns Non-empty trimmed directives.
+     */
+    private static splitDirectives(value: string): string[] {
+        return value
+            .split(';')
+            .map((directive) => directive.trim())
+            .filter((directive) => directive.length > 0);
+    }
+
+    /**
+     * Returns the lowercased directive name.
+     *
+     * Directive names are case-insensitive, while directive values are not, so
+     * only the name is lowercased.
+     *
+     * @param directive CSP directive.
+     *
+     * @returns Lowercased directive name.
+     */
+    private static getDirectiveName(directive: string): string {
+        const [name] = directive.split(/\s/, 1);
+
+        return name.toLowerCase();
+    }
+
+    /**
+     * Returns the arguments of a CSP directive.
+     *
+     * @param directive CSP directive.
+     *
+     * @returns Arguments as written, or an empty string for a value-less directive.
+     */
+    private static getDirectiveArguments(directive: string): string {
+        const match = /^\S+\s+(.*)$/.exec(directive);
+
+        return match ? match[1] : '';
+    }
+
+    /**
+     * Collects the CSP header value of a declarative rule.
+     *
+     * @param rule Declarative rule.
+     *
+     * @returns CSP header value or `null` if the rule has no CSP header.
+     */
+    private static getCspValue(rule: DeclarativeRule): string | null {
+        const header = rule.action.responseHeaders?.find(CspConverter.isCspHeader);
+
+        return header?.value ?? null;
+    }
+
+    /**
+     * Checks whether two CSP header values can be expressed by one header.
+     *
+     * CSP ignores a repeated directive and applies only the first one, so two
+     * policies with conflicting directives must stay in separate headers: a
+     * browser applies every header of the response.
+     *
+     * @param currentValue Current CSP header value.
+     * @param valueToMerge CSP header value to append.
+     *
+     * @returns `true` if the values have no conflicting directive.
+     */
+    private static canMergeCspValues(currentValue: string, valueToMerge: string): boolean {
+        const currentArguments = new Map<string, string>();
+        CspConverter.splitDirectives(currentValue).forEach((directive) => {
+            currentArguments.set(
+                CspConverter.getDirectiveName(directive),
+                CspConverter.getDirectiveArguments(directive),
+            );
+        });
+
+        return CspConverter.splitDirectives(valueToMerge).every((directive) => {
+            const name = CspConverter.getDirectiveName(directive);
+            const current = currentArguments.get(name);
+
+            return current === undefined
+                || current === CspConverter.getDirectiveArguments(directive);
+        });
     }
 
     /**
@@ -136,9 +221,13 @@ export class CspConverter extends RegularRuleConverter {
      * @param sourceRule The source rule to merge into.
      * @param ruleToMerge The rule to merge into the source rule.
      *
-     * @returns The combined {@link DeclarativeRule}.
+     * @returns The combined {@link DeclarativeRule}, or `null` if the two rules
+     * carry conflicting directives and must stay separate.
      */
-    private static combineRulePair(sourceRule: DeclarativeRule, ruleToMerge: DeclarativeRule): DeclarativeRule {
+    private static combineRulePair(
+        sourceRule: DeclarativeRule,
+        ruleToMerge: DeclarativeRule,
+    ): DeclarativeRule | null {
         // Deep copy to drop references to source rule
         const resultRule: DeclarativeRule = JSON.parse(JSON.stringify(sourceRule));
 
@@ -152,6 +241,13 @@ export class CspConverter extends RegularRuleConverter {
         let cspHeaderInfoToMerge = headersToMerge.find(CspConverter.isCspHeader);
         if (!cspHeaderInfoToMerge) {
             return resultRule;
+        }
+
+        const currentValue = CspConverter.getCspValue(resultRule);
+        if (currentValue !== null
+            && cspHeaderInfoToMerge.value !== undefined
+            && !CspConverter.canMergeCspValues(currentValue, cspHeaderInfoToMerge.value)) {
+            return null;
         }
 
         // Deep copy to avoid reference issues

@@ -1,4 +1,4 @@
-import { type DeclarativeRule, FilterConverter, type IRulesetWithSourceMap } from '@adguard/dnr-converter';
+import { type DeclarativeRule, type IRulesetWithSourceMap } from '@adguard/dnr-converter';
 
 import { type DeclarativeRuleInfo, defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
@@ -32,6 +32,14 @@ class DeclarativeFilteringLog {
     #isListening = false;
 
     /**
+     * Whether declarative logging was enabled by the last {@link finishUpdate}.
+     *
+     * Kept so that {@link restore} can bring the listener back to the previous
+     * state without replacing the rule sets which are still in effect.
+     */
+    #isEnabled = false;
+
+    /**
      * Mutex for managing concurrent access to rule set updates.
      */
     private readonly mutex: Mutex = new Mutex();
@@ -54,22 +62,6 @@ class DeclarativeFilteringLog {
     }
 
     /**
-     * Acquires the mutex lock within the specified timeout.
-     * Used to prevent getting rule info during rule set updates.
-     *
-     * The lock is released by {@link withUpdateLock} when the operation passed
-     * to it finishes, so this method is only meant to be paired with it.
-     *
-     * @param timeoutMs The maximum time to wait (in milliseconds) to acquire the lock.
-     * Defaults to {@link DeclarativeFilteringLog.MAX_WAIT_TIME_MS}.
-     *
-     * @throws {TimeoutError} If the lock is not acquired within the specified time.
-     */
-    public async startUpdate(timeoutMs = this.MAX_WAIT_TIME_MS): Promise<void> {
-        await this.mutex.lock(timeoutMs);
-    }
-
-    /**
      * Sets the new rule sets and enables or disables declarative logging.
      *
      * The update lock is not released here: it stays held until the operation
@@ -80,8 +72,25 @@ class DeclarativeFilteringLog {
      */
     public finishUpdate(rulesets: IRulesetWithSourceMap[], enableLog: boolean): void {
         this.sourceRulesets = rulesets;
+        this.#isEnabled = enableLog;
 
         if (enableLog) {
+            this.start();
+        } else {
+            this.stop();
+        }
+    }
+
+    /**
+     * Restores the listener state of the previous {@link finishUpdate}.
+     *
+     * An update stops the listener before the browser rules are replaced, so a
+     * failed update keeps the previous rules working while the log stays
+     * silent. The rule sets are not replaced here: after a rollback the
+     * previous ones are still in effect.
+     */
+    public restore(): void {
+        if (this.#isEnabled) {
             this.start();
         } else {
             this.stop();
@@ -102,7 +111,9 @@ class DeclarativeFilteringLog {
      * @throws Whatever the operation throws.
      */
     public async withUpdateLock(operation: () => Promise<void>): Promise<void> {
-        await this.startUpdate();
+        // Acquire the lock before touching the rule sets, so rule info is not
+        // read while they are being replaced.
+        await this.mutex.lock(this.MAX_WAIT_TIME_MS);
 
         try {
             await operation();
@@ -153,20 +164,16 @@ class DeclarativeFilteringLog {
         }
 
         const sourceRules = await ruleset.getRulesById(sourceDnrRuleId);
-        // The rebuilt CSP ruleset keeps its rules in the full declarative list
-        // and never in the unsafe list, so skip the always-empty unsafe lookup.
-        const isCspRuleset = sourceRulesetId === FilterConverter.CSP_RULESET_ID;
-        let declarativeRule: DeclarativeRule | undefined;
-        if (isCspRuleset) {
+        // The rebuilt CSP ruleset keeps its rules in the full declarative list,
+        // so the unsafe lookup is simply empty for it and the fallback below
+        // finds the rule.
+        const unsafeDeclarativeRules = await ruleset.getUnsafeRules();
+        let declarativeRule: DeclarativeRule | undefined = unsafeDeclarativeRules
+            .find((r) => r.id === sourceDnrRuleId);
+
+        if (!declarativeRule) {
             const declarativeRules = await ruleset.getDeclarativeRules();
             declarativeRule = declarativeRules.find((r) => r.id === sourceDnrRuleId);
-        } else {
-            const unsafeDeclarativeRules = await ruleset.getUnsafeRules();
-            declarativeRule = unsafeDeclarativeRules.find((r) => r.id === sourceDnrRuleId);
-            if (!declarativeRule) {
-                const declarativeRules = await ruleset.getDeclarativeRules();
-                declarativeRule = declarativeRules.find((r) => r.id === sourceDnrRuleId);
-            }
         }
 
         if (!declarativeRule) {

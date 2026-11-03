@@ -134,7 +134,7 @@ describe('RulesScanner', () => {
             parseFromNodeMock.mockReturnValueOnce([mockRule2]);
 
             const filterFn = vi.fn((rule: any) => rule.pattern === '||example.com^');
-            const result = await RulesScanner.scanFilters([filter], filterFn);
+            const result = await RulesScanner.scanFilters([filter], { filterFn });
 
             expect(filterFn).toHaveBeenCalledTimes(2);
             expect(result).toEqual({
@@ -266,13 +266,9 @@ describe('RulesScanner', () => {
                 throw new Error('Rule creation failed');
             });
 
-            const result = await RulesScanner.scanFilters(
-                [filter],
-                undefined,
-                undefined,
-                undefined,
-                (line) => line === filterRule,
-            );
+            const result = await RulesScanner.scanFilters([filter], {
+                skipErrorLineSelector: (line) => line === filterRule,
+            });
 
             expect(result.errors).toEqual([]);
             expect(result.filters[0].rules).toEqual([]);
@@ -294,13 +290,9 @@ describe('RulesScanner', () => {
             };
             parserMock.mockReturnValue(mockAst as any);
 
-            const result = await RulesScanner.scanFilters(
-                [filter],
-                undefined,
-                undefined,
-                undefined,
-                (line) => line === filterRule,
-            );
+            const result = await RulesScanner.scanFilters([filter], {
+                skipErrorLineSelector: (line) => line === filterRule,
+            });
 
             expect(result.errors).toEqual([]);
         });
@@ -320,13 +312,9 @@ describe('RulesScanner', () => {
                 throw new Error('Rule creation failed');
             });
 
-            const result = await RulesScanner.scanFilters(
-                [filter],
-                undefined,
-                undefined,
-                undefined,
-                (line) => line !== filterRule,
-            );
+            const result = await RulesScanner.scanFilters([filter], {
+                skipErrorLineSelector: (line) => line !== filterRule,
+            });
 
             expect(result.errors).toHaveLength(1);
             expect(result.errors[0].message).toBe('Rule creation failed');
@@ -407,7 +395,7 @@ describe('RulesScanner', () => {
             });
             parseFromNodeMock.mockReturnValueOnce([mockRule3]);
 
-            const result = await RulesScanner.scanFilters([filter], undefined, 2);
+            const result = await RulesScanner.scanFilters([filter], { maxScannedRules: 2 });
             expect(result).toEqual({
                 errors: [new MaxScannedRulesError(
                     'Maximum number of scanned network rules reached at line index 15.',
@@ -484,7 +472,7 @@ describe('RulesScanner', () => {
             });
             parseFromNodeMock.mockReturnValueOnce([mockRule2]);
 
-            const result = await RulesScanner.scanFilters([filter], undefined, 2, lineSelector);
+            const result = await RulesScanner.scanFilters([filter], { maxScannedRules: 2, lineSelector });
 
             expect(result).toEqual({
                 errors: [new MaxScannedRulesError(

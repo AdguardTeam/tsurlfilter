@@ -100,6 +100,7 @@
 /* eslint-enable jsdoc/require-description-complete-sentence */
 
 import { getModifierAliases } from '@adguard/agtree';
+import { RegExpUtils } from '@adguard/agtree/utils';
 
 import {
     EmptyOrNegativeNumberOfRulesError,
@@ -182,7 +183,7 @@ export class FilterConverter {
      */
     private static readonly CSP_RELATED_MODIFIER_REGEXP = new RegExp(
         `(?:^|[$,])[ \\t]*(?:${FilterConverter.CSP_RAW_MODIFIER_NAMES
-            .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+            .map(RegExpUtils.escapeRegexSpecials)
             .join('|')})(?![\\w-])`,
     );
 
@@ -325,15 +326,13 @@ export class FilterConverter {
         const {
             errors: scanErrors,
             filters: scannedFilters,
-        } = await RulesScanner.scanFilters(
-            relevantFilters.filters,
-            (rule) => (
+        } = await RulesScanner.scanFilters(relevantFilters.filters, {
+            filterFn: (rule) => (
                 isCspRule(rule)
                 || rule.isModifierEnabled(OPTION_NAMES.BADFILTER)
             ),
-            undefined,
-            FilterConverter.isCspRelatedText,
-        );
+            lineSelector: FilterConverter.isCspRelatedText,
+        });
 
         const convertedRules = await RulesConverter.convertCspRules(scannedFilters, options);
         const badFilterRules = scannedFilters.flatMap(({ badFilterRules: rules }) => rules);
@@ -485,11 +484,7 @@ export class FilterConverter {
         const {
             errors: scanErrors,
             filters: scannedFilters,
-        } = await RulesScanner.scanFilters(
-            filters,
-            undefined,
-            scannedLimit,
-        );
+        } = await RulesScanner.scanFilters(filters, { maxScannedRules: scannedLimit });
 
         const convertedRules = await RulesConverter.convert(scannedFilters, options);
 
@@ -595,13 +590,11 @@ export class FilterConverter {
             const {
                 errors: scanErrors,
                 filters: scannedFilters,
-            } = await RulesScanner.scanFilters(
-                filters,
-                filterRule,
-                scannedLimit,
-                undefined,
+            } = await RulesScanner.scanFilters(filters, {
+                filterFn: filterRule,
+                maxScannedRules: scannedLimit,
                 skipErrorLineSelector,
-            );
+            });
             const convertedRules = await RulesConverter.convert(scannedFilters, options);
             const badFilterRules = scannedFilters.flatMap(({ badFilterRules: rules }) => rules);
             const result = FilterConverter.collectConvertedResult(
@@ -619,13 +612,11 @@ export class FilterConverter {
             const {
                 errors: scanErrors,
                 filters: [scannedFilter],
-            } = await RulesScanner.scanFilters(
-                [filter],
-                filterRule,
-                scannedLimit,
-                undefined,
+            } = await RulesScanner.scanFilters([filter], {
+                filterFn: filterRule,
+                maxScannedRules: scannedLimit,
                 skipErrorLineSelector,
-            );
+            });
             const convertedRules = await RulesConverter.convert([scannedFilter], options);
             const result = FilterConverter.collectConvertedResult(
                 FilterConverter.getRulesetId(scannedFilter.id),

@@ -907,7 +907,7 @@ describe('RuleConverter', () => {
             const testCspValue = "default-src 'self'";
             const rule = createRuleMock({
                 enabledOptions: [OPTION_NAMES.CSP],
-                advancedModifierValue: testCspValue,
+                cspDirective: testCspValue,
             });
             // @ts-expect-error Accessing private member for test purposes
             const action = RegularRuleConverter.getAddingCspHeadersAction(rule);
@@ -1877,8 +1877,8 @@ describe('RuleConverter', () => {
             // Should have 2 rules: one combined (rule1 + rule2) and one standalone (rule3)
             expect(result.declarativeRules).toHaveLength(2);
 
-            // Should have called createRuleTemplate for each rule
-            expect(createRuleTemplate).toHaveBeenCalledTimes(6); // 3 initial + 3 for saving templates
+            // Should have called createRuleTemplate once per rule
+            expect(createRuleTemplate).toHaveBeenCalledTimes(3);
 
             // Should have called combineRulePair once (rule1 + rule2)
             expect(combineRulePair).toHaveBeenCalledTimes(1);

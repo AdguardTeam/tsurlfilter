@@ -72,10 +72,15 @@ const areEqualLists = <T>(left: readonly T[] | undefined, right: readonly T[] | 
 };
 
 /**
- * Checks whether an exception's URL identity equals a blocking rule's one.
+ * Checks whether an exception's URL identity matches a blocking rule's one.
  *
  * `urlFilter` and `regexFilter` are compared one by one: a value stays tied to
  * its field, otherwise a url filter would cover a regexp with the same text.
+ *
+ * DNR matches `urlFilter` case-insensitively unless the rule sets
+ * `isUrlFilterCaseSensitive`, so a case-insensitive exception compares the
+ * lowercased values: it matches the same URLs as the blocking rule. A regexp
+ * filter is always case-sensitive, so it is never lowercased.
  *
  * @param exceptionCondition Condition of the exception.
  * @param blockingCondition Condition of the blocking rule.
@@ -85,8 +90,17 @@ const areEqualLists = <T>(left: readonly T[] | undefined, right: readonly T[] | 
 const coversUrlCondition = (
     exceptionCondition: RuleCondition,
     blockingCondition: RuleCondition,
-): boolean => exceptionCondition.urlFilter === blockingCondition.urlFilter
-    && exceptionCondition.regexFilter === blockingCondition.regexFilter;
+): boolean => {
+    const exceptionUrlFilter = exceptionCondition.isUrlFilterCaseSensitive
+        ? exceptionCondition.urlFilter
+        : exceptionCondition.urlFilter?.toLowerCase();
+    const blockingUrlFilter = exceptionCondition.isUrlFilterCaseSensitive
+        ? blockingCondition.urlFilter
+        : blockingCondition.urlFilter?.toLowerCase();
+
+    return exceptionUrlFilter === blockingUrlFilter
+        && exceptionCondition.regexFilter === blockingCondition.regexFilter;
+};
 
 /**
  * Builds the set of values allowed by an inclusion/exclusion condition pair.

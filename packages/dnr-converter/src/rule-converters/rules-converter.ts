@@ -108,7 +108,6 @@ import { type FilterConverterOptions } from '../filter-converter/filter-converte
 import { UrlTransformRulesConverter } from '../grouped-rules-converters/url-transform-converter';
 import { OPTION_NAMES } from '../rule/option-names';
 import { type Rule } from '../rule/rule';
-import { RuleDeclarativeValidator } from '../rule/rule-validator';
 import { type ScannedFilter } from '../rules-scanner';
 import { type Source } from '../ruleset/source-map';
 import { isSafeRule } from '../utils/is-safe-rule';
@@ -217,12 +216,13 @@ export class RulesConverter {
                 return !invalidBlockingRules.has(rule);
             }
 
-            try {
-                return RuleDeclarativeValidator.shouldProcessCspException(rule);
-            } catch (error) {
-                invalidCspExceptions.set(rule, error as Error);
+            const reason = CspRulesResolver.getUnprocessableReason(rule);
+            if (reason !== null) {
+                invalidCspExceptions.set(rule, new UnsupportedModifierError(reason, rule));
                 return false;
             }
+
+            return true;
         });
         const {
             rules: resolvedCspRules,

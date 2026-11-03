@@ -359,6 +359,16 @@ export class Rule {
     readonly advancedModifierValue: string | null = null;
 
     /**
+     * CSP directive of a `$csp` rule, `null` when the directive is omitted.
+     *
+     * A dedicated field is required because {@link advancedModifierValue} is
+     * shared by every value-bearing advanced modifier and keeps only the last
+     * one: `$csp=script-src 'none',urltransform=/a/b/` would otherwise carry
+     * the url-transform value as the directive.
+     */
+    readonly cspDirective: string | null = null;
+
+    /**
      * Rule text exactly as written in the filter list, before conversion to AG
      * syntax.
      *
@@ -685,8 +695,7 @@ export class Rule {
 
                 case OPTION_NAMES.CSP:
                     this.enabledModifiers.add(name);
-                    this.advancedModifierName = rawName;
-                    this.advancedModifierValue = value || null;
+                    this.cspDirective = value || null;
                     // Only an allowlist `$csp` may omit the directive: it means
                     // "cancel the CSP rules of the matching scope". A blocking
                     // rule without a directive would silently degrade into a
@@ -694,6 +703,29 @@ export class Rule {
                     if (!isAllowlist && !value) {
                         throw new SyntaxError(
                             'Invalid $csp rule: CSP directive must not be empty',
+                        );
+                    }
+                    // `report-uri` and `report-to` make the browser send
+                    // violation reports to a third-party host. tsurlfilter
+                    // rejects any directive with this prefix, so an unsupported
+                    // report target cannot leak the browsing context.
+                    if (value && value.toLowerCase().includes('report-')) {
+                        throw new SyntaxError(
+                            `Invalid $csp rule: forbidden CSP directive: ${value}`,
+                        );
+                    }
+                    break;
+
+                case OPTION_NAMES.PERMISSIONS:
+                    this.enabledModifiers.add(name);
+                    this.advancedModifierName = rawName;
+                    this.advancedModifierValue = value || null;
+                    // Same as `$csp`: only an allowlist rule may omit the
+                    // directive. A blocking rule without it would silently
+                    // degrade into a plain blocking rule.
+                    if (!isAllowlist && !value) {
+                        throw new SyntaxError(
+                            'Invalid $permissions rule: permissions directive must not be empty',
                         );
                     }
                     break;
@@ -704,7 +736,6 @@ export class Rule {
                 case OPTION_NAMES.XMLPRUNE:
                 case OPTION_NAMES.HLS:
                 case OPTION_NAMES.REFERRERPOLICY:
-                case OPTION_NAMES.PERMISSIONS:
                 case OPTION_NAMES.URLTRANSFORM:
                     this.enabledModifiers.add(name);
                     this.advancedModifierName = rawName;
@@ -721,9 +752,16 @@ export class Rule {
                     break;
 
                 case OPTION_NAMES.REMOVEHEADER: {
+                    // A rule without a header name cannot remove anything and
+                    // would degrade into a plain blocking rule.
+                    if (!value) {
+                        throw new SyntaxError(
+                            'Invalid $removeheader rule: removeheader value must not be empty',
+                        );
+                    }
                     this.enabledModifiers.add(name);
                     this.advancedModifierName = rawName;
-                    this.advancedModifierValue = value || null;
+                    this.advancedModifierValue = value;
                     const info = Rule.computeRemoveHeaderInfo(value);
                     this.removeHeaderName = info.name;
                     this.removeHeaderIsRequestType = info.isRequest;

@@ -402,7 +402,9 @@ export default class DynamicRulesApi {
 
         rebuiltCspRules.forEach((rule) => {
             let { id } = rule;
-            while (usedIds.has(id)) {
+            // A collision moves the rule to the first free id; the ids of the
+            // following rules are assigned after it, so one lookup is enough.
+            if (usedIds.has(id)) {
                 while (usedIds.has(nextId)) {
                     nextId += 1;
                 }

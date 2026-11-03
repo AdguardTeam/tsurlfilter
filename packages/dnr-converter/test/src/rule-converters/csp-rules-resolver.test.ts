@@ -1038,4 +1038,47 @@ describe('CspRulesResolver.resolve', () => {
             unsupportedExceptions: [rules[1]],
         });
     });
+
+    it('cancels a blocker whose path differs in case only', () => {
+        // DNR matches a url filter case-insensitively unless the rule is
+        // marked with `$match-case`, so both rules match the same URLs.
+        const rules = createRules(
+            "||example.com/Path$csp=script-src 'none'",
+            '@@||example.com/path$csp',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('reports a case-sensitive exception with another case as unsupported', () => {
+        const rules = createRules(
+            "||example.com/path$csp=script-src 'none'",
+            '@@||example.com/Path$csp,match-case',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('cancels a blocker with an exception whose pattern ends after the domain', () => {
+        // `||example.com` matches the same hosts as `||example.com^` plus the
+        // hosts which only start with the domain, so it is at least as wide.
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none'",
+            '@@||example.com$csp',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
 });

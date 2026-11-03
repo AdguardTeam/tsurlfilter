@@ -519,7 +519,9 @@ $cookie=/__utm[a-z]/
 ! <br/>
 ! Rules with the same matching condition are combined into one, but only within
 ! the scope of one static filter or within the scope of all dynamic rules
-! (custom filters and user rules).
+! (custom filters and user rules), and only when their directives do not
+! conflict: CSP applies only the first copy of a repeated directive, so rules
+! with conflicting directives stay in separate headers and both are enforced.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -622,7 +624,9 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
 ! <br/>
 ! Rules with the same matching condition are combined into one, but only within
 ! the scope of one static filter or within the scope of all dynamic rules
-! (custom filters and user rules).
+! (custom filters and user rules), and only when their directives do not
+! conflict: CSP applies only the first copy of a repeated directive, so rules
+! with conflicting directives stay in separate headers and both are enforced.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>

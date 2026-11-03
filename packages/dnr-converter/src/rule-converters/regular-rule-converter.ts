@@ -590,7 +590,7 @@ export class RegularRuleConverter {
             return null;
         }
 
-        const cspHeaderValue = rule.advancedModifierValue;
+        const cspHeaderValue = rule.cspDirective;
         if (!cspHeaderValue) {
             return null;
         }
@@ -728,8 +728,15 @@ export class RegularRuleConverter {
                     requestHeaders,
                 };
             }
-            default: {
+            case ActionKind.Block: {
                 return { type: RuleActionType.Block };
+            }
+            default: {
+                // A new action kind must be handled explicitly instead of
+                // silently becoming a blocking rule.
+                const unknownKind: never = kind;
+
+                throw new Error(`Unhandled action kind: ${unknownKind as string}`);
             }
         }
     }
@@ -1168,21 +1175,26 @@ export class RegularRuleConverter {
      * a declarative rule. This template is used to compare different
      * declarative rules.
      * @param combineRulePair A function that combines two similar
-     * declarative rules into one by merging their specific properties.
+     * declarative rules into one by merging their specific properties, or
+     * returns `null` when the two rules cannot be combined and must stay
+     * separate.
      *
      * @returns Object with grouped similar declarative rules.
      */
     protected static groupConvertedRules(
         converted: ConvertedRules,
         createRuleTemplate: (rule: DeclarativeRule) => string,
-        combineRulePair: (sourceRule: DeclarativeRule, ruleToMerge: DeclarativeRule) => DeclarativeRule,
+        combineRulePair: (
+            sourceRule: DeclarativeRule,
+            ruleToMerge: DeclarativeRule,
+        ) => DeclarativeRule | null,
     ): ConvertedRules {
-        const rulesTemplates = new Map<string, DeclarativeRule>();
-
-        const saveRuleTemplate = (rule: DeclarativeRule): void => {
-            const template = createRuleTemplate(rule);
-            rulesTemplates.set(template, rule);
-        };
+        /**
+         * Rules of one template, in order. A template describes the matching
+         * condition, so the rules of one bucket may still be incompatible with
+         * each other, e.g. two `$csp` rules with conflicting directives.
+         */
+        const rulesTemplates = new Map<string, DeclarativeRule[]>();
 
         const result: ConvertedRules = {
             declarativeRules: [],
@@ -1194,7 +1206,7 @@ export class RegularRuleConverter {
         declarativeRules.forEach((declarativeRule) => {
             // Try to find a sibling declarative rule
             const template = createRuleTemplate(declarativeRule);
-            const siblingDeclarativeRule = rulesTemplates.get(template);
+            const siblings = rulesTemplates.get(template) ?? [];
 
             // Try to find the source mapping for the current declarative rule
             const source = sourceMapValues.find((s) => s.declarativeRuleId === declarativeRule.id);
@@ -1204,27 +1216,44 @@ export class RegularRuleConverter {
             }
 
             /**
-             * If a similar rule is found, combine the two declarative rules into one
-             * and save the combined rule's template for future comparisons.
-             * Also, update the source mapping to reflect the new combined rule ID.
+             * If a sibling can be combined with the current rule, replace it
+             * with the combined rule and update the source mapping to reflect
+             * the combined rule ID.
              *
-             * If no similar rule is found, simply save the current
-             * rule's template and add the source mapping as is.
+             * If no sibling accepts the rule, it is added to the bucket as is:
+             * a rule which cannot be merged must not be merged with a rule it
+             * contradicts.
              */
-            if (siblingDeclarativeRule) {
-                const combinedRule = combineRulePair(siblingDeclarativeRule, declarativeRule);
-                saveRuleTemplate(combinedRule);
-                result.sourceMapValues.push({
-                    ...source,
-                    declarativeRuleId: combinedRule.id,
-                });
-            } else {
-                saveRuleTemplate(declarativeRule);
-                result.sourceMapValues.push(source);
+            let siblingIndex = -1;
+            let combinedRule: DeclarativeRule | null = null;
+
+            for (let index = 0; index < siblings.length; index += 1) {
+                const candidate = combineRulePair(siblings[index], declarativeRule);
+
+                if (candidate !== null) {
+                    siblingIndex = index;
+                    combinedRule = candidate;
+                    break;
+                }
             }
+
+            if (siblingIndex === -1 || combinedRule === null) {
+                rulesTemplates.set(template, [...siblings, declarativeRule]);
+                result.sourceMapValues.push(source);
+                return;
+            }
+
+            const mergedRule = combinedRule;
+            rulesTemplates.set(template, siblings.map((rule, index) => (
+                index === siblingIndex ? mergedRule : rule
+            )));
+            result.sourceMapValues.push({
+                ...source,
+                declarativeRuleId: mergedRule.id,
+            });
         });
 
-        result.declarativeRules = Array.from(rulesTemplates.values());
+        result.declarativeRules = Array.from(rulesTemplates.values()).flat();
 
         return result;
     }

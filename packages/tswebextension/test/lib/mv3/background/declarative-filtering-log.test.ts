@@ -380,11 +380,13 @@ describe('DeclarativeFilteringLog.logMatchedRule', () => {
         expect(result.sourceRules).toEqual([{ sourceRule: '||csp.example^$csp=x', filterId: 2 }]);
     });
 
-    it('does not load unsafe rules for a rebuilt CSP session source', async () => {
+    it('falls back to the declarative list for a rebuilt CSP session source', async () => {
         SessionRulesApi.sourceMapForUnsafeRules.set(50, ['_csp', 200]);
         const cspRuleset = {
             getId: (): string => '_csp',
             getRulesById: vi.fn(async () => [{ sourceRule: '||csp.example^$csp=x', filterId: 2 }]),
+            // The rebuilt CSP ruleset keeps its rules in the declarative list,
+            // so the unsafe list is empty for it.
             getUnsafeRules: vi.fn(async () => []),
             getDeclarativeRules: vi.fn(async () => [{ id: 200, action: { type: 'modifyHeaders' } }]),
         };
@@ -392,23 +394,71 @@ describe('DeclarativeFilteringLog.logMatchedRule', () => {
 
         const result = await (declarativeFilteringLog as any).getRuleInfoForSessionRule('_session', 50);
 
-        expect(cspRuleset.getUnsafeRules).not.toHaveBeenCalled();
         expect(cspRuleset.getDeclarativeRules).toHaveBeenCalledTimes(1);
         expect(result.sourceRules).toEqual([{ sourceRule: '||csp.example^$csp=x', filterId: 2 }]);
     });
 });
 
 describe('DeclarativeFilteringLog.withUpdateLock', () => {
+    /**
+     * Returns the internal mutex of the log, which guards rule set updates.
+     *
+     * @returns The mutex instance.
+     */
+    const getMutex = (): {
+        lock: (timeoutMs?: number) => Promise<void>;
+        unlock: () => void;
+    } => (declarativeFilteringLog as any).mutex;
+
+    /**
+     * Acquires the update lock directly to check the mutex state.
+     *
+     * @param timeoutMs Maximum wait time.
+     *
+     * @returns Resolved promise when the lock is acquired.
+     */
+    const startUpdate = (timeoutMs = 0): Promise<void> => getMutex().lock(timeoutMs);
+
     const releaseUpdateLock = (): void => {
-        (declarativeFilteringLog as any).mutex.unlock();
+        getMutex().unlock();
     };
+
+    it('restarts the listener after a failed update', () => {
+        const startSpy = vi.spyOn(declarativeFilteringLog, 'start');
+        const stopSpy = vi.spyOn(declarativeFilteringLog, 'stop');
+
+        declarativeFilteringLog.finishUpdate([], true);
+        // `configure()` stops the listener before the browser rules are replaced.
+        declarativeFilteringLog.stop();
+        declarativeFilteringLog.restore();
+
+        expect(startSpy).toHaveBeenCalledTimes(2);
+        expect(stopSpy).toHaveBeenCalledTimes(1);
+
+        startSpy.mockRestore();
+        stopSpy.mockRestore();
+    });
+
+    it('keeps the listener stopped when logging is disabled', () => {
+        const startSpy = vi.spyOn(declarativeFilteringLog, 'start');
+        const stopSpy = vi.spyOn(declarativeFilteringLog, 'stop');
+
+        declarativeFilteringLog.finishUpdate([], false);
+        declarativeFilteringLog.restore();
+
+        expect(startSpy).not.toHaveBeenCalled();
+        expect(stopSpy).toHaveBeenCalledTimes(2);
+
+        startSpy.mockRestore();
+        stopSpy.mockRestore();
+    });
 
     it('releases the lock when the operation throws', async () => {
         await expect(declarativeFilteringLog.withUpdateLock(async () => {
             throw new Error('configuration failed');
         })).rejects.toThrow('configuration failed');
 
-        await expect(declarativeFilteringLog.startUpdate(0)).resolves.toBeUndefined();
+        await expect(startUpdate(0)).resolves.toBeUndefined();
         releaseUpdateLock();
     });
 
@@ -416,10 +466,10 @@ describe('DeclarativeFilteringLog.withUpdateLock', () => {
         await declarativeFilteringLog.withUpdateLock(async () => {
             declarativeFilteringLog.finishUpdate([], false);
 
-            await expect(declarativeFilteringLog.startUpdate(0)).rejects.toThrow(TimeoutError);
+            await expect(startUpdate(0)).rejects.toThrow(TimeoutError);
         });
 
-        await expect(declarativeFilteringLog.startUpdate(0)).resolves.toBeUndefined();
+        await expect(startUpdate(0)).resolves.toBeUndefined();
         releaseUpdateLock();
     });
 
@@ -438,10 +488,10 @@ describe('DeclarativeFilteringLog.withUpdateLock', () => {
     });
 
     it('does not release the lock held by another update', async () => {
-        await declarativeFilteringLog.startUpdate();
+        await startUpdate();
 
         const startUpdateSpy = vi
-            .spyOn(declarativeFilteringLog, 'startUpdate')
+            .spyOn(getMutex(), 'lock')
             .mockRejectedValueOnce(new TimeoutError());
 
         await expect(declarativeFilteringLog.withUpdateLock(async () => {
@@ -449,7 +499,7 @@ describe('DeclarativeFilteringLog.withUpdateLock', () => {
         })).rejects.toThrow(TimeoutError);
 
         startUpdateSpy.mockRestore();
-        await expect(declarativeFilteringLog.startUpdate(0)).rejects.toThrow(TimeoutError);
+        await expect(startUpdate(0)).rejects.toThrow(TimeoutError);
 
         releaseUpdateLock();
     });
