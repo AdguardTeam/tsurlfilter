@@ -35,6 +35,12 @@ const DOMAIN_RULE_END = String.raw`(?:\.)?(?::\d*)?(?:[\/\\?#]|$)/$document,impo
 const DOMAIN_WILDCARD = String.raw`[^\/\\?#@]*`;
 
 /**
+ * Beginning of the rule generated for an entry with the `*.` prefix: the URL start and the
+ * subdomains, each ending with a dot.
+ */
+const SUBDOMAIN_RULE_START = String.raw`@@/^(?:https?|wss?):\/\/(?:[^\/\\?#]*@)?(?:[^\/\\?#@.]+\.)*`;
+
+/**
  * Creates an engine with the given allowlist rules, the way the application loads them.
  *
  * @param rules Allowlist rules.
@@ -47,6 +53,25 @@ const createEngine = (rules: string): Engine => Engine.createSync({
         content: rules,
     }],
 });
+
+/**
+ * Creates an engine the way MV3 configures the allowlist for the given entries.
+ *
+ * @param entries Allowlist entries.
+ *
+ * @returns Engine with the generated rules.
+ */
+const createMv3Engine = (entries: string[]): Engine => {
+    const config = getConfigurationMv3Fixture();
+
+    config.allowlist = entries;
+    config.settings.allowlistEnabled = true;
+
+    const allowlistApi = new AllowlistApi();
+    allowlistApi.configure(config);
+
+    return createEngine(allowlistApi.getAllowlistRules() ?? '');
+};
 
 describe('Allowlist Api', () => {
     let allowlist: Allowlist;
@@ -158,11 +183,11 @@ describe('Allowlist Api', () => {
                 },
                 {
                     domain: '*.example.com',
-                    expected: String.raw`@@||example.com^$document,important`,
+                    expected: `${SUBDOMAIN_RULE_START}example\\.com${DOMAIN_RULE_END}`,
                 },
                 {
                     domain: '*.sub.example.*',
-                    expected: String.raw`@@||sub.example.*^$document,important`,
+                    expected: `${SUBDOMAIN_RULE_START}sub\\.example\\.${DOMAIN_WILDCARD}${DOMAIN_RULE_END}`,
                 },
                 {
                     domain: '*example.com',
@@ -178,7 +203,7 @@ describe('Allowlist Api', () => {
                 },
                 {
                     domain: '*.example*.com',
-                    expected: String.raw`@@||example*.com^$document,important`,
+                    expected: `${SUBDOMAIN_RULE_START}example${DOMAIN_WILDCARD}\\.com${DOMAIN_RULE_END}`,
                 },
             ];
 
@@ -265,25 +290,6 @@ describe('Allowlist Api', () => {
     });
 
     describe('getAllowlistRules matching in MV3 for an entry without a domain', () => {
-        /**
-         * Builds an engine the way MV3 configures the allowlist for the given entries.
-         *
-         * @param entries Allowlist entries.
-         *
-         * @returns Engine with the generated rules.
-         */
-        const createMv3Engine = (entries: string[]): Engine => {
-            const config = getConfigurationMv3Fixture();
-
-            config.allowlist = entries;
-            config.settings.allowlistEnabled = true;
-
-            const allowlistApi = new AllowlistApi();
-            allowlistApi.configure(config);
-
-            return createEngine(allowlistApi.getAllowlistRules() ?? '');
-        };
-
         it('does not allowlist anything for a bare `*` entry', () => {
             const engine = createMv3Engine(['*']);
 
@@ -297,10 +303,43 @@ describe('Allowlist Api', () => {
             expect(engine.matchFrame('https://a.com/')).toBeNull();
         });
 
+        it('does not allowlist anything for a padded bare `*` entry', () => {
+            const engine = createMv3Engine([' * ']);
+
+            expect(engine.matchFrame('https://a.com/')).toBeNull();
+        });
+
         it('keeps the documented full wildcard `*.*`', () => {
             const engine = createMv3Engine(['*.*']);
 
             expect(engine.matchFrame('https://a.com/')).not.toBeNull();
+            expect(engine.matchFrame('https://localhost/')).not.toBeNull();
+        });
+    });
+
+    describe('getAllowlistRules matching in MV3 for a wildcard entry', () => {
+        const matchingCases = [
+            // The `*.` twin covers the subdomains of a wildcard TLD entry.
+            { entries: ['example.*'], url: 'https://example.com/' },
+            { entries: ['example.*'], url: 'https://sub.example.org/' },
+            { entries: ['*example.com'], url: 'https://myexample.com/' },
+        ];
+
+        it.each(matchingCases)('matches $url for $entries', ({ entries, url }) => {
+            expect(createMv3Engine(entries).matchFrame(url)).not.toBeNull();
+        });
+
+        const notMatchingCases = [
+            // The `*.` twin stays within the host, so it cannot reach the userinfo or the path.
+            { entries: ['example.*'], url: 'https://example.com@evil.org/' },
+            { entries: ['example.*'], url: 'https://evil.org//example.com/' },
+            { entries: ['*example.com'], url: 'https://example.com@evil.org/' },
+            { entries: ['*example.com'], url: 'https://evil.org//example.com/' },
+            { entries: ['*example.com'], url: 'https://evil.org/?url=//example.com/' },
+        ];
+
+        it.each(notMatchingCases)('does not match $url for $entries', ({ entries, url }) => {
+            expect(createMv3Engine(entries).matchFrame(url)).toBeNull();
         });
     });
 });

@@ -48,6 +48,12 @@ const HOST_BOUNDARY = String.raw`(?:[\/\\?#]|$)`;
 const HOST_WILDCARD = String.raw`[^\/\\?#@]*`;
 
 /**
+ * Subdomains before the entry domain, each ending with a dot. The character class excludes dots
+ * and the authority delimiters, so the labels stay separate and cannot reach another host.
+ */
+const SUBDOMAIN_LABELS = String.raw`(?:[^\/\\?#@.]+\.)*`;
+
+/**
  * Checks whether the entry covers the domain together with all its subdomains.
  *
  * @param domain Normalized allowlist entry.
@@ -66,6 +72,15 @@ const isSubdomainEntry = (domain: string): boolean => domain.startsWith('*.');
  * @returns True if the entry contains at least one literal character.
  */
 const hasConcreteLabel = (domain: string): boolean => /[^*.]/.test(domain);
+
+/**
+ * Checks whether the entry is the full wildcard, e.g. the `*` of `*.*`.
+ *
+ * @param domain Normalized allowlist entry.
+ *
+ * @returns True if the entry consists of wildcards only.
+ */
+const isFullWildcard = (domain: string): boolean => /^\*+$/.test(domain);
 
 /**
  * Removes the `www.` prefix, which the generated rule matches anyway.
@@ -92,15 +107,23 @@ const escapeDomainForRegexp = (domain: string): string => {
 };
 
 /**
- * Builds a pattern that covers the domain and all its subdomains.
+ * Builds a pattern that covers the domain together with all its subdomains. Both the subdomains
+ * and the domain itself are anchored to the URL host, so a wildcard in the entry cannot move the
+ * match to another host. The full wildcard `*.*` keeps covering every URL.
  *
  * @param baseDomain Domain without the `*.` prefix.
  *
  * @returns Pattern of the allowlist rule.
  */
-const createSubdomainPattern = (baseDomain: string): string => (
-    `${SimpleRegex.MASK_START_URL}${baseDomain}${SimpleRegex.MASK_SEPARATOR}`
-);
+const createSubdomainPattern = (baseDomain: string): string => {
+    if (isFullWildcard(baseDomain)) {
+        return `${SimpleRegex.MASK_START_URL}*${SimpleRegex.MASK_SEPARATOR}`;
+    }
+
+    const escapedBaseDomain = escapeDomainForRegexp(baseDomain);
+
+    return `/${URL_START}${SUBDOMAIN_LABELS}${escapedBaseDomain}${ROOT_LABEL_DOT}${PORT}${HOST_BOUNDARY}/`;
+};
 
 /**
  * Builds a pattern that covers the host itself and its `www.` variant.

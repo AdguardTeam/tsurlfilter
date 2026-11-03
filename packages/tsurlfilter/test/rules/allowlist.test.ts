@@ -15,6 +15,12 @@ const FILTER_LIST_ID = 100;
 const RULE_START = String.raw`@@/^(?:https?|wss?):\/\/(?:[^\/\\?#]*@)?(www\.)?`;
 
 /**
+ * Beginning of the rule generated for an entry with the `*.` prefix: the URL start and the
+ * subdomains, each ending with a dot.
+ */
+const SUBDOMAIN_RULE_START = String.raw`@@/^(?:https?|wss?):\/\/(?:[^\/\\?#]*@)?(?:[^\/\\?#@.]+\.)*`;
+
+/**
  * End of the rule generated for an entry without the `*.` prefix: the host end — an optional root
  * label dot, an optional port, the path, the query, the fragment or the end of the URL — and the
  * modifiers.
@@ -58,9 +64,13 @@ describe('RuleFactory.createAllowlistRule', () => {
             { domain: '*example.com', expected: `${RULE_START}${WILDCARD}example\\.com${RULE_END}` },
             // Regexp metacharacters of the entry are escaped, so the entry stays a literal host.
             { domain: 'example(+).com', expected: `${RULE_START}example\\(\\+\\)\\.com${RULE_END}` },
-            { domain: '*.example.com', expected: String.raw`@@||example.com^$document,important` },
-            { domain: '*.EXAMPLE.COM', expected: String.raw`@@||example.com^$document,important` },
-            { domain: '*.sub.example.*', expected: String.raw`@@||sub.example.*^$document,important` },
+            { domain: '*.example.com', expected: `${SUBDOMAIN_RULE_START}example\\.com${RULE_END}` },
+            { domain: '*.EXAMPLE.COM', expected: `${SUBDOMAIN_RULE_START}example\\.com${RULE_END}` },
+            {
+                domain: '*.sub.example.*',
+                expected: `${SUBDOMAIN_RULE_START}sub\\.example\\.${WILDCARD}${RULE_END}`,
+            },
+            // The full wildcard is the only entry that covers every URL, not just every host.
             { domain: '*.*', expected: String.raw`@@||*^$document,important` },
         ];
 
@@ -102,7 +112,12 @@ describe('RuleFactory.createAllowlistRule', () => {
             { domain: 'www.example.com', url: 'https://www.example.com/' },
             { domain: '*.example.com', url: 'https://example.com/' },
             { domain: '*.example.com', url: 'https://sub.example.com/' },
+            { domain: '*.example.com', url: 'https://deep.sub.example.com/' },
             { domain: '*.example.com', url: 'https://example.com./' },
+            { domain: '*.example.com', url: 'https://example.com:8080/' },
+            { domain: '*.example.*', url: 'https://example.com/' },
+            { domain: '*.example.*', url: 'https://sub.example.org/' },
+            { domain: '*.sub.example.*', url: 'https://deep.sub.example.net/' },
             { domain: 'example.*', url: 'https://example.org/' },
             // A wildcard TLD entry matches any TLD, so this host is covered by design.
             { domain: 'example.*', url: 'https://example.community/' },
@@ -142,8 +157,14 @@ describe('RuleFactory.createAllowlistRule', () => {
             { domain: '*example.com', url: 'https://myexample.community/' },
             // A wildcard stays within the host: it cannot reach the userinfo or the path.
             { domain: 'example.*', url: 'https://example.com@evil.org/' },
+            { domain: '*.example.*', url: 'https://example.com@evil.org/' },
+            { domain: '*.example.*', url: 'https://evil.org//example.com/' },
+            { domain: '*.example.*', url: 'https://evil.org/?url=//example.com/' },
+            { domain: '*.sub.example.*', url: 'https://sub.example.com@evil.org/' },
             { domain: '*example.com', url: 'https://evil.org//example.com/' },
             { domain: '*example.com', url: 'https://user@evil.org/?x=example.com' },
+            // The `*.` twin added by MV3 reaches the same branch, so it is covered by the same rows.
+            { domain: '*.example.com', url: 'https://example.com@evil.org/' },
         ];
 
         it.each(cases)('does not match $url for $domain', ({ domain, url }) => {

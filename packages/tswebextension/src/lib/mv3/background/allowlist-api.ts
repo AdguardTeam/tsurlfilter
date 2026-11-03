@@ -23,7 +23,13 @@ export class AllowlistApi extends CommonAllowlist {
          * same as in DNR engine: requestDomains and excludedRequestDomains in
          * DNR will match all subdomains of the domain by default.
          */
-        const domainWithSubDomainsMask = configuration.allowlist.reduce<string[]>((acc, domain) => {
+        const domainWithSubDomainsMask = configuration.allowlist.reduce<string[]>((acc, entry) => {
+            /**
+             * The entry is normalized the same way `super.configure()` does it, so the check and
+             * the `*.` twin below see exactly what reaches the engine.
+             */
+            const domain = entry.trim();
+
             /**
              * An entry without a domain produces no rule, and its `*.` twin would become the
              * full wildcard `*.*`, which allowlists every site. Such an entry is dropped here,

@@ -44,7 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   every URL (`*.`) or only URLs containing `www.` (`*`).
 - A `*` inside an allowlist entry now matches within the host only, so `example.*`
   no longer allowlists `https://example.com@evil.org/` and `*example.com` no longer
-  matches `https://evil.org//example.com/`.
+  matches `https://evil.org//example.com/`. The `*.` form is anchored the same way,
+  so `*.example.*` and the MV3 `*.` twin of `*example.com` keep their host boundary
+  too.
 - `$badfilter` incorrectly negated rules with different values of value-bearing
   modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
   `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when
