@@ -1142,6 +1142,49 @@ describe('HTML filtering rules (content rules)', () => {
         });
     });
 
+    it('correctly parses html rules - contains keeps spaces around a quoted argument', () => {
+        // The argument is the raw text between the parentheses, spaces included
+        const rule = createCosmeticRule('example.org$$div:contains( "foo" )', 0);
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div',
+                specialSelectors: [{
+                    name: HtmlSpecialSelectorName.Contains,
+                    value: ' "foo" ',
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - contains keeps spaces around an unquoted argument', () => {
+        const rule = createCosmeticRule('example.org$$div:contains( foo )', 0);
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div',
+                specialSelectors: [{
+                    name: HtmlSpecialSelectorName.Contains,
+                    value: ' foo ',
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - has-text keeps spaces around the argument', () => {
+        const rule = createCosmeticRule('example.org$$div:has-text( foo )', 0);
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div',
+                specialSelectors: [{
+                    name: HtmlSpecialSelectorName.Contains,
+                    value: ' foo ',
+                }],
+            }]],
+        });
+    });
+
     it('correctly parses html rules - -abp-contains alias', () => {
         const rule = createCosmeticRule('example.org$$script:-abp-contains(foo)', 0);
 
