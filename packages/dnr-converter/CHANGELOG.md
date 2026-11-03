@@ -31,13 +31,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A blocking `$csp` rule without a directive is a parse error instead of a
   plain block rule, and so are a `$csp` directive which mentions `report-uri` or
-  `report-to`, and a value-less `$permissions` or `$removeheader`: such rules
-  used to degrade into a plain blocking rule or to send violation reports to a
-  third-party host.
-- Merged `$csp` rules of the same filter deduplicate their directives. Rules
-  whose directives conflict are no longer merged: CSP applies only the first
-  copy of a repeated directive, so the merge silently dropped the second
-  policy, while two headers enforce both.
+  `report-to`, a value-less `$permissions` or `$removeheader`, and `$csp`
+  combined with `$cookie`: such rules used to degrade into a plain blocking
+  rule, to send violation reports to a third-party host, or to produce no rule
+  at all, because one declarative rule carries one action.
+- Merged `$csp` rules of the same filter are no longer combined into one
+  policy: CSP applies only the first copy of a repeated directive, so a merge
+  either dropped the second policy or changed what is blocked through the
+  `default-src` fallback. Only identical policies are deduplicated now,
+  everything else stays in its own header, where a browser enforces both.
 - `Rule.writtenKeys` is gone: `$badfilter` compares the rule text as written
   (`Rule.originalText`), so a rule no longer keeps a comparison key.
 
@@ -51,7 +53,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   converted to punycode, also after a `*` or `*.` wildcard and in unanchored or
   scheme-prefixed patterns, the rest of the pattern is percent-encoded, and
   `$domain`, `$to` and `$denyallow` values are lowercased before the punycode
-  conversion, so `ПРИМЕР.рф` and `пример.рф` give the same domain.
+  conversion, so `ПРИМЕР.рф` and `пример.рф` give the same domain. A `*` inside
+  an anchored hostname is converted label by label, so `||пример.рф*/x` keeps
+  the wildcard a separator instead of folding it into a label, and the hostname
+  of the pattern is lowercased, so `||ПРИМЕР.рф^` matches the host
+  `xn--e1afmkfd.xn--p1ai`.
 - A `$csp` exception is applied only when it really covers the blocking rule:
   the URL identity is compared field by field, and an exception which would
   lose a part of its condition is rejected and reported instead of matching
@@ -66,7 +72,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resource.
 - A `$csp` exception is recognized when its pattern ends right after the domain
   (`@@||example.com$csp`), and a url filter is compared case-insensitively when
-  the exception is not marked with `$match-case`, like DNR matches it.
+  the exception is not marked with `$match-case`, like DNR matches it. A pattern
+  which ends right after the domain is a host prefix, so it is never called
+  disjoint from another domain: `||example.com$csp` with `@@||example.company^`
+  excludes `example.company` instead of dropping the exception.
 - `$badfilter` incorrectly negated rules with different values of value-bearing
   modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
   `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when

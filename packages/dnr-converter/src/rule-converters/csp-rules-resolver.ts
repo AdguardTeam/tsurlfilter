@@ -309,7 +309,12 @@ export class CspRulesResolver {
     }
 
     /**
-     * Checks whether two clean domain patterns cannot match the same request domain.
+     * Checks whether two rules cannot match the same request domain.
+     *
+     * Only terminated domains are compared: a pattern which ends right after
+     * the domain (`||example.com`) matches every host which starts with it, so
+     * it is a host prefix rather than a host and cannot be called disjoint
+     * from `example.company`.
      *
      * @param exceptionRule CSP exception rule.
      * @param blockingRule Blocking CSP rule.
@@ -317,8 +322,8 @@ export class CspRulesResolver {
      * @returns `true` if the domain scopes are disjoint.
      */
     private static areDomainsDisjoint(exceptionRule: Rule, blockingRule: Rule): boolean {
-        const exceptionDomain = CspRulesResolver.getAnchoredDomain(exceptionRule);
-        const blockingDomain = CspRulesResolver.getAnchoredDomain(blockingRule);
+        const exceptionDomain = CspRulesResolver.getTerminatedDomain(exceptionRule);
+        const blockingDomain = CspRulesResolver.getTerminatedDomain(blockingRule);
         if (!exceptionDomain || !blockingDomain) {
             return false;
         }

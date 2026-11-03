@@ -185,33 +185,56 @@ export class CspConverter extends RegularRuleConverter {
     }
 
     /**
-     * Checks whether two CSP header values can be expressed by one header.
+     * Checks whether two CSP header values express the same policy.
      *
-     * CSP ignores a repeated directive and applies only the first one, so two
-     * policies with conflicting directives must stay in separate headers: a
-     * browser applies every header of the response.
+     * Merged directives form a single policy, so merging different ones can
+     * change what is blocked through the `default-src` fallback:
+     * `default-src 'none'` plus `script-src 'self'` in one header allow
+     * same-origin scripts, while the same directives in two headers block
+     * them, because a browser applies every header of the response. Two
+     * identical policies, on the other hand, are applied once either way, so
+     * only such values are merged.
      *
      * @param currentValue Current CSP header value.
      * @param valueToMerge CSP header value to append.
      *
-     * @returns `true` if the values have no conflicting directive.
+     * @returns `true` if the values express the same policy.
      */
     private static canMergeCspValues(currentValue: string, valueToMerge: string): boolean {
-        const currentArguments = new Map<string, string>();
-        CspConverter.splitDirectives(currentValue).forEach((directive) => {
-            currentArguments.set(
-                CspConverter.getDirectiveName(directive),
-                CspConverter.getDirectiveArguments(directive),
-            );
-        });
+        const currentArguments = CspConverter.mapDirectiveArguments(currentValue);
+        const mergeArguments = CspConverter.mapDirectiveArguments(valueToMerge);
 
-        return CspConverter.splitDirectives(valueToMerge).every((directive) => {
+        if (currentArguments.size !== mergeArguments.size) {
+            return false;
+        }
+
+        for (const [name, args] of mergeArguments) {
+            if (currentArguments.get(name) !== args) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Lists the directives of a CSP header value with their arguments.
+     *
+     * @param value CSP header value.
+     *
+     * @returns Arguments by lowercased directive name.
+     */
+    private static mapDirectiveArguments(value: string): Map<string, string> {
+        const argumentsByName = new Map<string, string>();
+
+        CspConverter.splitDirectives(value).forEach((directive) => {
             const name = CspConverter.getDirectiveName(directive);
-            const current = currentArguments.get(name);
-
-            return current === undefined
-                || current === CspConverter.getDirectiveArguments(directive);
+            if (!argumentsByName.has(name)) {
+                argumentsByName.set(name, CspConverter.getDirectiveArguments(directive));
+            }
         });
+
+        return argumentsByName;
     }
 
     /**

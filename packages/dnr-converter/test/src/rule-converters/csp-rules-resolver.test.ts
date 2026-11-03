@@ -185,6 +185,35 @@ describe('CspRulesResolver.resolve', () => {
         });
     });
 
+    it('excludes a domain from a blocker whose pattern ends after the domain', () => {
+        // `||example.com$csp` is a host prefix rather than a host: it matches
+        // https://example.company/ as well, so `example.company` cannot be
+        // called disjoint from it and must be excluded from the blocker.
+        const rules = createRules(
+            "||example.com$csp=script-src 'none'",
+            '@@||example.company^$csp',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map([[rules[0], ['example.company']]]),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('reports an exception whose pattern ends after the domain as unsupported', () => {
+        // The exception is a host prefix, so it cannot be expressed as an
+        // excluded domain and the blocker stays as written.
+        const rules = createRules(
+            "||example.company^$csp=script-src 'none'",
+            '@@||example.com$csp',
+        );
+        const { rules: resolvedRules, unsupportedExceptions } = CspRulesResolver.resolve(rules);
+
+        expect(resolvedRules).toEqual([rules[0]]);
+        expect(unsupportedExceptions).toEqual([rules[1]]);
+    });
+
     it('removes a subdomain rule covered by a parent-domain exception', () => {
         const rules = createRules(
             "||cdn.example.com^$csp=script-src 'none'",

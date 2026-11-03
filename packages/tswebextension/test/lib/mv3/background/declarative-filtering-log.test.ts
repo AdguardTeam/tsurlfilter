@@ -423,14 +423,15 @@ describe('DeclarativeFilteringLog.withUpdateLock', () => {
         getMutex().unlock();
     };
 
-    it('restarts the listener after a failed update', () => {
+    it('restarts the listener after a failed update', async () => {
         const startSpy = vi.spyOn(declarativeFilteringLog, 'start');
         const stopSpy = vi.spyOn(declarativeFilteringLog, 'stop');
 
         declarativeFilteringLog.finishUpdate([], true);
-        // `configure()` stops the listener before the browser rules are replaced.
-        declarativeFilteringLog.stop();
-        declarativeFilteringLog.restore();
+
+        await expect(declarativeFilteringLog.withStoppedListener(async () => {
+            throw new Error('configuration failed');
+        })).rejects.toThrow('configuration failed');
 
         expect(startSpy).toHaveBeenCalledTimes(2);
         expect(stopSpy).toHaveBeenCalledTimes(1);
@@ -439,15 +440,34 @@ describe('DeclarativeFilteringLog.withUpdateLock', () => {
         stopSpy.mockRestore();
     });
 
-    it('keeps the listener stopped when logging is disabled', () => {
+    it('keeps the listener stopped when logging is disabled', async () => {
         const startSpy = vi.spyOn(declarativeFilteringLog, 'start');
         const stopSpy = vi.spyOn(declarativeFilteringLog, 'stop');
 
         declarativeFilteringLog.finishUpdate([], false);
-        declarativeFilteringLog.restore();
+
+        await expect(declarativeFilteringLog.withStoppedListener(async () => {
+            throw new Error('configuration failed');
+        })).rejects.toThrow('configuration failed');
 
         expect(startSpy).not.toHaveBeenCalled();
-        expect(stopSpy).toHaveBeenCalledTimes(2);
+
+        startSpy.mockRestore();
+        stopSpy.mockRestore();
+    });
+
+    it('keeps the listener state of a successful update', async () => {
+        const startSpy = vi.spyOn(declarativeFilteringLog, 'start');
+        const stopSpy = vi.spyOn(declarativeFilteringLog, 'stop');
+
+        await declarativeFilteringLog.withStoppedListener(async () => {
+            declarativeFilteringLog.finishUpdate([], true);
+        });
+
+        // The stop of `withStoppedListener` and the start of `finishUpdate`:
+        // a successful update needs no restore.
+        expect(stopSpy).toHaveBeenCalledTimes(1);
+        expect(startSpy).toHaveBeenCalledTimes(1);
 
         startSpy.mockRestore();
         stopSpy.mockRestore();

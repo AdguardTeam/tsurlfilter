@@ -1040,6 +1040,52 @@ describe('RuleConverter', () => {
             expect(condition.urlFilter).toBe('|https://asciiPrepared(пример.рф)/%D0%BF%D1%83%D1%82%D1%8C|');
         });
 
+        it('converts an anchored hostname with an internal wildcard part by part', () => {
+            const rule = createRuleMock({
+                pattern: '||foo*.пример.рф^',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('||asciiPrepared(foo)*asciiPrepared(.пример.рф)^');
+        });
+
+        it('keeps a wildcard after a non-ASCII hostname a separator', () => {
+            const rule = createRuleMock({
+                pattern: '||пример.рф*/путь',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('||asciiPrepared(пример.рф)*/%D0%BF%D1%83%D1%82%D1%8C');
+        });
+
+        it('percent-encodes a wildcard suffix of an unanchored pattern', () => {
+            const rule = createRuleMock({
+                pattern: 'page*новости.html',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('page*%D0%BD%D0%BE%D0%B2%D0%BE%D1%81%D1%82%D0%B8.html');
+        });
+
+        it('lowercases the hostname before the punycode conversion', () => {
+            const rule = createRuleMock({
+                pattern: '||ПРИМЕР.рф^',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('||asciiPrepared(пример.рф)^');
+        });
+
+        it('keeps the hostname case for a $match-case rule', () => {
+            const rule = createRuleMock({
+                pattern: '||ПРИМЕР.рф^',
+                isRegexRule: false,
+                enabledOptions: [OPTION_NAMES.MATCH_CASE],
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('||asciiPrepared(ПРИМЕР.рф)^');
+        });
+
         it('percent-encodes a non-ASCII leading segment without a dot', () => {
             const rule = createRuleMock({
                 pattern: 'путь^',

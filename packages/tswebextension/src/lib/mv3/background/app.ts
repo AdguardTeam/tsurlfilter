@@ -399,24 +399,26 @@ export class TsWebExtension implements AppInterface<
         // Stop handle onRuleMatchedDebug event.
         // It should be stopped before declarative log update or removing filtering rules,
         // otherwise, it may try to log applying of removed rules. AG-44355.
-        declarativeFilteringLog.stop();
+        // A failure of any step below keeps the previous rules in effect, so the
+        // listener is restarted then.
+        await declarativeFilteringLog.withStoppedListener(async () => {
+            if (configuration.settings.filteringEnabled) {
+                await this.applyFilteringConfiguration(configuration, res);
+            } else {
+                await TsWebExtension.removeAllFilteringRules();
+            }
 
-        if (configuration.settings.filteringEnabled) {
-            await this.applyFilteringConfiguration(configuration, res);
-        } else {
-            await TsWebExtension.removeAllFilteringRules();
-        }
+            this.configuration = TsWebExtension.createConfigurationContext(configuration);
 
-        this.configuration = TsWebExtension.createConfigurationContext(configuration);
+            // Update previously opened tabs with new rules - find for each tab
+            // new main frame rule.
+            await tabsApi.updateCurrentTabsMainFrameRules();
 
-        // Update previously opened tabs with new rules - find for each tab
-        // new main frame rule.
-        await tabsApi.updateCurrentTabsMainFrameRules();
+            // Reload request events listeners.
+            await WebRequestApi.flushMemoryCache();
 
-        // Reload request events listeners.
-        await WebRequestApi.flushMemoryCache();
-
-        documentBlockingService.configure(config);
+            documentBlockingService.configure(config);
+        });
 
         logger.trace('[tsweb.TsWebExtension.configure]: end');
 
@@ -567,13 +569,7 @@ export class TsWebExtension implements AppInterface<
                     '[tsweb.TsWebExtension.applyFilteringConfiguration]: Cannot roll back dynamic rules:',
                     rollbackError,
                 ),
-            ).catch((error: unknown) => {
-                // The previous rules stay in effect, so the listener which was
-                // stopped before the update must be restarted as well.
-                declarativeFilteringLog.restore();
-
-                throw error;
-            });
+            );
             res.sessionRules = { limitations: sessionLimitations };
 
             if (sessionLimitations.length > 0) {

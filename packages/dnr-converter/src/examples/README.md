@@ -2873,11 +2873,11 @@ only by the standalone CSP conversion (`convertCspRules()`): the regular
 `convert()` still rejects an allowlist `$csp` rule. Examples with exceptions
 below are converted by that pass, the rest by `convert()`.
 <br/>
-Rules with the same matching condition are combined into one, but only within
-the scope of one static filter or within the scope of all dynamic rules
-(custom filters and user rules), and only when their directives do not
-conflict: CSP applies only the first copy of a repeated directive, so rules
-with conflicting directives stay in separate headers and both are enforced.
+Rules with the same matching condition and the same policy are combined into
+one, but only within the scope of one static filter or within the scope of all
+dynamic rules (custom filters and user rules). Different policies stay in
+separate headers, where a browser enforces both: merged, they would change
+what the `default-src` fallback blocks.
 <br/>
 <b>Examples:</b>
 <br/>

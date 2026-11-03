@@ -231,10 +231,11 @@ export class RegularRuleConverter {
      * domain or a scheme, where the hostname is guaranteed.
      *
      * @param pattern URL filter pattern.
+     * @param isCaseSensitive Whether the pattern is matched case-sensitively.
      *
      * @returns URL filter pattern with non-ASCII characters converted.
      */
-    private static prepareUrlFilter(pattern: string): string {
+    private static prepareUrlFilter(pattern: string, isCaseSensitive: boolean): string {
         const domainAnchor = pattern.startsWith('||') ? '||' : '';
         let rest = pattern.substring(domainAnchor.length);
 
@@ -246,17 +247,48 @@ export class RegularRuleConverter {
         const wildcard = wildcardMatch ? wildcardMatch[0] : '';
         rest = rest.substring(wildcard.length);
 
-        // A `*` inside the hostname is a wildcard, not a separator, so a
-        // pattern like `||foo*.пример.рф^` keeps the whole hostname and is
-        // converted to punycode as a whole.
-        const hostnameEndIndex = rest.search(/[\^/|?:]/);
+        // A `*` inside an anchored hostname is a wildcard, not a separator, so
+        // a pattern like `||foo*.пример.рф^` keeps the whole hostname. An
+        // unanchored pattern has no hostname before the `*`: the leading part
+        // is a path fragment there.
+        const hasAnchor = domainAnchor !== '' || scheme !== '';
+        const hostnameEndIndex = rest.search(hasAnchor ? /[\^/|?:]/ : /[*^/|?:]/);
         const hostname = hostnameEndIndex === -1 ? rest : rest.substring(0, hostnameEndIndex);
         const suffix = hostnameEndIndex === -1 ? '' : rest.substring(hostnameEndIndex);
 
-        const isHostname = domainAnchor !== '' || scheme !== '' || hostname.includes('.');
-        const preparedHostname = isHostname ? prepareASCII(hostname) : encodeNonAscii(hostname);
+        const isHostname = hasAnchor || hostname.includes('.');
+        const preparedHostname = isHostname
+            ? RegularRuleConverter.prepareHostname(hostname, isCaseSensitive)
+            : encodeNonAscii(hostname);
 
         return `${domainAnchor}${scheme}${wildcard}${preparedHostname}${encodeNonAscii(suffix)}`;
+    }
+
+    /**
+     * Converts a hostname, possibly containing `*` wildcards, to ASCII.
+     *
+     * The parts between the wildcards are converted separately: punycode
+     * cannot encode a `*`, so converting the whole string would fold it into a
+     * label and the rule would never match.
+     *
+     * The hostname is lowercased, because a host in a URL is always
+     * lowercased and punycode keeps the case of non-ASCII letters, so
+     * `ПРИМЕР.рф` would otherwise be converted to a label which never matches.
+     * The case is kept for a `$match-case` rule, which asks for a
+     * case-sensitive comparison.
+     *
+     * @param hostname Hostname with optional `*` wildcards.
+     * @param isCaseSensitive Whether the pattern is matched case-sensitively.
+     *
+     * @returns ASCII hostname.
+     */
+    private static prepareHostname(hostname: string, isCaseSensitive: boolean): string {
+        const prepared = isCaseSensitive ? hostname : hostname.toLowerCase();
+
+        return prepared
+            .split('*')
+            .map((part) => (part === '' ? part : prepareASCII(part)))
+            .join('*');
     }
 
     /**
@@ -762,7 +794,10 @@ export class RegularRuleConverter {
                 const patternWithoutVerticals = pattern.startsWith('||*')
                     ? pattern.substring(2)
                     : pattern;
-                condition.urlFilter = RegularRuleConverter.prepareUrlFilter(patternWithoutVerticals);
+                condition.urlFilter = RegularRuleConverter.prepareUrlFilter(
+                    patternWithoutVerticals,
+                    rule.isModifierEnabled(OPTION_NAMES.MATCH_CASE),
+                );
             }
         }
 

@@ -20,8 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for built-in filters (user rules stay in `dynamicRules.errors`),
   `dynamicRules.limitations` and `sessionRules.limitations` for the two separate
   quotas, so the session overflow never reaches the dynamic counters, and
-  `dynamicRules.counts` with the final counts, rebuilt CSP rules included. Both
-  error channels and both limitation lists are logged by `configure()`.
+  `dynamicRules.counts` with the final counts, rebuilt CSP rules included.
+  `configure()` logs the errors of built-in CSP rules and the session
+  limitations; `dynamicRules.errors` and `dynamicRules.limitations` are left to
+  the consumer.
 - `UnexpectedConversionError`, `RuleScanError`, `isRuleScanError` and
   `DynamicRulesCounts` are now re-exported, so consumers can check errors with
   `instanceof` and use the counters type.
@@ -49,9 +51,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A CSP rule of an unreadable filter is reported in the channel of that filter
   instead of being dropped from both: the error is classified by its filter id,
   not by its kind only.
-- The declarative filtering log listener is restarted when a configuration step
-  fails after it was stopped: the previous rules stay in effect, so the log must
-  not stay silent until the next successful `configure()`.
+- The declarative filtering log listener is restarted when any step of
+  `configure()` fails after it was stopped: the previous rules stay in effect,
+  so the log must not stay silent until the next successful `configure()`.
 - In MV3, static filters, custom filters and user rules were handed to the
   converter already converted by the extension, so `$badfilter` rules from those
   sources were compared by the converted text instead of the text as written and

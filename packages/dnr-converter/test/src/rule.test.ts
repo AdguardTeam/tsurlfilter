@@ -416,5 +416,15 @@ describe('Rule', () => {
                 Rule.createFromText(1, 0, "||example.com^$csp=script-src 'none'; img-src 'self'");
             }).not.toThrow();
         });
+
+        it('throws for a $csp rule combined with $cookie in any order', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, "||example.com^$csp=script-src 'none',cookie");
+            }).toThrow('$csp is not compatible with $cookie');
+
+            expect(() => {
+                Rule.createFromText(1, 0, "||example.com^$cookie,csp=script-src 'none'");
+            }).toThrow('$csp is not compatible with $cookie');
+        });
     });
 });

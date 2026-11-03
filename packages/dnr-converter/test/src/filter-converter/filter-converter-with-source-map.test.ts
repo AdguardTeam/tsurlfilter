@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { RuleActionType } from '../../../src/declarative-rule';
+import { UnsupportedRegexpError } from '../../../src/errors/conversion-errors';
 import {
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRulesError,
@@ -45,17 +46,18 @@ describe('FilterConverter (withSourceMap: true)', () => {
 
     describe('convertCspRules', () => {
         it('reports a failed blocker once and keeps it out of resolution', async () => {
-            // `$removeparam` makes the blocker incompatible with the CSP
-            // conversion, so the preflight rejects it and it cannot cancel
-            // anything.
+            // The rule parses as a CSP rule, but its regexp cannot be
+            // expressed in DNR, so the preflight rejects it and it cannot
+            // cancel anything.
             const filter = createFilter([
-                "||example.com^$csp=script-src 'none',removeparam=x",
+                "/a(b)\\1/$csp=script-src 'none'",
                 '@@||example.com^$csp',
             ], 1);
 
             const { ruleset, errors } = await converter.convertCspRules([filter]);
 
             expect(errors).toHaveLength(1);
+            expect(errors[0]).toBeInstanceOf(UnsupportedRegexpError);
             expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
         });
 
@@ -309,7 +311,7 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(errors).toHaveLength(0);
         });
 
-        it('leaves a rule combining $csp with $cookie to the regular pass', async () => {
+        it('reports a rule combining $csp with $cookie', async () => {
             const filter = createFilter([
                 "||example.com^$csp=script-src 'none',cookie",
             ], 1);
@@ -317,7 +319,7 @@ describe('FilterConverter (withSourceMap: true)', () => {
             const { ruleset, errors } = await converter.convertCspRules([filter]);
 
             expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
-            expect(errors).toHaveLength(0);
+            expect(errors).toHaveLength(1);
         });
 
         it('reports a blocking rule with an empty $csp directive', async () => {
@@ -393,7 +395,9 @@ describe('FilterConverter (withSourceMap: true)', () => {
             });
         });
 
-        it('keeps a rule combining $csp with $cookie in the regular conversion', async () => {
+        it('leaves a rule combining $csp with $cookie to the CSP pass', async () => {
+            // The regular pass skips scanning errors of CSP-related lines: the
+            // CSP pass scans the same line and reports it once.
             const filter = createFilter([
                 "||example.com^$csp=script-src 'none',cookie",
             ], 1);
@@ -405,9 +409,7 @@ describe('FilterConverter (withSourceMap: true)', () => {
             const declarativeRules = await ruleset.getDeclarativeRules();
 
             expect(errors).toHaveLength(0);
-            expect(declarativeRules).toHaveLength(1);
-            expect(declarativeRules[0].action.type).toBe(RuleActionType.ModifyHeaders);
-            expect(declarativeRules[0].action.responseHeaders).toBeDefined();
+            expect(declarativeRules).toHaveLength(0);
         });
 
         it('reports a broken CSP rule when CSP rules are not excluded', async () => {

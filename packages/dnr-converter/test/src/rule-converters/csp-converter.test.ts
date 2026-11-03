@@ -196,7 +196,10 @@ describe('CspConverter', () => {
             expect(result).not.toBeNull();
         });
 
-        it('should combine two CSP rules by merging header values', () => {
+        it('keeps policies with different directives in separate headers', () => {
+            // Merged, `default-src 'none'` would let `script-src 'self'`
+            // override the fallback and allow same-origin scripts, while two
+            // headers block them both.
             const sourceRule: DeclarativeRule = {
                 id: 1,
                 action: {
@@ -204,7 +207,7 @@ describe('CspConverter', () => {
                     responseHeaders: [{
                         header: CSP_HEADER_NAME,
                         operation: HeaderOperation.Append,
-                        value: 'script-src \'self\'',
+                        value: 'default-src \'none\'',
                     }],
                 },
                 condition: { urlFilter: 'example.com' },
@@ -217,7 +220,7 @@ describe('CspConverter', () => {
                     responseHeaders: [{
                         header: CSP_HEADER_NAME,
                         operation: HeaderOperation.Append,
-                        value: 'style-src \'unsafe-inline\'',
+                        value: 'script-src \'self\'',
                     }],
                 },
                 condition: { urlFilter: 'example.com' },
@@ -225,21 +228,8 @@ describe('CspConverter', () => {
 
             // @ts-expect-error Accessing private method for testing purposes
             const result = CspConverter.combineRulePair(sourceRule, ruleToMerge);
-            expect(result).toEqual({
-                id: 1,
-                action: {
-                    type: RuleActionType.ModifyHeaders,
-                    responseHeaders: [{
-                        header: CSP_HEADER_NAME,
-                        operation: HeaderOperation.Append,
-                        value: 'script-src \'self\'; style-src \'unsafe-inline\'',
-                    }],
-                },
-                condition: { urlFilter: 'example.com' },
-            });
 
-            // Ensure original source rule is not mutated
-            expect(result).not.toBe(sourceRule);
+            expect(result).toBeNull();
         });
 
         it('should not duplicate identical directives when merging header values', () => {
@@ -275,7 +265,7 @@ describe('CspConverter', () => {
             expect(result!.action.responseHeaders![0].value).toBe('script-src \'none\'');
         });
 
-        it('should append only the directives that are not present yet', () => {
+        it('keeps a policy with an extra directive in its own header', () => {
             const sourceRule: DeclarativeRule = {
                 id: 1,
                 action: {
@@ -305,7 +295,7 @@ describe('CspConverter', () => {
             // @ts-expect-error Accessing private method for testing purposes
             const result = CspConverter.combineRulePair(sourceRule, ruleToMerge);
 
-            expect(result!.action.responseHeaders![0].value).toBe('script-src \'none\'; img-src \'none\'');
+            expect(result).toBeNull();
         });
 
         it('should set value when source rule has no CSP value', () => {

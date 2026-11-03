@@ -83,11 +83,9 @@ export const selectActionKinds = (rule: Rule): ActionKind[] => {
 const producesAction = (rule: Rule, kind: ActionKind): boolean => {
     switch (kind) {
         case ActionKind.Csp: {
-            // A rule which also removes cookies is converted by the regular
-            // pass: the converter builds one action per rule, and the cookie
-            // action is the one such a rule is expected to have.
-            return rule.cspDirective !== null
-                && !rule.isModifierEnabled(OPTION_NAMES.COOKIE);
+            // `$csp` with `$cookie` is rejected while parsing, so a rule with
+            // a directive always produces the CSP action.
+            return rule.cspDirective !== null;
         }
         case ActionKind.Permissions: {
             // `advancedModifierValue` holds the value of the last advanced

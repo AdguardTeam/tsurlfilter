@@ -89,11 +89,35 @@ class DeclarativeFilteringLog {
      * silent. The rule sets are not replaced here: after a rollback the
      * previous ones are still in effect.
      */
-    public restore(): void {
+    #restore(): void {
         if (this.#isEnabled) {
             this.start();
         } else {
             this.stop();
+        }
+    }
+
+    /**
+     * Runs an operation with the listener stopped, restarting it when the
+     * operation throws.
+     *
+     * `configure()` stops the listener before the browser rules are replaced,
+     * so a failure at any later step keeps the previous rules in effect and
+     * must not leave the log silent until the next successful update.
+     *
+     * @param operation Operation to run.
+     *
+     * @throws Whatever the operation throws.
+     */
+    public async withStoppedListener(operation: () => Promise<void>): Promise<void> {
+        this.stop();
+
+        try {
+            await operation();
+        } catch (error: unknown) {
+            this.#restore();
+
+            throw error;
         }
     }
 

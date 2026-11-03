@@ -815,6 +815,17 @@ export class Rule {
             );
         }
 
+        // One declarative rule produces one action, and the CSP action would
+        // win the conversion and then be dropped by the CSP scope checks, so
+        // such a rule would do nothing at all. Reject the combination instead
+        // of silently removing cookies only.
+        if (this.enabledModifiers.has(OPTION_NAMES.CSP)
+            && this.enabledModifiers.has(OPTION_NAMES.COOKIE)) {
+            throw new SyntaxError(
+                '$csp is not compatible with $cookie',
+            );
+        }
+
         // Validate modifier combinations (ported from tsurlfilter).
         if (this.enabledModifiers.has(OPTION_NAMES.REMOVEPARAM)) {
             for (const modifier of this.enabledModifiers) {
