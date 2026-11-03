@@ -4,6 +4,30 @@ import { type AllowlistConfiguration, Allowlist as CommonAllowlist } from '../..
 import { getUpperLevelDomain } from '../../common/utils/url';
 
 /**
+ * Checks whether the entry is the full wildcard — `*.*` and its `*.**` spelling — which the
+ * generated rules translate into a pattern that covers every document.
+ *
+ * @param domain Normalized allowlist entry.
+ *
+ * @returns True for an entry without any concrete label.
+ */
+const isFullWildcardEntry = (domain: string): boolean => /^\*\.\*+$/.test(domain);
+
+/**
+ * Checks whether DNR can express the entry in `requestDomains`: a plain domain or a `*.` mask.
+ * Any other wildcard has no DNR equivalent.
+ *
+ * @param domain Normalized allowlist entry.
+ *
+ * @returns True if the entry has no wildcard outside the `*.` mask.
+ */
+const isExpressibleInDnr = (domain: string): boolean => {
+    const host = domain.startsWith('*.') ? domain.slice(2) : domain;
+
+    return !host.includes('*');
+};
+
+/**
  * The allowlist is used to exclude certain websites from filtering.
  * Blocking rules are not applied to the sites in the list.
  * The allowlist can also be inverted.
@@ -84,7 +108,20 @@ export class AllowlistApi extends CommonAllowlist {
             return '@@$document,important';
         }
 
-        const allDomains = this.domains.map((domain) => {
+        /**
+         * The full wildcard covers every site, and DNR expresses that with a rule without `$to`.
+         * In the inverted mode it excludes nothing, so it is dropped by the filter below instead.
+         */
+        if (!this.inverted && this.domains.some(isFullWildcardEntry)) {
+            return '@@$document,important';
+        }
+
+        /**
+         * DNR matches whole domains only, so a `*` outside the `*.` mask cannot be expressed in
+         * `requestDomains`: the converter either drops the value or, for `$to=*`, keeps the rule
+         * and drops the domain condition, which would disable filtering on every site.
+         */
+        const allDomains = this.domains.filter(isExpressibleInDnr).map((domain) => {
             // Map subdomain masks to upper domains records, because masks itself
             // will be ignored by DNR. Transforming masks to upper domains will
             // match all subdomains by default in DNR.

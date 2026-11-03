@@ -68,6 +68,50 @@ describe('Allowlist Api', () => {
                 inverted: true,
                 expected: '@@$document,important',
             },
+            // A `*` outside the `*.` mask has no DNR equivalent, so it is skipped instead of
+            // dropping the domain condition of the whole rule.
+            {
+                input: ['*example.com'],
+                inverted: false,
+                expected: '',
+            },
+            {
+                input: ['example*.com'],
+                inverted: false,
+                expected: '',
+            },
+            {
+                input: ['*example.com', 'example.org'],
+                inverted: false,
+                expected: '@@$document,important,to=example.org',
+            },
+            {
+                input: ['*.example.*', 'example.org'],
+                inverted: false,
+                expected: '@@$document,important,to=example.org',
+            },
+            // The full wildcard covers every document, which is a rule without `$to`.
+            {
+                input: ['*.*'],
+                inverted: false,
+                expected: '@@$document,important',
+            },
+            {
+                input: ['*.*', 'example.com'],
+                inverted: false,
+                expected: '@@$document,important',
+            },
+            // In the inverted mode the full wildcard excludes nothing, so it is skipped.
+            {
+                input: ['*.*', 'example.com'],
+                inverted: true,
+                expected: '@@$document,important,to=~example.com',
+            },
+            {
+                input: ['*example.com', 'example.org'],
+                inverted: true,
+                expected: '@@$document,important,to=~example.org',
+            },
         ];
 
         it.each(cases)('should combine $input rules to $expected for MV2', ({ input, inverted, expected }) => {
