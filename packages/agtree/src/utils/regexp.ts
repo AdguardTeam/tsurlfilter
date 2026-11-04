@@ -82,6 +82,16 @@ export const SPECIAL_REGEX_SYMBOLS = new Set([
 ]);
 
 /**
+ * Pattern for an ASCII lowercase letter.
+ *
+ * CoreLibs strips every trailing lowercase letter of a `:contains()`
+ * argument as a regular expression flag, whether or not it is a flag that
+ * CoreLibs honors (see {@link RegExpUtils.parseCoreLibsRegexArgument}).
+ * `islower()` in the C locale matches the ASCII letters `a`-`z` only.
+ */
+const LOWERCASE_LETTER_PATTERN = /^[a-z]$/;
+
+/**
  * Utility functions for working with RegExp patterns.
  */
 export class RegExpUtils {
@@ -107,8 +117,8 @@ export class RegExpUtils {
     }
 
     /**
-     * Splits a regular expression literal in the `/pattern/flags` form into
-     * its pattern and flags.
+     * Splits a JavaScript regular expression literal in the `/pattern/flags`
+     * form into its pattern and flags.
      *
      * The parser checks only the shape of the literal, not whether the pattern
      * compiles in JavaScript. The literal must have this shape:
@@ -119,9 +129,13 @@ export class RegExpUtils {
      *   backslash of `\\` does not escape a following `/` or `]`;
      * - the pattern between the delimiters is not empty.
      *
-     * The shape check is independent of the JavaScript `RegExp` parser on
-     * purpose. AdGuard CoreLibs compiles `:contains(/.../)` arguments with
-     * PCRE2, which accepts patterns that JavaScript rejects, e.g. `/a++/`.
+     * The shape check does not compile the pattern on purpose: the caller
+     * compiles it and falls back to literal matching if JavaScript rejects
+     * the pattern, e.g. `/a++/`, which is valid PCRE2 but invalid JavaScript.
+     *
+     * This is the JavaScript literal grammar. CoreLibs reads a `:contains()`
+     * argument with a different scanner, see
+     * {@link RegExpUtils.parseCoreLibsRegexArgument}.
      *
      * @param literal String to parse.
      *
@@ -185,6 +199,80 @@ export class RegExpUtils {
 
         // No closing slash was found
         return null;
+    }
+
+    /**
+     * Extracts a regular expression from a `:contains()` argument the same
+     * way AdGuard CoreLibs does.
+     *
+     * CoreLibs does not use a JavaScript regular expression literal scanner
+     * for this argument. Its `extract_regex()` function in
+     * `filtering/htmlfilter/src/htmlfilter.cpp` works like this:
+     *
+     * - the argument must be longer than two characters and start with `/`;
+     * - every trailing ASCII lowercase letter is removed as a flag, whether
+     *   or not it is a flag CoreLibs honors (`i` and `s` only). So in
+     *   `/a/bc` the letters `bc` are flags, not part of the pattern;
+     * - the last character must be `/`, which is the delimiter. CoreLibs
+     *   ignores escapes and character classes, so it takes the last slash,
+     *   not the first unescaped slash outside a character class;
+     * - the pattern between the leading `/` and the delimiter must not be
+     *   empty, otherwise CoreLibs matches the argument as literal text.
+     *
+     * Consequences: `///` is the regular expression `/`, while `/a\/` and
+     * `/a[b/` are regular expressions with the invalid PCRE2 patterns `a\`
+     * and `a[b`, so CoreLibs rejects those rules. A JavaScript literal
+     * scanner returns `null` for all three.
+     *
+     * The caller must not compile the returned pattern. This method only
+     * reports how CoreLibs splits the argument.
+     *
+     * @param argument Argument of the `:contains()` pseudo-class.
+     *
+     * @returns Pattern and stripped flags, or `null` if CoreLibs matches the
+     * argument as literal text.
+     *
+     * @example
+     * // Returns `{ pattern: 'ads', flags: '' }`
+     * RegExpUtils.parseCoreLibsRegexArgument('/ads/');
+     *
+     * // Returns `{ pattern: '/', flags: '' }`
+     * RegExpUtils.parseCoreLibsRegexArgument('///');
+     */
+    public static parseCoreLibsRegexArgument(argument: string): RegexLiteralParts | null {
+        // CoreLibs requires a pattern and two delimiters at least, so a
+        // two-character argument such as `//` is literal text
+        if (argument.length <= 2 || !argument.startsWith(SLASH)) {
+            return null;
+        }
+
+        // Index after the last character which is not a stripped flag. The
+        // leading slash is never stripped, so the loop stops at 1. CoreLibs
+        // can strip all the characters after the leading slash and then
+        // reads the character before the argument, which is `(` for
+        // `:contains()` and not a slash, so such an argument is literal text.
+        let end = argument.length;
+
+        while (end > 1 && LOWERCASE_LETTER_PATTERN.test(argument.charAt(end - 1))) {
+            end -= 1;
+        }
+
+        // No closing slash before the stripped flags
+        if (end <= 1 || argument.charAt(end - 1) !== SLASH) {
+            return null;
+        }
+
+        const pattern = argument.slice(1, end - 1);
+
+        // An empty pattern is matched as literal text
+        if (!pattern) {
+            return null;
+        }
+
+        return {
+            pattern,
+            flags: argument.slice(end),
+        };
     }
 
     /**

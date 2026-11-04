@@ -111,6 +111,60 @@ describe('RegExpUtils', () => {
         });
     });
 
+    describe('parseCoreLibsRegexArgument', () => {
+        test.each([
+            // Not regular expressions: too short, no leading slash, no
+            // closing slash, an uppercase flag, or an empty pattern
+            { actual: '', expected: null },
+            { actual: '/', expected: null },
+            { actual: '//', expected: null },
+            { actual: 'plain string', expected: null },
+            { actual: ' /test/', expected: null },
+            { actual: '/ads', expected: null },
+            // CoreLibs strips trailing lowercase letters only
+            { actual: '/ads/I', expected: null },
+            // The stripped flags leave an empty pattern, so the argument is
+            // literal text
+            { actual: '//x', expected: null },
+            { actual: '//abc', expected: null },
+            // Regular expressions
+            { actual: '/test/', expected: { pattern: 'test', flags: '' } },
+            { actual: '/a++/', expected: { pattern: 'a++', flags: '' } },
+            { actual: '/[/]/', expected: { pattern: '[/]', flags: '' } },
+            // CoreLibs takes the last slash as the delimiter and ignores
+            // escapes and character classes, unlike a JavaScript literal
+            // scanner
+            {
+                actual: String.raw`/a\/`,
+                expected: { pattern: 'a\\', flags: '' },
+            },
+            {
+                actual: '/a[b/',
+                expected: { pattern: 'a[b', flags: '' },
+            },
+            // `///` is the regular expression `/`
+            { actual: '///', expected: { pattern: '/', flags: '' } },
+            // Every trailing lowercase letter is a flag, even if CoreLibs
+            // does not honor it
+            { actual: '/ads/i', expected: { pattern: 'ads', flags: 'i' } },
+            { actual: '/a/bc', expected: { pattern: 'a', flags: 'bc' } },
+            { actual: '/ads/', expected: { pattern: 'ads', flags: '' } },
+            // Slashes inside the pattern are part of the pattern
+            { actual: '/a/b/c/', expected: { pattern: 'a/b/c', flags: '' } },
+            // Escapes are ignored, so the pattern keeps them
+            {
+                actual: String.raw`/a\\/`,
+                expected: { pattern: String.raw`a\\`, flags: '' },
+            },
+            {
+                actual: String.raw`/a[\\]b/`,
+                expected: { pattern: String.raw`a[\\]b`, flags: '' },
+            },
+        ])('parseCoreLibsRegexArgument should parse \'$actual\'', ({ actual, expected }) => {
+            expect(RegExpUtils.parseCoreLibsRegexArgument(actual)).toEqual(expected);
+        });
+    });
+
     describe('negateRegexPattern', () => {
         test.each([
             {

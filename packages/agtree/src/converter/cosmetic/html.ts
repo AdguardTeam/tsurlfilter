@@ -437,7 +437,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *   strip later. This mirrors CoreLibs, which never unquotes `:contains()`
      *   arguments. For AdGuard to AdGuard conversion the value is emitted by
      *   {@link HtmlRuleConverter.appendSpecialAttributePseudoClasses}, which
-     *   turns a value that looks like a regular expression literal into an
+     *   turns a value that CoreLibs reads as a regular expression into an
      *   escaped regular expression, so that it still matches literally.
      * - `[wildcard="*content*"]` -> `:contains(/*.content*./s)`
      *   convert search pattern to regular expression
@@ -1236,12 +1236,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - a literal `:contains()` may be chained in front of a single regex
      *   `:contains()` only when it is chain-safe, see
      *   {@link HtmlRuleConverter.isChainSafeLiteral};
-     * - a standalone `[tag-content]` value that looks like a regular expression
-     *   literal (e.g. `/ads/`) is emitted as an escaped regular expression
-     *   (e.g. `/\/ads\//`), because `:contains()` consumers compile such an
-     *   argument into a `RegExp` and the `[tag-content]` value must stay a
-     *   literal substring match — see
-     *   {@link RegExpUtils.parseRegexLiteral}.
+     * - a standalone `[tag-content]` value that CoreLibs reads as a regular
+     *   expression (e.g. `/ads/`) is emitted as an escaped regular expression
+     *   (e.g. `/\/ads\//`), so the value stays a literal substring match. The
+     *   check mirrors CoreLibs' `:contains()` argument scanner, not the
+     *   JavaScript literal grammar — see
+     *   {@link RegExpUtils.parseCoreLibsRegexArgument}.
      *
      * Combinations which cannot be represented as such a chain — an unsafe
      * literal plus any regex-like constraint, or several regex-like
@@ -1295,14 +1295,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
         if (emitLiteralStandalone) {
             const literal = tagContentValues[0];
 
-            // A value that looks like a regular expression literal must be
-            // emitted as an escaped regular expression: `:contains()`
-            // consumers compile such an argument into a `RegExp`, but a
-            // `[tag-content]` value is always a literal substring match.
-            // CoreLibs compiles the argument with PCRE2, which accepts
-            // patterns that JavaScript rejects (e.g. `/a++/`), so the check
-            // uses the literal shape, not JavaScript RegExp validity.
-            const argument = RegExpUtils.parseRegexLiteral(literal) !== null
+            // A value that CoreLibs reads as a regular expression must be
+            // emitted as an escaped regular expression: CoreLibs compiles
+            // such an argument into a `RegExp`, but a `[tag-content]` value
+            // is always a literal substring match. The check mirrors
+            // CoreLibs' `extract_regex()`: it takes the last slash as the
+            // delimiter and ignores escapes and character classes, so values
+            // such as `/a++/`, `/a\/`, and `///` are escaped too. A value
+            // that is not escaped stays literal text in CoreLibs.
+            const argument = RegExpUtils.parseCoreLibsRegexArgument(literal) !== null
                 ? `${SLASH}${RegExpUtils.escapeRegexSpecials(literal)}${SLASH}`
                 : literal;
 

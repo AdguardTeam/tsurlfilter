@@ -228,6 +228,30 @@ describe('HtmlRuleConverter', () => {
                         expected: [String.raw`$$div:contains(/\/a\+\+\//)`],
                     },
 
+                    // `[tag-content]` with a value that only CoreLibs reads as a regexp: it
+                    // takes the last slash as the delimiter and ignores escapes, so `/a\/` is
+                    // the invalid PCRE2 pattern `a\` and CoreLibs rejects the raw rule. The
+                    // escaped form matches the literal text instead
+                    {
+                        actual: String.raw`$$div[tag-content="/a\/"]`,
+                        expected: [String.raw`$$div:contains(/\/a\\\//)`],
+                    },
+
+                    // A slash inside an unterminated character class: a JavaScript literal
+                    // scanner finds no closing slash, while CoreLibs takes the last slash as
+                    // the delimiter and rejects the raw pattern `a[b`
+                    {
+                        actual: '$$div[tag-content="/a[b/"]',
+                        expected: [String.raw`$$div:contains(/\/a\[b\//)`],
+                    },
+
+                    // `///` is the regular expression `/` for CoreLibs, so the raw value would
+                    // match any text with a slash. The escaped form matches the literal `///`
+                    {
+                        actual: '$$div[tag-content="///"]',
+                        expected: [String.raw`$$div:contains(/\/\/\//)`],
+                    },
+
                     // `[tag-content]` with a leading slash but no closing slash: not a regexp literal,
                     // so the raw value is kept
                     {
