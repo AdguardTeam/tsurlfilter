@@ -19,12 +19,14 @@ import { TsWebExtension } from '../../../../src/lib/mv3/background/app';
 import { appContext } from '../../../../src/lib/mv3/background/app-context';
 import { ChromiumCanvasRegistration } from '../../../../src/lib/mv3/background/canvas-registration';
 import { type ConfigurationMV3 } from '../../../../src/lib/mv3/background/configuration';
+import { declarativeFilteringLog } from '../../../../src/lib/mv3/background/declarative-filtering-log';
 import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
 import { extSessionStorage, type SessionStorageSchema } from '../../../../src/lib/mv3/background/ext-session-storage';
 import FiltersApi from '../../../../src/lib/mv3/background/filters-api';
 import { CspService } from '../../../../src/lib/mv3/background/services/csp-service';
 import { StealthService } from '../../../../src/lib/mv3/background/services/stealth-service';
+import { SessionRulesApi } from '../../../../src/lib/mv3/background/session-rules-api';
 import { getConfigurationMv3Fixture } from '../fixtures/configuration';
 
 const configureBoundaries = TsWebExtension as unknown as {
@@ -65,6 +67,14 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
      * Supplies browser boundaries without loading ruleset files.
      */
     const prepareConfigure = (): void => {
+        // The mocked log must actually run the steps it wraps, otherwise
+        // `configure()` stops before applying anything.
+        vi.mocked(declarativeFilteringLog.withUpdateLock).mockImplementation(async (operation) => {
+            await operation();
+        });
+        vi.mocked(declarativeFilteringLog.withStoppedListener).mockImplementation(async (operation) => {
+            await operation();
+        });
         vi.spyOn(configureBoundaries, 'syncRulesetsWithIdb').mockResolvedValue(undefined);
         vi.spyOn(configureBoundaries, 'getFiltersUpdateInfo').mockResolvedValue({
             staticFilters: [], customFilters: [], filtersIdsToEnable: [], filtersIdsToDisable: [],
@@ -76,9 +86,20 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
         Object.defineProperty(browser, 'declarativeNetRequest', {
             configurable: true, value: { getEnabledRulesets: vi.fn().mockResolvedValue([]) },
         });
-        vi.spyOn(DynamicRulesApi, 'updateDynamicFiltering').mockResolvedValue({
-            ruleset: { unloadContent: vi.fn() }, declarativeRulesToCancel: [],
+        vi.spyOn(DynamicRulesApi, 'prepareDynamicFiltering').mockResolvedValue({
+            ruleset: { unloadContent: vi.fn() },
+            declarativeRulesToCancel: [],
+            counts: { total: 0, unsafe: 0, regexp: 0 },
+            limitations: [],
+            errors: [],
         } as never);
+        vi.spyOn(DynamicRulesApi, 'limitRebuiltCspRules').mockResolvedValue({
+            rules: [],
+            counts: { total: 0, unsafe: 0, regexp: 0 },
+            limitations: [],
+        } as never);
+        vi.spyOn(DynamicRulesApi, 'applyDynamicFiltering').mockResolvedValue({} as never);
+        vi.spyOn(SessionRulesApi, 'updateSessionRules').mockResolvedValue([]);
     };
 
     it('compiles exceptions after the engine restarts on configure', async () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { RuleActionType } from '../../../src/declarative-rule';
+import { ResourceType, RuleActionType } from '../../../src/declarative-rule';
 import { UnsupportedRegexpError } from '../../../src/errors/conversion-errors';
 import {
     EmptyOrNegativeNumberOfRulesError,
@@ -252,8 +252,13 @@ describe('FilterConverter (withSourceMap: true)', () => {
             const { ruleset, errors } = await converter.convertCspRules([filter]);
             const declarativeRules = await ruleset.getDeclarativeRules();
 
-            expect(declarativeRules).toHaveLength(1);
+            // A rule with an excluded-only `$domain` also gets the additional
+            // document rule, so the header is appended on browser-started
+            // navigations, which have no initiator.
+            expect(declarativeRules).toHaveLength(2);
             expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['foo.com']);
+            expect(declarativeRules[1].condition.resourceTypes).toEqual([ResourceType.MainFrame]);
+            expect(declarativeRules[1].condition.excludedRequestDomains).toEqual(['foo.com']);
             expect(errors).toHaveLength(1);
         });
 
