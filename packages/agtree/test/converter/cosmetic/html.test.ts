@@ -99,16 +99,25 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/^(?=.{0,}$).*/s)'],
                     },
 
-                    // `[min-length]` special attribute selector - the PCRE2 quantifier bound
+                    // `[min-length]` special attribute selector - a large value at
+                    // the PCRE2 quantifier limit
                     {
                         actual: '$$div[min-length="65535"]',
                         expected: ['$$div:contains(/^(?=.{65535,}$).*/s)'],
                     },
 
-                    // `[max-length]` special attribute selector - the PCRE2 quantifier bound
+                    // `[max-length]` special attribute selector - a large value at
+                    // the PCRE2 quantifier limit
                     {
                         actual: '$$div[max-length="65535"]',
                         expected: ['$$div:contains(/^(?=.{0,65535}$).*/s)'],
+                    },
+
+                    // `[max-length]` special attribute selector - a real-world value
+                    // above the PCRE2 quantifier limit is kept as decimal digits
+                    {
+                        actual: '$$div[max-length="300000"]',
+                        expected: ['$$div:contains(/^(?=.{0,300000}$).*/s)'],
                     },
 
                     // `[max-length]` special attribute selector - leading whitespace is accepted
@@ -125,20 +134,20 @@ describe('HtmlRuleConverter', () => {
 
                     // `[min-length]` and `[max-length]` combined - tag-content before length selectors
                     {
-                        actual: '$$script[tag-content="text"][min-length="10000"][max-length="36000"]',
-                        expected: ['$$script:contains(text):contains(/^(?=.{10000,36000}$).*/s)'],
+                        actual: '$$script[tag-content="text"][min-length="100000"][max-length="360000"]',
+                        expected: ['$$script:contains(text):contains(/^(?=.{100000,360000}$).*/s)'],
                     },
 
                     // `[min-length]` and `[max-length]` combined - tag-content after length selectors
                     {
-                        actual: '$$script[tag-content="Flags."][min-length="20000"][max-length="30000"]',
-                        expected: ['$$script:contains(Flags.):contains(/^(?=.{20000,30000}$).*/s)'],
+                        actual: '$$script[tag-content="Flags."][min-length="20000"][max-length="300000"]',
+                        expected: ['$$script:contains(Flags.):contains(/^(?=.{20000,300000}$).*/s)'],
                     },
 
                     // `[min-length]` and `[max-length]` combined - max-length appears before min-length
                     {
-                        actual: '$$script[max-length="30000"][min-length="20000"]',
-                        expected: ['$$script:contains(/^(?=.{20000,30000}$).*/s)'],
+                        actual: '$$script[max-length="300000"][min-length="20000"]',
+                        expected: ['$$script:contains(/^(?=.{20000,300000}$).*/s)'],
                     },
 
                     // duplicate length selectors are resolved as normalized digit strings,
@@ -150,6 +159,21 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div[min-length="0005"][min-length="7"]',
                         expected: ['$$div:contains(/^(?=.{7,}$).*/s)'],
+                    },
+
+                    // large values are kept as decimal digits, without rounding
+                    // or exponent notation
+                    {
+                        actual: '$$div[min-length="1000000000000000000000"]',
+                        expected: ['$$div:contains(/^(?=.{1000000000000000000000,}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[max-length="99999999999999999999"]',
+                        expected: ['$$div:contains(/^(?=.{0,99999999999999999999}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="0005"][max-length="00099999999999999999999"]',
+                        expected: ['$$div:contains(/^(?=.{5,99999999999999999999}$).*/s)'],
                     },
 
                     // `[tag-content]` with an unbalanced value + `[max-length]`: such a literal cannot
@@ -538,27 +562,6 @@ describe('HtmlRuleConverter', () => {
                         error: "Value of special attribute selector 'min-length' must be an integer, got '1.5'",
                     },
 
-                    // invalid special attribute selector - value above the PCRE2
-                    // quantifier limit
-                    {
-                        input: '$$[min-length="65536"]',
-                        // eslint-disable-next-line max-len
-                        error: "Value of special attribute selector 'min-length' must not exceed 65535, got '65536'",
-                    },
-                    {
-                        input: '$$[max-length="65536"]',
-                        // eslint-disable-next-line max-len
-                        error: "Value of special attribute selector 'max-length' must not exceed 65535, got '65536'",
-                    },
-
-                    // invalid special attribute selector - an out-of-range value in
-                    // a merged constraint set
-                    {
-                        input: '$$[min-length="0005"][max-length="00065536"]',
-                        // eslint-disable-next-line max-len
-                        error: "Value of special attribute selector 'max-length' must not exceed 65535, got '00065536'",
-                    },
-
                     // invalid special pseudo-class selector - argument missing
                     {
                         input: '$$:contains()',
@@ -576,60 +579,6 @@ describe('HtmlRuleConverter', () => {
                             );
                         }).toThrowError(error);
                     }
-                });
-            });
-
-            describe('length attribute values above the PCRE2 quantifier limit', () => {
-                test('should reject a 22-digit [min-length] value without rounding', () => {
-                    const value = '1000000000000000000000';
-                    let caughtError: unknown;
-
-                    try {
-                        HtmlRuleConverter.convertToAdg(
-                            RuleParser.parse(
-                                `$$div[min-length="${value}"]`,
-                                parsingEnabledDefaultParserOptions,
-                            ) as HtmlFilteringRule,
-                        );
-                    } catch (error: unknown) {
-                        caughtError = error;
-                    }
-
-                    expect(caughtError).toBeInstanceOf(Error);
-
-                    const { message } = caughtError as Error;
-
-                    expect(message).toBe(
-                        // eslint-disable-next-line max-len
-                        "Value of special attribute selector 'min-length' must not exceed 65535, got '1000000000000000000000'",
-                    );
-                    expect(message).toContain(value);
-                    expect(message).toContain('65535');
-                    expect(message).not.toContain('1e+21');
-                });
-
-                test('should reject a value above Number.MAX_SAFE_INTEGER without rounding', () => {
-                    const value = '99999999999999999999';
-                    let caughtError: unknown;
-
-                    try {
-                        HtmlRuleConverter.convertToAdg(
-                            RuleParser.parse(
-                                `$$div[max-length="${value}"]`,
-                                parsingEnabledDefaultParserOptions,
-                            ) as HtmlFilteringRule,
-                        );
-                    } catch (error: unknown) {
-                        caughtError = error;
-                    }
-
-                    expect(caughtError).toBeInstanceOf(Error);
-
-                    const { message } = caughtError as Error;
-
-                    expect(message).toContain(value);
-                    expect(message).toContain('65535');
-                    expect(message).not.toContain('100000000000000000000');
                 });
             });
 
