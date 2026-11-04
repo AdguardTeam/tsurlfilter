@@ -89,6 +89,22 @@ const hasConcreteLabel = (domain: string): boolean => /[^*.]/.test(domain);
 const isFullWildcard = (domain: string): boolean => /^\*+$/.test(domain);
 
 /**
+ * Everything before the host of a URL-like entry: the scheme, the `//` and the credentials.
+ */
+const URL_PREFIX = /^(?:[a-z][a-z0-9+.-]*:)?\/\/(?:[^/?#@]*@)?/;
+
+/**
+ * Characters that end the host of an entry: a path, a query or a fragment.
+ */
+const HOST_END = /[/?#]/;
+
+/**
+ * Port at the end of a host — a bracketed IPv6 literal or a single-colon hostname followed by
+ * digits — so the colons of the literal itself stay.
+ */
+const HOST_PORT = /^(\[[^\]]*\]|[^:]+):\d+$/;
+
+/**
  * Removes the `www.` prefix, which the generated rule matches anyway.
  *
  * @param domain Lowercased host of the entry.
@@ -109,17 +125,20 @@ const stripWwwPrefix = (domain: string): string => {
 };
 
 /**
- * Normalizes an allowlist entry to the domain it describes: lower case, without the path, which an
- * imported or an old entry may carry, and without the `www.` prefix that the generated rule covers
- * anyway.
+ * Normalizes an allowlist entry to the domain it describes: lower case, without the scheme, the
+ * credentials, the port, the path, the query or the fragment that an imported or an old entry may
+ * carry, and without the `www.` prefix that the generated rule covers anyway.
  *
  * @param entry Allowlist entry.
  *
  * @returns Domain of the entry, or an empty string if the entry has no domain.
  */
-export const normalizeAllowlistDomain = (entry: string): string => (
-    stripWwwPrefix(entry.toLowerCase().split('/')[0].trim())
-);
+export const normalizeAllowlistDomain = (entry: string): string => {
+    const withoutUrlPrefix = entry.toLowerCase().trim().replace(URL_PREFIX, '');
+    const host = withoutUrlPrefix.split(HOST_END)[0];
+
+    return stripWwwPrefix(host.trim().replace(HOST_PORT, '$1'));
+};
 
 /**
  * Escapes the regexp special characters of the entry and turns `*` back into a host wildcard.

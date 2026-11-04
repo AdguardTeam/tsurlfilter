@@ -59,9 +59,18 @@ describe('normalizeAllowlistDomain', () => {
         { entry: 'EXAMPLE.COM', expected: 'example.com' },
         { entry: '  Example.COM \t', expected: 'example.com' },
         { entry: 'www.example.com', expected: 'example.com' },
-        // A path is not a part of an entry: settings import and old profiles may still carry one.
+        // A path, a query or a fragment is not a part of an entry.
         { entry: 'example.com/path?query#fragment', expected: 'example.com' },
+        { entry: 'example.com?x=1', expected: 'example.com' },
+        { entry: 'example.com#fragment', expected: 'example.com' },
         { entry: 'www.example.com/path', expected: 'example.com' },
+        // Neither is the scheme, the credentials or the port.
+        { entry: 'https://example.com/path', expected: 'example.com' },
+        { entry: 'HTTPS://Example.COM/', expected: 'example.com' },
+        { entry: '//example.com/', expected: 'example.com' },
+        { entry: 'https://user:pass@example.com/', expected: 'example.com' },
+        { entry: 'example.com:8080', expected: 'example.com' },
+        { entry: '*.example.com:8080/', expected: '*.example.com' },
         // `www.*` describes the hosts under `www.`, so the prefix is the part that defines it.
         { entry: 'www.*', expected: 'www.*' },
         // A bare `www.` has no domain at all.
@@ -153,9 +162,12 @@ describe('RuleFactory.createAllowlistRule', () => {
             { domain: 'a', url: 'https://a/' },
             { domain: '*.a', url: 'https://a/' },
             { domain: '*.a', url: 'https://sub.a/' },
-            // A path is not a part of an entry: it is cut, so the whole site stays covered.
+            // A URL-like entry is reduced to its host, so the whole site stays covered.
             { domain: 'example.com/', url: 'https://example.com/page' },
             { domain: 'example.com/path', url: 'https://example.com/other' },
+            { domain: 'example.com?x=1', url: 'https://example.com/other' },
+            { domain: 'https://example.com/path', url: 'https://example.com/other' },
+            { domain: 'example.com:8080', url: 'https://example.com/other' },
             { domain: '*.example.com/', url: 'https://sub.example.com/page' },
             // `www.*` describes the hosts under `www.`.
             { domain: 'www.*', url: 'https://www.example.com/' },

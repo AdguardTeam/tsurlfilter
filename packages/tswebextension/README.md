@@ -475,7 +475,9 @@ is ignored: `example.com/path` covers the whole host. An entry that describes no
 host, such as `*`, `**` or `*.`, is ignored; the full wildcard is `*.*`.
 
 In MV3, every entry also covers subdomains in the regular allowlist mode. In the
-inverted mode a `*.example.com` entry covers only the direct subdomains.
+inverted mode the network filtering excludes the listed domain together with all
+its subdomains, while frame matching and canvas protection look at the host and
+one level below it.
 
 #### trustedDomains
 
