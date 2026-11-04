@@ -15,6 +15,7 @@ import {
     setConfiguration,
 } from '@adguard/tsurlfilter';
 
+import { CanvasExceptionRules } from '../../common/canvas-protection/exception-rules';
 import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { logger } from '../../common/utils/logger';
 import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
@@ -339,6 +340,15 @@ export class EngineApi {
      */
     public isUserRulesFilter(filterId: number): boolean {
         return filterId === this.userFilterId;
+    }
+
+    /**
+     * Gets stealth and document exception texts, excluding generated allowlist rules.
+     *
+     * @returns Exception texts, or an empty array if the engine is not started.
+     */
+    public getDocumentOrStealthExceptionRuleTexts(): string[] {
+        return this.engine ? CanvasExceptionRules.getRuleTexts(this.engine) : [];
     }
 
     /**

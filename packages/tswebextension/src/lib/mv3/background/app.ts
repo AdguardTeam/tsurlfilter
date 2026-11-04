@@ -13,6 +13,9 @@ import { LogLevel } from '@adguard/logger';
 import { FilterList } from '@adguard/tsurlfilter';
 
 import { type AppInterface, type MessageHandler } from '../../common/app';
+import { type RegistrationResult } from '../../common/canvas-protection/contracts';
+import { CanvasProtectionController } from '../../common/canvas-protection/controller';
+import { CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
 import { ALLOWLIST_FILTER_ID, BLOCKING_TRUSTED_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
@@ -23,6 +26,7 @@ import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 import { AllowlistApi, allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
 import { assistant, Assistant } from './assistant';
+import { ChromiumCanvasRegistration } from './canvas-registration';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
 import { CspRulesManager, type CspRulesResult } from './csp-rules-manager';
 import { declarativeFilteringLog } from './declarative-filtering-log';
@@ -76,6 +80,7 @@ type ConfigurationResult = {
         counts: DynamicRulesCounts;
     };
     stealthResult?: StealthConfigurationResult;
+    canvasProtection?: RegistrationResult;
 };
 
 type FiltersUpdateInfo = {
@@ -140,6 +145,15 @@ export class TsWebExtension implements AppInterface<
     isStarted = false;
 
     /**
+     * Owns browser registration acknowledgment and current-session code generation.
+     */
+    private readonly canvasProtection = new CanvasProtectionController(
+        new CanvasProtectionRegistration(new ChromiumCanvasRegistration(), appContext),
+        () => (appContext.isStorageInitialized ? this.configuration : undefined),
+        () => ({ ruleTexts: engineApi.getDocumentOrStealthExceptionRuleTexts(), allowlist: allowlistApi }),
+    );
+
+    /**
      * Stores the initialize promise to prevent multiple initialize calls when
      * a large number of messages are received when the service worker
      * starts or wakes up.
@@ -181,6 +195,7 @@ export class TsWebExtension implements AppInterface<
         }
 
         try {
+            this.canvasProtection.resume();
             const res = await this.configure(config);
 
             // Start listening for request events.
@@ -218,6 +233,9 @@ export class TsWebExtension implements AppInterface<
             this.startPromise = undefined;
 
             logger.error('[tsweb.TsWebExtension.innerStart]: failed: ', e);
+
+            // The app did not start, so later setters must not register the script.
+            await this.canvasProtection.stop();
 
             throw new Error('Cannot be started: ', { cause: e as Error });
         }
@@ -349,6 +367,7 @@ export class TsWebExtension implements AppInterface<
 
         appContext.isAppStarted = false;
         this.isStarted = false;
+        await this.canvasProtection.stop();
     }
 
     /**
@@ -357,6 +376,7 @@ export class TsWebExtension implements AppInterface<
      * filters and user rules on the fly to a single merged rule set), starts
      * declarative filtering log and restarts the engine to reload cosmetic
      * rules.
+     * Canvas exclusions are compiled again from the updated rules and allowlist when protection is enabled.
      *
      * @param config A {@link ConfigurationMV3} to apply.
      *
@@ -367,6 +387,7 @@ export class TsWebExtension implements AppInterface<
      * Details: {@link ConversionResult}.
      * - limitations of dynamic rules omitted due to the browser quotas and
      * limitations of session rules in a separate field.
+     * - canvas protection registration state.
      *
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
@@ -409,6 +430,7 @@ export class TsWebExtension implements AppInterface<
             }
 
             this.configuration = TsWebExtension.createConfigurationContext(configuration);
+            res.canvasProtection = await this.canvasProtection.apply();
 
             // Update previously opened tabs with new rules - find for each tab
             // new main frame rule.
@@ -594,6 +616,7 @@ export class TsWebExtension implements AppInterface<
                 verbose: configuration.verbose,
             });
             await engineApi.waitingForEngine;
+            this.canvasProtection.invalidatePolicy();
 
             // TODO: Recreate only dynamic ruleset, because static cannot be changed
             const rulesets = [
@@ -625,6 +648,31 @@ export class TsWebExtension implements AppInterface<
 
             res.staticFilters = staticRulesets;
         });
+    }
+
+    /**
+     * Updates canvas opt-in and waits for the browser registration result.
+     *
+     * @param enabled Whether canvas protection is requested.
+     *
+     * @returns The acknowledged or unresolved registration state.
+     *
+     * @throws When the application has no configuration.
+     */
+    public async setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult> {
+        const result = await this.canvasProtection.setEnabled(enabled);
+        // The setting is changed in place, but the session storage saves only an assigned configuration.
+        this.configuration = this.configuration!;
+        return result;
+    }
+
+    /**
+     * Reports requested state separately from browser acknowledgment history.
+     *
+     * @returns The most recent registration lifecycle result.
+     */
+    public getCanvasProtectionState(): RegistrationResult {
+        return this.canvasProtection.getState();
     }
 
     /**
@@ -906,10 +954,15 @@ export class TsWebExtension implements AppInterface<
      * This method called as soon as possible and allows access
      * to the actual context before the app is started.
      */
-    // eslint-disable-next-line class-methods-use-this
     public async initStorage(): Promise<void> {
         await extSessionStorage.init();
         appContext.isStorageInitialized = true;
+        // Chromium keeps the registered script across browser restarts, with the previous session's seed.
+        // The session storage is empty then, so this removes it until start() registers a new one.
+        // After a service worker restart the script is as the last apply() left it, and start() reconciles it.
+        if (!this.configuration) {
+            await this.canvasProtection.apply();
+        }
     }
 
     /**

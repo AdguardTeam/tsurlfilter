@@ -3,13 +3,18 @@ import { LRUCache } from 'lru-cache';
 import { FilterList, type FilterListConversionError } from '../filterlist/filter-list';
 import { FilterRuleList } from '../filterlist/filter-rule-list';
 import { type IRuleList } from '../filterlist/rule-list';
-import { RuleCategory } from '../filterlist/rule-parts';
+import { type NetworkRuleParts, RuleCategory } from '../filterlist/rule-parts';
 import { RuleStorage } from '../filterlist/rule-storage';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { Request } from '../request';
 import { RequestType } from '../request-type';
-import { type NetworkRule, type WrittenRuleTextResolver } from '../rules/network-rule';
-import { type IndexedStorageCosmeticRuleParts, type IndexedStorageNetworkRuleParts } from '../rules/rule';
+import { type NetworkRule, NetworkRuleOption, type WrittenRuleTextResolver } from '../rules/network-rule';
+import { NETWORK_RULE_OPTIONS } from '../rules/network-rule-options';
+import {
+    type IndexedStorageCosmeticRuleParts,
+    type IndexedStorageNetworkRuleParts,
+    type IndexedStorageRuleParts,
+} from '../rules/rule';
 
 import { CHUNK_SIZE } from './constants';
 import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
@@ -85,6 +90,11 @@ export class Engine {
     private readonly ruleStorage: RuleStorage;
 
     /**
+     * Storage indexes of potential document or stealth exceptions, including their badfilter rules.
+     */
+    private readonly documentOrStealthExceptionIndexes: number[];
+
+    /**
      * Resolves the text of a rule as written in the filter list.
      */
     private readonly resolveWrittenText: WrittenRuleTextResolver;
@@ -109,6 +119,7 @@ export class Engine {
     public static createSync(options: EngineFactoryOptions): Engine {
         const networkRulesParts: IndexedStorageNetworkRuleParts[] = [];
         const cosmeticRulesParts: IndexedStorageCosmeticRuleParts[] = [];
+        const documentOrStealthExceptionIndexes: number[] = [];
 
         const lists: IRuleList[] = [];
         const conversionErrors: FilterListConversionError[] = [];
@@ -145,19 +156,24 @@ export class Engine {
                 continue;
             }
 
-            if (indexedRuleParts.ruleParts.category === RuleCategory.Network) {
-                // Note: it is safe to cast here, because we checked rule type
-                networkRulesParts.push(indexedRuleParts as IndexedStorageNetworkRuleParts);
-            } else if (indexedRuleParts.ruleParts.category === RuleCategory.Cosmetic) {
-                // Note: it is safe to cast here, because we checked rule type
-                cosmeticRulesParts.push(indexedRuleParts as IndexedStorageCosmeticRuleParts);
-            }
+            Engine.collectRuleParts(
+                indexedRuleParts,
+                networkRulesParts,
+                cosmeticRulesParts,
+                documentOrStealthExceptionIndexes,
+            );
         }
 
         const networkEngine = NetworkEngine.createSync(networkRulesParts, storage);
         const cosmeticEngine = CosmeticEngine.createSync(cosmeticRulesParts, storage);
 
-        const engine = new Engine(storage, networkEngine, cosmeticEngine, conversionErrors);
+        const engine = new Engine(
+            storage,
+            networkEngine,
+            cosmeticEngine,
+            conversionErrors,
+            documentOrStealthExceptionIndexes,
+        );
 
         return engine;
     }
@@ -172,6 +188,7 @@ export class Engine {
     public static async createAsync(options: EngineFactoryOptions): Promise<Engine> {
         const networkRulesParts: IndexedStorageNetworkRuleParts[] = [];
         const cosmeticRulesParts: IndexedStorageCosmeticRuleParts[] = [];
+        const documentOrStealthExceptionIndexes: number[] = [];
 
         const lists: IRuleList[] = [];
         const conversionErrors: FilterListConversionError[] = [];
@@ -224,13 +241,12 @@ export class Engine {
                 continue;
             }
 
-            if (ruleParts.ruleParts.category === RuleCategory.Network) {
-                // Note: it is safe to cast here, because we checked rule type
-                networkRulesParts.push(ruleParts as IndexedStorageNetworkRuleParts);
-            } else if (ruleParts.ruleParts.category === RuleCategory.Cosmetic) {
-                // Note: it is safe to cast here, because we checked rule type
-                cosmeticRulesParts.push(ruleParts as IndexedStorageCosmeticRuleParts);
-            }
+            Engine.collectRuleParts(
+                ruleParts,
+                networkRulesParts,
+                cosmeticRulesParts,
+                documentOrStealthExceptionIndexes,
+            );
         }
 
         const [networkEngine, cosmeticEngine] = await Promise.all([
@@ -238,9 +254,58 @@ export class Engine {
             CosmeticEngine.createAsync(cosmeticRulesParts, storage),
         ]);
 
-        const engine = new Engine(storage, networkEngine, cosmeticEngine, conversionErrors);
+        const engine = new Engine(
+            storage,
+            networkEngine,
+            cosmeticEngine,
+            conversionErrors,
+            documentOrStealthExceptionIndexes,
+        );
 
         return engine;
+    }
+
+    /**
+     * Collects rule parts for matching engines and indexes potential document or stealth exceptions.
+     *
+     * @param indexedRuleParts Scanned rule parts with their storage index.
+     * @param networkRulesParts Collected network rule parts.
+     * @param cosmeticRulesParts Collected cosmetic rule parts.
+     * @param documentOrStealthExceptionIndexes Collected candidate storage indexes.
+     */
+    private static collectRuleParts(
+        indexedRuleParts: IndexedStorageRuleParts,
+        networkRulesParts: IndexedStorageNetworkRuleParts[],
+        cosmeticRulesParts: IndexedStorageCosmeticRuleParts[],
+        documentOrStealthExceptionIndexes: number[],
+    ): void {
+        if (indexedRuleParts.ruleParts.category === RuleCategory.Network) {
+            // The category identifies the network rule parts.
+            networkRulesParts.push(indexedRuleParts as IndexedStorageNetworkRuleParts);
+
+            if (Engine.isDocumentOrStealthExceptionCandidate(indexedRuleParts.ruleParts)) {
+                documentOrStealthExceptionIndexes.push(indexedRuleParts.index);
+            }
+        } else if (indexedRuleParts.ruleParts.category === RuleCategory.Cosmetic) {
+            // The category identifies the cosmetic rule parts.
+            cosmeticRulesParts.push(indexedRuleParts as IndexedStorageCosmeticRuleParts);
+        }
+    }
+
+    /**
+     * Checks modifier text for potential stealth or document exceptions before parsing.
+     *
+     * @param ruleParts Network rule parts.
+     *
+     * @returns Whether the rule may disable document filtering or stealth features.
+     */
+    private static isDocumentOrStealthExceptionCandidate(ruleParts: NetworkRuleParts): boolean {
+        if (!ruleParts.allowlist || ruleParts.modifiersStart === undefined) {
+            return false;
+        }
+
+        const modifiers = ruleParts.text.slice(ruleParts.modifiersStart, ruleParts.modifiersEnd);
+        return modifiers.includes(NETWORK_RULE_OPTIONS.STEALTH) || modifiers.includes(NETWORK_RULE_OPTIONS.DOCUMENT);
     }
 
     /**
@@ -251,19 +316,45 @@ export class Engine {
      * @param networkEngine Network engine.
      * @param cosmeticEngine Cosmetic engine.
      * @param conversionErrors Conversion errors.
+     * @param documentOrStealthExceptionIndexes Storage indexes of potential document or stealth exceptions.
      */
     private constructor(
         ruleStorage: RuleStorage,
         networkEngine: NetworkEngine,
         cosmeticEngine: CosmeticEngine,
         conversionErrors: FilterListConversionError[],
+        documentOrStealthExceptionIndexes: number[],
     ) {
         this.ruleStorage = ruleStorage;
+        this.documentOrStealthExceptionIndexes = documentOrStealthExceptionIndexes;
         this.networkEngine = networkEngine;
         this.cosmeticEngine = cosmeticEngine;
         this.resolveWrittenText = ruleStorage.createWrittenTextResolver();
         this.resultCache = new LRUCache({ max: Engine.REQUEST_CACHE_SIZE });
         this.conversionErrors = conversionErrors;
+    }
+
+    /**
+     * Returns exceptions with a `$stealth` or `$document` modifier, selected by a build-time
+     * substring prefilter on the converted rule text, so `$doc` counts as `$document`.
+     * An equivalent exception spelled out as `$elemhide,content,urlblock,jsinject` is not collected.
+     * Rules cancelled by `$badfilter` and the `$badfilter` rules themselves are excluded.
+     *
+     * @returns Document or stealth exception rules with `$badfilter` applied.
+     */
+    public getDocumentOrStealthExceptionRules(): NetworkRule[] {
+        const rules: NetworkRule[] = [];
+
+        for (const index of this.documentOrStealthExceptionIndexes) {
+            const rule = this.ruleStorage.retrieveNetworkRule(index);
+            if (rule) {
+                rules.push(rule);
+            }
+        }
+
+        return MatchingResult.removeBadfilterRules(rules, this.resolveWrittenText).filter((rule) => {
+            return rule.isOptionEnabled(NetworkRuleOption.Stealth) || rule.isFilteringDisabled();
+        });
     }
 
     /**

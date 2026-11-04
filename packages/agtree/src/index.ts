@@ -128,6 +128,7 @@ export {
 } from './utils/quotes';
 export { type Position, PositionProvider } from './utils/position-provider';
 export { RuleCategorizer } from './utils/categorizer';
+export { SPECIAL_PSEUDO_CLASS_NAMES } from './utils/special-pseudo-classes';
 
 // Constants
 export {

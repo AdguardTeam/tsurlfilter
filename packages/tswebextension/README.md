@@ -8,6 +8,9 @@ Table of content:
     - [Browser compatibility](#browser-compatibility)
     - [Install](#install)
     - [Usage](#usage)
+    - [Canvas protection](#canvas-protection)
+        - [Exceptions](#exceptions)
+        - [Limits](#limits)
     - [CLI](#cli)
     - [Side effects](#side-effects)
     - [API](#api)
@@ -57,12 +60,14 @@ Table of content:
                     - [blockChromeClientData](#blockchromeclientdata)
                     - [sendDoNotTrack](#senddonottrack)
                     - [blockWebRTC](#blockwebrtc)
+                    - [protectCanvas](#protectcanvas)
         - [TsWebExtension](#tswebextension-1)
             - [Properties](#properties)
                 - [configuration](#configuration-1)
                 - [onFilteringLogEvent](#onfilteringlogevent)
                 - [isStarted](#isstarted)
             - [Methods](#methods)
+                - [Canvas protection methods](#canvas-protection-methods)
                 - [initStorage()](#initstorage)
                 - [start()](#start)
                 - [configure()](#configure)
@@ -154,6 +159,149 @@ const build = async () => {
 
 If path is not defined, the resources will be loaded to `build/war`
 relative to your current working directory by default
+
+## Canvas protection
+
+Opt-in protection against canvas fingerprinting for Chromium MV3, Chromium
+MV2 and Firefox MV2. It adds noise to the pixels a page reads through
+`getImageData()`, `toDataURL()` and `toBlob()` of an HTML canvas and
+`getImageData()` and `convertToBlob()` of an OffscreenCanvas. Drawing and the
+canvas bitmap stay untouched. The noise is stable for a site within one
+browser session and differs between sites and sessions. A frame uses the site
+of its top-level document.
+
+Protection needs `settings.filteringEnabled`, `settings.stealthModeEnabled`
+and `settings.stealth.protectCanvas`. The library compiles exceptions from
+filter rules and the allowlist automatically.
+
+```ts
+import { type TsWebExtension } from '@adguard/tswebextension/mv3';
+
+async function enableCanvasProtection(app: TsWebExtension) {
+    return app.setCanvasProtectionEnabled(true);
+}
+```
+
+For MV2, use the root package import.
+The returned `RegistrationResult` tells whether the script is installed and,
+if not, why.
+
+Requirements:
+
+- Chromium MV3: the `userScripts` permission, host permissions and user
+  scripts allowed by the user.
+- Chromium MV2: host permissions and the content script
+  `@adguard/tswebextension/content-script` declared at `document_start` in
+  all frames.
+- Firefox MV2: host permissions.
+- Private windows: the extension must be allowed to run there.
+
+Only canvases that received rendering are noised: any 2D context call that
+can put device-dependent pixels on a canvas marks it for good. A canvas
+filled only from `<video>` elements or `putImageData()` is read natively.
+
+### Exceptions
+
+- `@@||host^$stealth` and `@@||host^$stealth=fingerprinting` exclude the
+  host and its subdomains by the document's own URL. A list of stealth
+  options containing `fingerprinting` and the `$important` modifier are
+  supported. Frames from other sites remain protected. While protection is
+  enabled, the [filtering log](#onfilteringlogevent) attaches the exception
+  to the request of each document it keeps native, as a
+  `FilteringEventType.StealthAllowlistAction` event.
+- `@@||host^$document` and the allowlist, in normal or inverted mode,
+  exclude the top-level document and its frames when the browser reveals
+  the top-level document's URL and it has a hostname, so frames of a
+  `file:` or `about:blank` top-level document are never excluded.
+  See [Limits](#limits) for browser restrictions.
+  `$document` may also use `$important` or combine with `$stealth`.
+  In normal mode, MV2 entries such as `example.com` cover the host and
+  `www.`, while `*.example.com` covers the host and all its subdomains.
+  In MV3, every entry also covers subdomains.
+  In inverted mode, protection stays on for listed hosts: a plain entry
+  covers the host and `www.`, and a `*.` entry covers subdomains one level
+  below the domain after stripping `www.`, as frame matching does.
+  MV3 adds a `*.` twin to every plain entry, so plain entries also cover
+  one-level subdomains there.
+  Hosts that only start with an entry, such as `example.community` for
+  `example.com`, never match.
+- `$badfilter` cancels an exception. Other forms, including paths,
+  `$domain`, regular expressions and wildcard hosts such as `example.*`,
+  do not affect canvas protection; the debug log counts skipped rules by reason.
+  `$urlblock`, `$genericblock`, `$content` and trusted domains do not
+  disable it.
+- Rules with a Unicode hostname apply to canvas protection after conversion
+  to punycode. The rest of filtering currently does not apply these rules.
+
+Exceptions follow the rules and allowlist of the last `start()` or
+`configure()` and apply to documents loaded afterwards. They are compiled
+only while protection is enabled.
+
+### Limits
+
+- Only fully opaque pixels change, on canvases up to 32767 px per side and
+  268435456 px in area. The noise is chosen on 8-bit sRGB values. A readout
+  in another color space or pixel format shows it at the same pixels: by one
+  level in an 8-bit format, by 1/255 in a float one.
+- Documents without a hostname, such as `file:` pages, stay native. A frame
+  with a hostname inside one uses its own hostname.
+- WebGL and WebGPU readouts, an OffscreenCanvas in a worker and copies made
+  through `VideoFrame`, a WebGL texture or `captureStream()` stay native.
+  Big-endian platforms get no noise.
+- Same-origin `about:blank`, `about:srcdoc` and `blob:` frames are protected
+  by the document that contains them, a frame without a URL as soon as it is
+  inserted. A frame with a URL shows an empty `about:blank` document until its
+  own one loads; read through `window[index]` or by the frame's name on
+  `window` or `document` in the same synchronous run as its insertion, that
+  document stays native. A frame in a shadow root created from markup, e.g.
+  `<template shadowrootmode>` or `setHTMLUnsafe()`, is protected once the
+  page reads it through `contentWindow`, `contentDocument` or
+  `getSVGDocument()`. `data:` frames, sandboxed frames without `allow-same-origin` and
+  `about:blank` or `blob:` popups stay native. A popup or a sandboxed frame
+  that loads a matching URL gets the script like any other document.
+- A cross-origin frame learns its top-level document from
+  `location.ancestorOrigins`, which gives its origin only. Firefox before 148 has
+  no such list, and Firefox 148 lists `"null"` when the embedder sets
+  `referrerpolicy="no-referrer"` or `"same-origin"` on the frame. The frame
+  then uses its own hostname, so it gets the same noise on every site, and
+  inherits no document exclusions.
+- Chromium MV2 has no early script registration. The content script sends
+  one request per `http:` or `https:` document to
+  `https://<extension ID>.tswebextension.invalid:1/`, which the background
+  page answers with the engine, or with nothing when the document is not
+  protected. The content script then inserts the engine as an inline page
+  script before page scripts run. The content script cannot know whether the
+  document is protected, so the request is synchronous except in documents
+  that already got the engine, XML documents and frames that forbid
+  `sync-xhr`: every document costs one synchronous round trip to the
+  background page, whether protection is on or off. Without the background
+  page, e.g. while it starts, the request fails in the browser without a DNS
+  lookup or connection, because port 1 is blocked. Some documents get the
+  engine injected with `tabs.executeScript` when they commit, after their
+  first scripts: frames that forbid `sync-xhr` by Permissions Policy,
+  documents with an opaque origin such as sandboxed frames, frames that
+  load while their top-level document navigates, and documents where the
+  request fails. Chromium before 106 sends no request, so all documents
+  there get the engine this way.
+- Firefox before 128 runs registered scripts only in the content script
+  sandbox, so the script there inserts the engine as an inline page script.
+  On a page whose CSP blocks inline scripts it falls back to a `blob:` script,
+  which runs after the page's first scripts or not at all. Firefox before 97
+  has no `canvas` on `ImageBitmapRenderingContext`, so a canvas filled only
+  through `transferFromImageBitmap()` is read natively there.
+- A document loaded before the script is registered stays native until
+  reload. Chromium MV3 keeps registered user scripts across browser restarts:
+  `initStorage()` removes the previous session's script, and documents loaded
+  before that get the previous session's seed.
+- The protection is detectable and a determined page can defeat it. The
+  noise shows when the same content is read at several offsets, and page
+  code that runs inside a wrapped call sees the engine's stack frames. The
+  engine defines nothing on the global object, and its wrappers keep the
+  native name, length and source text.
+- A protected readout costs time proportional to its area: a few
+  milliseconds for 1280×720. `toDataURL()` and `toBlob()` also copy the
+  canvas before encoding, through one more private canvas when it has
+  transparent pixels.
 
 ## CLI
 
@@ -516,6 +664,14 @@ type: `boolean`
 
 Blocks the possibility of leaking your IP address through WebRTC, even if you use a proxy server or VPN.
 
+###### protectCanvas
+
+type: `boolean | undefined`
+
+Optional `settings.stealth.protectCanvas`; omitted means disabled. Requires
+filtering and stealth mode. See
+[Canvas protection](#canvas-protection) for scope and prerequisites.
+
 ### TsWebExtension
 
 #### Properties
@@ -541,6 +697,40 @@ type: `boolean`
 Is app started.
 
 #### Methods
+
+##### Canvas protection methods
+
+Available in MV2 and MV3:
+
+- `setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult>`
+- `getCanvasProtectionState(): RegistrationResult`
+
+The setter rejects when there is no application configuration. Every method
+returns the
+registration state, `CanvasRegistrationStatus`: `Installed`, `Disabled`,
+`Unavailable` with a `requiredUserAction`, or `Failed`. In Chromium MV2
+`Installed` means the script is set up for injection: no browser
+acknowledges it, and a document where injection fails, e.g. after the user
+limited the extension's site access, stays native without an error. `start()` and
+`configure()` return it as `canvasProtection`. A later `configure()`
+replaces setter changes with its own `settings.stealth.protectCanvas` and
+recalculates exceptions; omitting the setting disables protection. Changes
+apply to documents loaded afterwards.
+
+`RegistrationResult` fields:
+
+- `status`, `reason`, `requiredUserAction`: the verdict. The texts are
+  English diagnostics for logs.
+- `requested`: the gates and the exceptions revision of the last request.
+- `installed`: the revision and generation of the script the browser last
+  accepted, or `Unavailable` when no script is registered.
+- `operations`: browser calls of the request in order, with the browser
+  error of each failed one.
+
+On `Unavailable`, ask the user for `requiredUserAction`, e.g. to allow user
+scripts in Chromium MV3, and call `setCanvasProtectionEnabled(true)` again
+afterwards. A pending request also reports `Unavailable` until its promise
+resolves.
 
 ##### initStorage()
 
