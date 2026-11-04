@@ -46,16 +46,17 @@ import { createNodeConversionResult, type NodeConversionResult } from '../base-i
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 
 /**
- * Upper bound of the length-matching regular expression generated when
- * converting uBlock `:min-text-length()` to AdGuard `:contains()`.
+ * Upper bound of the length values used in the generated length-matching
+ * regular expressions.
  *
  * The bound must not exceed 65535: converted rules are applied by CoreLibs,
  * which compiles `:contains(/.../)` patterns with PCRE2, and PCRE2 rejects
  * quantifier numbers greater than 65535 ("quantifier too large" error).
  *
- * Note: this bound applies to the generated regular expression only.
- * The `[max-length]` and `[min-length]` attribute values are not bounded
- * by it: products apply those attributes natively, without PCRE2.
+ * The bound applies to both paths which generate a length quantifier:
+ * - converting uBlock `:min-text-length()` to AdGuard `:contains()`;
+ * - converting the AdGuard `[min-length]` / `[max-length]` attribute
+ *   selectors to AdGuard `:contains()`.
  *
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}
  * @see {@link https://www.pcre.org/current/doc/html/pcre2limits.html}
@@ -194,6 +195,7 @@ export const ERROR_MESSAGES = {
     SPECIAL_ATTRIBUTE_SELECTOR_VALUE_REQUIRED: "Special attribute selector '%s' requires a value",
     SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT: "Value of special attribute selector '%s' must be an integer, got '%s'",
     SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE: "Value of special attribute selector '%s' must be a positive integer, got '%s'",
+    SPECIAL_ATTRIBUTE_SELECTOR_VALUE_TOO_LARGE: "Value of special attribute selector '%s' must not exceed %s, got '%s'",
     SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED: "Special attribute selector '%s' is not supported in conversion",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED: "Special pseudo-class selector '%s' requires an argument",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT: "Argument of special pseudo-class selector '%s' must be an integer, got '%s'",
@@ -481,20 +483,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // converts to a length-matching regular expression
             case AdgAttributeSelectors.MinLength:
             case AdgAttributeSelectors.MaxLength: {
-                // Validate length value
-                HtmlRuleConverter.assertValidLengthValue(
-                    name,
-                    value,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
-                    ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
-                );
+                const length = HtmlRuleConverter.resolveAdgLengthAttributeValue(name, value);
 
-                // It's safe to cast to number here after validation
-                const length = Number(value);
-
-                let min: number | null = null;
-                let max: number | null = null;
+                let min: string | null = null;
+                let max: string | null = null;
 
                 if (name === AdgAttributeSelectors.MinLength) {
                     min = length;
@@ -793,9 +785,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      */
     private static collectLengthConstraints(
         selectors: (SimpleSelector | SelectorCombinator)[],
-    ): { min: number | null; max: number | null } | null {
-        const minValues: number[] = [];
-        const maxValues: number[] = [];
+    ): { min: string | null; max: string | null } | null {
+        const minValues: string[] = [];
+        const maxValues: string[] = [];
 
         for (let i = 0; i < selectors.length; i += 1) {
             const selector = selectors[i];
@@ -819,18 +811,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             const { value } = selector.value;
 
-            HtmlRuleConverter.assertValidLengthValue(
-                name,
-                value,
-                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
-                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
-                ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
-            );
+            const normalizedValue = HtmlRuleConverter.resolveAdgLengthAttributeValue(name, value);
 
             if (name === AdgAttributeSelectors.MinLength) {
-                minValues.push(Number(value));
+                minValues.push(normalizedValue);
             } else {
-                maxValues.push(Number(value));
+                maxValues.push(normalizedValue);
             }
         }
 
@@ -838,19 +824,23 @@ export class HtmlRuleConverter extends RuleConverterBase {
             return null;
         }
 
-        let min: number | null = null;
-        let max: number | null = null;
+        let min: string | null = null;
+        let max: string | null = null;
 
-        if (minValues.length > 1) {
-            min = Math.max(...minValues);
-        } else if (minValues.length === 1) {
-            [min] = minValues;
+        if (minValues.length > 0) {
+            min = minValues.reduce((largest, current) => (
+                HtmlRuleConverter.compareLengthDigitStrings(current, largest) > 0
+                    ? current
+                    : largest
+            ));
         }
 
-        if (maxValues.length > 1) {
-            max = Math.min(...maxValues);
-        } else if (maxValues.length === 1) {
-            [max] = maxValues;
+        if (maxValues.length > 0) {
+            max = maxValues.reduce((smallest, current) => (
+                HtmlRuleConverter.compareLengthDigitStrings(current, smallest) < 0
+                    ? current
+                    : smallest
+            ));
         }
 
         return { min, max };
@@ -1248,7 +1238,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
         convertedSelectors: (SimpleSelector | SelectorCombinator)[],
         tagContentValues: string[],
         wildcardGlobValues: string[],
-        lengthConstraints: { min: number | null; max: number | null } | null,
+        lengthConstraints: { min: string | null; max: string | null } | null,
     ): void {
         // Nothing was deferred
         if (
@@ -1538,6 +1528,91 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 errorMessage,
             ));
         }
+    }
+
+    /**
+     * Validates and normalizes the value of the `[min-length]` or
+     * `[max-length]` special attribute selector.
+     *
+     * The returned value is a string of plain decimal digits with no leading
+     * whitespace, no leading `+` and no leading zeros (except a single `0` for
+     * zero). The value never goes through a JavaScript `number`, so large
+     * values are neither rounded nor converted to exponent notation.
+     *
+     * @param name Name of the special attribute selector.
+     * @param value Original attribute value.
+     *
+     * @returns Normalized value as a string of decimal digits.
+     *
+     * @throws If the value is not a valid non-negative integer or exceeds
+     * {@link ADG_HTML_CONVERSION_MAX_LENGTH}.
+     */
+    private static resolveAdgLengthAttributeValue(name: string, value: string): string {
+        HtmlRuleConverter.assertValidLengthValue(
+            name,
+            value,
+            ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
+            ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
+            ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
+        );
+
+        const normalizedValue = HtmlRuleConverter.normalizeLengthDigits(value);
+
+        if (
+            HtmlRuleConverter.compareLengthDigitStrings(
+                normalizedValue,
+                String(ADG_HTML_CONVERSION_MAX_LENGTH),
+            ) > 0
+        ) {
+            throw new RuleConversionError(sprintf(
+                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_TOO_LARGE,
+                name,
+                ADG_HTML_CONVERSION_MAX_LENGTH,
+                value,
+            ));
+        }
+
+        return normalizedValue;
+    }
+
+    /**
+     * Normalizes a validated length value to plain decimal digits.
+     *
+     * Strips the leading whitespace and the optional `+` allowed by
+     * {@link ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN}, then strips leading zeros.
+     * A zero result is kept as a single `0`.
+     *
+     * @param value Validated length value.
+     *
+     * @returns Normalized value as a string of decimal digits.
+     */
+    private static normalizeLengthDigits(value: string): string {
+        const digits = value.trim().replace(/^\+/, '');
+        const withoutLeadingZeros = digits.replace(/^0+/, '');
+
+        return withoutLeadingZeros === EMPTY ? '0' : withoutLeadingZeros;
+    }
+
+    /**
+     * Compares two normalized strings of decimal digits without `number`
+     * conversion, so large values keep their full precision.
+     *
+     * @param left First normalized digit string.
+     * @param right Second normalized digit string.
+     *
+     * @returns A negative number if `left` is less than `right`, `0` if they
+     * are equal, and a positive number if `left` is greater than `right`.
+     */
+    private static compareLengthDigitStrings(left: string, right: string): number {
+        if (left.length !== right.length) {
+            return left.length > right.length ? 1 : -1;
+        }
+
+        if (left === right) {
+            return 0;
+        }
+
+        return left > right ? 1 : -1;
     }
 
     /**

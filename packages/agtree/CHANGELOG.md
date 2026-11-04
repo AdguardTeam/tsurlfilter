@@ -30,6 +30,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `[min-length]` and `[max-length]` values are now emitted as plain decimal
+  digits during ADG→ADG conversion, so large values are not rounded and do
+  not use exponent notation. Values above 65535, the PCRE2 quantifier limit,
+  now throw a conversion error. (AG-61619)
 - Pseudo-class selector arguments are no longer trimmed: the argument is the
   raw text between the pseudo-class parentheses, e.g. `$$div:contains( "foo" )`
   keeps the spaces around the quoted text, and `:not( .a )` keeps the spaces
