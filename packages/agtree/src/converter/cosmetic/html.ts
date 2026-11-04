@@ -660,12 +660,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - `[min-length="min"]` -> `:min-text-length(min)`
      *   the value is validated and normalized to plain digits, since uBlock
      *   accepts only digits (e.g. `" 5"` and `"+5"` become `5`)
-     * - `[max-length]` is skipped.
+     * - `[max-length]` is skipped, but its value is validated the same way as
+     *   `[min-length]` first, so an invalid value throws the same conversion
+     *   error as in AdGuard to AdGuard conversion instead of being dropped
+     *   silently.
      *
      * @param name Name of the special attribute selector.
      * @param value Value of the special attribute selector.
      *
      * @returns A {@link SimpleSelector} to add to the current complex selector, or `false` to skip it.
+     *
+     * @throws Rule conversion error if the value of a length selector is invalid.
      */
     private static convertSpecialAttributeSelectorAdgToUbo(name: string, value: string): SimpleSelector | false {
         switch (name) {
@@ -710,8 +715,16 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 );
             }
 
-            // `[max-length]` is skipped
+            // `[max-length]` is skipped, but only after validating its value
             case AdgAttributeSelectors.MaxLength: {
+                HtmlRuleConverter.assertValidLengthValue(
+                    name,
+                    value,
+                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
+                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
+                    ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
+                );
+
                 return false;
             }
 

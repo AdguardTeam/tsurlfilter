@@ -38,6 +38,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   drops when characters follow the closing quote: e.g.
   `$$div:contains("foo" )` now throws a conversion error instead of becoming
   `##^div:has-text("foo" )`.
+- ADG→uBO conversion now validates `[max-length]` values before dropping them:
+  e.g. `$$div[max-length="1e2"]` and `$$div[max-length="abc"]` now throw a
+  conversion error instead of silently becoming `##^div`.
 
 ### Security
 
