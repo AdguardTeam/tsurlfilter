@@ -1393,7 +1393,7 @@ describe('HTML filtering rules (content rules)', () => {
     it('correctly parses html rules - combined tag-content and length regex (converted form)', () => {
         // Convert from raw [tag-content][min-length][max-length] syntax first
         const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
-            'example.org$$script[tag-content="text"][min-length="10000"][max-length="36000"]',
+            'example.org$$script[tag-content="text"][min-length="100000"][max-length="360000"]',
         );
         const rule = createCosmeticRule(convertedRuleText, 0);
 
@@ -1408,7 +1408,7 @@ describe('HTML filtering rules (content rules)', () => {
                     },
                     {
                         name: 'contains',
-                        value: /^(?=.{10000,36000}$).*/s,
+                        value: /^(?=.{100000,360000}$).*/s,
                     },
                 ],
             }]],
