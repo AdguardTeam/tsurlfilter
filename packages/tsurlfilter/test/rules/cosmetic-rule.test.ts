@@ -1326,6 +1326,33 @@ describe('HTML filtering rules (content rules)', () => {
         expect((value as RegExp).test('text with aaa inside')).toBe(false);
     });
 
+    it('correctly parses html rules - slashes-only [tag-content] value stays literal', () => {
+        // CoreLibs reads `///` as the regexp `/` and ignores escapes when it
+        // finds the delimiter, so a raw `:contains(///)` would match any text
+        // with a slash. The converter escapes the value instead, and the
+        // escaped regexp matches the literal `///`.
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$div[tag-content="///"]',
+        );
+
+        expect(convertedRuleText).toBe(String.raw`example.org$$div:contains(/\/\/\//)`);
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selectorList = rule.getHtmlSelectorList();
+        const { specialSelectors } = selectorList!.selectors[0][0];
+
+        expect(specialSelectors).toHaveLength(1);
+        expect(specialSelectors[0].name).toBe(HtmlSpecialSelectorName.Contains);
+
+        const { value } = specialSelectors[0];
+        expect(value).toBeInstanceOf(RegExp);
+
+        // The literal substring `///` matches
+        expect((value as RegExp).test('text with /// inside')).toBe(true);
+        // A single slash does not match
+        expect((value as RegExp).test('text with / inside')).toBe(false);
+    });
+
     it('correctly parses html rules - contains with quoted regexp argument (literal)', () => {
         // A quoted regexp-lookalike is NOT a regexp: the wrapping quotes
         // are literal characters of the matched text (CoreLibs parity)
