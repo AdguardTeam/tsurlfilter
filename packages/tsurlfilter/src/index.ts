@@ -15,7 +15,7 @@ export * from './request';
 export * from './request-type';
 export * from './rules/cosmetic-rule';
 export * from './rules/network-rule';
-export type { MatchConditions } from './rules/pattern';
+export type { MatchMode, PatternMatcher } from './rules/pattern';
 export * from './rules/host-rule';
 export * from './rules/rule';
 export * from './rules/rule-factory';

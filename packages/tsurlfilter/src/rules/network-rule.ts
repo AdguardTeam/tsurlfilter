@@ -36,7 +36,7 @@ import {
     OPTIONS_DELIMITER,
 } from './network-rule-options';
 import { type NetworkRuleOption as NetworkRuleOptionType, OptionFlags } from './option-flags';
-import { type MatchConditions, Pattern } from './pattern';
+import { Pattern, type PatternMatcher } from './pattern';
 import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
 import { SimpleRegex } from './simple-regex';
 
@@ -1091,7 +1091,7 @@ export class NetworkRule implements IRule {
             return false;
         }
 
-        if (!this.matchConditions(request)) {
+        if (!this.matchModifiers(request)) {
             return false;
         }
 
@@ -1110,7 +1110,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True when every modifier condition holds.
      */
-    public matchConditions(request: Request): boolean {
+    public matchModifiers(request: Request): boolean {
         if (this.isOptionEnabled(NetworkRuleOption.Method) && !this.matchMethod(request.method)) {
             return false;
         }
@@ -1183,8 +1183,8 @@ export class NetworkRule implements IRule {
      *
      * @returns Prepared pattern conditions.
      */
-    public getMatchConditions(): MatchConditions {
-        return this.pattern.getMatchConditions();
+    public getPatternMatcher(): PatternMatcher {
+        return this.pattern.getPatternMatcher();
     }
 
     /**

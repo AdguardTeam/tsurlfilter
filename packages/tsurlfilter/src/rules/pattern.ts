@@ -3,13 +3,21 @@ import { type Request } from '../request';
 import { SimpleRegex } from './simple-regex';
 
 /**
+ * Mode of {@link PatternMatcher}.
+ */
+export type MatchMode = 'hostname' | 'shortcut' | 'regex' | 'invalid';
+
+/**
  * How the engine matches a rule pattern, resolved by `Pattern.prepare()`:
  * `||host^` is compared by hostname, a pattern identical to its shortcut (or
  * the `shortcut*` shape) is a substring search, everything else is a regex.
  * `invalid` marks a pattern whose regex cannot be compiled — the engine never
  * matches it.
+ *
+ * `$match-case` disables the shortcut mode: `prepare()` skips the
+ * case-insensitive shortcut branch then and the pattern comes back as `regex`.
  */
-export type MatchConditions =
+export type PatternMatcher =
     | { mode: 'hostname'; hostname: string }
     | { mode: 'shortcut'; shortcut: string }
     | { mode: 'regex'; source: string; flags: string }
@@ -117,7 +125,8 @@ export class Pattern {
             return this.regex.test(request.hostname);
         }
 
-        return this.regex.test(request.url);
+        // The shortened URL keeps the cost of a backtracking regex bounded.
+        return this.regex.test(request.urlMatch);
     }
 
     /**
@@ -181,8 +190,10 @@ export class Pattern {
         }
 
         // Rules like `/example/*` are rather often in the real-life filters,
-        // we might want to process them.
-        if (this.pattern.startsWith(this.shortcut)
+        // we might want to process them. `$match-case` keeps the regex: a
+        // substring search would ignore the case.
+        if (!this.matchcase
+            && this.pattern.startsWith(this.shortcut)
             && this.pattern.length === this.shortcut.length + 1
             && this.pattern.endsWith('*')) {
             this.patternShortcut = true;
@@ -258,14 +269,16 @@ export class Pattern {
      *
      * @returns Prepared pattern conditions.
      */
-    public getMatchConditions(): MatchConditions {
+    public getPatternMatcher(): PatternMatcher {
         this.prepare();
 
         if (this.patternShortcut) {
             return { mode: 'shortcut', shortcut: this.shortcut };
         }
 
-        if (this.hostname !== undefined) {
+        // The same truthy check as `matchPattern()`: an empty hostname means
+        // the pattern was not recognized as a hostname one.
+        if (this.hostname) {
             return { mode: 'hostname', hostname: this.hostname };
         }
 

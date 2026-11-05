@@ -19,18 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Engine.getCosmeticResult()` accepts an `ignorePath` option, and
   `CosmeticRule.match()` — a new `ignorePath` parameter, both skipping the
   `$path` modifier check.
-- `NetworkRule.matchConditions()` — checks a rule's modifier conditions
+- `NetworkRule.matchModifiers()` — checks a rule's modifier conditions
   without testing the pattern, for tools that replicate the engine's decision
   outside its process.
-- `NetworkRule.getMatchConditions()` and `Pattern.getMatchConditions()` with
-  the `MatchConditions` type — describe how a pattern is matched (hostname,
-  shortcut or regex) without matching a request.
+- `NetworkRule.getPatternMatcher()` with the `PatternMatcher` and `MatchMode`
+  types — describe how a pattern is matched (hostname, shortcut or regex)
+  without matching a request.
 - `RuleTable` and `getRuleTable()` — the lookup table the engine stores a rule
   in, so build tools can reproduce the engine's tie-break order instead of
   copying the routing. The table predicates are shared with `addRule()`.
-- `MASK_ALLOWLIST`, `NETWORK_RULE_OPTIONS`, `OPTIONS_DELIMITER` and
-  `DomainModifier` are exported for build tools that need to re-apply the
-  engine's option parsing.
+- `MASK_ALLOWLIST` and `DomainModifier` are exported for build tools that
+  need to re-apply the engine's option parsing.
 
 ### Changed
 
@@ -64,6 +63,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [AdguardBrowserExtension#3605].
 - Domain-scoped cosmetic and JavaScript rules not matching hosts with labels
   ending in an underscore.
+- Patterns are matched against the URL shortened to
+  `Request.MAX_URL_MATCH_LENGTH`, like the shortcut check already was: a
+  backtracking regex no longer receives an unbounded input and cannot go
+  quadratic in the URL length. A match reachable only past that length does not
+  happen anymore.
 
 ### Security
 
