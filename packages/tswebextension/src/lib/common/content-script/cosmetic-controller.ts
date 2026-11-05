@@ -199,16 +199,19 @@ export class CosmeticControllerCommon {
                 return;
             }
 
-            if (this.hitsMarkersApplied) {
-                this.ensureCounter(false);
-                return;
-            }
-
             this.reapplyMarkedCosmeticData();
             return;
         }
 
         if (isCollectStats) {
+            // A previous reapply may have failed or been interrupted, leaving
+            // a counter over unmarked CSS. Resume only when the markers are
+            // actually applied.
+            if (!this.hitsMarkersApplied) {
+                this.reapplyMarkedCosmeticData();
+                return;
+            }
+
             this.cssHitsCounter.resume();
             return;
         }

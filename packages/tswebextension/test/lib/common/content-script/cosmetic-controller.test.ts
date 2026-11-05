@@ -12,6 +12,7 @@ import {
 } from 'vitest';
 import browser from 'webextension-polyfill';
 
+import { ExtendedCss } from '@adguard/extended-css';
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
 import * as SendMessageModule from '../../../../src/lib/common/content-script/send-app-message';
@@ -442,6 +443,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
 
     it('re-applies marked ExtendedCss rules on live enable', async () => {
         const restoreMutationObserver = mockMutationObserver();
+        const disposeSpy = vi.spyOn(ExtendedCss.prototype, 'dispose');
         document.body.innerHTML = '<div id="live-ext-bait" class="ad_header">text</div>';
 
         const rules = ['#?#.ad_header:contains(text)'];
@@ -475,8 +477,68 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
             // The marked ExtendedCss rule must be applied to the element that
             // was already in the document when collection was enabled.
             expect(getBaitStats(sendAppMessageSpy, 0).length).toBeGreaterThan(0);
+            expect(disposeSpy).toHaveBeenCalled();
         } finally {
             document.body.innerHTML = '';
+            restoreMutationObserver();
+        }
+    });
+
+    it('retries marked data after a failed reapply', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+        let reapplyRequests = 0;
+
+        try {
+            vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockImplementation(async (message) => {
+                    const isReapply = message.type === MessageType.GetCosmeticData
+                        && (message.payload as { reapplyHits?: boolean }).reapplyHits;
+
+                    if (isReapply) {
+                        reapplyRequests += 1;
+                        return null;
+                    }
+
+                    return {
+                        isAppStarted: true,
+                        areHitsStatsCollected: false,
+                        extCssRules: [],
+                        nativeCssSelectors: null,
+                    };
+                });
+
+            const cosmeticController = new CosmeticController();
+            cosmeticController.init();
+
+            // Enable collection before the unmarked cosmetic data response
+            // is applied. The controller creates a counter and asks for
+            // marked data, but the request fails.
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: true },
+            });
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            expect(reapplyRequests).toBe(1);
+
+            // The counter still exists over unmarked CSS. Enabling again must
+            // request the marked data instead of resuming the counter.
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: true },
+            });
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            expect(reapplyRequests).toBe(2);
+        } finally {
             restoreMutationObserver();
         }
     });
