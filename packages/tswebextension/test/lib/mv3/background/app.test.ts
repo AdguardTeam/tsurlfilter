@@ -147,6 +147,19 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
         expect(rules).not.toHaveBeenCalled();
     });
 
+    it('stops the declarative log listener around configure', async () => {
+        appContext.isStorageInitialized = true;
+        prepareConfigure();
+        const withStoppedListener = vi.mocked(declarativeFilteringLog.withStoppedListener);
+        withStoppedListener.mockClear();
+
+        await instance.configure(getConfigurationMv3Fixture());
+
+        // A bare `stop()` here would keep the listener silent after a failure,
+        // so `configure()` must run its steps through the wrapper.
+        expect(withStoppedListener).toHaveBeenCalledOnce();
+    });
+
     it('rejects setters before the storage is initialized', async () => {
         await expect(instance.setCanvasProtectionEnabled(true)).rejects.toThrow('Configuration not set!');
         expect(apply).not.toHaveBeenCalled();

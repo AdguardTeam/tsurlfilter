@@ -420,8 +420,8 @@ export class TsWebExtension implements AppInterface<
         // Stop handle onRuleMatchedDebug event.
         // It should be stopped before declarative log update or removing filtering rules,
         // otherwise, it may try to log applying of removed rules. AG-44355.
-        // A failure of any step below keeps the previous rules in effect, so the
-        // listener is restarted then.
+        // Any failure of a step below restarts the listener, so the log does
+        // not stay silent until the next successful configuration.
         await declarativeFilteringLog.withStoppedListener(async () => {
             if (configuration.settings.filteringEnabled) {
                 await this.applyFilteringConfiguration(configuration, res);

@@ -59,8 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instead of being dropped from both: the error is classified by its filter id,
   not by its kind only.
 - The declarative filtering log listener is restarted when any step of
-  `configure()` fails after it was stopped: the previous rules stay in effect,
-  so the log must not stay silent until the next successful `configure()`.
+  `configure()` fails after it was stopped, so the log does not stay silent
+  until the next successful `configure()`.
 - Filtering log now records CSS hits for elements that pages add and remove
   while the page is loading, e.g. anti-adblock bait elements created by a
   script in `<head>`.

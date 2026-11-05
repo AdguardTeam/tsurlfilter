@@ -84,10 +84,9 @@ class DeclarativeFilteringLog {
     /**
      * Restores the listener state of the previous {@link finishUpdate}.
      *
-     * An update stops the listener before the browser rules are replaced, so a
-     * failed update keeps the previous rules working while the log stays
-     * silent. The rule sets are not replaced here: after a rollback the
-     * previous ones are still in effect.
+     * An update stops the listener before the browser rules are replaced, so
+     * a failure at any later step must bring it back: otherwise the log stays
+     * silent until the next successful update, whichever rules ended up live.
      */
     #restore(): void {
         if (this.#isEnabled) {
@@ -102,8 +101,8 @@ class DeclarativeFilteringLog {
      * operation throws.
      *
      * `configure()` stops the listener before the browser rules are replaced,
-     * so a failure at any later step keeps the previous rules in effect and
-     * must not leave the log silent until the next successful update.
+     * so a failure at any later step must restart it instead of leaving the
+     * log silent until the next successful update.
      *
      * @param operation Operation to run.
      *
