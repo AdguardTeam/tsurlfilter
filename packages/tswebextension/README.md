@@ -359,6 +359,14 @@ the top-level document is not gated (its `ancestorOrigins` is empty), so it
 runs them, while the background reports no coverage for the host and the
 dynamic path injects them again.
 
+The manifest is read on every sync, including the one that drops the
+registrations, so the published set always comes from it. When the manifest
+cannot be read, the previously published set is kept; on a first sync the
+coverage keys are used instead. The runtime expansion is never published: a
+host outside the gate set would be reported as covered while the page gate
+shims its frames, and its rules would be lost. Under-claiming the other way
+only re-runs a rule the page bundle has already run.
+
 At runtime, each configured hostname (plus its `www.` alias) is matched
 against the engine with `$path` ignored, the matching rules are hashed, and
 a persistent content script is registered with
