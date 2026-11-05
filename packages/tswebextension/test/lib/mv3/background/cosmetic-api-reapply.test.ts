@@ -9,6 +9,7 @@ import {
 
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
+import { logger } from '../../../../src/lib/common/utils/logger';
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 import { createCosmeticRule } from '../../../helpers/rule-creator';
 
@@ -131,5 +132,32 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
 
         expect(data.areHitsStatsCollected).toBe(false);
         expect(insertCSSMock).not.toHaveBeenCalled();
+    });
+
+    it('does not report success when the frame context is gone', async () => {
+        tabsApiMock.getFrameContext.mockReturnValue(undefined);
+
+        const data = await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(data.areHitsStatsCollected).toBe(false);
+        expect(insertCSSMock).not.toHaveBeenCalled();
+    });
+
+    it('does not report success when marked CSS injection fails', async () => {
+        insertCSSMock.mockRejectedValue(new Error('injection failed'));
+        const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});
+
+        const data = await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(data.areHitsStatsCollected).toBe(false);
+        expect(infoSpy).toHaveBeenCalledTimes(1);
     });
 });

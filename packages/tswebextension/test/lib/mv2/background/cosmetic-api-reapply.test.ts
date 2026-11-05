@@ -9,10 +9,11 @@ import {
 
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
+import { logger } from '../../../../src/lib/common/utils/logger';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { createCosmeticRule } from '../../../helpers/rule-creator';
 
-const { appContextMock, tabsApiMock } = vi.hoisted(() => ({
+const { appContextMock, tabsApiMock, engineApiMock } = vi.hoisted(() => ({
     appContextMock: {
         isStorageInitialized: true,
         isAppStarted: true,
@@ -27,6 +28,9 @@ const { appContextMock, tabsApiMock } = vi.hoisted(() => ({
         getFrameContext: vi.fn(),
         updateFrameContext: vi.fn(),
     },
+    engineApiMock: {
+        matchCosmetic: vi.fn(),
+    },
 }));
 
 vi.mock('../../../../src/lib/mv2/background/app-context', () => ({
@@ -34,9 +38,7 @@ vi.mock('../../../../src/lib/mv2/background/app-context', () => ({
 }));
 
 vi.mock('../../../../src/lib/mv2/background/api', () => ({
-    engineApi: {
-        matchCosmetic: vi.fn(),
-    },
+    engineApi: engineApiMock,
     tabsApi: tabsApiMock,
 }));
 
@@ -64,6 +66,8 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         cosmeticResult = new CosmeticResult();
         cosmeticResult.elementHiding.append(createCosmeticRule('example.org##.banner', 0, 0));
         cosmeticResult.elementHiding.append(createCosmeticRule('example.org#?#.banner:has(> .ad)', 0, 1));
+        engineApiMock.matchCosmetic.mockReset();
+        engineApiMock.matchCosmetic.mockReturnValue(cosmeticResult);
 
         tabsApiMock.getFrameContext.mockReturnValue({
             cosmeticResult,
@@ -120,5 +124,33 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
 
         expect(data.areHitsStatsCollected).toBe(false);
         expect(injectSpy).not.toHaveBeenCalled();
+    });
+
+    it('does not report success when the frame context is gone', async () => {
+        tabsApiMock.getFrameContext.mockReturnValue(undefined);
+        const injectSpy = vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
+
+        const data = await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(data.areHitsStatsCollected).toBe(false);
+        expect(injectSpy).not.toHaveBeenCalled();
+    });
+
+    it('does not report success when marked CSS injection fails', async () => {
+        vi.spyOn(CosmeticApi, 'injectCss').mockRejectedValue(new Error('injection failed'));
+        const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});
+
+        const data = await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(data.areHitsStatsCollected).toBe(false);
+        expect(infoSpy).toHaveBeenCalledTimes(1);
     });
 });

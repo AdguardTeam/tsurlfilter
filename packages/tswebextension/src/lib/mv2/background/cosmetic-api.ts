@@ -1,5 +1,6 @@
 import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
+import { isCollectStatsEnabledForDocument } from '../../common/collect-hit-stats';
 import { USER_FILTER_ID } from '../../common/constants';
 import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
@@ -206,9 +207,10 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         // Do not collect hits stats if website is allowlisted.
-        const isDocumentAllowlisted = !!tabContext.mainFrameRule
-            && tabContext.mainFrameRule.isFilteringDisabled();
-        const effectiveCollectStats = areHitsStatsCollected && !isDocumentAllowlisted;
+        const effectiveCollectStats = isCollectStatsEnabledForDocument(
+            areHitsStatsCollected,
+            tabContext.mainFrameRule,
+        );
 
         data.areHitsStatsCollected = effectiveCollectStats;
 
@@ -269,6 +271,9 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
         if (!frameContext) {
+            // The frame context may be gone for an old subframe. The marked
+            // CSS cannot be injected, so do not report collection as applied.
+            data.areHitsStatsCollected = false;
             return data;
         }
 
@@ -282,6 +287,7 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const { cosmeticResult } = frameContext;
         if (!cosmeticResult) {
+            data.areHitsStatsCollected = false;
             return data;
         }
 
@@ -296,6 +302,9 @@ export class CosmeticApi extends CosmeticApiCommon {
                 await CosmeticApi.injectCss(tabId, frameId, cssText);
                 CosmeticApi.markedCssInjected.set(frameContext, injectionKey);
             } catch (e) {
+                // The content script must not mark the marked data as applied
+                // when the CSS injection failed.
+                data.areHitsStatsCollected = false;
                 logger.info(`[tsweb.CosmeticApi.reapplyMarkedCosmeticData]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
             }
         }
