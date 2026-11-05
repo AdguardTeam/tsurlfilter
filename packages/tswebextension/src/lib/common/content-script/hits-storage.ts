@@ -9,8 +9,11 @@ export class HitsStorage {
      * page lifetime. This matters for the short-lived probes collected during
      * loading: their detached subtrees are not referenced anywhere else once
      * they are dropped, and the storage must not keep them alive.
+     *
+     * Each element keeps every rule counted for it, because several rules can
+     * match one element.
      */
-    private map = new WeakMap<object, string>();
+    private map = new WeakMap<object, Set<string>>();
 
     /**
      * Checks if element is counted.
@@ -21,7 +24,22 @@ export class HitsStorage {
      * @returns True if element is counted.
      */
     public isCounted(element: object, rule: string): boolean {
-        return this.map.get(element) === rule;
+        return this.map.get(element)?.has(rule) ?? false;
+    }
+
+    /**
+     * Returns the number of distinct rules counted for the element.
+     *
+     * The full scan reads it to detect a mutation that counted another rule
+     * while the scan was running. The set only grows, so a changed count means
+     * the element's stored entries changed.
+     *
+     * @param element Html element.
+     *
+     * @returns Number of counted rules.
+     */
+    public getCountedRulesCount(element: object): number {
+        return this.map.get(element)?.size ?? 0;
     }
 
     /**
@@ -31,6 +49,12 @@ export class HitsStorage {
      * @param rule Rule text.
      */
     public setCounted(element: object, rule: string): void {
-        this.map.set(element, rule);
+        let rules = this.map.get(element);
+        if (!rules) {
+            rules = new Set();
+            this.map.set(element, rules);
+        }
+
+        rules.add(rule);
     }
 }

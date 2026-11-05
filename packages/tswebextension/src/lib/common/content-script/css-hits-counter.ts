@@ -67,7 +67,7 @@ interface CssHitsCounterOptions {
  * The full scan keeps its hits apart from {@link HitsStorage} until it
  * completes. An interrupted scan is simply discarded, and a mutation counted
  * while the scan runs commits its own entry immediately, so a re-appended
- * element is never lost to a rollback.
+ * element is never lost when the scan is discarded.
  */
 interface FullScanState {
     /**
@@ -77,6 +77,12 @@ interface FullScanState {
         filterId: number;
         ruleIndex: number;
         rule: string;
+        /**
+         * Number of rules counted for the element when the scan read it. Used
+         * to detect a mutation that counted another rule while the scan was
+         * running.
+         */
+        previousCount: number;
     }>;
 }
 
@@ -289,6 +295,10 @@ export class CssHitsCounter {
         this.onCssHitsFoundCallback = callback;
 
         if (this.paused) {
+            // The collector may already be observing. A paused counter does
+            // not consume its probes, and a later pause() returns early
+            // because the counter is already paused, so stop it here.
+            this.pendingProbesCollector?.stop();
             return;
         }
 
@@ -566,6 +576,16 @@ export class CssHitsCounter {
                     continue;
                 }
 
+                // The parsed marker is cached per shared rule style, so
+                // ExtendedCss calls this hook again on later mutation passes.
+                // Deduplicate by element and rule via the same storage the
+                // DOM scan uses.
+                const ruleAndFilterString = ruleInfo.filterId + SEMICOLON + ruleInfo.ruleIndex;
+                if (this.hitsStorage.isCounted(affectedEl.node, ruleAndFilterString)) {
+                    continue;
+                }
+                this.hitsStorage.setCounted(affectedEl.node, ruleAndFilterString);
+
                 const element = this.elementToString
                     ? ElementUtils.elementToString(affectedEl.node)
                     : affectedEl.node;
@@ -670,7 +690,10 @@ export class CssHitsCounter {
 
                 const result: ICountedElement[] = [];
                 fullScan.pendingHits.forEach((hit, element) => {
-                    if (this.hitsStorage.isCounted(element, hit.rule)) {
+                    // A mutation may have counted another rule for this
+                    // element while the scan was running. Do not overwrite
+                    // that newer entry with the stale scan value.
+                    if (this.hitsStorage.getCountedRulesCount(element) !== hit.previousCount) {
                         return;
                     }
 
@@ -747,7 +770,8 @@ export class CssHitsCounter {
      * @param start Start of batch.
      * @param length Length of batch.
      * @param countedElements Optional set receiving elements that produced a hit.
-     * @param fullScan Optional state of the full scan, used for rollback.
+     * @param fullScan Optional state keeping provisional scan hits until the
+     * scan completes.
      *
      * @returns Data with information about rule and element.
      */
@@ -786,6 +810,7 @@ export class CssHitsCounter {
                     filterId,
                     ruleIndex,
                     rule: ruleAndFilterString,
+                    previousCount: this.hitsStorage.getCountedRulesCount(element),
                 });
                 continue;
             }
