@@ -52,11 +52,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The MV3 `*.` twin is now built from the normalized entry, so `www.example.com`
   covers `sub.example.com` through it, like the DNR rule for the same entry, and a
   path in an entry is ignored the same way as in MV2.
-- The rule combined for DNR no longer passes entries with a `*` outside the `*.`
-  mask to `$to`: the converter either dropped such a value or, for `$to=*`,
-  removed the domain condition, which disabled filtering on every site. The full
-  wildcard `*.*` is translated into a rule without `$to`, which allows every
-  document, and the other wildcard entries are skipped.
+- The rule combined for DNR no longer passes a wildcard inside a label
+  (`*example.com`, `example*.com`) to `$to`: the converter dropped such a value
+  and kept the rule without a domain condition, which allowed every main frame.
+  A wildcard TLD (`example.*`, `www.*`, `*.example.*` mapped to `example.*`) is
+  still supported, the full wildcard `*.*` becomes a rule without `$to`, and in
+  the inverted mode a list that ends up without expressible entries becomes a
+  rule without `$to` as well, so network filtering matches frame matching.
 - Filtering log now records CSS hits for elements that pages add and remove
   while the page is loading, e.g. anti-adblock bait elements created by a
   script in `<head>`.

@@ -14,17 +14,27 @@ import { getUpperLevelDomain } from '../../common/utils/url';
 const isFullWildcardEntry = (domain: string): boolean => /^\*\.\*+$/.test(domain);
 
 /**
- * Checks whether DNR can express the entry in `requestDomains`: a plain domain or a `*.` mask.
- * Any other wildcard has no DNR equivalent.
+ * Checks whether the host ends with a wildcard TLD, e.g. `example.*`. DNR expresses it by
+ * enumerating the known top-level domains, so only a single trailing wildcard label is supported.
+ *
+ * @param host Entry without the `*.` mask.
+ *
+ * @returns True for a host whose only wildcard is the last label.
+ */
+const isWildcardTld = (host: string): boolean => /^[^*]+\.\*$/.test(host);
+
+/**
+ * Checks whether DNR can express the entry in `requestDomains`: a plain domain, a `*.` mask or a
+ * wildcard TLD. A wildcard inside a label (`*example.com`, `example*.com`) has no DNR equivalent.
  *
  * @param domain Normalized allowlist entry.
  *
- * @returns True if the entry has no wildcard outside the `*.` mask.
+ * @returns True if the entry has no wildcard that DNR cannot convert.
  */
 const isExpressibleInDnr = (domain: string): boolean => {
     const host = domain.startsWith('*.') ? domain.slice(2) : domain;
 
-    return !host.includes('*');
+    return !host.includes('*') || isWildcardTld(host);
 };
 
 /**
@@ -101,25 +111,18 @@ export class AllowlistApi extends CommonAllowlist {
      * @returns Combined rule in AG format.
      */
     public combineAllowListRulesForDNR(): string {
-        // In inverted allowlist mode with an empty list, we must not block anything anywhere.
-        // To ensure that browser DNR does not block requests, generate a global allowlist
-        // rule that applies to all documents.
-        if (this.inverted && this.domains.length === 0) {
-            return '@@$document,important';
-        }
-
         /**
          * The full wildcard covers every site, and DNR expresses that with a rule without `$to`.
-         * In the inverted mode it excludes nothing, so it is dropped by the filter below instead.
+         * In the inverted mode it excludes nothing, so it is dropped by the filter below.
          */
         if (!this.inverted && this.domains.some(isFullWildcardEntry)) {
             return '@@$document,important';
         }
 
         /**
-         * DNR matches whole domains only, so a `*` outside the `*.` mask cannot be expressed in
-         * `requestDomains`: the converter either drops the value or, for `$to=*`, keeps the rule
-         * and drops the domain condition, which would disable filtering on every site.
+         * DNR matches whole domains only, so a wildcard inside a label cannot be expressed in
+         * `requestDomains`: the converter drops such a value and keeps the rule without a domain
+         * condition, which would allow every site.
          */
         const allDomains = this.domains.filter(isExpressibleInDnr).map((domain) => {
             // Map subdomain masks to upper domains records, because masks itself
@@ -133,6 +136,16 @@ export class AllowlistApi extends CommonAllowlist {
 
             return this.inverted ? `~${d}` : d;
         });
+
+        /**
+         * In the inverted mode the rule allows every request except the listed domains, so a list
+         * left without expressible entries means "allow everywhere". Without this rule DNR would
+         * block everything, while `matchFrameInverted()` finds no host in such a list and
+         * allowlists every frame.
+         */
+        if (this.inverted && allDomains.length === 0) {
+            return '@@$document,important';
+        }
 
         return AllowlistApi.getAllowlistRule(allDomains);
     }

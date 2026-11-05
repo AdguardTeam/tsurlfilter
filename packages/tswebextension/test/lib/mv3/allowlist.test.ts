@@ -85,8 +85,31 @@ describe('Allowlist Api', () => {
                 inverted: false,
                 expected: '@@$document,important,to=example.org',
             },
+            // A wildcard TLD is expressible: the converter enumerates the known top-level domains,
+            // and the `*.` mask is mapped to its upper domain first.
+            {
+                input: ['example.*'],
+                inverted: false,
+                expected: '@@$document,important,to=example.*',
+            },
+            {
+                input: ['*.example.*'],
+                inverted: false,
+                expected: '@@$document,important,to=example.*',
+            },
+            {
+                input: ['www.*'],
+                inverted: false,
+                expected: '@@$document,important,to=www.*',
+            },
             {
                 input: ['*.example.*', 'example.org'],
+                inverted: false,
+                expected: '@@$document,important,to=example.*|example.org',
+            },
+            // A wildcard inside a label has no DNR equivalent, so it is skipped.
+            {
+                input: ['example.*.com', 'example.org'],
                 inverted: false,
                 expected: '@@$document,important,to=example.org',
             },
@@ -111,6 +134,23 @@ describe('Allowlist Api', () => {
                 input: ['*example.com', 'example.org'],
                 inverted: true,
                 expected: '@@$document,important,to=~example.org',
+            },
+            // A list without expressible entries means "block nothing" in the inverted mode, the
+            // same answer `matchFrameInverted()` gives, so it must not end up as an empty rule.
+            {
+                input: ['*.*'],
+                inverted: true,
+                expected: '@@$document,important',
+            },
+            {
+                input: ['*example.com'],
+                inverted: true,
+                expected: '@@$document,important',
+            },
+            {
+                input: ['*.example.*'],
+                inverted: true,
+                expected: '@@$document,important,to=~example.*',
             },
         ];
 
