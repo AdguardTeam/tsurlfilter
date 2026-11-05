@@ -523,7 +523,9 @@ $cookie=/__utm[a-z]/
 ! path-level subtraction is not expressible in DNR. Exceptions are resolved
 ! only by the standalone CSP conversion (`convertCspRules()`): the regular
 ! `convert()` still rejects an allowlist `$csp` rule. Examples with exceptions
-! below are converted by that pass, the rest by `convert()`.
+! below are converted by that pass, the rest by `convert()`. An `$important`
+! blocking rule keeps its policy even against a value-less exception, while
+! MV2 cancels it.
 ! <br/>
 ! Rules with the same matching condition and the same policy are combined into
 ! one, but only within the scope of one static filter or within the scope of all
@@ -632,9 +634,7 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
 ! <br/>
 ! Rules with the same matching condition are combined into one, but only within
 ! the scope of one static filter or within the scope of all dynamic rules
-! (custom filters and user rules), and only when their directives do not
-! conflict: CSP applies only the first copy of a repeated directive, so rules
-! with conflicting directives stay in separate headers and both are enforced.
+! (custom filters and user rules).
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>

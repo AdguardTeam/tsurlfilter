@@ -262,6 +262,39 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(errors).toHaveLength(1);
         });
 
+        it('does not exclude a domain from a blocker with an additional main_frame rule', async () => {
+            const filter = createFilter([
+                "$csp=script-src 'none',domain=a.com",
+                '@@||a.com^$csp,domain=a.com',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            // The exception matches `$domain` by the initiator only, so
+            // excluding `a.com` would also drop the policy from a navigation
+            // to `a.com` without an initiator.
+            expect(declarativeRules).toHaveLength(2);
+            declarativeRules.forEach(({ condition }) => {
+                expect(condition.excludedRequestDomains).toBeUndefined();
+            });
+            expect(errors).toHaveLength(1);
+        });
+
+        it('excludes a domain by an exception with $domain from a blocker without a main_frame rule', async () => {
+            const filter = createFilter([
+                "$csp=script-src 'none',subdocument,domain=a.com",
+                '@@||b.com^$csp,domain=a.com',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.excludedRequestDomains).toEqual(['b.com']);
+            expect(errors).toHaveLength(0);
+        });
+
         it('resolves the source rule of a selected line by its original offset', async () => {
             const filter = createFilter([
                 '||ads.example^',

@@ -75,6 +75,9 @@ export default class DynamicRulesApi {
 
     /**
      * First ID tried when reassigning colliding IDs of rebuilt CSP rules.
+     *
+     * Any free positive ID is valid; reassignment starts low to stay clear of
+     * the hash-based IDs of converted rules.
      */
     private static readonly FIRST_REASSIGNED_RULE_ID = 2;
 
@@ -387,8 +390,6 @@ export default class DynamicRulesApi {
      * @param cspRuleset Source ruleset for rebuilt CSP rules.
      *
      * @returns Merged rules and runtime source mapping.
-     *
-     * @throws If rebuilt CSP rules are provided without their source ruleset.
      */
     private static mergeCspRules(
         rules: DeclarativeRule[],

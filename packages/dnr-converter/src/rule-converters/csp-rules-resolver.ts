@@ -40,15 +40,18 @@ type CspPairResult = {
  */
 export class CspRulesResolver {
     /**
+     * Error message for an exception which cannot be applied safely.
+     */
+    public static readonly UNRESOLVABLE_EXCEPTION_MESSAGE = 'Network allowlist rule with $csp modifier'
+        + ' cannot be resolved safely';
+
+    /**
      * Returns why a CSP exception cannot enter resolution.
      *
      * An exception which would lose a part of its condition or whose condition
      * cannot be built at all is not resolved: it is reported as unsupported
      * instead of silently matching more than written. The reason is returned
      * instead of a boolean, so the caller reports it as is.
-     *
-     * This is the only place which validates an exception: the conversion and
-     * the resolution itself must not repeat the checks.
      *
      * @param exceptionRule CSP exception rule.
      *
@@ -70,11 +73,11 @@ export class CspRulesResolver {
         try {
             return RuleDeclarativeValidator.shouldProcessCspException(exceptionRule)
                 ? null
-                : 'Network allowlist rule with $csp modifier cannot be resolved safely';
+                : CspRulesResolver.UNRESOLVABLE_EXCEPTION_MESSAGE;
         } catch (error) {
             return error instanceof Error
                 ? error.message
-                : 'Network allowlist rule with $csp modifier cannot be resolved safely';
+                : CspRulesResolver.UNRESOLVABLE_EXCEPTION_MESSAGE;
         }
     }
 
@@ -379,6 +382,18 @@ export class CspRulesResolver {
         }
 
         if (CspRulesResolver.areDomainsDisjoint(exceptionRule, blockingRule)) {
+            return null;
+        }
+
+        // The additional `main_frame` rule of the blocker matches by the
+        // target host, while an exception with a permitted `$domain` matches
+        // by the initiator only, so the exclusion would drop the policy for
+        // navigations the exception does not cover. The exclusion is set per
+        // source rule, so the base rule does not get it either.
+        if (
+            (exceptionRule.permittedDomains?.length ?? 0) > 0
+            && RegularRuleConverter.hasTargetDomainRule(blockingRule)
+        ) {
             return null;
         }
 

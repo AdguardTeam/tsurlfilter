@@ -56,7 +56,8 @@ export class CspRulesManager {
      *
      * @returns Rebuilt CSP rules split by DNR storage scope.
      *
-     * @throws If a generated rule has no source or combines static and dynamic sources.
+     * @throws If a generated rule has no source, an unknown source filter, or
+     * combines static and dynamic sources.
      */
     public static async build(
         staticFilters: IFilter[],

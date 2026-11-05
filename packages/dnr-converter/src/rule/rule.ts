@@ -707,7 +707,7 @@ export class Rule {
                     }
                     // `report-uri` and `report-to` make the browser send
                     // violation reports to a third-party host. tsurlfilter
-                    // rejects any directive with this prefix, so an unsupported
+                    // rejects any directive containing `report-`, so an unsupported
                     // report target cannot leak the browsing context.
                     if (value && value.toLowerCase().includes('report-')) {
                         throw new SyntaxError(

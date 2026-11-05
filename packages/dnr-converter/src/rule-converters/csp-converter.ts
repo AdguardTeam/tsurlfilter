@@ -100,35 +100,6 @@ export class CspConverter extends RegularRuleConverter {
     }
 
     /**
-     * Appends CSP directives that are not present in the current value yet.
-     *
-     * Identical repeated `$csp` rules must not duplicate their directives in
-     * the merged header value.
-     *
-     * @param currentValue Current CSP header value.
-     * @param valueToMerge CSP header value to append.
-     *
-     * @returns Merged CSP header value.
-     */
-    private static mergeCspValues(currentValue: string, valueToMerge: string): string {
-        const directives = CspConverter.splitDirectives(currentValue);
-        const knownNames = new Set(directives.map((directive) => (
-            CspConverter.getDirectiveName(directive)
-        )));
-
-        CspConverter.splitDirectives(valueToMerge).forEach((directive) => {
-            const name = CspConverter.getDirectiveName(directive);
-
-            if (!knownNames.has(name)) {
-                knownNames.add(name);
-                directives.push(directive);
-            }
-        });
-
-        return directives.join('; ');
-    }
-
-    /**
      * Splits a CSP header value into directives.
      *
      * @param value CSP header value.
@@ -239,13 +210,13 @@ export class CspConverter extends RegularRuleConverter {
 
     /**
      * Combines two similar `$csp` {@link DeclarativeRule}
-     * rules into one by merging their CSP header values.
+     * rules into one when they carry the same policy.
      *
      * @param sourceRule The source rule to merge into.
      * @param ruleToMerge The rule to merge into the source rule.
      *
      * @returns The combined {@link DeclarativeRule}, or `null` if the two rules
-     * carry conflicting directives and must stay separate.
+     * carry different policies and must stay separate.
      */
     private static combineRulePair(
         sourceRule: DeclarativeRule,
@@ -289,18 +260,8 @@ export class CspConverter extends RegularRuleConverter {
                 return resultRule;
             }
 
-            /**
-             * Check if the CSP header value is already set in the result rule:
-             * - if `true` - append value from the rule to merge;
-             * - if `false` - set value from the rule to merge.
-             */
-            const cspHeaderValue = resultHeaders[cspHeaderIndex].value;
-            if (cspHeaderValue && cspHeaderInfoToMerge.value) {
-                resultHeaders[cspHeaderIndex].value = CspConverter.mergeCspValues(
-                    cspHeaderValue,
-                    cspHeaderInfoToMerge.value,
-                );
-            } else {
+            // Only identical policies reach this point, so a set value is kept.
+            if (!resultHeaders[cspHeaderIndex].value) {
                 resultHeaders[cspHeaderIndex].value = cspHeaderInfoToMerge.value;
             }
         } else {

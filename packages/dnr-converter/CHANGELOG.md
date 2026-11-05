@@ -20,23 +20,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `IRulesetWithSourceMap` gained a required `getSourceRuleIndexes()`, which maps
   a declarative rule id to source rule indexes without reading the rule text, and
   `ComputedWithSourceMapOptions` describes the source-map-only options.
-- `Rule.cspDirective` keeps the `$csp` directive in a dedicated field, and
-  `CspRulesResolver.getUnprocessableReason()` returns why an exception cannot be
-  applied.
-- `RulesScanner.scanFilters()` takes a `ScanFiltersOptions` object: the scanner
-  used to accept two selectors of the same type positionally, so a swap
-  compiled.
+- `excludeCspRules` conversion option leaves CSP rules to the standalone CSP
+  conversion.
+- `Rule.cspDirective` keeps the `$csp` directive in a dedicated field.
 
 ### Changed
 
 - A blocking `$csp` rule without a directive is a parse error instead of a
-  plain block rule, and so are a `$csp` directive which mentions `report-uri` or
-  `report-to`, a value-less `$permissions` or `$removeheader`, and `$csp`
+  plain block rule, and so are a `$csp` directive which contains `report-`
+  (as in tsurlfilter), a value-less `$permissions` or `$removeheader`, and `$csp`
   combined with `$cookie`: such rules used to degrade into a plain blocking
   rule, to send violation reports to a third-party host, or to produce no rule
   at all, because one declarative rule carries one action.
-- Merged `$csp` rules of the same filter are no longer combined into one
-  policy: CSP applies only the first copy of a repeated directive, so a merge
+- `$csp` rules with the same condition in one filter are no longer combined
+  into one policy: CSP applies only the first copy of a repeated directive, so a merge
   either dropped the second policy or changed what is blocked through the
   `default-src` fallback. Only identical policies are deduplicated now,
   everything else stays in its own header, where a browser enforces both.
@@ -63,7 +60,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lose a part of its condition is rejected and reported instead of matching
   more than written. An exception whose condition cannot be built at all, e.g. a
   domain label punycode cannot encode, is reported the same way instead of
-  failing the whole conversion.
+  failing the whole conversion. An exception with `$domain` does not exclude a
+  domain from a blocker with the additional `main_frame` rule, which matches
+  by the target host.
+- A value-less `$csp` exception does not cancel an `$important` blocking rule,
+  while MV2 cancels it: `$important` keeps its documented priority over
+  exceptions.
 - A filter whose content cannot be read no longer fails the whole conversion:
   the standalone CSP pass skips it and reports an `UnavailableFilterSourceError`.
 - The `$csp` directive is no longer replaced by a following value-bearing

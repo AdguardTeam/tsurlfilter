@@ -22,7 +22,7 @@ export enum ActionKind {
 /**
  * Lists action kinds a rule may produce, in priority order.
  *
- * The list is structural: it contains every enabled modifier in priority
+ * The list is structural: it contains every enabled action modifier in priority
  * order plus `Block` as the fallback, so the caller can try to build an action
  * for each kind until one succeeds.
  *
@@ -122,8 +122,9 @@ export const selectActionKind = (rule: Rule): ActionKind => {
  * Checks whether a rule belongs to the CSP ruleset.
  *
  * Blocking rules belong there only when the converted action appends the CSP
- * header: a rule combining `$csp` with `$redirect` or `$cookie` produces
- * another action and must be converted by the regular pass. Exceptions have no
+ * header: a rule combining `$csp` with a higher-priority modifier, such as
+ * `$redirect`, produces another action and must be converted by the regular
+ * pass. Exceptions have no
  * converted action, so they belong there whenever `$csp` is enabled.
  *
  * @param rule Rule to check.

@@ -251,7 +251,7 @@ export class RulesConverter {
                 ...blockingPreflightErrors,
                 ...invalidCspExceptions.values(),
                 ...unsupportedExceptions.map((rule) => new UnsupportedModifierError(
-                    'Network allowlist rule with $csp modifier cannot be resolved safely',
+                    CspRulesResolver.UNRESOLVABLE_EXCEPTION_MESSAGE,
                     rule,
                 )),
                 ...converted.errors,

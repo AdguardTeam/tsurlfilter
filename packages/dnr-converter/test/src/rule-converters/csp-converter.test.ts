@@ -164,7 +164,7 @@ describe('CspConverter', () => {
             expect(result).toBeNull();
         });
 
-        it('merges rules with the same directive written identically', () => {
+        it('merges rules whose directive names differ only in case', () => {
             const sourceRule: DeclarativeRule = {
                 id: 1,
                 action: {
@@ -193,7 +193,7 @@ describe('CspConverter', () => {
             // @ts-expect-error Accessing private method for testing purposes
             const result = CspConverter.combineRulePair(sourceRule, ruleToMerge);
 
-            expect(result).not.toBeNull();
+            expect(result?.action.responseHeaders?.[0].value).toBe('script-src \'none\'');
         });
 
         it('keeps policies with different directives in separate headers', () => {

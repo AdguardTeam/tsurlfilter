@@ -1096,6 +1096,22 @@ export class RegularRuleConverter {
     }
 
     /**
+     * Checks whether {@link convertRules} builds the additional `main_frame`
+     * rule for a rule, see {@link buildTargetDomainRule}.
+     *
+     * @param rule Source {@link Rule}.
+     *
+     * @returns `true` if the additional rule is built.
+     */
+    public static hasTargetDomainRule(rule: Rule): boolean {
+        return RegularRuleConverter.getTargetDomainCondition(rule, {
+            id: 0,
+            action: { type: RuleActionType.Block },
+            condition: RegularRuleConverter.getCondition(rule),
+        }) !== null;
+    }
+
+    /**
      * Builds the additional `main_frame` rule when the `$domain` modifier
      * must also match the target hostname of a document request.
      *
