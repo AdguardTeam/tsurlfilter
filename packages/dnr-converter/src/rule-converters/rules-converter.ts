@@ -370,14 +370,14 @@ export class RulesConverter {
      * @param ruleId The ID of the truncated rule.
      * @param sourcesIndex The index of sources.
      * @param errorsIndex The index of errors.
-     * @param excludedRulesIds The list of excluded rule IDs.
+     *
+     * @returns IDs of the source rules truncated with the declarative rule.
      */
     private static removeTruncatedRuleSourcesAndErrors(
         ruleId: number,
         sourcesIndex: Map<number, Source[]>,
         errorsIndex: Map<number, ConversionError[]>,
-        excludedRulesIds: number[],
-    ): void {
+    ): number[] {
         // Removing a source for a truncated rule
         const sources = sourcesIndex.get(ruleId) || [];
         const sourcesRulesIds = sources.map(({ sourceRuleIndex }) => sourceRuleIndex);
@@ -386,8 +386,8 @@ export class RulesConverter {
         // Removing an error for a truncated rule
         errorsIndex.set(ruleId, []);
 
-        // Note: be sure, that sourceRulesIds are not too much to overflow stack.
-        excludedRulesIds.push(...sourcesRulesIds);
+        // Note: be sure, that sourcesRulesIds are not too much to overflow stack.
+        return sourcesRulesIds;
     }
 
     /**
@@ -444,8 +444,10 @@ export class RulesConverter {
         // Checks and, if necessary, trims the maximum number of rules
         if (maxNumberOfRules && declarativeRules.length > 0) {
             const filteredRules: DeclarativeRule[] = [];
-            // Each error must list only the rules that its own limit dropped:
-            // the extension adds the unsafe list to the unsafe-rule count.
+            // The unsafe list is the source for the extension's unsafe-rule
+            // count, so it must contain every excluded unsafe rule, including
+            // the ones the total limit drops. The total list contains only the
+            // rules the total limit drops.
             const unsafeExcludedRulesIds: number[] = [];
             const totalExcludedRulesIds: number[] = [];
 
@@ -459,11 +461,12 @@ export class RulesConverter {
                     unsafeRulesCounter += 1;
 
                     if (unsafeRulesCounter > maxNumberOfUnsafeRules) {
-                        RulesConverter.removeTruncatedRuleSourcesAndErrors(
-                            rule.id,
-                            sourcesIndexLoader.get(),
-                            errorsIndexLoader.get(),
-                            unsafeExcludedRulesIds,
+                        unsafeExcludedRulesIds.push(
+                            ...RulesConverter.removeTruncatedRuleSourcesAndErrors(
+                                rule.id,
+                                sourcesIndexLoader.get(),
+                                errorsIndexLoader.get(),
+                            ),
                         );
 
                         continue;
@@ -477,12 +480,18 @@ export class RulesConverter {
 
                 totalLimitExcludedCount += 1;
 
-                RulesConverter.removeTruncatedRuleSourcesAndErrors(
+                const excludedSourceRulesIds = RulesConverter.removeTruncatedRuleSourcesAndErrors(
                     rule.id,
                     sourcesIndexLoader.get(),
                     errorsIndexLoader.get(),
-                    totalExcludedRulesIds,
                 );
+                totalExcludedRulesIds.push(...excludedSourceRulesIds);
+
+                // An unsafe rule dropped by the total limit is still an unsafe
+                // rule the user tried to enable.
+                if (maxNumberOfUnsafeRules && !isSafeRule(rule)) {
+                    unsafeExcludedRulesIds.push(...excludedSourceRulesIds);
+                }
             }
 
             if (
@@ -527,11 +536,12 @@ export class RulesConverter {
                     regexpRulesCounter += 1;
 
                     if (regexpRulesCounter > maxNumberOfRegexpRules) {
-                        RulesConverter.removeTruncatedRuleSourcesAndErrors(
-                            rule.id,
-                            sourcesIndexLoader.get(),
-                            errorsIndexLoader.get(),
-                            excludedRulesIds,
+                        excludedRulesIds.push(
+                            ...RulesConverter.removeTruncatedRuleSourcesAndErrors(
+                                rule.id,
+                                sourcesIndexLoader.get(),
+                                errorsIndexLoader.get(),
+                            ),
                         );
 
                         continue;

@@ -32,8 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   number of excluded rules. It now counts the rules that remain after the
   unsafe limit.
 - `TooManyRulesError` and `TooManyUnsafeRulesError` shared one list of excluded
-  source rules, so each error listed rules excluded by the other limit. Each
-  error now reports only the rules that its own limit excludes.
+  source rules, so each error listed rules excluded by the other limit.
+  `TooManyRulesError` now lists only the rules that the total limit drops, and
+  `TooManyUnsafeRulesError` lists every excluded unsafe rule, including the
+  unsafe rules that the total limit drops, so a consumer can restore the
+  unsafe-rule count from this list.
 - `$domain` did not match the target hostname of a document request. Chrome
   matches `initiatorDomains` against the request initiator only, and a document
   request started by the browser (new tab page, address bar, bookmark, reload)

@@ -1259,6 +1259,48 @@ describe('RulesConverter', () => {
             expect(totalLimitError.message).toContain('4 exceeds the limit provided - 3');
         });
 
+        it('lists unsafe rules dropped by the total limit in the unsafe error', () => {
+            const declarativeRules = [
+                createDeclarativeRule(1, 'safe1.com'),
+                createDeclarativeRule(2, 'safe2.com'),
+                createDeclarativeRule(3, 'safe3.com'),
+                createDeclarativeRule(4, 'unsafe1.com'),
+                createDeclarativeRule(5, 'unsafe2.com'),
+            ];
+            const sourceMapValues = declarativeRules.map((rule, index) => (
+                createSource(rule.id, (index + 1) * 10, (index + 1) * 100)
+            ));
+            const converted = createConvertedRules(declarativeRules, sourceMapValues);
+
+            // The first three rules are safe, the last two are unsafe.
+            isSafeRuleMocked.mockImplementation((rule) => rule.id <= 3);
+
+            // @ts-expect-error Accessing private method for testing
+            const result = RulesConverter.checkLimitations(
+                converted,
+                3, // maxNumberOfRules
+                1, // maxNumberOfUnsafeRules
+            );
+
+            // The three safe rules fill the total limit, so the first unsafe
+            // rule is dropped by the total limit and the second by the unsafe
+            // limit.
+            expect(result.declarativeRules.map((r) => r.id)).toEqual([1, 2, 3]);
+
+            const unsafeLimitError = result.limitations!.find(
+                (limitation) => limitation instanceof TooManyUnsafeRulesError,
+            ) as TooManyUnsafeRulesError;
+            // The extension adds this list to the kept unsafe rules, so it must
+            // list every unsafe rule that is not enabled, whichever limit
+            // dropped it.
+            expect(unsafeLimitError.excludedRulesIds).toEqual([40, 50]);
+
+            const totalLimitError = result.limitations!.find(
+                (limitation) => limitation instanceof TooManyRulesError,
+            ) as TooManyRulesError;
+            expect(totalLimitError.excludedRulesIds).toEqual([40]);
+        });
+
         it('should enforce maximum number of regex rules limit', () => {
             const declarativeRules = [
                 createDeclarativeRule(1, 'example.com'), // non-regex
@@ -1592,7 +1634,6 @@ describe('RulesConverter', () => {
             const ruleId = 1;
             const sourcesIndex = new Map<number, Source[]>();
             const errorsIndex = new Map<number, ConversionError[]>();
-            const excludedRulesIds: number[] = [];
 
             // Setup initial data
             const sources = [
@@ -1605,11 +1646,10 @@ describe('RulesConverter', () => {
             errorsIndex.set(ruleId, errors);
 
             // @ts-expect-error Accessing private method for testing
-            RulesConverter.removeTruncatedRuleSourcesAndErrors(
+            const excludedRulesIds = RulesConverter.removeTruncatedRuleSourcesAndErrors(
                 ruleId,
                 sourcesIndex,
                 errorsIndex,
-                excludedRulesIds,
             );
 
             // Verify sources are cleared
@@ -1626,18 +1666,16 @@ describe('RulesConverter', () => {
             const ruleId = 2;
             const sourcesIndex = new Map<number, Source[]>();
             const errorsIndex = new Map<number, ConversionError[]>();
-            const excludedRulesIds: number[] = [];
 
             // Setup with empty sources but with errors
             sourcesIndex.set(ruleId, []);
             errorsIndex.set(ruleId, [createConversionError(ruleId)]);
 
             // @ts-expect-error Accessing private method for testing
-            RulesConverter.removeTruncatedRuleSourcesAndErrors(
+            const excludedRulesIds = RulesConverter.removeTruncatedRuleSourcesAndErrors(
                 ruleId,
                 sourcesIndex,
                 errorsIndex,
-                excludedRulesIds,
             );
 
             // Verify sources remain empty
@@ -1654,17 +1692,15 @@ describe('RulesConverter', () => {
             const ruleId = 3;
             const sourcesIndex = new Map<number, Source[]>();
             const errorsIndex = new Map<number, ConversionError[]>();
-            const excludedRulesIds: number[] = [];
 
             // Setup with errors but no sources entry
             errorsIndex.set(ruleId, [createConversionError(ruleId)]);
 
             // @ts-expect-error Accessing private method for testing
-            RulesConverter.removeTruncatedRuleSourcesAndErrors(
+            const excludedRulesIds = RulesConverter.removeTruncatedRuleSourcesAndErrors(
                 ruleId,
                 sourcesIndex,
                 errorsIndex,
-                excludedRulesIds,
             );
 
             // Verify sources are set to empty array
@@ -1681,7 +1717,6 @@ describe('RulesConverter', () => {
             const ruleId = 4;
             const sourcesIndex = new Map<number, Source[]>();
             const errorsIndex = new Map<number, ConversionError[]>();
-            const excludedRulesIds: number[] = [];
 
             // Setup with multiple sources from different filters
             const sources = [
@@ -1694,11 +1729,10 @@ describe('RulesConverter', () => {
             errorsIndex.set(ruleId, [createConversionError(ruleId)]);
 
             // @ts-expect-error Accessing private method for testing
-            RulesConverter.removeTruncatedRuleSourcesAndErrors(
+            const excludedRulesIds = RulesConverter.removeTruncatedRuleSourcesAndErrors(
                 ruleId,
                 sourcesIndex,
                 errorsIndex,
-                excludedRulesIds,
             );
 
             // Verify sources are cleared
@@ -1707,11 +1741,11 @@ describe('RulesConverter', () => {
             // Verify errors are cleared
             expect(errorsIndex.get(ruleId)).toEqual([]);
 
-            // Verify all source rule indices are added to excluded list
+            // Verify all source rule indices are returned
             expect(excludedRulesIds).toEqual([5, 15, 25]);
         });
 
-        it('should append to existing excludedRulesIds array', () => {
+        it('should return IDs that the caller can append to an existing list', () => {
             const ruleId = 5;
             const sourcesIndex = new Map<number, Source[]>();
             const errorsIndex = new Map<number, ConversionError[]>();
@@ -1727,12 +1761,12 @@ describe('RulesConverter', () => {
             errorsIndex.set(ruleId, [createConversionError(ruleId)]);
 
             // @ts-expect-error Accessing private method for testing
-            RulesConverter.removeTruncatedRuleSourcesAndErrors(
+            const truncatedRulesIds = RulesConverter.removeTruncatedRuleSourcesAndErrors(
                 ruleId,
                 sourcesIndex,
                 errorsIndex,
-                excludedRulesIds,
             );
+            excludedRulesIds.push(...truncatedRulesIds);
 
             // Verify sources are cleared
             expect(sourcesIndex.get(ruleId)).toEqual([]);
@@ -1748,7 +1782,6 @@ describe('RulesConverter', () => {
             const ruleId = 6;
             const sourcesIndex = new Map<number, Source[]>();
             const errorsIndex = new Map<number, ConversionError[]>();
-            const excludedRulesIds: number[] = [];
 
             // Setup with sources but empty errors
             const sources = [createSource(ruleId, 30, 300)];
@@ -1756,11 +1789,10 @@ describe('RulesConverter', () => {
             errorsIndex.set(ruleId, []);
 
             // @ts-expect-error Accessing private method for testing
-            RulesConverter.removeTruncatedRuleSourcesAndErrors(
+            const excludedRulesIds = RulesConverter.removeTruncatedRuleSourcesAndErrors(
                 ruleId,
                 sourcesIndex,
                 errorsIndex,
-                excludedRulesIds,
             );
 
             // Verify sources are cleared
@@ -1769,7 +1801,7 @@ describe('RulesConverter', () => {
             // Verify errors remain empty
             expect(errorsIndex.get(ruleId)).toEqual([]);
 
-            // Verify source rule index is added to excluded list
+            // Verify source rule index is returned
             expect(excludedRulesIds).toEqual([30]);
         });
     });
