@@ -983,6 +983,16 @@ describe('RuleConverter', () => {
         ])('returns false for an unrepresentable %s value', (field, rule) => {
             expect(RegularRuleConverter.areDomainConditionsRepresentable(rule)).toBe(false);
         });
+
+        it.each([
+            ['permittedDomains', createRuleMock({ permittedDomains: ['example.com:8080'] })],
+            ['restrictedDomains', createRuleMock({ restrictedDomains: ['example.com:8080'] })],
+            ['permittedToDomains', createRuleMock({ permittedToDomains: ['example.com:8080'] })],
+            ['restrictedToDomains', createRuleMock({ restrictedToDomains: ['example.com:8080'] })],
+            ['denyAllowDomains', createRuleMock({ denyAllowDomains: ['example.com:8080'] })],
+        ])('returns false for a port in %s', (field, rule) => {
+            expect(RegularRuleConverter.areDomainConditionsRepresentable(rule)).toBe(false);
+        });
     });
 
     describe('getCondition', () => {

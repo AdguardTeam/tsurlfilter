@@ -62,7 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   domain label punycode cannot encode, is reported the same way instead of
   failing the whole conversion. An exception with `$domain` does not exclude a
   domain from a blocker with the additional `main_frame` rule, which matches
-  by the target host.
+  by the target host, and an exception whose `$domain`, `$to` or `$denyallow`
+  value contains a port is rejected, since a DNR domain list cannot hold one.
 - A value-less `$csp` exception does not cancel an `$important` blocking rule,
   while MV2 cancels it: `$important` keeps its documented priority over
   exceptions.

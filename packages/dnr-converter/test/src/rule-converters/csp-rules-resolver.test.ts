@@ -305,6 +305,19 @@ describe('CspRulesResolver.resolve', () => {
         });
     });
 
+    it('rejects an exception with a port in the $domain condition', () => {
+        const rules = createRules(
+            "$csp=script-src 'none'",
+            "@@$csp=script-src 'none',domain=example.com:8080",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
     it('accepts an exception with a disjoint $domain condition as a safe no-op', () => {
         const rules = createRules(
             "||example.com^$csp=script-src 'none',domain=foo.com",

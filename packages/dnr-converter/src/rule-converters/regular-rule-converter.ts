@@ -192,6 +192,11 @@ export class RegularRuleConverter {
     private static readonly WILDCARD_TLD = `${DOT}${MASK_ANY_CHARACTER}`;
 
     /**
+     * Separator between a host and a port in a URL.
+     */
+    private static readonly PORT_SEPARATOR = ':';
+
+    /**
      * Pattern prefixes that target a specific domain.
      *
      * AdGuard matches the `$domain` modifier against the target hostname of
@@ -370,6 +375,10 @@ export class RegularRuleConverter {
     /**
      * Checks whether all domain conditions can be represented in DNR.
      *
+     * A port cannot appear in a DNR domain list, so a `$domain` entry written
+     * as `example.com:8080` is not a domain which drops a part of the
+     * condition: it has no valid declarative form at all.
+     *
      * @param rule Source rule.
      *
      * @returns `true` if conversion does not drop any domain condition.
@@ -385,6 +394,7 @@ export class RegularRuleConverter {
 
         return domainLists.every((domains) => domains?.every((domain) => (
             !isRegexPattern(domain)
+            && !domain.includes(RegularRuleConverter.PORT_SEPARATOR)
             && (!domain.includes(MASK_ANY_CHARACTER) || RegularRuleConverter.isWildcardTldDomain(domain))
         )) ?? true);
     }
