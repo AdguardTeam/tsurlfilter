@@ -1,6 +1,6 @@
 # Parsing pipeline overview
 
-The pipeline parser is structured as three sequential, allocation-free stages:
+The pipeline parser is structured as three sequential stages:
 
 ```text
 source string
@@ -20,9 +20,12 @@ source string
 
 All three stages share the same pre-allocated buffers that are reused across
 calls. The only heap allocations that happen are in the final AST builder
-stage, when AST objects and their `value` strings are created.
+stage, when AST objects and their `value` strings are created. The one
+exception is `collectRegexValueRegions()`, which allocates a small region
+array while structurally parsing a network rule that carries a `=/…/` regex
+value.
 
-> The v5 pipeline API is documented in the [package README](../../README.md#quick-start).
+> The v5 pipeline API is documented in the [package README](../README.md#quick-start).
 
 ---
 
@@ -48,7 +51,7 @@ source → Tokenizer → AST Parser → AST node
 
 ### Why the Structural Parser Layer?
 
-The structural parser solves these problems by inserting a **zero-allocation structural analysis** stage
+The structural parser solves these problems by inserting a **near-zero-allocation structural analysis** stage
 between tokenization and AST building:
 
 ```text
@@ -102,12 +105,12 @@ source → Tokenizer → Parser → AST builder → AST node
 **File:** `tokenizer/tokenizer.ts`
 
 Scans the raw source string character-by-character and classifies spans into
-token types (`Ident`, `Comma`, `OpenParen`, `Whitespace`, …).
+token types (`Letter`, `Comma`, `OpenParen`, `Whitespace`, …).
 
-Output is written into a caller-supplied `TokenizeResult`:
+Output is written into the tokenizer's own arrays:
 
 ```typescript
-TokenizeResult {
+Tokenizer {
   tokenCount: number       — how many tokens were produced
   types:  Uint8Array       — TokenType per token
   ends:   Uint32Array      — exclusive source end of each token
@@ -118,8 +121,8 @@ Token **starts** are implicit: `token[i].start = token[i-1].end` (or 0 for
 the first token). Storing only ends halves the memory required and the first
 start is always derivable.
 
-The same `TokenizeResult` object is reused across calls — both typed arrays
-are overwritten in-place each time.
+The same `Tokenizer` instance is reused across calls — both typed arrays are
+overwritten in-place each time.
 
 ---
 
@@ -150,7 +153,9 @@ ParserContext {
 ```
 
 A single `ParserContext` is created once and reused. `initParserContext`
-rebinds the tokenizer arrays and clears `data` before each parse.
+rebinds the tokenizer arrays and resets `status`, but it does **not** clear
+`data`: the buffer contents are undefined on entry, and every slot a parser
+reads must be written by that parse.
 
 ### ctx.data layout (example: preprocessor comment)
 
@@ -185,7 +190,8 @@ consumer entry points:
   materialization of high-volume rule kinds.
 - **`parseRange(ctx, startTi, endTi, dataOffset, options?)`** — for callers
   that have already tokenized and want to parse a sub-range of tokens,
-  optionally writing into a non-zero region of `ctx.data`.
+  optionally writing into a non-zero region of `ctx.data`. Cosmetic rules
+  require `dataOffset === 0` and throw otherwise.
 
 The two-phase flow is complemented by encapsulated structural readers —
 `CosmeticRuleDataReader` and `NetworkRuleDataReader` — that expose semantic
@@ -298,7 +304,7 @@ tokenizer.setSource(source);                    // stage 1: tokenize
 initParserContext(ctx, source, tokenizer);       // bind tokenizer output
 const kind = StructuralRuleParser.parse(ctx);  // stage 2: structural parse
 if (kind === RuleKind.Comment) {
-    const ast = CommentAstBuilder.parse(source, ctx.data, options); // stage 3
+    const ast = CommentAstBuilder.parse(source, ctx.data, 0, options); // stage 3
 }
 ```
 
@@ -315,7 +321,8 @@ contributors **must** follow all of them when adding or modifying parsers.
 1. **Zero heap allocation in stages 1 and 2.**
    The tokenizer and structural parser stages MUST NOT call `new`, allocate
    arrays, or produce strings. All output goes into the pre-allocated
-   `ctx.data` buffer.
+   `ctx.data` buffer. The one exception is `collectRegexValueRegions()`, which
+   allocates a small region array for a network rule with a `=/…/` value.
 
 2. **Buffers grow on demand up to a hard cap.**
    Buffers are allocated at construction with a caller-chosen capacity. If a
@@ -347,7 +354,8 @@ contributors **must** follow all of them when adding or modifying parsers.
 
 6. **Structural parsers and pipeline parsers both use `parse()` / `parseRange()`.**
    - Structural parsers (in `src/parser/`): `static parse(ctx, startTi?,
-     endTi?, dataOffset?)` — zero allocation, writes to `ctx.data`.
+     endTi?, dataOffset?)` — writes to `ctx.data`; the only allocation is
+     `collectRegexValueRegions()` for a network rule with a `=/…/` value.
    - Pipeline parsers (in `src/ast-builder/`): `parse(source, options?)` and
      `parseRange(ctx, startTi, endTi, dataOffset, options?)`.
 
@@ -451,7 +459,8 @@ const ast: SelectorList = selectorParser.parseRange(ctx, startTi, endTi, 0, opti
 ### `parse(ctx, startTi?, endTi?, dataOffset?, ...)` — structural parser signature
 
 ```typescript
-// Structural parser — zero allocation, writes integer offsets to ctx.data
+// Structural parser — writes integer offsets to ctx.data; only
+// collectRegexValueRegions() allocates, for a =/…/ value
 NetworkRuleParser.parse(ctx);                             // full range
 NetworkRuleParser.parse(ctx, 3, 15, 0);                   // sub-range
 ```
@@ -476,15 +485,17 @@ sub-parsers (e.g., `CssRuleParser` calling `SelectorListParser`).
 ```text
 Offset   Size    Region
 ──────────────────────────────────────────────────────────────────────
-0        5       Network rule header (NR_*)
-                 — OR — CR header for cosmetic rules (CR_*, 6 slots)
-5        320     Network modifier records (64 modifiers × stride 5)
-                 — OR — uBO modifier records for element-hiding rules
-                    (4 modifiers × stride 7 = 28 slots, fits in [6..33])
-453      384     Domain records (128 domains × stride 3)
+0        5       Network rule header (NR_*) — for cosmetic rules, the
+                 first 5 slots of the 7-slot CR header
+5        448     Modifier records (64 × stride 7 — the region is sized for
+                 the largest, uBO, stride; network and AdGuard records use
+                 stride 5). Cosmetic records start at slot 7, so slots 5-6
+                 hold the rest of the CR header. uBO modifier records for
+                 element-hiding rules occupy [7..34] (4 × stride 7).
+453      384     Domain records (128 × stride 3)
 837      128     Scriptlet body data
 ──────────────────────────────────────────────────────────────────────
-Total    965     default ctx.data.length
+Total    965     5 + 64 × 7 + 128 × 3 + 128
 ```
 
 Network rules and cosmetic rules are mutually exclusive, so their header and

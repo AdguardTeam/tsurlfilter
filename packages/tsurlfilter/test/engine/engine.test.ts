@@ -57,6 +57,110 @@ describe('Engine Tests', () => {
         expect(result.stealthRules).toBeNull();
     });
 
+    it('keeps a regex rule with escaped $ and no modifiers', () => {
+        // Regression: `getRuleParts` treated the `-1` separator index as an
+        // invalid rule and dropped `/a\$b\$c/`, while `RuleFactory` parsed it.
+        const ruleText = '/a\\$b\\$c/';
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: ruleText,
+                },
+            ],
+        });
+
+        expect(engine.getRulesCount()).toBe(1);
+    });
+
+    it('matches a rule with whitespace before the modifier separator', () => {
+        // Regression: `getRuleParts` kept the space in the pattern, so the
+        // engine loaded the rule but never matched it.
+        const ruleText = '/ads/banner.js $script';
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: ruleText,
+                },
+            ],
+        });
+
+        expect(engine.getRulesCount()).toBe(1);
+
+        const request = new Request('https://example.com/ads/banner.js', '', RequestType.Script);
+        const result = engine.matchRequest(request);
+
+        expect(result.basicRule).not.toBeNull();
+    });
+
+    it('matches a regex rule ending in $/', () => {
+        // Regression: `getRuleParts` split at the `$` before the final `/`,
+        // so the engine loaded a rule that could never match.
+        const ruleText = '/ads\\/banner\\.js$/';
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: ruleText,
+                },
+            ],
+        });
+
+        expect(engine.getRulesCount()).toBe(1);
+
+        const request = new Request('https://example.com/ads/banner.js', '', RequestType.Document);
+        const result = engine.matchRequest(request);
+
+        expect(result.basicRule).not.toBeNull();
+    });
+
+    it('matches a regex rule with a $ anchor before |', () => {
+        // Regression: the fast split treated `$|` as the modifier separator,
+        // so the engine loaded a rule that could never match.
+        const ruleText = '/\\/[a-f0-9]{32}\\.js(?:$|\\?)/';
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: ruleText,
+                },
+            ],
+        });
+
+        expect(engine.getRulesCount()).toBe(1);
+
+        const request = new Request(
+            'https://example.com/0123456789abcdef0123456789abcdef.js',
+            '',
+            RequestType.Document,
+        );
+        const result = engine.matchRequest(request);
+
+        expect(result.basicRule).not.toBeNull();
+    });
+
+    it('matches a regex rule whose pattern contains a literal $', () => {
+        // Regression: `$b` was treated as a modifier list, so the engine
+        // loaded the rule with the pattern `/[a` and never matched it.
+        const ruleText = '/[a$b]/';
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: ruleText,
+                },
+            ],
+        });
+
+        expect(engine.getRulesCount()).toBe(1);
+
+        const request = new Request('https://example.com/a', '', RequestType.Document);
+        const result = engine.matchRequest(request);
+
+        expect(result.basicRule).not.toBeNull();
+    });
+
     it('works if frame matches rule', () => {
         const ruleText = '@@||example.org$document';
         const rules = [ruleText];

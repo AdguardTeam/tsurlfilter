@@ -205,12 +205,14 @@ export class StructuralRuleParser implements RootParser<RuleParserOptions> {
      * @param startTi Inclusive start token index. Defaults to 0.
      * @param endTi Exclusive end token index. Defaults to ctx.tokenCount.
      * @param dataOffset Offset within ctx.data to write output. Defaults to 0.
+     *   Must be `0` for cosmetic rules.
      * @param options Parsing options object. See {@link RuleParserOptions}.
      *
      * @returns The {@link RuleKind} of the rule, so the caller can dispatch
      *   to the correct AST parser.
      *
-     * @throws If the rule is a non-supported cosmetic rule type.
+     * @throws If the rule is a non-supported cosmetic rule type, or if a
+     *   cosmetic rule is parsed with a non-zero `dataOffset`.
      */
     public static parse(
         ctx: ParserContext,
@@ -244,6 +246,13 @@ export class StructuralRuleParser implements RootParser<RuleParserOptions> {
                 return RuleKind.Network;
 
             case RuleKind.Cosmetic: {
+                // Cosmetic structural parsers write the CR header and every
+                // sub-region at absolute offsets, so a non-zero dataOffset
+                // would make the AST builders read a region that was never
+                // written. Reject it instead of returning a wrong rule.
+                if (dataOffset !== 0) {
+                    throw new Error('Non-zero dataOffset is not supported for cosmetic rules');
+                }
                 if (ignoreCosmetic) {
                     ctx.data[dataOffset] = 0;
                     return RuleKind.Cosmetic;

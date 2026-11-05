@@ -5,7 +5,9 @@
  * `TokenType.LineBreak` tokens, and runs the structural parser for each
  * complete rule. Invokes a callback with the populated `ParserContext`.
  *
- * Zero heap allocation during scanning — only the callback may allocate.
+ * Scanning does not allocate on the common path. The callback may allocate,
+ * and `collectRegexValueRegions()` allocates a small region array while
+ * structurally parsing a network rule that carries a `=/…/` regex value.
  */
 
 /* eslint-disable no-bitwise */
@@ -51,13 +53,6 @@ const ERR_DATA_BUFFER_OVERFLOW = 'Parser data buffer overflow: rule too large fo
  * Most rules are 5–50 tokens; 2048 fits ~40–100 complete rules per chunk.
  */
 const DEFAULT_TOKEN_CAPACITY = 2048;
-
-/**
- * Hard upper limit on token buffer growth.
- * A single rule using more tokens than this is considered malformed and is
- * reported as an error without emitting a partial-rule callback.
- */
-const HARD_TOKEN_CAP = 262_144;
 
 /**
  * Default modifier capacity per rule.
@@ -373,7 +368,7 @@ export class FilterListScanner {
             } else if (this.grow) {
                 // No LineBreak found in this entire chunk — we have a single
                 // rule that is larger than the token buffer. Buffer may grow.
-                const newCap = Math.min(t.types.length * 2, HARD_TOKEN_CAP);
+                const newCap = Math.min(t.types.length * 2, MAX_TOKEN_CAPACITY);
                 if (newCap > t.types.length) {
                     // Grow and retry from the same position.
                     t.growCapacity(newCap);
@@ -384,8 +379,12 @@ export class FilterListScanner {
                     // rule callback, which would violate the one-callback-per-
                     // physical-line contract.
                     const [ruleEnd, nextStart] = findNextNewline(source, t.offset);
-                    // eslint-disable-next-line max-len
-                    const e = new Error(`Rule at offset ${pendingRuleSourceStart} exceeds the maximum token capacity of ${HARD_TOKEN_CAP} tokens`);
+                    const e = new CapacityOverflowError(
+                        REGION_TOKENS,
+                        MAX_TOKEN_CAPACITY + 1,
+                        MAX_TOKEN_CAPACITY,
+                        pendingRuleSourceStart,
+                    );
                     if (onRuleError) {
                         onRuleError(e, pendingRuleSourceStart, ruleEnd);
                     } else {

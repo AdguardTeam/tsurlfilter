@@ -1,9 +1,10 @@
 /**
  * @file Tests for `RuleParserPipeline.parseRange()` with cosmetic rules.
  *
- * Validates that parseRange correctly threads the caller's `ctx` and
- * `dataOffset` through the cosmetic dispatch, and that `ruleStart`/`ruleEnd`
- * are applied to the result.
+ * Validates that parseRange correctly threads the caller's `ctx` through the
+ * cosmetic dispatch, that `ruleStart`/`ruleEnd` are applied to the result, and
+ * that a non-zero `dataOffset` is rejected for cosmetic rules (their parsers
+ * write at fixed offsets).
  */
 
 import { describe, expect, test } from 'vitest';
@@ -145,5 +146,10 @@ describe('RuleParserPipeline.parseRange — cosmetic rules', () => {
 
             expect(rangeResult).toEqual(expected);
         }
+    });
+
+    test('rejects a non-zero dataOffset for cosmetic rules', () => {
+        expect(() => parseSubRange('example.com##.ads', 0, 'example.com##.ads'.length, 64))
+            .toThrow(/Non-zero dataOffset is not supported for cosmetic rules/);
     });
 });

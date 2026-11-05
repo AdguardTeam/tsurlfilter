@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { NetworkRuleAstBuilder } from '../../src/ast-builder';
+import { ValueKind } from '../../src/nodes';
 import {
     createParserContext,
     initParserContext,
@@ -168,6 +169,109 @@ describe('parseNetworkRule', () => {
             expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
             expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org/path');
             expect(ModifierParser.getName(source, d, 0)).toBe('value');
+        });
+
+        test('=/ inside the pattern does not open a regex value', () => {
+            const source = '||example.com/?u=/x$script,removeparam=/y/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.com/?u=/x');
+            expect(ModifierListParser.getCount(d)).toBe(2);
+            expect(ModifierParser.getName(source, d, 0)).toBe('script');
+            expect(ModifierParser.getName(source, d, 1)).toBe('removeparam');
+            expect(ModifierParser.getValue(source, d, 1)).toBe('/y/');
+        });
+
+        test('pattern ending in =/ keeps the modifier list', () => {
+            // eslint-disable-next-line max-len
+            const source = '/^https:\\/\\/[0-9a-z.]+\\/wp-content\\/litespeed\\/js\\/[0-9a-f]{32}\\.js\\?ver=/$script,~third-party,match-case,replace=/function _0x[a-z0-9]{3}536\\(\\)\\{[\\s\\S]*?\\}/function _0x242536(){};/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe(source.slice(0, source.indexOf('$script')));
+            expect(ModifierListParser.getCount(d)).toBe(4);
+            expect(ModifierParser.getName(source, d, 0)).toBe('script');
+            expect(ModifierParser.getName(source, d, 1)).toBe('third-party');
+            expect(ModifierParser.isNegated(d, 1)).toBe(true);
+            expect(ModifierParser.getName(source, d, 3)).toBe('replace');
+        });
+
+        test('f=/ inside the pattern does not open a regex value', () => {
+            const source = '||x-trojmiasto.pl/combo/f=/_style/$replace=/(.\\$)/\\$1.banner-maxia/,stylesheet';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||x-trojmiasto.pl/combo/f=/_style/');
+            expect(ModifierListParser.getCount(d)).toBe(2);
+            expect(ModifierParser.getName(source, d, 0)).toBe('replace');
+            expect(ModifierParser.getName(source, d, 1)).toBe('stylesheet');
+        });
+
+        test('whitespace after the separator before a regex modifier', () => {
+            const source = '||example.com^$ replace=/a$b/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.com^');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('replace');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/a$b/');
+        });
+
+        test('whitespace before a regex modifier assignment', () => {
+            const source = '||example.com^$replace =/a$b/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.com^');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('replace');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/a$b/');
+        });
+
+        test('whitespace after a regex modifier assignment', () => {
+            const source = '||example.com^$replace= /(a)/$1/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.com^');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('replace');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/(a)/$1/');
+        });
+
+        test('comma-separated =/ in the pattern does not open a regex value', () => {
+            const source = '||example.com/a,b=/c$removeparam=/x/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.com/a,b=/c');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('removeparam');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/x/');
+        });
+
+        test('escaped $ before =/ in the pattern does not open a regex value', () => {
+            const source = '/foo\\$b=/$removeparam=/x/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('/foo\\$b=/');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('removeparam');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/x/');
+        });
+
+        test('$ before | does not start a modifier list', () => {
+            const source = '/foo$|bar,b=/$removeparam=/x/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('/foo$|bar,b=/');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('removeparam');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/x/');
         });
     });
 
@@ -407,11 +511,63 @@ describe('parseNetworkRule', () => {
             expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org^');
         });
 
-        test('trailing whitespace is preserved (raw parser)', () => {
+        test('trailing whitespace is trimmed from the pattern', () => {
             const source = '||example.org^  ';
             const d = parse(source);
 
-            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org^  ');
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org^');
+        });
+
+        test('trailing tab is trimmed from the pattern', () => {
+            const source = '||example.org^\t';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org^');
+        });
+
+        test('whitespace before the separator is trimmed from the pattern', () => {
+            const source = '||example.org^ $script';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org^');
+            expect(ModifierParser.getName(source, d, 0)).toBe('script');
+        });
+
+        test('regex pattern kind survives trailing whitespace trimming', () => {
+            for (const source of ['/banner/ ', '/banner/ $script']) {
+                const d = parse(source);
+                const ast = NetworkRuleAstBuilder.parse(source, d);
+
+                expect(ast.pattern.value).toBe('/banner/');
+                expect(ast.pattern.kind).toBe(ValueKind.Regex);
+            }
+        });
+
+        test('$ inside a regex value is not the separator', () => {
+            const source = '||example.org^$replace=/a$b/good/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org^');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('replace');
+        });
+
+        test('$ and comma inside a regex value do not split the modifier list', () => {
+            const source = '||example.com$removeparam=/x$y,z/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.com');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('removeparam');
+        });
+
+        test('$ inside a regex value containing = is not the separator', () => {
+            const source = '||example.org^$replace=/a=b$c/good/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.org^');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('replace');
         });
 
         test('buffer reuse across calls', () => {

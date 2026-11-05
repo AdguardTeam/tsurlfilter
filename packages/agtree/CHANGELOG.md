@@ -11,6 +11,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `collectRegexValueRegions()` and the `RegexValueRegion` type are exported
+  from `@adguard/agtree/utils`. They locate the `=/…/` regex value regions of
+  a network rule, including the replacement part of `$replace`, without
+  tokenizing the rule.
+- `isModifierListStart()` is exported from `@adguard/agtree/utils`. It
+  reports whether a `$` can start a modifier list, matching the structural
+  parser, so consumers can split network rules without tokenizing them.
 - `SPECIAL_PSEUDO_CLASS_NAMES` is now exported, so consumers can use the
   same list of special pseudo-class names as the parser and the converter.
 - `:has-text()` is now accepted as a synonym of `:contains()` in AdGuard
@@ -18,6 +25,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- `CommentKind` is a regular `enum` instead of a `const enum`, so consumers
+  compiling with `isolatedModules` can use it in a value position.
 - AdGuard HTML filtering rule bodies with an unbalanced or unterminated
   special pseudo-class argument (`:contains()` / `:-abp-contains()` /
   `:has-text()`), e.g.
@@ -54,6 +63,37 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `RuleParserPipeline.parseRange` now rejects a non-zero `dataOffset` for
+  cosmetic rules. Their structural parsers write at fixed offsets, so a
+  non-zero offset previously produced a rule with an empty selector and no
+  domains instead of an error.
+- A parameter list with more than 32 entries (`!#safari_cb_affinity(...)`,
+  hint parameters) is now rejected instead of writing past the reserved
+  `ctx.data` region.
+- `adg_safari_any` now expands to `adg_cb_ios` and `adg_cb_safari`. It parses
+  to a platform type that has no concrete instances, so wildcard expansion
+  returned an empty list and every compatibility entry keyed by it was silently
+  dropped — for example `prevent-window-open` for Safari content blockers.
+  Wildcard expansion now throws when it matches no concrete platform.
+- A `$` inside a `$replace`/`$removeparam` regex value is no longer treated as
+  the modifier separator, so `$replace=/a$b/good/` and
+  `$removeparam=/x$y,z/` parse as a single modifier.
+- `collectRegexValueRegions()` accepts spaces and tabs between `=` and the
+  opening `/`, matching the structural modifier parser, so
+  `$replace= /(a)/$1/` and `$removeparam= /x$y/` parse as single values.
+- `FilterListScanner` now reports a token-buffer hard-cap overflow as
+  `CapacityOverflowError`, matching `RuleParserPipeline`, instead of a plain
+  `Error`.
+- Network rule separator detection no longer scans tokens before the rule
+  start, so parsing rules without a `$` after a large rule no longer walks
+  the whole token buffer.
+- Leading whitespace before an AdGuard `[$...]` modifier list is ignored, so an
+  indented rule no longer parses the modifier list as part of the domain list.
+- Trailing whitespace is no longer part of a network rule pattern. A rule with
+  a trailing space or tab, or with whitespace before the `$` separator,
+  previously produced a pattern containing that whitespace, which made the
+  engine reject the rule as a host rule. The pattern now ends at the last
+  non-whitespace token, as in v4.
 - `[tag-content]` values are now emitted raw during ADG→ADG conversion:
   quotes within the value (e.g. `[tag-content='"advert"']` →
   `:contains("advert")`) are literal characters of the text to match,

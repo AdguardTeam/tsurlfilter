@@ -32,9 +32,9 @@ if (!ctx.valid) {
 }
 ```
 
-### `isKnownValidator(validatorName: string): boolean`
+### `isRegisteredValidator(validatorName: string): boolean`
 
-Type guard to check if a validator name is known.
+Type guard to check if a validator is registered. Unlike `KNOWN_VALIDATORS`, it does not include `redirect_resource`.
 
 **Parameters:**
 
@@ -45,9 +45,9 @@ Type guard to check if a validator name is known.
 **Example:**
 
 ```typescript
-import { isKnownValidator } from './compatibility-tables/validators';
+import { isRegisteredValidator } from './compatibility-tables/validators';
 
-if (isKnownValidator('pipe_separated_domains')) {
+if (isRegisteredValidator('pipe_separated_domains')) {
   // validator exists
 }
 ```

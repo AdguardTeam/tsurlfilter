@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { CompatibilityTypes, setConfiguration } from '../../src/configuration';
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';
 import { HostRule } from '../../src/rules/host-rule';
-import { NetworkRule } from '../../src/rules/network-rule';
+import { NetworkRule, NetworkRuleOption } from '../../src/rules/network-rule';
 import { RULE_INDEX_NONE } from '../../src/rules/rule';
 import { RuleFactory } from '../../src/rules/rule-factory';
 import { createRule } from '../helpers/rule-creator';
@@ -96,6 +96,133 @@ describe('RuleFactory shared pipeline', () => {
         for (let i = 0; i < 100; i += 1) {
             expect(RuleFactory.createRule('||a.com^$third-party', 0)).toBeInstanceOf(NetworkRule);
         }
+    });
+});
+
+describe('RuleFactory whitespace handling', () => {
+    it('does not reject a network rule with trailing spaces', () => {
+        const rule = RuleFactory.createRule('||example.org^  ', 0);
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect((rule as NetworkRule).getPattern()).toBe('||example.org^');
+    });
+
+    it('does not reject a network rule with a trailing tab', () => {
+        const rule = RuleFactory.createRule('||example.org^\t', 0);
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect((rule as NetworkRule).getPattern()).toBe('||example.org^');
+    });
+
+    it('trims whitespace before the modifier separator', () => {
+        const rule = RuleFactory.createRule('||example.org^ $third-party', 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe('||example.org^');
+        expect(rule.isOptionEnabled(NetworkRuleOption.ThirdParty)).toBe(true);
+    });
+});
+
+describe('RuleFactory regex value handling', () => {
+    it('parses a rule whose pattern contains =/', () => {
+        // Real-world rule from ag-base.txt: `?ver=/` is part of the pattern,
+        // not a regex modifier value.
+        // eslint-disable-next-line max-len
+        const text = '/^https:\\/\\/[0-9a-z.]+\\/wp-content\\/litespeed\\/js\\/[0-9a-f]{32}\\.js\\?ver=/$script,~third-party,match-case,replace=/function _0x[a-z0-9]{3}536\\(\\)\\{[\\s\\S]*?\\}/function _0x242536(){};/';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern())
+            .toBe('/^https:\\/\\/[0-9a-z.]+\\/wp-content\\/litespeed\\/js\\/[0-9a-f]{32}\\.js\\?ver=/');
+        expect(rule.isRegexRule()).toBe(true);
+        expect(rule.getAdvancedModifierValue())
+            .toBe('/function _0x[a-z0-9]{3}536\\(\\)\\{[\\s\\S]*?\\}/function _0x242536(){};/');
+    });
+
+    it('parses a rule whose pattern contains f=/', () => {
+        // Real-world rule from ag-base.txt: `combo/f=/` must not open a regex
+        // value that swallows the `$replace` separator.
+        const text = '||x-trojmiasto.pl/combo/f=/_style/$replace=/(.\\$)/\\$1.banner-maxia/,stylesheet';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe('||x-trojmiasto.pl/combo/f=/_style/');
+        expect(rule.getAdvancedModifierValue()).toBe('/(.\\$)/\\$1.banner-maxia/');
+    });
+
+    it('keeps a regex rule with escaped $ and no modifiers', () => {
+        const text = '/a\\$b\\$c/';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe(text);
+    });
+
+    it('parses a rule whose pattern contains a comma followed by =/', () => {
+        const text = '||example.com/a,b=/c$removeparam=/x$y/';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe('||example.com/a,b=/c');
+        expect(rule.getAdvancedModifierValue()).toBe('/x$y/');
+    });
+
+    it('keeps a regex pattern ending in $/', () => {
+        const text = '/ads\\/banner\\.js$/';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe(text);
+    });
+
+    it('keeps a regex pattern with an escaped $', () => {
+        const text = '/a\\$b/';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe(text);
+    });
+
+    it('keeps the separator in a rule with an escaped $ in the modifier value', () => {
+        const text = '/foo.php$removeparam=a\\$b';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe('/foo.php');
+        expect(rule.getAdvancedModifierValue()).toBe('a\\$b');
+    });
+
+    it('parses a regex value with whitespace after the assignment', () => {
+        const text = '||example.com^$replace= /(a)/$1/';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe('||example.com^');
+        expect(rule.getAdvancedModifierValue()).toBe('/(a)/$1/');
+    });
+
+    it('parses a removeparam regex value with whitespace after the assignment', () => {
+        const text = '||example.com^$removeparam= /x$y/';
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe('||example.com^');
+        expect(rule.getAdvancedModifierValue()).toBe('/x$y/');
+    });
+
+    it.each([
+        '/ads\\.js$|banner/',
+        '/(ads\\.js$)/',
+        '/a\\.js$|b\\.js$/',
+        '/\\/[a-f0-9]{32}\\.js(?:$|\\?)/',
+        '/[a$b]/',
+        '/[$a-z]/',
+        '/a$b/',
+    ])('keeps a regex pattern whose $ cannot start a modifier list: %s', (text) => {
+        const rule = RuleFactory.createRule(text, 0) as NetworkRule;
+
+        expect(rule).toBeInstanceOf(NetworkRule);
+        expect(rule.getPattern()).toBe(text);
     });
 });
 

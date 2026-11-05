@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] <!-- release/agtree-v5 -->
+## [Unreleased]
 
 ### Added
 
@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   literal substring. Unbalanced arguments, e.g.
   `$$script:contains((function(g,b,a,c,e,d)`, are now parsed and matched
   as-is, mirroring CoreLibs [#96].
-- Updated `@adguard/agtree` to `v5.0.0` with refactored parser API: rule parsing now uses
+- Updated `@adguard/agtree` to `v5.0.0-alpha.0` with refactored parser API: rule parsing now uses
   `RuleParserPipeline`, domain lists use `parseDomainList`, and `ParserOptions`
   is replaced by `ParseOptions`.
 - The matching engine now materializes network and cosmetic rules directly from
@@ -44,6 +44,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Rule splitting no longer scans the whole rule once per `$` character. Regex
+  value regions (`$replace=/…/`, `$removeparam=/…/`) are collected in a single
+  pass, so a long rule with many `$` characters inside a regex no longer makes
+  filter-list loading quadratic.
+- `$replace`/`$removeparam` values that contain `=` no longer split at a `$`
+  inside the regex: the whole `=/…/` region is treated as a modifier value.
+- Pattern-only rules whose `$` characters are all escaped or inside a regex
+  literal (for example `/a\$b\$c/`) no longer get `patternEnd: -1`; they
+  keep the whole rule as the pattern.
+- Rule splitting now trims whitespace before the `$` separator from the
+  pattern, so rules like `/ads/banner.js $script` match through the engine
+  instead of loading with a pattern that includes the space.
+- Rules are no longer split at a `$` that cannot start a modifier list:
+  regex-only rules such as `/ads\/banner\.js$/`, `/(ads\.js$)/`, and
+  `/\/[a-f0-9]{32}\.js(?:$|\?)/` keep the whole rule as the pattern, while
+  rules whose modifier value contains an escaped `$`, such as
+  `/foo.php$removeparam=a\$b`, keep their separator.
+- Regex values separated from `=` by spaces or tabs, such as
+  `$replace= /(a)/$1/` and `$removeparam= /x$y/`, are no longer split at a
+  `$` inside the value.
 - HTML filtering native selectors now keep literal double quotes in
   attribute values: `$$div[data-x="""a"""]` now builds
   `div[data-x="\"a\""]` instead of `div[data-x="a"]`, and

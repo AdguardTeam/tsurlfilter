@@ -18,6 +18,7 @@ import type {
 } from '../../../nodes';
 import { NodeType } from '../../../nodes';
 import type { ParserContext } from '../../../parser/context';
+import { CTX_STATUS_OVERFLOW } from '../../../parser/context';
 import { DeclarationListParser } from '../../../parser/css/declaration-list';
 import { DEFAULT_MAX_DECLARATIONS } from '../../../parser/css/declaration-list/constants';
 import { CssRuleParser } from '../../../parser/css/rule';
@@ -141,7 +142,7 @@ export class CssRuleAstBuilder {
                 dlDataOffset,
                 maxDeclarations,
             );
-            if (ctx.status === 1) {
+            if (ctx.status === CTX_STATUS_OVERFLOW) {
                 throw new Error('Parser data buffer overflow: declaration list too large for current capacity');
             }
 

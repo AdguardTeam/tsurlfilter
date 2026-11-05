@@ -41,6 +41,33 @@ describe('RuleParser — AdGuard rule modifiers', () => {
             });
         });
 
+        test('leading whitespace before the modifier list is ignored', () => {
+            const ast = parser.parse('  [$path=/page]example.com##.ads');
+
+            expect(ast).toMatchObject({
+                type: 'ElementHidingRule',
+                modifiers: {
+                    type: 'ModifierList',
+                    children: [
+                        {
+                            type: 'Modifier',
+                            name: { type: 'Value', value: 'path' },
+                            value: { type: 'Value', value: '/page' },
+                        },
+                    ],
+                },
+                domains: {
+                    type: 'DomainList',
+                    children: [
+                        {
+                            type: 'Domain',
+                            value: 'example.com',
+                        },
+                    ],
+                },
+            });
+        });
+
         test('[$domain] modifier - [$domain=example.com]##.ads', () => {
             const ast = parser.parse('[$domain=example.com]##.ads');
 

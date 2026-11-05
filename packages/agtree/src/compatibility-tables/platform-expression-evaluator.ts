@@ -51,7 +51,8 @@ export class PlatformExpressionEvaluator {
      *
      * @returns Array of concrete Platform objects after expansion and filtering.
      *
-     * @throws Error if expression is empty or contains only negations.
+     * @throws Error if the expression is empty, contains only negations, or a
+     *   wildcard matches no concrete platform.
      */
     public static evaluate(expression: string): Platform[] {
         const parts = expression
@@ -109,6 +110,13 @@ export class PlatformExpressionEvaluator {
             if (platform.isWildcard) {
                 // Expand wildcard to matching concrete platforms
                 const matches = this.getConcreteMatches(platform);
+
+                // A wildcard that matches nothing would silently drop every
+                // data entry keyed by it, so fail loudly instead.
+                if (matches.length === 0) {
+                    throw new Error(`Platform '${platform.toString()}' does not match any concrete platform`);
+                }
+
                 for (const match of matches) {
                     const key = match.toString();
                     if (!seen.has(key)) {
@@ -138,6 +146,7 @@ export class PlatformExpressionEvaluator {
      */
     private static getConcreteMatches(wildcard: Platform): Platform[] {
         const allConcrete = Platform.getAllConcretePlatforms();
+
         return allConcrete.filter((concrete) => wildcard.matches(concrete));
     }
 

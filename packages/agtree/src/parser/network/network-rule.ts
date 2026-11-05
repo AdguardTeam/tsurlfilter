@@ -26,8 +26,14 @@
 
 import { CHAR_BACKSLASH } from '../../tokenizer/char-codes';
 import { TokenType } from '../../tokenizer/token-types';
+import { collectRegexValueRegions, type RegexValueRegion } from '../../utils/regex-value-regions';
 import type { ParserContext } from '../context';
-import { regionEquals, skipWs, tokenStart } from '../context';
+import {
+    lastNonWs,
+    regionEquals,
+    skipWs,
+    tokenStart,
+} from '../context';
 import { ModifierListParser } from '../misc/modifier-list';
 import { isRegexLiteral } from '../misc/regex-literal';
 import { isPotentialNetModifier } from '../misc/shared';
@@ -185,26 +191,23 @@ export class NetworkRuleParser implements StructuralParser {
         // Find the separator $
         const sepTi = NetworkRuleParser.findNetSeparator(ctx, ti, endTi);
 
-        let patternEndIdx: number;
-        let separatorSourceIdx: number;
-
-        if (sepTi === -1) {
-            patternEndIdx = endTi > startTi
-                ? ends[endTi - 1]
-                : patternStartIdx;
-            separatorSourceIdx = NO_VALUE;
-        } else {
-            patternEndIdx = sepTi > ti
-                ? tokenStart(ctx, sepTi)
-                : patternStartIdx;
-            separatorSourceIdx = tokenStart(ctx, sepTi);
-        }
+        // Trailing whitespace is not part of the pattern. The tokenizer groups
+        // it into a single Whitespace token, so the last non-whitespace token
+        // before the separator (or before the end of the rule) is the real
+        // pattern end. Keeping the whitespace would make `hasSpaces()` in the
+        // engine treat the rule as a host rule and reject it.
+        const patternLimitTi = sepTi !== -1 ? sepTi : endTi;
+        const lastPatternTi = lastNonWs(ctx, ti, patternLimitTi);
+        const patternEndIdx = lastPatternTi >= 0
+            ? ends[lastPatternTi]
+            : patternStartIdx;
+        const separatorSourceIdx = sepTi !== -1 ? tokenStart(ctx, sepTi) : NO_VALUE;
 
         d[dataOffset + NR_FLAGS_OFFSET] = flags;
-        // Detect regex pattern: delegate to the shared isRegexLiteral helper.
-        const patternStartTi = ti;
-        const patternEndTi = sepTi !== -1 ? sepTi : endTi;
-        if (isRegexLiteral(types, patternStartTi, patternEndTi)) {
+        // Detect regex pattern from the same trimmed range as the pattern
+        // bounds, so a trailing space does not change the pattern kind.
+        const patternEndTi = lastPatternTi >= 0 ? lastPatternTi + 1 : ti;
+        if (isRegexLiteral(types, ti, patternEndTi)) {
             d[dataOffset + NR_FLAGS_OFFSET] = flags | NR_FLAG_PATTERN_REGEX;
         }
         d[dataOffset + NR_PATTERN_START_OFFSET] = patternStartIdx;
@@ -220,7 +223,7 @@ export class NetworkRuleParser implements StructuralParser {
     }
 
     /**
-     * Find network separator ($) scanning backwards using lastIndexOf.
+     * Find network separator ($) scanning backwards within the rule range.
      *
      * @param ctx Parser context.
      * @param searchStart First token index to consider.
@@ -232,31 +235,54 @@ export class NetworkRuleParser implements StructuralParser {
         const { types, source } = ctx;
         let i = endTi;
 
-        while (i > searchStart) {
-            i = types.lastIndexOf(TokenType.DollarSign, i - 1);
+        // Regex value regions (`$replace=/…/`, `$removeparam=/…/`) are
+        // collected lazily, once, because most rules have none.
+        let regions: readonly RegexValueRegion[] | null = null;
+        let regionIndex = -1;
 
-            if (i === -1 || i < searchStart) {
+        while (i > searchStart) {
+            // Bounded backward scan. `lastIndexOf` would walk before
+            // `searchStart` — through the whole token buffer for a rule
+            // without a `$`.
+            i -= 1;
+            while (i >= searchStart && types[i] !== TokenType.DollarSign) {
+                i -= 1;
+            }
+
+            if (i < searchStart) {
                 break;
             }
 
-            // Keep in sync with `findNetworkRuleSeparatorIndex` in tsurlfilter
-            // (`src/filterlist/rule-parts.ts`), which mirrors this logic. The
-            // two already differ for regex values with `$` in the middle:
-            // tsurlfilter also skips `$` inside `=/…/` regions, so e.g.
-            // `$removeparam=/x$y,z/` and `$replace=/a$b=c/d/` are handled there.
-            //
-            // A `$` inside a modifier value is not a separator: skip a `$`
-            // preceded by an escaped backslash (e.g. `/^\\$ja=/`). A `$`
-            // directly preceded by `\$` never reaches this loop — the tokenizer
-            // emits `\$` as a single `Escaped` token. A `$` followed by `/`
-            // (a regex end anchor) is already rejected by
-            // `isPotentialNetModifier` below.
+            // A `$` preceded by a backslash is escaped (e.g. `/^\\$ja=/`) and
+            // never the separator.
             const dollarOff = tokenStart(ctx, i);
 
             if (source.charCodeAt(dollarOff - 1) === CHAR_BACKSLASH) {
                 continue;
             }
 
+            // A `$` inside a `=/…/` value belongs to the regex or to its
+            // replacement string (`$1`), not to the modifier list.
+            if (regions === null) {
+                // `ctx.source` can be a whole filter list, so scan only the
+                // current rule's range.
+                const ruleStartOff = tokenStart(ctx, searchStart);
+                const ruleEndOff = endTi > searchStart ? ctx.ends[endTi - 1] : ruleStartOff;
+                regions = collectRegexValueRegions(source, ruleStartOff, ruleEndOff);
+                regionIndex = regions.length - 1;
+            }
+
+            // Regions are ascending, so walk the index down as `i` decreases.
+            while (regionIndex >= 0 && regions[regionIndex][0] > dollarOff) {
+                regionIndex -= 1;
+            }
+
+            if (regionIndex >= 0 && dollarOff < regions[regionIndex][1]) {
+                continue;
+            }
+
+            // A `$` followed by `/` (a regex end anchor) is rejected by
+            // `isPotentialNetModifier`.
             if (isPotentialNetModifier(ctx, i + 1, endTi)) {
                 return i;
             }

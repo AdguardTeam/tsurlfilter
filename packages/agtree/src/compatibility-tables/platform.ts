@@ -320,6 +320,22 @@ export class Platform {
             return false;
         }
 
+        // `adg_safari_any` is the legacy name for the Safari content-blocker
+        // family, documented as `adg_cb_ios` + `adg_cb_safari`. It parses to
+        // `PlatformType.Safari`, which has no concrete instances of its own,
+        // so match the two content-blocker platforms directly.
+        if (this.type === PlatformType.Safari) {
+            if (target.type !== PlatformType.Cb) {
+                return false;
+            }
+
+            if (this.specific === PlatformSpecific.Ios || this.specific === PlatformSpecific.Safari) {
+                return target.specific === this.specific;
+            }
+
+            return target.specific === PlatformSpecific.Ios || target.specific === PlatformSpecific.Safari;
+        }
+
         // If we don't specify type, we match all types
         if (!this.type) {
             return true;
