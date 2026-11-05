@@ -59,17 +59,6 @@ export class AppContext {
     public preregisteredScriptRules?: Map<string, Set<string>>;
 
     /**
-     * Published host set: the hostnames the page gate covers. A frame is
-     * covered only when its top-level site belongs to this set, so an embed
-     * under a foreign top stays on the dynamic injection path. Sources, in
-     * order of preference: the build manifest of the generation being synced,
-     * the configured domains when the manifest could not be read, and the
-     * boot registration keys when only persisted registrations remain. Plain
-     * (non-persisted) field: it lives for one service-worker lifetime.
-     */
-    public preregisteredHostnames?: Set<string>;
-
-    /**
      * Per-hostname hashes of rules covered by preregistered content-script
      * registrations that existed when the service worker started (before
      * the first sync of this SW lifetime), recovered from the registrations'

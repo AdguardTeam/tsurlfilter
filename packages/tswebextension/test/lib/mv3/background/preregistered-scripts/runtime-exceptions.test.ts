@@ -18,11 +18,7 @@
  * along with AdGuard Browser Extension. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {
-    describe,
-    expect,
-    it,
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
     collectExceptionLines,

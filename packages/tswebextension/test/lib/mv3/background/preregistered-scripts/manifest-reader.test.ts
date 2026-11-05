@@ -15,6 +15,18 @@ import {
 const SCRIPTS_PATH = 'filters/preregistered-scripts';
 
 /**
+ * A manifest every field of which is valid; tests override the field they
+ * exercise.
+ */
+const VALID_MANIFEST = {
+    schemaVersion: MANIFEST_SCHEMA_VERSION,
+    hashes: ['0123456789abcdef'],
+    scriptletFiles: { 'set-cookie': 's-set-cookie.js' },
+    hostnames: ['youtube.com', 'www.youtube.com'],
+    pageExceptions: { 2: '0123456789abcdef' },
+};
+
+/**
  * Serves the given body as the manifest fetch response.
  *
  * @param body Manifest JSON body to serve, or `null` to simulate a missing
@@ -42,20 +54,13 @@ describe('readManifest', () => {
     });
 
     it('returns the manifest as-is when the schema version matches', async () => {
-        const body = {
-            schemaVersion: MANIFEST_SCHEMA_VERSION,
-            hashes: ['0123456789abcdef'],
-            scriptletFiles: { 'set-cookie': 's-set-cookie.js' },
-            hostnames: ['youtube.com', 'www.youtube.com'],
-            pageExceptions: { 2: '0123456789abcdef' },
-        };
-        stubManifestFetch(body);
+        stubManifestFetch(VALID_MANIFEST);
 
         const manifest = await readManifest(SCRIPTS_PATH);
 
         // The manifest is the package's own build output: returned as-is,
         // without normalization.
-        expect(manifest).toEqual(body);
+        expect(manifest).toEqual(VALID_MANIFEST);
     });
 
     it('throws when the manifest is unavailable (404)', async () => {
@@ -171,31 +176,16 @@ describe('readManifest', () => {
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hostnames"');
     });
 
-    it('throws when "hostnames" is empty or not plain hostnames', async () => {
-        stubManifestFetch({
-            schemaVersion: MANIFEST_SCHEMA_VERSION,
-            hashes: [],
-            scriptletFiles: {},
-            hostnames: [],
-        });
-        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hostnames"');
+    it.each([
+        ['an empty array', []],
+        ['a bare string', 'youtube.com'],
+        ['an upper-case host', ['Example.COM']],
+        ['a host with a port', ['example.com:443']],
+        ['a URL', ['https://example.com']],
+    ])('throws when "hostnames" is %s', async (_shape, hostnames) => {
+        stubManifestFetch({ ...VALID_MANIFEST, hashes: [], hostnames });
 
-        for (const hostnames of [
-            'youtube.com',
-            ['Example.COM'],
-            ['example.com:443'],
-            ['https://example.com'],
-        ]) {
-            clearManifestCache();
-            stubManifestFetch({
-                schemaVersion: MANIFEST_SCHEMA_VERSION,
-                hashes: [],
-                scriptletFiles: {},
-                hostnames,
-            });
-            // eslint-disable-next-line no-await-in-loop
-            await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hostnames"');
-        }
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hostnames"');
     });
 
     it('throws when "pageExceptions" is missing, so a stale gate is never trusted', async () => {
@@ -224,13 +214,7 @@ describe('readManifest', () => {
     });
 
     it('passes an abort signal to fetch, so a hung request cannot stall the sync', async () => {
-        stubManifestFetch({
-            schemaVersion: MANIFEST_SCHEMA_VERSION,
-            hashes: [],
-            scriptletFiles: {},
-            hostnames: ['youtube.com'],
-            pageExceptions: { 2: '0123456789abcdef' },
-        });
+        stubManifestFetch(VALID_MANIFEST);
 
         await readManifest(SCRIPTS_PATH);
 

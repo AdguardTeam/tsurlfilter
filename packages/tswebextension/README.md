@@ -347,12 +347,14 @@ dynamic path. Documents that loaded before the current service worker
 started are judged against the boot snapshot of the registrations that
 existed then; later documents use the last published coverage.
 
-Coverage also requires the top-level site to belong to the configured host
-set: the filtering state (allowlist, inverted allowlist) is tab-level, so a
-preregistered host's frame embedded under a foreign top (for example, a
-YouTube embed on an allowlisted third-party site) stays on the dynamic
-injection path, which is the only side that can see the embedding site's
-filtering state. Intermediate frames do not participate.
+Coverage applies to top-level documents only: a subframe's verdict depends
+on the rules of its parent (the engine passes the parent's frame rule into
+the subdocument match), and the page cannot read the parent's URL when the
+domains differ. Frames therefore always stay on the dynamic injection path,
+where the engine sees the frame rule; they trade `document_start` timing for
+the correct verdict. The registered host set is the manifest's, not the
+runtime expansion: a configured hostname that the manifest does not list has
+no baked files and is skipped with a warning.
 
 At runtime, each configured hostname (plus its `www.` alias) is matched
 against the engine with `$path` ignored, the matching rules are hashed, and
@@ -361,9 +363,7 @@ a persistent content script is registered with
 A scriptlet function file carries only the implementations the host's rules
 use; the per-rule file enforces any `$path` condition via `location`; the
 cleanup file runs last, deleting the coordination `window` property before
-page scripts run. The shared bundle itself installs a no-op shim when the
-top-level origin is outside the embedded host set, so the files that follow
-it do nothing under a foreign top-level site.
+page scripts run.
 
 The synthetic root request used by both the build-time collector and the
 runtime sync is shared through
@@ -377,23 +377,21 @@ path applied them, and an in-page execution failure is not observable.
 
 Known limitations:
 
+- Scriptlet executions are deduped by rule hash, unlike the dynamic path;
+  both paths rely on scriptlets being idempotent.
 - `$document`/`$jsinject` exceptions below the root path (e.g.
   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for the
   host: rules registered on `*://youtube.com/*` still execute on `/embed/…`.
   Tracked in AG-54564.
-- The preregistered path is currently Chromium-only. The embed gate reads
-  `location.ancestorOrigins`, available in Blink and, since Firefox 148, in
-  Gecko, but the artifacts, the registrations and the background predicate
-  are built for Chromium MV3. A frame whose top-level document has an opaque
-  origin (e.g. a CSP-sandboxed top) is rejected by the page gate — the top
-  document itself passes it, but its subframes see the top origin as `null`
-  and install the no-op shim — while the background still sees the top URL
-  and reports coverage, so covered rules are not injected in those subframes.
-  Aligning the two sides needs a cross-repo signal.
-- An `about:blank` top opened with `window.open('')` from a preregistered
-  page inherits the opener's origin: its embeds pass the page gate, while the
-  background stops at the `about:blank` URL, treats the top as opaque and
-  injects dynamically — the same rules run twice.
+- Frames never take the fast path: they are injected dynamically, on
+  `webNavigation.onCommitted`, after the frame's document starts. A frame
+  whose own inline script reads a property before that moment wins the race,
+  and in the cold-start window (browser or service-worker start, while the
+  engine is still being built) the frame may receive no rules at all. The
+  top-level document is unaffected.
+- The preregistered path is shipped for the Chromium-based MV3 targets only:
+  the artifacts are generated and committed for Chromium, Opera and Edge, so
+  the Firefox MV3 package has no preregistration and stays fully dynamic.
 - `$url`-modified rules are never preregistered: the engine is queried per
   hostname root, so they stay on the dynamic injection path.
 - A page that started before a sync removed a `#%#` JS rule can execute it

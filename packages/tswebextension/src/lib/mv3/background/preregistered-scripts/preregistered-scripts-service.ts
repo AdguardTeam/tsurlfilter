@@ -47,19 +47,9 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  */
 type RegistrationPlan = {
     /**
-     * Host set to publish for the dynamic path's coverage check.
-     */
-    publishedHostnames: readonly string[];
-
-    /**
      * Hostnames the descriptors cover.
      */
     registeredHostnames: readonly string[];
-
-    /**
-     * Host set of the generation, `undefined` when the manifest was not read.
-     */
-    generationHostnames: readonly string[] | undefined;
 
     /**
      * Descriptors to register; empty when the generation is not trusted.
@@ -72,28 +62,18 @@ type RegistrationPlan = {
  * preregistered domains, so build-time-known scriptlet/JS rules run at
  * `document_start`, before the extension itself finishes starting up.
  *
- * `matchOriginAsFallback: true` makes the registrations cover
- * `about:blank`/srcdoc frames too: the dynamic path treats such frames as
- * covered by their nearest HTTP ancestor's hostname, so the preregistered
- * files must actually be injected there as well — otherwise the rules
- * would be suppressed on both paths. Coverage still requires the
- * top-level site to be preregistered: see below.
+ * Only top-level documents are registered: a subframe's verdict depends on
+ * the rules of its parent (the engine passes the parent's frame rule into
+ * the subdocument match), and the page cannot read the parent's URL when the
+ * domains differ. Frames therefore always keep the dynamic injection path,
+ * where the engine decides.
  *
  * Hostnames not in the list keep the standard dynamic injection path.
  *
  * A host that user rules or custom filters can affect keeps the dynamic path
- * as well: those lists exist only at runtime, so the baked page gate cannot
+ * as well: those lists exist only at runtime, so the baked artifacts cannot
  * account for them, and a wrong verdict there either runs scriptlets on a
  * page the user excluded or suppresses them where the engine allows them.
- *
- * A frame is covered only when the top-level site belongs to the
- * preregistered host set: the filtering state (allowlist, inverted
- * allowlist) is tab-level, so the shared bundle installs a no-op shim when
- * the top-level origin (`location.ancestorOrigins`) is outside the set, and
- * the dynamic path applies the same rule to the published coverage.
- * Third-party embeds under a foreign top therefore stay on the dynamic path,
- * which can see the embedding site's filtering state. Intermediate frames do
- * not participate.
  *
  * Known timing windows (accepted by design, self-healing on navigation):
  * - Documents are judged against the latest reported coverage, not the
@@ -105,24 +85,8 @@ type RegistrationPlan = {
  *   removed `#%#` JS rule is not harmless — see Known limitations.
  *   Pre-existing tabs are judged against the boot snapshot.
  *
- * Known limitations:
- * - Scriptlet executions are deduped by rule hash, unlike the dynamic
- *   path — both paths rely on scriptlets being idempotent.
- * - A page that started before a sync removed a `#%#` JS rule can execute
- *   it twice: the preregistered file already ran it, and the dynamic path
- *   runs it again because the coordination set dedupes only within one
- *   registration execution and `cleanup` deletes it before page scripts
- *   run. Arbitrary JS is not idempotent.
- * - `$url`-modified rules are never preregistered (the engine is queried
- *   per hostname root) and stay on the dynamic injection path.
- * - `$document`/`$jsinject` exceptions below the root path (e.g.
- *   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for
- *   the host: rules registered on `*://youtube.com/*` still execute on
- *   `/embed/…` — tracked in AG-54564.
- * - A frame whose top-level document has an opaque origin (e.g. a
- *   CSP-sandboxed top) is rejected by the page gate, but the background
- *   still sees the top frame's URL and reports coverage, so covered rules
- *   are not injected in its subframes.
+ * Known limitations are listed in the package README together with the
+ * other preregistration constraints; this comment does not repeat them.
  */
 export class PreregisteredScriptsService {
     /**
@@ -183,9 +147,6 @@ export class PreregisteredScriptsService {
 
         if (PreregisteredScriptsService.isNamespaceEmpty()) {
             appContext.preregisteredScriptRules = new Map();
-            // The empty guard proves the boot snapshot holds no hostnames
-            // either, so no page can be covered by a registration.
-            appContext.preregisteredHostnames = new Set();
 
             return;
         }
@@ -237,18 +198,11 @@ export class PreregisteredScriptsService {
             appContext.preregisteredScriptsKey = undefined;
             appContext.preregisteredScriptsRegistered = false;
             appContext.preregisteredScriptRules = new Map();
-            // Pre-existing pages already received the boot files at
-            // document_start: keep their host set resolvable.
-            appContext.preregisteredHostnames = new Set(
-                appContext.preregisteredScriptRulesAtBoot?.keys() ?? [],
-            );
             // The namespace is known to be empty now.
             appContext.preregisteredScriptRulesAtBootFailed = false;
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.clearRegistrations]: Failed to clear preregistered scripts', e);
-            const fallback = PreregisteredScriptsService.getFallbackCoverage();
-            appContext.preregisteredScriptRules = fallback;
-            PreregisteredScriptsService.publishFallbackHostnames(fallback);
+            appContext.preregisteredScriptRules = PreregisteredScriptsService.getFallbackCoverage();
         }
     }
 
@@ -278,7 +232,6 @@ export class PreregisteredScriptsService {
         appContext.preregisteredScriptRules = new Map();
         appContext.preregisteredScriptRulesAtBoot = undefined;
         appContext.preregisteredScriptRulesAtBootFailed = false;
-        appContext.preregisteredHostnames = undefined;
     }
 
     /**
@@ -355,37 +308,6 @@ export class PreregisteredScriptsService {
     }
 
     /**
-     * Publishes the hostname set that describes the fallback coverage when a
-     * sync/clear fails before the first successful publication. The already
-     * published set is kept: it describes the registrations that are still
-     * active. Without this, a failed first sync would republish coverage that
-     * the dynamic path can never match, re-injecting rules the persisted
-     * registrations already ran at `document_start`.
-     *
-     * @param coverage Coverage map that is being republished.
-     * @param generationHostnames Host set of the artifact generation, when it
-     * was read before the failure: the page gate uses that set, not the
-     * runtime expansion.
-     */
-    private static publishFallbackHostnames(
-        coverage: Map<string, Set<string>>,
-        generationHostnames?: readonly string[],
-    ): void {
-        if (appContext.preregisteredHostnames !== undefined) {
-            return;
-        }
-
-        const configured = generationHostnames
-            ?? (appContext.preregisteredScripts
-                ? expandHostnames(appContext.preregisteredScripts.domains)
-                : []);
-
-        appContext.preregisteredHostnames = new Set(
-            configured.length > 0 ? configured : coverage.keys(),
-        );
-    }
-
-    /**
      * Builds a stable key for a descriptor set; the registry order is
      * irrelevant, so the descriptors are sorted by id.
      *
@@ -457,9 +379,7 @@ export class PreregisteredScriptsService {
         // Defaults for a sync that registers nothing: the dynamic path covers
         // every configured host.
         let plan: RegistrationPlan = {
-            publishedHostnames: hostnames,
             registeredHostnames: hostnames,
-            generationHostnames: undefined,
             scripts: [],
         };
 
@@ -489,18 +409,9 @@ export class PreregisteredScriptsService {
 
             const fallback = PreregisteredScriptsService.getFallbackCoverage();
             appContext.preregisteredScriptRules = fallback;
-            PreregisteredScriptsService.publishFallbackHostnames(fallback, plan.generationHostnames);
 
             return fallback;
         }
-
-        // The registrations now describe this hostname set; publish it for
-        // the dynamic path's top-level check. A failed sync keeps the
-        // previous registrations, so it keeps the previous set too. Published
-        // even when preregistration is disabled: the boot snapshot may still
-        // describe pre-existing pages, and the coverage map short-circuits
-        // when there are no active registrations.
-        appContext.preregisteredHostnames = new Set(plan.publishedHostnames);
 
         // Report exactly what is registered, not what the sync attempted:
         // after a partial failure the browser still holds the previous
@@ -540,20 +451,21 @@ export class PreregisteredScriptsService {
      * dynamic path, where the engine decides.
      *
      * A configured host missing from the manifest host set is not registered
-     * either: the shared bundle's embed gate trusts that set only, so the
-     * background would report no coverage for the host while its rules still
-     * ran at `document_start` — and `#%#` rules are not idempotent.
+     * either: the generation carries no files for it, so registering it would
+     * run nothing while the background reports the rules as covered — and
+     * `#%#` rules are not idempotent.
      *
      * A host that a user rule or a custom filter can affect is not registered
-     * at all: those lists are runtime-only, the baked gate knows nothing about
-     * them, and a wrong verdict there either runs scriptlets on a page the
-     * user excluded or suppresses them where the engine allows them. The host
-     * keeps the dynamic path, where the engine decides with the full rule set.
+     * at all: those lists are runtime-only, the baked page gate knows nothing
+     * about them, and a wrong verdict there either runs scriptlets on a page
+     * the user excluded or suppresses them where the engine allows them. The
+     * host keeps the dynamic path, where the engine decides with the full rule
+     * set.
      *
      * @param hostnames Configured hostnames, expanded.
      * @param scriptsPath Extension-relative path to preregistered scripts.
      *
-     * @returns Host sets to publish and the descriptors to register.
+     * @returns Registered hostnames and the descriptors to register.
      */
     private static async resolveRegistrationPlan(
         hostnames: readonly string[],
@@ -570,9 +482,7 @@ export class PreregisteredScriptsService {
             );
 
             return {
-                publishedHostnames: [],
                 registeredHostnames: [],
-                generationHostnames: [],
                 scripts: [],
             };
         }
@@ -604,9 +514,7 @@ export class PreregisteredScriptsService {
         const staticHostnames = registeredHostnames.filter((hostname) => !runtimeAffected.has(hostname));
 
         return {
-            publishedHostnames: manifest.hostnames.filter((hostname) => !runtimeAffected.has(hostname)),
             registeredHostnames: staticHostnames,
-            generationHostnames: manifest.hostnames,
             scripts: await PreregisteredScriptsService.buildDomainScripts(
                 [...staticHostnames],
                 scriptsPath,
@@ -682,7 +590,7 @@ export class PreregisteredScriptsService {
      * actual coverage is read separately from the active registrations.
      */
     private static async buildDomainScripts(
-        hostnames: string[],
+        hostnames: readonly string[],
         scriptsPath: string,
         manifest: PreregisteredScriptsManifest,
     ): Promise<ContentScriptDescriptor[]> {
@@ -817,8 +725,8 @@ export class PreregisteredScriptsService {
                         matches: domainToMatchPatterns(hostname),
                         runAt: 'document_start',
                         world: 'MAIN',
-                        allFrames: true,
-                        matchOriginAsFallback: true,
+                        allFrames: false,
+                        matchOriginAsFallback: false,
                         persistAcrossSessions: true,
                     });
 
