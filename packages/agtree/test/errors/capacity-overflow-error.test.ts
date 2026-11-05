@@ -15,6 +15,15 @@ describe('CapacityOverflowError', () => {
         expect(err.message).toContain('65536');
     });
 
+    test('includes the optional rule offset in the message', () => {
+        const err = new CapacityOverflowError('tokens', 1_000_000, 262_144, 42);
+
+        expect(err.message).toContain('Rule at offset 42');
+        expect(err.message).toContain('tokens');
+        expect(err.message).toContain('1000000');
+        expect(err.message).toContain('262144');
+    });
+
     test('is throwable and catchable as itself', () => {
         try {
             throw new CapacityOverflowError('tokens', 1_000_000, 262_144);

@@ -383,6 +383,7 @@ export class FilterListScanner {
                         REGION_TOKENS,
                         MAX_TOKEN_CAPACITY + 1,
                         MAX_TOKEN_CAPACITY,
+                        pendingRuleSourceStart,
                     );
                     if (onRuleError) {
                         onRuleError(e, pendingRuleSourceStart, ruleEnd);

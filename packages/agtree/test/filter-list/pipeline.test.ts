@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { FilterListPipeline } from '../../src/filter-list/pipeline';
 import type { FilterListParseOptions } from '../../src/filter-list/types';
+import { MAX_TOKEN_CAPACITY } from '../../src/limits';
 import {
     CommentRuleType,
     CosmeticRuleType,
@@ -388,6 +389,16 @@ describe('FilterListPipeline', () => {
             expect(errors[0]).toMatchObject({ start: 0, end: 23 });
             expect(errors[1]).toMatchObject({ start: 24, end: source.length });
         });
+    });
+
+    test('strict mode: token hard-cap overflow reports the rule offset', () => {
+        const hardCapPipeline = new FilterListPipeline({ tokenCapacity: 4, grow: true });
+        const firstLine = '! comment\n';
+        const oversizedRule = '.'.repeat(MAX_TOKEN_CAPACITY + 1);
+
+        expect(() => {
+            hardCapPipeline.parse(`${firstLine}${oversizedRule}`, { tolerant: false });
+        }).toThrow(`Rule at offset ${firstLine.length}`);
     });
 
     test('parses a long list of rules without regex values in linear time', () => {

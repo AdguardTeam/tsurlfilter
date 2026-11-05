@@ -51,7 +51,7 @@ source → Tokenizer → AST Parser → AST node
 
 ### Why the Structural Parser Layer?
 
-The structural parser solves these problems by inserting a **zero-allocation structural analysis** stage
+The structural parser solves these problems by inserting a **near-zero-allocation structural analysis** stage
 between tokenization and AST building:
 
 ```text
@@ -354,7 +354,8 @@ contributors **must** follow all of them when adding or modifying parsers.
 
 6. **Structural parsers and pipeline parsers both use `parse()` / `parseRange()`.**
    - Structural parsers (in `src/parser/`): `static parse(ctx, startTi?,
-     endTi?, dataOffset?)` — zero allocation, writes to `ctx.data`.
+     endTi?, dataOffset?)` — writes to `ctx.data`; the only allocation is
+     `collectRegexValueRegions()` for a network rule with a `=/…/` value.
    - Pipeline parsers (in `src/ast-builder/`): `parse(source, options?)` and
      `parseRange(ctx, startTi, endTi, dataOffset, options?)`.
 
@@ -458,7 +459,8 @@ const ast: SelectorList = selectorParser.parseRange(ctx, startTi, endTi, 0, opti
 ### `parse(ctx, startTi?, endTi?, dataOffset?, ...)` — structural parser signature
 
 ```typescript
-// Structural parser — zero allocation, writes integer offsets to ctx.data
+// Structural parser — writes integer offsets to ctx.data; only
+// collectRegexValueRegions() allocates, for a =/…/ value
 NetworkRuleParser.parse(ctx);                             // full range
 NetworkRuleParser.parse(ctx, 3, 15, 0);                   // sub-range
 ```

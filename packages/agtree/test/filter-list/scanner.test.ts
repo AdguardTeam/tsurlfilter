@@ -276,11 +276,12 @@ describe('FilterListScanner', () => {
 
     test('reports a token hard-cap overflow as CapacityOverflowError', () => {
         const hardCapScanner = new FilterListScanner({ tokenCapacity: 4, grow: true });
+        const firstLine = '! comment\n';
         const oversizedRule = '.'.repeat(MAX_TOKEN_CAPACITY + 1);
         let error: unknown;
 
         hardCapScanner.scan(
-            oversizedRule,
+            `${firstLine}${oversizedRule}`,
             () => {},
             () => {},
             (e) => { error = e; },
@@ -288,6 +289,7 @@ describe('FilterListScanner', () => {
 
         expect(error).toBeInstanceOf(CapacityOverflowError);
         expect((error as CapacityOverflowError).region).toBe('tokens');
+        expect((error as Error).message).toContain(`Rule at offset ${firstLine.length}`);
     });
 
     describe('data-buffer overflow (grow:false)', () => {

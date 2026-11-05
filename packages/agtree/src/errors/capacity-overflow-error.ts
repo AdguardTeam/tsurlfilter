@@ -63,9 +63,14 @@ export class CapacityOverflowError extends Error {
      * @param region The buffer region that overflowed.
      * @param requested The capacity that was requested.
      * @param hardCap The hard cap for this region.
+     * @param offset Optional source offset of the rule that triggered the
+     *   overflow. When provided, it is included in the error message so strict
+     *   mode callers can identify the offending rule.
      */
-    constructor(region: CapacityRegion, requested: number, hardCap: number) {
-        super(`Parser ${region} buffer would exceed hard cap (requested ${requested}, max ${hardCap})`);
+    constructor(region: CapacityRegion, requested: number, hardCap: number, offset?: number) {
+        const location = offset === undefined ? '' : `Rule at offset ${offset}: `;
+
+        super(`${location}Parser ${region} buffer would exceed hard cap (requested ${requested}, max ${hardCap})`);
         this.name = 'CapacityOverflowError';
         this.region = region;
         this.requested = requested;
