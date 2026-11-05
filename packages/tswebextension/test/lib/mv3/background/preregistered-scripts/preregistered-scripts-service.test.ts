@@ -1220,7 +1220,7 @@ describe('PreregisteredScriptsService', () => {
             expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
         });
 
-        it('falls back to the configured hostname set when the manifest cannot be read', async () => {
+        it('falls back to the coverage keys when the manifest cannot be read', async () => {
             appContext.preregisteredScripts = { domains: ['youtube.com'], path: SCRIPTS_PATH };
             appContext.preregisteredScriptRulesAtBoot = new Map([
                 ['youtube.com', new Set(['0123456789abcdef'])],
@@ -1228,19 +1228,31 @@ describe('PreregisteredScriptsService', () => {
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            // Without a manifest the generation's set is unknown, so the
-            // dynamic path is matched against the configured expansion.
-            expect(appContext.preregisteredHostnames).toEqual(
-                new Set(['youtube.com', 'www.youtube.com']),
-            );
+            // Without a manifest the generation's set is unknown. The runtime
+            // expansion is not published: it may hold a host outside the gate
+            // set, and a host the gate shims must not be reported as covered.
+            // The coverage keys under-claim instead, which only re-runs a rule
+            // the page bundle has already run.
+            expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
         });
 
-        it('falls back to the coverage keys when the first sync fails without a config', async () => {
+        it('publishes the manifest host set when the first sync is already disabled', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            setupManifest(
+                [await computeRuleHash(rule)],
+                { 'set-cookie': scriptletFilename('set-cookie') },
+                ['youtube.com'],
+            );
+            // The boot snapshot lists both hosts: a host with no registration
+            // of its own is still in the gate set, so the boot keys cannot
+            // describe the gate. `configure()` starts with a disabled sync
+            // when `debugScriptlets` is on.
             appContext.preregisteredScriptRulesAtBoot = new Map([
                 ['youtube.com', new Set(['0123456789abcdef'])],
+                ['www.youtube.com', new Set(['0123456789abcdef'])],
             ]);
 
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            await PreregisteredScriptsService.sync(false, ['youtube.com'], SCRIPTS_PATH);
 
             expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
         });

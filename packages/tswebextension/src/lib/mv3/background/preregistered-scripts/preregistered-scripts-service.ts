@@ -313,6 +313,12 @@ export class PreregisteredScriptsService {
      * the dynamic path can never match, re-injecting rules the persisted
      * registrations already ran at `document_start`.
      *
+     * The runtime expansion is never published here: it may contain hosts
+     * outside the gate set, and a host the page gate shims must not be
+     * reported as covered — its rules would be lost. The coverage keys
+     * under-claim instead, which only re-runs a rule the page bundle already
+     * ran.
+     *
      * @param coverage Coverage map that is being republished.
      * @param generationHostnames Host set of the artifact generation, when it
      * was read before the failure: the page gate uses that set, not the
@@ -326,14 +332,7 @@ export class PreregisteredScriptsService {
             return;
         }
 
-        const configured = generationHostnames
-            ?? (appContext.preregisteredScripts
-                ? expandHostnames(appContext.preregisteredScripts.domains)
-                : []);
-
-        appContext.preregisteredHostnames = new Set(
-            configured.length > 0 ? configured : coverage.keys(),
-        );
+        appContext.preregisteredHostnames = new Set(generationHostnames ?? coverage.keys());
     }
 
     /**
@@ -405,10 +404,10 @@ export class PreregisteredScriptsService {
         scriptsPath: string,
     ): Promise<Map<string, Set<string>>> {
         const hostnames = expandHostnames(domains);
-        // Host set of the artifact generation, known once the manifest is
-        // read. When it is, the published set is the manifest's, not the
-        // runtime expansion: the expansion only decides which hosts to
-        // register.
+        // Gate host set of the artifact generation. Read on every path, not
+        // only for the registrations: the page gate gates on this set, so the
+        // published coverage has to use it even when preregistration is off.
+        // The manifest read is cached per scripts path.
         let generationHostnames: readonly string[] | undefined;
         // Hosts the registrations are built for: the gate-covered subset of
         // the runtime expansion.
@@ -419,29 +418,45 @@ export class PreregisteredScriptsService {
         let scripts: ContentScriptDescriptor[] = [];
 
         try {
-            if (preregistrationEnabled && hostnames.length > 0) {
-                const manifest = await readManifest(scriptsPath);
-                generationHostnames = manifest.hostnames;
+            if (hostnames.length > 0) {
+                try {
+                    const manifest = await readManifest(scriptsPath);
+                    generationHostnames = manifest.hostnames;
 
-                // Register only the hosts the page gate covers. A host that
-                // is registered but missing from the manifest set runs its
-                // rules at `document_start` on its own top-level pages while
-                // the background reports no coverage there, so the dynamic
-                // path injects the same rules again — and `#%#` rules are
-                // not idempotent.
-                const gateHosts = new Set(manifest.hostnames);
-                registeredHostnames = hostnames.filter((hostname) => gateHosts.has(hostname));
-                const skippedHostnames = hostnames.filter((hostname) => !gateHosts.has(hostname));
+                    if (preregistrationEnabled) {
+                        // Register only the hosts the page gate covers. A host
+                        // that is registered but missing from the manifest set
+                        // runs its rules at `document_start` on its own
+                        // top-level pages while the background reports no
+                        // coverage there, so the dynamic path injects the same
+                        // rules again — and `#%#` rules are not idempotent.
+                        const gateHosts = new Set(manifest.hostnames);
+                        registeredHostnames = hostnames.filter((hostname) => gateHosts.has(hostname));
+                        const skippedHostnames = hostnames.filter((hostname) => !gateHosts.has(hostname));
 
-                if (skippedHostnames.length > 0) {
-                    logger.warn(`[tsweb.PreregisteredScriptsService.doSync]: ${skippedHostnames.length} configured hostname(s) are missing from the manifest host set, not registering them`, skippedHostnames);
+                        if (skippedHostnames.length > 0) {
+                            logger.warn(`[tsweb.PreregisteredScriptsService.doSync]: ${skippedHostnames.length} configured hostname(s) are missing from the manifest host set, not registering them`, skippedHostnames);
+                        }
+
+                        scripts = await PreregisteredScriptsService.buildDomainScripts(
+                            registeredHostnames,
+                            scriptsPath,
+                            manifest,
+                        );
+                    }
+                } catch (e) {
+                    // An enabled sync must not register against a manifest it
+                    // could not read: the previous registrations stay, and the
+                    // previous host set keeps describing them. With
+                    // preregistration off the set only feeds the published
+                    // coverage, so a read failure must not block dropping the
+                    // registrations.
+                    if (preregistrationEnabled) {
+                        throw e;
+                    }
+
+                    logger.warn('[tsweb.PreregisteredScriptsService.doSync]: Failed to read the manifest, keeping the previous host set', e);
                 }
-
-                scripts = await PreregisteredScriptsService.buildDomainScripts(
-                    registeredHostnames,
-                    scriptsPath,
-                    manifest,
-                );
             }
 
             const scriptsKey = PreregisteredScriptsService.getScriptsKey(scripts);
@@ -470,20 +485,16 @@ export class PreregisteredScriptsService {
             return fallback;
         }
 
-        // Publish the host set that describes the live registrations; the
-        // dynamic path's top-level check is matched against it. Only the
-        // generation's set counts: the page gate gates on it, so publishing
-        // the runtime expansion when the manifest was not read would let the
-        // background report coverage for a frame the gate shims, and the
-        // covered rules would not run. Without a manifest the previous set is
-        // kept — a failed sync leaves the registrations it describes active —
-        // and on the first sync the boot registrations are the only
-        // description available, their hosts being a subset of the gate set.
+        // Publish the set the page gate gates on, so the dynamic path's
+        // top-level check matches the same hosts. Only the generation's set
+        // counts: the runtime expansion may hold a host outside it, and
+        // reporting coverage for a host whose frames the gate shims would
+        // lose those rules. When the manifest is not available the previous
+        // set is kept — on the enabled path it describes the registrations
+        // that are still active, on the disabled path the boot snapshot of
+        // pre-existing documents.
         appContext.preregisteredHostnames = new Set(
-            generationHostnames
-            ?? appContext.preregisteredHostnames
-            ?? appContext.preregisteredScriptRulesAtBoot?.keys()
-            ?? [],
+            generationHostnames ?? appContext.preregisteredHostnames ?? [],
         );
 
         // Report exactly what is registered, not what the sync attempted:

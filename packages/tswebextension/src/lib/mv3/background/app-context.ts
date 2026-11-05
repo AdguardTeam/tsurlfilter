@@ -62,11 +62,13 @@ export class AppContext {
      * Published host set: the hostnames the page gate covers. A frame is
      * covered only when its top-level site belongs to this set, so an embed
      * under a foreign top stays on the dynamic injection path. Sources: the
-     * generation manifest when the sync read it; otherwise the runtime
-     * expansion (preregistration is off, or the manifest is unreadable);
-     * after a failed first sync the configured domains or the coverage keys;
-     * after a successful clear the boot registration keys. Plain
-     * (non-persisted) field: it lives for one service-worker lifetime.
+     * generation manifest, read on every sync; when it is unavailable the
+     * previously published set is kept (it still describes the live
+     * registrations, or the boot snapshot of pre-existing documents); after a
+     * failed first sync the coverage keys; after a successful clear the boot
+     * registration keys. The runtime expansion is never published: a host
+     * outside the gate set would lose its rules. Plain (non-persisted) field:
+     * it lives for one service-worker lifetime.
      */
     public preregisteredHostnames?: Set<string>;
 
