@@ -161,6 +161,26 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/^(?=.{7,}$).*/s)'],
                     },
 
+                    // duplicate length selectors with different digit counts and
+                    // large values that differ only in the last digit are compared
+                    // as digit strings, in both orders
+                    {
+                        actual: '$$div[min-length="9"][min-length="10"][max-length="20"][max-length="100"]',
+                        expected: ['$$div:contains(/^(?=.{10,20}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="10"][min-length="9"][max-length="100"][max-length="20"]',
+                        expected: ['$$div:contains(/^(?=.{10,20}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="99999999999999999998"][min-length="99999999999999999999"]',
+                        expected: ['$$div:contains(/^(?=.{99999999999999999999,}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="99999999999999999999"][min-length="99999999999999999998"]',
+                        expected: ['$$div:contains(/^(?=.{99999999999999999999,}$).*/s)'],
+                    },
+
                     // large values are kept as decimal digits, without rounding
                     // or exponent notation
                     {
