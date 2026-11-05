@@ -5,7 +5,7 @@ import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParam
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl } from '../../common/utils/url';
-import { type FrameMV3, type PreparedCosmeticResultMV3 } from '../tabs/frame';
+import { type PreparedCosmeticResultMV3 } from '../tabs/frame';
 import { tabsApi } from '../tabs/tabs-api';
 
 import { appContext } from './app-context';
@@ -67,18 +67,6 @@ interface ApplyCosmeticRulesParams {
      */
     preExistingDocument?: boolean;
 }
-
-/**
- * Resolves a frame context for preregistered coverage lookups.
- *
- * @param tabId Tab id.
- * @param frameId Frame id.
- *
- * @returns Frame context or `undefined` when the frame is unknown.
- */
-const getFrameContext = (tabId: number, frameId: number): FrameMV3 | undefined => (
-    tabsApi.getFrameContext(tabId, frameId)
-);
 
 /**
  * Cosmetic api class.
@@ -583,7 +571,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         // double execution. Rules missing from the covered set (degraded at
         // sync time, or added to the registration after a pre-existing page
         // loaded) still go through the dynamic path.
-        const coveredRules = await getCoveredRules(tabId, frameContext, getFrameContext, preExistingDocument);
+        const coveredRules = getCoveredRules(frameContext, preExistingDocument);
 
         const { localRules } = frameContext.preparedCosmeticResult;
 

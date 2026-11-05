@@ -1,31 +1,12 @@
 import { type CosmeticRule } from '@adguard/tsurlfilter';
 
-import { NO_PARENT_FRAME_ID } from '../../../common/constants';
+import { MAIN_FRAME_ID } from '../../../common/constants';
 import { logger } from '../../../common/utils/logger';
 import { isHttpRequest } from '../../../common/utils/url';
 import { type FrameMV3 } from '../../tabs/frame';
 import { appContext } from '../app-context';
 
 import { computeRuleHashCached } from './hasher';
-
-/**
- * Minimal frame shape the ancestor walk needs: the fields available both
- * from the cached frame contexts and from `webNavigation.getAllFrames`.
- */
-type FrameNode = Pick<
-    FrameMV3,
-    'frameId' | 'parentFrameId' | 'url' | 'documentId' | 'parentDocumentId'
->;
-
-/**
- * Looks up a frame context by tab and frame id.
- */
-export type FrameContextLookup = (tabId: number, frameId: number) => FrameMV3 | undefined;
-
-/**
- * Reads the live frame tree of a tab.
- */
-export type FrameTreeLookup = (tabId: number) => Promise<Map<number, FrameNode> | undefined>;
 
 /**
  * Rules whose hash failure has already been logged. Hashing failures are
@@ -51,171 +32,16 @@ const parseHostname = (url: string): string | null => {
 };
 
 /**
- * Returns whether a cached frame context describes the document the child
- * belongs to. The top frame context is overwritten at navigation start,
- * before the navigation commits, and that write carries no document id
- * (`onBeforeRequest`/`onBeforeNavigate` have none), so a cached parent
- * without one may describe a document that never committed.
+ * Returns the hashes of preregistered rules covered for the frame — those
+ * dynamic injection must skip.
  *
- * @param parentDocumentId Document id the child reports for its parent.
- * @param documentId Document id of the cached parent context.
+ * Only the top-level document takes the fast path. A subframe's verdict
+ * depends on the rules of its parent (the engine passes the parent's frame
+ * rule into the subdocument match), and the page cannot read the parent's
+ * URL when the domains differ, so every frame stays on the dynamic path and
+ * the engine decides.
  *
- * @returns True when the cached context may be used.
- */
-const isSameDocument = (
-    parentDocumentId: string | undefined,
-    documentId: string | undefined,
-): boolean => {
-    // A child that does not know its parent document cannot disprove the
-    // match.
-    if (!parentDocumentId) {
-        return true;
-    }
-
-    return parentDocumentId === documentId;
-};
-
-/**
- * Resolves the origin host of an opaque frame URL (`blob:` carries the
- * creator's origin, `data:` is opaque).
- *
- * @param url Frame URL.
- *
- * @returns Origin hostname, or `null` for an opaque origin.
- */
-const parseUrlOriginHost = (url: string): string | null => {
-    try {
-        const { origin } = new URL(url);
-        if (origin === 'null') {
-            return null;
-        }
-        return parseHostname(origin);
-    } catch {
-        return null;
-    }
-};
-
-/**
- * Reads the live frame tree of a tab, used when the cached frame contexts no
- * longer cover the ancestor chain.
- *
- * @param tabId Tab id.
- *
- * @returns Frame id → frame map, or `undefined` when unreadable.
- */
-const getLiveFrameTree: FrameTreeLookup = async (tabId) => {
-    try {
-        const frames = await chrome.webNavigation.getAllFrames({ tabId });
-        if (!frames) {
-            logger.warn(`[tsweb.coverage]: Empty frame tree for tab ${tabId}, keeping its frames on dynamic injection`);
-            return undefined;
-        }
-
-        return new Map(frames.map((frame) => [frame.frameId, frame]));
-    } catch (e) {
-        logger.warn(`[tsweb.coverage]: Failed to read the frame tree for tab ${tabId}, keeping its frames on dynamic injection`, e);
-        return undefined;
-    }
-};
-
-/**
- * Resolves the hostname whose preregistered coverage applies to a frame, or
- * `null` when the frame must stay on the dynamic path.
- *
- * Only the top-level origin decides: the filtering state (allowlist,
- * inverted allowlist) is tab-level, and the page gate checks
- * `location.ancestorOrigins` the same way. Intermediate frames do not
- * participate. The returned key is the nearest HTTP(S) host, which is what
- * `matchOriginAsFallback` matched the registration against. A missing cached
- * parent is resolved from the live frame tree.
- *
- * @param tabId Tab id.
- * @param frameContext Frame context to resolve the host for.
- * @param getFrameContext Injected frame lookup.
- * @param hostnames Preregistered hostnames.
- * @param isCoveredHost Check on the nearest HTTP(S) host: when it returns
- * false, the walk stops before reaching the top frame, because no top-level
- * origin can make an uncovered host covered.
- * @param getFrameTree Injected live frame tree lookup.
- *
- * @returns Coverage hostname or `null`.
- */
-export const resolveCoverageHost = async (
-    tabId: number,
-    frameContext: FrameMV3,
-    getFrameContext: FrameContextLookup,
-    hostnames: ReadonlySet<string>,
-    isCoveredHost: (host: string) => boolean,
-    getFrameTree: FrameTreeLookup = getLiveFrameTree,
-): Promise<string | null> => {
-    const visited = new Set<number>();
-    let current: FrameNode = frameContext;
-    let coverageHost: string | null = null;
-    let liveFrames: Map<number, FrameNode> | undefined;
-
-    for (;;) {
-        // Broken parent chains must not loop forever.
-        if (visited.has(current.frameId)) {
-            return null;
-        }
-        visited.add(current.frameId);
-
-        const isHttp = isHttpRequest(current.url);
-        const host = isHttp ? parseHostname(current.url) : null;
-        // The nearest HTTP(S) node is the coverage key.
-        coverageHost ??= host;
-
-        // Nothing is registered for the nearest HTTP(S) host: no top-level
-        // origin can change that, so stop before paying for the rest of the
-        // walk and for a possible `getAllFrames` round trip.
-        if (coverageHost !== null && !isCoveredHost(coverageHost)) {
-            return null;
-        }
-
-        if (current.parentFrameId === NO_PARENT_FRAME_ID) {
-            // The top frame decides: its origin must belong to the set.
-            const topHost = isHttp ? host : parseUrlOriginHost(current.url);
-
-            return topHost && hostnames.has(topHost) ? coverageHost : null;
-        }
-
-        const { parentFrameId } = current;
-        // Once the live tree is read it is the only source: mixing it with
-        // the cache could splice two different document trees together.
-        const cachedParent = liveFrames ? undefined : getFrameContext(tabId, parentFrameId);
-
-        if (cachedParent && isSameDocument(current.parentDocumentId, cachedParent.documentId)) {
-            current = cachedParent;
-            continue;
-        }
-
-        // Pruned cache, or an entry that describes another document: resolve
-        // the parent from the live tree.
-        // eslint-disable-next-line no-await-in-loop
-        liveFrames ??= await getFrameTree(tabId);
-        if (!liveFrames) {
-            // `getLiveFrameTree` has already warned: a closing tab is enough
-            // for `getAllFrames` to return null.
-            return null;
-        }
-
-        const liveParent = liveFrames.get(parentFrameId);
-        if (!liveParent) {
-            logger.warn(`[tsweb.coverage]: Frame ${parentFrameId} is missing from the live tree of tab ${tabId}, keeping the frame on dynamic injection`);
-            return null;
-        }
-
-        current = liveParent;
-    }
-};
-
-/**
- * Returns the hashes of preregistered rules covered by the registrations
- * that apply to the frame — those dynamic injection must skip.
- *
- * @param tabId Tab id.
  * @param frameContext Frame context.
- * @param getFrameContext Injected frame lookup.
  * @param preExistingDocument Whether the document loaded before the current
  * service worker started: such a document is judged only against the rules
  * from registrations persisted at boot, since a registration updated since
@@ -223,12 +49,14 @@ export const resolveCoverageHost = async (
  *
  * @returns Covered rule hashes or `undefined` when there is no coverage.
  */
-export const getCoveredRules = async (
-    tabId: number,
+export const getCoveredRules = (
     frameContext: FrameMV3,
-    getFrameContext: FrameContextLookup,
     preExistingDocument = false,
-): Promise<ReadonlySet<string> | undefined> => {
+): ReadonlySet<string> | undefined => {
+    if (frameContext.frameId !== MAIN_FRAME_ID || !isHttpRequest(frameContext.url)) {
+        return undefined;
+    }
+
     const coveredRules = preExistingDocument
         ? appContext.preregisteredScriptRulesAtBoot
         : appContext.preregisteredScriptRules;
@@ -237,25 +65,9 @@ export const getCoveredRules = async (
         return undefined;
     }
 
-    const hostnames = appContext.preregisteredHostnames;
-    if (!hostnames || hostnames.size === 0) {
-        return undefined;
-    }
+    const host = parseHostname(frameContext.url);
 
-    const host = await resolveCoverageHost(
-        tabId,
-        frameContext,
-        getFrameContext,
-        hostnames,
-        // A frame whose nearest HTTP(S) host has no covered rules can never
-        // be covered: skip the walk to the top frame for it.
-        (candidate) => coveredRules.has(candidate),
-    );
-    if (!host) {
-        return undefined;
-    }
-
-    return coveredRules.get(host);
+    return host ? coveredRules.get(host) : undefined;
 };
 
 /**

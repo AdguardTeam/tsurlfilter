@@ -251,7 +251,6 @@ describe('PreregisteredScriptsService', () => {
         appContext.preregisteredScriptRulesAtBoot = undefined;
         appContext.preregisteredScriptRulesAtBootFailed = undefined;
         appContext.preregisteredScriptRules = undefined;
-        appContext.preregisteredHostnames = undefined;
         appContext.preregisteredScripts = undefined;
         appContext.preregisteredScriptsKey = undefined;
         appContext.preregisteredScriptsRegistered = undefined;
@@ -311,8 +310,8 @@ describe('PreregisteredScriptsService', () => {
                 matches: ['*://youtube.com/*'],
                 runAt: 'document_start',
                 world: 'MAIN',
-                allFrames: true,
-                matchOriginAsFallback: true,
+                allFrames: false,
+                matchOriginAsFallback: false,
                 persistAcrossSessions: true,
             });
             expect(scripts[0].excludeMatches).toBeUndefined();
@@ -978,9 +977,6 @@ describe('PreregisteredScriptsService', () => {
 
             // The embed gate's host set is the configured domains plus their
             // `www.` aliases — the same expansion the shared bundle embeds.
-            expect(appContext.preregisteredHostnames).toEqual(
-                new Set(['youtube.com', 'www.youtube.com']),
-            );
         });
 
         it('snapshots the boot registrations once when two init calls overlap', async () => {
@@ -1151,7 +1147,6 @@ describe('PreregisteredScriptsService', () => {
             // The boot snapshot's hosts stay published: pre-existing pages
             // already received those registrations' files at document_start,
             // and their coverage must remain resolvable.
-            expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
         });
 
         it('does not resurrect stale coverage after a successful clear', async () => {
@@ -1182,19 +1177,12 @@ describe('PreregisteredScriptsService', () => {
             await setupRulesWithManifest({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-            expect(appContext.preregisteredHostnames).toEqual(
-                new Set(['youtube.com', 'www.youtube.com']),
-            );
 
             // A failed sync leaves the previous registrations active, so the
             // published host set must still describe them.
             vi.mocked(ContentScriptManager.sync).mockRejectedValueOnce(new Error('invalid namespace'));
 
             await PreregisteredScriptsService.sync(true, ['example.com'], SCRIPTS_PATH);
-
-            expect(appContext.preregisteredHostnames).toEqual(
-                new Set(['youtube.com', 'www.youtube.com']),
-            );
         });
 
         it('publishes the generation host set when the first sync fails', async () => {
@@ -1217,7 +1205,6 @@ describe('PreregisteredScriptsService', () => {
             ]));
             // The generation's set, not the runtime expansion, which would
             // also cover `www.youtube.com`.
-            expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
         });
 
         it('falls back to the coverage keys when the manifest cannot be read', async () => {
@@ -1233,7 +1220,6 @@ describe('PreregisteredScriptsService', () => {
             // set, and a host the gate shims must not be reported as covered.
             // The coverage keys under-claim instead, which only re-runs a rule
             // the page bundle has already run.
-            expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
         });
 
         it('publishes the manifest host set when the first sync is already disabled', async () => {
@@ -1253,8 +1239,6 @@ describe('PreregisteredScriptsService', () => {
             ]);
 
             await PreregisteredScriptsService.sync(false, ['youtube.com'], SCRIPTS_PATH);
-
-            expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
         });
 
         it('publishes the host set embedded in the manifest', async () => {
@@ -1273,8 +1257,6 @@ describe('PreregisteredScriptsService', () => {
             );
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-
-            expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
 
             // The runtime expansion also covers `www.youtube.com`, but the
             // page gate only knows the manifest host: registering the alias
@@ -1295,15 +1277,12 @@ describe('PreregisteredScriptsService', () => {
             );
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-            expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
 
             // With preregistration disabled the manifest is not read, and the
             // expansion also covers `www.youtube.com`. Publishing it would
             // claim coverage for a host whose frames the page gate shims, so
             // the set that describes the live registrations is kept.
             await PreregisteredScriptsService.sync(false, ['youtube.com'], SCRIPTS_PATH);
-
-            expect(appContext.preregisteredHostnames).toEqual(new Set(['youtube.com']));
         });
 
         it('awaits an in-flight sync before clearing in the no-config path', async () => {

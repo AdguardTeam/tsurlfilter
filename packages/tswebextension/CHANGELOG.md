@@ -14,11 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional `preregisteredScripts` MV3 configuration for synchronizing
   persistent content-script registrations and excluding covered local rules from
   dynamic injection. Rules that are not covered remain on the dynamic path.
-  A frame is covered only when the top-level site belongs to the host set of the
-  artifact generation, so a preregistered host's frame under a foreign top-level
-  site stays on the dynamic path. The manifest must carry that set
-  (`hostnames`): a manifest without it fails the sync, and only its hosts are
-  registered.
+  Only top-level documents are registered and covered: a subframe's verdict
+  depends on the rules of its parent, which the page cannot read when the
+  domains differ, so frames always keep the dynamic path. The manifest must
+  carry the host set of the generation (`hostnames`): a manifest without it
+  fails the sync, and only its hosts are registered.
 - Public utilities for hashing preregistered rules and resolving stable
   script filenames. They are exported from
   `@adguard/tswebextension/mv3/preregistered-scripts/build-contract`.
