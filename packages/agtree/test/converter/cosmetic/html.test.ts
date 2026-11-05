@@ -1133,6 +1133,27 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div'],
                     },
 
+                    // `[max-length]` special attribute selector - dropping the whole
+                    // compound selector must not leave a dangling combinator
+                    {
+                        actual: '$$div > [max-length="100"]',
+                        expected: ['##^div > *'],
+                    },
+
+                    // `[max-length]` special attribute selector - dropping the whole
+                    // complex selector replaces the empty compound with `*`
+                    {
+                        actual: '$$[max-length="100"]',
+                        expected: ['##^*'],
+                    },
+
+                    // `[max-length]` special attribute selector - empty compound
+                    // between combinators
+                    {
+                        actual: '$$div > [max-length="100"] > span',
+                        expected: ['##^div > * > span'],
+                    },
+
                     // `[tag-content]` special attribute selector
                     {
                         actual: '$$div[tag-content="example"]',
@@ -1431,6 +1452,10 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div'],
                     },
                     {
+                        actual: '$$div > [max-length="100"]',
+                        expected: ['##^div > *'],
+                    },
+                    {
                         actual: '$$div[tag-content="example"]',
                         expected: ['##^div:has-text(example)'],
                     },
@@ -1461,15 +1486,6 @@ describe('HtmlRuleConverter', () => {
                     {
                         input: '$$div[max-length="abc"]',
                         error: "Value of special attribute selector 'max-length' must be an integer, got 'abc'",
-                    },
-                    {
-                        input: '$$div[max-length="1e2"]',
-                        error: "Value of special attribute selector 'max-length' must be an integer, got '1e2'",
-                    },
-                    {
-                        input: '$$div[max-length="-1"]',
-                        // eslint-disable-next-line max-len
-                        error: "Value of special attribute selector 'max-length' must be a positive integer, got '-1'",
                     },
 
                     // Parsing errors

@@ -40,7 +40,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `##^div:has-text("foo" )`.
 - ADG→uBO conversion now validates `[max-length]` values before dropping them:
   e.g. `$$div[max-length="1e2"]` and `$$div[max-length="abc"]` now throw a
-  conversion error instead of silently becoming `##^div`.
+  conversion error instead of silently becoming `##^div`. A dropped
+  `[max-length]` that is the whole compound selector is replaced with `*`, so
+  `$$div > [max-length="100"]` becomes `##^div > *` instead of an invalid
+  rule with a dangling combinator.
 
 ### Security
 

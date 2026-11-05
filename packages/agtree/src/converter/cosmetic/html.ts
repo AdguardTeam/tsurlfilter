@@ -436,7 +436,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *   any quotes in it are literal characters of the text to match, not
      *   a transport encoding to strip later. This mirrors CoreLibs, which
      *   never unquotes `:contains()` arguments.
-     * - `[wildcard="*content*"]` -> `:contains(/*.content*./s)`
+     * - `[wildcard="*content*"]` -> `:contains(/^.*content.*$/s)`
      *   convert search pattern to regular expression
      * - `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/s)`
      *   converts to a length-matching regular expression.
@@ -467,7 +467,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 );
             }
 
-            // `[wildcard="*content*"] -> `:contains(/*.content*./s)`
+            // `[wildcard="*content*"]` -> `:contains(/^.*content.*$/s)`
             // convert search pattern to regular expression
             case AdgAttributeSelectors.Wildcard: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
@@ -655,7 +655,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * Handles special attribute selectors during AdGuard to uBlock conversion:
      * - `[tag-content="content"]` -> `:has-text(content)`
      *   direct conversion, no changes to value
-     * - `[wildcard="*content*"]` -> `:has-text(/*.content*./s)`
+     * - `[wildcard="*content*"]` -> `:has-text(/^.*content.*$/s)`
      *   convert search pattern to regular expression
      * - `[min-length="min"]` -> `:min-text-length(min)`
      *   the value is validated and normalized to plain digits, since uBlock
@@ -663,7 +663,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - `[max-length]` is skipped, but its value is validated the same way as
      *   `[min-length]` first, so an invalid value throws the same conversion
      *   error as in AdGuard to AdGuard conversion instead of being dropped
-     *   silently.
+     *   silently. When the dropped selector is the whole compound selector,
+     *   the converter emits `*` in its place to keep the complex selector
+     *   valid.
      *
      * @param name Name of the special attribute selector.
      * @param value Value of the special attribute selector.
@@ -683,7 +685,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 );
             }
 
-            // `[wildcard="*content*"] -> `:has-text(/*.content*./s)`
+            // `[wildcard="*content*"]` -> `:has-text(/^.*content.*$/s)`
             // convert search pattern to regular expression
             case AdgAttributeSelectors.Wildcard: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
@@ -693,7 +695,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
             }
 
             // `[min-length="min"]` -> `:min-text-length(min)`
-            case AdgAttributeSelectors.MinLength: {
+            // `[max-length]` is skipped after validating its value, since uBlock
+            // has no equivalent for it
+            case AdgAttributeSelectors.MinLength:
+            case AdgAttributeSelectors.MaxLength: {
                 // Validate length value
                 HtmlRuleConverter.assertValidLengthValue(
                     name,
@@ -702,6 +707,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
                     ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
                 );
+
+                if (name === AdgAttributeSelectors.MaxLength) {
+                    return false;
+                }
 
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.MinTextLength,
@@ -713,19 +722,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     // which uBlock rejects.
                     value.trim().replace(/^\+/, ''),
                 );
-            }
-
-            // `[max-length]` is skipped, but only after validating its value
-            case AdgAttributeSelectors.MaxLength: {
-                HtmlRuleConverter.assertValidLengthValue(
-                    name,
-                    value,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
-                    ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
-                );
-
-                return false;
             }
 
             // This line is unreachable due to exhausted cases, but we keep it to satisfy TS
@@ -1175,9 +1171,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 );
             }
 
+            // Dropping a special attribute selector may empty its whole
+            // compound selector, which would leave a dangling combinator or an
+            // empty complex selector. The dropped constraint does not restrict
+            // the matched elements, so `*` keeps the rest of the rule valid.
+            const normalizedSelectors = HtmlRuleConverter.replaceEmptyCompoundsWithUniversalSelector(
+                convertedSelectors,
+            );
+
             convertedComplexSelectors.push({
                 type: 'ComplexSelector',
-                children: convertedSelectors,
+                children: normalizedSelectors,
             });
         }
 
@@ -1198,6 +1202,53 @@ export class HtmlRuleConverter extends RuleConverterBase {
         }
 
         return convertedBody;
+    }
+
+    /**
+     * Replaces empty compound selectors left by dropped special simple
+     * selectors with the universal selector `*`.
+     *
+     * A special attribute selector may be the whole compound selector, so
+     * dropping it produces a dangling combinator (`div > [max-length]` becomes
+     * `div >`) or an empty complex selector (`[max-length]` alone). Both are
+     * rejected by uBlock. The dropped constraint does not change which
+     * elements match, so `*` keeps the rest of the rule intact:
+     * `##^div > *` instead of an invalid rule lost entirely.
+     *
+     * @param convertedSelectors Converted selectors of a complex selector.
+     *
+     * @returns Converted selectors with empty compounds replaced by `*`.
+     */
+    private static replaceEmptyCompoundsWithUniversalSelector(
+        convertedSelectors: (SimpleSelector | SelectorCombinator)[],
+    ): (SimpleSelector | SelectorCombinator)[] {
+        const universalSelector: SimpleSelector = {
+            type: 'TypeSelector',
+            value: '*',
+        };
+        const result: (SimpleSelector | SelectorCombinator)[] = [];
+
+        for (let i = 0; i < convertedSelectors.length; i += 1) {
+            const selector = convertedSelectors[i];
+
+            if (selector.type === 'SelectorCombinator') {
+                // A combinator at the start of the complex selector or right
+                // after another combinator separates an empty compound
+                if (result.length === 0 || result[result.length - 1].type === 'SelectorCombinator') {
+                    result.push(universalSelector);
+                }
+            }
+
+            result.push(selector);
+        }
+
+        // The last compound is empty if the complex selector ends with a
+        // combinator, or if every selector was dropped
+        if (result.length === 0 || result[result.length - 1].type === 'SelectorCombinator') {
+            result.push(universalSelector);
+        }
+
+        return result;
     }
 
     /**
