@@ -99,22 +99,22 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/^(?=.{0,}$).*/s)'],
                     },
 
-                    // `[min-length]` special attribute selector - a large value at
-                    // the PCRE2 quantifier limit
+                    // `[min-length]` special attribute selector - a large value
+                    // equal to the former PCRE2 quantifier limit
                     {
                         actual: '$$div[min-length="65535"]',
                         expected: ['$$div:contains(/^(?=.{65535,}$).*/s)'],
                     },
 
-                    // `[max-length]` special attribute selector - a large value at
-                    // the PCRE2 quantifier limit
+                    // `[max-length]` special attribute selector - a large value
+                    // equal to the former PCRE2 quantifier limit
                     {
                         actual: '$$div[max-length="65535"]',
                         expected: ['$$div:contains(/^(?=.{0,65535}$).*/s)'],
                     },
 
                     // `[max-length]` special attribute selector - a real-world value
-                    // above the PCRE2 quantifier limit is kept as decimal digits
+                    // above the former PCRE2 quantifier limit is kept as decimal digits
                     {
                         actual: '$$div[max-length="300000"]',
                         expected: ['$$div:contains(/^(?=.{0,300000}$).*/s)'],
