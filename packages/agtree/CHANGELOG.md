@@ -31,9 +31,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Fixed
 
 - `[min-length]` and `[max-length]` values are now emitted as plain decimal
-  digits during ADG→ADG conversion, so large values (e.g.
-  `[max-length="300000"]`) are neither rounded nor switched to exponent
-  notation. (AG-61619)
+  digits during ADG→ADG conversion, so large values are neither rounded nor
+  switched to exponent notation. For example,
+  `[min-length="1000000000000000000000"]` used to become `.{1e+21,}`.
 - Pseudo-class selector arguments are no longer trimmed: the argument is the
   raw text between the pseudo-class parentheses, e.g. `$$div:contains( "foo" )`
   keeps the spaces around the quoted text, and `:not( .a )` keeps the spaces
