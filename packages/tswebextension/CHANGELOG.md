@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- CSS hits statistics now pause and resume immediately when the `collectStats`
+  setting changes, without reloading the page. Enabling collection on an open
+  page re-applies the marked cosmetic data, and a bfcache restore re-syncs the
+  state with the background.
+- Partial CSS hits from an interrupted full DOM scan are no longer reported;
+  the next scan reports them.
 - Filtering log now records CSS hits for elements that pages add and remove
   while the page is loading, e.g. anti-adblock bait elements created by a
   script in `<head>`.
