@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `NetworkRule.getMatchConditions()` and `Pattern.getMatchConditions()` with
   the `MatchConditions` type — describe how a pattern is matched (hostname,
   shortcut or regex) without matching a request.
+- `RuleTable` and `getRuleTable()` — the lookup table the engine stores a rule
+  in, so build tools can reproduce the engine's tie-break order instead of
+  copying the routing. The table predicates are shared with `addRule()`.
 - `MASK_ALLOWLIST`, `NETWORK_RULE_OPTIONS`, `OPTIONS_DELIMITER` and
   `DomainModifier` are exported for build tools that need to re-apply the
   engine's option parsing.

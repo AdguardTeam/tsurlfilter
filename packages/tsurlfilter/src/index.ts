@@ -7,6 +7,7 @@ export * from './engine/dns-engine';
 export * from './engine/dns-result';
 export * from './engine/engine';
 export * from './engine/matching-result';
+export { RuleTable, getRuleTable } from './engine/lookup-tables/rule-table';
 export * from './filterlist/rule-list';
 export * from './filterlist/rule-storage';
 export * from './filterlist/source-map';

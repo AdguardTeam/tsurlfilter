@@ -45,31 +45,11 @@ export class HostnameLookupTable implements ILookupTable {
         const { patternStart, patternEnd } = ruleParts;
         const pattern = ruleParts.text.slice(patternStart, patternEnd);
 
-        if (!pattern) {
+        if (!HostnameLookupTable.accepts(pattern)) {
             return false;
         }
 
-        let hostname = '';
-
-        // Pattern: '||example.org^'
-        if (pattern.startsWith(SimpleRegex.MASK_START_URL) && pattern.endsWith(SimpleRegex.MASK_SEPARATOR)) {
-            hostname = pattern.slice(
-                SimpleRegex.MASK_START_URL.length,
-                pattern.length - SimpleRegex.MASK_SEPARATOR.length,
-            );
-        }
-
-        // Pattern: '||example.org/path'
-        if (pattern.startsWith(SimpleRegex.MASK_START_URL) && pattern.indexOf(SimpleRegex.MASK_BACKSLASH) !== -1) {
-            const end = pattern.indexOf(SimpleRegex.MASK_BACKSLASH);
-            hostname = pattern.slice(SimpleRegex.MASK_START_URL.length, end);
-        }
-
-        if (!HostnameLookupTable.isValidHostname(hostname)) {
-            return false;
-        }
-
-        const hash = fastHash(hostname);
+        const hash = fastHash(HostnameLookupTable.extractHostname(pattern));
         let rulesIndexes = this.hostnameLookupTable.get(hash);
         if (!rulesIndexes) {
             rulesIndexes = [];
@@ -123,6 +103,46 @@ export class HostnameLookupTable implements ILookupTable {
             }
         }
         return result;
+    }
+
+    /**
+     * Checks whether the table accepts the pattern. Single source of the
+     * decision: `addRule()` and the public rule inspection both use it.
+     *
+     * @param pattern Network rule pattern.
+     *
+     * @returns True when the engine keeps the rule in this table.
+     */
+    public static accepts(pattern: string): boolean {
+        return HostnameLookupTable.isValidHostname(HostnameLookupTable.extractHostname(pattern));
+    }
+
+    /**
+     * Extracts the hostname the rule is keyed by.
+     *
+     * @param pattern Network rule pattern.
+     *
+     * @returns Hostname, or an empty string when the pattern is not keyed by
+     * one.
+     */
+    private static extractHostname(pattern: string): string {
+        let hostname = '';
+
+        // Pattern: '||example.org^'
+        if (pattern.startsWith(SimpleRegex.MASK_START_URL) && pattern.endsWith(SimpleRegex.MASK_SEPARATOR)) {
+            hostname = pattern.slice(
+                SimpleRegex.MASK_START_URL.length,
+                pattern.length - SimpleRegex.MASK_SEPARATOR.length,
+            );
+        }
+
+        // Pattern: '||example.org/path'
+        if (pattern.startsWith(SimpleRegex.MASK_START_URL) && pattern.indexOf(SimpleRegex.MASK_BACKSLASH) !== -1) {
+            const end = pattern.indexOf(SimpleRegex.MASK_BACKSLASH);
+            hostname = pattern.slice(SimpleRegex.MASK_START_URL.length, end);
+        }
+
+        return hostname;
     }
 
     /**

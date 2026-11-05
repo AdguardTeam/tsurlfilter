@@ -45,26 +45,13 @@ export class DomainsLookupTable implements ILookupTable {
             return false;
         }
 
-        const filteredDomains: string[] = [];
-
         const domains = ruleParts.text.slice(ruleParts.domainsStart, ruleParts.domainsEnd).split('|');
-        if (domains.length === 0) {
+
+        if (!DomainsLookupTable.accepts(domains)) {
             return false;
         }
 
-        for (const domain of domains) {
-            if (DomainModifier.isWildcardOrRegexDomain(domain)) {
-                return false;
-            }
-
-            if (!domain.startsWith('~')) {
-                filteredDomains.push(domain);
-            }
-        }
-
-        if (filteredDomains.length === 0) {
-            return false;
-        }
+        const filteredDomains = domains.filter((domain) => !domain.startsWith('~'));
 
         filteredDomains.forEach((domain) => {
             const hash = fastHash(domain);
@@ -78,6 +65,32 @@ export class DomainsLookupTable implements ILookupTable {
 
         this.rulesCount += 1;
         return true;
+    }
+
+    /**
+     * Checks whether the table accepts the rule's `$domain` list. Single
+     * source of the decision: `addRule()` and the public rule inspection both
+     * use it.
+     *
+     * @param domains Domains as written in the rule: restricted ones keep the
+     * `~` prefix.
+     *
+     * @returns True when the engine keeps the rule in this table.
+     */
+    public static accepts(domains: readonly string[]): boolean {
+        let hasPermitted = false;
+
+        for (const domain of domains) {
+            if (DomainModifier.isWildcardOrRegexDomain(domain)) {
+                return false;
+            }
+
+            if (!domain.startsWith('~')) {
+                hasPermitted = true;
+            }
+        }
+
+        return hasPermitted;
     }
 
     /** @inheritdoc */

@@ -48,20 +48,40 @@ export class TrieLookupTable implements ILookupTable {
         const { patternStart, patternEnd } = ruleParts;
         const pattern = ruleParts.text.slice(patternStart, patternEnd);
 
-        if (!pattern) {
-            return false;
-        }
-
         const shortcut = SimpleRegex.extractShortcut(pattern);
 
-        if (!shortcut || TrieLookupTable.isAnyURLShortcut(shortcut)
-            || shortcut.length < SimpleRegex.MIN_SHORTCUT_LENGTH) {
+        if (!TrieLookupTable.acceptsShortcut(shortcut)) {
             return false;
         }
 
         this.trie.add(shortcut, storageIdx);
         this.rulesCount += 1;
         return true;
+    }
+
+    /**
+     * Checks whether the table accepts the pattern. Single source of the
+     * decision: `addRule()` and the public rule inspection both use it.
+     *
+     * @param pattern Network rule pattern.
+     *
+     * @returns True when the engine keeps the rule in this table.
+     */
+    public static accepts(pattern: string): boolean {
+        return TrieLookupTable.acceptsShortcut(SimpleRegex.extractShortcut(pattern));
+    }
+
+    /**
+     * Checks whether the trie can index the shortcut.
+     *
+     * @param shortcut Extracted rule shortcut.
+     *
+     * @returns True when the engine keeps the rule in this table.
+     */
+    private static acceptsShortcut(shortcut: string): boolean {
+        return !!shortcut
+            && !TrieLookupTable.isAnyURLShortcut(shortcut)
+            && shortcut.length >= SimpleRegex.MIN_SHORTCUT_LENGTH;
     }
 
     /** @inheritdoc */
