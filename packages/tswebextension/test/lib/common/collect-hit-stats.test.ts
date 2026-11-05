@@ -6,7 +6,9 @@ import {
     it,
 } from 'vitest';
 
-import { CollectHitStatsNotifier } from '../../../src/lib/common/collect-hit-stats';
+import { type NetworkRule } from '@adguard/tsurlfilter';
+
+import { CollectHitStatsNotifier, isCollectStatsEnabledForDocument } from '../../../src/lib/common/collect-hit-stats';
 import { MESSAGE_HANDLER_NAME, MessageType } from '../../../src/lib/common/message-constants';
 
 describe('CollectHitStatsNotifier', () => {
@@ -94,5 +96,24 @@ describe('CollectHitStatsNotifier', () => {
         expect(browser.tabs.sendMessage.secondCall.args[1]).toEqual(expect.objectContaining({
             payload: { isCollectStats: false },
         }));
+    });
+});
+
+describe('isCollectStatsEnabledForDocument', () => {
+    const allowlistedRule = { isFilteringDisabled: (): boolean => true } as NetworkRule;
+    const regularRule = { isFilteringDisabled: (): boolean => false } as NetworkRule;
+
+    it('returns false when collection is disabled', () => {
+        expect(isCollectStatsEnabledForDocument(false, regularRule)).toBe(false);
+        expect(isCollectStatsEnabledForDocument(undefined, regularRule)).toBe(false);
+    });
+
+    it('returns false for an allowlisted document', () => {
+        expect(isCollectStatsEnabledForDocument(true, allowlistedRule)).toBe(false);
+    });
+
+    it('returns true when collection is enabled and the document is not allowlisted', () => {
+        expect(isCollectStatsEnabledForDocument(true, regularRule)).toBe(true);
+        expect(isCollectStatsEnabledForDocument(true, null)).toBe(true);
     });
 });

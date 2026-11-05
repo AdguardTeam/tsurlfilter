@@ -25,7 +25,7 @@ import {
 } from '../../../../src/lib/common/canvas-protection/constants';
 import { CollectHitStatsNotifier } from '../../../../src/lib/common/collect-hit-stats';
 import { type Message } from '../../../../src/lib/common/message';
-import { canvasDeliveryChannel } from '../../../../src/lib/mv2/background/api';
+import { canvasDeliveryChannel, tabsApi } from '../../../../src/lib/mv2/background/api';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { assistant, Assistant } from '../../../../src/lib/mv2/background/assistant';
 import { configurationMV2Validator } from '../../../../src/lib/mv2/background/configuration';
@@ -222,6 +222,19 @@ describe('TsWebExtension', () => {
 
             expect(notifySpy).not.toHaveBeenCalled();
             notifySpy.mockRestore();
+        });
+
+        it('resolves collect stats to false for an allowlisted tab', () => {
+            const tabId = 1;
+            vi.spyOn(tabsApi, 'getTabContext').mockReturnValue({
+                mainFrameRule: { isFilteringDisabled: (): boolean => true },
+            } as never);
+            const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+            instance.setCollectHitStats(false);
+
+            const resolver = notifySpy.mock.calls[0][1] as (tabId: number) => boolean;
+            expect(resolver(tabId)).toBe(false);
         });
 
         it('should update stealthModeEnabled correctly', async () => {

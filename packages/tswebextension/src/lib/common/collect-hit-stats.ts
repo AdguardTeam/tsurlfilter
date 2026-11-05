@@ -1,7 +1,26 @@
 import browser, { type Tabs } from 'webextension-polyfill';
 
+import { type NetworkRule } from '@adguard/tsurlfilter';
+
 import { MESSAGE_HANDLER_NAME, MessageType } from './message-constants';
 import { logger } from './utils/logger';
+
+/**
+ * Returns whether CSS hits must be collected for a document.
+ *
+ * The setting can be enabled globally, but allowlisted documents opt out.
+ *
+ * @param collectStats Global `collectStats` setting value.
+ * @param mainFrameRule Document-level rule for the tab, if known.
+ *
+ * @returns True if hits must be collected.
+ */
+export function isCollectStatsEnabledForDocument(
+    collectStats: boolean | undefined,
+    mainFrameRule: NetworkRule | null | undefined,
+): boolean {
+    return !!collectStats && !mainFrameRule?.isFilteringDisabled();
+}
 
 /**
  * Notifies content scripts about changes of the `collectStats` setting.

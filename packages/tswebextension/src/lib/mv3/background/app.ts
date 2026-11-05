@@ -15,7 +15,7 @@ import { type AppInterface, type MessageHandler } from '../../common/app';
 import { type RegistrationResult } from '../../common/canvas-protection/contracts';
 import { CanvasProtectionController } from '../../common/canvas-protection/controller';
 import { CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
-import { CollectHitStatsNotifier } from '../../common/collect-hit-stats';
+import { CollectHitStatsNotifier, isCollectStatsEnabledForDocument } from '../../common/collect-hit-stats';
 import { ALLOWLIST_FILTER_ID, BLOCKING_TRUSTED_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
@@ -909,12 +909,10 @@ export class TsWebExtension implements AppInterface<
      * @returns True if hits must be collected for the tab.
      */
     private static isCollectStatsEnabledForTab(tabId: number): boolean {
-        const collectStats = appContext.configuration?.settings.collectStats || false;
-        const tabContext = tabsApi.getTabContext(tabId);
-        const isDocumentAllowlisted = !!tabContext?.mainFrameRule
-            && tabContext.mainFrameRule.isFilteringDisabled();
-
-        return collectStats && !isDocumentAllowlisted;
+        return isCollectStatsEnabledForDocument(
+            appContext.configuration?.settings.collectStats,
+            tabsApi.getTabContext(tabId)?.mainFrameRule,
+        );
     }
 
     /**

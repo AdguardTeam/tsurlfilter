@@ -3,6 +3,7 @@ import { type Runtime } from 'webextension-polyfill';
 
 import { NetworkRuleOption } from '@adguard/tsurlfilter';
 
+import { isCollectStatsEnabledForDocument } from '../../common/collect-hit-stats';
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { type CookieRule } from '../../common/content-script/cookie-controller';
 import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
@@ -131,10 +132,8 @@ export class MessagesApi {
         const tabContext = typeof tabId === 'number'
             ? this.tabsApi.getTabContext(tabId)
             : undefined;
-        const isDocumentAllowlisted = !!tabContext?.mainFrameRule
-            && tabContext.mainFrameRule.isFilteringDisabled();
 
-        return collectStats && !isDocumentAllowlisted;
+        return isCollectStatsEnabledForDocument(collectStats, tabContext?.mainFrameRule);
     }
 
     /**
