@@ -55,9 +55,7 @@ import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
  *
  * Note: this bound applies to the generated regular expression only.
  * The `[max-length]` and `[min-length]` attribute values are not bounded
- * by it: products apply those attributes natively, without PCRE2, and the
- * ADG→ADG conversion emits the value verbatim as a digit string, so real
- * rules such as `[max-length="300000"]` keep converting.
+ * by it: products apply those attributes natively, without PCRE2.
  *
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}
  * @see {@link https://www.pcre.org/current/doc/html/pcre2limits.html}
