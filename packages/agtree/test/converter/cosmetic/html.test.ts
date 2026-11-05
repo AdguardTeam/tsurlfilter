@@ -1178,6 +1178,10 @@ describe('HtmlRuleConverter', () => {
                         actual: '$$div[min-length="+5"]',
                         expected: ['##^div:min-text-length(5)'],
                     },
+                    {
+                        actual: '$$div[min-length="0005"]',
+                        expected: ['##^div:min-text-length(5)'],
+                    },
 
                     // `[min-length]` special attribute selector - large values are
                     // normalized textually, so `Number()` rounding and the exponent

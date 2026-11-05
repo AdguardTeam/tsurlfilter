@@ -691,12 +691,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.MinTextLength,
                     // uBlock validates the argument with a digits-only pattern,
-                    // so strip the leading whitespace and the optional plus sign
-                    // that the pattern above allows (e.g. `" 5"` -> `5`).
-                    // The normalization stays textual: `Number()` would round
-                    // large values and switch to exponent notation from `1e21`,
-                    // which uBlock rejects.
-                    value.trim().replace(/^\+/, ''),
+                    // so normalize the value to plain decimal digits (e.g.
+                    // `" 5"` and `"+5"` -> `5`). The normalization stays
+                    // textual: `Number()` would round large values and switch
+                    // to exponent notation from `1e21`, which uBlock rejects.
+                    HtmlRuleConverter.normalizeLengthDigits(value),
                 );
             }
 
@@ -1566,14 +1565,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * Strips the leading whitespace and the optional `+` allowed by
      * {@link ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN}, then strips leading zeros.
-     * A zero result is kept as a single `0`.
+     * The pattern already rejects trailing whitespace, so only the leading
+     * side needs stripping. A zero result is kept as a single `0`.
      *
      * @param value Validated length value.
      *
      * @returns Normalized value as a string of decimal digits.
      */
     private static normalizeLengthDigits(value: string): string {
-        const digits = value.trim().replace(/^\+/, '');
+        const digits = value.trimStart().replace(/^\+/, '');
         const withoutLeadingZeros = digits.replace(/^0+/, '');
 
         return withoutLeadingZeros === EMPTY ? '0' : withoutLeadingZeros;
