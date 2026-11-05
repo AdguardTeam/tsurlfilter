@@ -46,11 +46,51 @@ import { WebRequestApi } from './web-request-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult;
+
+    /**
+     * Static rule sets of the filters enabled in the browser.
+     */
     staticFilters: IRulesetWithSourceMap[];
+
+    /**
+     * Creates the static rule sets of the filters that are not enabled in the
+     * browser, e.g. to read their rule counters for the rules limits checks.
+     *
+     * The rule sets are created on demand and one at a time, because creating
+     * a rule set for the first time requires runtime filter list preparation,
+     * which is too expensive for the startup path. Call it after the
+     * configuration is applied. Repeated calls return the same promise, and
+     * rule sets that fail to be created are logged and skipped.
+     */
+    loadDisabledStaticFilters: () => Promise<IRulesetWithSourceMap[]>;
+
     dynamicRules?: ConversionResult;
     stealthResult?: StealthConfigurationResult;
     canvasProtection?: RegistrationResult;
 };
+
+/**
+ * Static rule sets split by their state in the browser.
+ */
+type StaticRulesets = {
+    /**
+     * Rule sets enabled in the browser, created immediately.
+     */
+    enabled: IRulesetWithSourceMap[];
+
+    /**
+     * Lazily creates the rule sets not enabled in the browser.
+     */
+    loadDisabled: () => Promise<IRulesetWithSourceMap[]>;
+};
+
+/**
+ * Resolves with no rule sets, used when there are no disabled static rule
+ * sets to create.
+ *
+ * @returns Promise resolved with an empty list.
+ */
+const loadNoRulesets = async (): Promise<IRulesetWithSourceMap[]> => [];
 
 type FiltersUpdateInfo = {
     staticFilters: IFilter[];
@@ -380,6 +420,7 @@ export class TsWebExtension implements AppInterface<
                 errors: [],
             },
             staticFilters: [],
+            loadDisabledStaticFilters: loadNoRulesets,
         };
 
         // Stop handle onRuleMatchedDebug event.
@@ -406,18 +447,21 @@ export class TsWebExtension implements AppInterface<
                 filtersIdsToEnable,
             );
 
-            // Create static rulesets.
-            const staticRulesets = await TsWebExtension.loadStaticRulesets(
+            // Get static rule sets enabled in the browser. Requested after
+            // the filtering update, because the browser may decline enabling
+            // some of them.
+            const enabledRulesetsIds = await browser.declarativeNetRequest.getEnabledRulesets();
+
+            // Create static rule sets of enabled filters only, the rest are
+            // created on demand, see `ConfigurationResult.loadDisabledStaticFilters`.
+            const {
+                enabled: enabledStaticRulesets,
+                loadDisabled: loadDisabledStaticRulesets,
+            } = await TsWebExtension.loadStaticRulesets(
                 configuration.rulesetsPath,
                 staticFilters,
+                enabledRulesetsIds,
             );
-
-            // Get enabled static rule sets
-            const enabledRulesetsIds = await browser.declarativeNetRequest.getEnabledRulesets();
-            const enabledStaticRulesets = staticRulesets.filter((ruleset) => {
-                const rulesetId = ruleset.getId();
-                return enabledRulesetsIds.includes(rulesetId);
-            });
 
             // Update allowlist settings.
             allowlistApi.configure(configuration);
@@ -486,7 +530,7 @@ export class TsWebExtension implements AppInterface<
 
             // TODO: Recreate only dynamic ruleset, because static cannot be changed
             const rulesets = [
-                ...staticRulesets,
+                ...enabledStaticRulesets,
                 res.dynamicRules.ruleset,
             ];
 
@@ -511,7 +555,8 @@ export class TsWebExtension implements AppInterface<
                 }
             }
 
-            res.staticFilters = staticRulesets;
+            res.staticFilters = enabledStaticRulesets;
+            res.loadDisabledStaticFilters = loadDisabledStaticRulesets;
         } else {
             await TsWebExtension.removeAllFilteringRules();
         }
@@ -792,16 +837,25 @@ export class TsWebExtension implements AppInterface<
     /**
      * Wraps static filters into rule sets.
      *
+     * Only the rule sets enabled in the browser are created immediately. Rule
+     * sets of disabled filters are needed only for their rule counters, e.g.
+     * for the rules limits checks on the client, but creating a rule set for
+     * the first time requires runtime filter list preparation, so they are
+     * created on demand via the returned `loadDisabled`, off the startup path.
+     *
      * @param rulesetsPath Path to the rule set metadata.
      * @param staticFilters List of static {@link IFilter}.
+     * @param enabledRulesetsIds Ids of rule sets enabled in the browser.
      *
-     * @returns A list of static {@link IRulesetWithSourceMap}, or an empty list if an error
-     * occurred during the rule scanning step.
+     * @returns Enabled static {@link IRulesetWithSourceMap|rule sets}, or an
+     * empty list if an error occurred during the rule scanning step, and a
+     * function to create the disabled ones.
      */
     private static async loadStaticRulesets(
         rulesetsPath: ConfigurationMV3['rulesetsPath'],
         staticFilters: IFilter[],
-    ): Promise<IRulesetWithSourceMap[]> {
+        enabledRulesetsIds: string[],
+    ): Promise<StaticRulesets> {
         // Wrap filters into rule sets
         const rulesetsLoaderApi = new RulesetsLoaderApi(rulesetsPath);
         const manifest = browser.runtime.getManifest();
@@ -809,27 +863,73 @@ export class TsWebExtension implements AppInterface<
             throw new Error('Cannot find declarative_net_request in manifest');
         }
 
-        // Note: we cannot create rulesets only for enabled filters because we
-        // need to get all rulesets' counters for checking limits on the client.
         // Note: we skip metadata ruleset, because it is not a real ruleset.
-        const manifestRulesets = manifest.declarative_net_request.rule_resources
-            .filter(({ id }) => id !== getRulesetId(METADATA_RULESET_ID));
+        const manifestRulesetsIds = manifest.declarative_net_request.rule_resources
+            .map(({ id }) => id)
+            .filter((id) => id !== getRulesetId(METADATA_RULESET_ID));
 
-        const staticRulesetsTasks = manifestRulesets.map(({ id }) => {
-            return rulesetsLoaderApi.createRuleset(id, staticFilters);
-        });
+        const enabledIds = new Set(enabledRulesetsIds);
+        const disabledRulesetsIds = manifestRulesetsIds.filter((id) => !enabledIds.has(id));
+
+        let disabledRulesetsPromise: Promise<IRulesetWithSourceMap[]> | null = null;
+
+        const loadDisabled = (): Promise<IRulesetWithSourceMap[]> => {
+            disabledRulesetsPromise ??= TsWebExtension.createRulesetsOneByOne(
+                rulesetsLoaderApi,
+                disabledRulesetsIds,
+                staticFilters,
+            );
+
+            return disabledRulesetsPromise;
+        };
+
+        const staticRulesetsTasks = manifestRulesetsIds
+            .filter((id) => enabledIds.has(id))
+            .map((id) => rulesetsLoaderApi.createRuleset(id, staticFilters));
 
         try {
-            const staticRulesets = await Promise.all(staticRulesetsTasks);
+            const enabled = await Promise.all(staticRulesetsTasks);
 
-            return staticRulesets;
+            return { enabled, loadDisabled };
         } catch (e) {
             const filterListIds = staticFilters.map((f) => f.getId());
 
             logger.error(`[tsweb.TsWebExtension.loadStaticRulesets]: cannot scan rules of filter list with ids ${filterListIds} due to: `, e);
 
-            return [];
+            return { enabled: [], loadDisabled };
         }
+    }
+
+    /**
+     * Creates rule sets one at a time and skips the ones that fail.
+     *
+     * Rule sets are created sequentially because this runs in the background:
+     * it keeps the peak memory and the longest event loop block to those of a
+     * single rule set, instead of parsing all rule set files at once.
+     *
+     * @param rulesetsLoaderApi Rule sets loader.
+     * @param rulesetsIds Ids of rule sets to create.
+     * @param staticFilters List of static {@link IFilter}.
+     *
+     * @returns Created rule sets in the order of `rulesetsIds`.
+     */
+    private static async createRulesetsOneByOne(
+        rulesetsLoaderApi: RulesetsLoaderApi,
+        rulesetsIds: string[],
+        staticFilters: IFilter[],
+    ): Promise<IRulesetWithSourceMap[]> {
+        const rulesets: IRulesetWithSourceMap[] = [];
+
+        for (const rulesetId of rulesetsIds) {
+            try {
+                // eslint-disable-next-line no-await-in-loop
+                rulesets.push(await rulesetsLoaderApi.createRuleset(rulesetId, staticFilters));
+            } catch (e) {
+                logger.error(`[tsweb.TsWebExtension.createRulesetsOneByOne]: cannot create rule set ${rulesetId} due to: `, e);
+            }
+        }
+
+        return rulesets;
     }
 
     /**

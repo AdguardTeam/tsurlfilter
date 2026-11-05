@@ -69,7 +69,9 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
         vi.spyOn(configureBoundaries, 'getFiltersUpdateInfo').mockResolvedValue({
             staticFilters: [], customFilters: [], filtersIdsToEnable: [], filtersIdsToDisable: [],
         });
-        vi.spyOn(configureBoundaries, 'loadStaticRulesets').mockResolvedValue([]);
+        vi.spyOn(configureBoundaries, 'loadStaticRulesets').mockResolvedValue({
+            enabled: [], loadDisabled: vi.fn().mockResolvedValue([]),
+        });
         vi.spyOn(FiltersApi, 'updateFiltering').mockResolvedValue({ errors: [] });
         vi.spyOn(StealthService, 'applySettings').mockResolvedValue({} as never);
         vi.spyOn(CspService, 'addCspReportBlockingRule').mockResolvedValue(undefined);
@@ -124,6 +126,51 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
         config.settings.filteringEnabled = false;
         await instance.configure(config);
         expect(rules).not.toHaveBeenCalled();
+    });
+
+    it('creates only rulesets enabled by the browser during configuration', async () => {
+        appContext.isStorageInitialized = true;
+        prepareConfigure();
+        const loadStaticRulesets = vi.spyOn(configureBoundaries, 'loadStaticRulesets');
+        const loadDisabled = vi.fn().mockResolvedValue([]);
+        loadStaticRulesets.mockResolvedValue({ enabled: [], loadDisabled });
+        const getEnabledRulesets = vi.fn().mockResolvedValue(['ruleset_2']);
+        Object.defineProperty(browser, 'declarativeNetRequest', {
+            configurable: true, value: { getEnabledRulesets },
+        });
+        const config = getConfigurationMv3Fixture();
+        config.settings.filteringEnabled = true;
+
+        const result = await instance.configure(config);
+
+        // Enabled rulesets are requested after the requested state is applied,
+        // because the browser may decline enabling some rulesets, and before
+        // the rulesets are created to skip the disabled ones.
+        expect(getEnabledRulesets.mock.invocationCallOrder[0])
+            .toBeGreaterThan(vi.mocked(FiltersApi.updateFiltering).mock.invocationCallOrder[0]);
+        expect(getEnabledRulesets.mock.invocationCallOrder[0])
+            .toBeLessThan(loadStaticRulesets.mock.invocationCallOrder[0]);
+        expect(loadStaticRulesets).toHaveBeenCalledWith(
+            config.rulesetsPath,
+            expect.any(Array),
+            ['ruleset_2'],
+        );
+        // Disabled rulesets are created only when the caller asks for them.
+        expect(loadDisabled).not.toHaveBeenCalled();
+        expect(result.loadDisabledStaticFilters).toBe(loadDisabled);
+    });
+
+    it('returns no disabled rulesets when filtering is disabled', async () => {
+        appContext.isStorageInitialized = true;
+        vi.spyOn(configureBoundaries, 'syncRulesetsWithIdb').mockResolvedValue(undefined);
+        vi.spyOn(configureBoundaries, 'removeAllFilteringRules').mockResolvedValue(undefined);
+        const config = getConfigurationMv3Fixture();
+        config.settings.filteringEnabled = false;
+
+        const result = await instance.configure(config);
+
+        expect(result.staticFilters).toEqual([]);
+        expect(await result.loadDisabledStaticFilters()).toEqual([]);
     });
 
     it('rejects setters before the storage is initialized', async () => {
