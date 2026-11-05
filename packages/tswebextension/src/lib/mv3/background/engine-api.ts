@@ -22,6 +22,7 @@ import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/ur
 
 import { type ConfigurationMV3 } from './configuration';
 import { createPreregisteredRootRequest } from './preregistered-scripts/root-request';
+import { collectExceptionLines } from './preregistered-scripts/runtime-exceptions';
 import { type ITrustedFilter } from './trusted-filter';
 import { UserScriptsApi } from './user-scripts-api';
 
@@ -92,6 +93,13 @@ export class EngineApi {
     private userFilterId: number = USER_FILTER_ID;
 
     /**
+     * Candidate page-exception lines of the runtime-only lists (user rules and
+     * custom filters). The page gate is baked from the built-in lists only, so
+     * the runtime has to know whether these lists can change its verdict.
+     */
+    private runtimeExceptionLines: readonly string[] = [];
+
+    /**
      * Starts the engine with the provided bunch of rules,
      * wrapped in filters or custom rules.
      *
@@ -108,6 +116,7 @@ export class EngineApi {
         } = config;
 
         const lists: EngineFactoryFilterList[] = [];
+        const runtimeExceptionLines: string[] = [];
 
         /**
          * Local (built-in) filters are always applied and are trusted.
@@ -147,6 +156,7 @@ export class EngineApi {
                         ignoreJS: !filter.isTrusted(),
                         ignoreUnsafe: !filter.isTrusted(),
                     });
+                    runtimeExceptionLines.push(...collectExceptionLines(content));
                 } catch (e) {
                     const filterId = remoteFilters[i].getId();
                     logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for filter ${filterId} due to: `, e);
@@ -174,6 +184,7 @@ export class EngineApi {
                     ignoreJS: false,
                     ignoreUnsafe: false,
                 });
+                runtimeExceptionLines.push(...collectExceptionLines(userrules));
             }
         } catch (e) {
             const filterId = userRulesFilter.getId();
@@ -205,6 +216,7 @@ export class EngineApi {
         // scripts.
         this.localRulesFiltersIds = localFilters.map((filter) => filter.getId());
         this.userFilterId = userRulesFilter.getId();
+        this.runtimeExceptionLines = runtimeExceptionLines;
 
         // Update configuration of engine.
         setConfiguration({
@@ -401,6 +413,19 @@ export class EngineApi {
      */
     public isUserRulesFilter(filterId: number): boolean {
         return filterId === this.userFilterId;
+    }
+
+    /**
+     * Returns the page-exception candidate lines of the runtime-only lists:
+     * user rules and custom filters. They are not baked into the page gate,
+     * so the preregistered-scripts service uses them to keep an affected host
+     * on the dynamic path.
+     *
+     * @returns Candidate lines, without duplicates removal; empty until the
+     * engine is started.
+     */
+    public getRuntimeExceptionLines(): readonly string[] {
+        return this.runtimeExceptionLines;
     }
 
     /**

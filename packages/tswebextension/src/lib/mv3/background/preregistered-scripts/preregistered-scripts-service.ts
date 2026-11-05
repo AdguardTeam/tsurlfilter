@@ -17,6 +17,7 @@ import {
 import { getHostnameScriptRules } from './hostname-rule-resolver';
 import { readManifest } from './manifest-reader';
 import { deriveCoverage, readActiveRegistrations, snapshotBootRegistrations } from './registrations-reader';
+import { findHostsWithRuntimeExceptions } from './runtime-exceptions';
 
 /**
  * Namespace for content script registration. Must be stable across sessions.
@@ -79,6 +80,11 @@ type RegistrationPlan = {
  * top-level site to be preregistered: see below.
  *
  * Hostnames not in the list keep the standard dynamic injection path.
+ *
+ * A host that user rules or custom filters can affect keeps the dynamic path
+ * as well: those lists exist only at runtime, so the baked page gate cannot
+ * account for them, and a wrong verdict there either runs scriptlets on a
+ * page the user excluded or suppresses them where the engine allows them.
  *
  * A frame is covered only when the top-level site belongs to the
  * preregistered host set: the filtering state (allowlist, inverted
@@ -538,6 +544,12 @@ export class PreregisteredScriptsService {
      * background would report no coverage for the host while its rules still
      * ran at `document_start` — and `#%#` rules are not idempotent.
      *
+     * A host that a user rule or a custom filter can affect is not registered
+     * at all: those lists are runtime-only, the baked gate knows nothing about
+     * them, and a wrong verdict there either runs scriptlets on a page the
+     * user excluded or suppresses them where the engine allows them. The host
+     * keeps the dynamic path, where the engine decides with the full rule set.
+     *
      * @param hostnames Configured hostnames, expanded.
      * @param scriptsPath Extension-relative path to preregistered scripts.
      *
@@ -577,12 +589,26 @@ export class PreregisteredScriptsService {
             );
         }
 
-        return {
-            publishedHostnames: manifest.hostnames,
+        const runtimeAffected = findHostsWithRuntimeExceptions(
+            engineApi.getRuntimeExceptionLines(),
             registeredHostnames,
+        );
+        if (runtimeAffected.size > 0) {
+            logger.warn(
+                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: User rules or custom filters'
+                + ' can change the page verdict for some hostnames, keeping them on the dynamic path',
+                [...runtimeAffected],
+            );
+        }
+
+        const staticHostnames = registeredHostnames.filter((hostname) => !runtimeAffected.has(hostname));
+
+        return {
+            publishedHostnames: manifest.hostnames.filter((hostname) => !runtimeAffected.has(hostname)),
+            registeredHostnames: staticHostnames,
             generationHostnames: manifest.hostnames,
             scripts: await PreregisteredScriptsService.buildDomainScripts(
-                [...registeredHostnames],
+                [...staticHostnames],
                 scriptsPath,
                 manifest,
             ),

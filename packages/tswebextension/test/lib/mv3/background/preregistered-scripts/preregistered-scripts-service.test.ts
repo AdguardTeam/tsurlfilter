@@ -35,6 +35,7 @@ vi.mock('../../../../../src/lib/mv3/background/engine-api', () => ({
         isLocalFilter: vi.fn(),
         isCosmeticRuleAllowlisted: vi.fn().mockReturnValue(false),
         getEnabledLocalFiltersIds: vi.fn().mockReturnValue([]),
+        getRuntimeExceptionLines: vi.fn().mockReturnValue([]),
     },
 }));
 
@@ -314,6 +315,7 @@ describe('PreregisteredScriptsService', () => {
             registryState.descriptors = [];
         });
         vi.mocked(DocumentApi.matchFrame).mockReset().mockReturnValue(null);
+        vi.mocked(engineApi.getRuntimeExceptionLines).mockReturnValue([]);
     });
 
     describe('sync — early exits', () => {
@@ -385,6 +387,36 @@ describe('PreregisteredScriptsService', () => {
 
             expect(result.size).toBe(0);
             expect(ContentScriptManager.sync).toHaveBeenCalledWith('preregistered', []);
+        });
+
+        it('keeps a host on the dynamic path when runtime rules can change its verdict', async () => {
+            // The page gate is baked from the built-in lists only, so a user
+            // rule or a custom filter changing the JS verdict for a host must
+            // leave that host to the engine — and only that host.
+            const youtubeRule = mockScriptletRule('set-cookie', []);
+            const exampleRule = mockScriptletRule('set-cookie', []);
+            setupEngine({ 'youtube.com': [youtubeRule], 'example.org': [exampleRule] });
+            setupManifest(
+                [await computeRuleHash(youtubeRule), await computeRuleHash(exampleRule)],
+                { 'set-cookie': scriptletFilename('set-cookie') },
+                expandHostnames(['youtube.com', 'example.org']),
+            );
+            vi.mocked(engineApi.getRuntimeExceptionLines)
+                .mockReturnValue(['@@||youtube.com/feed/trending$document']);
+
+            const result = await PreregisteredScriptsService.sync(
+                true,
+                ['youtube.com', 'example.org'],
+                SCRIPTS_PATH,
+            );
+
+            expect([...result.keys()]).toEqual(['example.org']);
+            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(scripts.map((script) => script.id)).toEqual(['example.org']);
+            // The published set feeds the dynamic path's coverage check: a host
+            // that is not registered must not be reported as covered either.
+            expect(appContext.preregisteredHostnames)
+                .toEqual(new Set(expandHostnames(['example.org'])));
         });
 
         it('does not treat prototype properties as scriptlet function files', async () => {
