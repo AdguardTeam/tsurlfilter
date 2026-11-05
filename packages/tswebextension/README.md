@@ -336,8 +336,9 @@ is derived automatically at runtime.
 type: `string`
 
 Path to the preregistered script artifacts directory (contains
-`manifest.json`, the shared bundle, one function file per scriptlet, one
-file per rule, and the cleanup file — see
+`manifest.json`, the shared bundle, one `cond-{filterId}.js` per filter whose
+network exceptions are baked, one function file per scriptlet, one file per
+rule, and the cleanup file — see
 `@adguard/tswebextension/mv3/preregistered-scripts/build-contract`).
 Coverage is reported from the registrations actually active after a sync:
 on sync failure the last published coverage is kept (the boot snapshot
@@ -359,7 +360,8 @@ no baked files and is skipped with a warning.
 At runtime, each configured hostname (plus its `www.` alias) is matched
 against the engine with `$path` ignored, the matching rules are hashed, and
 a persistent content script is registered with
-`js: [shared bundle, ...scriptlet function files, ...per-rule files, cleanup]`.
+`js: [...conditions files of the enabled filters, shared bundle, ...scriptlet
+function files, ...per-rule files, cleanup]`.
 A scriptlet function file carries only the implementations the host's rules
 use; the per-rule file enforces any `$path` condition via `location`; the
 cleanup file runs last, deleting the coordination `window` property before
@@ -379,10 +381,10 @@ Known limitations:
 
 - Scriptlet executions are deduped by rule hash, unlike the dynamic path;
   both paths rely on scriptlets being idempotent.
-- `$document`/`$jsinject` exceptions below the root path (e.g.
-  `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for the
-  host: rules registered on `*://youtube.com/*` still execute on `/embed/…`.
-  Tracked in AG-54564.
+- User rules and custom filters are not baked into the page gate: a host
+  their `$document`/`$jsinject` exception can reach keeps the dynamic path,
+  and a subframe is never preregistered for the same reason — see the
+  coverage notes above.
 - Frames never take the fast path: they are injected dynamically, on
   `webNavigation.onCommitted`, after the frame's document starts. A frame
   whose own inline script reads a property before that moment wins the race,

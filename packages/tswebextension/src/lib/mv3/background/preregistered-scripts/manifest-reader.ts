@@ -1,7 +1,6 @@
 import { isPlainHostname } from '../../../common/utils/hostname';
 
 import {
-    CONDITIONS_FILENAME_REGEX,
     MANIFEST_FILENAME,
     MANIFEST_SCHEMA_VERSION,
     type PreregisteredScriptsManifest,
@@ -80,16 +79,8 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         throw new Error(`Malformed manifest at ${url}: "hostnames" must be a non-empty array of plain hostnames`);
     }
 
-    if (conditions !== undefined) {
-        if (typeof conditions !== 'object' || conditions === null || Array.isArray(conditions)) {
-            throw new Error(`Malformed manifest at ${url}: "conditions" must be an object`);
-        }
-
-        for (const [filterId, file] of Object.entries(conditions)) {
-            if (typeof file !== 'string' || !CONDITIONS_FILENAME_REGEX.test(file)) {
-                throw new Error(`Malformed manifest at ${url}: filter "${filterId}" must map to a cond-*.js file name`);
-            }
-        }
+    if (!Array.isArray(conditions) || !conditions.every((filterId) => Number.isInteger(filterId) && filterId > 0)) {
+        throw new Error(`Malformed manifest at ${url}: "conditions" must be an array of filter ids`);
     }
 
     if (typeof pageExceptions !== 'object' || pageExceptions === null || Array.isArray(pageExceptions)) {
@@ -108,7 +99,7 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         scriptletFiles,
         hostnames,
         pageExceptions,
-        ...(conditions ? { conditions } : {}),
+        conditions,
     };
 };
 
@@ -137,9 +128,9 @@ const fetchManifest = async (scriptsPath: string): Promise<PreregisteredScriptsM
 /**
  * Fetches the build-time manifest shipped next to the artifacts. It lists
  * the rule hashes with matching generated files, the scriptlet name →
- * function-file map, the embed-gate hostname set, the conditions files of the
- * filters that carry page exceptions and the fingerprint those exceptions
- * were baked from.
+ * function-file map, the hostname set, the ids of the filters whose page
+ * exceptions are baked into conditions files and the fingerprint those
+ * exceptions were baked from.
  *
  * The manifest is this package's own build output, but it is still
  * validated: a missing, unreadable, malformed, or version-mismatched

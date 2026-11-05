@@ -10,6 +10,7 @@ import {
     CLEANUP_FILENAME,
     computeRuleHashCached,
     expandHostnames,
+    getConditionsFilename,
     getRuleFilename,
     type PreregisteredScriptsManifest,
     SHARED_BUNDLE_FILENAME,
@@ -602,12 +603,13 @@ export class PreregisteredScriptsService {
         // stop applying an exception as soon as its filter is disabled,
         // exactly like the engine does. The files run before the shared
         // bundle and append to its conditions list; their mutual order is
-        // irrelevant, the gate picks the winner by priority.
-        const conditions = manifest.conditions ?? {};
-        const conditionFiles = engineApi.getEnabledLocalFiltersIds()
-            .map((filterId) => conditions[String(filterId)])
-            .filter((filename): filename is string => typeof filename === 'string')
-            .map((filename) => `${scriptsPath}/${filename}`);
+        // irrelevant, the gate picks the winner by priority. Sorted, so a
+        // reordered filter list does not rebuild the descriptors.
+        const enabledFilterIds = new Set(engineApi.getEnabledLocalFiltersIds());
+        const conditionFiles = [...manifest.conditions]
+            .sort((a, b) => a - b)
+            .filter((filterId) => enabledFilterIds.has(filterId))
+            .map((filterId) => `${scriptsPath}/${getConditionsFilename(filterId)}`);
 
         const scripts: ContentScriptDescriptor[] = [];
         const degradedRules = new Set<string>();

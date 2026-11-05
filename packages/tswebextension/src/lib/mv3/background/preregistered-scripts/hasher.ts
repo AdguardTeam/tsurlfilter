@@ -3,8 +3,8 @@ import { type CosmeticRule } from '@adguard/tsurlfilter';
 import { normalizeDomain } from '../../../common/utils/hostname';
 
 /**
- * Coordination key: the `window` property name shared by the shared bundle,
- * per-rule files and the cleanup file.
+ * Coordination key: the `window` property name shared by the conditions
+ * files, the shared bundle, the per-rule files and the cleanup file.
  *
  * Fixed forever: the cleanup file deletes the property before any page
  * script runs, so rotation buys no stealth. A stable key keeps the
@@ -35,7 +35,8 @@ export const getRuleFilename = (hash: string): string => {
 
 /**
  * Filename prefix of the per-filter conditions files: each file carries the
- * network exceptions of one filter for the page gate.
+ * network exceptions of one filter for the page gate. The filename is derived
+ * from the filter id, so the manifest stores ids only.
  */
 export const CONDITIONS_FILENAME_PREFIX = 'cond-';
 
@@ -95,13 +96,13 @@ export interface PreregisteredScriptsManifest {
     hostnames: string[];
 
     /**
-     * Filter id → conditions filename (`cond-{filterId}.js`). Each file adds
-     * the network exceptions of one filter to the page gate of the shared
-     * bundle; the runtime includes only the files of enabled filters, so
-     * disabling a filter also drops its exceptions — the same way the engine
-     * stops applying them.
+     * Ids of the filters whose page exceptions are baked into
+     * `cond-{filterId}.js`. Each file adds the exceptions of one filter to the
+     * page gate of the shared bundle; the runtime includes only the files of
+     * enabled filters, so disabling a filter also drops its exceptions — the
+     * same way the engine stops applying them.
      */
-    conditions?: Record<string, string>;
+    conditions: number[];
 
     /**
      * Filter id → fingerprint of that filter's page exceptions, the ones its
@@ -154,15 +155,6 @@ export const SCRIPTLET_FUNCTION_FILENAME_PREFIX = 's-';
  */
 export const SCRIPTLET_FUNCTION_FILENAME_REGEX = new RegExp(
     `^${SCRIPTLET_FUNCTION_FILENAME_PREFIX}[A-Za-z0-9_-]+\\.js$`,
-);
-
-/**
- * Matches per-filter conditions filenames (`cond-*.js`) that stay inside the
- * artifacts directory. Derived from {@link CONDITIONS_FILENAME_PREFIX} so the
- * build and runtime sides cannot drift apart.
- */
-export const CONDITIONS_FILENAME_REGEX = new RegExp(
-    `^${CONDITIONS_FILENAME_PREFIX}[0-9]+\\.js$`,
 );
 
 /**
@@ -318,8 +310,8 @@ export const expandHostnames = (domains: string[]): string[] => {
  *
  * @param filePath Script file path from a registration descriptor.
  *
- * @returns The rule hash, or `null` for non-rule files (shared bundle,
- * per-function `s-*.js`, cleanup).
+ * @returns The rule hash, or `null` for non-rule files (conditions
+ * `cond-*.js`, shared bundle, per-function `s-*.js`, cleanup).
  */
 export const getRuleHashFromFilePath = (filePath: string): string | null => {
     const match = RULE_FILE_PATH_REGEX.exec(filePath);

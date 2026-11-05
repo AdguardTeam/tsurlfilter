@@ -138,7 +138,7 @@ export const findHostsWithRuntimeExceptions = (
         const request = new Request(rootUrl, rootUrl, RequestType.Document);
 
         const affectsHost = rules.some(({ rule, pattern }) => matchesHostScope(pattern, hostname)
-            && rule.matchConditions(request));
+            && rule.matchModifiers(request));
 
         if (affectsHost) {
             affected.add(hostname);

@@ -145,7 +145,8 @@ const mockJsRule = (content: string, filterListId = 1): any => ({
  * would once the JS cosmetic bit is cleared.
  *
  * @param rulesByDomain Map of domain → rules to return for that domain.
- * @param localFilterIds Filter ids considered "local" by `isLocalFilter`.
+ * @param localFilterIds Ids the engine reports as local: they pick the
+ * conditions files of the manifest and drive the local-rule checks.
  * @param disableJsForDomains Domains for which `matchCosmetic` should report
  * no script rules (simulating an allowlist rule).
  */
@@ -192,7 +193,7 @@ const scriptletFilename = (name: string): string => `s-${name}.js`;
  * Defaults to an empty map.
  * @param hostnames Expanded host set to embed in the manifest. Defaults to
  * the configured domains; `null` omits the field to simulate a broken build.
- * @param conditions Filter id → conditions filename map.
+ * @param conditions Ids of the filters that carry conditions files.
  * @param pageExceptions Filter id → fingerprint map of the baked page
  * exceptions. Defaults to the map a consistent build produces for the enabled
  * filters; a different value simulates a stale generation.
@@ -201,7 +202,7 @@ const setupManifest = (
     hashes: string[] | null,
     scriptletFiles?: Record<string, string>,
     hostnames: string[] | null = expandHostnames(['youtube.com']),
-    conditions?: Record<string, string>,
+    conditions: number[] = [],
     pageExceptions: Record<string, string> = Object.fromEntries(
         vi.mocked(engineApi.getEnabledLocalFiltersIds)().map((id) => [
             String(id),
@@ -228,7 +229,7 @@ const setupManifest = (
                 hashes,
                 scriptletFiles: scriptletFiles ?? {},
                 ...(hostnames ? { hostnames } : {}),
-                ...(conditions ? { conditions } : {}),
+                conditions,
                 pageExceptions,
             }),
         };
@@ -240,7 +241,8 @@ const setupManifest = (
  * — the state a consistent build produces.
  *
  * @param rulesByDomain Map of domain → rules to return for that domain.
- * @param localFilterIds Filter ids considered "local" by `isLocalFilter`.
+ * @param localFilterIds Ids the engine reports as local: they pick the
+ * conditions files of the manifest and drive the local-rule checks.
  * @param disableJsForDomains Domains for which `matchCosmetic` should report
  * no script rules (simulating an allowlist rule).
  */
@@ -668,7 +670,7 @@ describe('PreregisteredScriptsService', () => {
                 [await computeRuleHash(rule)],
                 { 'set-cookie': scriptletFilename('set-cookie') },
                 expandHostnames(['youtube.com']),
-                { 1: 'cond-1.js', 2: 'cond-2.js', 3: 'cond-3.js' },
+                [1, 2, 3],
             );
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);

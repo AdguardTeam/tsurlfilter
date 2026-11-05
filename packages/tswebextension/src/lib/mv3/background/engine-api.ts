@@ -117,6 +117,10 @@ export class EngineApi {
 
         const lists: EngineFactoryFilterList[] = [];
         const runtimeExceptionLines: string[] = [];
+        // Only the filters that actually reached the engine: a filter whose
+        // content failed to load has no rules, so its conditions file must
+        // not be registered either.
+        const localRulesFiltersIds: number[] = [];
 
         /**
          * Local (built-in) filters are always applied and are trusted.
@@ -136,6 +140,7 @@ export class EngineApi {
                     ignoreJS: false,
                     ignoreUnsafe: false,
                 });
+                localRulesFiltersIds.push(filter.getId());
             } catch (e) {
                 const filterId = localFilters[i].getId();
                 logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for filter ${filterId} due to: `, e);
@@ -214,7 +219,7 @@ export class EngineApi {
 
         // Update IDs of loaded to engine filters for split local and remote
         // scripts.
-        this.localRulesFiltersIds = localFilters.map((filter) => filter.getId());
+        this.localRulesFiltersIds = localRulesFiltersIds;
         this.userFilterId = userRulesFilter.getId();
         this.runtimeExceptionLines = runtimeExceptionLines;
 

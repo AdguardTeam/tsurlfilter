@@ -23,8 +23,22 @@ const VALID_MANIFEST = {
     hashes: ['0123456789abcdef'],
     scriptletFiles: { 'set-cookie': 's-set-cookie.js' },
     hostnames: ['youtube.com', 'www.youtube.com'],
+    conditions: [2],
     pageExceptions: { 2: '0123456789abcdef' },
 };
+
+/**
+ * Builds a manifest body from {@link VALID_MANIFEST}: tests override only the
+ * field they exercise, and pass `undefined` to drop it.
+ *
+ * @param overrides Fields to replace.
+ *
+ * @returns Manifest body to serve.
+ */
+const makeManifest = (overrides: Record<string, unknown> = {}): unknown => ({
+    ...VALID_MANIFEST,
+    ...overrides,
+});
 
 /**
  * Serves the given body as the manifest fetch response.
@@ -69,40 +83,24 @@ describe('readManifest', () => {
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('404');
     });
 
-    it('keeps the conditions map of the enabled filters', async () => {
-        const body = {
-            schemaVersion: MANIFEST_SCHEMA_VERSION,
-            hashes: ['0123456789abcdef'],
-            scriptletFiles: {},
-            hostnames: ['youtube.com'],
-            pageExceptions: { 2: '0123456789abcdef' },
-            conditions: { 2: 'cond-2.js' },
-        };
-        stubManifestFetch(body);
+    it('keeps the conditions list', async () => {
+        // The reader does not know which filters are enabled: it validates the
+        // ids and leaves the selection to the runtime.
+        stubManifestFetch(makeManifest({ conditions: [2, 3] }));
 
         const manifest = await readManifest(SCRIPTS_PATH);
 
-        expect(manifest.conditions).toEqual({ 2: 'cond-2.js' });
+        expect(manifest.conditions).toEqual([2, 3]);
     });
 
-    it('throws when a conditions mapping is not a cond-*.js basename', async () => {
-        stubManifestFetch({
-            schemaVersion: MANIFEST_SCHEMA_VERSION,
-            hashes: [],
-            scriptletFiles: {},
-            hostnames: ['youtube.com'],
-            conditions: { 2: '../cond-2.js' },
-        });
+    it('throws when "conditions" is not a list of filter ids', async () => {
+        stubManifestFetch(makeManifest({ conditions: ['../cond-2.js'] }));
 
-        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('cond-*.js');
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('filter ids');
     });
 
     it('throws on manifests written under another schema version', async () => {
-        stubManifestFetch({
-            schemaVersion: MANIFEST_SCHEMA_VERSION + 1,
-            hashes: ['0123456789abcdef'],
-            scriptletFiles: { 'set-cookie': 's-set-cookie.js' },
-        });
+        stubManifestFetch(makeManifest({ schemaVersion: MANIFEST_SCHEMA_VERSION + 1 }));
 
         // A manifest with a different version is a broken build: failing
         // the sync keeps the previous registrations instead of silently
@@ -111,67 +109,47 @@ describe('readManifest', () => {
     });
 
     it('throws when the schema version is missing', async () => {
-        stubManifestFetch({ hashes: [], scriptletFiles: {} });
+        stubManifestFetch(makeManifest({ schemaVersion: undefined }));
 
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('schema version');
     });
 
     it('throws when "hashes" is missing, so a truncated manifest does not unregister everything', async () => {
-        stubManifestFetch({ schemaVersion: MANIFEST_SCHEMA_VERSION, scriptletFiles: {} });
+        stubManifestFetch(makeManifest({ hashes: undefined }));
 
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hashes"');
     });
 
     it('throws when "hashes" is not an array of strings', async () => {
-        stubManifestFetch({
-            schemaVersion: MANIFEST_SCHEMA_VERSION,
-            hashes: '0123456789abcdef',
-            scriptletFiles: {},
-        });
+        stubManifestFetch(makeManifest({ hashes: '0123456789abcdef' }));
 
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hashes"');
     });
 
     it('throws when "scriptletFiles" is missing or not an object', async () => {
-        stubManifestFetch({ schemaVersion: MANIFEST_SCHEMA_VERSION, hashes: [] });
+        stubManifestFetch(makeManifest({ scriptletFiles: undefined }));
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"scriptletFiles"');
 
         clearManifestCache();
-        stubManifestFetch({
-            schemaVersion: MANIFEST_SCHEMA_VERSION,
-            hashes: [],
-            scriptletFiles: ['s-set-cookie.js'],
-        });
+        stubManifestFetch(makeManifest({ scriptletFiles: ['s-set-cookie.js'] }));
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"scriptletFiles"');
     });
 
     it('throws when a scriptlet file mapping is not a string', async () => {
-        stubManifestFetch({
-            schemaVersion: MANIFEST_SCHEMA_VERSION,
-            hashes: [],
-            scriptletFiles: { 'set-cookie': 1 },
-        });
+        stubManifestFetch(makeManifest({ scriptletFiles: { 'set-cookie': 1 } }));
 
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"set-cookie"');
     });
 
     it('throws when a scriptlet file mapping is not an s-*.js basename', async () => {
-        stubManifestFetch({
-            schemaVersion: MANIFEST_SCHEMA_VERSION,
-            hashes: [],
-            scriptletFiles: { 'set-cookie': '../s-set-cookie.js' },
-        });
+        stubManifestFetch(makeManifest({ scriptletFiles: { 'set-cookie': '../s-set-cookie.js' } }));
 
         // The value goes straight into the MAIN-world `js` list.
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('s-*.js');
     });
 
     it('throws when "hostnames" is missing, so the gate set is never guessed', async () => {
-        stubManifestFetch({
-            schemaVersion: MANIFEST_SCHEMA_VERSION,
-            hashes: [],
-            scriptletFiles: {},
-        });
+        stubManifestFetch(makeManifest({ hostnames: undefined }));
 
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hostnames"');
     });
@@ -183,18 +161,13 @@ describe('readManifest', () => {
         ['a host with a port', ['example.com:443']],
         ['a URL', ['https://example.com']],
     ])('throws when "hostnames" is %s', async (_shape, hostnames) => {
-        stubManifestFetch({ ...VALID_MANIFEST, hashes: [], hostnames });
+        stubManifestFetch(makeManifest({ hashes: [], hostnames }));
 
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hostnames"');
     });
 
     it('throws when "pageExceptions" is missing, so a stale gate is never trusted', async () => {
-        stubManifestFetch({
-            schemaVersion: MANIFEST_SCHEMA_VERSION,
-            hashes: [],
-            scriptletFiles: {},
-            hostnames: ['youtube.com'],
-        });
+        stubManifestFetch(makeManifest({ pageExceptions: undefined }));
 
         // Without the fingerprint the runtime cannot tell whether the baked
         // exceptions still describe the loaded filters.
@@ -202,13 +175,7 @@ describe('readManifest', () => {
     });
 
     it('throws when a page-exceptions entry is not a fingerprint', async () => {
-        stubManifestFetch({
-            schemaVersion: MANIFEST_SCHEMA_VERSION,
-            hashes: [],
-            scriptletFiles: {},
-            hostnames: ['youtube.com'],
-            pageExceptions: { 2: '' },
-        });
+        stubManifestFetch(makeManifest({ pageExceptions: { 2: '' } }));
 
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"2"');
     });
@@ -231,13 +198,7 @@ describe('readManifest', () => {
     });
 
     it('parses the manifest once per scripts path', async () => {
-        stubManifestFetch({
-            schemaVersion: MANIFEST_SCHEMA_VERSION,
-            hashes: [],
-            scriptletFiles: {},
-            hostnames: ['youtube.com'],
-            pageExceptions: { 2: '0123456789abcdef' },
-        });
+        stubManifestFetch(makeManifest());
 
         await readManifest(SCRIPTS_PATH);
         await readManifest(SCRIPTS_PATH);
@@ -249,14 +210,7 @@ describe('readManifest', () => {
         stubManifestFetch(null);
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('404');
 
-        const body = {
-            schemaVersion: MANIFEST_SCHEMA_VERSION,
-            hashes: [],
-            scriptletFiles: {},
-            hostnames: ['youtube.com'],
-            pageExceptions: { 2: '0123456789abcdef' },
-        };
-        stubManifestFetch(body);
+        stubManifestFetch(makeManifest());
 
         // A manifest is package-immutable: refetching a broken one would
         // only stall every sync for the fetch timeout.
@@ -265,6 +219,6 @@ describe('readManifest', () => {
 
         clearManifestCache();
 
-        await expect(readManifest(SCRIPTS_PATH)).resolves.toEqual(body);
+        await expect(readManifest(SCRIPTS_PATH)).resolves.toEqual(makeManifest());
     });
 });
