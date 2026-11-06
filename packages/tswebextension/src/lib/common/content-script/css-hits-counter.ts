@@ -21,6 +21,15 @@ type ICountedElement = RuleInfoBasic & { element: string | Element };
 const DEFAULT_ELEMENT_TO_STRING = true;
 
 /**
+ * Why the counter is paused.
+ *
+ * A reapply pause is short and keeps ExtendedCss hits so they are reported
+ * after the marked rules are applied. A collection-disabled pause drops them:
+ * statistics must not include hits found while collection is off.
+ */
+export type CssHitsCounterPauseReason = 'collection-disabled' | 'reapply';
+
+/**
  * CssHitsCounter options.
  *
  * The pending-probes options are internal: they are used by the bundled
@@ -55,10 +64,17 @@ interface CssHitsCounterOptions {
      * Start the counter in the paused state.
      *
      * Used when the applied cosmetic data already contains hit markers but
-     * collection is disabled: the ExtendedCss hook must blank the markers
-     * without reporting, and the counter is resumed later.
+     * collection is disabled, or while marked data is being reapplied.
      */
     paused?: boolean;
+
+    /**
+     * Why the counter starts paused. Controls whether ExtendedCss hits found
+     * while paused are queued for {@link CssHitsCounter.resume}.
+     *
+     * @default 'collection-disabled'
+     */
+    pauseReason?: CssHitsCounterPauseReason;
 }
 
 /**
@@ -77,12 +93,6 @@ interface FullScanState {
         filterId: number;
         ruleIndex: number;
         rule: string;
-        /**
-         * Number of rules counted for the element when the scan read it. Used
-         * to detect a mutation that counted another rule while the scan was
-         * running.
-         */
-        previousCount: number;
     }>;
 }
 
@@ -240,6 +250,11 @@ export class CssHitsCounter {
     private paused = false;
 
     /**
+     * Why the counter is paused.
+     */
+    private pauseReason: CssHitsCounterPauseReason = 'collection-disabled';
+
+    /**
      * State of the running full scan. Cleared by pause and stop, so delayed
      * batches from an interrupted scan do not report hits.
      */
@@ -288,6 +303,7 @@ export class CssHitsCounter {
      */
     constructor(callback: (x: ICountedElement[]) => void, options?: CssHitsCounterOptions) {
         this.paused = options?.paused ?? false;
+        this.pauseReason = options?.pauseReason ?? 'collection-disabled';
 
         if (options) {
             const { elementToString, pendingProbes, pendingProbesCollector } = options;
@@ -372,9 +388,21 @@ export class CssHitsCounter {
     /**
      * Pauses css hits counting. The counter can be resumed with
      * {@link resume}. Use {@link stop} for final teardown.
+     *
+     * @param reason Why the counter is paused. ExtendedCss hits are queued
+     * only for a short reapply pause; a collection-disabled pause drops them.
      */
-    public pause(): void {
-        if (this.stopped || this.paused) {
+    public pause(reason: CssHitsCounterPauseReason = 'collection-disabled'): void {
+        if (this.stopped) {
+            return;
+        }
+
+        this.pauseReason = reason;
+        if (reason === 'collection-disabled') {
+            this.pendingExtendedCssHits = [];
+        }
+
+        if (this.paused) {
             return;
         }
 
@@ -610,8 +638,9 @@ export class CssHitsCounter {
                 };
 
                 if (this.paused) {
-                    if (this.pendingExtendedCssHits.length
-                        < CssHitsCounter.MAX_PENDING_EXTENDED_CSS_HITS) {
+                    if (this.pauseReason === 'reapply'
+                        && this.pendingExtendedCssHits.length
+                            < CssHitsCounter.MAX_PENDING_EXTENDED_CSS_HITS) {
                         this.pendingExtendedCssHits.push(hit);
                     }
                 } else {
@@ -706,10 +735,11 @@ export class CssHitsCounter {
 
                 const result: ICountedElement[] = [];
                 fullScan.pendingHits.forEach((hit, element) => {
-                    // A mutation may have counted another rule for this
-                    // element while the scan was running. Do not overwrite
-                    // that newer entry with the stale scan value.
-                    if (this.hitsStorage.getCountedRulesCount(element) !== hit.previousCount) {
+                    // A mutation may have counted the same rule for this
+                    // element while the scan was running. Do not report it
+                    // twice. A different rule is still a valid scan hit: the
+                    // storage keeps a set of rules per element.
+                    if (this.hitsStorage.isCounted(element, hit.rule)) {
                         return;
                     }
 
@@ -826,7 +856,6 @@ export class CssHitsCounter {
                     filterId,
                     ruleIndex,
                     rule: ruleAndFilterString,
-                    previousCount: this.hitsStorage.getCountedRulesCount(element),
                 });
                 continue;
             }

@@ -30,10 +30,6 @@ export class HitsStorage {
     /**
      * Returns the number of distinct rules counted for the element.
      *
-     * The full scan reads it to detect a mutation that counted another rule
-     * while the scan was running. The set only grows, so a changed count means
-     * the element's stored entries changed.
-     *
      * @param element Html element.
      *
      * @returns Number of counted rules.

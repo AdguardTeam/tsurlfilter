@@ -16,6 +16,7 @@ import { ExtendedCss } from '@adguard/extended-css';
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
 import { type CosmeticControllerCommon } from '../../../../src/lib/common/content-script/cosmetic-controller';
+import { CssHitsCounter } from '../../../../src/lib/common/content-script/css-hits-counter';
 import * as SendMessageModule from '../../../../src/lib/common/content-script/send-app-message';
 import { type ContentScriptCosmeticData } from '../../../../src/lib/common/cosmetic-api';
 import { MessageType } from '../../../../src/lib/common/message-constants';
@@ -580,6 +581,48 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
 
             // ExtendedCss hits do not depend on the native CSS injection.
             expect(getBaitStats(sendAppMessageSpy, 0).length).toBeGreaterThan(0);
+        } finally {
+            document.body.innerHTML = '';
+            restoreMutationObserver();
+        }
+    });
+
+    it('requests native markers when only ExtendedCss is marked', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+        document.body.innerHTML = '<div id="native-marker-missing-bait" class="ad_header">text</div>';
+
+        const rules = ['#?#.ad_header:contains(text)'];
+        let reapplyRequests = 0;
+        const pauseSpy = vi.spyOn(CssHitsCounter.prototype, 'pause');
+
+        try {
+            vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockImplementation(async (message) => {
+                    const isReapply = message.type === MessageType.GetCosmeticData
+                        && (message.payload as { reapplyHits?: boolean }).reapplyHits;
+
+                    if (isReapply) {
+                        reapplyRequests += 1;
+                        return getCosmeticData(rules, true);
+                    }
+
+                    return {
+                        ...getCosmeticData(rules, true),
+                        areNativeHitsStatsCollected: false,
+                    };
+                });
+
+            const cosmeticController = createController(CosmeticController);
+            cosmeticController.init();
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            // The initial response has marked ExtendedCss but no marked native
+            // CSS, so the controller must ask for the native markers too.
+            expect(reapplyRequests).toBe(1);
+            expect(pauseSpy).toHaveBeenCalledWith('reapply');
         } finally {
             document.body.innerHTML = '';
             restoreMutationObserver();

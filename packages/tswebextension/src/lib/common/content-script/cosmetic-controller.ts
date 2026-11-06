@@ -6,7 +6,7 @@ import { MessageType } from '../message-constants';
 import { validateSelectors } from '../utils/selector-validator';
 
 import { CollectHitStatsListener } from './collect-hit-stats';
-import { CssHitsCounter } from './css-hits-counter';
+import { CssHitsCounter, type CssHitsCounterPauseReason } from './css-hits-counter';
 import { PendingProbesCollector } from './pending-probes-collector';
 import { sendAppMessage } from './send-app-message';
 
@@ -163,7 +163,10 @@ export class CosmeticControllerCommon {
             // A paused counter is needed when the data has markers but
             // collection is off: the hook must blank them without reporting.
             // It is also used while marked data is being requested.
-            this.ensureCounter(!collectStats || !areHitsStatsCollected);
+            this.ensureCounter(
+                !collectStats || !areHitsStatsCollected,
+                collectStats ? 'reapply' : 'collection-disabled',
+            );
         } else {
             this.pendingProbesCollector.stop();
         }
@@ -177,9 +180,9 @@ export class CosmeticControllerCommon {
             && !!this.cssHitsCounter;
 
         // A state message may arrive before the cosmetic data response. When
-        // it enabled collection and the response was built without markers,
-        // ask the background for a marked copy.
-        if (collectStats && !areHitsStatsCollected) {
+        // it enabled collection and either the ExtendedCss rules or the native
+        // CSS was built without markers, ask the background for a marked copy.
+        if (collectStats && (!areHitsStatsCollected || !areNativeHitsStatsCollected)) {
             this.reapplyMarkedCosmeticData();
         }
     }
@@ -236,13 +239,16 @@ export class CosmeticControllerCommon {
     private async reapplyMarkedCosmeticData(): Promise<void> {
         if (this.reapplyInFlight) {
             // Remember the enable so a failed or unmarked response can retry.
-            if (this.collectHitStatsEnabled) {
+            if (this.isCollectHitStatsEnabled()) {
                 this.reapplyRequested = true;
             }
             return;
         }
 
-        if (!this.collectHitStatsEnabled) {
+        // `null` means no state message has arrived yet. The initial response
+        // can still contain marked data, so only an explicit disable stops
+        // the reapply.
+        if (!this.isCollectHitStatsEnabled()) {
             return;
         }
 
@@ -250,7 +256,7 @@ export class CosmeticControllerCommon {
         // Re-apply from a paused state so the counter does not scan the
         // unmarked data, and so the ExtendedCss hook can queue hits while the
         // marked rules are applied.
-        this.cssHitsCounter?.pause();
+        this.cssHitsCounter?.pause('reapply');
 
         try {
             const res = await sendAppMessage({
@@ -276,19 +282,21 @@ export class CosmeticControllerCommon {
                 return;
             }
 
-            if (!this.collectHitStatsEnabled) {
+            if (!this.isCollectHitStatsEnabled()) {
                 return;
             }
 
             if (!res.areHitsStatsCollected) {
                 // The background considers collection disabled for this
-                // frame, e.g. because the document is allowlisted.
+                // frame, e.g. because the document is allowlisted. Drop any
+                // ExtendedCss hits queued during the reapply pause.
+                this.cssHitsCounter?.pause();
                 this.pendingProbesCollector.stop();
                 return;
             }
 
             if (!this.cssHitsCounter) {
-                this.ensureCounter(true);
+                this.ensureCounter(true, 'reapply');
             }
 
             const hasMarkedExtendedCss = !!res.extCssRules && res.extCssRules.length > 0;
@@ -321,7 +329,7 @@ export class CosmeticControllerCommon {
             if (this.reapplyRequested) {
                 this.reapplyRequested = false;
 
-                if (this.collectHitStatsEnabled && !this.hitsMarkersApplied) {
+                if (this.isCollectHitStatsEnabled() && !this.hitsMarkersApplied) {
                     this.reapplyMarkedCosmeticData();
                 }
             }
@@ -329,11 +337,24 @@ export class CosmeticControllerCommon {
     }
 
     /**
+     * Whether collection is enabled or no state message has arrived yet.
+     *
+     * @returns False only after an explicit disable.
+     */
+    private isCollectHitStatsEnabled(): boolean {
+        return this.collectHitStatsEnabled !== false;
+    }
+
+    /**
      * Creates the CSS hits counter if it does not exist yet.
      *
      * @param paused Whether the counter must start paused.
+     * @param pauseReason Why the counter starts paused.
      */
-    private ensureCounter(paused: boolean): void {
+    private ensureCounter(
+        paused: boolean,
+        pauseReason: CssHitsCounterPauseReason = 'collection-disabled',
+    ): void {
         if (this.cssHitsCounter) {
             return;
         }
@@ -346,6 +367,7 @@ export class CosmeticControllerCommon {
         }, {
             pendingProbesCollector: this.pendingProbesCollector,
             paused,
+            pauseReason,
         });
     }
 
