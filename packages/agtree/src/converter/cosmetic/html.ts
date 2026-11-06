@@ -679,23 +679,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             // `[min-length="min"]` -> `:min-text-length(min)`
             case AdgAttributeSelectors.MinLength: {
-                // Validate length value
-                HtmlRuleConverter.assertValidLengthValue(
-                    name,
-                    value,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
-                    ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
-                );
-
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.MinTextLength,
                     // uBlock validates the argument with a digits-only pattern,
-                    // so normalize the value to plain decimal digits (e.g.
-                    // `" 5"` and `"+5"` -> `5`). The normalization stays
-                    // textual: `Number()` would round large values and switch
-                    // to exponent notation from `1e21`, which uBlock rejects.
-                    HtmlRuleConverter.normalizeLengthDigits(value),
+                    // so the value is normalized to plain decimal digits (e.g.
+                    // `" 5"` and `"+5"` -> `5`).
+                    HtmlRuleConverter.resolveAdgLengthAttributeValue(name, value),
                 );
             }
 
@@ -1537,9 +1526,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * values are neither rounded nor converted to exponent notation.
      *
      * The value is not bounded by {@link ADG_HTML_CONVERSION_MAX_LENGTH}:
-     * the attributes are applied natively by products, and the generated
-     * pattern is applied by the JavaScript `RegExp` implementation of
-     * `tsurlfilter` / `tswebextension`, which accepts larger quantifiers.
+     * that constant bounds only the regular expression generated from uBlock
+     * `:min-text-length()`. AdGuard products apply the `[min-length]` and
+     * `[max-length]` attributes natively, and uBlock applies
+     * `:min-text-length()` natively.
      *
      * @param name Name of the special attribute selector.
      * @param value Original attribute value.
