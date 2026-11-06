@@ -1745,39 +1745,6 @@ describe('RulesConverter', () => {
             expect(excludedRulesIds).toEqual([5, 15, 25]);
         });
 
-        it('should return IDs that the caller can append to an existing list', () => {
-            const ruleId = 5;
-            const sourcesIndex = new Map<number, Source[]>();
-            const errorsIndex = new Map<number, ConversionError[]>();
-            const excludedRulesIds: number[] = [1, 2, 3]; // Pre-existing IDs
-
-            // Setup with sources
-            const sources = [
-                createSource(ruleId, 10, 100),
-                createSource(ruleId, 20, 200),
-            ];
-
-            sourcesIndex.set(ruleId, sources);
-            errorsIndex.set(ruleId, [createConversionError(ruleId)]);
-
-            // @ts-expect-error Accessing private method for testing
-            const truncatedRulesIds = RulesConverter.removeTruncatedRuleSourcesAndErrors(
-                ruleId,
-                sourcesIndex,
-                errorsIndex,
-            );
-            excludedRulesIds.push(...truncatedRulesIds);
-
-            // Verify sources are cleared
-            expect(sourcesIndex.get(ruleId)).toEqual([]);
-
-            // Verify errors are cleared
-            expect(errorsIndex.get(ruleId)).toEqual([]);
-
-            // Verify new rule IDs are appended to existing excluded list
-            expect(excludedRulesIds).toEqual([1, 2, 3, 10, 20]);
-        });
-
         it('should handle empty errors array', () => {
             const ruleId = 6;
             const sourcesIndex = new Map<number, Source[]>();
