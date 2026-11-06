@@ -1291,8 +1291,8 @@ describe('RulesConverter', () => {
                 (limitation) => limitation instanceof TooManyUnsafeRulesError,
             ) as TooManyUnsafeRulesError;
             // The extension adds this list to the kept unsafe rules, so it must
-            // list every unsafe rule that is not enabled, whichever limit
-            // dropped it.
+            // also list the unsafe rules that the total limit drops, and not
+            // only the ones the unsafe limit drops.
             expect(unsafeLimitError.excludedRulesIds).toEqual([40, 50]);
 
             const totalLimitError = result.limitations!.find(

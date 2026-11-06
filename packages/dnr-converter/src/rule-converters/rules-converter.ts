@@ -444,10 +444,13 @@ export class RulesConverter {
         // Checks and, if necessary, trims the maximum number of rules
         if (maxNumberOfRules && declarativeRules.length > 0) {
             const filteredRules: DeclarativeRule[] = [];
-            // The unsafe list is the source for the extension's unsafe-rule
-            // count, so it must contain every excluded unsafe rule, including
-            // the ones the total limit drops. The total list contains only the
-            // rules the total limit drops.
+            // Both lists hold source rule ids, and a declarative rule produced
+            // from several source rules adds several ids. The total list holds
+            // the rules that the total limit drops. The unsafe list feeds the
+            // extension's unsafe-rule count, so it also holds the unsafe rules
+            // that the total limit drops; it is reported only when the unsafe
+            // limit itself is exceeded, and it does not include unsafe rules
+            // that the regexp limit drops later.
             const unsafeExcludedRulesIds: number[] = [];
             const totalExcludedRulesIds: number[] = [];
 
