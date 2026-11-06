@@ -16,6 +16,7 @@ export {
     Ruleset,
 } from './ruleset/ruleset';
 export {
+    type IFilteredRuleset,
     type IRulesetWithSourceMap,
     RulesetWithSourceMap,
     type RulesetContentProvider,

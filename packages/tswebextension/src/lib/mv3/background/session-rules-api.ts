@@ -2,6 +2,7 @@ import browser from 'webextension-polyfill';
 
 import {
     type DeclarativeRule,
+    type IFilteredRuleset,
     type IRulesetWithSourceMap,
     isCspDeclarativeRule,
     type LimitationError,
@@ -165,6 +166,10 @@ export class SessionRulesApi {
      * (collected from dynamic rules).
      * @param rebuiltCspRules Globally rebuilt CSP rules from static filters.
      * @param cspRuleset Source ruleset for rebuilt CSP rules.
+     * @param unreadableCspFilterIds Ids of the source filters whose content
+     * could not be read during the CSP pass; the rules of such a filter are
+     * kept from its own ruleset instead of the rebuilt list, because the
+     * rebuilt list has none.
      *
      * @returns Limitations for session rules omitted due to the browser quotas.
      */
@@ -172,7 +177,8 @@ export class SessionRulesApi {
         enabledStaticRulesets: IRulesetWithSourceMap[],
         declarativeRulesToCancel?: UpdateStaticRulesOptions[] | undefined,
         rebuiltCspRules?: DeclarativeRule[],
-        cspRuleset?: IRulesetWithSourceMap,
+        cspRuleset?: IRulesetWithSourceMap | IFilteredRuleset,
+        unreadableCspFilterIds?: number[],
     ): Promise<LimitationError[]> {
         const rulesToCancel = new Map<string, number[]>(
             declarativeRulesToCancel
@@ -213,6 +219,29 @@ export class SessionRulesApi {
                 };
             }),
         ));
+
+        // The rebuilt CSP list has no rules of a source filter whose content
+        // could not be read, so the rules of such a filter are re-added from
+        // the shared CSP ruleset itself, rebuilt without the read sources:
+        // stripping every metadata CSP rule instead would silently drop the
+        // filter's policies.
+        if (
+            cspRuleset !== undefined
+            && unreadableCspFilterIds !== undefined
+            && unreadableCspFilterIds.length > 0
+        ) {
+            if (typeof (cspRuleset as IFilteredRuleset).getFilteredDeclarativeRules !== 'function') {
+                throw new Error('The CSP ruleset cannot be rebuilt without the unreadable source filters');
+            }
+
+            const keptCspRules = await (cspRuleset as IFilteredRuleset)
+                .getFilteredDeclarativeRules(unreadableCspFilterIds);
+
+            unsafeRulesFromStaticFilters.push({
+                ruleset: cspRuleset,
+                rules: keptCspRules,
+            });
+        }
 
         // Before collecting rules to enable, record which browser session
         // rules should be removed.

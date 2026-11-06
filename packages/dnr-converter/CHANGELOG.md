@@ -64,6 +64,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   domain from a blocker with the additional `main_frame` rule, which matches
   by the target host, and an exception whose `$domain`, `$to` or `$denyallow`
   value contains a port is rejected, since a DNR domain list cannot hold one.
+- An exception with a permitted `$domain` against a blocker with the additional
+  `main_frame` rule is rejected only when the excluded domain overlaps the
+  target domains: `*$csp=x,domain=a.com` + `@@||cdn.example.net^$csp,domain=a.com`
+  is resolvable, while an exception for `sub.a.com` stays rejected.
+- `ConversionResult` of the standalone CSP conversion gained
+  `withoutSourceFilters()`, which rebuilds the ruleset without the rules of
+  given source filters, so an unreadable filter can be kept from its own
+  ruleset instead of losing its CSP rules with the shared list.
 - A value-less `$csp` exception does not cancel an `$important` blocking rule,
   while MV2 cancels it: `$important` keeps its documented priority over
   exceptions.

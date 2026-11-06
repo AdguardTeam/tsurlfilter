@@ -1,6 +1,7 @@
 import { type ConversionError } from '../errors/conversion-errors';
 import { type LimitationError } from '../errors/limitation-errors';
 import { type IRuleset } from '../ruleset/ruleset';
+import { type IFilteredRuleset } from '../ruleset/ruleset-with-source-map';
 import { type UpdateStaticRulesOptions } from '../ruleset/types';
 
 /**
@@ -33,4 +34,17 @@ export interface ConversionResult<T = IRuleset> {
      * should be canceled.
      */
     declarativeRulesToCancel?: UpdateStaticRulesOptions[];
+
+    /**
+     * Rebuilds the result's ruleset without the rules of the given source
+     * filters. Present only in {@link FilterConverter.convertCspRules}; a
+     * ruleset of an unreadable filter must be rebuilt from its remaining
+     * sources instead of trusting the shared ruleset, which holds no rules of
+     * the filter.
+     *
+     * @param excludedFilterIds Ids of the source filters to exclude.
+     *
+     * @returns A conversion result which holds no rules of the filters.
+     */
+    withoutSourceFilters?: (excludedFilterIds: number[]) => ConversionResult<IFilteredRuleset>;
 }

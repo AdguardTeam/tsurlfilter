@@ -118,6 +118,7 @@ import { RulesScanner, type ScannedFilter } from '../rules-scanner';
 import { RulesHashMap } from '../ruleset/rules-hash-map';
 import { type IRuleset, Ruleset } from '../ruleset/ruleset';
 import {
+    type IFilteredRuleset,
     type IRulesetWithSourceMap,
     type RulesetContentProvider,
     RulesetWithSourceMap,
@@ -344,8 +345,139 @@ export class FilterConverter {
             badFilterRules,
         );
         result.errors = [...relevantFilters.errors, ...scanErrors, ...result.errors];
+        result.withoutSourceFilters = (excludedFilterIds) => ({
+            ...FilterConverter.rebuildCspResult(
+                convertedRules,
+                scannedFilters,
+                filters,
+                badFilterRules,
+                excludedFilterIds,
+            ),
+            ruleset: FilterConverter.rebuildCspRuleset(
+                convertedRules,
+                filters,
+                excludedFilterIds,
+            ),
+        });
 
         return result;
+    }
+
+    /**
+     * Rebuilds the CSP ruleset without the rules of the given source filters.
+     *
+     * The stored scanned rules are already resolved (`$badfilter` applied,
+     * cancelled and removed rules excluded), so the excluded filters only
+     * drop their rules from the conversion input; a source map entry whose
+     * declarative rule was converted from several sources is dropped when any
+     * of them is excluded.
+     *
+     * @param convertedRules Result of the resolved conversion.
+     * @param scannedFilters Scanned filters the rules were converted from.
+     * @param filterList Source filters.
+     * @param badFilterRules `$badfilter` rules of the scanned filters.
+     * @param excludedFilterIds Ids of the source filters to exclude.
+     *
+     * @returns Conversion result which holds no rules of the filters.
+     */
+    private static rebuildCspResult(
+        convertedRules: ConvertedRules,
+        scannedFilters: ScannedFilter[],
+        filterList: IFilter[],
+        badFilterRules: Rule[],
+        excludedFilterIds: number[],
+    ): ConversionResult<IRulesetWithSourceMap> {
+        const excluded = new Set(excludedFilterIds);
+        const scannedRulesByFilter = new Map(convertedRules.scannedRulesByFilter ?? []);
+        const excludedSourceRuleIndexes = new Map<number, Set<number>>();
+        excluded.forEach((filterId) => {
+            excludedSourceRuleIndexes.set(
+                filterId,
+                new Set((scannedRulesByFilter.get(filterId) ?? []).map((rule) => rule.index)),
+            );
+        });
+
+        const sourceMapValues = convertedRules.sourceMapValues.filter(({ filterId, sourceRuleIndex }) => (
+            !excludedSourceRuleIndexes.get(filterId)?.has(sourceRuleIndex)
+        ));
+        const declarativeRuleIds = new Set(sourceMapValues.map(({ declarativeRuleId }) => declarativeRuleId));
+        const declarativeRules = convertedRules.declarativeRules.filter(({ id }) => declarativeRuleIds.has(id));
+        const keptFilters = scannedFilters.filter(({ id }) => !excluded.has(id));
+
+        return FilterConverter.collectConvertedResult(
+            FilterConverter.CSP_RULESET_ID,
+            filterList,
+            keptFilters,
+            {
+                sourceMapValues,
+                declarativeRules,
+                errors: [],
+                limitations: [],
+            },
+            badFilterRules.filter((rule) => !excluded.has(rule.filterListId)),
+        );
+    }
+
+    /**
+     * Rebuilds the CSP ruleset itself without the rules of the given source
+     * filters, so its declarative rules can be read per source group later.
+     *
+     * @param convertedRules Result of the resolved conversion.
+     * @param filterList Source filters.
+     * @param excludedFilterIds Ids of the source filters to exclude.
+     *
+     * @returns Ruleset which holds no rules of the filters.
+     */
+    private static rebuildCspRuleset(
+        convertedRules: ConvertedRules,
+        filterList: IFilter[],
+        excludedFilterIds: number[],
+    ): IFilteredRuleset {
+        const excluded = new Set(excludedFilterIds);
+        const scannedRulesByFilter = new Map(convertedRules.scannedRulesByFilter ?? []);
+        const excludedSourceRuleIndexes = new Map<number, Set<number>>();
+        excluded.forEach((filterId) => {
+            excludedSourceRuleIndexes.set(
+                filterId,
+                new Set((scannedRulesByFilter.get(filterId) ?? []).map((rule) => rule.index)),
+            );
+        });
+
+        const sourceMapValues = convertedRules.sourceMapValues.filter(({ filterId, sourceRuleIndex }) => (
+            !excludedSourceRuleIndexes.get(filterId)?.has(sourceRuleIndex)
+        ));
+        const declarativeRuleIds = new Set(sourceMapValues.map(({ declarativeRuleId }) => declarativeRuleId));
+        const declarativeRules = convertedRules.declarativeRules.filter(({ id }) => declarativeRuleIds.has(id));
+
+        return new RulesetWithSourceMap(
+            FilterConverter.CSP_RULESET_ID,
+            declarativeRules.filter(isSafeRule).length,
+            declarativeRules.length - declarativeRules.filter(isSafeRule).length,
+            declarativeRules.filter((rule) => rule.condition.regexFilter !== undefined).length,
+            {
+                loadSourceMap: async () => new SourceMap(sourceMapValues),
+                loadFilterList: async () => filterList,
+                loadDeclarativeRules: async () => declarativeRules,
+                loadFilteredDeclarativeRules: async (excludedIds) => {
+                    const excludedAgain = new Set(excludedIds);
+                    const again = new Map<number, Set<number>>();
+                    excludedAgain.forEach((filterId) => {
+                        again.set(
+                            filterId,
+                            new Set((scannedRulesByFilter.get(filterId) ?? []).map((rule) => rule.index)),
+                        );
+                    });
+                    const keptSources = sourceMapValues.filter(({ filterId, sourceRuleIndex }) => (
+                        !again.get(filterId)?.has(sourceRuleIndex)
+                    ));
+                    const keptIds = new Set(keptSources.map(({ declarativeRuleId }) => declarativeRuleId));
+                    return declarativeRules.filter(({ id }) => keptIds.has(id));
+                },
+            },
+            [],
+            new RulesHashMap([]),
+            [],
+        );
     }
 
     /**

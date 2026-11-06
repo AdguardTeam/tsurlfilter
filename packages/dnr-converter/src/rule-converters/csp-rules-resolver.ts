@@ -390,9 +390,21 @@ export class CspRulesResolver {
         // by the initiator only, so the exclusion would drop the policy for
         // navigations the exception does not cover. The exclusion is set per
         // source rule, so the base rule does not get it either.
+        //
+        // The overlap is impossible when the target domains and the excluded
+        // domain do not cover each other: the additional rule never matches
+        // the excluded host, and the base rule is guarded by the covering
+        // check above.
+        const targetDomains = RegularRuleConverter.getCondition(blockingRule).initiatorDomains ?? [];
+        const intersectsTargetDomains = targetDomains.some((domain) => (
+            isDomainCovered(domain, exceptionDomain)
+            || isDomainCovered(exceptionDomain, domain)
+        ));
+
         if (
             (exceptionRule.permittedDomains?.length ?? 0) > 0
             && RegularRuleConverter.hasTargetDomainRule(blockingRule)
+            && intersectsTargetDomains
         ) {
             return null;
         }

@@ -305,6 +305,32 @@ describe('CspRulesResolver.resolve', () => {
         });
     });
 
+    it('rejects the exclusion of an exception whose $domain overlaps the target domains', () => {
+        const rules = createRules(
+            "*$csp=script-src 'none',domain=example.com",
+            '@@||sub.example.com^$csp,domain=example.com',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('excludes a domain whose $domain does not overlap the target domains', () => {
+        const rules = createRules(
+            "*$csp=script-src 'none',domain=example.com",
+            '@@||cdn.example.net^$csp,domain=example.com',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map([[rules[0], ['cdn.example.net']]]),
+            unsupportedExceptions: [],
+        });
+    });
+
     it('rejects an exception with a port in the $domain condition', () => {
         const rules = createRules(
             "$csp=script-src 'none'",

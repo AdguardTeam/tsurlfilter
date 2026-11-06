@@ -295,6 +295,25 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(errors).toHaveLength(0);
         });
 
+        it('excludes a domain from a main_frame blocker when the target domains do not overlap', async () => {
+            const filter = createFilter([
+                "$csp=script-src 'none',domain=a.com|b.com",
+                '@@||cdn.example.com^$csp,domain=a.com|b.com',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            // `cdn.example.com` cannot intersect `requestDomains [a.com,b.com]`
+            // of the additional rule, and the base rule is covered by the
+            // initiator coverage, so the exclusion is resolvable.
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(2);
+            expect(declarativeRules[0].condition.excludedRequestDomains).toEqual(['cdn.example.com']);
+            expect(declarativeRules[1].condition.requestDomains).toEqual(['a.com', 'b.com']);
+            expect(declarativeRules[1].condition.excludedRequestDomains).toEqual(['cdn.example.com']);
+        });
+
         it('resolves the source rule of a selected line by its original offset', async () => {
             const filter = createFilter([
                 '||ads.example^',

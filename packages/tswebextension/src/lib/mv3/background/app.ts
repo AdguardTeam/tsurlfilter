@@ -5,6 +5,7 @@ import {
     getRulesetId,
     type IFilter,
     type IRulesetWithSourceMap,
+    isUnavailableFilterSourceError,
     type LimitationError,
     METADATA_RULESET_ID,
     RULESET_NAME_PREFIX,
@@ -545,6 +546,9 @@ export class TsWebExtension implements AppInterface<
                 this.webAccessibleResourcesPath,
             );
             res.cspRules = { errors: cspRules.staticErrors };
+            const unreadableStaticCspFilterIds = cspRules.staticErrors
+                .filter(isUnavailableFilterSourceError)
+                .map(({ filterId }) => filterId);
 
             if (res.cspRules.errors.length > 0) {
                 logger.warn(
@@ -584,7 +588,8 @@ export class TsWebExtension implements AppInterface<
                     enabledStaticRulesets,
                     declarativeRulesToCancel,
                     cspRules.staticRules,
-                    cspRules.ruleset,
+                    cspRules.staticRuleset,
+                    unreadableStaticCspFilterIds,
                 ),
                 (snapshot) => DynamicRulesApi.rollbackDynamicFiltering(snapshot),
                 (rollbackError) => logger.error(

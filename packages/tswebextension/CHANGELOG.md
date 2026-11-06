@@ -57,7 +57,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   raw quota, so the counters of the limits warning are exact.
 - A CSP rule of an unreadable filter is reported in the channel of that filter
   instead of being dropped from both: the error is classified by its filter id,
-  not by its kind only.
+  not by its kind only, and the session update re-adds the CSP rules of such a
+  filter from its own ruleset instead of dropping them with the rebuilt list.
 - The declarative filtering log listener is restarted when any step of
   `configure()` fails after it was stopped, so the log does not stay silent
   until the next successful `configure()`.

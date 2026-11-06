@@ -135,12 +135,33 @@ export interface IRulesetWithSourceMap extends IBaseRuleset {
 }
 
 /**
+ * Extended rule set which can rebuild its declarative rules from the source
+ * filter list, excluding the rules of given filters.
+ *
+ * Implemented by {@link RulesetWithSourceMap} when the content provider has a
+ * `loadFilteredDeclarativeRules` loader.
+ */
+export interface IFilteredRuleset extends IRulesetWithSourceMap {
+    /**
+     * Returns the declarative rules of the rule set, excluding the rules of
+     * the given source filters. A rule built from several sources is kept only
+     * when none of them is excluded.
+     *
+     * @param excludedFilterIds Ids of the source filters to exclude.
+     *
+     * @returns Declarative rules of the remaining sources.
+     */
+    getFilteredDeclarativeRules(excludedFilterIds: number[]): Promise<DeclarativeRule[]>;
+}
+
+/**
  * Rule set content's provider for lazy load data.
  */
 export type RulesetContentProvider = {
     loadSourceMap: () => Promise<ISourceMap>;
     loadFilterList: () => Promise<IFilter[]>;
     loadDeclarativeRules: () => Promise<DeclarativeRule[]>;
+    loadFilteredDeclarativeRules?: (excludedFilterIds: number[]) => Promise<DeclarativeRule[]>;
 };
 
 /**
@@ -380,6 +401,16 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     /** @inheritdoc */
     public getUnsafeRules(): Promise<DeclarativeRule[]> {
         return Promise.resolve(this.unsafeRules);
+    }
+
+    /** @inheritdoc */
+    public getFilteredDeclarativeRules(excludedFilterIds: number[]): Promise<DeclarativeRule[]> {
+        const loader = this.rulesetContentProvider.loadFilteredDeclarativeRules;
+        if (!loader) {
+            throw new Error('The ruleset does not support filtered declarative rules');
+        }
+
+        return loader(excludedFilterIds);
     }
 
     /** @inheritdoc */

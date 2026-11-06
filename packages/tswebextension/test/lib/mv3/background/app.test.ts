@@ -11,6 +11,8 @@ import {
 } from 'vitest';
 import browser from 'webextension-polyfill';
 
+import { getRulesetId, type RulesetContentProvider } from '@adguard/dnr-converter';
+
 import { CanvasAvailabilityStatus } from '../../../../src/lib/common/canvas-protection/constants';
 import { CanvasProtectionRegistration } from '../../../../src/lib/common/canvas-protection/registration';
 import { MemoryStorage } from '../../../../src/lib/common/storage/core';
@@ -202,6 +204,181 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
         const storage = save.mock.contexts.at(-1) as MemoryStorage<SessionStorageSchema>;
         const stored = await storage.get('tswebextension');
         expect(stored?.configuration?.settings.stealth.protectCanvas).toBe(true);
+    });
+
+    describe('configure wiring', () => {
+        const USER_FILTER_ID = 0;
+
+        /**
+         * Runs `configure()` with a real CSP pass and mocked browser
+         * boundaries, so the scope placement, the counts and the rollback
+         * wiring of `applyFilteringConfiguration()` are asserted.
+         *
+         * The regular dynamic conversion is mocked with an empty result: it is
+         * covered by the dynamic-rules tests, and the wiring under test is the
+         * join of its output with the real `CspRulesManager.build()`.
+         *
+         * @param staticFilterRules Rules of the built-in filter.
+         * @param userRules User rules.
+         *
+         * @returns The mocks the assertions are made against and the result.
+         */
+        const runConfigure = async (
+            staticFilterRules: string[],
+            userRules: string[],
+        ): Promise<{
+            prepareDynamicFiltering: ReturnType<typeof vi.fn>;
+            limitRebuiltCspRules: ReturnType<typeof vi.fn>;
+            applyDynamicFiltering: ReturnType<typeof vi.fn>;
+            updateSessionRules: ReturnType<typeof vi.fn>;
+            rollback: ReturnType<typeof vi.fn>;
+            configure: () => ReturnType<TsWebExtension['configure']>;
+        }> => {
+            const { createFilter } = await import('../helpers');
+            const staticFilter = createFilter(staticFilterRules, 1);
+            const userFilter = createFilter(userRules, USER_FILTER_ID);
+            const { RulesetWithSourceMap } = await import('@adguard/dnr-converter');
+            const staticRuleset = new RulesetWithSourceMap(
+                getRulesetId(staticFilter.getId()),
+                0,
+                0,
+                0,
+                {
+                    loadSourceMap: async (): ReturnType<RulesetContentProvider['loadSourceMap']> => ({
+                        getByDeclarativeRuleId: () => [],
+                        getBySourceRuleIndex: () => [],
+                        serialize: () => '',
+                    }),
+                    loadFilterList: async (): ReturnType<RulesetContentProvider['loadFilterList']> => [staticFilter],
+                    loadDeclarativeRules: async (): ReturnType<RulesetContentProvider['loadDeclarativeRules']> => [],
+                },
+                [],
+                { hasSources: () => false } as never,
+                [],
+            );
+
+            // The mocked log must run the steps it wraps, otherwise
+            // `configure()` stops before applying anything.
+            vi.mocked(declarativeFilteringLog.withUpdateLock).mockImplementation(async (operation) => {
+                await operation();
+            });
+            vi.mocked(declarativeFilteringLog.withStoppedListener).mockImplementation(async (operation) => {
+                await operation();
+            });
+            vi.spyOn(configureBoundaries, 'syncRulesetsWithIdb').mockResolvedValue(undefined);
+            vi.spyOn(configureBoundaries, 'getFiltersUpdateInfo').mockResolvedValue({
+                staticFilters: [staticFilter],
+                customFilters: [],
+                filtersIdsToEnable: [],
+                filtersIdsToDisable: [],
+            });
+            vi.spyOn(configureBoundaries, 'loadStaticRulesets').mockResolvedValue([staticRuleset]);
+            vi.spyOn(FiltersApi, 'updateFiltering').mockResolvedValue({ errors: [] });
+            vi.spyOn(StealthService, 'applySettings').mockResolvedValue({} as never);
+            vi.spyOn(CspService, 'addCspReportBlockingRule').mockResolvedValue(undefined);
+            Object.defineProperty(browser, 'declarativeNetRequest', {
+                configurable: true,
+                value: { getEnabledRulesets: vi.fn().mockResolvedValue([getRulesetId(staticFilter.getId())]) },
+            });
+
+            // Empty regular conversion: the dynamic scope is exercised by the
+            // rebuilt CSP rules only.
+            const prepareDynamicFiltering = vi.spyOn(DynamicRulesApi, 'prepareDynamicFiltering')
+                .mockResolvedValue({
+                    ruleset: { unloadContent: vi.fn() },
+                    declarativeRulesToCancel: [],
+                    counts: { total: 0, unsafe: 0, regexp: 0 },
+                    limitations: [],
+                    errors: [],
+                } as never);
+            const limitRebuiltCspRules = vi.spyOn(DynamicRulesApi, 'limitRebuiltCspRules')
+                .mockImplementation(async (conversionResult, rules) => ({
+                    rules,
+                    counts: { total: rules.length, unsafe: 0, regexp: 0 },
+                    limitations: [],
+                }) as never);
+            const applyDynamicFiltering = vi.spyOn(DynamicRulesApi, 'applyDynamicFiltering')
+                .mockResolvedValue({ rules: [], sourceMap: new Map(), disabledStaticRuleIds: new Map() } as never);
+            const updateSessionRules = vi.spyOn(SessionRulesApi, 'updateSessionRules').mockResolvedValue([]);
+            const rollback = vi.spyOn(DynamicRulesApi, 'rollbackDynamicFiltering')
+                .mockResolvedValue(undefined as never);
+
+            // The user rules reach the CSP pass through the real FiltersApi
+            // path, not through the configuration text, so the scope split
+            // depends on the filter object the wiring hands over.
+            vi.spyOn(FiltersApi, 'createUserRulesFilter').mockReturnValue(userFilter);
+
+            const config = getConfigurationMv3Fixture();
+
+            return {
+                prepareDynamicFiltering,
+                limitRebuiltCspRules,
+                applyDynamicFiltering,
+                updateSessionRules,
+                rollback,
+                configure: () => instance.configure(config),
+            };
+        };
+
+        /**
+         * Runs `configure()` with a session-update failure and returns the
+         * rollback mock, so the rejection and the rollback are both asserted.
+         *
+         * @param staticFilterRules Rules of the built-in filter.
+         * @param userRules User rules.
+         *
+         * @returns The rollback mock.
+         */
+        const runFailingConfigure = async (
+            staticFilterRules: string[],
+            userRules: string[],
+        ): Promise<ReturnType<typeof vi.fn>> => {
+            const failure = new Error('quota');
+
+            // Install the failing mock after runConfigure's own setup:
+            // `configure()` runs only after the rejection is wired.
+            const setup = await runConfigure(staticFilterRules, userRules);
+            vi.mocked(SessionRulesApi.updateSessionRules).mockRejectedValue(failure);
+            await expect(setup.configure()).rejects.toBe(failure);
+            return setup.rollback;
+        };
+
+        it('places the static CSP rules into session rules and the dynamic ones into dynamic rules', async () => {
+            appContext.isStorageInitialized = true;
+            const {
+                limitRebuiltCspRules, applyDynamicFiltering, updateSessionRules, configure,
+            } = await runConfigure(
+                ["$csp=script-src 'none'"],
+                ["||example.com^$csp=img-src 'none'"],
+            );
+            const result = await configure();
+
+            // The dynamic CSP rule is fitted to the dynamic quotas and applied
+            // with the regular dynamic rules; the static one goes to the
+            // session update, and neither scope receives the other's rule.
+            const limitedRules = limitRebuiltCspRules.mock.calls[0][1];
+            expect(limitedRules).toHaveLength(1);
+            expect(limitedRules[0].action.responseHeaders[0].value).toBe("img-src 'none'");
+
+            const appliedCspRules = applyDynamicFiltering.mock.calls[0][2];
+            expect(appliedCspRules).toEqual(limitedRules);
+
+            const sessionArgs = updateSessionRules.mock.calls[0];
+            const sessionCspRules = sessionArgs[2];
+            expect(sessionCspRules).toHaveLength(1);
+            expect(sessionCspRules[0].action.responseHeaders[0].value).toBe("script-src 'none'");
+
+            expect(result.cspRules?.errors).toEqual([]);
+            expect(result.dynamicRules?.errors).toEqual([]);
+            // The counts are the final ones, rebuilt CSP rules included.
+            expect(result.dynamicRules?.counts).toEqual({ total: 1, unsafe: 0, regexp: 0 });
+        });
+
+        it('rolls the dynamic rules back when the session update fails', async () => {
+            appContext.isStorageInitialized = true;
+            const rollback = await runFailingConfigure(["$csp=script-src 'none'"], []);
+            expect(rollback).toHaveBeenCalledOnce();
+        });
     });
 
     describe('initStorage', () => {
