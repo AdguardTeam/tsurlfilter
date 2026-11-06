@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `normalizeAllowlistDomain()` — it turns an allowlist entry into the domain
   it describes: lower case, without the scheme, the credentials, the port, the path,
   the query or the fragment that an imported or an old entry may carry, and without
-  the `www.` prefix the generated rule covers anyway.
+  the `www.` prefix and the root label dot the generated rule covers anyway.
 - Added the `fingerprinting` value for `$stealth`
   (`StealthOptionName.Fingerprinting`).
 - Added `Engine.getDocumentOrStealthExceptionRules()` to retrieve `$stealth`
@@ -46,6 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `https://example.com./`) is matched by its host, and entries without a domain — a
   bare `*.`, `*` or `**` — are rejected instead of producing a rule that matched
   every URL (`*.`) or only URLs containing `www.` (`*`).
+- An entry that carries a URL is reduced to the domain it names, so
+  `example.com/path`, `example.com?x=1`, `example.com:8080`,
+  `https://user@example.com./` and `example.com\path` all cover `example.com`,
+  while `www.*` keeps its prefix and covers the hosts under `www.`.
 - A `*` inside an allowlist entry now matches within the host only, so `example.*`
   no longer allowlists `https://example.com@evil.org/` and `*example.com` no longer
   matches `https://evil.org//example.com/`. The `*.` form is anchored the same way,

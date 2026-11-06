@@ -94,9 +94,10 @@ const isFullWildcard = (domain: string): boolean => /^\*+$/.test(domain);
 const URL_PREFIX = /^(?:[a-z][a-z0-9+.-]*:)?\/\/(?:[^/?#@]*@)?/;
 
 /**
- * Characters that end the host of an entry: a path, a query or a fragment.
+ * Characters that end the host of an entry: a path, a query or a fragment. A backslash is here
+ * because browsers normalize it to a slash, and `HOST_BOUNDARY` treats it as a host end too.
  */
-const HOST_END = /[/?#]/;
+const HOST_END = /[/\\?#]/;
 
 /**
  * Port at the end of a host — a bracketed IPv6 literal or a single-colon hostname followed by
@@ -125,9 +126,27 @@ const stripWwwPrefix = (domain: string): string => {
 };
 
 /**
+ * Removes the root label dot of a multi-label host, which names the same host: the generated rule
+ * tolerates the dot on the URL side anyway. A single-label entry is left alone, so `www.` and `*.`
+ * stay entries without a domain instead of becoming different hosts.
+ *
+ * @param host Lowercased host of the entry.
+ *
+ * @returns Host without the trailing dot, or the host itself.
+ */
+const stripRootLabelDot = (host: string): string => {
+    if (!host.endsWith('.') || host.split('.').length <= 2) {
+        return host;
+    }
+
+    return host.slice(0, -1);
+};
+
+/**
  * Normalizes an allowlist entry to the domain it describes: lower case, without the scheme, the
  * credentials, the port, the path, the query or the fragment that an imported or an old entry may
- * carry, and without the `www.` prefix that the generated rule covers anyway.
+ * carry, and without the `www.` prefix and the root label dot that the generated rule covers
+ * anyway.
  *
  * @param entry Allowlist entry.
  *
@@ -137,7 +156,7 @@ export const normalizeAllowlistDomain = (entry: string): string => {
     const withoutUrlPrefix = entry.toLowerCase().trim().replace(URL_PREFIX, '');
     const host = withoutUrlPrefix.split(HOST_END)[0];
 
-    return stripWwwPrefix(host.trim().replace(HOST_PORT, '$1'));
+    return stripWwwPrefix(stripRootLabelDot(host.trim().replace(HOST_PORT, '$1')));
 };
 
 /**

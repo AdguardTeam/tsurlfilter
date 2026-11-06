@@ -470,9 +470,11 @@ on the value of [allowlistInverted](#allowlistinverted) setting value.
 A plain entry such as `example.com` covers that host and its `www.` subdomain,
 while a `*.example.com` entry covers the domain and all its subdomains. An entry
 never covers a host that only starts with it: `example.com` does not cover
-`example.community`. A path, a query or a fragment is not a part of an entry and
-is ignored: `example.com/path` covers the whole host. An entry that describes no
-host, such as `*`, `**` or `*.`, is ignored; the full wildcard is `*.*`.
+`example.community`. A scheme, credentials, a port, a path, a query, a
+fragment or a trailing root label dot are not a part of an entry and are
+ignored: `example.com/path` and `https://example.com./` cover the whole host.
+An entry that describes no host, such as `*`, `**` or `*.`, is ignored; the
+full wildcard is `*.*`.
 
 In MV3, every entry also covers subdomains in the regular allowlist mode. In the
 inverted mode the network filtering excludes the listed domain together with all

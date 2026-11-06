@@ -71,6 +71,13 @@ describe('normalizeAllowlistDomain', () => {
         { entry: 'https://user:pass@example.com/', expected: 'example.com' },
         { entry: 'example.com:8080', expected: 'example.com' },
         { entry: '*.example.com:8080/', expected: '*.example.com' },
+        // The root label dot names the same host, and browsers normalize a backslash to a slash.
+        { entry: 'example.com.', expected: 'example.com' },
+        { entry: 'https://example.com./', expected: 'example.com' },
+        { entry: '*.example.com.', expected: '*.example.com' },
+        { entry: 'example.*.', expected: 'example.*' },
+        { entry: 'example.com\\path', expected: 'example.com' },
+        { entry: 'www.example.com.', expected: 'example.com' },
         // `www.*` describes the hosts under `www.`, so the prefix is the part that defines it.
         { entry: 'www.*', expected: 'www.*' },
         // A bare `www.` has no domain at all.
@@ -168,6 +175,8 @@ describe('RuleFactory.createAllowlistRule', () => {
             { domain: 'example.com?x=1', url: 'https://example.com/other' },
             { domain: 'https://example.com/path', url: 'https://example.com/other' },
             { domain: 'example.com:8080', url: 'https://example.com/other' },
+            { domain: 'example.com\\path', url: 'https://example.com/other' },
+            { domain: 'example.com.', url: 'https://example.com/' },
             { domain: '*.example.com/', url: 'https://sub.example.com/page' },
             // `www.*` describes the hosts under `www.`.
             { domain: 'www.*', url: 'https://www.example.com/' },
