@@ -17,8 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed `SimpleRegex.fromLiteral()` for regexp literals that contain an
-  escaped delimiter or an escaped backslash in a character class.
+- `:contains()` regexp arguments in HTML filtering rules that end with an
+  escaped backslash (`/foo\\/`) or have one in a character class (`/[\\]/`)
+  are now compiled as regexps instead of being matched as text.
 - `:contains()` regexp arguments in HTML filtering rules now ignore all
   flags except `i`, `s`, and the Unicode flags `u` and `v`. Matching is
   stateless and does not depend on the previously matched element.
