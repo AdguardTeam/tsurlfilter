@@ -111,7 +111,7 @@ const fetchManifest = async (scriptsPath: string): Promise<PreregisteredScriptsM
 /**
  * Fetches the build-time manifest shipped next to the artifacts. It lists
  * the rule hashes with matching generated files, the scriptlet name →
- * function-file map and the embed-gate hostname set.
+ * function-file map and the hostnames the generation registers.
  *
  * The manifest is this package's own build output, but it is still
  * validated: a missing, unreadable, malformed, or version-mismatched

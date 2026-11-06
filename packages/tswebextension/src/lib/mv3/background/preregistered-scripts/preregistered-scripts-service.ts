@@ -362,42 +362,26 @@ export class PreregisteredScriptsService {
         let scripts: ContentScriptDescriptor[] = [];
 
         try {
-            if (hostnames.length > 0) {
-                try {
-                    const manifest = await readManifest(scriptsPath);
+            if (preregistrationEnabled && hostnames.length > 0) {
+                const manifest = await readManifest(scriptsPath);
 
-                    if (preregistrationEnabled) {
-                        // Register only the hosts the generation carries. A
-                        // host missing from the manifest has no baked files, so
-                        // registering it would run nothing while the dynamic
-                        // path reports the rules as covered.
-                        const gateHosts = new Set(manifest.hostnames);
-                        registeredHostnames = hostnames.filter((hostname) => gateHosts.has(hostname));
-                        const skippedHostnames = hostnames.filter((hostname) => !gateHosts.has(hostname));
+                // Register only the hosts the generation carries. A host
+                // missing from the manifest has no baked files, so registering
+                // it would run nothing while the dynamic path reports the
+                // rules as covered.
+                const gateHosts = new Set(manifest.hostnames);
+                registeredHostnames = hostnames.filter((hostname) => gateHosts.has(hostname));
+                const skippedHostnames = hostnames.filter((hostname) => !gateHosts.has(hostname));
 
-                        if (skippedHostnames.length > 0) {
-                            logger.warn(`[tsweb.PreregisteredScriptsService.doSync]: ${skippedHostnames.length} configured hostname(s) are missing from the manifest host set, not registering them`, skippedHostnames);
-                        }
-
-                        scripts = await PreregisteredScriptsService.buildDomainScripts(
-                            registeredHostnames,
-                            scriptsPath,
-                            manifest,
-                        );
-                    }
-                } catch (e) {
-                    // An enabled sync must not register against a manifest it
-                    // could not read: the previous registrations stay, and the
-                    // previous host set keeps describing them. With
-                    // preregistration off the set only feeds the published
-                    // coverage, so a read failure must not block dropping the
-                    // registrations.
-                    if (preregistrationEnabled) {
-                        throw e;
-                    }
-
-                    logger.warn('[tsweb.PreregisteredScriptsService.doSync]: Failed to read the manifest, keeping the previous host set', e);
+                if (skippedHostnames.length > 0) {
+                    logger.warn(`[tsweb.PreregisteredScriptsService.doSync]: ${skippedHostnames.length} configured hostname(s) are missing from the manifest host set, not registering them`, skippedHostnames);
                 }
+
+                scripts = await PreregisteredScriptsService.buildDomainScripts(
+                    registeredHostnames,
+                    scriptsPath,
+                    manifest,
+                );
             }
 
             const scriptsKey = PreregisteredScriptsService.getScriptsKey(scripts);

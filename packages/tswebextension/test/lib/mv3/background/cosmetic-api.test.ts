@@ -299,11 +299,11 @@ describe('CosmeticApi — preregistered script rules', () => {
             expect(applyLocal).toHaveBeenCalled();
         });
 
-        it('keeps $path-qualified rules on the dynamic path in an opaque frame', async () => {
-            // The per-rule `$path` guard cannot evaluate the ancestor's URL
-            // from an about:blank/srcdoc frame, so the preregistered file
-            // never runs such rules there; the dynamic path (which copied
-            // the ancestor's result) must still deliver them.
+        it('injects local rules into an opaque frame even when the parent is covered', async () => {
+            // Subframes never take the preregistered path: their verdict
+            // depends on the parent's rules, and the dynamic path is the one
+            // that sees the frame rule. `applyLocal` is called because the
+            // frame is not covered, not because of any per-rule guard.
             const pathRule = makeRawRule(LOCAL_JS_RULE_CONTENT, { pattern: '/tv' });
             const childFrame = {
                 ...makeFrameContext('about:blank', [pathRule]),
