@@ -35,7 +35,7 @@ class DeclarativeFilteringLog {
      * Whether declarative logging was enabled by the last {@link finishUpdate}.
      *
      * Kept so that {@link restore} can bring the listener back to the previous
-     * state without replacing the rule sets which are still in effect.
+     * state, whichever rule sets ended up live after a failed update.
      */
     #isEnabled = false;
 

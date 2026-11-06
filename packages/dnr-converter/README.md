@@ -79,7 +79,7 @@ MV3 limitations (inherent to the Declarative Net Request API) are:
   rule is reported instead of applied, e.g. `@@||a.com^$csp,domain=a.com`
   with `$csp=...,domain=a.com`. A value-less
   exception applies only when it outranks the blocking rule, so
-  `@@||example.com^$csp` does not cancel `||example.com^$csp=...,$important`;
+  `@@||example.com^$csp` does not cancel `||example.com^$csp=...,important`;
   this differs from MV2, where the value-less exception wins, and from what the
   filtering log shows in MV3
 - `$removeparam`, `$removeheader`, `$permissions` — allowlist rules
