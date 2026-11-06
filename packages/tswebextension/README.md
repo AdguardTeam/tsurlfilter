@@ -343,9 +343,9 @@ Coverage is reported from the registrations actually active after a sync:
 on sync failure the last published coverage is kept (the boot snapshot
 before the first sync), and rules in those sets stay excluded from dynamic
 injection; a rule that cannot be confirmed as covered remains on the
-dynamic path. Top-level documents that loaded before the current service
+dynamic path. Outermost documents that loaded before the current service
 worker started are judged against the boot snapshot of the registrations
-that existed then; later top-level documents use the last published
+that existed then; later outermost documents use the last published
 coverage. Subframes are not part of either: their coverage is always the
 dynamic path.
 
