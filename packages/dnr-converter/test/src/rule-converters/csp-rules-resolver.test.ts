@@ -337,6 +337,10 @@ describe('CspRulesResolver.resolve', () => {
             "@@$csp=script-src 'none',domain=example.com:8080",
         );
 
+        expect(CspRulesResolver.getUnprocessableReason(rules[1])).toBe(
+            'Network allowlist rule with $csp modifier has a domain condition'
+            + ' which cannot be represented in DNR',
+        );
         expect(CspRulesResolver.resolve(rules)).toEqual({
             rules: [rules[0]],
             excludedRequestDomains: new Map(),

@@ -74,7 +74,10 @@ MV3 limitations (inherent to the Declarative Net Request API) are:
 - `$csp` — exceptions are supported only through `convertCspRules()`, which
   sees all filters at once; the regular `convert()` still rejects an allowlist
   `$csp` rule. Exceptions are supported for exact conditions and clean domain
-  exclusions; path-level subtraction is not expressible in DNR. A value-less
+  exclusions; path-level subtraction is not expressible in DNR, and an
+  exception with `$domain` against a blocker that also gets the `main_frame`
+  rule is reported instead of applied, e.g. `@@||a.com^$csp,domain=a.com`
+  with `$csp=...,domain=a.com`. A value-less
   exception applies only when it outranks the blocking rule, so
   `@@||example.com^$csp` does not cancel `||example.com^$csp=...,$important`;
   this differs from MV2, where the value-less exception wins, and from what the
