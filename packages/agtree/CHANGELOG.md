@@ -43,7 +43,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   conversion error instead of silently becoming `##^div`. A dropped
   `[max-length]` that is the whole compound selector is replaced with `*`, so
   `$$div > [max-length="100"]` becomes `##^div > *` instead of an invalid
-  rule with a dangling combinator.
+  rule with a dangling combinator. A complex selector that consisted only of
+  dropped selectors still throws `Complex selector cannot be empty`, e.g.
+  `$$[max-length="100"]`, because `*` alone also matches `html`.
 
 ### Security
 

@@ -186,6 +186,7 @@ export const ERROR_MESSAGES = {
 
     EMPTY_SELECTOR_LIST: 'Selector list of HTML filtering rule must not be empty',
     EMPTY_COMPLEX_SELECTOR: 'Complex selector of selector list must not be empty',
+    EMPTY_COMPLEX_SELECTOR_AFTER_DROP: 'Complex selector cannot be empty',
     INVALID_SELECTOR_COMBINATOR: "Invalid selector combinator '%s' used between selectors",
     UNKNOWN_SELECTOR_TYPE: "Unknown selector type '%s' found during conversion",
 
@@ -665,7 +666,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *   error as in AdGuard to AdGuard conversion instead of being dropped
      *   silently. When the dropped selector is the whole compound selector,
      *   the converter emits `*` in its place to keep the complex selector
-     *   valid.
+     *   valid. A complex selector that consisted only of dropped selectors is
+     *   still a conversion error, because a bare `*` also matches `html`.
      *
      * @param name Name of the special attribute selector.
      * @param value Value of the special attribute selector.
@@ -1190,6 +1192,14 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // generator rejects.
             let normalizedSelectors = convertedSelectors;
             if (hasDroppedSelector) {
+                // A complex selector that consisted only of dropped selectors
+                // must not become a bare `*`: uBlock applies `*` to `html` too,
+                // and removing `html` breaks the response filter. Keep the
+                // previous conversion error.
+                if (convertedSelectors.length === 0) {
+                    throw new RuleConversionError(ERROR_MESSAGES.EMPTY_COMPLEX_SELECTOR_AFTER_DROP);
+                }
+
                 normalizedSelectors = HtmlRuleConverter.replaceEmptyCompoundsWithUniversalSelector(
                     convertedSelectors,
                 );
@@ -1230,6 +1240,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * rest of the rule keeps its meaning: `##^div > *` instead of an invalid
      * rule lost entirely.
      *
+     * The caller must not pass an empty array: a complex selector emptied by
+     * dropped selectors is a conversion error, see
+     * {@link ERROR_MESSAGES.EMPTY_COMPLEX_SELECTOR_AFTER_DROP}.
+     *
      * @param convertedSelectors Converted selectors of a complex selector.
      *
      * @returns Converted selectors with empty compounds replaced by `*`.
@@ -1258,8 +1272,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
         }
 
         // The last compound is empty if the complex selector ends with a
-        // combinator, or if every selector was dropped
-        if (result.length === 0 || result[result.length - 1].type === 'SelectorCombinator') {
+        // combinator
+        if (result[result.length - 1].type === 'SelectorCombinator') {
             result.push(universalSelector);
         }
 

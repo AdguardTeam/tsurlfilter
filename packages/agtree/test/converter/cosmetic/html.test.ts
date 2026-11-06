@@ -1159,11 +1159,12 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div > *'],
                     },
 
-                    // `[max-length]` special attribute selector - dropping the whole
-                    // complex selector replaces the empty compound with `*`
+                    // `[max-length]` special attribute selector - the `*` replaces
+                    // the dropped leading compound. Unlike a bare `*`, the complex
+                    // selector is still bounded by the rest of the rule.
                     {
-                        actual: '$$[max-length="100"]',
-                        expected: ['##^*'],
+                        actual: '$$[max-length="100"] > div',
+                        expected: ['##^* > div'],
                     },
 
                     // `[max-length]` special attribute selector - empty compound
@@ -1410,6 +1411,17 @@ describe('HtmlRuleConverter', () => {
                         input: '$$div[max-length="-1"]',
                         // eslint-disable-next-line max-len
                         error: "Value of special attribute selector 'max-length' must be a positive integer, got '-1'",
+                    },
+
+                    // `[max-length]` was the whole complex selector - a bare `*`
+                    // would also match `html`, so the conversion keeps the error
+                    {
+                        input: '$$[max-length="100"]',
+                        error: 'Complex selector cannot be empty',
+                    },
+                    {
+                        input: '$$div, [max-length="100"]',
+                        error: 'Complex selector cannot be empty',
                     },
 
                     // invalid special pseudo-class selector - argument missing
