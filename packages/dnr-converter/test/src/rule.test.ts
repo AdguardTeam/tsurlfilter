@@ -341,6 +341,25 @@ describe('Rule', () => {
                     .toEqual({ kind: BadfilterNegationKind.Full });
             });
 
+            it('returns Full when a regexp badfilter entry could cover a kept entry', () => {
+                // DNR cannot exclude a regexp domain, so the rule is cancelled
+                // completely instead of narrowed: otherwise it would keep
+                // applying on the domains that the badfilter cancels.
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=/foo/,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=example.com|/foo/');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule))
+                    .toEqual({ kind: BadfilterNegationKind.Full });
+            });
+
+            it('returns None for a regexp badfilter entry that the target does not name', () => {
+                const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=/foo/,badfilter');
+                const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=example.com');
+
+                expect(RuleBadfilter.negationScope(badfilterRule, targetRule))
+                    .toEqual({ kind: BadfilterNegationKind.None });
+            });
+
             it('returns Full when the target rule has no $domain', () => {
                 // A rule without `$domain` applies everywhere, so the badfilter
                 // covers its whole domain scope.
@@ -665,6 +684,23 @@ describe('Rule', () => {
             const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
 
             expect(Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter])).toBeNull();
+        });
+
+        it('drops the rule when a later regexp badfilter covers a kept domain', () => {
+            const [firstBadfilter] = Rule.createFromText(1, 0, '||example.com^$domain=a.com,badfilter');
+            const [secondBadfilter] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=a.com|/b/,badfilter',
+            );
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=a.com|b.com');
+
+            // The first badfilter removes `a.com`, so the second one no longer
+            // changes the current list. Its regexp still matches the kept
+            // `b.com`, which DNR cannot exclude, so the rule is dropped in both
+            // orders.
+            expect(Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter])).toBeNull();
+            expect(Rule.applyBadfilters(targetRule, [secondBadfilter, firstBadfilter])).toBeNull();
         });
     });
 

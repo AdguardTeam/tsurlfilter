@@ -250,6 +250,32 @@ describe('FilterConverter', () => {
             expect(ruleset.getDeclarativeRules()).toHaveLength(0);
         });
 
+        it('removes a rule that a regexp $domain badfilter could cancel on a kept domain', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=example.com|/foo/',
+                '||example.org^$domain=/foo/,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            // DNR cannot exclude a regexp domain, so the narrowed rule would
+            // apply on the domains that the badfilter cancels. The converter
+            // cancels the rule completely instead.
+            expect(errors).toHaveLength(0);
+            expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('removes a rule when a later regexp $domain badfilter covers a kept domain', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=a.com|b.com',
+                '||example.org^$domain=a.com,badfilter',
+                '||example.org^$domain=a.com|/b/,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(errors).toHaveLength(0);
+            expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
         it('does not convert a $badfilter rule that also carries a convertible modifier', async () => {
             const filter = createFilter([
                 "||example.org^$csp=script-src 'self'",

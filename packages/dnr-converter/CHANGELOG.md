@@ -74,10 +74,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   exception applies only while neither rule has a negated `~domain`; otherwise
   the whole text is compared. A target rule without `$domain` is still cancelled
   completely, because the converter narrows only an existing permitted list. A
-  `$badfilter` from a dynamic ruleset still disables a whole rule from an
-  already-built static ruleset, because such a rule can only be disabled as a
-  whole. Wildcard-TLD entries are expanded with a popular TLD list, so an entry
-  outside that list is not covered.
+  target rule that a regexp badfilter entry could cancel on a kept domain is
+  also cancelled completely, because DNR cannot express an exclusion that
+  matches a regexp. A `$badfilter` from a dynamic ruleset still disables a whole
+  rule from an already-built static ruleset, because such a rule can only be
+  disabled as a whole. Wildcard-TLD entries are expanded with a popular TLD list,
+  so an entry outside that list is not covered.
 - `$badfilter` rules that also carried a convertible modifier (e.g.
   `||example.com^$csp=script-src 'none',badfilter`) were converted into
   declarative rules instead of disabling the rule they refer to.

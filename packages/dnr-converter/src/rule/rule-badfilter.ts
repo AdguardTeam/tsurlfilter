@@ -187,7 +187,9 @@ export class RuleBadfilter {
      * exclusion means {@link BadfilterNegationKind.None}, and the entries that
      * stay mean {@link BadfilterNegationKind.Partial}. A badfilter entry that is
      * a subdomain of a kept target entry becomes an exclusion, because the kept
-     * entry still covers it in DNR.
+     * entry still covers it in DNR. A regexp badfilter entry cannot be expressed
+     * as a DNR exclusion, so it cancels the rule completely when narrowing keeps
+     * any target entry.
      *
      * @param badfilterRule The rule that carries the `$badfilter` modifier.
      * @param targetRule The rule to test for negation.
@@ -243,6 +245,15 @@ export class RuleBadfilter {
         );
 
         if (permittedDomains.length === 0) {
+            return { kind: BadfilterNegationKind.Full };
+        }
+
+        // DNR cannot exclude a regexp domain: `excludedInitiatorDomains`
+        // accepts domain names only, and a kept target entry may still match the
+        // badfilter pattern. Check this before the no-change case: an earlier
+        // badfilter may have removed the entry that made the two lists
+        // intersect, while the regexp still matches a kept entry.
+        if (badfilterRule.permittedDomains.some(isRegexPattern)) {
             return { kind: BadfilterNegationKind.Full };
         }
 

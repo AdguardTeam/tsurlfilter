@@ -677,6 +677,15 @@ const ENGINE_DOMAIN_BADFILTER_CASES: [
         'https://example.org/',
         true,
     ],
+    // DNR cannot exclude a regexp entry, so a regexp badfilter cancels the rule
+    // completely instead of narrowing it. The kept `example.com` entry would
+    // otherwise apply on `foo.example.com`, where the regexp cancels the rule.
+    [
+        '||example.com^$domain=example.com|/foo/',
+        '||example.com^$domain=/foo/,badfilter',
+        'https://foo.example.com/',
+        true,
+    ],
 ];
 
 describe('$domain badfilter negation through the MV2 engine', () => {
@@ -782,6 +791,41 @@ describe('$domain badfilter narrowing through the MV3 converter', () => {
             'https://example.com/',
             'https://bar.com/',
         )).toBe(true);
+    });
+
+    it('documents the limitation for a regexp badfilter entry', () => {
+        // DNR cannot express an exclusion that matches a regexp, so the rule is
+        // cancelled completely. MV2 keeps it on the domains that the badfilter
+        // does not match.
+        const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=example.com|/foo/');
+        const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=/foo/,badfilter');
+
+        expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
+        expect(matchesThroughEngine(
+            ['||example.com^$domain=example.com|/foo/', '||example.com^$domain=/foo/,badfilter'],
+            'https://example.com/',
+            'https://example.com/',
+        )).toBe(true);
+    });
+
+    it('cancels a rule completely when a later regexp badfilter covers a kept domain', () => {
+        const targetText = '||example.com^$domain=a.com|b.com';
+        const firstText = '||example.com^$domain=a.com,badfilter';
+        const secondText = '||example.com^$domain=a.com|/b/,badfilter';
+
+        const [targetRule] = Rule.createFromText(1, 0, targetText);
+        const [firstBadfilter] = Rule.createFromText(1, 0, firstText);
+        const [secondBadfilter] = Rule.createFromText(1, 0, secondText);
+
+        // The first badfilter removes `a.com`; the second one no longer changes
+        // the current list, but its regexp still matches the kept `b.com`, which
+        // DNR cannot exclude.
+        expect(Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter])).toBeNull();
+        expect(matchesThroughEngine(
+            [targetText, firstText, secondText],
+            'https://example.com/',
+            'https://b.com/',
+        )).toBe(false);
     });
 });
 
