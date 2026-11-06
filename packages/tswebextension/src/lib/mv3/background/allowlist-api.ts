@@ -15,7 +15,8 @@ const isFullWildcardEntry = (domain: string): boolean => /^\*\.\*+$/.test(domain
 
 /**
  * Checks whether the host ends with a wildcard TLD, e.g. `example.*`. DNR expresses it by
- * enumerating the known top-level domains, so only a single trailing wildcard label is supported.
+ * enumerating the popular top-level domains of `@adguard/dnr-converter`, so the rule covers those
+ * and no other, and only a single trailing wildcard label is supported.
  *
  * @param host Entry without the `*.` mask.
  *
@@ -111,6 +112,14 @@ export class AllowlistApi extends CommonAllowlist {
      * @returns Combined rule in AG format.
      */
     public combineAllowListRulesForDNR(): string {
+        /**
+         * A disabled allowlist adds no rule: with `@@$document,important` DNR would allow every
+         * main frame, while `getAllowlistRules()` and `matchFrame()` filter everywhere.
+         */
+        if (!this.enabled) {
+            return '';
+        }
+
         /**
          * The full wildcard covers every site, and DNR expresses that with a rule without `$to`.
          * In the inverted mode it excludes nothing, so it is dropped by the filter below.

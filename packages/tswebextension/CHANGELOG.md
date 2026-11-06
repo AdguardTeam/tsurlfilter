@@ -55,10 +55,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The rule combined for DNR no longer passes a wildcard inside a label
   (`*example.com`, `example*.com`) to `$to`: the converter dropped such a value
   and kept the rule without a domain condition, which allowed every main frame.
-  A wildcard TLD (`example.*`, `www.*`, `*.example.*` mapped to `example.*`) is
-  still supported, the full wildcard `*.*` becomes a rule without `$to`, and in
-  the inverted mode a list that ends up without expressible entries becomes a
-  rule without `$to` as well, so network filtering matches frame matching.
+  A wildcard TLD is still supported, but DNR covers only the popular top-level
+  domains of the converter: `example.*` becomes `example.<tld>` for those, and
+  `www.*` becomes `www.<tld>`, so a host like `www.example.com` stays filtered
+  there. The full wildcard `*.*` becomes a rule without `$to`, and in the inverted
+  mode a list that ends up without expressible entries becomes such a rule too, so
+  network filtering matches frame matching. A disabled allowlist now adds no rule
+  at all: in the inverted mode it used to add one that allowed every document.
 - Filtering log now records CSS hits for elements that pages add and remove
   while the page is loading, e.g. anti-adblock bait elements created by a
   script in `<head>`.

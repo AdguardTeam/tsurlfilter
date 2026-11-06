@@ -71,7 +71,7 @@ describe('Allowlist Api', () => {
                 inverted: true,
                 expected: '@@$document,important',
             },
-            // A `*` outside the `*.` mask has no DNR equivalent, so it is skipped instead of
+            // A wildcard inside a label has no DNR equivalent, so it is skipped instead of
             // dropping the domain condition of the whole rule.
             {
                 input: ['*example.com'],
@@ -161,12 +161,29 @@ describe('Allowlist Api', () => {
             const config = getConfigurationMv3Fixture();
 
             config.allowlist = input;
+            config.settings.allowlistEnabled = true;
             config.settings.allowlistInverted = inverted;
 
             allowlist.configure(config);
             const combinedRule = allowlist.combineAllowListRulesForDNR();
 
             expect(combinedRule).toStrictEqual(expected);
+        });
+
+        it('should return no rule when the allowlist is disabled', () => {
+            for (const inverted of [false, true]) {
+                const config = getConfigurationMv3Fixture();
+
+                config.allowlist = [];
+                config.settings.allowlistEnabled = false;
+                config.settings.allowlistInverted = inverted;
+
+                allowlist.configure(config);
+
+                // A disabled allowlist must not add a rule: in the inverted mode a rule without
+                // `$to` would let DNR allow every main frame.
+                expect(allowlist.combineAllowListRulesForDNR()).toStrictEqual('');
+            }
         });
     });
 
@@ -187,6 +204,7 @@ describe('Allowlist Api', () => {
             const config = getConfigurationMv3Fixture();
 
             config.allowlist = entries;
+            config.settings.allowlistEnabled = true;
             config.settings.allowlistInverted = inverted;
 
             const allowlistApi = new AllowlistApi();
