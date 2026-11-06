@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { createNodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
 import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
 import { NotImplementedError } from '../../../src/errors/not-implemented-error';
+import { RuleGenerator } from '../../../src/generator';
 import { type HtmlFilteringRule } from '../../../src/nodes';
 import { defaultParserOptions, type ParserOptions } from '../../../src/parser/options';
 import { RuleParser } from '../../../src/parser/rule-parser';
@@ -751,6 +752,24 @@ describe('HtmlRuleConverter', () => {
                         }).toThrowError(error);
                     }
                 });
+            });
+
+            // ADG→ADG moves special attribute selectors to the end of the
+            // complex selector instead of dropping them. The move must not be
+            // mistaken for a drop: a compound it empties is still an error and
+            // must not be replaced with `*`.
+            test.each([
+                '$$[tag-content="foo"] > div',
+                '$$div > [min-length="5"] > span',
+            ])("should not replace the empty compound of '%s' with `*`", (ruleText) => {
+                const rule = RuleParser.parse(
+                    ruleText,
+                    parsingEnabledDefaultParserOptions,
+                ) as HtmlFilteringRule;
+
+                const { result } = HtmlRuleConverter.convertToAdg(rule);
+
+                expect(() => RuleGenerator.generate(result[0])).toThrowError('Empty compound selector found');
             });
         });
 

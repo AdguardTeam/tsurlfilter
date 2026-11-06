@@ -993,6 +993,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             // Convert each selector
             const convertedSelectors: (SimpleSelector | SelectorCombinator)[] = [];
+
+            // Whether a special selector was dropped in this complex selector.
+            // Only a dropped selector can empty its compound: the ADG→ADG path
+            // moves special attribute selectors to the end of the complex
+            // selector instead of dropping them.
+            let hasDroppedSelector = false;
             for (let j = 0; j < selectors.length; j += 1) {
                 const selector = selectors[j];
 
@@ -1105,6 +1111,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                             convertedSelectors.push(result);
                             continue;
                         } else if (result === false) {
+                            hasDroppedSelector = true;
                             continue;
                         }
 
@@ -1140,6 +1147,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                             convertedSelectors.push(result);
                             continue;
                         } else if (result === false) {
+                            hasDroppedSelector = true;
                             continue;
                         }
 
@@ -1172,12 +1180,20 @@ export class HtmlRuleConverter extends RuleConverterBase {
             }
 
             // Dropping a special attribute selector may empty its whole
-            // compound selector, which would leave a dangling combinator or an
-            // empty complex selector. The dropped constraint does not restrict
-            // the matched elements, so `*` keeps the rest of the rule valid.
-            const normalizedSelectors = HtmlRuleConverter.replaceEmptyCompoundsWithUniversalSelector(
-                convertedSelectors,
-            );
+            // compound selector, which would leave a dangling combinator.
+            // `*` adds no constraint of its own, so the rest of the rule keeps
+            // its meaning: `##^div > *` instead of a rule uBlock rejects.
+            //
+            // Only a dropped selector can empty a compound. The ADG→ADG path
+            // moves special attribute selectors to the end of the complex
+            // selector, so it still produces an empty compound, which the
+            // generator rejects.
+            let normalizedSelectors = convertedSelectors;
+            if (hasDroppedSelector) {
+                normalizedSelectors = HtmlRuleConverter.replaceEmptyCompoundsWithUniversalSelector(
+                    convertedSelectors,
+                );
+            }
 
             convertedComplexSelectors.push({
                 type: 'ComplexSelector',
@@ -1210,10 +1226,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * A special attribute selector may be the whole compound selector, so
      * dropping it produces a dangling combinator (`div > [max-length]` becomes
-     * `div >`) or an empty complex selector (`[max-length]` alone). Both are
-     * rejected by uBlock. The dropped constraint does not change which
-     * elements match, so `*` keeps the rest of the rule intact:
-     * `##^div > *` instead of an invalid rule lost entirely.
+     * `div >`), which uBlock rejects. `*` adds no constraint of its own, so the
+     * rest of the rule keeps its meaning: `##^div > *` instead of an invalid
+     * rule lost entirely.
      *
      * @param convertedSelectors Converted selectors of a complex selector.
      *
