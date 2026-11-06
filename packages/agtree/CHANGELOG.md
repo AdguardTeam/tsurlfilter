@@ -42,6 +42,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   drops when characters follow the closing quote: e.g.
   `$$div:contains("foo" )` now throws a conversion error instead of becoming
   `##^div:has-text("foo" )`.
+- The HTML filtering rule converter now rejects `:-abp-contains()` with a
+  missing or empty argument, the same as `:contains()`.
 
 ### Security
 
