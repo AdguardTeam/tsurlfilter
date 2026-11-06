@@ -133,14 +133,27 @@ export class CssHitsCounter {
     private static readonly PENDING_PROBES_MAX_ATTEMPTS = 5;
 
     /**
+     * Maximum number of ExtendedCss hits queued while the counter is paused.
+     */
+    private static readonly MAX_PENDING_EXTENDED_CSS_HITS = 500;
+
+    /**
      * Callback function for counted css hits handling.
      */
     private onCssHitsFoundCallback: (x: ICountedElement[]) => void;
 
     /**
-     * Hits storage.
+     * Hits storage for the native DOM scan and mutation paths.
      */
     private hitsStorage: HitsStorage = new HitsStorage();
+
+    /**
+     * Hits storage for the ExtendedCss hook.
+     *
+     * Kept separate so an ExtendedCss hit cannot change the full scan's
+     * provisional entry snapshot for the same element.
+     */
+    private extendedCssHitsStorage: HitsStorage = new HitsStorage();
 
     /**
      * Mutation observer.
@@ -578,13 +591,13 @@ export class CssHitsCounter {
 
                 // The parsed marker is cached per shared rule style, so
                 // ExtendedCss calls this hook again on later mutation passes.
-                // Deduplicate by element and rule via the same storage the
-                // DOM scan uses.
+                // Deduplicate by element and rule in the hook's own storage,
+                // so the native scan's provisional snapshot is unaffected.
                 const ruleAndFilterString = ruleInfo.filterId + SEMICOLON + ruleInfo.ruleIndex;
-                if (this.hitsStorage.isCounted(affectedEl.node, ruleAndFilterString)) {
+                if (this.extendedCssHitsStorage.isCounted(affectedEl.node, ruleAndFilterString)) {
                     continue;
                 }
-                this.hitsStorage.setCounted(affectedEl.node, ruleAndFilterString);
+                this.extendedCssHitsStorage.setCounted(affectedEl.node, ruleAndFilterString);
 
                 const element = this.elementToString
                     ? ElementUtils.elementToString(affectedEl.node)
@@ -597,7 +610,10 @@ export class CssHitsCounter {
                 };
 
                 if (this.paused) {
-                    this.pendingExtendedCssHits.push(hit);
+                    if (this.pendingExtendedCssHits.length
+                        < CssHitsCounter.MAX_PENDING_EXTENDED_CSS_HITS) {
+                        this.pendingExtendedCssHits.push(hit);
+                    }
                 } else {
                     result.push(hit);
                 }
