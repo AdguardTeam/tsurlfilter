@@ -1,6 +1,6 @@
 import { type CosmeticRule } from '@adguard/tsurlfilter';
 
-import { MAIN_FRAME_ID } from '../../../common/constants';
+import { NO_PARENT_FRAME_ID } from '../../../common/constants';
 import { logger } from '../../../common/utils/logger';
 import { isHttpRequest } from '../../../common/utils/url';
 import { type FrameMV3 } from '../../tabs/frame';
@@ -35,11 +35,11 @@ const parseHostname = (url: string): string | null => {
  * Returns the hashes of preregistered rules covered for the frame — those
  * dynamic injection must skip.
  *
- * Only the top-level document takes the fast path. A subframe's verdict
- * depends on the rules of its parent (the engine passes the parent's frame
- * rule into the subdocument match), and the page cannot read the parent's
- * URL when the domains differ, so every frame stays on the dynamic path and
- * the engine decides.
+ * Only the outermost document takes the fast path, including a prerender
+ * whose frame id is not zero. A subframe's verdict depends on the main
+ * frame's rule and URL (the engine passes those into the subdocument
+ * match), and the page cannot read the main-frame URL when the domains
+ * differ, so every frame stays on the dynamic path and the engine decides.
  *
  * @param frameContext Frame context.
  * @param preExistingDocument Whether the document loaded before the current
@@ -53,7 +53,11 @@ export const getCoveredRules = (
     frameContext: FrameMV3,
     preExistingDocument = false,
 ): ReadonlySet<string> | undefined => {
-    if (frameContext.frameId !== MAIN_FRAME_ID || !isHttpRequest(frameContext.url)) {
+    // A prerendered outermost document can have a non-zero frame id.
+    // `onBeforeNavigate` skips only a frame-0 prerender, so the context
+    // lands under that id. The registration still runs there (`allFrames:
+    // false` matches the outermost frame), so coverage must too.
+    if (frameContext.parentFrameId !== NO_PARENT_FRAME_ID || !isHttpRequest(frameContext.url)) {
         return undefined;
     }
 

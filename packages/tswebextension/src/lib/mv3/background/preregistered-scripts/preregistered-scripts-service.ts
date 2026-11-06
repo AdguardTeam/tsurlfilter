@@ -44,11 +44,12 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  * preregistered domains, so build-time-known scriptlet/JS rules run at
  * `document_start`, before the extension itself finishes starting up.
  *
- * Only top-level documents are registered: a subframe's verdict depends on
- * the rules of its parent (the engine passes the parent's frame rule into
- * the subdocument match), and the page cannot read the parent's URL when the
- * domains differ. Frames therefore always keep the dynamic injection path,
- * where the engine decides.
+ * Only outermost documents are registered, including a prerender whose
+ * frame id is not zero: a subframe's verdict depends on the main frame's
+ * rule and URL (the engine passes those into the subdocument match), and
+ * the page cannot read the main-frame URL when the domains differ. Frames
+ * therefore always keep the dynamic injection path, where the engine
+ * decides.
  *
  * Hostnames not in the list keep the standard dynamic injection path.
  *
@@ -353,8 +354,8 @@ export class PreregisteredScriptsService {
         scriptsPath: string,
     ): Promise<Map<string, Set<string>>> {
         const hostnames = expandHostnames(domains);
-        // Hosts the registrations are built for: the subset of the runtime
-        // expansion the artifact generation carries.
+        // Hosts the registrations are built for. A host whose rules have no
+        // baked file is dropped in `buildDomainScripts` and stays dynamic.
         let registeredHostnames: readonly string[] = [];
 
         // A failure here leaves the previous registrations active, so the
@@ -365,17 +366,12 @@ export class PreregisteredScriptsService {
             if (preregistrationEnabled && hostnames.length > 0) {
                 const manifest = await readManifest(scriptsPath);
 
-                // Register only the hosts the generation carries. A host
-                // missing from the manifest has no baked files, so registering
-                // it would run nothing while the dynamic path reports the
-                // rules as covered.
-                const gateHosts = new Set(manifest.hostnames);
-                registeredHostnames = hostnames.filter((hostname) => gateHosts.has(hostname));
-                const skippedHostnames = hostnames.filter((hostname) => !gateHosts.has(hostname));
-
-                if (skippedHostnames.length > 0) {
-                    logger.warn(`[tsweb.PreregisteredScriptsService.doSync]: ${skippedHostnames.length} configured hostname(s) are missing from the manifest host set, not registering them`, skippedHostnames);
-                }
+                // Rule files are named by hash. `buildDomainScripts` drops
+                // rules missing from `manifest.hashes`, and coverage is read
+                // from the descriptors that were built, so a host the
+                // manifest does not list is still registered for exactly the
+                // rules that have baked files.
+                registeredHostnames = hostnames;
 
                 scripts = await PreregisteredScriptsService.buildDomainScripts(
                     registeredHostnames,

@@ -67,15 +67,6 @@ export interface PreregisteredScriptsManifest {
      * scriptlet has no entry here stays on the dynamic injection path.
      */
     scriptletFiles: Record<string, string>;
-
-    /**
-     * Expanded preregistered hostnames of the artifact generation. The
-     * runtime registers only hosts from this set, because a host the
-     * manifest does not list has no baked files. Required: without it the
-     * build cannot say which registrations it produced, and the feature has
-     * no released generation to stay compatible with.
-     */
-    hostnames: string[];
 }
 
 /**

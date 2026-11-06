@@ -349,13 +349,14 @@ that existed then; later top-level documents use the last published
 coverage. Subframes are not part of either: their coverage is always the
 dynamic path.
 
-Coverage applies to top-level documents only: a subframe's verdict depends
-on the state of the top-level document, and the page cannot read its URL
-when the domains differ. Subframes therefore always stay on the dynamic
-injection path, where the engine sees the main-frame rule; they trade
-`document_start` timing for the correct verdict. The registered host set is
-the manifest's, not the runtime expansion: a configured hostname that the
-manifest does not list has no baked files and is skipped with a warning.
+Coverage applies to outermost documents only, including a prerendered
+document whose frame id is not zero: a subframe's verdict depends on the
+main frame's rule and URL, and the page cannot read that URL when the
+domains differ. Subframes therefore always stay on the dynamic injection
+path, where the engine sees the main-frame rule; they trade
+`document_start` timing for the correct verdict. The runtime registers the
+configured expansion. A rule with no baked file is dropped and stays on the
+dynamic path.
 
 At runtime, each configured hostname (plus its `www.` alias) is matched
 against the engine with `$path` ignored, the matching rules are hashed, and

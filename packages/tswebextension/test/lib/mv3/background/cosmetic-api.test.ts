@@ -276,9 +276,9 @@ describe('CosmeticApi — preregistered script rules', () => {
         });
 
         it('keeps every subframe on the dynamic path, whatever its parent is', async () => {
-            // The frame's verdict depends on the rules of its parent, which
-            // the page cannot read when the domains differ: frames are never
-            // covered, so the engine decides.
+            // The frame's verdict depends on the main frame's rule and URL,
+            // which the page cannot read when the domains differ: frames are
+            // never covered, so the engine decides.
             const childFrame = {
                 ...makeFrameContext('https://youtube.com/embed'),
                 frameId: 1,
@@ -301,8 +301,8 @@ describe('CosmeticApi — preregistered script rules', () => {
 
         it('injects local rules into an opaque frame even when the parent is covered', async () => {
             // Subframes never take the preregistered path: their verdict
-            // depends on the parent's rules, and the dynamic path is the one
-            // that sees the frame rule. `applyLocal` is called because the
+            // depends on the main frame's rule and URL, and the dynamic path
+            // is the one that sees them. `applyLocal` is called because the
             // frame is not covered, not because of any per-rule guard.
             const pathRule = makeRawRule(LOCAL_JS_RULE_CONTENT, { pattern: '/tv' });
             const childFrame = {

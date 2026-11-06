@@ -1,5 +1,3 @@
-import { isPlainHostname } from '../../../common/utils/hostname';
-
 import {
     MANIFEST_FILENAME,
     MANIFEST_SCHEMA_VERSION,
@@ -51,7 +49,6 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         schemaVersion,
         hashes,
         scriptletFiles,
-        hostnames,
     } = value as Partial<PreregisteredScriptsManifest>;
 
     if (schemaVersion !== MANIFEST_SCHEMA_VERSION) {
@@ -72,17 +69,10 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         }
     }
 
-    if (!Array.isArray(hostnames)
-        || hostnames.length === 0
-        || !hostnames.every((hostname) => typeof hostname === 'string' && isPlainHostname(hostname))) {
-        throw new Error(`Malformed manifest at ${url}: "hostnames" must be a non-empty array of plain hostnames`);
-    }
-
     return {
         schemaVersion,
         hashes,
         scriptletFiles,
-        hostnames,
     };
 };
 
@@ -110,8 +100,9 @@ const fetchManifest = async (scriptsPath: string): Promise<PreregisteredScriptsM
 
 /**
  * Fetches the build-time manifest shipped next to the artifacts. It lists
- * the rule hashes with matching generated files, the scriptlet name →
- * function-file map and the hostnames the generation registers.
+ * the rule hashes with matching generated files and the scriptlet name →
+ * function-file map. A leftover `hostnames` field is ignored: coverage is
+ * the descriptors that were built, not a host list.
  *
  * The manifest is this package's own build output, but it is still
  * validated: a missing, unreadable, malformed, or version-mismatched

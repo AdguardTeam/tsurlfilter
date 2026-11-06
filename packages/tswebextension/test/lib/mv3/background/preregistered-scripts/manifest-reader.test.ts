@@ -22,7 +22,6 @@ const VALID_MANIFEST = {
     schemaVersion: MANIFEST_SCHEMA_VERSION,
     hashes: ['0123456789abcdef'],
     scriptletFiles: { 'set-cookie': 's-set-cookie.js' },
-    hostnames: ['youtube.com'],
 };
 
 /**
@@ -137,26 +136,21 @@ describe('readManifest', () => {
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('s-*.js');
     });
 
-    it('throws when "hostnames" is missing, so the gate set is never guessed', async () => {
+    it('accepts a manifest without "hostnames"', async () => {
         stubManifestFetch({
             schemaVersion: MANIFEST_SCHEMA_VERSION,
             hashes: [],
             scriptletFiles: {},
+            hostnames: ['youtube.com'],
         });
 
-        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hostnames"');
-    });
-
-    it.each([
-        ['an empty array', []],
-        ['a bare string', 'youtube.com'],
-        ['an upper-case host', ['Example.COM']],
-        ['a host with a port', ['example.com:443']],
-        ['a URL', ['https://example.com']],
-    ])('throws when "hostnames" is %s', async (_shape, hostnames) => {
-        stubManifestFetch({ ...VALID_MANIFEST, hashes: [], hostnames });
-
-        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hostnames"');
+        // A leftover host list is not part of the contract: coverage comes
+        // from the built descriptors, so the field is dropped.
+        await expect(readManifest(SCRIPTS_PATH)).resolves.toEqual({
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            hashes: [],
+            scriptletFiles: {},
+        });
     });
 
     it('passes an abort signal to fetch, so a hung request cannot stall the sync', async () => {
@@ -181,7 +175,6 @@ describe('readManifest', () => {
             schemaVersion: MANIFEST_SCHEMA_VERSION,
             hashes: [],
             scriptletFiles: {},
-            hostnames: ['youtube.com'],
         });
 
         await readManifest(SCRIPTS_PATH);
@@ -198,7 +191,6 @@ describe('readManifest', () => {
             schemaVersion: MANIFEST_SCHEMA_VERSION,
             hashes: [],
             scriptletFiles: {},
-            hostnames: ['youtube.com'],
         };
         stubManifestFetch(body);
 
