@@ -309,20 +309,25 @@ describe('TsWebExtension MV3 collect hit stats notifications', () => {
         );
     });
 
-    it('resolves collect stats to false for an allowlisted tab', () => {
+    it('resolves collect stats per tab when collection is enabled', () => {
+        const allowlistedTabId = 1;
+        const regularTabId = 2;
         instance.configuration = {
             settings: {
-                collectStats: true,
+                collectStats: false,
             },
         } as ConfigurationMV3Context;
-        vi.spyOn(tabsApi, 'getTabContext').mockReturnValue({
-            mainFrameRule: { isFilteringDisabled: (): boolean => true },
-        } as never);
+        vi.spyOn(tabsApi, 'getTabContext').mockImplementation(((tabId: number) => (
+            tabId === allowlistedTabId
+                ? { mainFrameRule: { isFilteringDisabled: (): boolean => true } }
+                : { mainFrameRule: { isFilteringDisabled: (): boolean => false } }
+        )) as never);
         const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
 
-        instance.setCollectHitStats(false);
+        instance.setCollectHitStats(true);
 
         const resolver = notifySpy.mock.calls[0][1] as (tabId: number) => boolean;
-        expect(resolver(1)).toBe(false);
+        expect(resolver(allowlistedTabId)).toBe(false);
+        expect(resolver(regularTabId)).toBe(true);
     });
 });

@@ -224,17 +224,24 @@ describe('TsWebExtension', () => {
             notifySpy.mockRestore();
         });
 
-        it('resolves collect stats to false for an allowlisted tab', () => {
-            const tabId = 1;
-            vi.spyOn(tabsApi, 'getTabContext').mockReturnValue({
-                mainFrameRule: { isFilteringDisabled: (): boolean => true },
-            } as never);
+        it('resolves collect stats per tab when collection is enabled', () => {
+            const allowlistedTabId = 1;
+            const regularTabId = 2;
+            vi.spyOn(tabsApi, 'getTabContext').mockImplementation(((tabId: number) => (
+                tabId === allowlistedTabId
+                    ? { mainFrameRule: { isFilteringDisabled: (): boolean => true } }
+                    : { mainFrameRule: { isFilteringDisabled: (): boolean => false } }
+            )) as never);
+
+            // Ensure the next call is a real change and notifies.
+            instance.configuration.settings.collectStats = false;
             const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
 
-            instance.setCollectHitStats(false);
+            instance.setCollectHitStats(true);
 
             const resolver = notifySpy.mock.calls[0][1] as (tabId: number) => boolean;
-            expect(resolver(tabId)).toBe(false);
+            expect(resolver(allowlistedTabId)).toBe(false);
+            expect(resolver(regularTabId)).toBe(true);
         });
 
         it('should update stealthModeEnabled correctly', async () => {
