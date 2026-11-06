@@ -28,20 +28,33 @@ import { SimpleRegex } from '@adguard/tsurlfilter';
  * @param hostPart Host part of the pattern.
  * @param hostname Hostname to check.
  * @param terminated Whether the host part ends with `/`, `^`, `?` or `#`.
+ * @param allowSubdomains Whether the pattern anchor accepts subdomains (a
+ * `||` anchor does, a scheme anchor does not: `|https://youtube.com/` never
+ * matches `https://www.youtube.com/`).
  *
  * @returns True when the host part can cover the hostname.
  */
-const isHostPartOfHost = (hostPart: string, hostname: string, terminated: boolean): boolean => {
+const isHostPartOfHost = (
+    hostPart: string,
+    hostname: string,
+    terminated: boolean,
+    allowSubdomains: boolean,
+): boolean => {
     const host = hostname.toLowerCase();
     const part = hostPart.toLowerCase();
 
-    if (host === part || host.endsWith(`.${part}`)) {
+    if (host === part) {
+        return true;
+    }
+
+    if (allowSubdomains && host.endsWith(`.${part}`)) {
         return true;
     }
 
     // `||youtube` matches `https://youtube.com/`, `||youtube.com` matches
     // `https://youtube.com.evil.com/`.
-    return !terminated && (host.startsWith(part) || host.includes(`.${part}`));
+    return !terminated
+        && (host.startsWith(part) || (allowSubdomains && host.includes(`.${part}`)));
 };
 
 /**
@@ -61,9 +74,11 @@ const isHostPartOfHost = (hostPart: string, hostname: string, terminated: boolea
  */
 export const matchesHostScope = (pattern: string, hostname: string): boolean => {
     let rest: string;
+    let allowSubdomains: boolean;
 
     if (pattern.startsWith(SimpleRegex.MASK_START_URL)) {
         rest = pattern.slice(SimpleRegex.MASK_START_URL.length);
+        allowSubdomains = true;
     } else if (pattern.startsWith('|')) {
         rest = pattern.slice(1);
         const schemeIndex = rest.indexOf('://');
@@ -71,6 +86,7 @@ export const matchesHostScope = (pattern: string, hostname: string): boolean => 
             return true;
         }
         rest = rest.slice(schemeIndex + 3);
+        allowSubdomains = false;
     } else {
         return true;
     }
@@ -91,8 +107,8 @@ export const matchesHostScope = (pattern: string, hostname: string): boolean => 
         // `*` is a sound host-scope signal. Over-inclusion is harmless: the
         // baked condition is the engine's own regex.
         const literalPrefix = hostPart.slice(0, hostPart.indexOf('*'));
-        return !literalPrefix || isHostPartOfHost(literalPrefix, hostname, false);
+        return !literalPrefix || isHostPartOfHost(literalPrefix, hostname, false, allowSubdomains);
     }
 
-    return isHostPartOfHost(hostPart, hostname, terminated);
+    return isHostPartOfHost(hostPart, hostname, terminated, allowSubdomains);
 };

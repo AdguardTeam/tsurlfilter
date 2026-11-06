@@ -18,23 +18,10 @@
  * along with AdGuard Browser Extension. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { RawRuleConverter } from '@adguard/agtree';
-import {
-    MASK_ALLOWLIST,
-    NetworkRule,
-    OPTIONS_DELIMITER,
-    Request,
-    RequestType,
-} from '@adguard/tsurlfilter';
+import { NetworkRule, Request, RequestType } from '@adguard/tsurlfilter';
 
+import { convertRuleLine, isExceptionCandidateLine, splitFilterLines } from './filter-lines';
 import { matchesHostScope } from './host-scope';
-
-/**
- * Line breaks the engine's filter list reader recognizes.
- *
- * @see tsurlfilter `findNextLineBreakIndex`.
- */
-const LINE_BREAK = /\r\n|\r|\n|\f/;
 
 /**
  * Keeps the lines that can carry a page exception: an allowlist rule with
@@ -45,31 +32,7 @@ const LINE_BREAK = /\r\n|\r|\n|\f/;
  * @returns Candidate lines.
  */
 export const collectExceptionLines = (content: string): string[] => {
-    const lines: string[] = [];
-
-    for (const line of content.split(LINE_BREAK)) {
-        if (line.includes(MASK_ALLOWLIST) && line.includes(OPTIONS_DELIMITER)) {
-            lines.push(line);
-        }
-    }
-
-    return lines;
-};
-
-/**
- * Converts a raw rule line the way the engine's filter list does: on failure
- * the original line is kept.
- *
- * @param line Raw rule line.
- *
- * @returns Rule texts to parse.
- */
-const convertLine = (line: string): string[] => {
-    try {
-        return RawRuleConverter.convertToAdg(line).result;
-    } catch {
-        return [line];
-    }
+    return splitFilterLines(content).filter(isExceptionCandidateLine);
 };
 
 /**
@@ -106,7 +69,7 @@ export const findHostsWithRuntimeExceptions = (
     const rules: { rule: NetworkRule; pattern: string }[] = [];
 
     for (const line of exceptionLines) {
-        for (const ruleText of convertLine(line)) {
+        for (const ruleText of convertRuleLine(line)) {
             let rule: NetworkRule;
             try {
                 rule = new NetworkRule(ruleText, 0);

@@ -33,6 +33,28 @@ export const PREREGISTERED_SCRIPTS_NAMESPACE = 'preregistered';
 const HOST_LOOKUP_BATCH_SIZE = 8;
 
 /**
+ * A fingerprint computed by
+ * {@link PreregisteredScriptsService.findStalePageExceptionFilters}, valid
+ * while the list checksum and the covered host set stay the same.
+ */
+type CachedFingerprint = {
+    /**
+     * Checksum of the filter list the fingerprint was computed from.
+     */
+    checksum: string;
+
+    /**
+     * Covered hostnames, joined; a new host changes the scope.
+     */
+    hostnamesKey: string;
+
+    /**
+     * The fingerprint itself.
+     */
+    fingerprint: string;
+};
+
+/**
  * Converts a hostname into a URL match pattern for `matches`.
  *
  * @param hostname Hostname string.
@@ -96,6 +118,15 @@ export class PreregisteredScriptsService {
      * cannot race on the shared content-script namespace.
      */
     private static syncQueue: Promise<unknown> = Promise.resolve();
+
+    /**
+     * Fingerprints of the filters checked by the last
+     * {@link PreregisteredScriptsService.findStalePageExceptionFilters} call,
+     * keyed by filter id. `doSync()` runs on every `configure()`, and
+     * `FiltersStorage` already stores a checksum per list, so an unchanged
+     * list is compared without reading and parsing its text again.
+     */
+    private static readonly fingerprintCache = new Map<number, CachedFingerprint>();
 
     /**
      * Applies the configuration: snapshots the boot registrations once per
@@ -529,12 +560,14 @@ export class PreregisteredScriptsService {
      * loaded lists.
      *
      * The build writes a fingerprint per filter into the manifest; the same
-     * map is recomputed here for the enabled filters. A filter without a
-     * baked entry counts as stale too — its exceptions were not baked at all,
-     * so nothing describes them. A read failure counts as stale: applying
-     * exceptions to rules the engine does not have would disable pages it
-     * filters normally, while falling back to the dynamic path only loses
-     * `document_start` timing.
+     * map is recomputed here for the enabled filters, scoped to the hostnames
+     * of the manifest. A filter without a baked entry counts as stale too —
+     * its exceptions were not baked at all, so nothing describes them.
+     *
+     * The fingerprint is cached per filter and reused while the stored list
+     * checksum and the covered host set stay the same, so the common case —
+     * a sync triggered by a settings change — does not read and parse the
+     * lists at all.
      *
      * @param manifest Build-time manifest.
      *
@@ -545,28 +578,81 @@ export class PreregisteredScriptsService {
         manifest: PreregisteredScriptsManifest,
     ): Promise<string[] | null> {
         const filterIds = engineApi.getEnabledLocalFiltersIds();
-        const contents = await Promise.all(
-            filterIds.map((filterId) => FiltersStorage.getRawFilterList(filterId).catch(() => undefined)),
-        );
+        const hostnamesKey = manifest.hostnames.join('\n');
 
-        if (contents.some((content) => content === undefined)) {
-            return filterIds
-                .filter((_, index) => contents[index] === undefined)
-                .map(String);
-        }
+        const checked = await Promise.all(filterIds.map(async (filterId) => {
+            const fingerprint = await PreregisteredScriptsService
+                .resolveFilterFingerprint(filterId, hostnamesKey, manifest.hostnames);
 
-        const lists: PreregisteredFilterList[] = filterIds.map((filterId, index) => ({
-            filterId,
-            content: contents[index] ?? '',
+            return {
+                filterId,
+                // `undefined` means the list could not be read: nothing
+                // describes its exceptions, so it must not be applied.
+                stale: fingerprint === undefined
+                    || manifest.pageExceptions[filterId] !== fingerprint,
+            };
         }));
 
-        const runtime = await computePageExceptionsFingerprint(lists);
-
-        const stale = Object.entries(runtime)
-            .filter(([filterId, fingerprint]) => manifest.pageExceptions[filterId] !== fingerprint)
-            .map(([filterId]) => filterId);
+        const stale = checked
+            .filter(({ stale: isStale }) => isStale)
+            .map(({ filterId }) => String(filterId));
 
         return stale.length > 0 ? stale : null;
+    }
+
+    /**
+     * Returns the current fingerprint of one filter's page exceptions.
+     *
+     * The fingerprint is a pure function of the list text, so an unchanged
+     * checksum means the cached value still holds: comparing it costs no read
+     * of the list and no parsing.
+     *
+     * @param filterId Filter id.
+     * @param hostnamesKey Covered hostnames, joined.
+     * @param hostnames Covered hostnames.
+     *
+     * @returns Fingerprint, or `undefined` when the list could not be read.
+     */
+    private static async resolveFilterFingerprint(
+        filterId: number,
+        hostnamesKey: string,
+        hostnames: readonly string[],
+    ): Promise<string | undefined> {
+        const checksum = await FiltersStorage.getChecksum(filterId).catch(() => undefined);
+        const cached = PreregisteredScriptsService.fingerprintCache.get(filterId);
+
+        if (checksum !== undefined
+            && cached !== undefined
+            && cached.checksum === checksum
+            && cached.hostnamesKey === hostnamesKey) {
+            return cached.fingerprint;
+        }
+
+        const content = await FiltersStorage.getRawFilterList(filterId).catch((e) => {
+            logger.error(
+                `[tsweb.PreregisteredScriptsService.resolveFilterFingerprint]: cannot read filter ${filterId}`,
+                e,
+            );
+            return undefined;
+        });
+
+        if (content === undefined) {
+            return undefined;
+        }
+
+        const lists: PreregisteredFilterList[] = [{ filterId, content }];
+        const computed = await computePageExceptionsFingerprint(lists, hostnames);
+        const fingerprint = computed[String(filterId)];
+
+        if (checksum !== undefined) {
+            PreregisteredScriptsService.fingerprintCache.set(filterId, {
+                checksum,
+                hostnamesKey,
+                fingerprint,
+            });
+        }
+
+        return fingerprint;
     }
 
     /**

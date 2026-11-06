@@ -74,6 +74,15 @@ describe('findHostsWithRuntimeExceptions', () => {
         expect(affected(['@@||elsewhere.test^$document'])).toEqual([]);
     });
 
+    it('keeps the host of a path-scoped user rule on the dynamic path', () => {
+        // The gate has no conditions file for user rules and custom filters,
+        // so a `$document` exception scoped to a path must still detach the
+        // host: otherwise the baked entries would run scriptlets on a page the
+        // engine leaves disabled.
+        expect(affected(['@@||youtube.com/my_video_ad$document']))
+            .toEqual(['www.youtube.com', 'youtube.com']);
+    });
+
     it('ignores an exception whose `$domain` excludes the host', () => {
         expect(affected(['@@*$jsinject,domain=example.org'])).toEqual(['example.org']);
     });

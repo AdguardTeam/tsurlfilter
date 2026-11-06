@@ -30,11 +30,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   exceptions stop applying when the filter is disabled.
 - The manifest now carries `pageExceptions` — a map of filter id to a
   fingerprint of the allowlist rules that filter's conditions file was baked
-  from, computed by `computePageExceptionsFingerprint()`. The service recomputes
-  it for the enabled filters and falls back to dynamic injection when one of
-  them does not match, so exceptions baked from lists that have since changed
-  are never applied; a filter disabled at runtime has no conditions file
-  registered and is not compared.
+  from, computed by `computePageExceptionsFingerprint()`. The hash covers the
+  converted rule text of every exception that can reach one of the covered
+  hostnames, so an edit to any modifier value that changes the engine verdict
+  invalidates the generation, while an exception for another site does not.
+  The service recomputes it for the enabled filters and falls back to dynamic
+  injection when one of them does not match, so exceptions baked from lists
+  that have since changed are never applied; a filter disabled at runtime has
+  no conditions file registered and is not compared.
 - A registered host is kept on the dynamic path when a user rule or a custom
   filter can change the page's JS verdict for it. Those lists are runtime
   only, so the baked page gate cannot account for them: the engine decides on

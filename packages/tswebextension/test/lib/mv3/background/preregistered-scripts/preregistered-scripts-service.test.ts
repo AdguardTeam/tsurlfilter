@@ -61,7 +61,12 @@ vi.mock('../../../../../src/lib/mv3/background/preregistered-scripts/exception-f
 }));
 
 vi.mock('../../../../../src/lib/common/storage/filters', () => ({
-    FiltersStorage: { getRawFilterList: vi.fn(async () => '') },
+    FiltersStorage: {
+        getRawFilterList: vi.fn(async () => ''),
+        // A stable checksum per filter: the service caches a fingerprint
+        // while it stays the same.
+        getChecksum: vi.fn(async (filterId: number) => `checksum-${filterId}`),
+    },
 }));
 
 vi.mock('../../../../../src/lib/mv3/background/document-api', () => ({
