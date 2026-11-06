@@ -1251,10 +1251,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
     private static replaceEmptyCompoundsWithUniversalSelector(
         convertedSelectors: (SimpleSelector | SelectorCombinator)[],
     ): (SimpleSelector | SelectorCombinator)[] {
-        const universalSelector: SimpleSelector = {
-            type: 'TypeSelector',
-            value: '*',
-        };
         const result: (SimpleSelector | SelectorCombinator)[] = [];
 
         for (let i = 0; i < convertedSelectors.length; i += 1) {
@@ -1262,9 +1258,14 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             if (selector.type === 'SelectorCombinator') {
                 // A combinator at the start of the complex selector or right
-                // after another combinator separates an empty compound
+                // after another combinator separates an empty compound. A new
+                // node is created for every empty compound, so the returned
+                // AST holds no shared references.
                 if (result.length === 0 || result[result.length - 1].type === 'SelectorCombinator') {
-                    result.push(universalSelector);
+                    result.push({
+                        type: 'TypeSelector',
+                        value: '*',
+                    });
                 }
             }
 
@@ -1274,7 +1275,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
         // The last compound is empty if the complex selector ends with a
         // combinator
         if (result[result.length - 1].type === 'SelectorCombinator') {
-            result.push(universalSelector);
+            result.push({
+                type: 'TypeSelector',
+                value: '*',
+            });
         }
 
         return result;

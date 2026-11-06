@@ -4,7 +4,7 @@ import { createNodeConversionResult } from '../../../src/converter/base-interfac
 import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
 import { NotImplementedError } from '../../../src/errors/not-implemented-error';
 import { RuleGenerator } from '../../../src/generator';
-import { type HtmlFilteringRule } from '../../../src/nodes';
+import { type HtmlFilteringRule, type HtmlFilteringRuleBody } from '../../../src/nodes';
 import { defaultParserOptions, type ParserOptions } from '../../../src/parser/options';
 import { RuleParser } from '../../../src/parser/rule-parser';
 
@@ -1167,6 +1167,13 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^* > div'],
                     },
 
+                    // `[max-length]` special attribute selector - dropping several
+                    // whole compounds keeps every compound non-empty
+                    {
+                        actual: '$$[max-length="1"] > [max-length="2"]',
+                        expected: ['##^* > *'],
+                    },
+
                     // `[max-length]` special attribute selector - empty compound
                     // between combinators
                     {
@@ -1535,6 +1542,22 @@ describe('HtmlRuleConverter', () => {
                         }).toThrowError(error);
                     }
                 });
+            });
+
+            // Every empty compound gets its own `*` node, so the returned AST
+            // holds no shared references.
+            test('should create a separate universal selector for every empty compound', () => {
+                const rule = RuleParser.parse(
+                    '$$[max-length="1"] > [max-length="2"]',
+                    parsingEnabledDefaultParserOptions,
+                ) as HtmlFilteringRule;
+
+                const { result } = HtmlRuleConverter.convertToUbo(rule);
+                const body = result[0].body as HtmlFilteringRuleBody;
+                const [complexSelector] = body.selectorList.children;
+                const { children } = complexSelector;
+
+                expect(children[0]).not.toBe(children[2]);
             });
         });
 
