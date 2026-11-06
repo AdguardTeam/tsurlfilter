@@ -44,9 +44,17 @@ export type ContentScriptCosmeticData = {
     isAppStarted: boolean;
 
     /**
-     * Are hits stats collected.
+     * Are marked ExtendedCss rules collected.
      */
     areHitsStatsCollected: boolean;
+
+    /**
+     * Whether the marked native CSS was applied for this frame.
+     *
+     * Marked ExtendedCss rules can be applied even when native CSS injection
+     * failed, e.g. for an old subframe whose context is gone.
+     */
+    areNativeHitsStatsCollected: boolean;
 
     /**
      * Extended css rules to apply.

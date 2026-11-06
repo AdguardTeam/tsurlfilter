@@ -58,6 +58,7 @@ const getCosmeticData = (rules: string[], areHitsStatsCollected: boolean): Conte
     return {
         isAppStarted: true,
         areHitsStatsCollected,
+        areNativeHitsStatsCollected: areHitsStatsCollected,
         extCssRules,
         nativeCssSelectors: null,
     };
@@ -100,6 +101,7 @@ describe('invalid native CSS selectors are handled gracefully', () => {
         const cosmeticData: ContentScriptCosmeticData = {
             isAppStarted: true,
             areHitsStatsCollected: false,
+            areNativeHitsStatsCollected: false,
             extCssRules: null,
             nativeCssSelectors: [...validSelectors, invalidSelector],
         };

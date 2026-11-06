@@ -99,6 +99,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         );
 
         expect(data.areHitsStatsCollected).toBe(true);
+        expect(data.areNativeHitsStatsCollected).toBe(true);
         expect(data.extCssRules?.some((rule) => rule.includes('adguard'))).toBe(true);
         expect(insertCSSMock).toHaveBeenCalledTimes(1);
         expect(insertCSSMock).toHaveBeenCalledWith(expect.objectContaining({
@@ -131,10 +132,11 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         );
 
         expect(data.areHitsStatsCollected).toBe(false);
+        expect(data.areNativeHitsStatsCollected).toBe(false);
         expect(insertCSSMock).not.toHaveBeenCalled();
     });
 
-    it('does not report success when the frame context is gone', async () => {
+    it('injects marked CSS without a frame context and keeps marked ExtendedCss rules', async () => {
         tabsApiMock.getFrameContext.mockReturnValue(undefined);
 
         const data = await CosmeticApi.reapplyMarkedCosmeticData(
@@ -143,11 +145,13 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
             FRAME_ID,
         );
 
-        expect(data.areHitsStatsCollected).toBe(false);
-        expect(insertCSSMock).not.toHaveBeenCalled();
+        expect(data.areHitsStatsCollected).toBe(true);
+        expect(data.areNativeHitsStatsCollected).toBe(true);
+        expect(data.extCssRules?.some((rule) => rule.includes('adguard'))).toBe(true);
+        expect(insertCSSMock).toHaveBeenCalledTimes(1);
     });
 
-    it('does not report success when marked CSS injection fails', async () => {
+    it('keeps marked ExtendedCss rules when marked CSS injection fails', async () => {
         insertCSSMock.mockRejectedValue(new Error('injection failed'));
         const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});
 
@@ -157,7 +161,9 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
             FRAME_ID,
         );
 
-        expect(data.areHitsStatsCollected).toBe(false);
+        expect(data.areHitsStatsCollected).toBe(true);
+        expect(data.areNativeHitsStatsCollected).toBe(false);
+        expect(data.extCssRules?.some((rule) => rule.includes('adguard'))).toBe(true);
         expect(infoSpy).toHaveBeenCalledTimes(1);
     });
 });

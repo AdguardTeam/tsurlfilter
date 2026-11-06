@@ -204,6 +204,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         const data: ContentScriptCosmeticData = {
             isAppStarted: false,
             areHitsStatsCollected: false,
+            areNativeHitsStatsCollected: false,
             extCssRules: null,
             nativeCssSelectors: null,
         };
@@ -218,6 +219,7 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         data.isAppStarted = isAppStarted;
         data.areHitsStatsCollected = areHitsStatsCollected;
+        data.areNativeHitsStatsCollected = areHitsStatsCollected;
 
         const tabContext = tabsApi.getTabContext(tabId);
 
@@ -232,6 +234,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         );
 
         data.areHitsStatsCollected = effectiveCollectStats;
+        data.areNativeHitsStatsCollected = effectiveCollectStats;
 
         const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
@@ -279,22 +282,22 @@ export class CosmeticApi extends CosmeticApiCommon {
             return data;
         }
 
-        const frameContext = tabsApi.getFrameContext(tabId, frameId);
-        if (!frameContext) {
-            // The frame context may be gone for an old subframe. The marked
-            // CSS cannot be injected, so do not report collection as applied.
-            data.areHitsStatsCollected = false;
-            return data;
-        }
-
-        const injectionKey = frameContext.preparedCosmeticResult ?? frameContext;
-
-        if (CosmeticApi.markedCssInjected.get(frameContext) === injectionKey) {
-            return data;
-        }
-
         const tabContext = tabsApi.getTabContext(tabId);
         if (!tabContext?.info.url) {
+            data.areNativeHitsStatsCollected = false;
+            return data;
+        }
+
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+
+        // The frame context is only an injection cache key. Old subframes no
+        // longer have one, so match from the frame URL and tab context.
+        const injectionKey = frameContext
+            ? frameContext.preparedCosmeticResult ?? frameContext
+            : undefined;
+
+        if (frameContext && injectionKey
+            && CosmeticApi.markedCssInjected.get(frameContext) === injectionKey) {
             return data;
         }
 
@@ -309,11 +312,13 @@ export class CosmeticApi extends CosmeticApiCommon {
         if (cssText) {
             try {
                 await ScriptingApi.insertCSS({ cssText, tabId, frameId });
-                CosmeticApi.markedCssInjected.set(frameContext, injectionKey);
+                if (frameContext && injectionKey) {
+                    CosmeticApi.markedCssInjected.set(frameContext, injectionKey);
+                }
             } catch (e) {
-                // The content script must not mark the marked data as applied
-                // when the CSS injection failed.
-                data.areHitsStatsCollected = false;
+                // Marked ExtendedCss rules are still applied by the content
+                // script, but native hits cannot be counted without this CSS.
+                data.areNativeHitsStatsCollected = false;
                 logger.info(`[tsweb.CosmeticApi.reapplyMarkedCosmeticData]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
             }
         }

@@ -73,6 +73,11 @@ export class CosmeticControllerCommon {
     private reapplyInFlight = false;
 
     /**
+     * Whether an enable arrived while a reapply request was in flight.
+     */
+    private reapplyRequested = false;
+
+    /**
      * ExtendedCss instance whose rules are currently applied.
      */
     private extendedCss?: ExtendedCss;
@@ -136,6 +141,7 @@ export class CosmeticControllerCommon {
             isAppStarted,
             extCssRules,
             areHitsStatsCollected,
+            areNativeHitsStatsCollected,
             nativeCssSelectors,
         } = cosmeticData;
 
@@ -166,7 +172,9 @@ export class CosmeticControllerCommon {
 
         CosmeticControllerCommon.repairNativeCss(nativeCssSelectors);
         this.applyExtendedCssRules(extCssRules, !!this.cssHitsCounter);
-        this.hitsMarkersApplied = areHitsStatsCollected && !!this.cssHitsCounter;
+        this.hitsMarkersApplied = areHitsStatsCollected
+            && areNativeHitsStatsCollected
+            && !!this.cssHitsCounter;
 
         // A state message may arrive before the cosmetic data response. When
         // it enabled collection and the response was built without markers,
@@ -226,7 +234,15 @@ export class CosmeticControllerCommon {
      * data was applied without hit markers.
      */
     private async reapplyMarkedCosmeticData(): Promise<void> {
-        if (this.reapplyInFlight || !this.collectHitStatsEnabled) {
+        if (this.reapplyInFlight) {
+            // Remember the enable so a failed or unmarked response can retry.
+            if (this.collectHitStatsEnabled) {
+                this.reapplyRequested = true;
+            }
+            return;
+        }
+
+        if (!this.collectHitStatsEnabled) {
             return;
         }
 
@@ -275,8 +291,11 @@ export class CosmeticControllerCommon {
                 this.ensureCounter(true);
             }
 
+            const hasMarkedExtendedCss = !!res.extCssRules && res.extCssRules.length > 0;
+            const hasMarkedNativeCss = res.areNativeHitsStatsCollected;
+
             this.applyExtendedCssRules(res.extCssRules, true);
-            this.hitsMarkersApplied = true;
+            this.hitsMarkersApplied = hasMarkedNativeCss;
             this.cosmeticDataApplied = true;
             this.reapplyTries = 0;
 
@@ -284,13 +303,28 @@ export class CosmeticControllerCommon {
                 this.pendingProbesCollector.start();
             }
 
-            this.cssHitsCounter?.resume();
+            if (hasMarkedNativeCss || hasMarkedExtendedCss) {
+                // ExtendedCss hits work without the native CSS injection.
+                // Keep the flag false when native CSS failed so the next
+                // enable retries it.
+                this.cssHitsCounter?.resume();
+            } else {
+                this.pendingProbesCollector.stop();
+            }
         } catch {
             // Keep the counter paused: without marked data there is nothing
             // to report, and a later toggle can retry.
             this.pendingProbesCollector.stop();
         } finally {
             this.reapplyInFlight = false;
+
+            if (this.reapplyRequested) {
+                this.reapplyRequested = false;
+
+                if (this.collectHitStatsEnabled && !this.hitsMarkersApplied) {
+                    this.reapplyMarkedCosmeticData();
+                }
+            }
         }
     }
 
