@@ -10,6 +10,9 @@
 export abstract class TooManyError extends Error {
     /**
      * List of excluded source (important!) {@link Source} rules ids.
+     *
+     * Holds one id per source rule, so a declarative rule produced from
+     * several source rules adds several ids.
      */
     public excludedRulesIds: number[];
 
@@ -20,6 +23,9 @@ export abstract class TooManyError extends Error {
 
     /**
      * Number of excluded declarative rules.
+     *
+     * Counts declarative rules, so it can differ from the length of
+     * {@link excludedRulesIds}, which counts source rules.
      */
     public numberOfExcludedDeclarativeRules: number;
 
