@@ -15,6 +15,7 @@ import browser from 'webextension-polyfill';
 import { ExtendedCss } from '@adguard/extended-css';
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
+import { type CosmeticControllerCommon } from '../../../../src/lib/common/content-script/cosmetic-controller';
 import * as SendMessageModule from '../../../../src/lib/common/content-script/send-app-message';
 import { type ContentScriptCosmeticData } from '../../../../src/lib/common/cosmetic-api';
 import { MessageType } from '../../../../src/lib/common/message-constants';
@@ -41,7 +42,41 @@ const controllers = [
     ['MV3', CosmeticControllerMV3],
 ] as const;
 
+/**
+ * Controllers created by the current test.
+ *
+ * Stopping them prevents an earlier test's counter or collector from
+ * observing DOM changes made by the next test.
+ */
+const createdControllers: CosmeticControllerCommon[] = [];
+
+/**
+ * Creates a controller and remembers it for cleanup.
+ *
+ * @param Controller Controller class under test.
+ *
+ * @returns Created controller.
+ */
+const createController = (
+    Controller: typeof CosmeticControllerMV2 | typeof CosmeticControllerMV3,
+): CosmeticControllerCommon => {
+    const controller = new Controller();
+    createdControllers.push(controller);
+    return controller;
+};
+
 afterEach(() => {
+    createdControllers.forEach((controller) => {
+        const internals = controller as unknown as {
+            cssHitsCounter?: { stop: () => void };
+            pendingProbesCollector?: { stop: () => void };
+        };
+
+        internals.cssHitsCounter?.stop();
+        internals.pendingProbesCollector?.stop();
+    });
+    createdControllers.length = 0;
+
     // Remove listeners registered by controllers created in this file.
     // eslint-disable-next-line no-underscore-dangle
     (browser.runtime.onMessage as unknown as { _listeners: unknown[] })._listeners = [];
@@ -110,7 +145,7 @@ describe.each(controllers)('%s short-lived probes', (_name, CosmeticController) 
             const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
                 .mockResolvedValue(cosmeticData);
 
-            const cosmeticController = new CosmeticController();
+            const cosmeticController = createController(CosmeticController);
             cosmeticController.init();
 
             // The collector must observe the DOM before the response is
@@ -150,7 +185,7 @@ describe.each(controllers)('%s short-lived probes', (_name, CosmeticController) 
         try {
             vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(null);
 
-            const cosmeticController = new CosmeticController();
+            const cosmeticController = createController(CosmeticController);
             cosmeticController.init();
 
             const collectorObserver = MutationObserverMock.last!;
@@ -177,7 +212,7 @@ describe.each(controllers)('%s short-lived probes', (_name, CosmeticController) 
                 nativeCssSelectors: null,
             });
 
-            const cosmeticController = new CosmeticController();
+            const cosmeticController = createController(CosmeticController);
             cosmeticController.init();
 
             const collectorObserver = MutationObserverMock.last!;
@@ -250,7 +285,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                     nativeCssSelectors: null,
                 });
 
-            const cosmeticController = new CosmeticController();
+            const cosmeticController = createController(CosmeticController);
             cosmeticController.init();
 
             await new Promise((resolve) => {
@@ -320,7 +355,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
             const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
                 .mockReturnValue(cosmeticDataPromise);
 
-            const cosmeticController = new CosmeticController();
+            const cosmeticController = createController(CosmeticController);
             cosmeticController.init();
 
             const collectorObserver = MutationObserverMock.last!;
@@ -432,7 +467,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                     };
                 });
 
-            const cosmeticController = new CosmeticController();
+            const cosmeticController = createController(CosmeticController);
             cosmeticController.init();
 
             await new Promise((resolve) => {
@@ -477,7 +512,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                     return getCosmeticData(rules, !!isReapply);
                 });
 
-            const cosmeticController = new CosmeticController();
+            const cosmeticController = createController(CosmeticController);
             cosmeticController.init();
 
             await new Promise((resolve) => {
@@ -526,7 +561,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                     return getCosmeticData([], false);
                 });
 
-            const cosmeticController = new CosmeticController();
+            const cosmeticController = createController(CosmeticController);
             cosmeticController.init();
 
             await new Promise((resolve) => {
@@ -575,7 +610,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                     };
                 });
 
-            const cosmeticController = new CosmeticController();
+            const cosmeticController = createController(CosmeticController);
             cosmeticController.init();
 
             // Enable collection before the unmarked cosmetic data response
@@ -654,7 +689,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                     });
                 });
 
-            const cosmeticController = new CosmeticController();
+            const cosmeticController = createController(CosmeticController);
             cosmeticController.init();
 
             triggerRuntimeMessage({
