@@ -87,6 +87,39 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/^(?=.{5,}$).*/s)'],
                     },
 
+                    // `[min-length]` special attribute selector - leading zeros are stripped
+                    {
+                        actual: '$$div[min-length=" 0005"]',
+                        expected: ['$$div:contains(/^(?=.{5,}$).*/s)'],
+                    },
+
+                    // `[min-length]` special attribute selector - zero stays a single zero
+                    {
+                        actual: '$$div[min-length="0000"]',
+                        expected: ['$$div:contains(/^(?=.{0,}$).*/s)'],
+                    },
+
+                    // `[min-length]` special attribute selector - 65535 is a
+                    // regular value here; the PCRE2 limit bounds only `:min-text-length()`
+                    {
+                        actual: '$$div[min-length="65535"]',
+                        expected: ['$$div:contains(/^(?=.{65535,}$).*/s)'],
+                    },
+
+                    // `[max-length]` special attribute selector - 65535 is a
+                    // regular value here; the PCRE2 limit bounds only `:min-text-length()`
+                    {
+                        actual: '$$div[max-length="65535"]',
+                        expected: ['$$div:contains(/^(?=.{0,65535}$).*/s)'],
+                    },
+
+                    // `[max-length]` special attribute selector - a real-world value
+                    // above the `:min-text-length()` limit is kept as decimal digits
+                    {
+                        actual: '$$div[max-length="300000"]',
+                        expected: ['$$div:contains(/^(?=.{0,300000}$).*/s)'],
+                    },
+
                     // `[max-length]` special attribute selector - leading whitespace is accepted
                     {
                         actual: '$$div[max-length=" 100"]',
@@ -115,6 +148,52 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$script[max-length="300000"][min-length="20000"]',
                         expected: ['$$script:contains(/^(?=.{20000,300000}$).*/s)'],
+                    },
+
+                    // duplicate length selectors are resolved as normalized digit strings,
+                    // without number conversion or precision loss
+                    {
+                        actual: '$$div[min-length="00065535"][max-length="65535"]',
+                        expected: ['$$div:contains(/^(?=.{65535,65535}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="0005"][min-length="7"]',
+                        expected: ['$$div:contains(/^(?=.{7,}$).*/s)'],
+                    },
+
+                    // duplicate length selectors with different digit counts and
+                    // large values that differ only in the last digit are compared
+                    // as digit strings, in both orders
+                    {
+                        actual: '$$div[min-length="9"][min-length="10"][max-length="20"][max-length="100"]',
+                        expected: ['$$div:contains(/^(?=.{10,20}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="10"][min-length="9"][max-length="100"][max-length="20"]',
+                        expected: ['$$div:contains(/^(?=.{10,20}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="99999999999999999998"][min-length="99999999999999999999"]',
+                        expected: ['$$div:contains(/^(?=.{99999999999999999999,}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="99999999999999999999"][min-length="99999999999999999998"]',
+                        expected: ['$$div:contains(/^(?=.{99999999999999999999,}$).*/s)'],
+                    },
+
+                    // large values are kept as decimal digits, without rounding
+                    // or exponent notation
+                    {
+                        actual: '$$div[min-length="1000000000000000000000"]',
+                        expected: ['$$div:contains(/^(?=.{1000000000000000000000,}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[max-length="99999999999999999999"]',
+                        expected: ['$$div:contains(/^(?=.{0,99999999999999999999}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="0005"][max-length="00099999999999999999999"]',
+                        expected: ['$$div:contains(/^(?=.{5,99999999999999999999}$).*/s)'],
                     },
 
                     // `[tag-content]` with an unbalanced value + `[max-length]`: such a literal cannot
@@ -1142,6 +1221,10 @@ describe('HtmlRuleConverter', () => {
                     },
                     {
                         actual: '$$div[min-length="+5"]',
+                        expected: ['##^div:min-text-length(5)'],
+                    },
+                    {
+                        actual: '$$div[min-length="0005"]',
                         expected: ['##^div:min-text-length(5)'],
                     },
 
