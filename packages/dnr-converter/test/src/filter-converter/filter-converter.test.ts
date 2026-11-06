@@ -276,6 +276,20 @@ describe('FilterConverter', () => {
             expect(ruleset.getDeclarativeRules()).toHaveLength(0);
         });
 
+        it('keeps a rule when a later regexp $domain badfilter matches only a removed domain', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=a.com|b.com',
+                '||example.org^$domain=a.com,badfilter',
+                '||example.org^$domain=a.com|/^a\\.com$/,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['b.com']);
+        });
+
         it('does not convert a $badfilter rule that also carries a convertible modifier', async () => {
             const filter = createFilter([
                 "||example.org^$csp=script-src 'self'",

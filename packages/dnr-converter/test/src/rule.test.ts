@@ -702,6 +702,44 @@ describe('Rule', () => {
             expect(Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter])).toBeNull();
             expect(Rule.applyBadfilters(targetRule, [secondBadfilter, firstBadfilter])).toBeNull();
         });
+
+        it('keeps a rule when a regexp badfilter matches only an already removed entry', () => {
+            const [firstBadfilter] = Rule.createFromText(1, 0, '||example.com^$domain=a.com,badfilter');
+            const [secondBadfilter] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=a.com|/^a\\.com$/,badfilter',
+            );
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=a.com|b.com');
+
+            // The anchored regexp can match only `a.com`, which the first
+            // badfilter already removed, so `b.com` keeps applying.
+            const result = Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter]);
+
+            expect(result?.permittedDomains).toEqual(['b.com']);
+        });
+
+        it('drops a rule when a regexp badfilter with a character class matches a kept entry', () => {
+            const [firstBadfilter] = Rule.createFromText(1, 0, '||example.com^$domain=a.com,badfilter');
+            const [secondBadfilter] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=a.com|/^b\\.\\w\\w\\w$/,badfilter',
+            );
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=a.com|b.com');
+
+            // `\w\w\w` matches `com`, so the regexp covers the kept `b.com`.
+            expect(Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter])).toBeNull();
+        });
+
+        it('drops a rule when a regexp badfilter matches a subdomain of a kept entry', () => {
+            const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=/^x\\.b\\.com$/,badfilter');
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=/^x\\.b\\.com$/|b.com');
+
+            // The badfilter covers `x.b.com`, which the kept `b.com` entry also
+            // covers in DNR.
+            expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
+        });
     });
 
     describe('advancedModifierValue', () => {

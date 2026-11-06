@@ -827,6 +827,46 @@ describe('$domain badfilter narrowing through the MV3 converter', () => {
             'https://b.com/',
         )).toBe(false);
     });
+
+    it('keeps a rule when a later regexp badfilter matches only a removed domain', () => {
+        const targetText = '||example.com^$domain=a.com|b.com';
+        const firstText = '||example.com^$domain=a.com,badfilter';
+        const secondText = '||example.com^$domain=a.com|/^a\\.com$/,badfilter';
+
+        const [targetRule] = Rule.createFromText(1, 0, targetText);
+        const [firstBadfilter] = Rule.createFromText(1, 0, firstText);
+        const [secondBadfilter] = Rule.createFromText(1, 0, secondText);
+
+        const narrowed = Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter]);
+
+        // The anchored regexp matches only the removed `a.com`, so `b.com`
+        // keeps applying, as it does in MV2.
+        expect(narrowed?.permittedDomains).toEqual(['b.com']);
+        expect(matchesThroughEngine(
+            [targetText, firstText, secondText],
+            'https://example.com/',
+            'https://b.com/',
+        )).toBe(true);
+    });
+
+    it('cancels a rule completely when a regexp badfilter with a character class covers a kept domain', () => {
+        const targetText = '||example.com^$domain=a.com|b.com';
+        const firstText = '||example.com^$domain=a.com,badfilter';
+        const secondText = '||example.com^$domain=a.com|/^b\\.\\w\\w\\w$/,badfilter';
+
+        const [targetRule] = Rule.createFromText(1, 0, targetText);
+        const [firstBadfilter] = Rule.createFromText(1, 0, firstText);
+        const [secondBadfilter] = Rule.createFromText(1, 0, secondText);
+
+        // `\w\w\w` matches `com`, so the regexp covers the kept `b.com`; DNR
+        // cannot exclude it, and the rule is cancelled completely.
+        expect(Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter])).toBeNull();
+        expect(matchesThroughEngine(
+            [targetText, firstText, secondText],
+            'https://example.com/',
+            'https://b.com/',
+        )).toBe(false);
+    });
 });
 
 // ---------------------------------------------------------------------------

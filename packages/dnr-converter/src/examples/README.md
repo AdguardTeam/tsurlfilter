@@ -139,8 +139,9 @@ Five cases are still not covered:
   narrows only an existing permitted `$domain` list, although DNR could express
   the exclusion with `excludedInitiatorDomains`;
 - a regexp entry in the badfilter's `$domain` list cancels the target rule
-  completely: DNR cannot exclude initiator domains that match a regexp, so a
-  narrowed rule would keep applying on the domains that the badfilter cancels;
+  completely when it can match a domain that a kept target entry covers: DNR
+  cannot exclude initiator domains that match a regexp, so a narrowed rule
+  would keep applying where the badfilter cancels it;
 - a `$badfilter` rule from a dynamic ruleset disables a whole declarative rule
   from an already-built static ruleset, because such a rule can only be
   disabled as a whole, not narrowed. This applies even when the static rule

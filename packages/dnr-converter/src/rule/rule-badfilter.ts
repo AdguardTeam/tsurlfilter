@@ -7,7 +7,7 @@
 
 import { NetworkRuleParser } from '@adguard/agtree/parser';
 
-import { OPTIONS_DELIMITER } from '../constants';
+import { MASK_ANY_CHARACTER, OPTIONS_DELIMITER } from '../constants';
 import { POPULAR_TLDS } from '../constants/popular-tlds';
 import { isRegexPattern } from '../utils/string';
 
@@ -52,6 +52,54 @@ const WRITTEN_MODIFIER_SEPARATOR_REGEXP = /(?<!\\),/;
  * Suffix of a wildcard TLD entry, e.g. `example.*`.
  */
 const WILDCARD_TLD_SUFFIX = '.*';
+
+/**
+ * Regexp characters that make a pattern match more than one literal string.
+ */
+const REGEXP_METACHARACTERS = new Set([
+    '^', '$', '.', '*', '+', '?', '(', ')', '[', ']', '{', '}', '|',
+]);
+
+/**
+ * Reduces the body of an anchored regexp to the single domain it matches.
+ *
+ * Only an escaped non-alphanumeric character stands for a literal character:
+ * `\.` is a dot. A shorthand class (`\w`), a hex or unicode escape (`\x2e`,
+ * `\u002e`), a backreference or a control escape matches more than one literal
+ * string and makes the pattern non-literal.
+ *
+ * @param pattern Regexp body without the anchors and delimiters.
+ *
+ * @returns The literal domain in lower case, or `null` when the pattern is not
+ *   a single literal string.
+ */
+const getLiteralDomain = (pattern: string): string | null => {
+    let literal = '';
+
+    for (let i = 0; i < pattern.length; i += 1) {
+        const char = pattern[i];
+
+        if (char === '\\') {
+            const escaped = pattern[i + 1];
+
+            if (escaped === undefined || /[a-z0-9]/i.test(escaped)) {
+                return null;
+            }
+
+            literal += escaped;
+            i += 1;
+            continue;
+        }
+
+        if (REGEXP_METACHARACTERS.has(char)) {
+            return null;
+        }
+
+        literal += char;
+    }
+
+    return literal.toLowerCase();
+};
 
 /**
  * Name of the `$domain` alias of other syntaxes, as it appears in the written
@@ -188,8 +236,8 @@ export class RuleBadfilter {
      * stay mean {@link BadfilterNegationKind.Partial}. A badfilter entry that is
      * a subdomain of a kept target entry becomes an exclusion, because the kept
      * entry still covers it in DNR. A regexp badfilter entry cannot be expressed
-     * as a DNR exclusion, so it cancels the rule completely when narrowing keeps
-     * any target entry.
+     * as a DNR exclusion, so it cancels the rule completely when it can match a
+     * domain that a kept target entry covers.
      *
      * @param badfilterRule The rule that carries the `$badfilter` modifier.
      * @param targetRule The rule to test for negation.
@@ -249,11 +297,15 @@ export class RuleBadfilter {
         }
 
         // DNR cannot exclude a regexp domain: `excludedInitiatorDomains`
-        // accepts domain names only, and a kept target entry may still match the
-        // badfilter pattern. Check this before the no-change case: an earlier
-        // badfilter may have removed the entry that made the two lists
-        // intersect, while the regexp still matches a kept entry.
-        if (badfilterRule.permittedDomains.some(isRegexPattern)) {
+        // accepts domain names only. When a badfilter regexp can match a domain
+        // that a kept entry covers, the rule is cancelled completely. Check this
+        // before the no-change case: an earlier badfilter may have removed the
+        // entry that made the two lists intersect, while the regexp still
+        // matches a kept entry.
+        const badfilterRegexps = badfilterRule.permittedDomains.filter(isRegexPattern);
+        if (badfilterRegexps.some(
+            (regexp) => RuleBadfilter.regexpCoversKeptEntry(regexp, permittedDomains),
+        )) {
             return { kind: BadfilterNegationKind.Full };
         }
 
@@ -375,6 +427,62 @@ export class RuleBadfilter {
             permittedDomains,
             excludedDomains: [...new Set(excludedDomains)],
         };
+    }
+
+    /**
+     * Checks whether a badfilter regexp entry can match a domain that a kept
+     * permitted entry covers in DNR.
+     *
+     * DNR matches `initiatorDomains` entries against the domain itself and its
+     * subdomains, while MV2 tests the badfilter regexp against the request
+     * domain. An anchored pattern that denotes one literal domain is compared
+     * with that scope; any other pattern is assumed to match a kept domain,
+     * because its full language cannot be compared with a DNR entry.
+     *
+     * @param regexpEntry Regexp entry from the badfilter `$domain` list.
+     * @param keptEntries Permitted `$domain` entries that stay in the target.
+     *
+     * @returns True when the regexp can match a domain covered by a kept entry.
+     */
+    private static regexpCoversKeptEntry(regexpEntry: string, keptEntries: readonly string[]): boolean {
+        const body = regexpEntry.slice(1, -1);
+
+        // A pattern anchored at only one end, or not anchored at all, can match
+        // part of a subdomain label, so the subdomains of a kept entry cannot
+        // be ruled out.
+        if (!body.startsWith('^') || !body.endsWith('$')) {
+            return true;
+        }
+
+        const literalDomain = getLiteralDomain(body.slice(1, -1));
+
+        if (literalDomain === null) {
+            return true;
+        }
+
+        return keptEntries.some((entry) => {
+            // A regexp or non-TLD wildcard entry is not representable in DNR,
+            // so it is not part of the emitted rule's scope.
+            const isNonTldWildcard = entry.includes(MASK_ANY_CHARACTER)
+                && !entry.endsWith(WILDCARD_TLD_SUFFIX);
+            if (isRegexPattern(entry) || isNonTldWildcard) {
+                return false;
+            }
+
+            if (entry.endsWith(WILDCARD_TLD_SUFFIX)) {
+                const prefix = entry.slice(0, -WILDCARD_TLD_SUFFIX.length).toLowerCase();
+
+                return POPULAR_TLDS.some((tld) => {
+                    const expanded = `${prefix}.${tld}`;
+
+                    return literalDomain === expanded || literalDomain.endsWith(`.${expanded}`);
+                });
+            }
+
+            const normalizedEntry = entry.toLowerCase();
+
+            return literalDomain === normalizedEntry || literalDomain.endsWith(`.${normalizedEntry}`);
+        });
     }
 
     /**
