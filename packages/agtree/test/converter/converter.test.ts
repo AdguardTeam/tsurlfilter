@@ -86,6 +86,11 @@ describe('Converter integration tests', () => {
                     expected: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got 'abc'",
                 },
                 {
+                    actual: '##^:min-text-length( )',
+                    // eslint-disable-next-line max-len
+                    expected: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got ' '",
+                },
+                {
                     actual: '##^:min-text-length(-1)',
                     // eslint-disable-next-line max-len
                     expected: "Argument of special pseudo-class selector 'min-text-length' must be a positive integer, got '-1'",

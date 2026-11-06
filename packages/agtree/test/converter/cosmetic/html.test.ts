@@ -74,6 +74,58 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/^(?=.{0,100}$).*/s)'],
                     },
 
+                    // `[min-length]` special attribute selector - leading whitespace is accepted
+                    // (CoreLibs parses the value with `strtoimax`, which skips leading spaces)
+                    {
+                        actual: '$$div[min-length=" 5"]',
+                        expected: ['$$div:contains(/^(?=.{5,}$).*/s)'],
+                    },
+
+                    // `[min-length]` special attribute selector - leading plus is accepted
+                    {
+                        actual: '$$div[min-length="+5"]',
+                        expected: ['$$div:contains(/^(?=.{5,}$).*/s)'],
+                    },
+
+                    // `[min-length]` special attribute selector - leading zeros are stripped
+                    {
+                        actual: '$$div[min-length=" 0005"]',
+                        expected: ['$$div:contains(/^(?=.{5,}$).*/s)'],
+                    },
+
+                    // `[min-length]` special attribute selector - zero stays a single zero
+                    {
+                        actual: '$$div[min-length="0000"]',
+                        expected: ['$$div:contains(/^(?=.{0,}$).*/s)'],
+                    },
+
+                    // `[min-length]` special attribute selector - 65535 is a
+                    // regular value here; the PCRE2 limit bounds only `:min-text-length()`
+                    {
+                        actual: '$$div[min-length="65535"]',
+                        expected: ['$$div:contains(/^(?=.{65535,}$).*/s)'],
+                    },
+
+                    // `[max-length]` special attribute selector - 65535 is a
+                    // regular value here; the PCRE2 limit bounds only `:min-text-length()`
+                    {
+                        actual: '$$div[max-length="65535"]',
+                        expected: ['$$div:contains(/^(?=.{0,65535}$).*/s)'],
+                    },
+
+                    // `[max-length]` special attribute selector - a real-world value
+                    // above the `:min-text-length()` limit is kept as decimal digits
+                    {
+                        actual: '$$div[max-length="300000"]',
+                        expected: ['$$div:contains(/^(?=.{0,300000}$).*/s)'],
+                    },
+
+                    // `[max-length]` special attribute selector - leading whitespace is accepted
+                    {
+                        actual: '$$div[max-length=" 100"]',
+                        expected: ['$$div:contains(/^(?=.{0,100}$).*/s)'],
+                    },
+
                     // `[min-length]` and `[max-length]` combined into a single :contains()
                     {
                         actual: '$$div[min-length="10"][max-length="100"]',
@@ -96,6 +148,52 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$script[max-length="300000"][min-length="20000"]',
                         expected: ['$$script:contains(/^(?=.{20000,300000}$).*/s)'],
+                    },
+
+                    // duplicate length selectors are resolved as normalized digit strings,
+                    // without number conversion or precision loss
+                    {
+                        actual: '$$div[min-length="00065535"][max-length="65535"]',
+                        expected: ['$$div:contains(/^(?=.{65535,65535}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="0005"][min-length="7"]',
+                        expected: ['$$div:contains(/^(?=.{7,}$).*/s)'],
+                    },
+
+                    // duplicate length selectors with different digit counts and
+                    // large values that differ only in the last digit are compared
+                    // as digit strings, in both orders
+                    {
+                        actual: '$$div[min-length="9"][min-length="10"][max-length="20"][max-length="100"]',
+                        expected: ['$$div:contains(/^(?=.{10,20}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="10"][min-length="9"][max-length="100"][max-length="20"]',
+                        expected: ['$$div:contains(/^(?=.{10,20}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="99999999999999999998"][min-length="99999999999999999999"]',
+                        expected: ['$$div:contains(/^(?=.{99999999999999999999,}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="99999999999999999999"][min-length="99999999999999999998"]',
+                        expected: ['$$div:contains(/^(?=.{99999999999999999999,}$).*/s)'],
+                    },
+
+                    // large values are kept as decimal digits, without rounding
+                    // or exponent notation
+                    {
+                        actual: '$$div[min-length="1000000000000000000000"]',
+                        expected: ['$$div:contains(/^(?=.{1000000000000000000000,}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[max-length="99999999999999999999"]',
+                        expected: ['$$div:contains(/^(?=.{0,99999999999999999999}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="0005"][max-length="00099999999999999999999"]',
+                        expected: ['$$div:contains(/^(?=.{5,99999999999999999999}$).*/s)'],
                     },
 
                     // `[tag-content]` with an unbalanced value + `[max-length]`: such a literal cannot
@@ -237,6 +335,14 @@ describe('HtmlRuleConverter', () => {
                         shouldConvert: false,
                     },
 
+                    // `:-abp-contains()` special pseudo-class selector (AdGuard alias of
+                    // `:contains()`, leave as-is for now - see AG-61400)
+                    {
+                        actual: '$$div:-abp-contains(foo)',
+                        expected: ['$$div:-abp-contains(foo)'],
+                        shouldConvert: false,
+                    },
+
                     // `:has-text()` special pseudo-class selector (uBlock alias, documented synonym of `:contains()`)
                     // https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules--contains
                     {
@@ -248,6 +354,42 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div:has-text(/ex.*ple/i)',
                         expected: ['$$div:contains(/ex.*ple/i)'],
+                    },
+
+                    // `:contains()` with spaces around a quoted argument — the argument
+                    // is the raw text between the parentheses, so the spaces are kept
+                    {
+                        actual: '$$div:contains( "foo" )',
+                        expected: ['$$div:contains( "foo" )'],
+                        shouldConvert: false,
+                    },
+
+                    // `:contains()` with spaces around an unquoted argument — kept as-is
+                    {
+                        actual: '$$div:contains( foo )',
+                        expected: ['$$div:contains( foo )'],
+                        shouldConvert: false,
+                    },
+
+                    // `:-abp-contains()` with spaces around the argument — kept as-is
+                    {
+                        actual: '$$div:-abp-contains( "foo" )',
+                        expected: ['$$div:-abp-contains( "foo" )'],
+                        shouldConvert: false,
+                    },
+
+                    // `:has-text()` with spaces around the argument — converted to
+                    // `:contains()` with the same raw argument, spaces included
+                    {
+                        actual: '$$div:has-text( foo )',
+                        expected: ['$$div:contains( foo )'],
+                    },
+
+                    // `:has-text()` with spaces around a quoted argument — converted to
+                    // `:contains()` with the same raw argument, spaces included
+                    {
+                        actual: '$$div:has-text( "foo" )',
+                        expected: ['$$div:contains( "foo" )'],
                     },
 
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
@@ -424,10 +566,48 @@ describe('HtmlRuleConverter', () => {
                         error: "Value of special attribute selector 'min-length' must be a positive integer, got '-1'",
                     },
 
+                    // invalid special attribute selector - trailing whitespace is not
+                    // accepted by CoreLibs' `strtoimax` parsing of the value
+                    {
+                        input: '$$[min-length="5 "]',
+                        // eslint-disable-next-line max-len
+                        error: "Value of special attribute selector 'min-length' must be an integer, got '5 '",
+                    },
+
+                    // invalid special attribute selector - exponent notation is not
+                    // accepted by CoreLibs' `strtoimax` parsing of the value
+                    {
+                        input: '$$[min-length="1e2"]',
+                        // eslint-disable-next-line max-len
+                        error: "Value of special attribute selector 'min-length' must be an integer, got '1e2'",
+                    },
+
+                    // invalid special attribute selector - fractional value would
+                    // produce an invalid `{1.5,}` quantifier in the regexp
+                    {
+                        input: '$$[min-length="1.5"]',
+                        // eslint-disable-next-line max-len
+                        error: "Value of special attribute selector 'min-length' must be an integer, got '1.5'",
+                    },
+
                     // invalid special pseudo-class selector - argument missing
                     {
                         input: '$$:contains()',
                         error: "Special pseudo-class selector 'contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // with an empty argument
+                    {
+                        input: '$$div:-abp-contains()',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // without an argument
+                    {
+                        input: '$$div:-abp-contains',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
                     },
                 ])("should not convert '$input'", ({ input, error }) => {
                     if (typeof input !== 'string') {
@@ -732,6 +912,15 @@ describe('HtmlRuleConverter', () => {
                         actual: '##^div:has-text(/ex.*ple/i)',
                         expected: ['$$div:contains(/ex.*ple/i)'],
                     },
+
+                    // `:-abp-contains()` special pseudo-class selector (AdGuard
+                    // alias of `:contains()`). This direction is permissive by
+                    // design: the alias is kept as-is, without a mixed-syntax
+                    // error.
+                    {
+                        actual: '##^div:-abp-contains(foo)',
+                        expected: ['$$div:-abp-contains(foo)'],
+                    },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperly(
                         HtmlRuleConverter,
@@ -844,11 +1033,49 @@ describe('HtmlRuleConverter', () => {
                         error: "Special pseudo-class selector 'has-text' requires an argument",
                     },
 
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // with an empty argument
+                    {
+                        input: '##^div:-abp-contains()',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // without an argument
+                    {
+                        input: '##^div:-abp-contains',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
+                    },
+
                     // invalid special pseudo-class selector - length value not number
                     {
                         input: '##^:min-text-length(abc)',
                         // eslint-disable-next-line max-len
                         error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got 'abc'",
+                    },
+
+                    // invalid special pseudo-class selector - whitespace-only argument
+                    // must not be accepted as 0 (Number(' ') === 0) and converted into
+                    // a match-all :contains() regex; uBO validates with /^\d+$/
+                    {
+                        input: '##^:min-text-length( )',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got ' '",
+                    },
+
+                    // invalid special pseudo-class selector - padded argument is not a
+                    // plain decimal number, unlike the attribute selectors (uBO parity)
+                    {
+                        input: '##^:min-text-length( 5 )',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got ' 5 '",
+                    },
+
+                    // invalid special pseudo-class selector - non-decimal number
+                    {
+                        input: '##^:min-text-length(1e2)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got '1e2'",
                     },
 
                     // invalid special pseudo-class selector - length value negative
@@ -927,6 +1154,11 @@ describe('HtmlRuleConverter', () => {
                         error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got 'abc'",
                     },
                     {
+                        input: '##^:min-text-length( )',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got ' '",
+                    },
+                    {
                         input: '##^:min-text-length(-1)',
                         // eslint-disable-next-line max-len
                         error: "Argument of special pseudo-class selector 'min-text-length' must be a positive integer, got '-1'",
@@ -979,6 +1211,29 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div[min-length="10"]',
                         expected: ['##^div:min-text-length(10)'],
+                    },
+
+                    // `[min-length]` special attribute selector - the value is normalized
+                    // for uBlock, which accepts only digits
+                    {
+                        actual: '$$div[min-length=" 5"]',
+                        expected: ['##^div:min-text-length(5)'],
+                    },
+                    {
+                        actual: '$$div[min-length="+5"]',
+                        expected: ['##^div:min-text-length(5)'],
+                    },
+                    {
+                        actual: '$$div[min-length="0005"]',
+                        expected: ['##^div:min-text-length(5)'],
+                    },
+
+                    // `[min-length]` special attribute selector - large values are
+                    // normalized textually, so `Number()` rounding and the exponent
+                    // notation it produces from 1e21 do not reach uBlock
+                    {
+                        actual: '$$div[min-length="1000000000000000000000"]',
+                        expected: ['##^div:min-text-length(1000000000000000000000)'],
                     },
 
                     // `[min-length]` special attribute selector - multiple usages
@@ -1047,10 +1302,27 @@ describe('HtmlRuleConverter', () => {
                         expected: ["##^div:has-text('example')"],
                     },
 
+                    // `:contains()` special pseudo-class selector - spaces around the
+                    // argument are part of the matched text, and uBlock keeps them too,
+                    // so they must survive the AdGuard to uBlock conversion
+                    {
+                        actual: '$$div:contains( "foo" )',
+                        expected: ['##^div:has-text( "foo" )'],
+                    },
+
                     // `:contains()` special pseudo-class selector - regexp are handled
                     {
                         actual: '$$div:contains(/ex.*ple/i)',
                         expected: ['##^div:has-text(/ex.*ple/i)'],
+                    },
+
+                    // `:-abp-contains()` special pseudo-class selector (AdGuard alias of
+                    // `:contains()`). The alias is not mapped to `:has-text()` yet
+                    // (see AG-61400), so the selector is kept as-is. This is the known
+                    // interim output; the expectation must change with AG-61400.
+                    {
+                        actual: '$$div:-abp-contains(foo)',
+                        expected: ['##^div:-abp-contains(foo)'],
                     },
 
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
@@ -1217,6 +1489,33 @@ describe('HtmlRuleConverter', () => {
                     {
                         input: '$$:contains()',
                         error: "Special pseudo-class selector 'contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // with an empty argument
+                    {
+                        input: '$$div:-abp-contains()',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // without an argument
+                    {
+                        input: '$$div:-abp-contains',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - uBlock drops a text
+                    // argument when characters follow the closing quote
+                    {
+                        input: '$$div:contains("foo" )',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: '\"foo\" '",
+                    },
+                    {
+                        input: '$$div:contains("foo"bar)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: '\"foo\"bar'",
                     },
 
                     // invalid simple selector - mixed syntax (uBlock special pseudo-class selector)
