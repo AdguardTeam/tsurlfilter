@@ -219,7 +219,6 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         data.isAppStarted = isAppStarted;
         data.areHitsStatsCollected = areHitsStatsCollected;
-        data.areNativeHitsStatsCollected = areHitsStatsCollected;
 
         const tabContext = tabsApi.getTabContext(tabId);
 
@@ -234,7 +233,8 @@ export class CosmeticApi extends CosmeticApiCommon {
         );
 
         data.areHitsStatsCollected = effectiveCollectStats;
-        data.areNativeHitsStatsCollected = effectiveCollectStats;
+        data.areNativeHitsStatsCollected = tabsApi.getFrameContext(tabId, frameId)
+            ?.preparedCosmeticResult?.areHitsStatsCollected ?? false;
 
         const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
@@ -298,6 +298,7 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         if (frameContext && injectionKey
             && CosmeticApi.markedCssInjected.get(frameContext) === injectionKey) {
+            data.areNativeHitsStatsCollected = true;
             return data;
         }
 
@@ -309,18 +310,23 @@ export class CosmeticApi extends CosmeticApiCommon {
             isNativeHasSupported: true,
         });
 
-        if (cssText) {
-            try {
-                await ScriptingApi.insertCSS({ cssText, tabId, frameId });
-                if (frameContext && injectionKey) {
-                    CosmeticApi.markedCssInjected.set(frameContext, injectionKey);
-                }
-            } catch (e) {
-                // Marked ExtendedCss rules are still applied by the content
-                // script, but native hits cannot be counted without this CSS.
-                data.areNativeHitsStatsCollected = false;
-                logger.info(`[tsweb.CosmeticApi.reapplyMarkedCosmeticData]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
+        if (!cssText) {
+            // There is no native CSS to inject, so no native hit can be lost.
+            data.areNativeHitsStatsCollected = true;
+            return data;
+        }
+
+        try {
+            await ScriptingApi.insertCSS({ cssText, tabId, frameId });
+            data.areNativeHitsStatsCollected = true;
+            if (frameContext && injectionKey) {
+                CosmeticApi.markedCssInjected.set(frameContext, injectionKey);
             }
+        } catch (e) {
+            // Marked ExtendedCss rules are still applied by the content
+            // script, but native hits cannot be counted without this CSS.
+            data.areNativeHitsStatsCollected = false;
+            logger.info(`[tsweb.CosmeticApi.reapplyMarkedCosmeticData]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
         }
 
         return data;

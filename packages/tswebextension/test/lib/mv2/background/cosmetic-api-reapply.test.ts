@@ -71,12 +71,27 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
 
         tabsApiMock.getFrameContext.mockReturnValue({
             cosmeticResult,
-            preparedCosmeticResult: { cssText: 'unmarked' },
+            preparedCosmeticResult: {
+                cssText: 'unmarked',
+                areHitsStatsCollected: false,
+            },
         });
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
+    });
+
+    it('reports the native marker state from the prepared result', () => {
+        const data = CosmeticApi.getContentScriptData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(data.areHitsStatsCollected).toBe(true);
+        expect(data.areNativeHitsStatsCollected).toBe(false);
+        expect(data.extCssRules?.some((rule) => rule.includes('adguard'))).toBe(true);
     });
 
     it('injects marked native CSS and returns marked ExtendedCss rules', async () => {
@@ -101,9 +116,35 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         const injectSpy = vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
 
         await CosmeticApi.reapplyMarkedCosmeticData('https://example.org/', TAB_ID, FRAME_ID);
-        await CosmeticApi.reapplyMarkedCosmeticData('https://example.org/', TAB_ID, FRAME_ID);
+        const data = await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
 
         expect(injectSpy).toHaveBeenCalledTimes(1);
+        expect(data.areNativeHitsStatsCollected).toBe(true);
+    });
+
+    it('reports native hits as collected when there is no native CSS', async () => {
+        cosmeticResult = new CosmeticResult();
+        tabsApiMock.getFrameContext.mockReturnValue({
+            cosmeticResult,
+            preparedCosmeticResult: {
+                cssText: undefined,
+                areHitsStatsCollected: false,
+            },
+        });
+        const injectSpy = vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
+
+        const data = await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(data.areNativeHitsStatsCollected).toBe(true);
+        expect(injectSpy).not.toHaveBeenCalled();
     });
 
     it('does not inject marked CSS for an allowlisted document', async () => {
@@ -113,7 +154,10 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         });
         tabsApiMock.getFrameContext.mockReturnValue({
             cosmeticResult,
-            preparedCosmeticResult: { cssText: 'unmarked-allowlisted' },
+            preparedCosmeticResult: {
+                cssText: 'unmarked-allowlisted',
+                areHitsStatsCollected: false,
+            },
         });
         const injectSpy = vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
 

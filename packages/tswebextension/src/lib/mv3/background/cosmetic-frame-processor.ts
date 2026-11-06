@@ -122,6 +122,7 @@ export class CosmeticFrameProcessor {
                     isNativeHasSupported: true,
                 },
             ),
+            areHitsStatsCollected,
             // Local script rules should be processed separately
             // because they will be injected with two different calls
             // to scripting API.

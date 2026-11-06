@@ -270,6 +270,7 @@ describe('TabsCosmeticInjector', () => {
             // depending on the way how they are stored in the engine.
             const preparedCosmeticResult = {
                 cssText: CosmeticApi.getCssText(cosmeticResult),
+                areHitsStatsCollected: false,
                 // Local script rules should be processed separately
                 // because they will be injected with two different calls
                 // to scripting API.
