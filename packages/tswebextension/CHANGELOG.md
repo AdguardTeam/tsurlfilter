@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Spaces around a quoted HTML filtering `:contains()` argument are no longer
   trimmed (via [@adguard/tsurlfilter]): `$$div:contains( "foo" )` now matches
   the text `"foo"` with a space on each side.
+- `$removeparam` regexp values with the `g` or `y` flag are now matched
+  statelessly: matching no longer depends on the previously tested URL
+  parameter, so all matching parameters are removed.
 
 ### Security
 

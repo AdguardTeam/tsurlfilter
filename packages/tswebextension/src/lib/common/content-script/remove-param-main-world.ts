@@ -140,6 +140,23 @@ export function patchHistoryForRemoveParam(
             return url;
         }
 
+        /**
+         * Tests a string against the regexp without depending on the previous
+         * match. The `g` and `y` flags make `test()` start at `lastIndex` and
+         * update it: a match moves it forward, a miss resets it to 0.
+         * Resetting it before every call keeps matching stateless while
+         * preserving the rule's flags and, therefore, the same matching
+         * semantics as the tsurlfilter engine.
+         *
+         * @param str The string to test.
+         *
+         * @returns True if the regexp matches the string.
+         */
+        const matches = (str: string): boolean => {
+            regExp.lastIndex = 0;
+            return regExp.test(str);
+        };
+
         let hashPart = '';
         const hashIndex = url.indexOf('#');
         let urlWithoutHash = url;
@@ -159,13 +176,13 @@ export function patchHistoryForRemoveParam(
                     if (!x) {
                         return false;
                     }
-                    const match = regExp.test(x);
+                    const match = matches(x);
                     if (match) {
                         return true;
                     }
                     try {
                         const decoded = decodeURIComponent(x);
-                        return regExp.test(decoded);
+                        return matches(decoded);
                     } catch {
                         return false;
                     }
@@ -176,12 +193,12 @@ export function patchHistoryForRemoveParam(
                 .split('&')
                 .filter((x) => {
                     const test = x.includes('=') ? x : `${x}=`;
-                    if (regExp.test(test)) {
+                    if (matches(test)) {
                         return false;
                     }
                     try {
                         const decoded = decodeURIComponent(test);
-                        return !regExp.test(decoded);
+                        return !matches(decoded);
                     } catch {
                         return true;
                     }
@@ -193,14 +210,12 @@ export function patchHistoryForRemoveParam(
             return url;
         }
 
-        // Normalize: remove leading '&' and empty '=' entries
+        // Normalize: drop empty entries and nameless ones (`=2`);
+        // value-less entries (`noval`, `a=`) are not dropped here.
         modifiedQuery = modifiedQuery
             .split('&')
             .filter((x) => x && !x.startsWith('='))
             .join('&');
-        while (modifiedQuery.charAt(0) === '&') {
-            modifiedQuery = modifiedQuery.slice(1);
-        }
 
         let result = pathPart;
         if (modifiedQuery) {
