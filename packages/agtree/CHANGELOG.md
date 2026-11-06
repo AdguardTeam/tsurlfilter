@@ -30,6 +30,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `[min-length]` and `[max-length]` values are now emitted as plain decimal
+  digits during ADG→ADG conversion, so large values are neither rounded nor
+  switched to exponent notation. For example,
+  `[min-length="1000000000000000000000"]` used to become `.{1e+21,}`.
 - Pseudo-class selector arguments are no longer trimmed: the argument is the
   raw text between the pseudo-class parentheses, e.g. `$$div:contains( "foo" )`
   keeps the spaces around the quoted text, and `:not( .a )` keeps the spaces
@@ -38,6 +42,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   drops when characters follow the closing quote: e.g.
   `$$div:contains("foo" )` now throws a conversion error instead of becoming
   `##^div:has-text("foo" )`.
+- The HTML filtering rule converter now rejects `:-abp-contains()` with a
+  missing or empty argument, the same as `:contains()`.
 
 ### Security
 

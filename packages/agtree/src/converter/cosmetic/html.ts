@@ -143,6 +143,12 @@ const SUPPORTED_ADG_PSEUDO_CLASSES = new Set<string>([
 ]);
 
 /**
+ * Set of {@link SPECIAL_PSEUDO_CLASS_NAMES}: all special pseudo-classes
+ * shared with the parser, including the AdGuard `:-abp-contains()` alias.
+ */
+const SPECIAL_PSEUDO_CLASS_NAME_SET = new Set<string>(SPECIAL_PSEUDO_CLASS_NAMES);
+
+/**
  * Markers of special pseudo-class selectors with raw-text arguments,
  * used to detect special selector markers in raw (unparseable) HTML
  * filtering rule bodies. Derived from {@link SPECIAL_PSEUDO_CLASS_NAMES},
@@ -481,20 +487,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // converts to a length-matching regular expression
             case AdgAttributeSelectors.MinLength:
             case AdgAttributeSelectors.MaxLength: {
-                // Validate length value
-                HtmlRuleConverter.assertValidLengthValue(
-                    name,
-                    value,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
-                    ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
-                );
+                const length = HtmlRuleConverter.resolveAdgLengthAttributeValue(name, value);
 
-                // It's safe to cast to number here after validation
-                const length = Number(value);
-
-                let min: number | null = null;
-                let max: number | null = null;
+                let min: string | null = null;
+                let max: string | null = null;
 
                 if (name === AdgAttributeSelectors.MinLength) {
                     min = length;
@@ -524,9 +520,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Handles special pseudo-class selectors during AdGuard to AdGuard conversion:
      * - `:contains(text)` -> kept as-is
-     * - `:-abp-contains(text)` -> kept as-is
      * - `:has-text(text)` -> `:contains(text)`
      *   `:has-text()` is a documented synonym for `:contains()` in AdGuard products.
+     *
+     * Note: `:-abp-contains()` does not reach this method. The converter
+     * validates its argument and keeps it as-is in `convertBody` (see AG-61400).
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
@@ -556,7 +554,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 ));
             }
 
-            // `:contains()` and `:-abp-contains()` are kept as-is in AdGuard rules
+            // `:contains()` is kept as-is in AdGuard rules
             default: {
                 return true;
             }
@@ -588,7 +586,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @returns A {@link SimpleSelector} to add to the current complex selector.
      *
-     * @throws If AdGuard-specific pseudo-class selector is found in uBlock rule.
+     * @throws If `:contains()` is found in a uBlock rule (mixed syntax).
      */
     private static convertSpecialPseudoClassSelectorUboToAdg(name: string, argument: string): SimpleSelector {
         switch (name) {
@@ -689,24 +687,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             // `[min-length="min"]` -> `:min-text-length(min)`
             case AdgAttributeSelectors.MinLength: {
-                // Validate length value
-                HtmlRuleConverter.assertValidLengthValue(
-                    name,
-                    value,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
-                    ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
-                );
-
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.MinTextLength,
                     // uBlock validates the argument with a digits-only pattern,
-                    // so strip the leading whitespace and the optional plus sign
-                    // that the pattern above allows (e.g. `" 5"` -> `5`).
-                    // The normalization stays textual: `Number()` would round
-                    // large values and switch to exponent notation from `1e21`,
-                    // which uBlock rejects.
-                    value.trim().replace(/^\+/, ''),
+                    // so the value is normalized to plain decimal digits (e.g.
+                    // `" 5"` and `"+5"` -> `5`).
+                    HtmlRuleConverter.resolveAdgLengthAttributeValue(name, value),
                 );
             }
 
@@ -730,6 +716,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - `:contains(text)` -> `:has-text(text)`
      *   direct conversion, no changes to argument. A text argument that
      *   uBlock would reject (e.g. `:contains("foo" )`) is not converted.
+     *
+     * Note: `:-abp-contains()` does not reach this method. It is an AdGuard
+     * alias of `:contains()`, but its uBlock mapping is not implemented yet
+     * (see AG-61400), so `convertBody` keeps it as-is.
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
@@ -793,9 +783,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      */
     private static collectLengthConstraints(
         selectors: (SimpleSelector | SelectorCombinator)[],
-    ): { min: number | null; max: number | null } | null {
-        const minValues: number[] = [];
-        const maxValues: number[] = [];
+    ): { min: string | null; max: string | null } | null {
+        const minValues: string[] = [];
+        const maxValues: string[] = [];
 
         for (let i = 0; i < selectors.length; i += 1) {
             const selector = selectors[i];
@@ -819,18 +809,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             const { value } = selector.value;
 
-            HtmlRuleConverter.assertValidLengthValue(
-                name,
-                value,
-                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
-                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
-                ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
-            );
+            const normalizedValue = HtmlRuleConverter.resolveAdgLengthAttributeValue(name, value);
 
             if (name === AdgAttributeSelectors.MinLength) {
-                minValues.push(Number(value));
+                minValues.push(normalizedValue);
             } else {
-                maxValues.push(Number(value));
+                maxValues.push(normalizedValue);
             }
         }
 
@@ -838,19 +822,23 @@ export class HtmlRuleConverter extends RuleConverterBase {
             return null;
         }
 
-        let min: number | null = null;
-        let max: number | null = null;
+        let min: string | null = null;
+        let max: string | null = null;
 
-        if (minValues.length > 1) {
-            min = Math.max(...minValues);
-        } else if (minValues.length === 1) {
-            [min] = minValues;
+        if (minValues.length > 0) {
+            min = minValues.reduce((largest, current) => (
+                HtmlRuleConverter.compareLengthDigitStrings(current, largest) > 0
+                    ? current
+                    : largest
+            ));
         }
 
-        if (maxValues.length > 1) {
-            max = Math.min(...maxValues);
-        } else if (maxValues.length === 1) {
-            [max] = maxValues;
+        if (maxValues.length > 0) {
+            max = maxValues.reduce((smallest, current) => (
+                HtmlRuleConverter.compareLengthDigitStrings(current, smallest) < 0
+                    ? current
+                    : smallest
+            ));
         }
 
         return { min, max };
@@ -1103,11 +1091,14 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     }
 
                     case 'PseudoClassSelector': {
-                        // Not a special pseudo-class selector - clone as-is after the switch
-                        if (
-                            !SUPPORTED_ADG_PSEUDO_CLASSES.has(selector.name.value)
-                            && !SUPPORTED_UBO_PSEUDO_CLASSES.has(selector.name.value)
-                        ) {
+                        const name = selector.name.value;
+                        const isSupported = SUPPORTED_ADG_PSEUDO_CLASSES.has(name)
+                            || SUPPORTED_UBO_PSEUDO_CLASSES.has(name);
+
+                        // Not a special pseudo-class selector - clone as-is after
+                        // the switch. The shared list is checked as well, so every
+                        // name added there gets its argument validated automatically.
+                        if (!isSupported && !SPECIAL_PSEUDO_CLASS_NAME_SET.has(name)) {
                             break;
                         }
 
@@ -1115,11 +1106,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         if (!selector.argument || selector.argument.value === EMPTY) {
                             throw new RuleConversionError(sprintf(
                                 ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED,
-                                selector.name.value,
+                                name,
                             ));
                         }
 
-                        const name = selector.name.value;
+                        // Only the special pseudo-classes supported for conversion
+                        // reach the callbacks. The `:-abp-contains()` alias is kept
+                        // as-is for now (see AG-61400).
+                        if (!isSupported) {
+                            break;
+                        }
+
                         const argument = selector.argument.value;
 
                         // Invoke callback and:
@@ -1248,7 +1245,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
         convertedSelectors: (SimpleSelector | SelectorCombinator)[],
         tagContentValues: string[],
         wildcardGlobValues: string[],
-        lengthConstraints: { min: number | null; max: number | null } | null,
+        lengthConstraints: { min: string | null; max: string | null } | null,
     ): void {
         // Nothing was deferred
         if (
@@ -1538,6 +1535,81 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 errorMessage,
             ));
         }
+    }
+
+    /**
+     * Validates and normalizes the value of the `[min-length]` or
+     * `[max-length]` special attribute selector.
+     *
+     * The returned value is a string of plain decimal digits with no leading
+     * whitespace, no leading `+` and no leading zeros (except a single `0` for
+     * zero). The value never goes through a JavaScript `number`, so large
+     * values are neither rounded nor converted to exponent notation.
+     *
+     * The value is not bounded by {@link ADG_HTML_CONVERSION_MAX_LENGTH}:
+     * that constant bounds only the regular expression generated from uBlock
+     * `:min-text-length()`. AdGuard products apply the `[min-length]` and
+     * `[max-length]` attributes natively, and uBlock applies
+     * `:min-text-length()` natively.
+     *
+     * @param name Name of the special attribute selector.
+     * @param value Original attribute value.
+     *
+     * @returns Normalized value as a string of decimal digits.
+     *
+     * @throws If the value is not a valid non-negative integer.
+     */
+    private static resolveAdgLengthAttributeValue(name: string, value: string): string {
+        HtmlRuleConverter.assertValidLengthValue(
+            name,
+            value,
+            ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
+            ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
+            ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
+        );
+
+        return HtmlRuleConverter.normalizeLengthDigits(value);
+    }
+
+    /**
+     * Normalizes a validated length value to plain decimal digits.
+     *
+     * Strips the leading whitespace and the optional `+` allowed by
+     * {@link ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN}, then strips leading zeros.
+     * The pattern already rejects trailing whitespace, so only the leading
+     * side needs stripping. A zero result is kept as a single `0`.
+     *
+     * @param value Validated length value.
+     *
+     * @returns Normalized value as a string of decimal digits.
+     */
+    private static normalizeLengthDigits(value: string): string {
+        const digits = value.trimStart().replace(/^\+/, '');
+        const withoutLeadingZeros = digits.replace(/^0+/, '');
+
+        return withoutLeadingZeros === EMPTY ? '0' : withoutLeadingZeros;
+    }
+
+    /**
+     * Compares two normalized strings of decimal digits without `number`
+     * conversion, so large values keep their full precision.
+     *
+     * @param left First normalized digit string.
+     * @param right Second normalized digit string.
+     *
+     * @returns A negative number if `left` is less than `right`, `0` if they
+     * are equal, and a positive number if `left` is greater than `right`.
+     */
+    private static compareLengthDigitStrings(left: string, right: string): number {
+        if (left.length !== right.length) {
+            return left.length > right.length ? 1 : -1;
+        }
+
+        if (left === right) {
+            return 0;
+        }
+
+        return left > right ? 1 : -1;
     }
 
     /**
