@@ -386,7 +386,6 @@ export class RulesConverter {
         // Removing an error for a truncated rule
         errorsIndex.set(ruleId, []);
 
-        // Note: be sure, that sourcesRulesIds are not too much to overflow stack.
         return sourcesRulesIds;
     }
 
@@ -464,6 +463,8 @@ export class RulesConverter {
                     unsafeRulesCounter += 1;
 
                     if (unsafeRulesCounter > maxNumberOfUnsafeRules) {
+                        // Note: be sure, that the source rule ids are not too
+                        // many to overflow the stack when spread.
                         unsafeExcludedRulesIds.push(
                             ...RulesConverter.removeTruncatedRuleSourcesAndErrors(
                                 rule.id,
