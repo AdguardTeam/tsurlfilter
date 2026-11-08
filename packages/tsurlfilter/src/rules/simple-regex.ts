@@ -525,8 +525,24 @@ export class SimpleRegex {
      * Converts a string representation of a regular expression into a RegExp object.
      *
      * The literal shape is parsed by {@link RegExpUtils.parseRegexLiteral},
-     * which is shared with the agtree converter so that both sides detect
-     * regular expression literals in the same way.
+     * which uses the JavaScript regular expression literal grammar. The
+     * engine compiles the pattern with the JavaScript `RegExp` constructor,
+     * so the JavaScript grammar is the primary one.
+     *
+     * There is one bounded compatibility exception. If the JavaScript split
+     * produces a pattern or flags that do not compile, the method retries the
+     * split with {@link RegExpUtils.parseCoreLibsRegexArgument} before falling
+     * back to a string. This restores the pre-3bf4ccf behavior for literals
+     * such as `/a\\/b/`, where the JavaScript scanner closes the literal at
+     * the slash after an escaped backslash. It is a shim for AG-61628, not a
+     * second grammar: do not extend it or use the CoreLibs split when the
+     * JavaScript split compiles.
+     *
+     * The ADG→ADG converter uses a different grammar on purpose: it must
+     * mirror CoreLibs' `extract_regex()` and therefore uses
+     * {@link RegExpUtils.parseCoreLibsRegexArgument} for detection. Do not
+     * unify the two grammars: they read literals such as `///` and `/a\/`
+     * differently by design (AG-61628).
      *
      * Only the flags `i`, `s`, `u`, and `v` are kept. The `g` and `y` flags
      * make `RegExp.test()` stateful because they advance `lastIndex`, so they
@@ -547,23 +563,43 @@ export class SimpleRegex {
             return literal;
         }
 
+        let regexp: RegExp;
+
         try {
             // Compile the original literal first. This keeps the fallback for
             // invalid literals, including invalid or duplicate flags.
-            const regexp = new RegExp(parts.pattern, parts.flags);
-
-            // Keep only the flags the HTML filtering engine supports. `g` and
-            // `y` make `RegExp.test()` stateful because they advance
-            // `lastIndex`, so the result depends on the previous match. `u`
-            // and `v` are kept because they change how the pattern is parsed,
-            // not just how it is matched.
-            const supportedFlags = regexp.flags.replace(/[^isuv]/g, '');
-
-            return new RegExp(regexp.source, supportedFlags);
+            regexp = new RegExp(parts.pattern, parts.flags);
         } catch (e) {
-            logger.warn(`[tsurl.SimpleRegex.fromLiteral]: Invalid regular expression literal: ${literal}:`, e);
-            return literal;
+            // Compatibility fallback for the AG-61628 grammar gap. The
+            // JavaScript split closes the literal at a slash after an escaped
+            // backslash, while the old engine scanner and CoreLibs continue to
+            // the next slash. When the JavaScript split does not compile,
+            // retry with the CoreLibs last-slash split. This is not a full
+            // switch to the CoreLibs grammar: the engine still compiles with
+            // the JavaScript `RegExp` constructor.
+            const coreLibsParts = RegExpUtils.parseCoreLibsRegexArgument(literal);
+
+            if (coreLibsParts === null) {
+                logger.warn(`[tsurl.SimpleRegex.fromLiteral]: Invalid regular expression literal: ${literal}:`, e);
+                return literal;
+            }
+
+            try {
+                regexp = new RegExp(coreLibsParts.pattern, coreLibsParts.flags);
+            } catch {
+                logger.warn(`[tsurl.SimpleRegex.fromLiteral]: Invalid regular expression literal: ${literal}:`, e);
+                return literal;
+            }
         }
+
+        // Keep only the flags the HTML filtering engine supports. `g` and
+        // `y` make `RegExp.test()` stateful because they advance `lastIndex`,
+        // so the result depends on the previous match. `u` and `v` are kept
+        // because they change how the pattern is parsed, not just how it is
+        // matched.
+        const supportedFlags = regexp.flags.replace(/[^isuv]/g, '');
+
+        return new RegExp(regexp.source, supportedFlags);
     }
 
     /**

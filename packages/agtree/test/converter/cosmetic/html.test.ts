@@ -252,11 +252,41 @@ describe('HtmlRuleConverter', () => {
                         expected: [String.raw`$$div:contains(/\/\/\//)`],
                     },
 
-                    // `[tag-content]` with a leading slash but no closing slash: not a regexp literal,
-                    // so the raw value is kept
+                    // `[tag-content]` with a leading slash but no closing slash: not a normal
+                    // CoreLibs regexp, but `/` followed only by lowercase letters makes
+                    // CoreLibs strip all letters, read the leading slash as the delimiter,
+                    // and take the regexp branch with an underflowed length. The escaped
+                    // form matches the literal text instead
                     {
                         actual: '$$div[tag-content="/ads"]',
-                        expected: ['$$div:contains(/ads)'],
+                        expected: [String.raw`$$div:contains(/\/ads/)`],
+                    },
+
+                    // Same underflow class with two lowercase letters
+                    {
+                        actual: '$$div[tag-content="/ab"]',
+                        expected: [String.raw`$$div:contains(/\/ab/)`],
+                    },
+
+                    // A digit before the lowercase letters stops the flag stripping at a
+                    // non-slash character, so CoreLibs matches the raw value as literal text
+                    {
+                        actual: '$$div[tag-content="/1ab"]',
+                        expected: ['$$div:contains(/1ab)'],
+                    },
+
+                    // Stripping the trailing lowercase letter leaves an empty pattern, so
+                    // CoreLibs matches the raw value as literal text
+                    {
+                        actual: '$$div[tag-content="//a"]',
+                        expected: ['$$div:contains(//a)'],
+                    },
+
+                    // An uppercase flag is not stripped, and the last character is not a
+                    // slash, so CoreLibs matches the raw value as literal text
+                    {
+                        actual: '$$div[tag-content="/ads/I"]',
+                        expected: ['$$div:contains(/ads/I)'],
                     },
 
                     // `[tag-content]` with a plain value: the raw value is kept

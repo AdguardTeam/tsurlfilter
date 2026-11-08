@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `[tag-content]` values that CoreLibs reads as regular expressions, e.g.
+  `/ads/` and `/ads`, now match the literal text in HTML filtering rules (via
+  [@adguard/agtree]): `FilterList` converts raw rules with
+  `RawRuleConverter.convertToAdg()` on load, so
+  `$$div[tag-content="/ads/"]` no longer matches a plain `ads` substring.
 - `SimpleRegex.fromLiteral()` now parses regexp literals with an escaped
   backslash before the closing slash, e.g. `/a\\/`, and with an escaped
   backslash inside a character class, e.g. `/a[\\]b/`. The parser now tracks

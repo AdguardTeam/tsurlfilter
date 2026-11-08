@@ -217,7 +217,15 @@ export class RegExpUtils {
      *   ignores escapes and character classes, so it takes the last slash,
      *   not the first unescaped slash outside a character class;
      * - the pattern between the leading `/` and the delimiter must not be
-     *   empty, otherwise CoreLibs matches the argument as literal text.
+     *   empty, otherwise CoreLibs matches the argument as literal text;
+     * - CoreLibs strips the trailing lowercase letters without a length
+     *   guard. If only lowercase letters follow the leading slash, e.g.
+     *   `/ads`, CoreLibs strips every letter, reads the leading slash as the
+     *   delimiter, and `--input.len` underflows to `SIZE_MAX`. CoreLibs takes
+     *   the PCRE2 branch, but the pattern length is not real. This method
+     *   returns `null` for this underflow class because it has no
+     *   representable pattern, see
+     *   {@link RegExpUtils.isCoreLibsRegexArgument}.
      *
      * Consequences: `///` is the regular expression `/`, while `/a\/` and
      * `/a[b/` are regular expressions with the invalid PCRE2 patterns `a\`
@@ -229,8 +237,10 @@ export class RegExpUtils {
      *
      * @param argument Argument of the `:contains()` pseudo-class.
      *
-     * @returns Pattern and stripped flags, or `null` if CoreLibs matches the
-     * argument as literal text.
+     * @returns Pattern and stripped flags, or `null` if the argument is not a
+     * normal CoreLibs regular expression. `null` also covers the underflow
+     * class. Use {@link RegExpUtils.isCoreLibsRegexArgument} to check whether
+     * CoreLibs reads the argument as a regular expression at all.
      *
      * @example
      * // Returns `{ pattern: 'ads', flags: '' }`
@@ -246,19 +256,16 @@ export class RegExpUtils {
             return null;
         }
 
-        // Index after the last character which is not a stripped flag. The
-        // leading slash is never stripped, so the loop stops at 1. CoreLibs
-        // can strip all the characters after the leading slash and then
-        // reads the character before the argument, which is `(` for
-        // `:contains()` and not a slash, so such an argument is literal text.
-        let end = argument.length;
+        const end = RegExpUtils.getCoreLibsRegexEnd(argument);
 
-        while (end > 1 && LOWERCASE_LETTER_PATTERN.test(argument.charAt(end - 1))) {
-            end -= 1;
-        }
-
-        // No closing slash before the stripped flags
-        if (end <= 1 || argument.charAt(end - 1) !== SLASH) {
+        // CoreLibs can strip all the characters after the leading slash.
+        // Then it reads `input.ptr[input.len - 1]` before the argument, which
+        // is the leading slash because the argument pointer was advanced by
+        // one. The delimiter check passes, `--input.len` underflows to
+        // `SIZE_MAX`, and CoreLibs takes the PCRE2 branch with a bogus
+        // pattern length. There is no pattern to return, so report `null`
+        // and let `isCoreLibsRegexArgument()` detect this case.
+        if (end === 1 || argument.charAt(end - 1) !== SLASH) {
             return null;
         }
 
@@ -273,6 +280,73 @@ export class RegExpUtils {
             pattern,
             flags: argument.slice(end),
         };
+    }
+
+    /**
+     * Checks whether CoreLibs reads a `:contains()` argument as a regular
+     * expression.
+     *
+     * This predicate covers the normal CoreLibs form parsed by
+     * {@link RegExpUtils.parseCoreLibsRegexArgument} and the `end === 1`
+     * underflow class. In the underflow class only ASCII lowercase letters
+     * follow the leading slash, e.g. `/ads`. CoreLibs strips every letter,
+     * reads the leading slash as the delimiter, underflows the pattern length
+     * to `SIZE_MAX`, and takes the PCRE2 branch. The argument is a regular
+     * expression for CoreLibs, but the pattern is not representable, so
+     * {@link RegExpUtils.parseCoreLibsRegexArgument} returns `null` for it.
+     *
+     * Use this predicate when the caller only needs to know whether CoreLibs
+     * matches the argument as literal text. Use
+     * {@link RegExpUtils.parseCoreLibsRegexArgument} when the caller needs the
+     * split pattern and flags.
+     *
+     * @param argument Argument of the `:contains()` pseudo-class.
+     *
+     * @returns `true` if CoreLibs reads the argument as a regular expression,
+     * `false` if CoreLibs matches it as literal text.
+     *
+     * @example
+     * // Returns `true`
+     * RegExpUtils.isCoreLibsRegexArgument('/ads');
+     *
+     * // Returns `false`
+     * RegExpUtils.isCoreLibsRegexArgument('/ads/I');
+     */
+    public static isCoreLibsRegexArgument(argument: string): boolean {
+        if (RegExpUtils.parseCoreLibsRegexArgument(argument) !== null) {
+            return true;
+        }
+
+        if (argument.length <= 2 || !argument.startsWith(SLASH)) {
+            return false;
+        }
+
+        // `/` followed only by lowercase letters: CoreLibs strips every
+        // letter and reads the leading slash as the delimiter. See the method
+        // docs and `parseCoreLibsRegexArgument()`.
+        return RegExpUtils.getCoreLibsRegexEnd(argument) === 1;
+    }
+
+    /**
+     * Finds the index after the last character of a `:contains()` argument
+     * that CoreLibs keeps before it looks for the closing delimiter.
+     *
+     * CoreLibs removes every trailing ASCII lowercase letter as a flag. Its
+     * loop has no length guard, so the result can be `1`, right after the
+     * leading slash. See {@link RegExpUtils.isCoreLibsRegexArgument}.
+     *
+     * @param argument Argument of the `:contains()` pseudo-class.
+     *
+     * @returns Index after the last character which is not a stripped flag.
+     */
+    private static getCoreLibsRegexEnd(argument: string): number {
+        let end = argument.length;
+
+        while (end > 1 && LOWERCASE_LETTER_PATTERN.test(argument.charAt(end - 1))) {
+            end -= 1;
+        }
+
+        return end;
     }
 
     /**

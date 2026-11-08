@@ -1241,7 +1241,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *   (e.g. `/\/ads\//`), so the value stays a literal substring match. The
      *   check mirrors CoreLibs' `:contains()` argument scanner, not the
      *   JavaScript literal grammar — see
-     *   {@link RegExpUtils.parseCoreLibsRegexArgument}.
+     *   {@link RegExpUtils.isCoreLibsRegexArgument}.
      *
      * Combinations which cannot be represented as such a chain — an unsafe
      * literal plus any regex-like constraint, or several regex-like
@@ -1301,9 +1301,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // is always a literal substring match. The check mirrors
             // CoreLibs' `extract_regex()`: it takes the last slash as the
             // delimiter and ignores escapes and character classes, so values
-            // such as `/a++/`, `/a\/`, and `///` are escaped too. A value
-            // that is not escaped stays literal text in CoreLibs.
-            const argument = RegExpUtils.parseCoreLibsRegexArgument(literal) !== null
+            // such as `/a++/`, `/a\/`, and `///` are escaped too. The check
+            // also covers `/` followed only by lowercase letters, e.g.
+            // `/ads`: CoreLibs strips those letters as flags, reads the
+            // leading slash as the delimiter, and takes the regexp branch. A
+            // value that CoreLibs matches as literal text stays raw.
+            const argument = RegExpUtils.isCoreLibsRegexArgument(literal)
                 ? `${SLASH}${RegExpUtils.escapeRegexSpecials(literal)}${SLASH}`
                 : literal;
 

@@ -209,6 +209,23 @@ describe('SimpleRegex.fromLiteral', () => {
         { input: '//', output: '//' },
         // Valid PCRE2 but invalid JavaScript: the engine cannot compile it
         { input: '/a++/', output: '/a++/' },
+        // The JavaScript split closes the literal at the slash after the
+        // escaped backslash and gets invalid flags, so the CoreLibs last-slash
+        // split is used as a compatibility fallback (AG-61628)
+        // eslint-disable-next-line prefer-regex-literals
+        { input: String.raw`/a\\/b/`, output: new RegExp(String.raw`a\\/b`) },
+        {
+            input: String.raw`/a\\/b/i`,
+            // eslint-disable-next-line prefer-regex-literals
+            output: new RegExp(String.raw`a\\/b`, 'i'),
+        },
+        // eslint-disable-next-line prefer-regex-literals
+        { input: String.raw`/\\//`, output: new RegExp(String.raw`\\/`) },
+        // An uppercase flag is not a CoreLibs flag, so there is no fallback
+        { input: '/ads/I', output: '/ads/I' },
+        // `///` is not a JavaScript literal (empty pattern), so there is no
+        // fallback
+        { input: '///', output: '///' },
     ])("returns '$output' for '$input'", ({ input, output }) => {
         const result = SimpleRegex.fromLiteral(input);
         if (typeof result === 'string') {

@@ -113,14 +113,18 @@ describe('RegExpUtils', () => {
 
     describe('parseCoreLibsRegexArgument', () => {
         test.each([
-            // Not regular expressions: too short, no leading slash, no
-            // closing slash, an uppercase flag, or an empty pattern
+            // Not normal CoreLibs regular expressions: too short, no leading
+            // slash, no closing slash, an uppercase flag, an empty pattern, or
+            // the underflow class (only lowercase letters after the leading
+            // slash). See isCoreLibsRegexArgument for the underflow class.
             { actual: '', expected: null },
             { actual: '/', expected: null },
             { actual: '//', expected: null },
             { actual: 'plain string', expected: null },
             { actual: ' /test/', expected: null },
             { actual: '/ads', expected: null },
+            { actual: '/ab', expected: null },
+            { actual: '/1ab', expected: null },
             // CoreLibs strips trailing lowercase letters only
             { actual: '/ads/I', expected: null },
             // The stripped flags leave an empty pattern, so the argument is
@@ -162,6 +166,41 @@ describe('RegExpUtils', () => {
             },
         ])('parseCoreLibsRegexArgument should parse \'$actual\'', ({ actual, expected }) => {
             expect(RegExpUtils.parseCoreLibsRegexArgument(actual)).toEqual(expected);
+        });
+    });
+
+    describe('isCoreLibsRegexArgument', () => {
+        test.each([
+            // Not regular expressions for CoreLibs
+            { actual: '', expected: false },
+            { actual: '/', expected: false },
+            { actual: '//', expected: false },
+            { actual: 'plain string', expected: false },
+            { actual: ' /test/', expected: false },
+            // An uppercase flag is not stripped, and the last character is not
+            // a slash
+            { actual: '/ads/I', expected: false },
+            // Not only lowercase letters after the leading slash: the last
+            // character before the stripped flags is not a slash
+            { actual: '/1ab', expected: false },
+            // The stripped flags leave an empty pattern
+            { actual: '//a', expected: false },
+            { actual: '//abc', expected: false },
+            // Normal CoreLibs regular expressions
+            { actual: '/test/', expected: true },
+            { actual: '/a++/', expected: true },
+            { actual: '/ads/', expected: true },
+            { actual: '/ads/i', expected: true },
+            { actual: '/a/b/c/', expected: true },
+            { actual: '///', expected: true },
+            { actual: String.raw`/a\/`, expected: true },
+            { actual: '/a[b/', expected: true },
+            // The underflow class: `/` followed only by lowercase letters.
+            // CoreLibs strips all of them and takes the regexp branch.
+            { actual: '/ads', expected: true },
+            { actual: '/ab', expected: true },
+        ])('isCoreLibsRegexArgument should return \'$expected\' for \'$actual\'', ({ actual, expected }) => {
+            expect(RegExpUtils.isCoreLibsRegexArgument(actual)).toBe(expected);
         });
     });
 

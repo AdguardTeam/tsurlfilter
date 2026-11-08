@@ -14,9 +14,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `RegExpUtils.parseRegexLiteral()` is now exported, so consumers can split
   a `/pattern/flags` literal into its parts without JavaScript `RegExp`
   validation.
-- `RegExpUtils.parseCoreLibsRegexArgument()` is now exported, so consumers
-  can detect the `:contains()` arguments that CoreLibs reads as regular
-  expressions.
+- `RegExpUtils.parseCoreLibsRegexArgument()` and
+  `RegExpUtils.isCoreLibsRegexArgument()` are now exported. The first splits
+  the `:contains()` arguments that CoreLibs reads as normal regular
+  expressions; the second also covers the underflow class, e.g. `/ads`.
 - `SPECIAL_PSEUDO_CLASS_NAMES` is now exported, so consumers can use the
   same list of special pseudo-class names as the parser and the converter.
 
@@ -48,8 +49,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `/ads/`, are now escaped when converted to a standalone `:contains()`
   argument during ADG→ADG conversion, so they still match the literal text.
   The check mirrors CoreLibs' `:contains()` argument scanner, so values
-  such as `/a++/`, `/a\/`, and `///` are escaped instead of becoming dead
-  or over-broad rules.
+  such as `/a++/`, `/a\/`, `///`, and `/ads` are escaped instead of becoming
+  dead or over-broad rules.
 
 ### Security
 
