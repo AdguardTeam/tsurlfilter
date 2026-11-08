@@ -197,6 +197,7 @@ describe('SimpleRegex.fromLiteral', () => {
         { input: '/[a-z]+/i', output: /[a-z]+/i },
         { input: '/(unclosed/i', output: '/(unclosed/i' },
         { input: '/[/]/', output: /[/]/ },
+        { input: '//', output: '//' },
         { input: String.raw`/foo\\/`, output: /foo\\/ },
         { input: String.raw`/foo\\/i`, output: /foo\\/i },
         { input: String.raw`/[\\]/`, output: /[\\]/ },
