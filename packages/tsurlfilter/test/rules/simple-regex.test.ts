@@ -197,6 +197,15 @@ describe('SimpleRegex.fromLiteral', () => {
         { input: '/[a-z]+/i', output: /[a-z]+/i },
         { input: '/(unclosed/i', output: '/(unclosed/i' },
         { input: '/[/]/', output: /[/]/ },
+        { input: '//', output: '//' },
+        { input: String.raw`/foo\\/`, output: /foo\\/ },
+        { input: String.raw`/foo\\/i`, output: /foo\\/i },
+        { input: String.raw`/[\\]/`, output: /[\\]/ },
+        { input: String.raw`/[\\]/i`, output: /[\\]/i },
+        { input: String.raw`/foo\/bar/`, output: /foo\/bar/ },
+        // The input is valid as a pattern but not as a JS regexp literal, so
+        // the expected RegExp spells the escaped slashes out.
+        { input: String.raw`/https:\\/\\/ads/`, output: /https:\\\/\\\/ads/ },
     ])("returns '$output' for '$input'", ({ input, output }) => {
         const result = SimpleRegex.fromLiteral(input);
         if (typeof result === 'string') {

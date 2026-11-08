@@ -522,12 +522,17 @@ export class SimpleRegex {
     /**
      * Converts a string representation of a regular expression into a RegExp object.
      *
+     * Like CoreLibs, the last `/` is treated as the delimiter: a `/` inside the
+     * pattern can be escaped (`\/`), follow an escaped backslash (`\\/`), or be
+     * located inside a character class, so the closing delimiter cannot be
+     * reliably found by scanning for the first unescaped `/`.
+     *
      * Only the flags `i`, `s`, `u`, and `v` are kept. The `g` and `y` flags
      * make `RegExp.test()` stateful because they advance `lastIndex`, so they
      * are dropped to keep matching stateless. The `u` and `v` flags are kept
      * because they change how the pattern is parsed (e.g. `\p{L}` is a Unicode
-     * property only with `u`), not just how it is matched. The remaining flags
-     * (`m`, `d`) are not supported by the HTML filtering engine.
+     * property only with `u` or `v`), not just how it is matched. The remaining
+     * flags (`m`, `d`) are not supported by the HTML filtering engine.
      *
      * @param literal String representation of the regular expression.
      *
@@ -539,27 +544,15 @@ export class SimpleRegex {
             return literal;
         }
 
-        let pattern = '';
-        let flags = '';
-        let inCharClass = false;
-
-        for (let i = 1; i < literal.length; i += 1) {
-            const char = literal.charAt(i);
-            if (char === '[' && literal[i - 1] !== '\\') {
-                inCharClass = true;
-            } else if (char === ']' && literal[i - 1] !== '\\') {
-                inCharClass = false;
-            } else if (literal[i] === '/' && literal[i - 1] !== '\\' && !inCharClass) {
-                pattern = literal.slice(1, i);
-                flags = literal.slice(i + 1);
-                break;
-            }
-        }
-
-        // Didn't find the ending slash
-        if (!pattern) {
+        // The last `/` closes the pattern. `//` and literals without a closing
+        // delimiter have no pattern and are returned as plain strings.
+        const delimiterIndex = literal.lastIndexOf('/');
+        if (delimiterIndex < 2) {
             return literal;
         }
+
+        const pattern = literal.slice(1, delimiterIndex);
+        const flags = literal.slice(delimiterIndex + 1);
 
         try {
             // Compile the original literal first. This keeps the fallback for
