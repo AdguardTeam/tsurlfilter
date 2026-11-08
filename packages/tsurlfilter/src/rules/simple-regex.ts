@@ -532,11 +532,13 @@ export class SimpleRegex {
      * There is one bounded compatibility exception. If the JavaScript split
      * produces a pattern or flags that do not compile, the method retries the
      * split with {@link RegExpUtils.parseCoreLibsRegexArgument} before falling
-     * back to a string. This restores the pre-3bf4ccf behavior for literals
-     * such as `/a\\/b/`, where the JavaScript scanner closes the literal at
-     * the slash after an escaped backslash. It is a shim for AG-61628, not a
-     * second grammar: do not extend it or use the CoreLibs split when the
-     * JavaScript split compiles.
+     * back to a string. The CoreLibs split treats the last `/` as the
+     * delimiter, so a `/` inside the pattern can be escaped (`\/`), follow an
+     * escaped backslash (`\\/`), or be inside a character class. This
+     * restores the pre-3bf4ccf behavior for literals such as `/a\\/b/`, where
+     * the JavaScript scanner closes the literal at the slash after an escaped
+     * backslash. It is a shim for AG-61628, not a second grammar: do not
+     * extend it or use the CoreLibs split when the JavaScript split compiles.
      *
      * The ADG→ADG converter uses a different grammar on purpose: it must
      * mirror CoreLibs' `extract_regex()` and therefore uses
@@ -548,8 +550,8 @@ export class SimpleRegex {
      * make `RegExp.test()` stateful because they advance `lastIndex`, so they
      * are dropped to keep matching stateless. The `u` and `v` flags are kept
      * because they change how the pattern is parsed (e.g. `\p{L}` is a Unicode
-     * property only with `u`), not just how it is matched. The remaining flags
-     * (`m`, `d`) are not supported by the HTML filtering engine.
+     * property only with `u` or `v`), not just how it is matched. The remaining
+     * flags (`m`, `d`) are not supported by the HTML filtering engine.
      *
      * @param literal String representation of the regular expression.
      *

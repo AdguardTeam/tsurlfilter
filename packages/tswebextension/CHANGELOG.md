@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTML filtering `:contains()` regexp arguments that end with an escaped
+  backslash (`/foo\\/`) or have one in a character class (`/[\\]/`) are now
+  compiled as regexps instead of being matched as text (via
+  [@adguard/tsurlfilter]).
 - HTML filtering rules whose selector starts with `html` or `:root` now
   match the document root and continue matching from it, e.g.
   `$$html > body > script` and `$$:root div`.

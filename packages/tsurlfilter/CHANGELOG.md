@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `:contains()` regexp arguments in HTML filtering rules that end with an
+  escaped backslash (`/foo\\/`) or have one in a character class (`/[\\]/`)
+  are now compiled as regexps instead of being matched as text.
 - `[tag-content]` values that CoreLibs reads as regular expressions, e.g.
   `/ads/` and `/ads`, now match the literal text in HTML filtering rules (via
   [@adguard/agtree]): `FilterList` converts raw rules with
