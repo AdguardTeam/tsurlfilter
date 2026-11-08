@@ -3,7 +3,8 @@ import { describe, expect, test } from 'vitest';
 import { createNodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
 import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
 import { NotImplementedError } from '../../../src/errors/not-implemented-error';
-import { type HtmlFilteringRule } from '../../../src/nodes';
+import { RuleGenerator } from '../../../src/generator';
+import { type HtmlFilteringRule, type HtmlFilteringRuleBody } from '../../../src/nodes';
 import { defaultParserOptions, type ParserOptions } from '../../../src/parser/options';
 import { RuleParser } from '../../../src/parser/rule-parser';
 
@@ -853,6 +854,24 @@ describe('HtmlRuleConverter', () => {
                     }
                 });
             });
+
+            // ADG→ADG moves special attribute selectors to the end of the
+            // complex selector instead of dropping them. The move must not be
+            // mistaken for a drop: a compound it empties is still an error and
+            // must not be replaced with `*`.
+            test.each([
+                '$$[tag-content="foo"] > div',
+                '$$div > [min-length="5"] > span',
+            ])("should not replace the empty compound of '%s' with `*`", (ruleText) => {
+                const rule = RuleParser.parse(
+                    ruleText,
+                    parsingEnabledDefaultParserOptions,
+                ) as HtmlFilteringRule;
+
+                const { result } = HtmlRuleConverter.convertToAdg(rule);
+
+                expect(() => RuleGenerator.generate(result[0])).toThrowError('Empty compound selector found');
+            });
         });
 
         describe('from uBO', () => {
@@ -1254,6 +1273,43 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div'],
                     },
 
+                    // `[max-length]` special attribute selector - leading whitespace is a
+                    // valid value, so the selector is still dropped
+                    {
+                        actual: '$$div[max-length=" 100"]',
+                        expected: ['##^div'],
+                    },
+
+                    // `[max-length]` special attribute selector - dropping the whole
+                    // compound selector must not leave a dangling combinator
+                    {
+                        actual: '$$div > [max-length="100"]',
+                        expected: ['##^div > *'],
+                    },
+
+                    // `[max-length]` special attribute selector - the `*` replaces
+                    // the dropped leading compound. Unlike a bare `*`, the complex
+                    // selector is still bounded by the rest of the rule.
+                    {
+                        actual: '$$[max-length="100"] > div',
+                        expected: ['##^* > div'],
+                    },
+
+                    // `[max-length]` special attribute selector - dropping several
+                    // whole compounds keeps every compound non-empty, and the
+                    // remaining `div` bounds the match
+                    {
+                        actual: '$$div > [max-length="1"] > [max-length="2"]',
+                        expected: ['##^div > * > *'],
+                    },
+
+                    // `[max-length]` special attribute selector - empty compound
+                    // between combinators
+                    {
+                        actual: '$$div > [max-length="100"] > span',
+                        expected: ['##^div > * > span'],
+                    },
+
                     // `[tag-content]` special attribute selector
                     {
                         actual: '$$div[tag-content="example"]',
@@ -1485,6 +1541,61 @@ describe('HtmlRuleConverter', () => {
                         error: "Value of special attribute selector 'min-length' must be a positive integer, got '-1'",
                     },
 
+                    // invalid special attribute selector - max-length value not number
+                    {
+                        input: '$$div[max-length="abc"]',
+                        error: "Value of special attribute selector 'max-length' must be an integer, got 'abc'",
+                    },
+                    {
+                        input: '$$div[max-length="1e2"]',
+                        error: "Value of special attribute selector 'max-length' must be an integer, got '1e2'",
+                    },
+
+                    // invalid special attribute selector - max-length value negative
+                    {
+                        input: '$$div[max-length="-1"]',
+                        // eslint-disable-next-line max-len
+                        error: "Value of special attribute selector 'max-length' must be a positive integer, got '-1'",
+                    },
+
+                    // `[max-length]` was the whole complex selector - a bare `*`
+                    // would also match `html`, so the conversion keeps the error
+                    {
+                        input: '$$[max-length="100"]',
+                        error: 'Complex selector cannot be empty',
+                    },
+                    {
+                        input: '$$div, [max-length="100"]',
+                        error: 'Complex selector cannot be empty',
+                    },
+
+                    // `[max-length]` was every compound of the complex selector -
+                    // an all-`*` selector matches almost every element, so the
+                    // conversion keeps the error
+                    {
+                        input: '$$[max-length="1"] > [max-length="2"]',
+                        error: 'Complex selector cannot be empty',
+                    },
+                    {
+                        input: '$$div, [max-length="1"] > [max-length="2"]',
+                        error: 'Complex selector cannot be empty',
+                    },
+
+                    // the remaining selector is the universal selector, which
+                    // adds no constraint, so the complex selector is still empty
+                    {
+                        input: '$$* > [max-length="1"]',
+                        error: 'Complex selector cannot be empty',
+                    },
+                    {
+                        input: '$$[max-length="1"] > *',
+                        error: 'Complex selector cannot be empty',
+                    },
+                    {
+                        input: '$$*[max-length="100"]',
+                        error: 'Complex selector cannot be empty',
+                    },
+
                     // invalid special pseudo-class selector - argument missing
                     {
                         input: '$$:contains()',
@@ -1558,6 +1669,10 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div'],
                     },
                     {
+                        actual: '$$div > [max-length="100"]',
+                        expected: ['##^div > *'],
+                    },
+                    {
                         actual: '$$div[tag-content="example"]',
                         expected: ['##^div:has-text(example)'],
                     },
@@ -1585,6 +1700,10 @@ describe('HtmlRuleConverter', () => {
                         // eslint-disable-next-line max-len
                         error: "Value of special attribute selector 'min-length' must be a positive integer, got '-1'",
                     },
+                    {
+                        input: '$$div[max-length="abc"]',
+                        error: "Value of special attribute selector 'max-length' must be an integer, got 'abc'",
+                    },
 
                     // Parsing errors
                     {
@@ -1602,6 +1721,22 @@ describe('HtmlRuleConverter', () => {
                         }).toThrowError(error);
                     }
                 });
+            });
+
+            // Every empty compound gets its own `*` node, so the returned AST
+            // holds no shared references.
+            test('should create a separate universal selector for every empty compound', () => {
+                const rule = RuleParser.parse(
+                    '$$div > [max-length="1"] > [max-length="2"]',
+                    parsingEnabledDefaultParserOptions,
+                ) as HtmlFilteringRule;
+
+                const { result } = HtmlRuleConverter.convertToUbo(rule);
+                const body = result[0].body as HtmlFilteringRuleBody;
+                const [complexSelector] = body.selectorList.children;
+                const { children } = complexSelector;
+
+                expect(children[2]).not.toBe(children[4]);
             });
         });
 

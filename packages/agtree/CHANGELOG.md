@@ -44,6 +44,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `##^div:has-text("foo" )`.
 - The HTML filtering rule converter now rejects `:-abp-contains()` with a
   missing or empty argument, the same as `:contains()`.
+- ADG→uBO conversion now validates `[max-length]` values before dropping them:
+  e.g. `$$div[max-length="1e2"]` and `$$div[max-length="abc"]` now throw a
+  conversion error instead of silently becoming `##^div`. A dropped
+  `[max-length]` that is the whole compound selector is replaced with `*`, so
+  `$$div > [max-length="100"]` becomes `##^div > *` instead of an invalid
+  rule with a dangling combinator. A complex selector that a drop leaves
+  without any constraint throws `Complex selector cannot be empty`, e.g.
+  `$$[max-length="100"]`, `$$*[max-length="100"]` and
+  `$$[max-length="1"] > [max-length="2"]`, because the resulting all-`*`
+  selector matches almost every element.
 
 ### Security
 
