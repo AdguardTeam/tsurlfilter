@@ -37,6 +37,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `[min-length]` and `[max-length]` values are now emitted as plain decimal
+  digits during ADG→ADG conversion, so large values are neither rounded nor
+  switched to exponent notation. For example,
+  `[min-length="1000000000000000000000"]` used to become `.{1e+21,}`.
 - Pseudo-class selector arguments are no longer trimmed: the argument is the
   raw text between the pseudo-class parentheses, e.g. `$$div:contains( "foo" )`
   keeps the spaces around the quoted text, and `:not( .a )` keeps the spaces
@@ -45,6 +49,18 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   drops when characters follow the closing quote: e.g.
   `$$div:contains("foo" )` now throws a conversion error instead of becoming
   `##^div:has-text("foo" )`.
+- The HTML filtering rule converter now rejects `:-abp-contains()` with a
+  missing or empty argument, the same as `:contains()`.
+- ADG→uBO conversion now validates `[max-length]` values before dropping them:
+  e.g. `$$div[max-length="1e2"]` and `$$div[max-length="abc"]` now throw a
+  conversion error instead of silently becoming `##^div`. A dropped
+  `[max-length]` that is the whole compound selector is replaced with `*`, so
+  `$$div > [max-length="100"]` becomes `##^div > *` instead of an invalid
+  rule with a dangling combinator. A complex selector that a drop leaves
+  without any constraint throws `Complex selector cannot be empty`, e.g.
+  `$$[max-length="100"]`, `$$*[max-length="100"]` and
+  `$$[max-length="1"] > [max-length="2"]`, because the resulting all-`*`
+  selector matches almost every element.
 - `[tag-content]` values that CoreLibs reads as regular expressions, e.g.
   `/ads/`, are now escaped when converted to a standalone `:contains()`
   argument during ADG→ADG conversion, so they still match the literal text.

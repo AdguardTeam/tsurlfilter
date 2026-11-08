@@ -531,12 +531,19 @@ export class RegExpUtils {
      * Creates a length-matching lookahead: `(?=.{min,max}$)`, which asserts
      * that the string length is between min and max.
      *
-     * @param min Minimum length or `null` for no minimum (default to `0`).
-     * @param max Maximum length or `null` for no maximum (default to no maximum).
+     * A string value is interpolated verbatim, so callers can pass a
+     * normalized string of plain decimal digits. This avoids `Number#toString()`
+     * rounding large values and switching to exponent notation.
+     *
+     * @param min Minimum length, or `null` for no minimum (default to `0`).
+     * @param max Maximum length, or `null` for no maximum (default to no maximum).
      *
      * @returns Length-matching lookahead.
      */
-    public static getLengthLookahead(min: number | null, max: number | null): string {
+    public static getLengthLookahead(
+        min: string | number | null,
+        max: string | number | null,
+    ): string {
         return `(?=.{${min ?? 0},${max ?? ''}}$)`;
     }
 
@@ -546,12 +553,17 @@ export class RegExpUtils {
      * - (?=.{min,max}$) is a lookahead that ensures the string length is between min and max
      * - .* matches any character (including newlines, due to the 's' flag).
      *
-     * @param min Minimum length or `null` for no minimum (default to `0`).
-     * @param max Maximum length or `null` for no maximum (default to no maximum).
+     * A string value is interpolated verbatim, see {@link getLengthLookahead}.
+     *
+     * @param min Minimum length, or `null` for no minimum (default to `0`).
+     * @param max Maximum length, or `null` for no maximum (default to no maximum).
      *
      * @returns Length-matching regular expression string.
      */
-    public static getLengthRegexp(min: number | null, max: number | null): string {
+    public static getLengthRegexp(
+        min: string | number | null,
+        max: string | number | null,
+    ): string {
         return `/^${RegExpUtils.getLengthLookahead(min, max)}.*/s`;
     }
 

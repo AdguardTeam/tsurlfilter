@@ -343,6 +343,26 @@ describe('RegExpUtils', () => {
                     max: null,
                     expected: '/^(?=.{0,}$).*/s',
                 },
+                {
+                    min: '65535',
+                    max: null,
+                    expected: '/^(?=.{65535,}$).*/s',
+                },
+                {
+                    min: null,
+                    max: '65535',
+                    expected: '/^(?=.{0,65535}$).*/s',
+                },
+                {
+                    min: '100000',
+                    max: null,
+                    expected: '/^(?=.{100000,}$).*/s',
+                },
+                {
+                    min: null,
+                    max: '300000',
+                    expected: '/^(?=.{0,300000}$).*/s',
+                },
             ])('should return correct length regex for min: $min and max: $max', ({ min, max, expected }) => {
                 expect(RegExpUtils.getLengthRegexp(min, max)).toBe(expected);
             });

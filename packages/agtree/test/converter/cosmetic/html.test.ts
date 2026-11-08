@@ -3,7 +3,8 @@ import { describe, expect, test } from 'vitest';
 import { createNodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
 import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
 import { NotImplementedError } from '../../../src/errors/not-implemented-error';
-import { type HtmlFilteringRule } from '../../../src/nodes';
+import { RuleGenerator } from '../../../src/generator';
+import { type HtmlFilteringRule, type HtmlFilteringRuleBody } from '../../../src/nodes';
 import { defaultParserOptions, type ParserOptions } from '../../../src/parser/options';
 import { RuleParser } from '../../../src/parser/rule-parser';
 
@@ -87,6 +88,39 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/^(?=.{5,}$).*/s)'],
                     },
 
+                    // `[min-length]` special attribute selector - leading zeros are stripped
+                    {
+                        actual: '$$div[min-length=" 0005"]',
+                        expected: ['$$div:contains(/^(?=.{5,}$).*/s)'],
+                    },
+
+                    // `[min-length]` special attribute selector - zero stays a single zero
+                    {
+                        actual: '$$div[min-length="0000"]',
+                        expected: ['$$div:contains(/^(?=.{0,}$).*/s)'],
+                    },
+
+                    // `[min-length]` special attribute selector - 65535 is a
+                    // regular value here; the PCRE2 limit bounds only `:min-text-length()`
+                    {
+                        actual: '$$div[min-length="65535"]',
+                        expected: ['$$div:contains(/^(?=.{65535,}$).*/s)'],
+                    },
+
+                    // `[max-length]` special attribute selector - 65535 is a
+                    // regular value here; the PCRE2 limit bounds only `:min-text-length()`
+                    {
+                        actual: '$$div[max-length="65535"]',
+                        expected: ['$$div:contains(/^(?=.{0,65535}$).*/s)'],
+                    },
+
+                    // `[max-length]` special attribute selector - a real-world value
+                    // above the `:min-text-length()` limit is kept as decimal digits
+                    {
+                        actual: '$$div[max-length="300000"]',
+                        expected: ['$$div:contains(/^(?=.{0,300000}$).*/s)'],
+                    },
+
                     // `[max-length]` special attribute selector - leading whitespace is accepted
                     {
                         actual: '$$div[max-length=" 100"]',
@@ -115,6 +149,52 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$script[max-length="300000"][min-length="20000"]',
                         expected: ['$$script:contains(/^(?=.{20000,300000}$).*/s)'],
+                    },
+
+                    // duplicate length selectors are resolved as normalized digit strings,
+                    // without number conversion or precision loss
+                    {
+                        actual: '$$div[min-length="00065535"][max-length="65535"]',
+                        expected: ['$$div:contains(/^(?=.{65535,65535}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="0005"][min-length="7"]',
+                        expected: ['$$div:contains(/^(?=.{7,}$).*/s)'],
+                    },
+
+                    // duplicate length selectors with different digit counts and
+                    // large values that differ only in the last digit are compared
+                    // as digit strings, in both orders
+                    {
+                        actual: '$$div[min-length="9"][min-length="10"][max-length="20"][max-length="100"]',
+                        expected: ['$$div:contains(/^(?=.{10,20}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="10"][min-length="9"][max-length="100"][max-length="20"]',
+                        expected: ['$$div:contains(/^(?=.{10,20}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="99999999999999999998"][min-length="99999999999999999999"]',
+                        expected: ['$$div:contains(/^(?=.{99999999999999999999,}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="99999999999999999999"][min-length="99999999999999999998"]',
+                        expected: ['$$div:contains(/^(?=.{99999999999999999999,}$).*/s)'],
+                    },
+
+                    // large values are kept as decimal digits, without rounding
+                    // or exponent notation
+                    {
+                        actual: '$$div[min-length="1000000000000000000000"]',
+                        expected: ['$$div:contains(/^(?=.{1000000000000000000000,}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[max-length="99999999999999999999"]',
+                        expected: ['$$div:contains(/^(?=.{0,99999999999999999999}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[min-length="0005"][max-length="00099999999999999999999"]',
+                        expected: ['$$div:contains(/^(?=.{5,99999999999999999999}$).*/s)'],
                     },
 
                     // `[tag-content]` with an unbalanced value + `[max-length]`: such a literal cannot
@@ -365,6 +445,14 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div:contains(/ex.*ple/i)',
                         expected: ['$$div:contains(/ex.*ple/i)'],
+                        shouldConvert: false,
+                    },
+
+                    // `:-abp-contains()` special pseudo-class selector (AdGuard alias of
+                    // `:contains()`, leave as-is for now - see AG-61400)
+                    {
+                        actual: '$$div:-abp-contains(foo)',
+                        expected: ['$$div:-abp-contains(foo)'],
                         shouldConvert: false,
                     },
 
@@ -620,6 +708,20 @@ describe('HtmlRuleConverter', () => {
                         input: '$$:contains()',
                         error: "Special pseudo-class selector 'contains' requires an argument",
                     },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // with an empty argument
+                    {
+                        input: '$$div:-abp-contains()',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // without an argument
+                    {
+                        input: '$$div:-abp-contains',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
+                    },
                 ])("should not convert '$input'", ({ input, error }) => {
                     if (typeof input !== 'string') {
                         expect(() => {
@@ -864,6 +966,24 @@ describe('HtmlRuleConverter', () => {
                     }
                 });
             });
+
+            // ADG→ADG moves special attribute selectors to the end of the
+            // complex selector instead of dropping them. The move must not be
+            // mistaken for a drop: a compound it empties is still an error and
+            // must not be replaced with `*`.
+            test.each([
+                '$$[tag-content="foo"] > div',
+                '$$div > [min-length="5"] > span',
+            ])("should not replace the empty compound of '%s' with `*`", (ruleText) => {
+                const rule = RuleParser.parse(
+                    ruleText,
+                    parsingEnabledDefaultParserOptions,
+                ) as HtmlFilteringRule;
+
+                const { result } = HtmlRuleConverter.convertToAdg(rule);
+
+                expect(() => RuleGenerator.generate(result[0])).toThrowError('Empty compound selector found');
+            });
         });
 
         describe('from uBO', () => {
@@ -922,6 +1042,15 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '##^div:has-text(/ex.*ple/i)',
                         expected: ['$$div:contains(/ex.*ple/i)'],
+                    },
+
+                    // `:-abp-contains()` special pseudo-class selector (AdGuard
+                    // alias of `:contains()`). This direction is permissive by
+                    // design: the alias is kept as-is, without a mixed-syntax
+                    // error.
+                    {
+                        actual: '##^div:-abp-contains(foo)',
+                        expected: ['$$div:-abp-contains(foo)'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperly(
@@ -1033,6 +1162,20 @@ describe('HtmlRuleConverter', () => {
                     {
                         input: '##^:has-text()',
                         error: "Special pseudo-class selector 'has-text' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // with an empty argument
+                    {
+                        input: '##^div:-abp-contains()',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // without an argument
+                    {
+                        input: '##^div:-abp-contains',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
                     },
 
                     // invalid special pseudo-class selector - length value not number
@@ -1211,6 +1354,10 @@ describe('HtmlRuleConverter', () => {
                         actual: '$$div[min-length="+5"]',
                         expected: ['##^div:min-text-length(5)'],
                     },
+                    {
+                        actual: '$$div[min-length="0005"]',
+                        expected: ['##^div:min-text-length(5)'],
+                    },
 
                     // `[min-length]` special attribute selector - large values are
                     // normalized textually, so `Number()` rounding and the exponent
@@ -1236,6 +1383,43 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div[max-length="100"][max-length="200"]',
                         expected: ['##^div'],
+                    },
+
+                    // `[max-length]` special attribute selector - leading whitespace is a
+                    // valid value, so the selector is still dropped
+                    {
+                        actual: '$$div[max-length=" 100"]',
+                        expected: ['##^div'],
+                    },
+
+                    // `[max-length]` special attribute selector - dropping the whole
+                    // compound selector must not leave a dangling combinator
+                    {
+                        actual: '$$div > [max-length="100"]',
+                        expected: ['##^div > *'],
+                    },
+
+                    // `[max-length]` special attribute selector - the `*` replaces
+                    // the dropped leading compound. Unlike a bare `*`, the complex
+                    // selector is still bounded by the rest of the rule.
+                    {
+                        actual: '$$[max-length="100"] > div',
+                        expected: ['##^* > div'],
+                    },
+
+                    // `[max-length]` special attribute selector - dropping several
+                    // whole compounds keeps every compound non-empty, and the
+                    // remaining `div` bounds the match
+                    {
+                        actual: '$$div > [max-length="1"] > [max-length="2"]',
+                        expected: ['##^div > * > *'],
+                    },
+
+                    // `[max-length]` special attribute selector - empty compound
+                    // between combinators
+                    {
+                        actual: '$$div > [max-length="100"] > span',
+                        expected: ['##^div > * > span'],
                     },
 
                     // `[tag-content]` special attribute selector
@@ -1298,6 +1482,15 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div:contains(/ex.*ple/i)',
                         expected: ['##^div:has-text(/ex.*ple/i)'],
+                    },
+
+                    // `:-abp-contains()` special pseudo-class selector (AdGuard alias of
+                    // `:contains()`). The alias is not mapped to `:has-text()` yet
+                    // (see AG-61400), so the selector is kept as-is. This is the known
+                    // interim output; the expectation must change with AG-61400.
+                    {
+                        actual: '$$div:-abp-contains(foo)',
+                        expected: ['##^div:-abp-contains(foo)'],
                     },
 
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
@@ -1460,10 +1653,79 @@ describe('HtmlRuleConverter', () => {
                         error: "Value of special attribute selector 'min-length' must be a positive integer, got '-1'",
                     },
 
+                    // invalid special attribute selector - max-length value not number
+                    {
+                        input: '$$div[max-length="abc"]',
+                        error: "Value of special attribute selector 'max-length' must be an integer, got 'abc'",
+                    },
+                    {
+                        input: '$$div[max-length="1e2"]',
+                        error: "Value of special attribute selector 'max-length' must be an integer, got '1e2'",
+                    },
+
+                    // invalid special attribute selector - max-length value negative
+                    {
+                        input: '$$div[max-length="-1"]',
+                        // eslint-disable-next-line max-len
+                        error: "Value of special attribute selector 'max-length' must be a positive integer, got '-1'",
+                    },
+
+                    // `[max-length]` was the whole complex selector - a bare `*`
+                    // would also match `html`, so the conversion keeps the error
+                    {
+                        input: '$$[max-length="100"]',
+                        error: 'Complex selector cannot be empty',
+                    },
+                    {
+                        input: '$$div, [max-length="100"]',
+                        error: 'Complex selector cannot be empty',
+                    },
+
+                    // `[max-length]` was every compound of the complex selector -
+                    // an all-`*` selector matches almost every element, so the
+                    // conversion keeps the error
+                    {
+                        input: '$$[max-length="1"] > [max-length="2"]',
+                        error: 'Complex selector cannot be empty',
+                    },
+                    {
+                        input: '$$div, [max-length="1"] > [max-length="2"]',
+                        error: 'Complex selector cannot be empty',
+                    },
+
+                    // the remaining selector is the universal selector, which
+                    // adds no constraint, so the complex selector is still empty
+                    {
+                        input: '$$* > [max-length="1"]',
+                        error: 'Complex selector cannot be empty',
+                    },
+                    {
+                        input: '$$[max-length="1"] > *',
+                        error: 'Complex selector cannot be empty',
+                    },
+                    {
+                        input: '$$*[max-length="100"]',
+                        error: 'Complex selector cannot be empty',
+                    },
+
                     // invalid special pseudo-class selector - argument missing
                     {
                         input: '$$:contains()',
                         error: "Special pseudo-class selector 'contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // with an empty argument
+                    {
+                        input: '$$div:-abp-contains()',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - `:-abp-contains()` alias
+                    // without an argument
+                    {
+                        input: '$$div:-abp-contains',
+                        error: "Special pseudo-class selector '-abp-contains' requires an argument",
                     },
 
                     // invalid special pseudo-class selector - uBlock drops a text
@@ -1519,6 +1781,10 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div'],
                     },
                     {
+                        actual: '$$div > [max-length="100"]',
+                        expected: ['##^div > *'],
+                    },
+                    {
                         actual: '$$div[tag-content="example"]',
                         expected: ['##^div:has-text(example)'],
                     },
@@ -1546,6 +1812,10 @@ describe('HtmlRuleConverter', () => {
                         // eslint-disable-next-line max-len
                         error: "Value of special attribute selector 'min-length' must be a positive integer, got '-1'",
                     },
+                    {
+                        input: '$$div[max-length="abc"]',
+                        error: "Value of special attribute selector 'max-length' must be an integer, got 'abc'",
+                    },
 
                     // Parsing errors
                     {
@@ -1563,6 +1833,22 @@ describe('HtmlRuleConverter', () => {
                         }).toThrowError(error);
                     }
                 });
+            });
+
+            // Every empty compound gets its own `*` node, so the returned AST
+            // holds no shared references.
+            test('should create a separate universal selector for every empty compound', () => {
+                const rule = RuleParser.parse(
+                    '$$div > [max-length="1"] > [max-length="2"]',
+                    parsingEnabledDefaultParserOptions,
+                ) as HtmlFilteringRule;
+
+                const { result } = HtmlRuleConverter.convertToUbo(rule);
+                const body = result[0].body as HtmlFilteringRuleBody;
+                const [complexSelector] = body.selectorList.children;
+                const { children } = complexSelector;
+
+                expect(children[2]).not.toBe(children[4]);
             });
         });
 
