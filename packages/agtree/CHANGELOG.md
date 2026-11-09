@@ -63,6 +63,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- The uBO modifier candidate scan for cosmetic selectors is linear again: a
+  selector with many `:not()` wrappers no longer makes rule parsing
+  quadratic (an 8,000-wrapper selector took ~285 ms; a cap-size selector
+  took 8–17 s).
+- A hint comment with more than 240 hints and an agent comment with more than
+  480 agents now throw an `AdblockSyntaxError` naming the capacity instead of
+  writing past the parser buffer. Before, the extra hints made every hint name
+  alias the whole rule text (memory amplification) and a long agent list failed
+  with the misleading "Agent name cannot be empty". The limits are fixed
+  constants, so they no longer depend on what the pipeline parsed before.
 - ABP snippets (`#$#`) whose arguments contain `{`/`}` — regex quantifiers
   such as `/a{1,2}/`, `{}` literals, `;`-separated calls — are parsed as
   snippets again instead of being routed to the CSS-injection parser and

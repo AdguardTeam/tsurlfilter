@@ -20,6 +20,7 @@ import {
     HINT_FIELD_PARAMS_END,
     HINT_FIELD_PARAMS_START,
     HINT_RECORD_STRIDE,
+    MAX_HINT_COUNT,
 } from '../../parser/comment/hint';
 import { createParserContext, initParserContext } from '../../parser/context';
 import { ParameterListParser as ParameterListStage2Parser, PL_BUFFER_SIZE } from '../../parser/misc/parameter-list';
@@ -102,7 +103,9 @@ export class HintCommentAstBuilder {
         dataOffset = 0,
         options: ParseOptions = {},
     ): HintCommentRule {
-        const count = data[dataOffset + CM_HINT_COUNT_OFFSET];
+        // Never read past the fixed comment-record capacity, even if a caller
+        // builds from a buffer the parser did not write (defensive bound).
+        const count = Math.min(data[dataOffset + CM_HINT_COUNT_OFFSET], MAX_HINT_COUNT);
         const children: Hint[] = new Array(count);
 
         for (let i = 0; i < count; i += 1) {

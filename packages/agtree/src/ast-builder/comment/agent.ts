@@ -19,6 +19,7 @@ import {
     AGENT_RECORD_STRIDE,
     CM_AGENT_COUNT_OFFSET,
     CM_AGENT_RECORDS_OFFSET,
+    MAX_AGENT_COUNT,
 } from '../../parser/comment/agent';
 import { CHAR_SPACE, CHAR_TAB } from '../../tokenizer/char-codes';
 import { SYNTAX_ALL } from '../../utils/syntax-flags';
@@ -130,7 +131,9 @@ export class AgentCommentAstBuilder {
         dataOffset = 0,
         options: ParseOptions = {},
     ): AgentCommentRule {
-        const count = data[dataOffset + CM_AGENT_COUNT_OFFSET];
+        // Never read past the fixed comment-record capacity, even if a caller
+        // builds from a buffer the parser did not write (defensive bound).
+        const count = Math.min(data[dataOffset + CM_AGENT_COUNT_OFFSET], MAX_AGENT_COUNT);
         const children: Agent[] = new Array(count);
 
         for (let i = 0; i < count; i += 1) {

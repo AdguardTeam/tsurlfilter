@@ -10,6 +10,7 @@
  * [2+] Per agent (stride=2): START, END (trimmed source offsets, exclusive end).
  */
 
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { lastNonWs, skipWs, tokenStart } from '../context';
@@ -43,6 +44,16 @@ export const AGENT_FIELD_START = 0;
 export const AGENT_FIELD_END = 1;
 
 /**
+ * Maximum number of agents in one comment rule.
+ *
+ * Fixed so the limit does not depend on the buffer size left by a previous
+ * parse (A06 S-6). 480 records occupy `2 + 480 * 2 = 962` slots, which fits
+ * the minimum default `ctx.data` (965 slots). Above the limit the parser threw
+ * a misleading "Agent name cannot be empty" error (F-013).
+ */
+export const MAX_AGENT_COUNT = 480;
+
+/**
  * Parser for adblock agent comment rules (`[Agent1; Agent2]`).
  */
 export class AgentCommentParser implements StructuralParser {
@@ -58,6 +69,13 @@ export class AgentCommentParser implements StructuralParser {
      */
     public static parse(ctx: ParserContext, startTi = 0, endTi = ctx.tokenCount, dataOffset = 0): void {
         const { data } = ctx;
+
+        const ruleStart = startTi > 0 ? ctx.ends[startTi - 1] : ctx.sourceStart;
+        const ruleEnd = endTi > 0 && endTi <= ctx.tokenCount ? ctx.ends[endTi - 1] : ruleStart;
+        const maxRecords = Math.min(
+            MAX_AGENT_COUNT,
+            Math.floor((data.length - dataOffset - CM_AGENT_RECORDS_OFFSET) / AGENT_RECORD_STRIDE),
+        );
 
         // Skip leading whitespace, then `[`
         let ti = skipWs(ctx, startTi);
@@ -96,6 +114,14 @@ export class AgentCommentParser implements StructuralParser {
 
             // Record the agent if non-empty
             if (agentEnd > agentStart) {
+                if (count >= maxRecords) {
+                    throw new AdblockSyntaxError(
+                        `Agent list exceeds the maximum of ${maxRecords} agents`,
+                        ruleStart,
+                        ruleEnd,
+                    );
+                }
+
                 const base = dataOffset + CM_AGENT_RECORDS_OFFSET + count * AGENT_RECORD_STRIDE;
 
                 data[base + AGENT_FIELD_START] = agentStart;

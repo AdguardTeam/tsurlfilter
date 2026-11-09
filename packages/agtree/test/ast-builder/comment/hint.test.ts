@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
+import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
+import type { HintCommentRule } from '../../../src/nodes';
 import { QuoteType } from '../../../src/utils/quotes';
 import { SYNTAX_ADG } from '../../../src/utils/syntax-flags';
 import { parseCommentRule } from '../../helpers/parse-helpers';
@@ -286,5 +288,53 @@ describe('CommentAstBuilder — hint comments', () => {
                 children: [],
             });
         });
+    });
+});
+
+describe('CommentAstBuilder — hint capacity (F-006)', () => {
+    // Use the production pipeline: its default context is the buffer the
+    // capacity constants are sized for (the `parseCommentRule` helper builds a
+    // deliberately smaller context).
+    const pipeline = new RuleParserPipeline();
+
+    /**
+     * Builds a hint comment with `count` space-separated hints `H0…Hn`.
+     *
+     * @param count Number of hints.
+     *
+     * @returns Hint comment source.
+     */
+    const buildHints = (count: number): string => `!+ ${Array.from({ length: count }, (_, i) => `H${i}`).join(' ')}`;
+
+    test('three hints keep their order and names', () => {
+        const ast = pipeline.parse(buildHints(3)) as HintCommentRule;
+
+        expect(ast.children).toHaveLength(3);
+        expect(ast.children.map((hint) => hint.name.value)).toEqual(['H0', 'H1', 'H2']);
+    });
+
+    test('a hint list at capacity parses', () => {
+        const ast = pipeline.parse(buildHints(240)) as HintCommentRule;
+
+        expect(ast.children).toHaveLength(240);
+        expect(ast.children[239].name.value).toBe('H239');
+    });
+
+    test('a hint list over capacity throws a capacity error instead of corrupting names', () => {
+        expect(() => pipeline.parse(buildHints(241))).toThrow(/maximum of 240 hints/i);
+    });
+
+    test('a very long hint list throws instead of amplifying memory', () => {
+        expect(() => pipeline.parse(buildHints(3000))).toThrow(/maximum of 240 hints/i);
+    });
+
+    test('every hint name equals its token span', () => {
+        const source = buildHints(240);
+        const ast = pipeline.parse(source, { isLocIncluded: true }) as HintCommentRule;
+
+        for (const [i, hint] of ast.children.entries()) {
+            expect(hint.name.value).toBe(`H${i}`);
+            expect(source.slice(hint.name.start, hint.name.end)).toBe(hint.name.value);
+        }
     });
 });
