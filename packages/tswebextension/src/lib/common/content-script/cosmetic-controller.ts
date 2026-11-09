@@ -1,12 +1,12 @@
 import { type ExtCssConfiguration, ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
 
-import { HIDING_STYLE } from '../../mv2/common/hidden-style';
 import { type ContentScriptCosmeticData } from '../cosmetic-api';
 import { MessageType } from '../message-constants';
 import { validateSelectors } from '../utils/selector-validator';
 
 import { CollectHitStatsListener } from './collect-hit-stats';
 import { CssHitsCounter } from './css-hits-counter';
+import { HIDING_STYLE } from './hidden-style';
 import { PendingProbesCollector } from './pending-probes-collector';
 import { sendAppMessage } from './send-app-message';
 
@@ -309,7 +309,12 @@ export class CosmeticControllerCommon {
             const hasMarkedExtendedCss = !!res.extCssRules && res.extCssRules.length > 0;
             const hasMarkedNativeCss = res.areNativeHitsStatsCollected;
 
-            this.applyExtendedCssRules(res.extCssRules, true);
+            if (res.extCssRules) {
+                // A response without rules can mean the background lost the
+                // tab context, not that the document has no ExtendedCss rules.
+                // Keep the applied instance in that case.
+                this.applyExtendedCssRules(res.extCssRules, true);
+            }
             this.hitsMarkersApplied = hasMarkedNativeCss;
             this.cosmeticDataApplied = true;
             this.reapplyTries = 0;

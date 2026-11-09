@@ -635,6 +635,51 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
         }
     });
 
+    it('keeps applied ExtendedCss rules when reapply has no rules', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+        const disposeSpy = vi.spyOn(ExtendedCss.prototype, 'dispose');
+        document.body.innerHTML = '<div id="preserved-ext-bait" class="ad_header">text</div>';
+
+        const rules = ['#?#.ad_header:contains(text)'];
+
+        try {
+            vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockImplementation(async (message) => {
+                    const isReapply = message.type === MessageType.GetCosmeticData
+                        && (message.payload as { reapplyHits?: boolean }).reapplyHits;
+
+                    return isReapply
+                        ? getCosmeticData([], true)
+                        : getCosmeticData(rules, false);
+                });
+
+            const cosmeticController = createController(CosmeticController);
+            cosmeticController.init();
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            expect(disposeSpy).not.toHaveBeenCalled();
+            disposeSpy.mockClear();
+
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: true },
+            });
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            expect(disposeSpy).not.toHaveBeenCalled();
+        } finally {
+            document.body.innerHTML = '';
+            restoreMutationObserver();
+        }
+    });
+
     it('applies marked ExtendedCss rules when native CSS injection failed', async () => {
         const restoreMutationObserver = mockMutationObserver();
         document.body.innerHTML = '<div id="native-failed-bait" class="ad_header">text</div>';

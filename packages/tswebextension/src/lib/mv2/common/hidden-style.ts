@@ -1,8 +1,6 @@
-/**
- * Css, injected to broken element for hiding.
- */
-// eslint-disable-next-line max-len
-export const HIDING_STYLE = '{ display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important; }';
+import { HIDING_STYLE } from '../../common/content-script/hidden-style';
+
+export { HIDING_STYLE };
 
 /**
  * Type of attribute matching supported by {@link createHidingCssRule}.
