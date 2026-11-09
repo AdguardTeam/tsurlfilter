@@ -235,6 +235,38 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(injectSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('stops retrying when the frame context changes', async () => {
+        const frameContext = {
+            cosmeticResult,
+            preparedCosmeticResult: {
+                cssText: 'marked',
+                areHitsStatsCollected: true,
+            },
+        };
+        const nextFrameContext = {
+            cosmeticResult: new CosmeticResult(),
+            preparedCosmeticResult: {
+                cssText: 'next',
+                areHitsStatsCollected: true,
+            },
+        };
+        tabsApiMock.getFrameContext
+            .mockReturnValueOnce(frameContext)
+            .mockReturnValueOnce(frameContext)
+            .mockReturnValue(nextFrameContext);
+        const injectSpy = vi.spyOn(CosmeticApi, 'injectCss')
+            .mockRejectedValue(new Error('injection failed'));
+
+        const data = await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(injectSpy).toHaveBeenCalledTimes(1);
+        expect(data.areNativeHitsStatsCollected).toBe(false);
+    });
+
     it('retries marked CSS injection after a transient failure', async () => {
         const injectSpy = vi.spyOn(CosmeticApi, 'injectCss')
             .mockRejectedValueOnce(new Error('transient failure'))

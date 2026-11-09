@@ -356,7 +356,12 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         try {
-            await CosmeticApi.injectMarkedCssWithRetries(tabId, frameId, cssText);
+            await CosmeticApi.injectMarkedCssWithRetries(
+                tabId,
+                frameId,
+                cssText,
+                frameContext,
+            );
             data.areNativeHitsStatsCollected = true;
             if (frameContext) {
                 CosmeticApi.setNativeHitsMarkersApplied(
@@ -511,6 +516,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param tabId Tab id.
      * @param frameId Frame id.
      * @param cssText Marked CSS text.
+     * @param frameContext Frame context that was matched for {@link cssText}.
      * @param tries Number of tries already made.
      *
      * @returns Promise that resolves when the CSS is injected.
@@ -519,6 +525,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         tabId: number,
         frameId: number,
         cssText: string,
+        frameContext: object | undefined,
         tries = 0,
     ): Promise<void> {
         try {
@@ -528,10 +535,22 @@ export class CosmeticApi extends CosmeticApiCommon {
                 throw e;
             }
 
+            if (tabsApi.getFrameContext(tabId, frameId) !== frameContext) {
+                // The frame navigated. Do not inject the old document's CSS
+                // into the new document.
+                throw e;
+            }
+
             await new Promise<void>((resolve) => {
                 setTimeout(resolve, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             });
-            await CosmeticApi.injectMarkedCssWithRetries(tabId, frameId, cssText, tries + 1);
+            await CosmeticApi.injectMarkedCssWithRetries(
+                tabId,
+                frameId,
+                cssText,
+                frameContext,
+                tries + 1,
+            );
         }
     }
 
