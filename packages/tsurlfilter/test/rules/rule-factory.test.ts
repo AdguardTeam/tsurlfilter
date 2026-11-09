@@ -313,3 +313,27 @@ describe('RuleFactory selector complexity (F-008)', () => {
         expect(cap / baseline).toBeLessThan(15);
     }, 120_000);
 });
+
+describe('RuleFactory HTML filtering selector layout (F-007)', () => {
+    it('keeps both domains for a long `$$` selector with 38 attributes', () => {
+        const rule = `example.com,example.org$$div${'[tag-content="a"]'.repeat(38)}`;
+        const created = RuleFactory.createRule(rule, 1, RULE_INDEX_NONE, true, true) as CosmeticRule;
+
+        expect(created).toBeTruthy();
+        expect(created.getPermittedDomains()).toEqual(['example.com', 'example.org']);
+    });
+
+    it('keeps both domains for a 20-compound `##^` selector', () => {
+        const compounds = Array.from({ length: 20 }, (_, i) => `div.c${i}`).join(' ');
+        const created = RuleFactory.createRule(
+            `example.com,example.org##^${compounds}`,
+            1,
+            RULE_INDEX_NONE,
+            true,
+            true,
+        ) as CosmeticRule;
+
+        expect(created).toBeTruthy();
+        expect(created.getPermittedDomains()).toEqual(['example.com', 'example.org']);
+    });
+});

@@ -8,6 +8,33 @@ import { RuleConversionError } from '../../src/errors/rule-conversion-error';
 const parser = new RuleParserPipeline();
 
 describe('HeaderRemovalRuleConverter', () => {
+    describe('rules with a `[$...]` modifier list (F-005)', () => {
+        // A `$removeheader` network rule cannot carry cosmetic modifiers; the
+        // converter must refuse instead of emitting a broader rule that loses
+        // the `path` restriction or the modifier's own domain list.
+        test.each([
+            '[$path=/x]example.com##^responseheader(foo)',
+            '[$path=/x,domain=a.com]example.com##^responseheader(foo)',
+        ])('refuses to convert %s', (rule) => {
+            const ast = parser.parse(rule, { parseHtmlFilteringRuleBodies: true });
+
+            expect(() => HeaderRemovalRuleConverter.convertToAdg(ast)).toThrow(RuleConversionError);
+            expect(() => HeaderRemovalRuleConverter.convertToAdg(ast)).toThrow(
+                /modifier list are not supported/i,
+            );
+        });
+
+        test('still converts a rule without a modifier list', () => {
+            const ast = parser.parse('example.com##^responseheader(foo)', {
+                parseHtmlFilteringRuleBodies: true,
+            });
+
+            expect(HeaderRemovalRuleConverter.convertToAdg(ast).result.map((node) => node)).toEqual([
+                expect.objectContaining({ type: 'NetworkRule' }),
+            ]);
+        });
+    });
+
     describe('uBO to ADG', () => {
         // Valid rules
         test.each([

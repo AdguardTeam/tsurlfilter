@@ -47,6 +47,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTML filtering rules with a long selector (`example.com,example.org$$div` +
+  many attributes, `##^` with many compounds) keep their permitted domains, so
+  the engine no longer drops them as unrestricted rules.
 - Cosmetic rules whose scriptlet argument ends with an escape right before the
   closing parenthesis, e.g. `a.com##+js(acs, Math, '\\x)`, are no longer
   dropped: an escape consumes exactly one character, so the `)` after it

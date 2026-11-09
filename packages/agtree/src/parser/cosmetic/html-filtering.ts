@@ -246,12 +246,16 @@ function tryParseResponseHeader(
         );
     }
 
-    // Write responseheader data
+    // Write responseheader data. A responseheader body has no selector list,
+    // so its fields live at the selector-list base rather than in the
+    // modifier-record slots (which `parseCommonCosmeticHeader` already used
+    // for a `[$...]` modifier list).
     ctx.data[CR_FLAGS_OFFSET] |= CR_FLAG_BODY_UBO_RESPONSEHEADER;
-    ctx.data[HF_FN_NAME_START] = fnNameStart;
-    ctx.data[HF_FN_NAME_END] = fnNameEnd;
-    ctx.data[HF_ARG_START] = argStart;
-    ctx.data[HF_ARG_END] = argEnd;
+    const hfBase = selectorListDataOffset(ctx);
+    ctx.data[hfBase + HF_FN_NAME_START] = fnNameStart;
+    ctx.data[hfBase + HF_FN_NAME_END] = fnNameEnd;
+    ctx.data[hfBase + HF_ARG_START] = argStart;
+    ctx.data[hfBase + HF_ARG_END] = argEnd;
 
     return true;
 }

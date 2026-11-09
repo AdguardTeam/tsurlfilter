@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import { createNodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
 import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
+import { RawRuleConverter } from '../../../src/converter/raw-rule';
 import { NotImplementedError } from '../../../src/errors/not-implemented-error';
 import { type HtmlFilteringRule } from '../../../src/nodes';
 import { SYNTAX_ABP, SYNTAX_ADG, SYNTAX_UBO } from '../../../src/utils/syntax-flags';
@@ -1556,5 +1557,29 @@ describe('HtmlRuleConverter', () => {
                 } as HtmlFilteringRule)).toThrowError(NotImplementedError);
             });
         });
+    });
+});
+
+describe('HtmlRuleConverter — selector-region layout (F-007)', () => {
+    /**
+     * Builds a space-separated selector of `count` descendant compounds.
+     *
+     * @param count Number of compounds.
+     *
+     * @returns Selector text.
+     */
+    const compounds = (count: number): string => Array.from({ length: count }, (_, i) => `div.c${i}`).join(' ');
+
+    test('a long HTML body keeps the domain list', () => {
+        const [converted] = RawRuleConverter.convertToAdg(`example.com,example.org$$${compounds(20)}`).result;
+
+        expect(converted.startsWith('example.com,example.org$$')).toBe(true);
+    });
+
+    test('a 38-attribute selector keeps the domain list', () => {
+        const rule = `example.com,example.org$$div${'[tag-content="a"]'.repeat(38)}`;
+        const [converted] = RawRuleConverter.convertToAdg(rule).result;
+
+        expect(converted.startsWith('example.com,example.org$$')).toBe(true);
     });
 });

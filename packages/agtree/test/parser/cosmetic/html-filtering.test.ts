@@ -46,11 +46,6 @@ const tokenizer = new Tokenizer(1024);
 const ctx = createParserContext();
 
 /**
- * Data offset where selector list data starts (after CR header).
- */
-const SL_DATA_OFFSET = 7;
-
-/**
  * Helper: tokenize, classify, then call AdgHtmlFilteringParser.parse.
  *
  * @param source Rule source string.
@@ -73,6 +68,19 @@ function parseUbo(source: string, parseUboSpecificRules = true): void {
     initParserContext(ctx, source, tokenizer);
     const classified = RuleClassifier.classify(ctx, 0, ctx.tokenCount);
     UboHtmlFilteringParser.parse(ctx, classified, { parseUboSpecificRules });
+}
+
+/**
+ * Slices a responseheader field from the source using the selector-list base.
+ *
+ * @param fieldStart Offset of the field start relative to the selector-list base.
+ * @param fieldEnd Offset of the field end relative to the selector-list base.
+ *
+ * @returns Source text of the field.
+ */
+function hfSlice(fieldStart: number, fieldEnd: number): string {
+    const base = selectorListDataOffset(ctx);
+    return ctx.source.slice(ctx.data[base + fieldStart], ctx.data[base + fieldEnd]);
 }
 
 /**
@@ -110,7 +118,7 @@ function isResponseHeader(): boolean {
  * @returns Child record fields.
  */
 function slChild(i: number) {
-    const base = SelectorListParser.childBase(SL_DATA_OFFSET, DEFAULT_MAX_COMPLEX, i);
+    const base = SelectorListParser.childBase(selectorListDataOffset(ctx), DEFAULT_MAX_COMPLEX, i);
     const d = ctx.data;
     return {
         kind: d[base + 0] as ChildKind,
@@ -135,7 +143,7 @@ describe('HtmlFilteringParser — ADG', () => {
 
         // The selector-list count at the shifted offset must be correct.
         // Use the context-aware selectorListDataOffset instead of the fixed
-        // SL_DATA_OFFSET so the test reads from the right position.
+        // selectorListDataOffset(ctx) so the test reads from the right position.
         const slOffset = selectorListDataOffset(ctx);
         expect(ctx.data[slOffset + SL_COUNT_OFFSET]).toBeGreaterThan(0);
     });
@@ -146,7 +154,7 @@ describe('HtmlFilteringParser — ADG', () => {
         expect(isException()).toBe(false);
 
         // Selector list should be parsed
-        expect(ctx.data[SL_DATA_OFFSET + SL_COUNT_OFFSET]).toBe(1);
+        expect(ctx.data[selectorListDataOffset(ctx) + SL_COUNT_OFFSET]).toBe(1);
         // First child: type selector "script"
         const c0 = slChild(0);
         expect(c0.kind).toBe(ChildKind.TypeSelector);
@@ -196,7 +204,7 @@ describe('HtmlFilteringParser — ADG', () => {
 
     test('ADG simple selector: div', () => {
         parseAdg('example.org$$div');
-        expect(ctx.data[SL_DATA_OFFSET + SL_COUNT_OFFSET]).toBe(1);
+        expect(ctx.data[selectorListDataOffset(ctx) + SL_COUNT_OFFSET]).toBe(1);
         const c0 = slChild(0);
         expect(c0.kind).toBe(ChildKind.TypeSelector);
         expect(ctx.source.slice(c0.f0, c0.f1)).toBe('div');
@@ -204,12 +212,12 @@ describe('HtmlFilteringParser — ADG', () => {
 
     test('ADG complex selector: div > span + a ~ h1', () => {
         parseAdg('example.org$$div > span + a ~ h1');
-        expect(ctx.data[SL_DATA_OFFSET + SL_COUNT_OFFSET]).toBe(1);
+        expect(ctx.data[selectorListDataOffset(ctx) + SL_COUNT_OFFSET]).toBe(1);
     });
 
     test('ADG multiple selectors: div > span, .class + #id', () => {
         parseAdg('example.org$$div > span, .class + #id');
-        expect(ctx.data[SL_DATA_OFFSET + SL_COUNT_OFFSET]).toBe(2);
+        expect(ctx.data[selectorListDataOffset(ctx) + SL_COUNT_OFFSET]).toBe(2);
     });
 
     test('ADG body with attribute without value: [some_attr]', () => {
@@ -222,8 +230,8 @@ describe('HtmlFilteringParser — ADG', () => {
     test('ADG lenient :contains() with an empty prefix', () => {
         parseAdg('example.org$$:contains((function(g,b,a,c,e,d))');
 
-        expect(ctx.data[SL_DATA_OFFSET + SL_COUNT_OFFSET]).toBe(1);
-        expect(SelectorListParser.childCountInComplex(ctx.data, SL_DATA_OFFSET, 0)).toBe(1);
+        expect(ctx.data[selectorListDataOffset(ctx) + SL_COUNT_OFFSET]).toBe(1);
+        expect(SelectorListParser.childCountInComplex(ctx.data, selectorListDataOffset(ctx), 0)).toBe(1);
 
         const c0 = slChild(0);
         expect(c0.kind).toBe(ChildKind.PseudoClassSelector);
@@ -234,8 +242,8 @@ describe('HtmlFilteringParser — ADG', () => {
     test('ADG lenient :contains() after a trailing explicit combinator', () => {
         parseAdg('example.org$$div > :contains((function(g,b,a,c,e,d))');
 
-        expect(ctx.data[SL_DATA_OFFSET + SL_COUNT_OFFSET]).toBe(1);
-        expect(SelectorListParser.childCountInComplex(ctx.data, SL_DATA_OFFSET, 0)).toBe(3);
+        expect(ctx.data[selectorListDataOffset(ctx) + SL_COUNT_OFFSET]).toBe(1);
+        expect(SelectorListParser.childCountInComplex(ctx.data, selectorListDataOffset(ctx), 0)).toBe(3);
 
         const c0 = slChild(0);
         expect(c0.kind).toBe(ChildKind.TypeSelector);
@@ -252,8 +260,8 @@ describe('HtmlFilteringParser — ADG', () => {
     test('ADG lenient :contains() after a descendant combinator', () => {
         parseAdg('example.org$$div :contains((function(g,b,a,c,e,d))');
 
-        expect(ctx.data[SL_DATA_OFFSET + SL_COUNT_OFFSET]).toBe(1);
-        expect(SelectorListParser.childCountInComplex(ctx.data, SL_DATA_OFFSET, 0)).toBe(3);
+        expect(ctx.data[selectorListDataOffset(ctx) + SL_COUNT_OFFSET]).toBe(1);
+        expect(SelectorListParser.childCountInComplex(ctx.data, selectorListDataOffset(ctx), 0)).toBe(3);
 
         const c1 = slChild(1);
         expect(c1.kind).toBe(ChildKind.SelectorCombinator);
@@ -280,7 +288,7 @@ describe('HtmlFilteringParser — uBO', () => {
         expect(ctx.source[bodyStart]).toBe('s'); // 'script'
 
         // Selector list parsed
-        expect(ctx.data[SL_DATA_OFFSET + SL_COUNT_OFFSET]).toBe(1);
+        expect(ctx.data[selectorListDataOffset(ctx) + SL_COUNT_OFFSET]).toBe(1);
         const c0 = slChild(0);
         expect(c0.kind).toBe(ChildKind.TypeSelector);
         expect(ctx.source.slice(c0.f0, c0.f1)).toBe('script');
@@ -301,7 +309,7 @@ describe('HtmlFilteringParser — uBO', () => {
 
     test('uBO simple selector: example.com##^div', () => {
         parseUbo('example.com##^div');
-        expect(ctx.data[SL_DATA_OFFSET + SL_COUNT_OFFSET]).toBe(1);
+        expect(ctx.data[selectorListDataOffset(ctx) + SL_COUNT_OFFSET]).toBe(1);
         const c0 = slChild(0);
         expect(c0.kind).toBe(ChildKind.TypeSelector);
         expect(ctx.source.slice(c0.f0, c0.f1)).toBe('div');
@@ -347,17 +355,14 @@ describe('HtmlFilteringParser — uBO responseheader', () => {
         expect(sepKind()).toBe(CR_SEP_KIND_UBO_HTML_FILTERING);
         expect(isResponseHeader()).toBe(true);
 
-        expect(ctx.source.slice(ctx.data[HF_FN_NAME_START], ctx.data[HF_FN_NAME_END]))
-            .toBe('responseheader');
-        expect(ctx.source.slice(ctx.data[HF_ARG_START], ctx.data[HF_ARG_END]))
-            .toBe('Test');
+        expect(hfSlice(HF_FN_NAME_START, HF_FN_NAME_END)).toBe('responseheader');
+        expect(hfSlice(HF_ARG_START, HF_ARG_END)).toBe('Test');
     });
 
     test('responseheader with extra spaces', () => {
         parseUbo('example.com##^  responseheader(  Test  )  ');
         expect(isResponseHeader()).toBe(true);
-        expect(ctx.source.slice(ctx.data[HF_ARG_START], ctx.data[HF_ARG_END]))
-            .toBe('Test');
+        expect(hfSlice(HF_ARG_START, HF_ARG_END)).toBe('Test');
     });
 
     test('responseheader() empty arg throws', () => {

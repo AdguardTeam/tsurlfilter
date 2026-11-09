@@ -15,11 +15,12 @@ import { TokenType } from '../tokenizer/token-types';
 import type { Tokenizer } from '../tokenizer/tokenizer';
 
 import {
+    CR_MODIFIER_RECORDS_OFFSET,
     slDataOffset as crSlDataOffset,
-    HF_MIN_DATA_SLOTS,
     SCRIPTLET_BODY_DATA_CAPACITY,
     UBO_MODIFIER_RECORD_STRIDE,
 } from './cosmetic/constants';
+import { SL_MIN_DATA_SLOTS } from './css/selector-list/constants';
 import { MODIFIER_RECORD_STRIDE, NR_MODIFIER_RECORDS_OFFSET } from './network/constants';
 
 /**
@@ -51,6 +52,19 @@ export const MAX_MODIFIER_RECORD_STRIDE = Math.max(
     MODIFIER_RECORD_STRIDE,
     UBO_MODIFIER_RECORD_STRIDE,
 ) as 7;
+
+/**
+ * Offset where the shared domain-records region begins, relative to the rule
+ * header.
+ *
+ * Domain records are only written for cosmetic rules, whose header is larger
+ * than the network header ({@link CR_MODIFIER_RECORDS_OFFSET} = 7 slots vs
+ * {@link NR_MODIFIER_RECORDS_OFFSET} = 5). Using the cosmetic size for both
+ * layouts keeps network rules correct (their header simply ends earlier) and
+ * prevents the last cosmetic modifier record from overlapping the first
+ * domain record when a small capacity makes the regions adjacent.
+ */
+export const DATA_HEADER_SIZE = Math.max(NR_MODIFIER_RECORDS_OFFSET, CR_MODIFIER_RECORDS_OFFSET);
 
 /**
  * Default maximum number of tokens per rule.
@@ -175,14 +189,18 @@ export interface ParserContext {
  * @returns Required `Int32Array` length.
  */
 function computeDataLength(maxMods: number, maxDomains: number, maxScriptletBody: number): number {
-    return Math.max(
-        NR_MODIFIER_RECORDS_OFFSET
+    // The selector-list region is stored after the header/modifier/domain/
+    // scriptlet regions, so a long selector cannot overwrite domain records
+    // and a `[$...]` modifier list cannot shift it out of the buffer.
+    const baseLength = Math.max(
+        DATA_HEADER_SIZE
             + maxMods * MAX_MODIFIER_RECORD_STRIDE
             + maxDomains * DOMAIN_RECORD_STRIDE
             + maxScriptletBody,
         CM_PREP_MIN_DATA_SLOTS,
-        HF_MIN_DATA_SLOTS,
     );
+
+    return baseLength + SL_MIN_DATA_SLOTS;
 }
 
 /**
@@ -236,6 +254,9 @@ export function createParserContext(
  * @param region Which region to grow ({@link REGION_MODIFIERS}, {@link REGION_DOMAINS},
  *   or {@link REGION_SCRIPTLET_BODY}).
  * @param newCapacity Desired new capacity (records for mod/domain; slots for scriptlet).
+ * @param dataOffset Offset within `ctx.data` where the CR/NR header starts.
+ *   Non-zero for `parseRange()` sub-parses; the header and every region are
+ *   copied at the same offset in the new buffer.
  *
  * @returns `true` on success; `false` if `newCapacity` exceeds the hard cap
  *          (caller should then set `ctx.overflowRegion` and `ctx.status = 2`).
@@ -244,6 +265,7 @@ export function growCtxRegion(
     ctx: ParserContext,
     region: GrowableRegion,
     newCapacity: number,
+    dataOffset = 0,
 ): boolean {
     let hardCap: number;
     if (region === REGION_MODIFIERS) {
@@ -267,23 +289,31 @@ export function growCtxRegion(
     const newMaxScriptlet = region === REGION_SCRIPTLET_BODY ? newCapacity : oldMaxScriptlet;
 
     const oldData = ctx.data;
-    const newData = new Int32Array(computeDataLength(newMaxMods, newMaxDomains, newMaxScriptlet));
+    const newData = new Int32Array(dataOffset + computeDataLength(newMaxMods, newMaxDomains, newMaxScriptlet));
 
-    // Copy header (always at offsets [0, NR_MODIFIER_RECORDS_OFFSET)).
-    for (let i = 0; i < NR_MODIFIER_RECORDS_OFFSET; i += 1) {
-        newData[i] = oldData[i];
+    // Preserve anything before the caller's header (sub-parser composition).
+    if (dataOffset > 0) {
+        newData.set(oldData.subarray(0, dataOffset), 0);
     }
 
-    // Copy modifier records (start offset is fixed at NR_MODIFIER_RECORDS_OFFSET).
+    // Copy header (at the caller's dataOffset).
+    for (let i = 0; i < NR_MODIFIER_RECORDS_OFFSET; i += 1) {
+        newData[dataOffset + i] = oldData[dataOffset + i];
+    }
+
+    // Copy modifier records (start offset is fixed relative to the header).
     const modSlots = oldMaxMods * MAX_MODIFIER_RECORD_STRIDE;
     newData.set(
-        oldData.subarray(NR_MODIFIER_RECORDS_OFFSET, NR_MODIFIER_RECORDS_OFFSET + modSlots),
-        NR_MODIFIER_RECORDS_OFFSET,
+        oldData.subarray(
+            dataOffset + NR_MODIFIER_RECORDS_OFFSET,
+            dataOffset + NR_MODIFIER_RECORDS_OFFSET + modSlots,
+        ),
+        dataOffset + NR_MODIFIER_RECORDS_OFFSET,
     );
 
     // Copy domain records — offset shifts when maxMods grew.
-    const oldDomainStart = NR_MODIFIER_RECORDS_OFFSET + oldMaxMods * MAX_MODIFIER_RECORD_STRIDE;
-    const newDomainStart = NR_MODIFIER_RECORDS_OFFSET + newMaxMods * MAX_MODIFIER_RECORD_STRIDE;
+    const oldDomainStart = dataOffset + DATA_HEADER_SIZE + oldMaxMods * MAX_MODIFIER_RECORD_STRIDE;
+    const newDomainStart = dataOffset + DATA_HEADER_SIZE + newMaxMods * MAX_MODIFIER_RECORD_STRIDE;
     const domSlots = oldMaxDomains * DOMAIN_RECORD_STRIDE;
     newData.set(oldData.subarray(oldDomainStart, oldDomainStart + domSlots), newDomainStart);
 
@@ -294,6 +324,11 @@ export function growCtxRegion(
         oldData.subarray(oldScriptletStart, oldScriptletStart + oldMaxScriptlet),
         newScriptletStart,
     );
+
+    // Copy the selector-list region, which lives at the end of the buffer.
+    const oldSelectorStart = oldData.length - SL_MIN_DATA_SLOTS;
+    const newSelectorStart = newData.length - SL_MIN_DATA_SLOTS;
+    newData.set(oldData.subarray(oldSelectorStart), newSelectorStart);
 
     ctx.data = newData;
     ctx.maxMods = newMaxMods;
@@ -446,7 +481,22 @@ export function skipUntil(ctx: ParserContext, ti: number, end: number, tokenType
  * @returns Domain records offset.
  */
 export function domainRecordsOffset(ctx: ParserContext): number {
-    return NR_MODIFIER_RECORDS_OFFSET + ctx.maxMods * MAX_MODIFIER_RECORD_STRIDE;
+    return DATA_HEADER_SIZE + ctx.maxMods * MAX_MODIFIER_RECORD_STRIDE;
+}
+
+/**
+ * Computes the absolute domain-records offset for a header at `dataOffset`.
+ *
+ * Shared by the cosmetic AST builders so the header size and the maximum
+ * modifier stride cannot drift between files.
+ *
+ * @param dataOffset Offset within `ctx.data` where the CR header starts.
+ * @param maxMods Maximum number of modifier records in the buffer.
+ *
+ * @returns Absolute offset of the first domain record.
+ */
+export function domainRecordsOffsetFor(dataOffset: number, maxMods: number): number {
+    return dataOffset + DATA_HEADER_SIZE + maxMods * MAX_MODIFIER_RECORD_STRIDE;
 }
 
 /**

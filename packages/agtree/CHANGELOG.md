@@ -25,6 +25,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- The minimum `ParserContext` data buffer grows by the selector-list region
+  (`SL_MIN_DATA_SLOTS`, 730 Int32 slots ≈ 2.9 KB) because the selector list is
+  stored at the end of the buffer. Code that pre-sizes buffers from
+  `ParserContext` capacities sees a larger minimum; `HF_MIN_DATA_SLOTS` now
+  equals `SL_MIN_DATA_SLOTS`.
 - `CommentKind` is a regular `enum` instead of a `const enum`, so consumers
   compiling with `isolatedModules` can use it in a value position.
 - AdGuard HTML filtering rule bodies with an unbalanced or unterminated
@@ -63,6 +68,19 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- HTML filtering and element-hiding rules with a long selector no longer
+  overwrite their own domain records: the selector-list region now lives at
+  the end of the parser buffer instead of after the rule header. Rules such
+  as `example.com,example.org##^div.c0 div.c1 …` keep both domains.
+- `[$...]` modifier records are no longer overwritten by `##^responseheader()`
+  fields: the responseheader name and argument are stored in the free
+  selector-list region, so `[$path=/x]example.com##^responseheader(foo)` keeps
+  `path=/x`. The header-removal converter refuses such rules instead of
+  emitting a broadened `$removeheader` rule.
+- Growing the modifier or domain region preserves every region, including the
+  selector-list tail and anything before a non-zero `dataOffset`, and domain
+  records no longer overlap the last modifier record when a small capacity
+  makes the regions adjacent.
 - The uBO modifier candidate scan for cosmetic selectors is linear again: a
   selector with many `:not()` wrappers no longer makes rule parsing
   quadratic (an 8,000-wrapper selector took ~285 ms; a cap-size selector

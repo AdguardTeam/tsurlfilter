@@ -28,6 +28,7 @@ export const ERROR_MESSAGES = {
     EMPTY_PARAMETER: `Empty parameter for '${UBO_RESPONSEHEADER_FN}' function`,
     EXPECTED_END_OF_RULE: "Expected end of rule, but got '%s'",
     MULTIPLE_DOMAINS_NOT_SUPPORTED: 'Multiple domains are not supported yet',
+    MODIFIERS_NOT_SUPPORTED: 'Rules with an AdGuard `[$...]` modifier list are not supported',
 };
 
 /**
@@ -100,6 +101,13 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
         // Check if the rule body is a uBO responseheader(...) function
         if (!body || !isUboResponseHeaderRemovalRuleBody(body)) {
             return createNodeConversionResult([rule], false);
+        }
+
+        // A `$removeheader` network rule cannot carry cosmetic `[$...]`
+        // modifiers (`path=`, `domain=`, ...). Dropping them would broaden the
+        // rule, so refuse the conversion instead (F-005).
+        if (rule.modifiers && rule.modifiers.children.length > 0) {
+            throw new RuleConversionError(ERROR_MESSAGES.MODIFIERS_NOT_SUPPORTED);
         }
 
         // Length of AST nodes, types of nodes, non-null argument
