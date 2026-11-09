@@ -1,5 +1,3 @@
-import { isPlainHostname } from '../../../common/utils/hostname';
-
 import {
     MANIFEST_FILENAME,
     MANIFEST_SCHEMA_VERSION,
@@ -51,7 +49,6 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         schemaVersion,
         hashes,
         scriptletFiles,
-        hostnames,
         conditions,
         pageExceptions,
     } = value as Partial<PreregisteredScriptsManifest>;
@@ -74,11 +71,6 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         }
     }
 
-    if (!Array.isArray(hostnames) || hostnames.length === 0
-        || !hostnames.every((hostname) => typeof hostname === 'string' && isPlainHostname(hostname))) {
-        throw new Error(`Malformed manifest at ${url}: "hostnames" must be a non-empty array of plain hostnames`);
-    }
-
     if (!Array.isArray(conditions) || !conditions.every((filterId) => Number.isInteger(filterId) && filterId > 0)) {
         throw new Error(`Malformed manifest at ${url}: "conditions" must be an array of filter ids`);
     }
@@ -97,7 +89,6 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         schemaVersion,
         hashes,
         scriptletFiles,
-        hostnames,
         pageExceptions,
         conditions,
     };
@@ -128,9 +119,10 @@ const fetchManifest = async (scriptsPath: string): Promise<PreregisteredScriptsM
 /**
  * Fetches the build-time manifest shipped next to the artifacts. It lists
  * the rule hashes with matching generated files, the scriptlet name →
- * function-file map, the hostname set, the ids of the filters whose page
- * exceptions are baked into conditions files and the fingerprint those
- * exceptions were baked from.
+ * function-file map, the ids of the filters whose page exceptions are
+ * baked into conditions files and the fingerprint those exceptions were
+ * baked from. A leftover `hostnames` field is ignored: coverage is the
+ * descriptors that were built, not a host list.
  *
  * The manifest is this package's own build output, but it is still
  * validated: a missing, unreadable, malformed, or version-mismatched

@@ -344,18 +344,20 @@ Coverage is reported from the registrations actually active after a sync:
 on sync failure the last published coverage is kept (the boot snapshot
 before the first sync), and rules in those sets stay excluded from dynamic
 injection; a rule that cannot be confirmed as covered remains on the
-dynamic path. Documents that loaded before the current service worker
-started are judged against the boot snapshot of the registrations that
-existed then; later documents use the last published coverage.
+dynamic path. Outermost documents that loaded before the current service
+worker started are judged against the boot snapshot of the registrations
+that existed then; later outermost documents use the last published
+coverage. Subframes are not part of either: their coverage is always the
+dynamic path.
 
-Coverage applies to top-level documents only: a subframe's verdict depends
-on the rules of its parent (the engine passes the parent's frame rule into
-the subdocument match), and the page cannot read the parent's URL when the
-domains differ. Frames therefore always stay on the dynamic injection path,
-where the engine sees the frame rule; they trade `document_start` timing for
-the correct verdict. The registered host set is the manifest's, not the
-runtime expansion: a configured hostname that the manifest does not list has
-no baked files and is skipped with a warning.
+Coverage applies to outermost documents only, including a prerendered
+document whose frame id is not zero: a subframe's verdict depends on the
+main frame's rule and URL, and the page cannot read that URL when the
+domains differ. Subframes therefore always stay on the dynamic injection
+path, where the engine sees the main-frame rule; they trade
+`document_start` timing for the correct verdict. The runtime registers the
+configured expansion. A rule with no baked file is dropped and stays on the
+dynamic path.
 
 At runtime, each configured hostname (plus its `www.` alias) is matched
 against the engine with `$path` ignored, the matching rules are hashed, and
@@ -385,12 +387,12 @@ Known limitations:
   their `$document`/`$jsinject` exception can reach keeps the dynamic path,
   and a subframe is never preregistered for the same reason — see the
   coverage notes above.
-- Frames never take the fast path: they are injected dynamically, on
-  `webNavigation.onCommitted`, after the frame's document starts. A frame
-  whose own inline script reads a property before that moment wins the race,
-  and in the cold-start window (browser or service-worker start, while the
-  engine is still being built) the frame may receive no rules at all. The
-  top-level document is unaffected.
+- Subframes never take the fast path: they are injected dynamically, on
+  `webNavigation.onResponseStarted` or `webNavigation.onCommitted`, after the
+  frame's document starts. A frame whose own inline script reads a property
+  before that moment wins the race, and in the cold-start window (browser or
+  service-worker start, while the engine is still being built) the frame may
+  receive no rules at all. The top-level document is unaffected.
 - The preregistered path is shipped for the Chromium-based MV3 targets only:
   the artifacts are generated and committed for Chromium, Opera and Edge, so
   the Firefox MV3 package has no preregistration and stays fully dynamic.

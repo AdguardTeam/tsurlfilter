@@ -22,7 +22,6 @@ const VALID_MANIFEST = {
     schemaVersion: MANIFEST_SCHEMA_VERSION,
     hashes: ['0123456789abcdef'],
     scriptletFiles: { 'set-cookie': 's-set-cookie.js' },
-    hostnames: ['youtube.com', 'www.youtube.com'],
     conditions: [2],
     pageExceptions: { 2: '0123456789abcdef' },
 };
@@ -148,22 +147,12 @@ describe('readManifest', () => {
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('s-*.js');
     });
 
-    it('throws when "hostnames" is missing, so the gate set is never guessed', async () => {
-        stubManifestFetch(makeManifest({ hostnames: undefined }));
+    it('ignores a leftover "hostnames" field', async () => {
+        stubManifestFetch(makeManifest({ hostnames: ['youtube.com'] }));
 
-        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hostnames"');
-    });
-
-    it.each([
-        ['an empty array', []],
-        ['a bare string', 'youtube.com'],
-        ['an upper-case host', ['Example.COM']],
-        ['a host with a port', ['example.com:443']],
-        ['a URL', ['https://example.com']],
-    ])('throws when "hostnames" is %s', async (_shape, hostnames) => {
-        stubManifestFetch(makeManifest({ hashes: [], hostnames }));
-
-        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"hostnames"');
+        // The host list is not part of the contract: coverage comes from
+        // the built descriptors, so the field is dropped.
+        await expect(readManifest(SCRIPTS_PATH)).resolves.toEqual(VALID_MANIFEST);
     });
 
     it('throws when "pageExceptions" is missing, so a stale gate is never trusted', async () => {

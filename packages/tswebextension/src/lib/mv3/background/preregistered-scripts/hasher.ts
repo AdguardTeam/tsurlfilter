@@ -87,15 +87,6 @@ export interface PreregisteredScriptsManifest {
     scriptletFiles: Record<string, string>;
 
     /**
-     * Expanded preregistered hostnames embedded in the shared bundle's embed
-     * gate. The runtime publishes this set for the top-level-site check, so
-     * the page and background predicates always use the same set. Required:
-     * a manifest without it cannot describe what its bundle gates, and the
-     * feature has no released generation to stay compatible with.
-     */
-    hostnames: string[];
-
-    /**
      * Ids of the filters whose page exceptions are baked into
      * `cond-{filterId}.js`. Each file adds the exceptions of one filter to the
      * page gate of the shared bundle; the runtime includes only the files of

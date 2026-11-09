@@ -46,11 +46,21 @@ describe('getCoveredRules', () => {
     });
 
     it('returns undefined for any subframe, so the engine decides there', () => {
-        // The frame's verdict depends on the parent's rules, which the page
-        // cannot read: frames always keep the dynamic path.
+        // The frame's verdict depends on the main frame's rule and URL,
+        // which the page cannot read: frames always keep the dynamic path.
         appContext.preregisteredScriptRules = new Map([['youtube.com', new Set(['abc'])]]);
 
         expect(getCoveredRules(frame(2, 'https://youtube.com/embed', 0))).toBeUndefined();
+    });
+
+    it('covers an outermost document whose frame id is not zero', () => {
+        // A prerendered outermost document can land under a non-zero frame
+        // id. It has no parent, and the allFrames:false registration runs
+        // there, so it must not fall through to dynamic injection.
+        appContext.preregisteredScriptRules = new Map([['youtube.com', new Set(['abc'])]]);
+
+        expect(getCoveredRules(frame(7, 'https://youtube.com/', -1)))
+            .toEqual(new Set(['abc']));
     });
 
     it('returns undefined for a non-http main frame', () => {

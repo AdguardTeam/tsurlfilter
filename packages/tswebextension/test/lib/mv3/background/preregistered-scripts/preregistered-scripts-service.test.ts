@@ -196,8 +196,8 @@ const scriptletFilename = (name: string): string => `s-${name}.js`;
  * (404) manifest.
  * @param scriptletFiles Scriptlet name → per-function filename map.
  * Defaults to an empty map.
- * @param hostnames Expanded host set to embed in the manifest. Defaults to
- * the configured domains; `null` omits the field to simulate a broken build.
+ * @param hostnames Optional leftover host list. The runtime ignores it;
+ * `null` omits the field.
  * @param conditions Ids of the filters that carry conditions files.
  * @param pageExceptions Filter id → fingerprint map of the baked page
  * exceptions. Defaults to the map a consistent build produces for the enabled
@@ -1102,8 +1102,9 @@ describe('PreregisteredScriptsService', () => {
                 new Map([['youtube.com', new Set([hash])]]),
             );
 
-            // The embed gate's host set is the configured domains plus their
-            // `www.` aliases — the same expansion the shared bundle embeds.
+            // The registration set is the configured domains plus their
+            // `www.` aliases — the same expansion the artifact generation
+            // carries.
         });
 
         it('snapshots the boot registrations once when two init calls overlap', async () => {
@@ -1300,19 +1301,7 @@ describe('PreregisteredScriptsService', () => {
             expect(result).toEqual(new Map());
         });
 
-        it('keeps the previous hostname set when a later sync fails', async () => {
-            await setupRulesWithManifest({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
-
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-
-            // A failed sync leaves the previous registrations active, so the
-            // published host set must still describe them.
-            vi.mocked(ContentScriptManager.sync).mockRejectedValueOnce(new Error('invalid namespace'));
-
-            await PreregisteredScriptsService.sync(true, ['example.com'], SCRIPTS_PATH);
-        });
-
-        it('publishes the generation host set when the first sync fails', async () => {
+        it('republishes the boot snapshot when the first sync fails', async () => {
             appContext.preregisteredScripts = { domains: ['youtube.com'], path: SCRIPTS_PATH };
             appContext.preregisteredScriptRulesAtBoot = new Map([
                 ['youtube.com', new Set(['0123456789abcdef'])],
@@ -1325,58 +1314,18 @@ describe('PreregisteredScriptsService', () => {
             const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
             // The fallback coverage describes the registrations that are
-            // still active, so the dynamic path must be able to match them
-            // against the published host set.
+            // still active: the boot snapshot, not the runtime expansion.
             expect(result).toEqual(new Map([
                 ['youtube.com', new Set(['0123456789abcdef'])],
             ]));
-            // The generation's set, not the runtime expansion, which would
-            // also cover `www.youtube.com`.
         });
 
-        it('falls back to the coverage keys when the manifest cannot be read', async () => {
-            appContext.preregisteredScripts = { domains: ['youtube.com'], path: SCRIPTS_PATH };
-            appContext.preregisteredScriptRulesAtBoot = new Map([
-                ['youtube.com', new Set(['0123456789abcdef'])],
-            ]);
-
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-
-            // Without a manifest the generation's set is unknown. The runtime
-            // expansion is not published: it may hold a host outside the gate
-            // set, and a host the gate shims must not be reported as covered.
-            // The coverage keys under-claim instead, which only re-runs a rule
-            // the page bundle has already run.
-        });
-
-        it('publishes the manifest host set when the first sync is already disabled', async () => {
+        it('registers a configured host the manifest host list omits', async () => {
             const rule = mockScriptletRule('set-cookie', []);
-            setupManifest(
-                [await computeRuleHash(rule)],
-                { 'set-cookie': scriptletFilename('set-cookie') },
-                ['youtube.com'],
-            );
-            // The boot snapshot lists both hosts: a host with no registration
-            // of its own is still in the gate set, so the boot keys cannot
-            // describe the gate. `configure()` starts with a disabled sync
-            // when `debugScriptlets` is on.
-            appContext.preregisteredScriptRulesAtBoot = new Map([
-                ['youtube.com', new Set(['0123456789abcdef'])],
-                ['www.youtube.com', new Set(['0123456789abcdef'])],
-            ]);
-
-            await PreregisteredScriptsService.sync(false, ['youtube.com'], SCRIPTS_PATH);
-        });
-
-        it('publishes the host set embedded in the manifest', async () => {
-            const rule = mockScriptletRule('set-cookie', []);
-            // Both hosts carry the rule, so only the manifest filter can keep
-            // the alias out of the registrations.
             await setupRulesWithManifest({ 'youtube.com': [rule], 'www.youtube.com': [rule] });
 
-            // The shared bundle embeds the generation's host set; it is the
-            // source of truth for the top-level predicate, even when the
-            // runtime config expands to a different list.
+            // `hostnames` is no longer a filter. Both hosts have a baked
+            // rule file, so both are registered and covered for that hash.
             setupManifest(
                 [await computeRuleHash(rule)],
                 { 'set-cookie': scriptletFilename('set-cookie') },
@@ -1385,31 +1334,8 @@ describe('PreregisteredScriptsService', () => {
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            // The runtime expansion also covers `www.youtube.com`, but the
-            // page gate only knows the manifest host: registering the alias
-            // would run its rules at `document_start` on its own top-level
-            // pages while the background reports no coverage there, and the
-            // dynamic path would inject the same rules again.
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-            expect(scripts.map((script) => script.id)).toEqual(['youtube.com']);
-        });
-
-        it('keeps the generation host set when preregistration is disabled', async () => {
-            const rule = mockScriptletRule('set-cookie', []);
-            await setupRulesWithManifest({ 'youtube.com': [rule] });
-            setupManifest(
-                [await computeRuleHash(rule)],
-                { 'set-cookie': scriptletFilename('set-cookie') },
-                ['youtube.com'],
-            );
-
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-
-            // With preregistration disabled the manifest is not read, and the
-            // expansion also covers `www.youtube.com`. Publishing it would
-            // claim coverage for a host whose frames the page gate shims, so
-            // the set that describes the live registrations is kept.
-            await PreregisteredScriptsService.sync(false, ['youtube.com'], SCRIPTS_PATH);
+            expect(scripts.map((script) => script.id).sort()).toEqual(['www.youtube.com', 'youtube.com']);
         });
 
         it('awaits an in-flight sync before clearing in the no-config path', async () => {

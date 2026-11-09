@@ -85,11 +85,12 @@ type RegistrationPlan = {
  * preregistered domains, so build-time-known scriptlet/JS rules run at
  * `document_start`, before the extension itself finishes starting up.
  *
- * Only top-level documents are registered: a subframe's verdict depends on
- * the rules of its parent (the engine passes the parent's frame rule into
- * the subdocument match), and the page cannot read the parent's URL when the
- * domains differ. Frames therefore always keep the dynamic injection path,
- * where the engine decides.
+ * Only outermost documents are registered, including a prerender whose
+ * frame id is not zero: a subframe's verdict depends on the main frame's
+ * rule and URL (the engine passes those into the subdocument match), and
+ * the page cannot read the main-frame URL when the domains differ. Frames
+ * therefore always keep the dynamic injection path, where the engine
+ * decides.
  *
  * Hostnames not in the list keep the standard dynamic injection path.
  *
@@ -504,7 +505,7 @@ export class PreregisteredScriptsService {
         scriptsPath: string,
     ): Promise<RegistrationPlan> {
         const manifest = await readManifest(scriptsPath);
-        const staleFilters = await PreregisteredScriptsService.findStalePageExceptionFilters(manifest);
+        const staleFilters = await PreregisteredScriptsService.findStalePageExceptionFilters(manifest, hostnames);
 
         if (staleFilters) {
             logger.warn(
@@ -519,21 +520,13 @@ export class PreregisteredScriptsService {
             };
         }
 
-        const gateHosts = new Set(manifest.hostnames);
-        const registeredHostnames = hostnames.filter((hostname) => gateHosts.has(hostname));
-        const skippedHostnames = hostnames.filter((hostname) => !gateHosts.has(hostname));
-
-        if (skippedHostnames.length > 0) {
-            logger.warn(
-                `[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: ${skippedHostnames.length}`
-                + ' configured hostname(s) are missing from the manifest host set, not registering them',
-                skippedHostnames,
-            );
-        }
-
+        // Rule files are named by hash. `buildDomainScripts` drops rules
+        // missing from `manifest.hashes`, and coverage is read from the
+        // descriptors that were built, so a host the generation does not list
+        // is still registered for exactly the rules that have baked files.
         const runtimeAffected = findHostsWithRuntimeExceptions(
             engineApi.getRuntimeExceptionLines(),
-            registeredHostnames,
+            hostnames,
         );
         if (runtimeAffected.size > 0) {
             logger.warn(
@@ -543,7 +536,7 @@ export class PreregisteredScriptsService {
             );
         }
 
-        const staticHostnames = registeredHostnames.filter((hostname) => !runtimeAffected.has(hostname));
+        const staticHostnames = hostnames.filter((hostname) => !runtimeAffected.has(hostname));
 
         return {
             registeredHostnames: staticHostnames,
@@ -570,19 +563,23 @@ export class PreregisteredScriptsService {
      * lists at all.
      *
      * @param manifest Build-time manifest.
+     * @param hostnames Preregistered hostnames the comparison is scoped to.
      *
      * @returns Ids of the filters whose baked exceptions must not be applied,
      * or `null` when the baked exceptions describe the loaded lists.
      */
     private static async findStalePageExceptionFilters(
         manifest: PreregisteredScriptsManifest,
+        hostnames: readonly string[],
     ): Promise<string[] | null> {
         const filterIds = engineApi.getEnabledLocalFiltersIds();
-        const hostnamesKey = manifest.hostnames.join('\n');
+        // The generation baked its conditions files for the hosts the
+        // configuration lists, so the same expansion scopes the comparison.
+        const hostnamesKey = hostnames.join('\n');
 
         const checked = await Promise.all(filterIds.map(async (filterId) => {
             const fingerprint = await PreregisteredScriptsService
-                .resolveFilterFingerprint(filterId, hostnamesKey, manifest.hostnames);
+                .resolveFilterFingerprint(filterId, hostnamesKey, hostnames);
 
             return {
                 filterId,
