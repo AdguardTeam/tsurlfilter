@@ -34,17 +34,46 @@ const fingerprint = async (content: string, hostnames: string[] = HOSTS): Promis
 };
 
 describe('computePageExceptionsFingerprint', () => {
-    it('is stable for the same rules and does not depend on the line order', async () => {
-        const first = await fingerprint([
-            '@@||youtube.com/my_video_ad$document',
+    it('is stable for the same rules', async () => {
+        const content = [
             '@@||youtube.com^$generichide',
+            '@@||youtube.com/watch$jsinject',
+        ].join('\n');
+
+        expect(await fingerprint(content)).toBe(await fingerprint(content));
+    });
+
+    it('changes when the rules are reordered', async () => {
+        // Two exceptions of one hostname-table key tie, and the engine breaks
+        // the tie by the list order: `$generichide` first keeps JS enabled on
+        // the page, `$jsinject` first disables it.
+        const generichideFirst = await fingerprint([
+            '@@||youtube.com^$generichide',
+            '@@||youtube.com/watch$jsinject',
         ].join('\n'));
-        const second = await fingerprint([
+        const jsinjectFirst = await fingerprint([
+            '@@||youtube.com/watch$jsinject',
             '@@||youtube.com^$generichide',
-            '@@||youtube.com/my_video_ad$document',
         ].join('\n'));
 
-        expect(first).toBe(second);
+        expect(generichideFirst).not.toBe(jsinjectFirst);
+    });
+
+    it('does not depend on the order the covered hostnames are given in', async () => {
+        const content = '@@||youtube.com^$generichide';
+
+        expect(await fingerprint(content, ['www.youtube.com', 'youtube.com']))
+            .toBe(await fingerprint(content, ['youtube.com', 'www.youtube.com']));
+    });
+
+    it('changes when a covered hostname is added', async () => {
+        // A rule for a whole domain reaches a new subdomain too, but the baked
+        // conditions map has no entry for it, so the generation must be
+        // invalidated even though the rules did not change.
+        const base = await fingerprint('@@||youtube.com^$generichide', ['youtube.com']);
+        const wider = await fingerprint('@@||youtube.com^$generichide', ['music.youtube.com', 'youtube.com']);
+
+        expect(wider).not.toBe(base);
     });
 
     it('changes when an exception is added or removed', async () => {
@@ -122,16 +151,13 @@ describe('computePageExceptionsFingerprint', () => {
         expect(withOtherSite).toBe(base);
     });
 
-    it('counts the same rule once the hostname is covered', async () => {
+    it('counts an exception only once its hostname is covered', async () => {
         const base = await fingerprint('@@||youtube.com^$document');
-        const covered = await fingerprint('@@||youtube.com^$document', [...HOSTS, 'example.org']);
         const withOtherSite = await fingerprint(
             ['@@||youtube.com^$document', '@@||example.org^$generichide'].join('\n'),
             [...HOSTS, 'example.org'],
         );
 
-        // The scope itself is not part of the hash, only the rules it keeps.
-        expect(covered).toBe(base);
         expect(withOtherSite).not.toBe(base);
     });
 

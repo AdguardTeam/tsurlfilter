@@ -2,7 +2,7 @@ import { NetworkRule } from '@adguard/tsurlfilter';
 
 import { convertRuleLine, isExceptionCandidateLine, splitFilterLines } from './filter-lines';
 import { matchesHostScope } from './host-scope';
-import { createPreregisteredPageRequest } from './root-request';
+import { createPreregisteredPageRequest } from './page-request';
 
 /**
  * Keeps the lines that can carry a page exception: an allowlist rule with

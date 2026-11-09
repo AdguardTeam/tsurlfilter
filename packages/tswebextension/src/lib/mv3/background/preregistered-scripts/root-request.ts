@@ -24,22 +24,3 @@ export const getPreregisteredRootUrl = (hostname: string): string => {
 export const createPreregisteredRootRequest = (hostname: string): Request => {
     return new Request(getPreregisteredRootUrl(hostname), null, RequestType.Document);
 };
-
-/**
- * Creates the document request the page gate decides on: the link is the page
- * itself, so the request is first-party and its source hostname is the page
- * hostname.
- *
- * Modifier matching needs both: `matchModifiers()` resolves a `$domain` of a
- * domain-specific pattern against the source hostname for document requests,
- * and a request without a source has none.
- *
- * @param hostname Hostname to query.
- *
- * @returns Document request of the hostname page.
- */
-export const createPreregisteredPageRequest = (hostname: string): Request => {
-    const url = getPreregisteredRootUrl(hostname);
-
-    return new Request(url, url, RequestType.Document);
-};

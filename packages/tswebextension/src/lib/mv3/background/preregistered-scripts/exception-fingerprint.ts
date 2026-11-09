@@ -3,7 +3,7 @@ import { NetworkRule, type Request } from '@adguard/tsurlfilter';
 import { convertRuleLine, isExceptionCandidateLine, splitFilterLines } from './filter-lines';
 import { hashString } from './hasher';
 import { matchesHostScope } from './host-scope';
-import { createPreregisteredPageRequest } from './root-request';
+import { createPreregisteredPageRequest } from './page-request';
 
 /**
  * A filter list together with the id it belongs to.
@@ -39,14 +39,19 @@ type HostScope = {
  * Builds the scope entries once per fingerprint, so a rule is not re-checked
  * with a new request object for every hostname.
  *
+ * Sorted: the order the covered hostnames are configured in must not change
+ * the fingerprint, unlike the order of the list lines.
+ *
  * @param hostnames Covered hostnames.
  *
- * @returns Hostname with the document request the gate decides on.
+ * @returns Hostname with the document request the gate decides on, sorted.
  */
-const toHostScopes = (hostnames: readonly string[]): HostScope[] => hostnames.map((hostname) => ({
-    hostname,
-    request: createPreregisteredPageRequest(hostname),
-}));
+const toHostScopes = (hostnames: readonly string[]): HostScope[] => [...hostnames]
+    .sort()
+    .map((hostname) => ({
+        hostname,
+        request: createPreregisteredPageRequest(hostname),
+    }));
 
 /**
  * Describes the page exceptions of one raw filter line that can reach at least
@@ -58,18 +63,23 @@ const toHostScopes = (hostnames: readonly string[]): HostScope[] => hostnames.ma
  * value the engine's verdict depends on is already in it, unlike a hand-picked
  * set of flags.
  *
+ * Every fact is tagged with the hostname it reaches. A rule that covers a
+ * whole domain reaches a new subdomain too, so without the tag a hostname
+ * added to the configuration would keep the fingerprint and the runtime would
+ * register a host the baked conditions map has no entry for.
+ *
  * @param line Raw filter line.
  * @param filterId Filter the line belongs to.
- * @param hosts Covered hostnames with their root requests.
+ * @param hosts Covered hostnames with their page requests.
  *
- * @returns Converted texts of the exception rules the line carries.
+ * @returns Tagged texts of the exception rules the line carries.
  */
 const describePageExceptionRules = (
     line: string,
     filterId: number,
     hosts: readonly HostScope[],
 ): string[] => {
-    const ruleTexts: string[] = [];
+    const facts: string[] = [];
 
     for (const ruleText of convertRuleLine(line)) {
         let rule: NetworkRule;
@@ -95,20 +105,18 @@ const describePageExceptionRules = (
         // The pattern scope alone is not enough: an unanchored pattern (`*`,
         // an empty one, a bare fragment) can occur inside a URL of any host,
         // so only the modifiers — `$domain` first of all — say whether the
-        // rule can decide this host's page. The root request is the same one
+        // rule can decide this host's page. The page request is the same one
         // the runtime exception check uses, and `matchModifiers()` does not
         // look at `$path`/`$url`, so both sides get the same answer.
         const pattern = rule.getPattern();
-        const reachesHost = hosts.some(({ hostname, request }) => matchesHostScope(pattern, hostname)
-            && rule.matchModifiers(request));
-        if (!reachesHost) {
-            continue;
+        for (const { hostname, request } of hosts) {
+            if (matchesHostScope(pattern, hostname) && rule.matchModifiers(request)) {
+                facts.push(`${hostname}\t${ruleText}`);
+            }
         }
-
-        ruleTexts.push(ruleText);
     }
 
-    return ruleTexts;
+    return facts;
 };
 
 /**
@@ -116,7 +124,7 @@ const describePageExceptionRules = (
  *
  * @param content Raw filter list text.
  * @param filterId Id of the filter list the text came from.
- * @param hosts Covered hostnames with their root requests.
+ * @param hosts Covered hostnames with their page requests.
  *
  * @returns Facts of the page exceptions found in the text.
  */
@@ -161,6 +169,11 @@ const collectExceptionFacts = (
  * change exceptions for other sites on almost every update, and such an edit
  * must not invalidate the baked artifacts of every host.
  *
+ * The order of the facts stays as it is in the list. Two exceptions for the
+ * same hostname-table key tie, and the engine breaks the tie by the list
+ * order, so a reorder changes the verdict and has to invalidate the baked
+ * artifacts.
+ *
  * @param lists Local filter lists with their ids.
  * @param hostnames Hostnames the generation covers.
  *
@@ -176,11 +189,7 @@ export const computePageExceptionsFingerprint = async (
         filterId,
         facts: collectExceptionFacts(content, filterId, hosts),
     }));
-    const hashes = await Promise.all(facts.map(async ({ facts: list }) => {
-        // The engine's match order does not depend on the list order.
-        list.sort();
-        return hashString(list.join('\n'));
-    }));
+    const hashes = await Promise.all(facts.map(async ({ facts: list }) => hashString(list.join('\n'))));
 
     return Object.fromEntries(
         facts.map(({ filterId }, index) => [String(filterId), hashes[index]]),

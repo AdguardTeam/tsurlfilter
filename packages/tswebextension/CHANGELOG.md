@@ -30,12 +30,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `cond-{filterId}.js`. The service registers the files of the enabled
   filters before the shared bundle, so a filter's exceptions stop applying
   when the filter is disabled.
+- The manifest now carries `dynamicHostnames` — the covered hostnames that
+  stayed on the dynamic path during the generation because a user rule or a
+  custom filter can change their page verdict. The baked `conditions` map may
+  have an entry for them, so the service skips them instead of applying a
+  verdict that does not describe the engine.
 - The manifest now carries `pageExceptions` — a map of filter id to a
   fingerprint of the allowlist rules that filter's conditions file was baked
   from, computed by `computePageExceptionsFingerprint()`. The hash covers the
-  converted rule text of every exception that can reach one of the covered
-  hostnames, so an edit to any modifier value that changes the engine verdict
-  invalidates the generation, while an exception for another site does not.
+  converted text of every exception tagged with the hostname it reaches, in
+  list order: an edit to any modifier value that changes the engine verdict,
+  a reorder of two exceptions that tie, and a new covered hostname all
+  invalidate the generation, while an exception for another site does not.
   The service recomputes it for the enabled filters and falls back to dynamic
   injection when one of them does not match, so exceptions baked from lists
   that have since changed are never applied; a filter disabled at runtime has

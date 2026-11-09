@@ -129,7 +129,7 @@ describe('Pattern Tests', () => {
 
     it('does not treat the cut of a long URL as its end', () => {
         const pattern = new Pattern('||example.org^*.js|');
-        const tail = 'a'.repeat(Request.MAX_URL_MATCH_LENGTH);
+        const tail = 'a'.repeat(Request.MAX_URL_MATCH_LENGTH - 'https://example.org/.js'.length);
 
         // `.js` ends exactly at the cut, but the URL continues: an end anchor
         // must not match there.
