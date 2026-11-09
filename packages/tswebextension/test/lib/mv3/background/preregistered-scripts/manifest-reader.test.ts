@@ -136,7 +136,7 @@ describe('readManifest', () => {
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('s-*.js');
     });
 
-    it('accepts a manifest without "hostnames"', async () => {
+    it('ignores a leftover "hostnames" field', async () => {
         stubManifestFetch({
             schemaVersion: MANIFEST_SCHEMA_VERSION,
             hashes: [],

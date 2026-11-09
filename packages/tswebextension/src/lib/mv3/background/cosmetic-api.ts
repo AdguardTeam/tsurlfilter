@@ -548,10 +548,10 @@ export class CosmeticApi extends CosmeticApiCommon {
         const tasks: Promise<void>[] = [];
 
         // Remote rules and CSS do not depend on preregistered coverage:
-        // queue them before the coverage lookup, which may need an IPC round
-        // trip to the frame tree. `remoteRules` only ever contains custom
-        // and user filter rules, which preregistered scripts (local filters
-        // only) never cover.
+        // queue them before the coverage lookup, whose
+        // `filterUncoveredRules` awaits per-rule hashing. `remoteRules` only
+        // ever contains custom and user filter rules, which preregistered
+        // scripts (local filters only) never cover.
         tasks.push(
             CosmeticApi.applyRemoteCosmeticRules(
                 tabId,

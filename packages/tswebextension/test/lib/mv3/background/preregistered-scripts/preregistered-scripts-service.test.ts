@@ -18,7 +18,6 @@ import { engineApi } from '../../../../../src/lib/mv3/background/engine-api';
 import {
     CLEANUP_FILENAME,
     computeRuleHash,
-    expandHostnames,
     getRuleFilename,
     MANIFEST_FILENAME,
     MANIFEST_SCHEMA_VERSION,
@@ -162,13 +161,10 @@ const scriptletFilename = (name: string): string => `s-${name}.js`;
  * (404) manifest.
  * @param scriptletFiles Scriptlet name → per-function filename map.
  * Defaults to an empty map.
- * @param hostnames Optional leftover host list. The runtime ignores it;
- * `null` omits the field.
  */
 const setupManifest = (
     hashes: string[] | null,
     scriptletFiles?: Record<string, string>,
-    hostnames: string[] | null = expandHostnames(['youtube.com']),
 ): void => {
     // sinon-chrome exposes getURL via a getter — replace the whole global.
     const getURL = vi.fn((p: string) => `chrome-extension://test/${p}`);
@@ -188,7 +184,6 @@ const setupManifest = (
                 schemaVersion: MANIFEST_SCHEMA_VERSION,
                 hashes,
                 scriptletFiles: scriptletFiles ?? {},
-                ...(hostnames ? { hostnames } : {}),
             }),
         };
     }));
@@ -1145,9 +1140,8 @@ describe('PreregisteredScriptsService', () => {
                 new Map([['youtube.com', new Set(['0123456789abcdef'])]]),
             );
             expect(appContext.preregisteredScriptRules).toEqual(new Map());
-            // The boot snapshot's hosts stay published: pre-existing pages
-            // already received those registrations' files at document_start,
-            // and their coverage must remain resolvable.
+            // Pre-existing pages are judged against the boot snapshot, so it
+            // must survive the clear.
         });
 
         it('does not resurrect stale coverage after a successful clear', async () => {
@@ -1181,7 +1175,7 @@ describe('PreregisteredScriptsService', () => {
             ]);
             // The manifest must be readable, otherwise the sync is never
             // reached: the failure under test is the sync, not the read.
-            setupManifest([], {}, ['youtube.com']);
+            setupManifest([], {});
             vi.mocked(ContentScriptManager.sync).mockRejectedValueOnce(new Error('invalid namespace'));
 
             const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
@@ -1193,16 +1187,15 @@ describe('PreregisteredScriptsService', () => {
             ]));
         });
 
-        it('registers a configured host the manifest host list omits', async () => {
+        it('registers every host of the configured expansion', async () => {
             const rule = mockScriptletRule('set-cookie', []);
             await setupRulesWithManifest({ 'youtube.com': [rule], 'www.youtube.com': [rule] });
 
-            // `hostnames` is no longer a filter. Both hosts have a baked
-            // rule file, so both are registered and covered for that hash.
+            // Both hosts have a baked rule file, so both are registered and
+            // covered for that hash.
             setupManifest(
                 [await computeRuleHash(rule)],
                 { 'set-cookie': scriptletFilename('set-cookie') },
-                ['youtube.com'],
             );
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);

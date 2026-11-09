@@ -354,9 +354,6 @@ export class PreregisteredScriptsService {
         scriptsPath: string,
     ): Promise<Map<string, Set<string>>> {
         const hostnames = expandHostnames(domains);
-        // Hosts the registrations are built for. A host whose rules have no
-        // baked file is dropped in `buildDomainScripts` and stays dynamic.
-        let registeredHostnames: readonly string[] = [];
 
         // A failure here leaves the previous registrations active, so the
         // last published coverage still describes them.
@@ -366,15 +363,11 @@ export class PreregisteredScriptsService {
             if (preregistrationEnabled && hostnames.length > 0) {
                 const manifest = await readManifest(scriptsPath);
 
-                // Rule files are named by hash. `buildDomainScripts` drops
-                // rules missing from `manifest.hashes`, and coverage is read
-                // from the descriptors that were built, so a host the
-                // manifest does not list is still registered for exactly the
-                // rules that have baked files.
-                registeredHostnames = hostnames;
-
+                // Rule files are named by hash: `buildDomainScripts` drops a
+                // rule without a baked file, and coverage is read from the
+                // descriptors that were built.
                 scripts = await PreregisteredScriptsService.buildDomainScripts(
-                    registeredHostnames,
+                    hostnames,
                     scriptsPath,
                     manifest,
                 );
@@ -418,7 +411,7 @@ export class PreregisteredScriptsService {
                 : deriveCoverage(scripts);
             appContext.preregisteredScriptRules = coveredRules;
 
-            logger.info(`[tsweb.PreregisteredScriptsService.doSync]: Synced preregistered scripts: ${coveredRules.size}/${registeredHostnames.length} hostnames covered`);
+            logger.info(`[tsweb.PreregisteredScriptsService.doSync]: Synced preregistered scripts: ${coveredRules.size}/${hostnames.length} hostnames covered`);
 
             return coveredRules;
         } catch (e) {
