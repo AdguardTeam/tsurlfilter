@@ -176,6 +176,14 @@ function findCloseBrace(
 }
 
 /**
+ * Error message used when a `#$#` body has braces but no declaration between
+ * them. The rule dispatcher treats this as an ABP snippet (4.x behaviour)
+ * instead of surfacing the error, because `{}` is common snippet argument
+ * text.
+ */
+export const EMPTY_DECLARATION_LIST_MESSAGE = 'CSS injection declaration list is empty';
+
+/**
  * Reject any non-whitespace tokens between a closing brace and the end of the
  * scanned range.
  *
@@ -543,7 +551,7 @@ export class AdgCssInjectionParser implements StructuralParser {
 
         if (dlEndTi < 0) {
             throw new AdblockSyntaxError(
-                'CSS injection declaration list is empty',
+                EMPTY_DECLARATION_LIST_MESSAGE,
                 ends[innerOpenBraceTi],
                 ends[innerCloseBraceTi],
             );

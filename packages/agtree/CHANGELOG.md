@@ -63,6 +63,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- ABP snippets (`#$#`) whose arguments contain `{`/`}` — regex quantifiers
+  such as `/a{1,2}/`, `{}` literals, `;`-separated calls — are parsed as
+  snippets again instead of being routed to the CSS-injection parser and
+  rejected. As in 4.x, a body is CSS injection only when it ends with a
+  declaration block; an empty `{}` stays snippet argument text.
+- An ABP snippet regex argument containing a slash after a backslash, e.g.
+  `/^https?:\/\/[^\/]+…$/`, no longer absorbs the following argument:
+  the argument list matches 4.x again, so the converter emits the intended
+  scriptlet call.
 - A scriptlet argument ending with an escape right before the closing
   parenthesis, e.g. `a.com##+js(acs, Math, '\\x)`, is parsed again: an escape
   consumes exactly one character, so the `)` after it closes the call instead

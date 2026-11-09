@@ -251,9 +251,12 @@ describe('RuleParser — CSS injection dispatch', () => {
         });
 
         test('close brace inside a closed string does not commit CSS injection', () => {
-            // The `}` is inside a string, so the declaration block never closes
-            // and the rule must not become a working `remove: true` rule.
-            expect(() => parseRule("#$#.banner { remove: true; content: '}'")).toThrow();
+            // The body ends with the string, not with a `}`, so the braces are
+            // snippet argument text (4.x) and the rule never becomes a working
+            // `remove: true` CSS rule.
+            parseRule("#$#.banner { remove: true; content: '}'", true);
+
+            expect(getSepKind()).toBe(CR_SEP_KIND_ABP_SNIPPET);
         });
     });
 

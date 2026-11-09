@@ -100,6 +100,21 @@ describe('FilterListPipeline', () => {
         expect(ast.children[1].start).toBe(7);
     });
 
+    test('ABP snippets with braces in their arguments are not InvalidRule (F-023)', () => {
+        const source = [
+            'example.com#$#log {}',
+            'example.com#$#x /a{1,2}/; y z',
+            'example.com#$#x /[a-z]{5,11}$/',
+        ].join('\n');
+        const ast = pipeline.parse(source);
+
+        expect(ast.children.map((child) => child.type)).toEqual([
+            CosmeticRuleType.ScriptletInjectionRule,
+            CosmeticRuleType.ScriptletInjectionRule,
+            CosmeticRuleType.ScriptletInjectionRule,
+        ]);
+    });
+
     test('tolerant mode (default) wraps syntax errors as InvalidRule', () => {
         // A rule that triggers a syntax error when parseUboSpecificRules=false
         const source = '||valid.com^\nexample.com##+js(some-scriptlet)\n! comment';
@@ -207,8 +222,20 @@ describe('FilterListPipeline', () => {
         expect(body.remove).toBeUndefined();
     });
 
-    test('rejects content after the CSS injection declaration block', () => {
+    test('`#$#` with trailing content is an ABP snippet, not CSS injection (F-023)', () => {
+        // 4.x only treats `#$#` as CSS injection when the body ends with a
+        // declaration block; `garbage` after `}` makes it a snippet.
         const source = 'example.com#$#.a { color: red } garbage';
+        const errors: unknown[] = [];
+        const ast = pipeline.parse(source, { onParseError: (error) => errors.push(error) });
+
+        expect(ast.children).toHaveLength(1);
+        expect(ast.children[0]!.type).toBe(CosmeticRuleType.ScriptletInjectionRule);
+        expect(errors).toHaveLength(0);
+    });
+
+    test('rejects content after a required CSS injection declaration block', () => {
+        const source = 'example.com#$?#.a { color: red } garbage';
         const errors: unknown[] = [];
         const ast = pipeline.parse(source, { onParseError: (error) => errors.push(error) });
 

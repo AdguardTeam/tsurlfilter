@@ -15,6 +15,33 @@ const parser = new RuleParserPipeline();
 describe('Scriptlet conversion', () => {
     describe('ABP to ADG', () => {
         test.each([
+            // braces in snippet arguments are argument text, not CSS (F-023)
+            {
+                actual: 'example.com#$#log {}',
+                expected: [
+                    "example.com#%#//scriptlet('abp-log', '{}')",
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: 'example.com#$#x /a{1,2}/; y z',
+                expected: [
+                    "example.com#%#//scriptlet('abp-x', '/a{1,2}/')",
+                    "example.com#%#//scriptlet('abp-y', 'z')",
+                ],
+                shouldConvert: true,
+            },
+            // an escaped slash inside a regex argument does not eat the next
+            // argument (F-024)
+            {
+                // eslint-disable-next-line max-len
+                actual: String.raw`pdftoshokan.com#$#replace-outbound-value atob /^https?:\\/\\/[^\\\\/]+\\/v1\\/link\\.php\\?.*idzone=.*$/ '#'`,
+                expected: [
+                    // eslint-disable-next-line max-len
+                    String.raw`pdftoshokan.com#%#//scriptlet('abp-replace-outbound-value', 'atob', '/^https?:\\/\\/[^\\\\/]+\\/v1\\/link\\.php\\?.*idzone=.*$/', '#')`,
+                ],
+                shouldConvert: true,
+            },
             // single scriptlet
             {
                 actual: '#$#abort-current-inline-script',
