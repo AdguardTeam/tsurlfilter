@@ -80,9 +80,12 @@ MV3 limitations are:
   still matches them through the base rule.
 - `$cookie` — limited; only supported without parameters (bare `$cookie`)
 - `$badfilter` — partial: a target rule without `$domain` is still cancelled
-  completely, wildcard-TLD entries cover only the expanded popular TLDs, a
-  dynamic `$badfilter` disables a whole static rule, and a narrowed document
-  rule still matches a navigation whose other end is a cancelled domain
+  completely, a regexp `$domain` entry cancels a blocking rule completely unless
+  it is an anchored literal domain that cannot match a kept entry (an exception
+  rule is narrowed instead), wildcard-TLD entries cover only the expanded
+  popular TLDs, a dynamic `$badfilter` disables a whole static rule, and a
+  narrowed document rule still matches a navigation whose other end is a
+  cancelled domain
 
 **Not yet supported / not convertible to DNR**:
 

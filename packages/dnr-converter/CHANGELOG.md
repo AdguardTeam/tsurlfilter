@@ -35,9 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   source rules, so each error listed rules excluded by the other limit.
   `TooManyRulesError` now lists only the rules that the total limit drops, and
   `TooManyUnsafeRulesError` also lists the unsafe rules that the total limit
-  drops, so a consumer can restore the unsafe-rule count when the unsafe limit
-  is exceeded. Both lists count source rules rather than declarative rules, and
-  the unsafe list does not include unsafe rules that the regexp limit drops.
+  drops, so a consumer can count the unsafe rules that these two limits exclude.
+  Both lists count source rules rather than declarative rules, the unsafe list
+  does not include unsafe rules that the regexp limit drops, and the counts can
+  therefore be lower than the number of excluded unsafe rules.
 - `$domain` did not match the target hostname of a document request. Chrome
   matches `initiatorDomains` against the request initiator only, and a document
   request started by the browser (new tab page, address bar, bookmark, reload)
@@ -74,12 +75,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   exception applies only while neither rule has a negated `~domain`; otherwise
   the whole text is compared. A target rule without `$domain` is still cancelled
   completely, because the converter narrows only an existing permitted list. A
-  target rule that a regexp badfilter entry could cancel on a kept domain is
-  also cancelled completely, because DNR cannot express an exclusion that
-  matches a regexp. A `$badfilter` from a dynamic ruleset still disables a whole
-  rule from an already-built static ruleset, because such a rule can only be
-  disabled as a whole. Wildcard-TLD entries are expanded with a popular TLD list,
-  so an entry outside that list is not covered.
+  blocking target rule whose kept entries a regexp badfilter entry may cover is
+  also cancelled completely unless the entry is an anchored literal domain that
+  cannot match a kept domain, because DNR cannot express an exclusion that
+  matches a regexp; an exception rule is narrowed instead. A `$badfilter` from a
+  dynamic ruleset still disables a whole rule from an already-built static
+  ruleset, because such a rule can only be disabled as a whole. Wildcard-TLD
+  entries are expanded with a popular TLD list, so an entry outside that list is
+  not covered.
 - `$badfilter` rules that also carried a convertible modifier (e.g.
   `||example.com^$csp=script-src 'none',badfilter`) were converted into
   declarative rules instead of disabling the rule they refer to.

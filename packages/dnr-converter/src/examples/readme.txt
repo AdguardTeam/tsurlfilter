@@ -68,10 +68,12 @@
 ! - a target rule without `$domain` is cancelled completely: the converter
 !   narrows only an existing permitted `$domain` list, although DNR could express
 !   the exclusion with `excludedInitiatorDomains`;
-! - a regexp entry in the badfilter's `$domain` list cancels the target rule
-!   completely when it can match a domain that a kept target entry covers: DNR
-!   cannot exclude initiator domains that match a regexp, so a narrowed rule
-!   would keep applying where the badfilter cancels it;
+! - a regexp entry in the badfilter's `$domain` list cancels a blocking target
+!   rule completely unless it is an anchored literal domain that cannot match a
+!   kept target entry; an exception target rule is narrowed instead, so it may
+!   keep allowing domains that the regexp cancels: DNR cannot exclude initiator
+!   domains that match a regexp, so a narrowed rule would keep applying where
+!   the badfilter cancels it;
 ! - a `$badfilter` rule from a dynamic ruleset disables a whole declarative rule
 !   from an already-built static ruleset, because such a rule can only be
 !   disabled as a whole, not narrowed. This applies even when the static rule
