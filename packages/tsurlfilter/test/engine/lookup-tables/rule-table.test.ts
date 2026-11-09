@@ -10,6 +10,19 @@ import { NetworkRule } from '../../../src/rules/network-rule';
 import { createRuleStorage } from './lookup-table';
 
 describe('getRuleTable', () => {
+    it('keeps the enum values the baked artifacts depend on', () => {
+        // The numbers travel into the gate entries and the page-side walk
+        // compares them in this order, while `NetworkEngine` walks its tables
+        // in the source order. Reordering the members must fail here, not in
+        // the page.
+        expect([
+            RuleTable.Hostname,
+            RuleTable.Shortcut,
+            RuleTable.Domains,
+            RuleTable.Seqscan,
+        ]).toEqual([0, 1, 2, 3]);
+    });
+
     it.each([
         // `||host^` and `||host/path` are keyed by hostname.
         ['||example.org^', RuleTable.Hostname],
@@ -32,6 +45,11 @@ describe('getRuleTable', () => {
         ['@@/\\d+$/$jsinject', RuleTable.Seqscan],
         ['@@/\\d+$/$jsinject,domain=~example.com', RuleTable.Seqscan],
         ['@@/\\d+$/$jsinject,domain=example.*', RuleTable.Seqscan],
+        // A regex `$domain` with an escaped separator is one value, not two:
+        // a raw split would leave pieces that no longer look like a regex and
+        // send the rule to the domains table, where it never matches.
+        ['@@/\\d+$/$jsinject,domain=/a\\|b/', RuleTable.Seqscan],
+        ['@@$document,domain=/patron(live\\|futbol\\|hd)\\d+\\.cfd$/', RuleTable.Seqscan],
     ])('places %s into the %s table', (ruleText, expected) => {
         const rule = new NetworkRule(ruleText, 1);
 
@@ -53,6 +71,8 @@ describe('getRuleTable', () => {
             '@@/\\d+$/$jsinject',
             '@@/\\d+$/$jsinject,domain=youtube.com',
             '@@/\\d+$/$jsinject,domain=~example.com',
+            '@@/\\d+$/$jsinject,domain=/a\\|b/',
+            '@@$document,domain=/patron(live\\|futbol\\|hd)\\d+\\.cfd$/',
         ];
 
         for (const ruleText of ruleTexts) {

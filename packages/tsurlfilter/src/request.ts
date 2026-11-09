@@ -59,14 +59,6 @@ export class Request {
     public readonly urlLowercase: string;
 
     /**
-     * The same request URL, but shortened to `MAX_URL_MATCH_LENGTH`.
-     * Patterns are matched against this string: a regex has to see the same
-     * bounded input as the shortcut check, otherwise a long URL makes a
-     * backtracking pattern quadratic in the URL length.
-     */
-    public readonly urlMatch: string;
-
-    /**
      * Request's hostname.
      */
     public readonly hostname: string;
@@ -147,7 +139,6 @@ export class Request {
         this.method = method;
 
         this.urlLowercase = Request.compactUrl(url)!.toLowerCase();
-        this.urlMatch = Request.compactUrl(url)!;
         this.sourceUrl = Request.compactUrl(sourceUrl);
 
         const tldResult = Request.parse(url);

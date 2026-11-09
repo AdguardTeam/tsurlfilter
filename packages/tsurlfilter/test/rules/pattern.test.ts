@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
-import { Pattern } from '../../src/rules/pattern';
+import { MatchMode, Pattern } from '../../src/rules/pattern';
 
 describe('Pattern Tests', () => {
     it('matches shortcut simple cases', () => {
@@ -109,22 +109,34 @@ describe('Pattern Tests', () => {
         )).toBeFalsy();
     });
 
-    it('matches the regex against the shortened URL', () => {
+    it('matches the regex against the whole URL', () => {
         const pattern = new Pattern('/tech.*top');
         const tail = 'a'.repeat(Request.MAX_URL_MATCH_LENGTH + 500);
 
-        // A match living past the cap is invisible to the regex, the same way
-        // it is invisible to the shortcut check: the input of a backtracking
-        // pattern stays bounded.
+        // The regex sees the whole URL: a cut at a fixed length would both
+        // hide a match that lives past it and let an end-anchored pattern
+        // match at the cut.
         expect(pattern.matchPattern(
             new Request(`https://example.org/tech.${tail}top`, null, RequestType.Document),
             false,
-        )).toBeFalsy();
+        )).toBeTruthy();
 
         expect(pattern.matchPattern(
             new Request('https://example.org/tech.xatop', null, RequestType.Document),
             false,
         )).toBeTruthy();
+    });
+
+    it('does not treat the cut of a long URL as its end', () => {
+        const pattern = new Pattern('||example.org^*.js|');
+        const tail = 'a'.repeat(Request.MAX_URL_MATCH_LENGTH);
+
+        // `.js` ends exactly at the cut, but the URL continues: an end anchor
+        // must not match there.
+        expect(pattern.matchPattern(
+            new Request(`https://example.org/${tail}.js&more=1`, null, RequestType.Document),
+            false,
+        )).toBeFalsy();
     });
 
     it('matches hostname with regexp', () => {
@@ -147,23 +159,23 @@ describe('Pattern Tests', () => {
 
     describe('getPatternMatcher', () => {
         it.each([
-            ['example', { mode: 'shortcut', shortcut: 'example' }],
-            ['/example/*', { mode: 'shortcut', shortcut: '/example/' }],
-            ['||example.org^', { mode: 'hostname', hostname: 'example.org' }],
+            ['example', { mode: MatchMode.Shortcut, shortcut: 'example' }],
+            ['/example/*', { mode: MatchMode.Shortcut, shortcut: '/example/' }],
+            ['||example.org^', { mode: MatchMode.Hostname, hostname: 'example.org' }],
             ['||example.org/path', {
-                mode: 'regex',
+                mode: MatchMode.Regex,
                 source: '^(http|https|ws|wss):\\/\\/([a-z0-9-_.]+\\.)?example\\.org\\/path',
                 flags: 'i',
             }],
-            ['||^', { mode: 'invalid' }],
-            ['/(/', { mode: 'invalid' }],
+            ['||^', { mode: MatchMode.Invalid }],
+            ['/(/', { mode: MatchMode.Invalid }],
         ])('describes %s', (patternText, expected) => {
             expect(new Pattern(patternText).getPatternMatcher()).toEqual(expected);
         });
 
         it('keeps $match-case on the regex path, so the case is respected', () => {
             expect(new Pattern('example', true).getPatternMatcher()).toEqual({
-                mode: 'regex',
+                mode: MatchMode.Regex,
                 source: 'example',
                 flags: '',
             });
@@ -173,7 +185,7 @@ describe('Pattern Tests', () => {
             const pattern = new Pattern('/example/*', true);
             const request = new Request('https://example.org/EXAMPLE/x', null, RequestType.Document);
 
-            expect(pattern.getPatternMatcher().mode).toBe('regex');
+            expect(pattern.getPatternMatcher().mode).toBe(MatchMode.Regex);
             expect(pattern.matchPattern(request, false)).toBeFalsy();
         });
     });

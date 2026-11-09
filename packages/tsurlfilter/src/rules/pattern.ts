@@ -4,8 +4,32 @@ import { SimpleRegex } from './simple-regex';
 
 /**
  * Mode of {@link PatternMatcher}.
+ *
+ * A string enum, not a union of literals: the values reach the build tools
+ * that replicate the engine's decision, and a member name is what makes a
+ * comparison there a compile-time reference instead of a bare string.
  */
-export type MatchMode = 'hostname' | 'shortcut' | 'regex' | 'invalid';
+export enum MatchMode {
+    /**
+     * The pattern is compared by hostname.
+     */
+    Hostname = 'hostname',
+
+    /**
+     * The pattern is a substring search.
+     */
+    Shortcut = 'shortcut',
+
+    /**
+     * The pattern is a regular expression.
+     */
+    Regex = 'regex',
+
+    /**
+     * The pattern cannot be compiled, so the engine never matches it.
+     */
+    Invalid = 'invalid',
+}
 
 /**
  * How the engine matches a rule pattern, resolved by `Pattern.prepare()`:
@@ -18,10 +42,10 @@ export type MatchMode = 'hostname' | 'shortcut' | 'regex' | 'invalid';
  * case-insensitive shortcut branch then and the pattern comes back as `regex`.
  */
 export type PatternMatcher =
-    | { mode: 'hostname'; hostname: string }
-    | { mode: 'shortcut'; shortcut: string }
-    | { mode: 'regex'; source: string; flags: string }
-    | { mode: 'invalid' };
+    | { mode: MatchMode.Hostname; hostname: string }
+    | { mode: MatchMode.Shortcut; shortcut: string }
+    | { mode: MatchMode.Regex; source: string; flags: string }
+    | { mode: MatchMode.Invalid };
 
 /**
  * Rule pattern class.
@@ -125,8 +149,10 @@ export class Pattern {
             return this.regex.test(request.hostname);
         }
 
-        // The shortened URL keeps the cost of a backtracking regex bounded.
-        return this.regex.test(request.urlMatch);
+        // The engine matches the whole URL: a cut at a fixed length would let
+        // an end-anchored pattern match at the cut and hide a match that sits
+        // past it.
+        return this.regex.test(request.url);
     }
 
     /**
@@ -273,19 +299,19 @@ export class Pattern {
         this.prepare();
 
         if (this.patternShortcut) {
-            return { mode: 'shortcut', shortcut: this.shortcut };
+            return { mode: MatchMode.Shortcut, shortcut: this.shortcut };
         }
 
         // The same truthy check as `matchPattern()`: an empty hostname means
         // the pattern was not recognized as a hostname one.
         if (this.hostname) {
-            return { mode: 'hostname', hostname: this.hostname };
+            return { mode: MatchMode.Hostname, hostname: this.hostname };
         }
 
         if (this.regexInvalid || !this.regex) {
-            return { mode: 'invalid' };
+            return { mode: MatchMode.Invalid };
         }
 
-        return { mode: 'regex', source: this.regex.source, flags: this.regex.flags };
+        return { mode: MatchMode.Regex, source: this.regex.source, flags: this.regex.flags };
     }
 }

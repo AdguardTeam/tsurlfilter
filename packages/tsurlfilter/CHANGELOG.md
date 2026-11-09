@@ -28,8 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `RuleTable` and `getRuleTable()` — the lookup table the engine stores a rule
   in, so build tools can reproduce the engine's tie-break order instead of
   copying the routing. The table predicates are shared with `addRule()`.
-- `MASK_ALLOWLIST` and `DomainModifier` are exported for build tools that
-  need to re-apply the engine's option parsing.
+- `MASK_ALLOWLIST` is exported for build tools that need to re-apply the
+  engine's option parsing.
 
 ### Changed
 
@@ -63,11 +63,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [AdguardBrowserExtension#3605].
 - Domain-scoped cosmetic and JavaScript rules not matching hosts with labels
   ending in an underscore.
-- Patterns are matched against the URL shortened to
-  `Request.MAX_URL_MATCH_LENGTH`, like the shortcut check already was: a
-  backtracking regex no longer receives an unbounded input and cannot go
-  quadratic in the URL length. A match reachable only past that length does not
-  happen anymore.
+- A regular expression `$domain` containing an escaped separator
+  (`$domain=/a\|b/`) was split into pieces, so the rule was filed under the
+  domains table and never matched. The value is now split the way the parser
+  reads it.
+- The `shortcut*` fast path is skipped for `$match-case` rules: `/ads/*`
+  matches `/ADS/` only when the modifier is absent, and the pattern is compiled
+  as a case-sensitive regex otherwise.
 
 ### Security
 

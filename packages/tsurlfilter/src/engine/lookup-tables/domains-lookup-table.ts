@@ -8,6 +8,46 @@ import { fastHash } from '../../utils/string-utils';
 import { type ILookupTable } from './lookup-table';
 
 /**
+ * Splits the raw `$domain` value into domains the way the rule parser does:
+ * only an unescaped `|` separates values, so a regex domain that contains one
+ * (`/a\|b/`) stays a single value.
+ *
+ * The parser resolves the escape, so the engine and `getRuleTable()` see the
+ * same list: a raw split would turn the regex into pieces that no longer look
+ * like a regex, and the rule would be filed under domains that never match.
+ *
+ * @param text Raw `$domain` value.
+ *
+ * @returns Domain values as written, restricted ones keeping the `~` prefix.
+ */
+const splitDomains = (text: string): string[] => {
+    const domains: string[] = [];
+    let current = '';
+
+    for (let i = 0; i < text.length; i += 1) {
+        const char = text[i];
+        if (char === '|') {
+            // Count the backslashes before the separator: an odd number means
+            // the pipe is escaped and belongs to the value.
+            let backslashes = 0;
+            while (current[current.length - 1 - backslashes] === '\\') {
+                backslashes += 1;
+            }
+            if (backslashes % 2 === 0) {
+                domains.push(current);
+                current = '';
+                continue;
+            }
+        }
+        current += char;
+    }
+
+    domains.push(current);
+
+    return domains;
+};
+
+/**
  * Domain lookup table.
  */
 // TODO: This lookup table has a lot of common code with HostnameLookupTable,
@@ -45,7 +85,7 @@ export class DomainsLookupTable implements ILookupTable {
             return false;
         }
 
-        const domains = ruleParts.text.slice(ruleParts.domainsStart, ruleParts.domainsEnd).split('|');
+        const domains = splitDomains(ruleParts.text.slice(ruleParts.domainsStart, ruleParts.domainsEnd));
 
         if (!DomainsLookupTable.accepts(domains)) {
             return false;
