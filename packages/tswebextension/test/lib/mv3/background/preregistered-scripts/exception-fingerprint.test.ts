@@ -57,6 +57,16 @@ describe('computePageExceptionsFingerprint', () => {
         ].join('\n'));
 
         expect(generichideFirst).not.toBe(jsinjectFirst);
+
+        // Same tie on a path-scoped pair: `youtube.com/watch` is the key of
+        // both rules, so only the list order decides.
+        expect(await fingerprint([
+            '@@||youtube.com/watch$generichide',
+            '@@||youtube.com/watch?v=$jsinject',
+        ].join('\n'))).not.toBe(await fingerprint([
+            '@@||youtube.com/watch?v=$jsinject',
+            '@@||youtube.com/watch$generichide',
+        ].join('\n')));
     });
 
     it('does not depend on the order the covered hostnames are given in', async () => {
