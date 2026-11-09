@@ -21,15 +21,6 @@ type ICountedElement = RuleInfoBasic & { element: string | Element };
 const DEFAULT_ELEMENT_TO_STRING = true;
 
 /**
- * Why the counter is paused.
- *
- * A reapply pause is short and keeps ExtendedCss hits so they are reported
- * after the marked rules are applied. A collection-disabled pause drops them:
- * statistics must not include hits found while collection is off.
- */
-export type CssHitsCounterPauseReason = 'collection-disabled' | 'reapply';
-
-/**
  * CssHitsCounter options.
  *
  * The pending-probes options are internal: they are used by the bundled
@@ -67,14 +58,6 @@ interface CssHitsCounterOptions {
      * collection is disabled, or while marked data is being reapplied.
      */
     paused?: boolean;
-
-    /**
-     * Why the counter starts paused. Controls whether ExtendedCss hits found
-     * while paused are queued for {@link CssHitsCounter.resume}.
-     *
-     * @default 'collection-disabled'
-     */
-    pauseReason?: CssHitsCounterPauseReason;
 }
 
 /**
@@ -153,17 +136,13 @@ export class CssHitsCounter {
     private onCssHitsFoundCallback: (x: ICountedElement[]) => void;
 
     /**
-     * Hits storage for the native DOM scan and mutation paths.
+     * Hits storage for the native DOM scan, mutation paths, and the
+     * ExtendedCss hook.
+     *
+     * A rule is either native or ExtendedCss, so its marker key identifies
+     * one path and the shared storage cannot suppress the other path.
      */
     private hitsStorage: HitsStorage = new HitsStorage();
-
-    /**
-     * Hits storage for the ExtendedCss hook.
-     *
-     * Kept separate so an ExtendedCss hit cannot change the full scan's
-     * provisional entry snapshot for the same element.
-     */
-    private extendedCssHitsStorage: HitsStorage = new HitsStorage();
 
     /**
      * Mutation observer.
@@ -250,11 +229,6 @@ export class CssHitsCounter {
     private paused = false;
 
     /**
-     * Why the counter is paused.
-     */
-    private pauseReason: CssHitsCounterPauseReason = 'collection-disabled';
-
-    /**
      * State of the running full scan. Cleared by pause and stop, so delayed
      * batches from an interrupted scan do not report hits.
      */
@@ -303,7 +277,6 @@ export class CssHitsCounter {
      */
     constructor(callback: (x: ICountedElement[]) => void, options?: CssHitsCounterOptions) {
         this.paused = options?.paused ?? false;
-        this.pauseReason = options?.pauseReason ?? 'collection-disabled';
 
         if (options) {
             const { elementToString, pendingProbes, pendingProbesCollector } = options;
@@ -388,21 +361,9 @@ export class CssHitsCounter {
     /**
      * Pauses css hits counting. The counter can be resumed with
      * {@link resume}. Use {@link stop} for final teardown.
-     *
-     * @param reason Why the counter is paused. ExtendedCss hits are queued
-     * only for a short reapply pause; a collection-disabled pause drops them.
      */
-    public pause(reason: CssHitsCounterPauseReason = 'collection-disabled'): void {
-        if (this.stopped) {
-            return;
-        }
-
-        this.pauseReason = reason;
-        if (reason === 'collection-disabled') {
-            this.pendingExtendedCssHits = [];
-        }
-
-        if (this.paused) {
+    public pause(): void {
+        if (this.stopped || this.paused) {
             return;
         }
 
@@ -619,13 +580,13 @@ export class CssHitsCounter {
 
                 // The parsed marker is cached per shared rule style, so
                 // ExtendedCss calls this hook again on later mutation passes.
-                // Deduplicate by element and rule in the hook's own storage,
-                // so the native scan's provisional snapshot is unaffected.
+                // Deduplicate by element and rule. Native and ExtendedCss
+                // rules have different marker keys, so one shared storage is
+                // enough.
                 const ruleAndFilterString = ruleInfo.filterId + SEMICOLON + ruleInfo.ruleIndex;
-                if (this.extendedCssHitsStorage.isCounted(affectedEl.node, ruleAndFilterString)) {
+                if (this.hitsStorage.isCounted(affectedEl.node, ruleAndFilterString)) {
                     continue;
                 }
-                this.extendedCssHitsStorage.setCounted(affectedEl.node, ruleAndFilterString);
 
                 const element = this.elementToString
                     ? ElementUtils.elementToString(affectedEl.node)
@@ -638,12 +599,13 @@ export class CssHitsCounter {
                 };
 
                 if (this.paused) {
-                    if (this.pauseReason === 'reapply'
-                        && this.pendingExtendedCssHits.length
-                            < CssHitsCounter.MAX_PENDING_EXTENDED_CSS_HITS) {
+                    if (this.pendingExtendedCssHits.length
+                        < CssHitsCounter.MAX_PENDING_EXTENDED_CSS_HITS) {
                         this.pendingExtendedCssHits.push(hit);
+                        this.hitsStorage.setCounted(affectedEl.node, ruleAndFilterString);
                     }
                 } else {
+                    this.hitsStorage.setCounted(affectedEl.node, ruleAndFilterString);
                     result.push(hit);
                 }
             }

@@ -28,17 +28,6 @@ export class HitsStorage {
     }
 
     /**
-     * Returns the number of distinct rules counted for the element.
-     *
-     * @param element Html element.
-     *
-     * @returns Number of counted rules.
-     */
-    public getCountedRulesCount(element: object): number {
-        return this.map.get(element)?.size ?? 0;
-    }
-
-    /**
      * Stores rule-element info in storage.
      *
      * @param element Html element.

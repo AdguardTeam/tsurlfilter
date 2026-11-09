@@ -248,13 +248,13 @@ describe('CssHitsCounter', () => {
         }
     });
 
-    it('queues an ExtendedCss hit once per rule during a reapply pause', () => {
+    it('queues an ExtendedCss hit once per rule while paused', () => {
         const restoreFixtureMarkers = removeFixtureMarkerElements();
         const onCssHitsFound = vi.fn();
         const counter = new CssHitsCounter(onCssHitsFound);
 
         try {
-            counter.pause('reapply');
+            counter.pause();
 
             const element = document.getElementById('testDiv')!;
             const firstRule = { style: { content: 'adguard51%3B51' } };
@@ -278,7 +278,7 @@ describe('CssHitsCounter', () => {
         }
     });
 
-    it('drops ExtendedCss hits while paused for disabled collection', () => {
+    it('queues ExtendedCss hits when the counter starts paused', () => {
         const restoreFixtureMarkers = removeFixtureMarkerElements();
         const onCssHitsFound = vi.fn();
         const counter = new CssHitsCounter(onCssHitsFound, { paused: true });
@@ -290,38 +290,15 @@ describe('CssHitsCounter', () => {
                 node: document.getElementById('testDiv')!,
             });
 
-            // The marker is still cleared so it cannot be painted, but the hit
-            // must not be queued for a later resume.
+            // The marker is cleared so it cannot be painted. The hit waits
+            // for resume instead of being lost.
             expect(rule.style.content).toBe('');
             expect(onCssHitsFound).not.toHaveBeenCalled();
 
             counter.resume();
-            expect(onCssHitsFound).not.toHaveBeenCalled();
+            const hits = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(hits.filter((stat: any) => stat.filterId === 57)).toHaveLength(1);
 
-            counter.stop();
-        } finally {
-            restoreFixtureMarkers();
-        }
-    });
-
-    it('clears queued ExtendedCss hits when a reapply pause becomes disabled', () => {
-        const restoreFixtureMarkers = removeFixtureMarkerElements();
-        const onCssHitsFound = vi.fn();
-        const counter = new CssHitsCounter(onCssHitsFound);
-
-        try {
-            counter.pause('reapply');
-            counter.countAffectedByExtendedCss({
-                rules: [{ style: { content: 'adguard58%3B58' } }],
-                node: document.getElementById('testDiv')!,
-            });
-            expect(onCssHitsFound).not.toHaveBeenCalled();
-
-            // Collection was disabled while the reapply was in flight.
-            counter.pause();
-            counter.resume();
-
-            expect(onCssHitsFound).not.toHaveBeenCalled();
             counter.stop();
         } finally {
             restoreFixtureMarkers();
@@ -2346,14 +2323,14 @@ describe('CssHitsCounter', () => {
         }
     });
 
-    it('blanks ExtendedCss markers during a reapply pause and reports the hits on resume', () => {
+    it('blanks ExtendedCss markers while paused and reports the hits on resume', () => {
         const restoreMutationObserver = mockMutationObserver();
         const restoreFixtureMarkers = removeFixtureMarkerElements();
         const onCssHitsFound = vi.fn();
         const counter = new CssHitsCounter(onCssHitsFound);
 
         try {
-            counter.pause('reapply');
+            counter.pause();
 
             const rule = { style: { content: 'adguard32;32' } };
             counter.countAffectedByExtendedCss({
@@ -2399,13 +2376,13 @@ describe('CssHitsCounter', () => {
         }
     });
 
-    it('caps the ExtendedCss hits queued during a reapply pause', () => {
+    it('caps the ExtendedCss hits queued while paused', () => {
         const restoreFixtureMarkers = removeFixtureMarkerElements();
         const onCssHitsFound = vi.fn();
         const counter = new CssHitsCounter(onCssHitsFound);
 
         try {
-            counter.pause('reapply');
+            counter.pause();
 
             const rule = { style: { content: 'adguard62%3B62' } };
             const elements = Array.from({ length: 501 }, () => document.createElement('div'));
@@ -2420,6 +2397,17 @@ describe('CssHitsCounter', () => {
                 .flatMap((c) => c[0])
                 .filter((stat: any) => stat.filterId === 62);
             expect(hits).toHaveLength(500);
+
+            // The hit that did not fit in the queue was not marked as
+            // counted, so a later hook call can still report it.
+            counter.countAffectedByExtendedCss({
+                rules: [rule],
+                node: elements[elements.length - 1],
+            });
+            const allHits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 62);
+            expect(allHits).toHaveLength(501);
 
             counter.stop();
         } finally {

@@ -6,7 +6,7 @@ import { MessageType } from '../message-constants';
 import { validateSelectors } from '../utils/selector-validator';
 
 import { CollectHitStatsListener } from './collect-hit-stats';
-import { CssHitsCounter, type CssHitsCounterPauseReason } from './css-hits-counter';
+import { CssHitsCounter } from './css-hits-counter';
 import { PendingProbesCollector } from './pending-probes-collector';
 import { sendAppMessage } from './send-app-message';
 
@@ -163,10 +163,7 @@ export class CosmeticControllerCommon {
             // A paused counter is needed when the data has markers but
             // collection is off: the hook must blank them without reporting.
             // It is also used while marked data is being requested.
-            this.ensureCounter(
-                !collectStats || !areHitsStatsCollected,
-                collectStats ? 'reapply' : 'collection-disabled',
-            );
+            this.ensureCounter(!collectStats || !areHitsStatsCollected);
         } else {
             this.pendingProbesCollector.stop();
         }
@@ -256,7 +253,7 @@ export class CosmeticControllerCommon {
         // Re-apply from a paused state so the counter does not scan the
         // unmarked data, and so the ExtendedCss hook can queue hits while the
         // marked rules are applied.
-        this.cssHitsCounter?.pause('reapply');
+        this.cssHitsCounter?.pause();
 
         try {
             const res = await sendAppMessage({
@@ -288,7 +285,7 @@ export class CosmeticControllerCommon {
 
             if (!res.areHitsStatsCollected) {
                 // The background considers collection disabled for this
-                // frame, e.g. because the document is allowlisted. Drop any
+                // frame, e.g. because the document is allowlisted. Keep any
                 // ExtendedCss hits queued during the reapply pause.
                 this.cssHitsCounter?.pause();
                 this.pendingProbesCollector.stop();
@@ -296,7 +293,7 @@ export class CosmeticControllerCommon {
             }
 
             if (!this.cssHitsCounter) {
-                this.ensureCounter(true, 'reapply');
+                this.ensureCounter(true);
             }
 
             const hasMarkedExtendedCss = !!res.extCssRules && res.extCssRules.length > 0;
@@ -349,12 +346,8 @@ export class CosmeticControllerCommon {
      * Creates the CSS hits counter if it does not exist yet.
      *
      * @param paused Whether the counter must start paused.
-     * @param pauseReason Why the counter starts paused.
      */
-    private ensureCounter(
-        paused: boolean,
-        pauseReason: CssHitsCounterPauseReason = 'collection-disabled',
-    ): void {
+    private ensureCounter(paused: boolean): void {
         if (this.cssHitsCounter) {
             return;
         }
@@ -367,7 +360,6 @@ export class CosmeticControllerCommon {
         }, {
             pendingProbesCollector: this.pendingProbesCollector,
             paused,
-            pauseReason,
         });
     }
 

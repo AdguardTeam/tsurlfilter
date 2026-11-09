@@ -16,7 +16,6 @@ import { ExtendedCss } from '@adguard/extended-css';
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
 import { type CosmeticControllerCommon } from '../../../../src/lib/common/content-script/cosmetic-controller';
-import { CssHitsCounter } from '../../../../src/lib/common/content-script/css-hits-counter';
 import * as SendMessageModule from '../../../../src/lib/common/content-script/send-app-message';
 import { type ContentScriptCosmeticData } from '../../../../src/lib/common/cosmetic-api';
 import { MessageType } from '../../../../src/lib/common/message-constants';
@@ -545,6 +544,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
         document.body.innerHTML = '<div id="native-failed-bait" class="ad_header">text</div>';
 
         const rules = ['#?#.ad_header:contains(text)'];
+        let reapplyRequests = 0;
 
         try {
             const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
@@ -553,6 +553,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                         && (message.payload as { reapplyHits?: boolean }).reapplyHits;
 
                     if (isReapply) {
+                        reapplyRequests += 1;
                         return {
                             ...getCosmeticData(rules, true),
                             areNativeHitsStatsCollected: false,
@@ -581,6 +582,26 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
 
             // ExtendedCss hits do not depend on the native CSS injection.
             expect(getBaitStats(sendAppMessageSpy, 0).length).toBeGreaterThan(0);
+            expect(reapplyRequests).toBe(1);
+
+            // Native markers are still missing, so the next enable retries
+            // the marked-data request.
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: false },
+            });
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: true },
+            });
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            expect(reapplyRequests).toBe(2);
         } finally {
             document.body.innerHTML = '';
             restoreMutationObserver();
@@ -593,7 +614,6 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
 
         const rules = ['#?#.ad_header:contains(text)'];
         let reapplyRequests = 0;
-        const pauseSpy = vi.spyOn(CssHitsCounter.prototype, 'pause');
 
         try {
             vi.spyOn(SendMessageModule, 'sendAppMessage')
@@ -622,7 +642,75 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
             // The initial response has marked ExtendedCss but no marked native
             // CSS, so the controller must ask for the native markers too.
             expect(reapplyRequests).toBe(1);
-            expect(pauseSpy).toHaveBeenCalledWith('reapply');
+        } finally {
+            document.body.innerHTML = '';
+            restoreMutationObserver();
+        }
+    });
+
+    it('keeps ExtendedCss hits when collection is toggled during reapply', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+        document.body.innerHTML = '';
+
+        const rules = ['#?#.ad_header:contains(text)'];
+        let resolveReapply!: (value: ContentScriptCosmeticData) => void;
+        let reapplyStartedResolve!: () => void;
+
+        const reapplyPromise = new Promise<ContentScriptCosmeticData>((resolve) => {
+            resolveReapply = resolve;
+        });
+        const reapplyStarted = new Promise<void>((resolve) => {
+            reapplyStartedResolve = resolve;
+        });
+
+        try {
+            const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockImplementation(async (message) => {
+                    const isReapply = message.type === MessageType.GetCosmeticData
+                        && (message.payload as { reapplyHits?: boolean }).reapplyHits;
+
+                    if (isReapply) {
+                        reapplyStartedResolve();
+                        return reapplyPromise;
+                    }
+
+                    return {
+                        ...getCosmeticData(rules, true),
+                        areNativeHitsStatsCollected: false,
+                    };
+                });
+
+            const cosmeticController = createController(CosmeticController);
+            cosmeticController.init();
+
+            await reapplyStarted;
+
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: false },
+            });
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: true },
+            });
+
+            const bait = document.createElement('div');
+            bait.className = 'ad_header';
+            bait.textContent = 'text';
+            document.body.appendChild(bait);
+
+            resolveReapply({
+                ...getCosmeticData(rules, true),
+                areNativeHitsStatsCollected: true,
+            });
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            expect(getBaitStats(sendAppMessageSpy, 0).length).toBeGreaterThan(0);
         } finally {
             document.body.innerHTML = '';
             restoreMutationObserver();
