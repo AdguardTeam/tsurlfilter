@@ -264,3 +264,52 @@ describe('RuleFactory scriptlet arguments ending with an escape (F-022)', () => 
         expect(rule).toBeInstanceOf(CosmeticRule);
     });
 });
+
+describe('RuleFactory selector complexity (F-008)', () => {
+    /**
+     * Builds a cosmetic rule whose selector has `count` `:not(.a)` wrappers.
+     *
+     * @param count Number of wrappers.
+     *
+     * @returns Rule text.
+     */
+    const notChain = (count: number): string => `example.com##div${':not(.a)'.repeat(count)} .z`;
+
+    /**
+     * Best-of-N time of `createRule` on the given rule.
+     *
+     * @param rule Rule text.
+     * @param runs Repetitions.
+     *
+     * @returns Elapsed milliseconds of the fastest run.
+     */
+    const bestOf = (rule: string, runs = 2): number => {
+        let best = Number.POSITIVE_INFINITY;
+        for (let i = 0; i < runs; i += 1) {
+            const started = performance.now();
+            RuleFactory.createRule(rule, 1);
+            best = Math.min(best, performance.now() - started);
+        }
+        return best;
+    };
+
+    it('scales linearly with the number of `:not()` wrappers', () => {
+        bestOf(notChain(500), 1);
+
+        const small = bestOf(notChain(4_000));
+        const large = bestOf(notChain(8_000));
+
+        // Quadratic scanning in agtree measured ≈ 4× here; linear ≈ 2×.
+        expect(large / small).toBeLessThan(3);
+    }, 120_000);
+
+    it('creates a rule for a cap-size `:not()` chain without quadratic scanning', () => {
+        // Same-process ratio against the 8k shape: the cap (43k) shape is
+        // ~5.4× larger, so linear scanning stays far below the quadratic
+        // version's ~30× (and its 8+ seconds).
+        const baseline = bestOf(notChain(8_000), 1);
+        const cap = bestOf(notChain(43_000), 1);
+
+        expect(cap / baseline).toBeLessThan(15);
+    }, 120_000);
+});
