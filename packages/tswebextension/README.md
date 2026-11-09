@@ -546,7 +546,8 @@ because it's not cover case with empty list in inverted mode.
 
 type: `boolean`
 
-Enables css hits counter if true.
+Enables the CSS hits counter if true. Collection stays disabled on documents
+where filtering is disabled by the allowlist.
 
 ##### debugScriptlets
 
@@ -848,7 +849,8 @@ Updates [collectStats](#collectstats) configuration value without
 re-initialization of engine.
 
 The new value is propagated to content scripts. CSS hits collection is
-paused or resumed in already-open tabs without a reload.
+paused or resumed in already-open tabs without a reload. Collection stays
+disabled on documents where filtering is disabled by the allowlist.
 
 Throws error if [configuration](#configuration) is not set.
 

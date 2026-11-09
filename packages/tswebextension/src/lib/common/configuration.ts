@@ -127,7 +127,10 @@ export const settingsConfigValidator = zod.object({
     allowlistEnabled: zod.boolean(),
 
     /**
-     * Enables css hits counter if true.
+     * Enables the CSS hits counter if true.
+     *
+     * Collection stays disabled on documents where filtering is disabled by
+     * the allowlist.
      */
     collectStats: zod.boolean(),
 
