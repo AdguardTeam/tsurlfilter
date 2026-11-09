@@ -51,9 +51,11 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         schemaVersion,
         hashes,
         scriptletFiles,
+
         dynamicHostnames,
         conditions,
         pageExceptions,
+
     } = value as Partial<PreregisteredScriptsManifest>;
 
     if (schemaVersion !== MANIFEST_SCHEMA_VERSION) {
@@ -98,9 +100,11 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         schemaVersion,
         hashes,
         scriptletFiles,
+
         dynamicHostnames,
         pageExceptions,
         conditions,
+
     };
 };
 

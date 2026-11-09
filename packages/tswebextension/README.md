@@ -383,10 +383,12 @@ Known limitations:
 
 - Scriptlet executions are deduped by rule hash, unlike the dynamic path;
   both paths rely on scriptlets being idempotent.
+
 - User rules and custom filters are not baked into the page gate: a host
   their `$document`/`$jsinject` exception can reach keeps the dynamic path,
   and a subframe is never preregistered for the same reason — see the
   coverage notes above.
+
 - Subframes never take the fast path: they are injected dynamically, on
   `webRequest.onResponseStarted` or `webNavigation.onCommitted`, after the
   frame's document starts. A frame whose own inline script reads a property

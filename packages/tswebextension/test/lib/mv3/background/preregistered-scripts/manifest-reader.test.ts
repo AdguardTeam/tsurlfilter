@@ -22,6 +22,7 @@ const VALID_MANIFEST = {
     schemaVersion: MANIFEST_SCHEMA_VERSION,
     hashes: ['0123456789abcdef'],
     scriptletFiles: { 'set-cookie': 's-set-cookie.js' },
+
     conditions: [2],
     pageExceptions: { 2: '0123456789abcdef' },
 };
@@ -161,6 +162,7 @@ describe('readManifest', () => {
         await expect(readManifest(SCRIPTS_PATH)).resolves.toEqual({
             ...VALID_MANIFEST,
             dynamicHostnames: ['youtube.com'],
+
         });
     });
 
