@@ -3,20 +3,42 @@ import { readFileSync } from 'node:fs';
 
 import { test } from 'vitest';
 
-import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
-import { CosmeticOption } from '../../src/engine/cosmetic-option';
-import { DnsEngine } from '../../src/engine/dns-engine';
-import { Engine } from '../../src/engine/engine';
-import { type IRuleList } from '../../src/filterlist/rule-list';
-import { RuleStorage } from '../../src/filterlist/rule-storage';
-import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
-import { StringRuleList } from '../../src/filterlist/string-rule-list';
-import { RequestType } from '../../src/request-type';
-import { type IndexedStorageCosmeticRuleParts } from '../../src/rules/rule';
+import {
+    type CosmeticEngine as CosmeticEngineType,
+    type IndexedStorageCosmeticRuleParts,
+    type IRuleList,
+} from '@adguard/tsurlfilter';
+import { ScannerType } from '@adguard/tsurlfilter/es/scanner-type';
 
 import { MATCH_BENCH_OPTIONS } from './engine-bench-options';
 import { parseRequests } from './requests';
-import { collectRuleParts } from './rule-parts';
+
+// `current` is imported from the BUILT `@adguard/tsurlfilter` package (its
+// `exports` map resolves to `dist/`), NOT from `src/`. Vite serves `src/`
+// module-by-module and deoptimizes cross-module calls, which inflates the
+// current leg 1.7–11×; the published baselines are optimized bundles, so the
+// current code must be measured as its bundle too. Build the package before
+// running this benchmark (see `packages/benchmarks/DEVELOPMENT.md`). The
+// dynamic import turns a missing/stale build into a clear error instead of a
+// cryptic module-resolution failure.
+const TSURLFILTER = await import('@adguard/tsurlfilter').catch((error: unknown) => {
+    throw new Error(
+        'Failed to resolve the built `@adguard/tsurlfilter` bundle. '
+        + 'Build it first (inject a temporary version, then `pnpm build`) — '
+        + 'see packages/benchmarks/DEVELOPMENT.md.',
+        { cause: error },
+    );
+});
+
+const {
+    CosmeticEngine,
+    CosmeticOption,
+    DnsEngine,
+    Engine,
+    RequestType,
+    RuleStorage,
+    StringRuleList,
+} = TSURLFILTER;
 
 const easyList = readFileSync('test/resources/easylist.txt', 'utf-8');
 const adguardSdnFilter = readFileSync('test/resources/adguard_sdn_filter.txt', 'utf-8');
@@ -34,9 +56,13 @@ let resultSink = 0;
  *
  * @returns A cosmetic engine built from the given rule lists.
  */
-const createCosmeticEngine = (lists: IRuleList[]): CosmeticEngine => {
+const createCosmeticEngine = (lists: IRuleList[]): CosmeticEngineType => {
     const storage = new RuleStorage(lists);
-    const rulesParts = collectRuleParts<IndexedStorageCosmeticRuleParts>(storage, ScannerType.CosmeticRules);
+    const scanner = storage.createRuleStorageScanner(ScannerType.CosmeticRules);
+    const rulesParts: IndexedStorageCosmeticRuleParts[] = [];
+    while (scanner.scan()) {
+        rulesParts.push(scanner.getRuleParts()! as IndexedStorageCosmeticRuleParts);
+    }
 
     return CosmeticEngine.createSync(rulesParts, storage);
 };

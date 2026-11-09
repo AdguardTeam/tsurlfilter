@@ -51,6 +51,9 @@ const esmConfig = {
         'src/request-type.ts',
         'src/rules/simple-regex.ts',
         'src/rules/network-rule-options.ts',
+        // The rule-storage scanners are typed by this enum; the benchmarks that
+        // build an engine from storage need to pass it to the built bundle.
+        'src/filterlist/scanner/scanner-type.ts',
     ],
     output: [
         {

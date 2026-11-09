@@ -4,9 +4,27 @@ import { readFileSync } from 'node:fs';
 import * as TsUrlFilterOld from 'tsurlfilter-v3';
 import { test } from 'vitest';
 
-import { Engine } from '../../src/engine/engine';
-
 import { ENGINE_BENCH_OPTIONS } from './engine-bench-options';
+
+// `current` is imported from the BUILT `@adguard/tsurlfilter` package
+// (its `exports` map resolves to `dist/`), NOT from `src/`. Vite serves
+// `src/` module-by-module and deoptimizes cross-module calls, which
+// inflates the current leg 1.7–11×; the published baselines are optimized
+// bundles, so the current code must be measured as its bundle too. Build
+// the package before running this benchmark (see
+// `packages/benchmarks/DEVELOPMENT.md`). The dynamic import turns a
+// missing/stale build into a clear error instead of a cryptic
+// module-resolution failure.
+const TSURLFILTER = await import('@adguard/tsurlfilter').catch((error: unknown) => {
+    throw new Error(
+        'Failed to resolve the built `@adguard/tsurlfilter` bundle. '
+        + 'Build it first (inject a temporary version, then `pnpm build`) — '
+        + 'see packages/benchmarks/DEVELOPMENT.md.',
+        { cause: error },
+    );
+});
+
+const { Engine } = TSURLFILTER;
 
 const ignoreCosmetic = false;
 const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');

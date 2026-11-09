@@ -1,7 +1,24 @@
 import * as AGTreeV2 from 'agtree-v2';
 import { test } from 'vitest';
 
-import { RuleParserPipeline } from '../src/ast-builder/rule-parser';
+// v5 is imported from the BUILT package (`@adguard/agtree` self-reference
+// resolves to `dist/` via the package `exports` map), NOT from `src/`. Vite
+// serves `src/` module-by-module and deoptimizes cross-module calls, which
+// inflates the v5 leg 1.7–11×; the v2 baseline is an optimized published
+// bundle, so v5 must be measured as its bundle too. Build the package before
+// running this benchmark (see `packages/benchmarks/DEVELOPMENT.md`). The
+// dynamic import turns a missing/stale build into a clear error instead of a
+// cryptic module-resolution failure.
+const AGTREE = await import('@adguard/agtree').catch((error: unknown) => {
+    throw new Error(
+        'Failed to resolve the built `@adguard/agtree` bundle. '
+        + 'Build it first (inject a temporary version, then `pnpm build`) — '
+        + 'see packages/benchmarks/DEVELOPMENT.md.',
+        { cause: error },
+    );
+});
+
+const { RuleParserPipeline } = AGTREE;
 
 const RULES = [
     '! Title: Example',

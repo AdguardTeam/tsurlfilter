@@ -26,10 +26,18 @@ const AGTREE = await import('@adguard/agtree').catch((error: unknown) => {
 
 const { RuleParserPipeline } = AGTREE;
 
-// v4's `RuleParser.parse` writes raw text and source locations into the AST by
-// default, while v5 does neither. Disable both so the v4 full-parse leg does
-// the same work as the v5 leg and the comparison stays apples-to-apples.
-const V4_PARSE_OPTIONS = { includeRaws: false, isLocIncluded: false };
+// v4's `RuleParser.parse` replaces the defaults instead of merging with them,
+// so spreading `defaultParserOptions` is required: passing only
+// `{ includeRaws: false, isLocIncluded: false }` would silently turn
+// `parseUboSpecificRules`/`parseAbpSpecificRules` off in the v4 leg (on
+// ubo-filters that changes 2,581 ASTs and makes v4 throw on 2,477 lines).
+// Raws and locations are disabled so the v4 full-parse leg does the same work
+// as the v5 leg and the comparison stays apples-to-apples.
+const V4_PARSE_OPTIONS = {
+    ...AGTreeV4.defaultParserOptions,
+    includeRaws: false,
+    isLocIncluded: false,
+};
 
 // The fixture is a real AdGuard Base filter list with CRLF line endings. Split
 // on `\r?\n` so no trailing `\r` is left in a rule (which would otherwise

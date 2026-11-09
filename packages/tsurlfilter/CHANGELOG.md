@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The `ScannerType` enum is now importable from
+  `@adguard/tsurlfilter/es/scanner-type`, matching the other `./es/*`
+  subpath entry points.
 - Added public `NetworkRule.createFromReader` and `CosmeticRule.createFromReader`
   entry points plus `CosmeticRule.supportsBinaryPath` to materialize rules from
   a structural reader without building an AST node. These accept a reader bound

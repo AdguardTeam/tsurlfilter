@@ -28,6 +28,10 @@
             "import": "./dist/es/simple-regex.js",
             "types": "./dist/types/src/rules/simple-regex.d.ts"
         },
+        "./es/scanner-type": {
+            "import": "./dist/es/scanner-type.js",
+            "types": "./dist/types/src/filterlist/scanner/scanner-type.d.ts"
+        },
         "./es/*": "./dist/es/*.js",
         "./umd": "./dist/tsurlfilter.umd.js"
     },
@@ -47,6 +51,9 @@
             ],
             "es/simple-regex": [
                 "dist/types/src/rules/simple-regex.d.ts"
+            ],
+            "es/scanner-type": [
+                "dist/types/src/filterlist/scanner/scanner-type.d.ts"
             ]
         }
     },
