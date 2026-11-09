@@ -15,7 +15,7 @@ import browser from 'webextension-polyfill';
 import { ExtendedCss } from '@adguard/extended-css';
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
-import { type CosmeticControllerCommon } from '../../../../src/lib/common/content-script/cosmetic-controller';
+import { CosmeticControllerCommon } from '../../../../src/lib/common/content-script/cosmetic-controller';
 import * as SendMessageModule from '../../../../src/lib/common/content-script/send-app-message';
 import { type ContentScriptCosmeticData } from '../../../../src/lib/common/cosmetic-api';
 import { MessageType } from '../../../../src/lib/common/message-constants';
@@ -196,6 +196,30 @@ describe.each(controllers)('%s short-lived probes', (_name, CosmeticController) 
 
             expect(collectorObserver.isDisconnected).toBe(true);
         } finally {
+            restoreMutationObserver();
+        }
+    });
+
+    it('retries a rejected cosmetic data request', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+        vi.useFakeTimers();
+
+        try {
+            const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockRejectedValueOnce(new Error('background unavailable'))
+                .mockResolvedValue(getCosmeticData([], false));
+
+            const cosmeticController = createController(CosmeticController);
+            cosmeticController.init();
+
+            const retryTimeout = (CosmeticControllerCommon as unknown as {
+                GET_COSMETIC_DATA_RETRY_TIMEOUT_MS: number;
+            }).GET_COSMETIC_DATA_RETRY_TIMEOUT_MS;
+            await vi.advanceTimersByTimeAsync(retryTimeout);
+
+            expect(sendAppMessageSpy).toHaveBeenCalledTimes(2);
+        } finally {
+            vi.useRealTimers();
             restoreMutationObserver();
         }
     });

@@ -121,9 +121,16 @@ export class CosmeticControllerCommon {
                 this.applyCosmetic(res);
                 return;
             }
-        } catch (e) {
-            this.pendingProbesCollector.stop();
-            throw e;
+        } catch {
+            // Keep collecting probes while a retry can still succeed.
+            if (this.tries <= CosmeticControllerCommon.MAX_GET_COSMETIC_DATA_TRIES) {
+                this.tries += 1;
+                setTimeout(
+                    this.process,
+                    CosmeticControllerCommon.GET_COSMETIC_DATA_RETRY_TIMEOUT_MS,
+                );
+                return;
+            }
         }
 
         // Without a response the counter is never created, so the collected
