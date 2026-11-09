@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- History API `$removeparam` rules with a regexp literal that contains an
+  escaped slash (e.g. `/utm_\/(a|b)`) or invalid regexp syntax no longer
+  disable all History API `$removeparam` rules on the page.
 - HTML filtering `:contains()` regexp arguments that end with an escaped
   backslash (`/foo\\/`) or have one in a character class (`/[\\]/`) are now
   compiled as regexps instead of being matched as text (via

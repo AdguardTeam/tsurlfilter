@@ -85,18 +85,30 @@ export function patchHistoryForRemoveParam(
         }
 
         if (rawValue.startsWith('/')) {
-            // Regex literal: /pattern/flags
-            const lastSlash = rawValue.lastIndexOf('/');
-            if (lastSlash > 0) {
-                const pattern = rawValue.substring(1, lastSlash);
-                const flags = rawValue.substring(lastSlash + 1);
-                return { regex: new RegExp(pattern, flags), isNegated };
+            // Regex literal: /pattern/flags. The closing delimiter is the
+            // first slash that a backslash does not escape. This is a local
+            // copy of the engine's escape-aware splitting: MV2 serializes
+            // this function via `Function.prototype.toString()`, so it must
+            // not reference module-level helpers.
+            const body = rawValue.substring(1);
+            let closingIndex = -1;
+
+            for (let i = 0; i < body.length; i += 1) {
+                if (body.charAt(i) === '/' && (i === 0 || body.charAt(i - 1) !== '\\')) {
+                    closingIndex = i;
+                    break;
+                }
             }
-            // Fallback: treat as literal
-            return {
-                regex: new RegExp(`^${escapeRegex(rawValue)}=[^&#]*$`),
-                isNegated,
-            };
+
+            const rawPattern = closingIndex === -1 ? body : body.substring(0, closingIndex);
+            // Unescape `\/` in the pattern body, like the engine does.
+            const pattern = rawPattern.replace(/\\\//g, '/');
+            let flags = closingIndex === -1 ? '' : body.substring(closingIndex + 1);
+            if (flags.indexOf('g') < 0) {
+                flags += 'g';
+            }
+
+            return { regex: new RegExp(pattern, flags), isNegated };
         }
 
         return {
@@ -105,14 +117,20 @@ export function patchHistoryForRemoveParam(
         };
     }
 
-    let descriptors: Descriptor[] | null = rawDescriptors.map((d: RemoveParamDescriptor) => {
-        const { regex, isNegated } = parseValue(d.value);
-        return {
-            valueRegExp: regex,
-            isAllowlist: d.isAllowlist,
-            isNegated,
-        };
-    });
+    let descriptors: Descriptor[] | null = [];
+    for (const rawDesc of rawDescriptors) {
+        try {
+            const { regex, isNegated } = parseValue(rawDesc.value);
+            descriptors.push({
+                valueRegExp: regex,
+                isAllowlist: rawDesc.isAllowlist,
+                isNegated,
+            });
+        } catch {
+            // One invalid descriptor must not abort patching or disable the
+            // remaining descriptors.
+        }
+    }
 
     const proto = History.prototype;
     const pushStateDesc = Object.getOwnPropertyDescriptor(proto, 'pushState');
@@ -379,14 +397,21 @@ export function patchHistoryForRemoveParam(
                 return;
             }
 
-            descriptors = rawDescs.map((d: RemoveParamDescriptor) => {
-                const { regex, isNegated } = parseValue(d.value);
-                return {
-                    valueRegExp: regex,
-                    isAllowlist: d.isAllowlist,
-                    isNegated,
-                };
-            });
+            const parsedDescriptors: Descriptor[] = [];
+            for (const rawDesc of rawDescs) {
+                try {
+                    const { regex, isNegated } = parseValue(rawDesc.value);
+                    parsedDescriptors.push({
+                        valueRegExp: regex,
+                        isAllowlist: rawDesc.isAllowlist,
+                        isNegated,
+                    });
+                } catch {
+                    // One invalid descriptor must not abort the update or
+                    // disable the remaining descriptors.
+                }
+            }
+            descriptors = parsedDescriptors;
 
             // Apply newly loaded descriptors to the current URL immediately.
             // This handles the case where the page navigated (via pushState)
