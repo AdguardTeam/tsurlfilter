@@ -60,6 +60,36 @@ export class CosmeticApi extends CosmeticApiCommon {
     private static markedCssInjected = new WeakMap<object, object>();
 
     /**
+     * Actual marked native CSS state per frame context.
+     *
+     * The prepared result only records whether its stylesheet was built with
+     * markers. Injection can fail after that, so the content script must read
+     * the actual result.
+     */
+    private static nativeHitsMarkersApplied = new WeakMap<object, {
+        preparedCosmeticResult: object | undefined;
+        applied: boolean;
+    }>();
+
+    /**
+     * Records whether marked native CSS is applied for a frame.
+     *
+     * @param frameContext Frame context.
+     * @param preparedCosmeticResult Prepared result used for the frame.
+     * @param applied Whether marked native CSS is applied.
+     */
+    private static setNativeHitsMarkersApplied(
+        frameContext: object,
+        preparedCosmeticResult: object | undefined,
+        applied: boolean,
+    ): void {
+        CosmeticApi.nativeHitsMarkersApplied.set(frameContext, {
+            preparedCosmeticResult,
+            applied,
+        });
+    }
+
+    /**
      * Applies scripts from a cosmetic result. It is possible inject a script
      * only once, because after the first inject, we set a flag in an isolated
      * copy of the window and all next calls to `buildScriptText` will return
@@ -218,7 +248,12 @@ export class CosmeticApi extends CosmeticApiCommon {
         let cosmeticResult;
 
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
-        data.areNativeHitsStatsCollected = frameContext?.preparedCosmeticResult?.areHitsStatsCollected ?? false;
+        const nativeHitsState = frameContext
+            ? CosmeticApi.nativeHitsMarkersApplied.get(frameContext)
+            : undefined;
+        data.areNativeHitsStatsCollected = !!nativeHitsState?.applied
+            && nativeHitsState.preparedCosmeticResult === frameContext?.preparedCosmeticResult;
+
         if (!frameContext || !frameContext.cosmeticResult) {
             const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
@@ -293,6 +328,11 @@ export class CosmeticApi extends CosmeticApiCommon {
         if (frameContext && injectionKey
             && CosmeticApi.markedCssInjected.get(frameContext) === injectionKey) {
             data.areNativeHitsStatsCollected = true;
+            CosmeticApi.setNativeHitsMarkersApplied(
+                frameContext,
+                frameContext.preparedCosmeticResult,
+                true,
+            );
             return data;
         }
 
@@ -305,19 +345,40 @@ export class CosmeticApi extends CosmeticApiCommon {
         if (!cssText) {
             // There is no native CSS to inject, so no native hit can be lost.
             data.areNativeHitsStatsCollected = true;
+            if (frameContext) {
+                CosmeticApi.setNativeHitsMarkersApplied(
+                    frameContext,
+                    frameContext.preparedCosmeticResult,
+                    true,
+                );
+            }
             return data;
         }
 
         try {
-            await CosmeticApi.injectCss(tabId, frameId, cssText);
+            await CosmeticApi.injectMarkedCssWithRetries(tabId, frameId, cssText);
             data.areNativeHitsStatsCollected = true;
-            if (frameContext && injectionKey) {
-                CosmeticApi.markedCssInjected.set(frameContext, injectionKey);
+            if (frameContext) {
+                CosmeticApi.setNativeHitsMarkersApplied(
+                    frameContext,
+                    frameContext.preparedCosmeticResult,
+                    true,
+                );
+                if (injectionKey) {
+                    CosmeticApi.markedCssInjected.set(frameContext, injectionKey);
+                }
             }
         } catch (e) {
             // Marked ExtendedCss rules are still applied by the content
             // script, but native hits cannot be counted without this CSS.
             data.areNativeHitsStatsCollected = false;
+            if (frameContext) {
+                CosmeticApi.setNativeHitsMarkersApplied(
+                    frameContext,
+                    frameContext.preparedCosmeticResult,
+                    false,
+                );
+            }
             logger.info(`[tsweb.CosmeticApi.reapplyMarkedCosmeticData]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
         }
 
@@ -444,6 +505,37 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Injects marked CSS with the same bounded retry policy as the initial
+     * stylesheet.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @param cssText Marked CSS text.
+     * @param tries Number of tries already made.
+     *
+     * @returns Promise that resolves when the CSS is injected.
+     */
+    private static async injectMarkedCssWithRetries(
+        tabId: number,
+        frameId: number,
+        cssText: string,
+        tries = 0,
+    ): Promise<void> {
+        try {
+            await CosmeticApi.injectCss(tabId, frameId, cssText);
+        } catch (e) {
+            if (tries >= CosmeticApi.INJECTION_MAX_TRIES) {
+                throw e;
+            }
+
+            await new Promise<void>((resolve) => {
+                setTimeout(resolve, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
+            });
+            await CosmeticApi.injectMarkedCssWithRetries(tabId, frameId, cssText, tries + 1);
+        }
+    }
+
+    /**
      * Injects css to specified tab id and frame id.
      *
      * @param tabId Tab id.
@@ -452,14 +544,25 @@ export class CosmeticApi extends CosmeticApiCommon {
      */
     public static async applyCss(tabId: number, frameId: number, tries = 0): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
+        const preparedCosmeticResult = frameContext?.preparedCosmeticResult;
 
-        const cssText = frameContext?.preparedCosmeticResult?.cssText;
+        if (!frameContext || !preparedCosmeticResult) {
+            return;
+        }
+
+        const { cssText } = preparedCosmeticResult;
         if (!cssText) {
+            CosmeticApi.setNativeHitsMarkersApplied(frameContext, preparedCosmeticResult, true);
             return;
         }
 
         try {
             await CosmeticApi.injectCss(tabId, frameId, cssText);
+            CosmeticApi.setNativeHitsMarkersApplied(
+                frameContext,
+                preparedCosmeticResult,
+                preparedCosmeticResult.areHitsStatsCollected,
+            );
         } catch (e) {
             // Retry injection if it fails
             if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
@@ -467,6 +570,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                     CosmeticApi.applyCss(tabId, frameId, tries + 1);
                 }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
+                CosmeticApi.setNativeHitsMarkersApplied(frameContext, preparedCosmeticResult, false);
                 logger.debug('[tsweb.CosmeticApi.applyCss]: error occurred during injection', e);
             }
         }

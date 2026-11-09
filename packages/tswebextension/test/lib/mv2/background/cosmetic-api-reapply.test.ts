@@ -79,6 +79,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
     });
 
     afterEach(() => {
+        vi.useRealTimers();
         vi.restoreAllMocks();
     });
 
@@ -92,6 +93,52 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(data.areHitsStatsCollected).toBe(true);
         expect(data.areNativeHitsStatsCollected).toBe(false);
         expect(data.extCssRules?.some((rule) => rule.includes('adguard'))).toBe(true);
+    });
+
+    it('reports prepared markers after initial injection succeeds', async () => {
+        tabsApiMock.getFrameContext.mockReturnValue({
+            cosmeticResult,
+            preparedCosmeticResult: {
+                cssText: 'marked',
+                areHitsStatsCollected: true,
+            },
+        });
+        vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
+
+        await CosmeticApi.applyCss(TAB_ID, FRAME_ID);
+
+        const data = CosmeticApi.getContentScriptData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(data.areNativeHitsStatsCollected).toBe(true);
+    });
+
+    it('does not report prepared markers when initial injection failed', async () => {
+        tabsApiMock.getFrameContext.mockReturnValue({
+            cosmeticResult,
+            preparedCosmeticResult: {
+                cssText: 'marked',
+                areHitsStatsCollected: true,
+            },
+        });
+        vi.spyOn(CosmeticApi, 'injectCss').mockRejectedValue(new Error('injection failed'));
+        vi.useFakeTimers();
+
+        const injection = CosmeticApi.applyCss(TAB_ID, FRAME_ID);
+        await vi.runAllTimersAsync();
+        await injection;
+        vi.useRealTimers();
+
+        const data = CosmeticApi.getContentScriptData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(data.areNativeHitsStatsCollected).toBe(false);
     });
 
     it('injects marked native CSS and returns marked ExtendedCss rules', async () => {
@@ -186,6 +233,21 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(data.areNativeHitsStatsCollected).toBe(true);
         expect(data.extCssRules?.some((rule) => rule.includes('adguard'))).toBe(true);
         expect(injectSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('retries marked CSS injection after a transient failure', async () => {
+        const injectSpy = vi.spyOn(CosmeticApi, 'injectCss')
+            .mockRejectedValueOnce(new Error('transient failure'))
+            .mockResolvedValue();
+
+        const data = await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(injectSpy).toHaveBeenCalledTimes(2);
+        expect(data.areNativeHitsStatsCollected).toBe(true);
     });
 
     it('keeps marked ExtendedCss rules when marked CSS injection fails', async () => {
