@@ -883,9 +883,11 @@ export class CssHitsCounter {
 
                     const { target } = mutationRecord;
                     if (!node.parentNode && target) {
-                        // If this node has been appended to the DOM and counted once, do not add
-                        // it again.
-                        if (this.probedElements.has(node)) {
+                        // If this node has been appended to the DOM and counted
+                        // once, do not add it again. Before marker styles are
+                        // applied, a previously probed node still needs a
+                        // recheck.
+                        if (this.markerStylesApplied && this.probedElements.has(node)) {
                             continue;
                         }
 

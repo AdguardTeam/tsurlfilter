@@ -2276,6 +2276,51 @@ describe('CssHitsCounter', () => {
         }
     });
 
+    it('rechecks a probed element until marker styles are applied', () => {
+        const restoreMutationObserver = mockMutationObserver();
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.recheck-bait',
+            "{ display: none !important; --adguard-hit: 'adguard64%3B64' !important; }",
+        ].join(' ');
+        const bait = document.createElement('div');
+        bait.className = 'recheck-bait';
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+            const observer = MutationObserverMock.last!;
+            const mutation = [{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord];
+
+            observer.trigger(mutation);
+            expect(onCssHitsFound).not.toHaveBeenCalled();
+
+            // The first probe ran before marker styles were applied. The
+            // element must be rechecked, not skipped as already probed.
+            document.head.appendChild(style);
+            observer.trigger(mutation);
+
+            const hits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 64);
+            expect(hits).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            bait.remove();
+            style.remove();
+            restoreFixtureMarkers();
+            restoreMutationObserver();
+        }
+    });
+
     it('reports native and ExtendedCss hits for the same element', () => {
         vi.useFakeTimers();
         const restoreMutationObserver = mockMutationObserver();
