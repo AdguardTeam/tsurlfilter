@@ -485,18 +485,28 @@ sub-parsers (e.g., `CssRuleParser` calling `SelectorListParser`).
 ```text
 Offset   Size    Region
 ──────────────────────────────────────────────────────────────────────
-0        5       Network rule header (NR_*) — for cosmetic rules, the
-                 first 5 slots of the 7-slot CR header
-5        448     Modifier records (64 × stride 7 — the region is sized for
+0        7       Rule header. Network rules use 5 slots (NR_*); cosmetic
+                 rules use all 7 (CR_*). Slots 5-6 hold the rest of the CR
+                 header for cosmetic rules.
+7        448     Modifier records (64 × stride 7 — the region is sized for
                  the largest, uBO, stride; network and AdGuard records use
-                 stride 5). Cosmetic records start at slot 7, so slots 5-6
-                 hold the rest of the CR header. uBO modifier records for
-                 element-hiding rules occupy [7..34] (4 × stride 7).
-453      384     Domain records (128 × stride 3)
-837      128     Scriptlet body data
+                 stride 5). Network records start at slot 5. uBO modifier
+                 records for element-hiding rules occupy [7..34] (4 × 7).
+455      384     Domain records (128 × stride 3), after `DATA_HEADER_SIZE`
+                 (7) + 64 × 7.
+839      128     Scriptlet body data
 ──────────────────────────────────────────────────────────────────────
-Total    965     5 + 64 × 7 + 128 × 3 + 128
+967      —       Base length (7 + 64 × 7 + 128 × 3 + 128)
+967      730     Selector-list region (2 + 8 × 3 + 64 × 11), at the END of
+                 the buffer so a long selector cannot overwrite domains or a
+                 `[$…]` modifier list.
+──────────────────────────────────────────────────────────────────────
+Total    1697    967 + 730 (`SL_MIN_DATA_SLOTS`)
 ```
+
+`growCtxRegion()` reallocates the whole buffer, preserves the part before a
+non-zero `dataOffset` and the selector-list tail at the end, and copies every
+region at its offset relative to the rule header.
 
 Network rules and cosmetic rules are mutually exclusive, so their header and
 modifier regions safely overlap.
