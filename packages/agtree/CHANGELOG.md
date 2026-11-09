@@ -13,6 +13,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `SPECIAL_PSEUDO_CLASS_NAMES` is now exported, so consumers can use the
   same list of special pseudo-class names as the parser and the converter.
+- `RegExpUtils.globToUboRegExp()` is now exported. It converts a glob to a
+  uBlock-compatible regexp, which uses `[\s\S]` instead of the unsupported
+  dot-all `s` flag.
+- `RegExpUtils.escapeRegexSpecials()` now accepts an optional `escapeQuotes`
+  argument. When it is `true`, single and double quotes are emitted as
+  `\x27` and `\x22`, which is required for a uBlock `:has-text()` argument,
+  because CSS-tree parses it before uBlock reads the regexp. The default is
+  `false`, so the existing behavior is unchanged.
 
 ### Changed
 
@@ -30,6 +38,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- ADG→uBO conversion of HTML filtering `[tag-content]` and `[wildcard]`
+  attribute selectors now produces rules closer to the AdGuard behavior:
+  `[tag-content]` becomes a case-sensitive escaped `:has-text()` regexp,
+  and `[wildcard]` becomes a uBlock-compatible regexp that uses `[\s\S]`
+  instead of the unsupported dot-all `s` flag. Rules whose values contain
+  HTML markup or an HTML character reference (e.g. `&lt;`, or `&copy 2024`
+  without the trailing semicolon) are kept as-is for elements other than
+  `script` and `style`, because uBlock matches `textContent`. Limitation: a
+  value without markup or character references still matches an element
+  whose `textContent` equals it even when its `innerHTML` differs.
 - `[min-length]` and `[max-length]` values are now emitted as plain decimal
   digits during ADG→ADG conversion, so large values are neither rounded nor
   switched to exponent notation. For example,

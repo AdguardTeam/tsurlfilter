@@ -37,6 +37,7 @@ import {
     EMPTY,
     EQUALS,
     OPEN_SQUARE_BRACKET,
+    REGEX_MARKER,
     SINGLE_QUOTE,
     SLASH,
 } from '../../utils/constants';
@@ -149,6 +150,57 @@ const SUPPORTED_ADG_PSEUDO_CLASSES = new Set<string>([
 const SPECIAL_PSEUDO_CLASS_NAME_SET = new Set<string>(SPECIAL_PSEUDO_CLASS_NAMES);
 
 /**
+ * HTML raw text elements, whose `innerHTML` equals `textContent`.
+ *
+ * The content of these elements is text rather than a tree of child nodes,
+ * and HTML serialization writes it literally. Thus `<` and `>` in a
+ * `[tag-content]` or `[wildcard]` value stay literal characters in both
+ * `innerHTML` and `textContent`, so the value can still match in uBlock
+ * `:has-text()`, which tests `textContent`.
+ *
+ * @see {@link https://html.spec.whatwg.org/multipage/syntax.html#raw-text-elements}
+ */
+const RAW_TEXT_ELEMENTS = new Set<string>(['script', 'style']);
+
+/**
+ * Named HTML character references that browsers decode even without the
+ * trailing semicolon (the legacy references of the HTML named character
+ * references table).
+ *
+ * Other named references are decoded only with a trailing semicolon, while
+ * numeric references are decoded with or without it.
+ *
+ * @see {@link https://html.spec.whatwg.org/multipage/named-characters.html}
+ */
+const LEGACY_HTML_CHARACTER_REFERENCE_NAMES = [
+    'AElig', 'AMP', 'Aacute', 'Acirc', 'Agrave', 'Aring', 'Atilde', 'Auml',
+    'COPY', 'Ccedil', 'ETH', 'Eacute', 'Ecirc', 'Egrave', 'Euml', 'GT',
+    'Iacute', 'Icirc', 'Igrave', 'Iuml', 'LT', 'Ntilde', 'Oacute', 'Ocirc',
+    'Ograve', 'Oslash', 'Otilde', 'Ouml', 'QUOT', 'REG', 'THORN', 'Uacute',
+    'Ucirc', 'Ugrave', 'Uuml', 'Yacute',
+    'aacute', 'acirc', 'acute', 'aelig', 'agrave', 'amp', 'aring', 'atilde',
+    'auml', 'brvbar', 'ccedil', 'cedil', 'cent', 'copy', 'curren', 'deg',
+    'divide', 'eacute', 'ecirc', 'egrave', 'eth', 'euml', 'frac12', 'frac14',
+    'frac34', 'gt', 'iacute', 'icirc', 'iexcl', 'igrave', 'iquest', 'iuml',
+    'laquo', 'lt', 'macr', 'micro', 'middot', 'nbsp', 'not', 'ntilde',
+    'oacute', 'ocirc', 'ograve', 'ordf', 'ordm', 'oslash', 'otilde', 'ouml',
+    'para', 'plusmn', 'pound', 'quot', 'raquo', 'reg', 'sect', 'shy', 'sup1',
+    'sup2', 'sup3', 'szlig', 'thorn', 'times', 'uacute', 'ucirc', 'ugrave',
+    'uml', 'uuml', 'yacute', 'yen', 'yuml',
+];
+
+/**
+ * Matches an HTML character reference that a browser decodes in an element's
+ * `textContent`: any named or numeric reference with a trailing semicolon, a
+ * numeric reference without it, or a legacy named reference without it.
+ */
+const HTML_CHARACTER_REFERENCE_REGEXP = new RegExp(
+    `&(?:#[0-9]+;?|#[xX][0-9a-fA-F]+;?|[a-zA-Z][a-zA-Z0-9]*;|${
+        LEGACY_HTML_CHARACTER_REFERENCE_NAMES.join('|')
+    })`,
+);
+
+/**
  * Markers of special pseudo-class selectors with raw-text arguments,
  * used to detect special selector markers in raw (unparseable) HTML
  * filtering rule bodies. Derived from {@link SPECIAL_PSEUDO_CLASS_NAMES},
@@ -216,11 +268,18 @@ export const ERROR_MESSAGES = {
  *
  * @param name Name of the special attribute selector.
  * @param value Value of the special attribute selector.
+ * @param typeSelector Lowercase type selector of the compound selector that
+ * contains the special attribute selector, or `null` if the compound selector
+ * has no type selector.
  *
  * @returns A {@link SimpleSelector} to add to the current complex selector,
  * or `false` to skip it, or `true` to keep it as-is.
  */
-type OnSpecialAttributeSelectorCallback = (name: string, value: string) => SimpleSelector | boolean;
+type OnSpecialAttributeSelectorCallback = (
+    name: string,
+    value: string,
+    typeSelector: string | null,
+) => SimpleSelector | boolean;
 
 /**
  * Callback type for handling special pseudo-class selectors during selector list conversion.
@@ -387,6 +446,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * Converts a HTML rule to uBlock syntax, if possible.
      * Also can be used to convert uBlock rules to uBlock syntax to validate them.
      *
+     * Note: a valid ADG rule may be kept as-is with `isConverted: false` when
+     * a special attribute selector cannot be represented in uBlock without
+     * changing its matching semantics, e.g. HTML markup or an HTML character
+     * reference in `[tag-content]`/`[wildcard]` for an element other than
+     * `script`/`style`, see {@link HtmlRuleConverter.containsHtmlMarkup},
+     * {@link HtmlRuleConverter.containsHtmlCharacterReference} and
+     * {@link HtmlRuleConverter.isRawTextElement}. Callers must not treat
+     * `isConverted: false` as proof of rule invalidity.
+     *
      * @param rule Rule node to convert.
      *
      * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
@@ -405,14 +473,55 @@ export class HtmlRuleConverter extends RuleConverterBase {
             throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
         }
 
+        // Set when a special attribute selector cannot be represented in
+        // uBlock without changing its matching semantics. uBlock cannot mix
+        // AdGuard-only selectors into the converted top-level selector list,
+        // so the whole rule is kept as-is instead of emitting a rule that
+        // matches other elements.
+        let isUnconvertible = false;
+
+        const onSpecialAttributeSelector: OnSpecialAttributeSelectorCallback = (name, value, typeSelector) => {
+            // The markup and character reference checks do not apply to raw
+            // text elements: their `innerHTML` equals `textContent`, so the
+            // value is still present in the text that uBlock matches.
+            if (
+                (name === AdgAttributeSelectors.TagContent
+                    || name === AdgAttributeSelectors.Wildcard)
+                && (
+                    HtmlRuleConverter.containsHtmlMarkup(value)
+                    || HtmlRuleConverter.containsHtmlCharacterReference(value)
+                )
+                && !HtmlRuleConverter.isRawTextElement(typeSelector)
+            ) {
+                isUnconvertible = true;
+                // Keep the selector: `convertBody()` converts the body
+                // before `isUnconvertible` is checked below, and dropping the
+                // only selector of a complex selector makes it throw
+                // `RuleConversionError: Complex selector cannot be empty`.
+                // The converted body is discarded anyway.
+                return true;
+            }
+
+            return HtmlRuleConverter.convertSpecialAttributeSelectorAdgToUbo(name, value);
+        };
+
         // Convert body
         const convertedBody = HtmlRuleConverter.convertBody(
             rule.body,
             AdgHtmlFilteringBodyParser,
             UboHtmlFilteringBodyGenerator,
-            HtmlRuleConverter.convertSpecialAttributeSelectorAdgToUbo,
+            onSpecialAttributeSelector,
             HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToUbo,
         );
+
+        if (isUnconvertible) {
+            // A selector list is a union of complex selectors, and special
+            // attribute selectors cannot be mixed into the converted selector
+            // list, so dropping only the unconvertible complex selectors
+            // would change the rule. Keep the original rule as a native HTML
+            // filtering selector instead.
+            return createNodeConversionResult([rule], false);
+        }
 
         return createNodeConversionResult(
             [{
@@ -651,11 +760,85 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
+     * Checks whether a special attribute selector value contains HTML markup
+     * characters (`<` or `>`).
+     *
+     * AdGuard `[tag-content]` and `[wildcard]` match the element HTML
+     * (`innerHTML`), while uBlock `:has-text()` matches the element text
+     * (`textContent`). Tags exist only in the HTML, so a value that contains
+     * markup can never be found in uBlock's `textContent`, i.e. the converted
+     * rule would match nothing. Such rules are kept as-is instead.
+     *
+     * Exception: for raw text elements the two strings are equal, see
+     * {@link HtmlRuleConverter.isRawTextElement}.
+     *
+     * @param value Value of the special attribute selector.
+     *
+     * @returns `true` if the value contains HTML markup, otherwise `false`.
+     */
+    private static containsHtmlMarkup(value: string): boolean {
+        return value.includes('<') || value.includes('>');
+    }
+
+    /**
+     * Checks whether a special attribute selector value contains an HTML
+     * character reference, e.g. `&lt;`, `&amp;`, `&#39;` or `&copy 2024`.
+     *
+     * AdGuard `[tag-content]` and `[wildcard]` match the element HTML
+     * (`innerHTML`), where a character reference stays encoded, while uBlock
+     * `:has-text()` matches the decoded `textContent`. A value with a
+     * character reference can therefore never be found in uBlock's
+     * `textContent`, i.e. the converted rule would match nothing. Such rules
+     * are kept as-is instead.
+     *
+     * Browsers decode numeric references and the legacy named references
+     * listed in the HTML specification even without the trailing semicolon,
+     * e.g. `&#39` and `&copy 2024`, so those forms are detected as well.
+     * Other named references require the semicolon.
+     *
+     * Exception: character references are not decoded in raw text elements
+     * either, so their `innerHTML` and `textContent` stay equal, see
+     * {@link HtmlRuleConverter.isRawTextElement}.
+     *
+     * @param value Value of the special attribute selector.
+     *
+     * @returns `true` if the value contains an HTML character reference,
+     * otherwise `false`.
+     */
+    private static containsHtmlCharacterReference(value: string): boolean {
+        return HTML_CHARACTER_REFERENCE_REGEXP.test(value);
+    }
+
+    /**
+     * Checks whether the type selector refers to an HTML raw text element.
+     *
+     * For raw text elements (`script`, `style`) the element content is text,
+     * not a tree of child nodes, so `innerHTML` and `textContent` are equal.
+     * A `[tag-content]` or `[wildcard]` value with markup characters can
+     * therefore still match in uBlock `:has-text()`, which tests
+     * `textContent`.
+     *
+     * @param typeSelector Type selector of the compound selector, or `null`
+     * if the compound selector has no type selector.
+     *
+     * @returns `true` if the type selector refers to a raw text element,
+     * otherwise `false`.
+     */
+    private static isRawTextElement(typeSelector: string | null): boolean {
+        return typeSelector !== null && RAW_TEXT_ELEMENTS.has(typeSelector);
+    }
+
+    /**
      * Handles special attribute selectors during AdGuard to uBlock conversion:
-     * - `[tag-content="content"]` -> `:has-text(content)`
-     *   direct conversion, no changes to value
-     * - `[wildcard="*content*"]` -> `:has-text(/^.*content.*$/s)`
-     *   convert search pattern to regular expression
+     * - `[tag-content="content"]` -> `:has-text(/content/)`
+     *   The literal is escaped and emitted as a regular expression. A plain
+     *   uBlock `:has-text()` argument is matched case-insensitively, while
+     *   AdGuard `[tag-content]` is case-sensitive. Only the `i` flag is
+     *   accepted by uBlock, so a regexp without flags stays case-sensitive.
+     * - `[wildcard="*content*"]` -> `:has-text(/^[\s\S]*content[\s\S]*$/)`
+     *   convert search pattern to a uBlock-compatible regular expression:
+     *   uBlock accepts only the `i` flag, so the dot-all `s` flag cannot be
+     *   used and `[\s\S]` replaces the dots.
      * - `[min-length="min"]` -> `:min-text-length(min)`
      *   the value is validated and normalized to plain digits, since uBlock
      *   accepts only digits (e.g. `" 5"` and `"+5"` become `5`)
@@ -666,6 +849,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *   handles the emptied compounds and rejects a complex selector left
      *   without any constraint, see {@link convertBody}.
      *
+     * Note: values that contain HTML markup or an HTML character reference are
+     * passed to this method only for raw text elements, where `innerHTML`
+     * equals `textContent`; for other elements such rules are kept as-is, see
+     * {@link HtmlRuleConverter.containsHtmlMarkup},
+     * {@link HtmlRuleConverter.containsHtmlCharacterReference} and
+     * {@link HtmlRuleConverter.isRawTextElement}.
+     *
      * @param name Name of the special attribute selector.
      * @param value Value of the special attribute selector.
      *
@@ -675,21 +865,23 @@ export class HtmlRuleConverter extends RuleConverterBase {
      */
     private static convertSpecialAttributeSelectorAdgToUbo(name: string, value: string): SimpleSelector | false {
         switch (name) {
-            // `[tag-content="content"]` -> `:has-text(content)`
-            // direct conversion, no changes to value
+            // `[tag-content="content"]` -> `:has-text(/content/)`
+            // the escaped literal is a case-sensitive regexp in uBlock, and
+            // quotes are emitted as hex escapes for CSS-tree, which parses the
+            // argument before uBlock reads the regexp
             case AdgAttributeSelectors.TagContent: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.HasText,
-                    value,
+                    `${REGEX_MARKER}${RegExpUtils.escapeRegexSpecials(value, true)}${REGEX_MARKER}`,
                 );
             }
 
-            // `[wildcard="*content*"]` -> `:has-text(/^.*content.*$/s)`
-            // convert search pattern to regular expression
+            // `[wildcard="*content*"]` -> `:has-text(/^[\s\S]*content[\s\S]*$/)`
+            // convert search pattern to a uBlock-compatible regular expression
             case AdgAttributeSelectors.Wildcard: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.HasText,
-                    RegExpUtils.globToRegExp(value),
+                    RegExpUtils.globToUboRegExp(value),
                 );
             }
 
@@ -779,6 +971,41 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 ));
             }
         }
+    }
+
+    /**
+     * Returns the lowercase type selector of the compound selector that
+     * contains the simple selector at the given index.
+     *
+     * A compound selector starts after a combinator, and a type selector,
+     * when present, is its first simple selector.
+     *
+     * @param selectors Child selectors of a complex selector.
+     * @param index Index of the simple selector within the complex selector.
+     *
+     * @returns Lowercase type selector, or `null` if the compound selector
+     * has no type selector.
+     */
+    private static getCompoundTypeSelector(
+        selectors: (SimpleSelector | SelectorCombinator)[],
+        index: number,
+    ): string | null {
+        let compoundStart = 0;
+
+        for (let i = index - 1; i >= 0; i -= 1) {
+            if (selectors[i].type === 'SelectorCombinator') {
+                compoundStart = i + 1;
+                break;
+            }
+        }
+
+        const firstSelector = selectors[compoundStart];
+
+        if (firstSelector.type !== 'TypeSelector') {
+            return null;
+        }
+
+        return firstSelector.value.toLowerCase();
     }
 
     /**
@@ -1056,6 +1283,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                         const name = selector.name.value;
                         const { value } = selector.value;
+                        const typeSelector = HtmlRuleConverter.getCompoundTypeSelector(selectors, j);
 
                         // [tag-content] and [wildcard] are deferred in ADG→ADG
                         // conversion: their emission may need to be merged with
@@ -1073,7 +1301,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                             // discard the single-attribute pseudo-class it
                             // returns — the actual nodes are emitted after the
                             // selector loop.
-                            onSpecialAttributeSelector(name, value);
+                            onSpecialAttributeSelector(name, value, typeSelector);
                             if (name === AdgAttributeSelectors.TagContent) {
                                 deferredTagContentValues.push(value);
                             } else {
@@ -1096,7 +1324,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                             // the merged one is emitted after the selector loop,
                             // possibly combined with the other deferred
                             // constraints.
-                            onSpecialAttributeSelector(name, value);
+                            onSpecialAttributeSelector(name, value, typeSelector);
                             continue;
                         }
 
@@ -1104,7 +1332,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         // - add returned simple selector if it's not boolean
                         // - skip adding if returned value is false
                         // - keep original simple selector if returned value is true
-                        const result = onSpecialAttributeSelector(name, value);
+                        const result = onSpecialAttributeSelector(name, value, typeSelector);
                         if (typeof result !== 'boolean') {
                             convertedSelectors.push(result);
                             continue;
