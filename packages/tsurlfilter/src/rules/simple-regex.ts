@@ -530,21 +530,24 @@ export class SimpleRegex {
      * so the JavaScript grammar is the primary one.
      *
      * There is one bounded compatibility exception. If the JavaScript split
-     * produces a pattern or flags that do not compile, the method retries the
-     * split with {@link RegExpUtils.parseCoreLibsRegexArgument} before falling
-     * back to a string. The CoreLibs split treats the last `/` as the
-     * delimiter, so a `/` inside the pattern can be escaped (`\/`), follow an
-     * escaped backslash (`\\/`), or be inside a character class. This
-     * restores the pre-3bf4ccf behavior for literals such as `/a\\/b/`, where
-     * the JavaScript scanner closes the literal at the slash after an escaped
-     * backslash. It is a shim for AG-61628, not a second grammar: do not
+     * produces a pattern or flags that do not compile, or if it finds no
+     * pattern at all, the method retries the split with
+     * {@link RegExpUtils.parseCoreLibsRegexArgument} before falling back to a
+     * string. The CoreLibs split treats the last `/` as the delimiter, so a
+     * `/` inside the pattern can be escaped (`\/`), follow an escaped
+     * backslash (`\\/`), or be inside a character class. This restores the
+     * pre-3bf4ccf behavior for literals such as `/a\\/b/`, where the
+     * JavaScript scanner closes the literal at the slash after an escaped
+     * backslash, and for `///` or `//a/`, where the JavaScript scanner sees an
+     * empty pattern. It is a shim for AG-61628, not a second grammar: do not
      * extend it or use the CoreLibs split when the JavaScript split compiles.
      *
      * The ADG→ADG converter uses a different grammar on purpose: it must
      * mirror CoreLibs' `extract_regex()` and therefore uses
      * {@link RegExpUtils.parseCoreLibsRegexArgument} for detection. Do not
-     * unify the two grammars: they read literals such as `///` and `/a\/`
-     * differently by design (AG-61628).
+     * unify the two grammars: the converter must escape every `[tag-content]`
+     * value that CoreLibs reads as a regular expression, including a value
+     * such as `/a\/` that the engine would match as literal text (AG-61628).
      *
      * Only the flags `i`, `s`, `u`, and `v` are kept. The `g` and `y` flags
      * make `RegExp.test()` stateful because they advance `lastIndex`, so they
@@ -560,36 +563,51 @@ export class SimpleRegex {
     public static fromLiteral(literal: string): string | RegExp {
         const parts = RegExpUtils.parseRegexLiteral(literal);
 
-        // Not a regular expression literal
-        if (parts === null) {
-            return literal;
+        let regexp: RegExp | null = null;
+        let jsError: unknown;
+
+        if (parts !== null) {
+            try {
+                // Compile the original literal first. This keeps the fallback
+                // for invalid literals, including invalid or duplicate flags.
+                regexp = new RegExp(parts.pattern, parts.flags);
+            } catch (e) {
+                jsError = e;
+            }
         }
 
-        let regexp: RegExp;
-
-        try {
-            // Compile the original literal first. This keeps the fallback for
-            // invalid literals, including invalid or duplicate flags.
-            regexp = new RegExp(parts.pattern, parts.flags);
-        } catch (e) {
+        if (regexp === null) {
             // Compatibility fallback for the AG-61628 grammar gap. The
             // JavaScript split closes the literal at a slash after an escaped
             // backslash, while the old engine scanner and CoreLibs continue to
-            // the next slash. When the JavaScript split does not compile,
-            // retry with the CoreLibs last-slash split. This is not a full
-            // switch to the CoreLibs grammar: the engine still compiles with
-            // the JavaScript `RegExp` constructor.
+            // the next slash. It also returns null for an empty pattern, e.g.
+            // `///` or `//a/`, which CoreLibs reads as regexps. When the
+            // JavaScript split does not compile or returns null, retry with the
+            // CoreLibs last-slash split. This is not a full switch to the
+            // CoreLibs grammar: the engine still compiles with the JavaScript
+            // `RegExp` constructor.
             const coreLibsParts = RegExpUtils.parseCoreLibsRegexArgument(literal);
 
             if (coreLibsParts === null) {
-                logger.warn(`[tsurl.SimpleRegex.fromLiteral]: Invalid regular expression literal: ${literal}:`, e);
+                // A value that neither grammar reads as a literal is plain
+                // text, e.g. `plain`, `/unclosed`, or `/ads`.
+                if (jsError !== undefined) {
+                    logger.warn(
+                        `[tsurl.SimpleRegex.fromLiteral]: Invalid regular expression literal: ${literal}:`,
+                        jsError,
+                    );
+                }
+
                 return literal;
             }
 
             try {
                 regexp = new RegExp(coreLibsParts.pattern, coreLibsParts.flags);
-            } catch {
-                logger.warn(`[tsurl.SimpleRegex.fromLiteral]: Invalid regular expression literal: ${literal}:`, e);
+            } catch (e) {
+                logger.warn(
+                    `[tsurl.SimpleRegex.fromLiteral]: Invalid regular expression literal: ${literal}:`,
+                    jsError ?? e,
+                );
                 return literal;
             }
         }

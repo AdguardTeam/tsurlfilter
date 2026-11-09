@@ -223,9 +223,16 @@ describe('SimpleRegex.fromLiteral', () => {
         { input: String.raw`/\\//`, output: new RegExp(String.raw`\\/`) },
         // An uppercase flag is not a CoreLibs flag, so there is no fallback
         { input: '/ads/I', output: '/ads/I' },
-        // `///` is not a JavaScript literal (empty pattern), so there is no
-        // fallback
-        { input: '///', output: '///' },
+        // The JavaScript split sees an empty pattern, so the CoreLibs fallback
+        // compiles the last-slash split. `///` is the regexp `/` for CoreLibs.
+        { input: '///', output: /\// },
+        // Same empty-pattern case: CoreLibs takes the last slash, so the
+        // pattern is `/a`, not an empty string.
+        { input: '//a/', output: /\/a/ },
+        { input: '//abc/', output: /\/abc/ },
+        // The CoreLibs split also produces an invalid pattern, so the value
+        // stays a string
+        { input: String.raw`/a\/`, output: String.raw`/a\/` },
         // The CoreLibs fallback also covers escaped backslashes
         { input: String.raw`/foo\\/`, output: /foo\\/ },
         { input: String.raw`/[\\]/`, output: /[\\]/ },
