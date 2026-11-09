@@ -409,6 +409,7 @@ export class PreregisteredScriptsService {
         scriptsPath: string,
     ): Promise<Map<string, Set<string>>> {
         const hostnames = expandHostnames(domains);
+
         // Defaults for a sync that registers nothing: the dynamic path covers
         // every configured host.
         let plan: RegistrationPlan = {
@@ -482,11 +483,6 @@ export class PreregisteredScriptsService {
      * baked exceptions would disable pages the engine filters normally (and
      * miss new ones), so nothing is registered and every host stays on the
      * dynamic path, where the engine decides.
-     *
-     * A configured host missing from the manifest host set is not registered
-     * either: the generation carries no files for it, so registering it would
-     * run nothing while the background reports the rules as covered — and
-     * `#%#` rules are not idempotent.
      *
      * A host that a user rule or a custom filter can affect is not registered
      * at all: those lists are runtime-only, the baked page gate knows nothing

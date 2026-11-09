@@ -388,7 +388,7 @@ Known limitations:
   and a subframe is never preregistered for the same reason — see the
   coverage notes above.
 - Subframes never take the fast path: they are injected dynamically, on
-  `webNavigation.onResponseStarted` or `webNavigation.onCommitted`, after the
+  `webRequest.onResponseStarted` or `webNavigation.onCommitted`, after the
   frame's document starts. A frame whose own inline script reads a property
   before that moment wins the race, and in the cold-start window (browser or
   service-worker start, while the engine is still being built) the frame may

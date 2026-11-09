@@ -121,8 +121,7 @@ const fetchManifest = async (scriptsPath: string): Promise<PreregisteredScriptsM
  * the rule hashes with matching generated files, the scriptlet name →
  * function-file map, the ids of the filters whose page exceptions are
  * baked into conditions files and the fingerprint those exceptions were
- * baked from. A leftover `hostnames` field is ignored: coverage is the
- * descriptors that were built, not a host list.
+ * baked from.
  *
  * The manifest is this package's own build output, but it is still
  * validated: a missing, unreadable, malformed, or version-mismatched

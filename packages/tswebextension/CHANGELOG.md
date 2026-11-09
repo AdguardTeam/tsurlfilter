@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   depends on the main frame's rule and URL, which the page cannot read when
   the domains differ, so frames always keep the dynamic path. Registrations
   follow the configured host expansion; a rule without a baked file stays on
-  the dynamic path. The manifest `hostnames` field is no longer read.
+  the dynamic path.
 - Public utilities for hashing preregistered rules and resolving stable
   script filenames. They are exported from
   `@adguard/tswebextension/mv3/preregistered-scripts/build-contract`.
