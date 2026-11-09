@@ -669,6 +669,22 @@ const ENGINE_DOMAIN_BADFILTER_CASES: [
         'https://example.com/',
         true,
     ],
+    // A wildcard-TLD badfilter entry excludes a kept plain entry that it only
+    // overlaps.
+    [
+        '||example.com^$domain=foo.com|example.com',
+        '||example.com^$domain=foo.com|sub.example.*,badfilter',
+        'https://sub.example.com/',
+        true,
+    ],
+    // A plain badfilter entry excludes a kept wildcard-TLD entry that it only
+    // overlaps.
+    [
+        '||example.com^$domain=foo.com|sub.example.*',
+        '||example.com^$domain=foo.com|example.com,badfilter',
+        'https://sub.example.com/',
+        true,
+    ],
     // A negated domain makes the cancellation complete, so the whole text is
     // compared and a matching text cancels the rule.
     [

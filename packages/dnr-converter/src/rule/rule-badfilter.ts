@@ -421,9 +421,9 @@ export class RuleBadfilter {
      * exclusions that the kept entries need.
      *
      * A target entry is removed when a badfilter entry covers every domain that
-     * the target entry matches. A badfilter entry that a kept target entry
-     * covers is added to the exclusions, because the kept entry still matches it
-     * in DNR.
+     * the target entry matches. A badfilter entry that overlaps a kept target
+     * entry is added to the exclusions, because the kept entry still matches the
+     * overlapping domains in DNR.
      *
      * Entries are compared as written, as `$badfilter` matches the rule text; a
      * plain domain name is compared case-insensitively, because a domain name is
@@ -458,7 +458,7 @@ export class RuleBadfilter {
         const excludedDomains = badfilterDomains.filter((badfilterDomain) => {
             const normalizedBadfilter = RuleBadfilter.normalizeForComparison(badfilterDomain);
 
-            return permittedDomains.some((targetDomain) => RuleBadfilter.isEntryUnder(
+            return permittedDomains.some((targetDomain) => RuleBadfilter.entriesOverlap(
                 normalizedBadfilter,
                 RuleBadfilter.normalizeForComparison(targetDomain),
             ));
@@ -546,6 +546,53 @@ export class RuleBadfilter {
         return regexpEntries.some(
             (regexp) => RuleBadfilter.regexpCoversKeptEntry(regexp, keptEntries),
         );
+    }
+
+    /**
+     * Checks whether two `$domain` entries cover at least one common domain.
+     *
+     * Used for exclusions: a badfilter entry that only overlaps a kept target
+     * entry still cancels the target on the overlap, so the kept entry has to
+     * exclude it. A regexp entry overlaps only an identically written entry. A
+     * wildcard TLD entry is expanded with {@link POPULAR_TLDS}, the same list
+     * that `RegularRuleConverter.prepareDeclarativeDomains` uses for the
+     * declarative condition.
+     *
+     * @param first First domain entry.
+     * @param second Second domain entry.
+     *
+     * @returns True when the two entries cover a common domain.
+     */
+    private static entriesOverlap(first: string, second: string): boolean {
+        if (isRegexPattern(first) || isRegexPattern(second)) {
+            return first === second;
+        }
+
+        const firstDomains = RuleBadfilter.expandWildcardTld(first);
+        const secondDomains = RuleBadfilter.expandWildcardTld(second);
+
+        return firstDomains.some((firstDomain) => secondDomains.some(
+            (secondDomain) => RuleBadfilter.isEntryUnder(firstDomain, secondDomain)
+                || RuleBadfilter.isEntryUnder(secondDomain, firstDomain),
+        ));
+    }
+
+    /**
+     * Expands a wildcard TLD entry to the popular TLD list, or returns the entry
+     * itself.
+     *
+     * @param entry Domain entry.
+     *
+     * @returns Domains that represent the entry in DNR.
+     */
+    private static expandWildcardTld(entry: string): string[] {
+        if (!entry.endsWith(WILDCARD_TLD_SUFFIX)) {
+            return [entry];
+        }
+
+        const prefix = entry.slice(0, -WILDCARD_TLD_SUFFIX.length);
+
+        return POPULAR_TLDS.map((tld) => `${prefix}.${tld}`);
     }
 
     /**

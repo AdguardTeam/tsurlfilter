@@ -790,6 +790,38 @@ describe('Rule', () => {
             // matches `b.com`.
             expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
         });
+
+        it('excludes a wildcard badfilter entry that overlaps a kept plain entry', () => {
+            const [badfilterRule] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=a.com|sub.example.*,badfilter',
+            );
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=a.com|example.com');
+
+            const result = Rule.applyBadfilters(targetRule, [badfilterRule]);
+
+            // MV2 cancels the rule on `sub.example.com`, which the kept
+            // `example.com` entry still covers.
+            expect(result?.permittedDomains).toEqual(['example.com']);
+            expect(result?.restrictedDomains).toEqual(['sub.example.*']);
+        });
+
+        it('excludes a plain badfilter entry that overlaps a kept wildcard entry', () => {
+            const [badfilterRule] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=a.com|example.com,badfilter',
+            );
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=a.com|sub.example.*');
+
+            const result = Rule.applyBadfilters(targetRule, [badfilterRule]);
+
+            // MV2 cancels the rule on `sub.example.com`, which expands from the
+            // kept `sub.example.*` entry.
+            expect(result?.permittedDomains).toEqual(['sub.example.*']);
+            expect(result?.restrictedDomains).toEqual(['example.com']);
+        });
     });
 
     describe('advancedModifierValue', () => {

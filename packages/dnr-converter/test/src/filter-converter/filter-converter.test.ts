@@ -224,6 +224,34 @@ describe('FilterConverter', () => {
             expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['example.com']);
         });
 
+        it('excludes a wildcard entry that only overlaps a kept plain entry', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=foo.com|example.com',
+                '||example.org^$domain=foo.com|sub.example.*,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['example.com']);
+            expect(declarativeRules[0].condition.excludedInitiatorDomains).toContain('sub.example.com');
+        });
+
+        it('excludes a plain entry that only overlaps a kept wildcard entry', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=foo.com|sub.example.*',
+                '||example.org^$domain=foo.com|example.com,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toContain('sub.example.com');
+            expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['example.com']);
+        });
+
         it('reports an empty-domains error when narrowing leaves only regexp domains', async () => {
             const filter = createFilter([
                 '/some$domain=example.com|/^ads\\./',
