@@ -2,8 +2,16 @@ import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import { AdgCssInjectionGenerator } from '../../../src/generator/css/adg-css-injection-generator';
-import type { CssInjectionRule, CssInjectionRuleBody, Raw } from '../../../src/nodes';
+import type {
+    AttributeSelectorWithValue,
+    CssDeclarationList,
+    CssInjectionRule,
+    CssInjectionRuleBody,
+    Raw,
+    SelectorList,
+} from '../../../src/nodes';
 import { SYNTAX_UBO } from '../../../src/utils/syntax-flags';
+import { walk } from '../../../src/walker';
 
 const parser = new RuleParserPipeline();
 
@@ -316,6 +324,260 @@ describe('UboCssInjectionAstBuilder — CSS sub-parsing options', () => {
         }) as CssInjectionRule;
 
         expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: declarationList });
+    });
+});
+
+describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
+    const options = {
+        isLocIncluded: true,
+        parseCssSelectorList: true,
+        parseCssDeclarationList: true,
+    };
+
+    test('attribute and declaration locations point into the original rule', () => {
+        const src = "example.com##div[title='ab']:style(color:red)";
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const attribute = selectorList.children[0].children[1] as AttributeSelectorWithValue;
+
+        expect(attribute.type).toBe('AttributeSelector');
+        expect(attribute).toMatchObject({ start: 16, end: 28 });
+        expect(attribute.name).toMatchObject({ value: 'title', start: 17, end: 22 });
+        expect(attribute.operator).toMatchObject({ value: '=', start: 22, end: 23 });
+        expect(attribute.value).toMatchObject({ value: 'ab', start: 24, end: 26 });
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+        const declaration = declarationList.children[0];
+
+        expect(declaration).toMatchObject({ start: 35, end: 44 });
+        expect(declaration.property).toMatchObject({ value: 'color', start: 35, end: 40 });
+        expect(declaration.value).toMatchObject({ value: 'red', start: 41, end: 44 });
+
+        // Container spans stay unchanged: full body / :style() value range.
+        expect(selectorList.start).toBe(13);
+        expect(selectorList.end).toBe(src.length);
+        expect(declarationList.start).toBe(35);
+        expect(declarationList.end).toBe(44);
+    });
+
+    test(':matches-path() modifier is skipped by child locations', () => {
+        const src = "example.com##:matches-path(/x) div[title='ab']:style(color:red)";
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const complex = selectorList.children[0];
+        const attribute = complex.children[1] as AttributeSelectorWithValue;
+
+        // The excised modifier and the trimmed leading space are removed,
+        // so the complex selector starts at offset 31.
+        expect(complex).toMatchObject({ start: 31, end: 46 });
+        expect(complex.children[0]).toMatchObject({
+            type: 'TypeSelector',
+            value: 'div',
+            start: 31,
+            end: 34,
+        });
+        expect(attribute.value).toMatchObject({ value: 'ab', start: 42, end: 44 });
+        expect(attribute.value.start).toBe(src.indexOf("'ab'") + 1);
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+        const declaration = declarationList.children[0];
+
+        expect(declaration).toMatchObject({ start: 53, end: 62 });
+        expect(declaration.property).toMatchObject({ value: 'color', start: 53, end: 58 });
+        expect(declaration.value).toMatchObject({ value: 'red', start: 59, end: 62 });
+        expect(declaration.property.start).toBe(src.indexOf('color'));
+
+        expect(selectorList.start).toBe(13);
+        expect(selectorList.end).toBe(src.length);
+        expect(declarationList.start).toBe(53);
+        expect(declarationList.end).toBe(62);
+    });
+
+    test('two kept ranges around an excised :matches-media() modifier', () => {
+        const src = '##div:matches-media((min-width: 100px)) .foo:style(color:red)';
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const complex = selectorList.children[0];
+        const classSelector = complex.children.find((child) => child.type === 'ClassSelector');
+
+        expect(complex).toMatchObject({ start: 2, end: 44 });
+        expect(complex.children[0]).toMatchObject({
+            type: 'TypeSelector',
+            value: 'div',
+            start: 2,
+            end: 5,
+        });
+        expect(classSelector).toMatchObject({ value: 'foo', start: 40, end: 44 });
+        expect(classSelector?.start).toBe(src.indexOf('.foo'));
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+        const declaration = declarationList.children[0];
+
+        expect(declaration).toMatchObject({ start: 51, end: 60 });
+        expect(declaration.property).toMatchObject({ value: 'color', start: 51, end: 56 });
+        expect(declaration.value).toMatchObject({ value: 'red', start: 57, end: 60 });
+        expect(declaration.property.start).toBe(src.indexOf('color'));
+
+        expect(selectorList.start).toBe(2);
+        expect(selectorList.end).toBe(src.length);
+        expect(declarationList.start).toBe(51);
+        expect(declarationList.end).toBe(60);
+    });
+
+    test('pseudo-class name and argument locations are remapped', () => {
+        const src = '##div:not(.ad):style(color:red)';
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const pseudo = selectorList.children[0].children[1];
+
+        expect(pseudo).toMatchObject({
+            type: 'PseudoClassSelector',
+            start: 5,
+            end: 14,
+        });
+        expect(pseudo).toMatchObject({
+            name: { value: 'not', start: 6, end: 9 },
+            argument: { value: '.ad', start: 10, end: 13 },
+        });
+    });
+
+    test('attribute flag location is remapped', () => {
+        const src = '##div:matches-path(/x)[title="ab" i]:style(color:red)';
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const attribute = selectorList.children[0].children[1] as AttributeSelectorWithValue;
+        const { flag } = attribute;
+
+        expect(flag).toMatchObject({ value: 'i', start: 34, end: 35 });
+        expect(src.slice(flag?.start, flag?.end)).toBe('i');
+    });
+
+    test(':remove() selector locations are remapped', () => {
+        const src = '##div:matches-path(/x).foo:remove()';
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const classSelector = selectorList.children[0].children[1];
+
+        expect(classSelector).toMatchObject({
+            type: 'ClassSelector',
+            value: 'foo',
+            start: 22,
+            end: 26,
+        });
+        expect(src.slice(classSelector.start, classSelector.end)).toBe('.foo');
+        expect(ast.body.remove).toBe(true);
+        expect(ast.body.declarationList).toBeUndefined();
+    });
+
+    test('zero-width attribute value stays zero-width across an excised modifier', () => {
+        const src = '##div[title=":matches-path(/x)"]:style(color:red)';
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const attribute = selectorList.children[0].children[1] as AttributeSelectorWithValue;
+
+        expect(attribute.value.value).toBe('');
+        expect(attribute.value.start).toBe(30);
+        expect(attribute.value.end).toBe(attribute.value.start);
+
+        // No located node may end before it starts.
+        walk(ast, {
+            enter: (node) => {
+                if (node.start !== undefined && node.end !== undefined) {
+                    expect(node.end).toBeGreaterThanOrEqual(node.start);
+                }
+            },
+        });
+    });
+
+    test('whitespace combinator points at one original whitespace run', () => {
+        const src = '##div :matches-path(/x) .foo:style(color:red)';
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const complex = selectorList.children[0];
+        const combinator = complex.children.find((child) => child.type === 'SelectorCombinator');
+
+        expect(combinator).toMatchObject({ value: ' ' });
+
+        const combinatorText = src.slice(combinator?.start, combinator?.end);
+
+        expect(combinatorText.trim()).toBe('');
+        expect(combinatorText).not.toContain(':matches-path');
+
+        // The enclosing complex selector must still cover the modifier.
+        expect(src.slice(complex.start, complex.end)).toContain(':matches-path(/x)');
+    });
+
+    test.each([
+        ['LF', '\n'],
+        ['CRLF', '\r\n'],
+        ['tab', '\t'],
+        ['form feed', '\f'],
+    ])('whitespace combinator covers the whole %s run', (_label, separator) => {
+        const src = `##div${separator}.foo:style(color:red)`;
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const combinator = selectorList.children[0].children[1];
+
+        expect(combinator).toMatchObject({ type: 'SelectorCombinator', value: ' ' });
+        expect(src.slice(combinator.start, combinator.end)).toBe(separator);
+    });
+
+    test('every declaration location is shifted by the :style() value start', () => {
+        const src = '##div:style(color:red;background:blue)';
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+
+        // Container span stays the full :style() value range.
+        expect(declarationList).toMatchObject({ start: 12, end: 37 });
+
+        expect(declarationList.children[0]).toMatchObject({ start: 12, end: 21 });
+        expect(declarationList.children[0].property).toMatchObject({
+            value: 'color',
+            start: 12,
+            end: 17,
+        });
+        expect(declarationList.children[0].value).toMatchObject({
+            value: 'red',
+            start: 18,
+            end: 21,
+        });
+
+        expect(declarationList.children[1]).toMatchObject({ start: 22, end: 37 });
+        expect(declarationList.children[1].property).toMatchObject({
+            value: 'background',
+            start: 22,
+            end: 32,
+        });
+        expect(declarationList.children[1].value).toMatchObject({
+            value: 'blue',
+            start: 33,
+            end: 37,
+        });
+
+        // Every located descendant points inside the :style() value and
+        // keeps its own text, so no node is left at a relative offset.
+        walk(declarationList, {
+            enter: (node, parent) => {
+                if (parent === null) {
+                    return;
+                }
+
+                if (node.start !== undefined && node.end !== undefined) {
+                    expect(node.start).toBeGreaterThanOrEqual(12);
+                    expect(node.end).toBeLessThanOrEqual(37);
+                }
+            },
+        });
     });
 });
 

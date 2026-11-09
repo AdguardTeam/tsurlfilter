@@ -189,6 +189,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `parameters` list replaces `common.parameters` rather than extending it, so
   the common required parameters had been dropped and valid calls were reported
   as having too many arguments.
+- CSS sub-parsing of uBlock `:style()` and `:remove()` rules now
+  reports node locations in the original rule source instead of the
+  trimmed sub-text. In `example.com##div[title='ab']:style(color:red)`
+  the attribute value `ab` now reports 24..26 and the declaration
+  `color:red` 35..44.
 
 ### Security
 
