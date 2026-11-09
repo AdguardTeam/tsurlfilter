@@ -27,7 +27,8 @@ export abstract class TooManyError extends Error {
      * Number of excluded declarative rules.
      *
      * Counts declarative rules, so it can differ from the length of
-     * {@link excludedRulesIds}, which counts source rules.
+     * {@link excludedRulesIds}, which holds one id per source rule of each
+     * excluded declarative rule.
      */
     public numberOfExcludedDeclarativeRules: number;
 

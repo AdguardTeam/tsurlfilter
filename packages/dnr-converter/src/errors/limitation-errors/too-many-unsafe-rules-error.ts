@@ -8,11 +8,13 @@ import { TooManyError } from './too-many-error';
  * Describes an error when the maximum number of unsafe rules is reached.
  *
  * {@link TooManyError.excludedRulesIds} also lists the unsafe source rules
- * that the total limit drops, so a consumer can count the unsafe rules that
- * these two limits exclude. It does not include unsafe rules that the regexp
- * limit drops, so the count can stay lower than the number of excluded unsafe
- * rules, and {@link TooManyError.numberOfExcludedDeclarativeRules} counts only
- * the unsafe rules that exceed the limit.
+ * that the total limit drops, so, when this error is created, a consumer can
+ * account for the unsafe rules that these two limits exclude. The list holds
+ * one id per source rule of each excluded declarative rule, so its length can
+ * differ from the number of excluded unsafe rules. It does not include unsafe
+ * rules that the regexp limit drops, and
+ * {@link TooManyError.numberOfExcludedDeclarativeRules} counts only the unsafe
+ * rules that exceed the limit.
  */
 export class TooManyUnsafeRulesError extends TooManyError {
     /**

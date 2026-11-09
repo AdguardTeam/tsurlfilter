@@ -38,10 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   excluded-rule list shared by the total and unsafe limit errors included rules
   dropped by the other limit. The total limit error now carries only the rules
   it drops, and the unsafe limit error also carries the unsafe rules that the
-  total limit drops, so the page counts the unsafe rules that these two limits
-  exclude; the total limit also no longer drops safe rules that the unsafe limit
-  made room for. The unsafe list counts source rules rather than declarative
-  rules, and unsafe rules dropped by the regexp limit are not included.
+  total limit drops, so, when the unsafe limit is exceeded too, the page can
+  account for the unsafe rules that these two limits exclude; the total limit
+  also no longer drops safe rules that the unsafe limit made room for. Both
+  lists hold source-rule ids, one per source rule of each excluded declarative
+  rule, so their length can differ from the number of excluded rules, and unsafe
+  rules dropped by the regexp limit are not included.
 - In MV3, `$badfilter` rules with `$domain` cancelled the whole target rule
   instead of only the domains that the badfilter covers. Such a rule now keeps
   applying on the other domains. A target rule without `$domain` is still

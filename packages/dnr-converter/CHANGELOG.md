@@ -37,10 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   source rules, so each error listed rules excluded by the other limit.
   `TooManyRulesError` now lists only the rules that the total limit drops, and
   `TooManyUnsafeRulesError` also lists the unsafe rules that the total limit
-  drops, so a consumer can count the unsafe rules that these two limits exclude.
-  Both lists count source rules rather than declarative rules, the unsafe list
-  does not include unsafe rules that the regexp limit drops, and the counts can
-  therefore be lower than the number of excluded unsafe rules.
+  drops, so, when the unsafe limit is exceeded too, a consumer can account for
+  the unsafe rules that these two limits exclude. Both lists hold source-rule
+  ids, one per source rule of each excluded declarative rule, so a source rule
+  that produces several excluded declarative rules is listed several times and
+  a declarative rule merged from several source rules adds several ids. The
+  unsafe list does not include unsafe rules that the regexp limit drops, so its
+  length can differ from the number of excluded unsafe rules.
 - `$domain` did not match the target hostname of a document request. Chrome
   matches `initiatorDomains` against the request initiator only, and a document
   request started by the browser (new tab page, address bar, bookmark, reload)
