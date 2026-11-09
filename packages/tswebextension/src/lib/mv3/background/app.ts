@@ -85,8 +85,8 @@ type StaticRulesets = {
 };
 
 /**
- * Resolves with no rule sets, used when there are no disabled static rule
- * sets to create.
+ * Resolves with no rule sets, used when filtering is disabled and no rule
+ * sets are created.
  *
  * @returns Promise resolved with an empty list.
  */

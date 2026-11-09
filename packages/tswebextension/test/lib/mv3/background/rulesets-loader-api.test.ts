@@ -9,6 +9,7 @@ import {
 } from 'vitest';
 import browser from 'webextension-polyfill';
 
+import { AGTREE_VERSION } from '@adguard/agtree';
 import {
     type CompactRulesetContent,
     Filter,
@@ -23,7 +24,7 @@ import {
     parseCompactRuleset,
     RulesetWithSourceMap,
 } from '@adguard/dnr-converter';
-import { fetchExtensionResourceText, FilterList } from '@adguard/tsurlfilter';
+import { fetchExtensionResourceText, FilterList, TSURLFILTER_VERSION } from '@adguard/tsurlfilter';
 
 import { IdbSingleton } from '../../../../src/lib/common/idb-singleton';
 import { FiltersStorage } from '../../../../src/lib/common/storage/filters';
@@ -48,10 +49,22 @@ const LARGE_RULESET_ID = getRulesetId(LARGE_FILTER_ID);
 const METADATA_RULESET = getRulesetId(METADATA_RULESET_ID);
 
 /**
+ * Version of the libraries that prepared a cached filter list, as stored by
+ * the loader.
+ */
+const FILTER_LIST_VERSION = `${TSURLFILTER_VERSION}/${AGTREE_VERSION}`;
+
+/**
  * Prefixes of the keys the loader writes to the rulesets store. They are
  * spelled out here on purpose: they are the persisted format.
  */
-type RulesetKeyPrefix = 'checksum' | 'metadata' | 'lazyMetadata' | 'declarativeRules' | 'metadataRulesCount';
+type RulesetKeyPrefix =
+    | 'checksum'
+    | 'metadata'
+    | 'lazyMetadata'
+    | 'declarativeRules'
+    | 'metadataRulesCount'
+    | 'filterListVersion';
 
 /**
  * Ruleset files served by the mocked `fetchExtensionResourceText`, by their
@@ -246,6 +259,7 @@ const expectCachedRuleset = async (checksum: string): Promise<void> => {
     expect(await readRulesetJson('lazyMetadata')).toEqual(content.lazyMetadata);
     expect(await readIdb(RULESETS_STORE, rulesetKey('metadataRulesCount'))).toBe(content.metadataRulesCount);
     expect(await readIdb(RULESETS_STORE, rulesetKey('checksum'))).toBe(checksum);
+    expect(await readIdb(RULESETS_STORE, rulesetKey('filterListVersion'))).toBe(FILTER_LIST_VERSION);
 
     const filterList = new FilterList(content.filterContent);
     expect(await FiltersStorage.get(FILTER_ID)).toEqual({
@@ -371,6 +385,44 @@ describe('RulesetsLoaderApi', () => {
 
             await new RulesetsLoaderApi(rulesetsPath).syncRulesetWithIdb(RULESET_ID);
 
+            await expectCachedRuleset(checksums[RULESET_ID]);
+        });
+
+        it('re-prepares the cached filter list when its library version changes', async () => {
+            const checksums = serveRulesets({
+                [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES),
+            });
+            await new RulesetsLoaderApi(rulesetsPath).syncRulesetWithIdb(RULESET_ID);
+            // Keep the checksum but mark the cached filter list as prepared by
+            // another version, as after an extension update.
+            await writeIdb(RULESETS_STORE, rulesetKey('filterListVersion'), 'old-version');
+            await FiltersStorage.setMultiple({
+                [FILTER_ID]: {
+                    rawFilterList: '||stale.example^',
+                    conversionData: FilterList.createEmptyConversionData(),
+                    checksum: checksums[RULESET_ID],
+                },
+            });
+            useNewRulesetsPath();
+
+            await new RulesetsLoaderApi(rulesetsPath).syncRulesetWithIdb(RULESET_ID);
+
+            expect(countFetches(RULESET_ID)).toBe(1);
+            await expectCachedRuleset(checksums[RULESET_ID]);
+        });
+
+        it('re-prepares a cached filter list stored without a library version', async () => {
+            const checksums = serveRulesets({
+                [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES),
+            });
+            await new RulesetsLoaderApi(rulesetsPath).syncRulesetWithIdb(RULESET_ID);
+            const db = await IdbSingleton.getOpenedDb(RULESETS_STORE);
+            await db.delete(RULESETS_STORE, rulesetKey('filterListVersion'));
+            useNewRulesetsPath();
+
+            await new RulesetsLoaderApi(rulesetsPath).syncRulesetWithIdb(RULESET_ID);
+
+            expect(countFetches(RULESET_ID)).toBe(1);
             await expectCachedRuleset(checksums[RULESET_ID]);
         });
 

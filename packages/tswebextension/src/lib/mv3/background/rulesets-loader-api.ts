@@ -1,6 +1,7 @@
 import { type IDBPDatabase } from 'idb';
 import browser from 'webextension-polyfill';
 
+import { AGTREE_VERSION } from '@adguard/agtree';
 import {
     extractRulesetId,
     getRulesetId,
@@ -13,7 +14,7 @@ import {
     parseCompactRuleset,
     RulesetWithSourceMap,
 } from '@adguard/dnr-converter';
-import { fetchExtensionResourceText, FilterList } from '@adguard/tsurlfilter';
+import { fetchExtensionResourceText, FilterList, TSURLFILTER_VERSION } from '@adguard/tsurlfilter';
 
 import { IdbSingleton } from '../../common/idb-singleton';
 import { FiltersStorage } from '../../common/storage/filters';
@@ -26,11 +27,13 @@ import { logger } from '../../common/utils/logger';
  * This class implements a two-layer caching strategy to optimize performance:
  * ## Caching Architecture:
  * 1. **IDB (IndexedDB) Cache**: Persistent storage that survives service worker restarts
- *    - Stores checksums, metadata, lazy metadata, declarative rules and the
- *      number of metadata rules of each rule set file
+ *    - Stores checksums, metadata, lazy metadata, declarative rules, the
+ *      number of metadata rules of each rule set file and the version of the
+ *      libraries that prepared the cached filter list
  *    - Keys format: `<prefix>_<rulesetId>` (e.g., `checksum_ruleset_123`).
  *    - Nothing clears it; entries are overwritten when the checksum of the
- *      rule set file changes, e.g. after an extension update.
+ *      rule set file or the version of the libraries that prepared the cached
+ *      filter list changes, e.g. after an extension update.
  *
  * 2. **In-Memory Cache**: Fast access layer for frequently accessed data within a session
  *    - `idbChecksumsCache`: Caches checksums from IDB with composite keys `<rulesetsPath>_<rulesetId>`
@@ -41,7 +44,8 @@ import { logger } from '../../common/utils/logger';
  * ## Cache Synchronization:
  * The source of truth for data freshness is the checksum of the rule set file
  * stored in the metadata rule set (`ruleset_0`).
- * When the checksum in IDB differs, the rule set file is read again: the
+ * When the checksum in IDB differs, or the cached filter list was prepared by
+ * another version of the libraries, the rule set file is read again: the
  * preprocessed filter list is written to {@link FiltersStorage} first, then the
  * rule set data together with the new checksum in one IDB transaction. If any
  * step fails, the `rulesets` store keeps the previous checksum (the `filters`
@@ -96,6 +100,20 @@ export class RulesetsLoaderApi {
     private static readonly KEY_PREFIX_METADATA_RULES_COUNT = 'metadataRulesCount';
 
     /**
+     * Prefix for the key of the version of the libraries that prepared the
+     * cached filter list.
+     */
+    private static readonly KEY_PREFIX_FILTER_LIST_VERSION = 'filterListVersion';
+
+    /**
+     * Version of the libraries that prepare cached filter lists. When it
+     * differs from the stored one, the filter list is prepared again even if
+     * the rule set file did not change, because the conversion output may
+     * differ between library releases.
+     */
+    private static readonly FILTER_LIST_VERSION = `${TSURLFILTER_VERSION}/${AGTREE_VERSION}`;
+
+    /**
      * Cache of metadata rule sets.
      */
     private static metadataRulesetsCache: Record<string, MetadataRuleset> = {};
@@ -135,6 +153,14 @@ export class RulesetsLoaderApi {
      * This cache is shared across all instances of the class.
      */
     private static idbChecksumsCache = new Map<string, string>();
+
+    /**
+     * Cache of versions of the libraries that prepared the cached filter
+     * lists, retrieved from IDB to avoid repeated database queries.
+     * Key format: `<rulesetsPath>_<rulesetId>`.
+     * This cache is shared across all instances of the class.
+     */
+    private static idbFilterListVersionsCache = new Map<string, string>();
 
     /**
      * Race condition lock map per rulesetId.
@@ -208,6 +234,7 @@ export class RulesetsLoaderApi {
     private static async getOpenedDb(store: string): Promise<IDBPDatabase> {
         return IdbSingleton.getOpenedDb(store, () => {
             RulesetsLoaderApi.idbChecksumsCache.clear();
+            RulesetsLoaderApi.idbFilterListVersionsCache.clear();
         });
     }
 
@@ -297,7 +324,9 @@ export class RulesetsLoaderApi {
      * Synchronizes the rule set with the IDB database.
      * This method ensures that the rule set is up-to-date in the IDB database.
      * If the rule set is not found in the IDB database, it will be added.
-     * If the rule set is found but its checksum does not match, it will be updated.
+     * If the rule set is found but its checksum or the version of the
+     * libraries that prepared its cached filter list does not match, it will
+     * be updated.
      *
      * @param rulesetId Rule set id.
      */
@@ -322,6 +351,7 @@ export class RulesetsLoaderApi {
                 }
 
                 let idbChecksum: string | undefined;
+                let idbFilterListVersion: string | undefined;
 
                 const cacheKey = `${this.rulesetsPath}_${rulesetId}`;
 
@@ -339,7 +369,24 @@ export class RulesetsLoaderApi {
                     }
                 }
 
-                if (idbChecksum === checksum) {
+                if (RulesetsLoaderApi.idbFilterListVersionsCache.has(cacheKey)) {
+                    idbFilterListVersion = RulesetsLoaderApi.idbFilterListVersionsCache.get(cacheKey);
+                } else {
+                    idbFilterListVersion = await RulesetsLoaderApi.getValueFromIdb(
+                        RulesetsLoaderApi.getKey(
+                            RulesetsLoaderApi.KEY_PREFIX_FILTER_LIST_VERSION,
+                            rulesetId,
+                        ),
+                    );
+                    if (idbFilterListVersion) {
+                        RulesetsLoaderApi.idbFilterListVersionsCache.set(cacheKey, idbFilterListVersion);
+                    }
+                }
+
+                const isFilterListVersionOutdated = idbFilterListVersion
+                    !== RulesetsLoaderApi.FILTER_LIST_VERSION;
+
+                if (idbChecksum === checksum && !isFilterListVersionOutdated) {
                     return;
                 }
 
@@ -348,7 +395,7 @@ export class RulesetsLoaderApi {
                     throw new Error(`Invalid rule set id: ${rulesetId}`);
                 }
 
-                logger.info(`[tsweb.RulesetsLoaderApi.syncRulesetWithIdb]: Syncing rule set with IDB: ${rulesetId} (previous checksum: ${idbChecksum}, current checksum: ${checksum})`);
+                logger.info(`[tsweb.RulesetsLoaderApi.syncRulesetWithIdb]: Syncing rule set with IDB: ${rulesetId} (previous checksum: ${idbChecksum}, current checksum: ${checksum}, previous filter list version: ${idbFilterListVersion}, current filter list version: ${RulesetsLoaderApi.FILTER_LIST_VERSION})`);
 
                 const rulesetPath = getRulesetPath(rulesetId, this.rulesetsPath);
                 const rawRuleset = await fetchExtensionResourceText(browser.runtime.getURL(rulesetPath));
@@ -371,9 +418,9 @@ export class RulesetsLoaderApi {
                 const filterList = new FilterList(filterContent);
 
                 // The preprocessed filter list is written before the rule set
-                // data and its checksum, so a failure at any step leaves the
-                // previous checksum in the rulesets store and the next start
-                // syncs again.
+                // data, its checksum and its filter list version, so a failure
+                // at any step leaves the previous checksum in the rulesets
+                // store and the next start syncs again.
                 await FiltersStorage.setMultiple({
                     [rulesetIdNumber]: {
                         rawFilterList: filterList.getContent(),
@@ -407,17 +454,28 @@ export class RulesetsLoaderApi {
                         checksum,
                         RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_CHECKSUM, rulesetId),
                     ),
+                    store.put(
+                        RulesetsLoaderApi.FILTER_LIST_VERSION,
+                        RulesetsLoaderApi.getKey(
+                            RulesetsLoaderApi.KEY_PREFIX_FILTER_LIST_VERSION,
+                            rulesetId,
+                        ),
+                    ),
                 ];
 
                 await Promise.all([...puts, tx.done]);
 
                 // After updating cache in db we should update it in memory cache
                 RulesetsLoaderApi.idbChecksumsCache.set(cacheKey, checksum);
+                RulesetsLoaderApi.idbFilterListVersionsCache.set(
+                    cacheKey,
+                    RulesetsLoaderApi.FILTER_LIST_VERSION,
+                );
 
                 // Invalidate the ruleset cache since the data has changed
                 RulesetsLoaderApi.rulesetsCache.delete(rulesetId);
 
-                logger.info(`[tsweb.RulesetsLoaderApi.syncRulesetWithIdb]: Synced rule set with IDB: ${rulesetId}, checksum: ${checksum}`);
+                logger.info(`[tsweb.RulesetsLoaderApi.syncRulesetWithIdb]: Synced rule set with IDB: ${rulesetId}, checksum: ${checksum}, filter list version: ${RulesetsLoaderApi.FILTER_LIST_VERSION}`);
             } catch (err) {
                 logger.error(`[tsweb.RulesetsLoaderApi.syncRulesetWithIdb]: Failed to sync rule set ${rulesetId}:`, err);
                 throw err;

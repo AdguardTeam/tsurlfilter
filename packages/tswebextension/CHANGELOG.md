@@ -44,7 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - MV3: the engine no longer prepares the enabled static filter lists again on
-  every start; it gets them from IndexedDB with their conversion data.
+  every start; it gets them from IndexedDB with their conversion data. Cached
+  filter lists are prepared again when the versions of the libraries that
+  perform the conversion change, so conversion fixes apply without a filter
+  update.
 - Filtering log now records CSS hits for elements that pages add and remove
   while the page is loading, e.g. anti-adblock bait elements created by a
   script in `<head>`.
