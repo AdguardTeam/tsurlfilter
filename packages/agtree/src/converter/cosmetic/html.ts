@@ -467,10 +467,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // `[tag-content="content"]` -> `:contains(content)`
             // direct conversion, no changes to value
             case AdgAttributeSelectors.TagContent: {
-                // The value is emitted raw: quotes within the value are
-                // literal characters to match, not a transport encoding —
-                // same as CoreLibs, which never unquotes `:contains()`
-                // arguments.
+                // The node returned here is discarded in ADG→ADG conversion:
+                // convertBody defers `[tag-content]` and emits the value in
+                // appendSpecialAttributePseudoClasses, which escapes a value
+                // that CoreLibs reads as a regular expression. Quotes within
+                // the value are literal characters to match, not a transport
+                // encoding — same as CoreLibs, which never unquotes
+                // `:contains()` arguments.
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
                     value,
