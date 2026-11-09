@@ -213,6 +213,7 @@ export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
         originalText,
         originalPermittedDomains: permittedDomains,
         originalRestrictedDomains: restrictedDomains,
+        deferredBadfilterRegexps: [],
         allowlist,
         hash,
         priority,

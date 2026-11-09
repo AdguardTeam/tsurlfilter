@@ -740,6 +740,56 @@ describe('Rule', () => {
             // covers in DNR.
             expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
         });
+
+        it('checks regexp coverage against the final list regardless of badfilter order', () => {
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=a.com|b.com|c.com');
+            const [regexpBadfilter] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=a.com|/^x\\.c\\.com$/,badfilter',
+            );
+            const [plainBadfilter] = Rule.createFromText(1, 0, '||example.com^$domain=c.com,badfilter');
+
+            // The regexp matches only `x.c.com`, and `c.com` is removed by the
+            // other badfilter, so `b.com` stays in both orders.
+            expect(Rule.applyBadfilters(targetRule, [regexpBadfilter, plainBadfilter])?.permittedDomains)
+                .toEqual(['b.com']);
+            expect(Rule.applyBadfilters(targetRule, [plainBadfilter, regexpBadfilter])?.permittedDomains)
+                .toEqual(['b.com']);
+        });
+
+        it('narrows an exception rule instead of dropping it when a regexp covers a kept domain', () => {
+            const [badfilterRule] = Rule.createFromText(
+                1,
+                0,
+                '@@||example.com^$domain=a.com|/foo/,badfilter',
+            );
+            const [targetRule] = Rule.createFromText(
+                1,
+                0,
+                '@@||example.com^$domain=a.com|b.com|/foo/',
+            );
+
+            // Dropping the exception would block `b.com`, where MV2 keeps
+            // allowing it.
+            const result = Rule.applyBadfilters(targetRule, [badfilterRule]);
+
+            expect(result?.permittedDomains).toEqual(['b.com']);
+            expect(result?.restrictedDomains).toBeNull();
+        });
+
+        it('treats an escaped list separator in a regexp as alternation', () => {
+            const [badfilterRule] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=a.com|/^x\\.com\\|b\\.com$/,badfilter',
+            );
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=a.com|b.com');
+
+            // MV2 removes the escape before compiling the regexp, so the pattern
+            // matches `b.com`.
+            expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
+        });
     });
 
     describe('advancedModifierValue', () => {

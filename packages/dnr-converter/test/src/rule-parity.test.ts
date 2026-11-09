@@ -867,6 +867,74 @@ describe('$domain badfilter narrowing through the MV3 converter', () => {
             'https://b.com/',
         )).toBe(false);
     });
+
+    it('checks regexp coverage against the final list regardless of badfilter order', () => {
+        const targetText = '||example.com^$domain=a.com|b.com|c.com';
+        const regexpText = '||example.com^$domain=a.com|/^x\\.c\\.com$/,badfilter';
+        const plainText = '||example.com^$domain=c.com,badfilter';
+
+        const [targetRule] = Rule.createFromText(1, 0, targetText);
+        const [regexpBadfilter] = Rule.createFromText(1, 0, regexpText);
+        const [plainBadfilter] = Rule.createFromText(1, 0, plainText);
+
+        // The regexp matches only `x.c.com`, and the other badfilter removes
+        // `c.com`, so `b.com` keeps applying as it does in MV2.
+        expect(Rule.applyBadfilters(targetRule, [regexpBadfilter, plainBadfilter])?.permittedDomains)
+            .toEqual(['b.com']);
+        expect(Rule.applyBadfilters(targetRule, [plainBadfilter, regexpBadfilter])?.permittedDomains)
+            .toEqual(['b.com']);
+        expect(matchesThroughEngine(
+            [targetText, regexpText, plainText],
+            'https://example.com/',
+            'https://b.com/',
+        )).toBe(true);
+        expect(matchesThroughEngine(
+            [targetText, regexpText, plainText],
+            'https://example.com/',
+            'https://x.c.com/',
+        )).toBe(false);
+    });
+
+    it('keeps an exception rule narrowed when a regexp badfilter covers a kept domain', () => {
+        const blockText = '||example.com^';
+        const targetText = '@@||example.com^$domain=a.com|b.com|/foo/';
+        const badfilterText = '@@||example.com^$domain=a.com|/foo/,badfilter';
+
+        const [targetRule] = Rule.createFromText(1, 0, targetText);
+        const [badfilterRule] = Rule.createFromText(1, 0, badfilterText);
+
+        // MV2 keeps allowing `example.com` on `b.com` through the exception, so
+        // the exception stays narrowed instead of being dropped.
+        const narrowed = Rule.applyBadfilters(targetRule, [badfilterRule]);
+
+        expect(narrowed?.permittedDomains).toEqual(['b.com']);
+
+        const engine = Engine.createSync({
+            filters: [{ id: 1, content: [blockText, targetText, badfilterText].join('\n') }],
+        });
+        const result = engine.matchRequest(
+            new Request('https://example.com/', 'https://b.com/', RequestType.Document),
+        );
+
+        expect(result.basicRule?.isAllowlist()).toBe(true);
+    });
+
+    it('treats an escaped list separator in a regexp as alternation', () => {
+        const targetText = '||example.com^$domain=a.com|b.com';
+        const badfilterText = '||example.com^$domain=a.com|/^x\\.com\\|b\\.com$/,badfilter';
+
+        const [targetRule] = Rule.createFromText(1, 0, targetText);
+        const [badfilterRule] = Rule.createFromText(1, 0, badfilterText);
+
+        // MV2 removes the escape before compiling the regexp, so the pattern
+        // matches `b.com` and cancels the rule.
+        expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
+        expect(matchesThroughEngine(
+            [targetText, badfilterText],
+            'https://example.com/',
+            'https://b.com/',
+        )).toBe(false);
+    });
 });
 
 // ---------------------------------------------------------------------------

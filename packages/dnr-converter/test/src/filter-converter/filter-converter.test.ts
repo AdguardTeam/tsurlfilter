@@ -10,6 +10,7 @@ import {
 import { RE2 } from '@adguard/re2-wasm';
 import { SimpleRegex } from '@adguard/tsurlfilter';
 
+import { RuleActionType } from '../../../src/declarative-rule/rule-action';
 import { type RuleCondition } from '../../../src/declarative-rule/rule-condition';
 import {
     EmptyDomainsError,
@@ -288,6 +289,22 @@ describe('FilterConverter', () => {
             expect(errors).toHaveLength(0);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0].condition.initiatorDomains).toEqual(['b.com']);
+        });
+
+        it('keeps an exception rule narrowed when a regexp $domain badfilter covers a kept domain', async () => {
+            const filter = createFilter([
+                '||example.org^',
+                '@@||example.org^$domain=a.com|b.com|/foo/',
+                '@@||example.org^$domain=a.com|/foo/,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(2);
+
+            const exception = declarativeRules.find((rule) => rule.action.type === RuleActionType.Allow);
+            expect(exception?.condition.initiatorDomains).toEqual(['b.com']);
         });
 
         it('does not convert a $badfilter rule that also carries a convertible modifier', async () => {

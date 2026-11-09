@@ -387,7 +387,9 @@ export class FilterConverter {
                     return r;
                 }
 
-                return Rule.applyBadfilters(r, fastMatched);
+                // The in-list badfilters are applied later, so a regexp check
+                // here could drop a rule before they remove a covered entry.
+                return Rule.applyBadfilters(r, fastMatched, false);
             };
         }
 

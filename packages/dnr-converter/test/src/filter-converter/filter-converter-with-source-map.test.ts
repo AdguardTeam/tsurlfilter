@@ -271,6 +271,67 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['sub.bar.com']);
         });
 
+        it('keeps a rule when a scan-time regexp covers only a domain that an in-list badfilter removes', async () => {
+            const filter = createFilter([
+                '||example.com^$domain=a.com|b.com|c.com',
+                '||example.com^$domain=c.com,badfilter',
+            ]);
+            const [badfilterRule] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=a.com|/^x\\.c\\.com$/,badfilter',
+            );
+
+            const [{ ruleset, errors }] = await converter.convert(
+                [filter],
+                { withSourceMap: true, badFilterRules: [badfilterRule] },
+            );
+
+            // The regexp covers only `c.com`'s subdomain `x.c.com`, and the
+            // in-list badfilter removes `c.com`, so `b.com` keeps applying.
+            const declarativeRules = await ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['b.com']);
+        });
+
+        it('drops a rule when an in-list regexp covers a domain left by a scan-time badfilter', async () => {
+            const filter = createFilter([
+                '||example.com^$domain=a.com|b.com|c.com',
+                '||example.com^$domain=a.com|/^x\\.b\\.com$/,badfilter',
+            ]);
+            const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=c.com,badfilter');
+
+            const [{ ruleset, errors }] = await converter.convert(
+                [filter],
+                { withSourceMap: true, badFilterRules: [badfilterRule] },
+            );
+
+            // The regexp covers `x.b.com`, which the kept `b.com` entry still
+            // covers, and DNR cannot exclude it.
+            expect(errors).toHaveLength(0);
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('finalizes a scan-time regexp check when the filter has no in-list badfilters', async () => {
+            const filter = createFilter(['||example.com^$domain=a.com|b.com']);
+            const [badfilterRule] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=a.com|/^x\\.b\\.com$/,badfilter',
+            );
+
+            const [{ ruleset, errors }] = await converter.convert(
+                [filter],
+                { withSourceMap: true, badFilterRules: [badfilterRule] },
+            );
+
+            // The regexp covers `x.b.com`, which the kept `b.com` entry still
+            // covers, and DNR cannot exclude it.
+            expect(errors).toHaveLength(0);
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
         it('drops a rule that a $domain badfilter cancels for every domain', async () => {
             const filter = createFilter(['||example.com^$domain=foo.com']);
             const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com,badfilter');

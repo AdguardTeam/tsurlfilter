@@ -273,6 +273,12 @@ interface RuleOverrides {
      * it narrows, because MV2 does not change the weight of that rule.
      */
     readonly priority?: number;
+
+    /**
+     * Badfilter regexp entries whose coverage still has to be checked against
+     * the final `$domain` list when the rule is narrowed in a later pass.
+     */
+    readonly deferredBadfilterRegexps?: readonly string[];
 }
 
 /**
@@ -358,6 +364,18 @@ export class Rule {
      * {@link Rule.restrictedDomains} for a parsed rule.
      */
     readonly originalRestrictedDomains: string[] | null = null;
+
+    /**
+     * Badfilter regexp entries whose coverage still has to be checked against
+     * the final `$domain` list.
+     *
+     * A rule can be narrowed in two passes: the scanner applies the badfilters
+     * from `badFilterRules`, and `RulesConverter` applies the ones from the
+     * filter list. A regexp may cover an entry that the later pass removes, so
+     * the check is carried from the first pass to the next
+     * {@link Rule.applyBadfilters} call instead of running between the passes.
+     */
+    readonly deferredBadfilterRegexps: readonly string[] = [];
 
     /**
      * Permitted destination domains from the `$to` modifier.
@@ -884,6 +902,10 @@ export class Rule {
             ? overrides.originalRestrictedDomains
             : this.restrictedDomains;
 
+        this.deferredBadfilterRegexps = overrides?.deferredBadfilterRegexps
+            ? [...overrides.deferredBadfilterRegexps]
+            : [];
+
         this.permittedResourceTypes = [...permittedResourceTypesSet];
         this.restrictedResourceTypes = [...restrictedResourceTypesSet];
     }
@@ -1011,21 +1033,42 @@ export class Rule {
      * entries still cover, because a declarative rule cannot be disabled for a
      * part of its domains.
      *
+     * Regexp entries in the badfilter `$domain` lists cannot be represented as
+     * DNR exclusions. A blocking rule that any of them may cover after every
+     * badfilter is applied is dropped, and an exception rule is kept narrowed
+     * instead.
+     *
+     * The regexp coverage check runs against the final list of this call, but a
+     * rule can be narrowed in two passes: `badFilterRules` during scanning and
+     * the in-list badfilters during conversion. When the scan-time call passes
+     * `finalizeRegexpCheck = false`, the entries are carried on the narrowed
+     * rule so the next call runs the check after the in-list badfilters removed
+     * their domains.
+     *
      * @param targetRule The rule to apply the badfilter rules to.
      * @param badfilterRules Rules that carry the `$badfilter` modifier.
+     * @param finalizeRegexpCheck When false, the regexp coverage check is
+     *   deferred to the next call instead of dropping the rule here. Defaults to
+     *   true.
      *
      * @returns The narrowed rule, or `null` when a badfilter cancels it
      *   completely.
      */
-    public static applyBadfilters(targetRule: Rule, badfilterRules: readonly Rule[]): Rule | null {
+    public static applyBadfilters(
+        targetRule: Rule,
+        badfilterRules: readonly Rule[],
+        finalizeRegexpCheck = true,
+    ): Rule | null {
         let current = targetRule;
         let excludedDomains: string[] = [];
+        let deferredRegexpEntries: string[] = [...(targetRule.deferredBadfilterRegexps ?? [])];
 
         for (let i = 0; i < badfilterRules.length; i += 1) {
             const negation = RuleBadfilter.negationScope(
                 badfilterRules[i],
                 targetRule,
                 current.permittedDomains,
+                true,
             );
 
             if (negation.kind === BadfilterNegationKind.Full) {
@@ -1036,11 +1079,32 @@ export class Rule {
                 current = current.withPermittedDomains(negation.permittedDomains);
                 excludedDomains = [...new Set([...excludedDomains, ...negation.excludedDomains])];
             }
+
+            if (negation.deferredRegexpEntries) {
+                deferredRegexpEntries = [
+                    ...new Set([...deferredRegexpEntries, ...negation.deferredRegexpEntries]),
+                ];
+            }
         }
 
-        return excludedDomains.length > 0
+        // Run the regexp check once, against the final list: an earlier
+        // badfilter may remove the entry that a regexp covers, while a later one
+        // may remove the regexp-matched entry instead, so checking inside the
+        // loop would make the result depend on the badfilter order.
+        if (finalizeRegexpCheck && !targetRule.allowlist && RuleBadfilter.regexpEntriesCoverKeptEntries(
+            deferredRegexpEntries,
+            current.permittedDomains,
+        )) {
+            return null;
+        }
+
+        const result = excludedDomains.length > 0
             ? current.withExcludedDomains(excludedDomains)
             : current;
+
+        return deferredRegexpEntries.length > 0
+            ? result.withDeferredBadfilterRegexps(deferredRegexpEntries)
+            : result;
     }
 
     /**
@@ -1079,6 +1143,7 @@ export class Rule {
                 originalPermittedDomains: this.originalPermittedDomains ?? this.permittedDomains ?? undefined,
                 originalRestrictedDomains: this.originalRestrictedDomains,
                 priority: this.priority,
+                deferredBadfilterRegexps: this.deferredBadfilterRegexps,
             },
         );
     }
@@ -1129,6 +1194,38 @@ export class Rule {
                 originalPermittedDomains: this.originalPermittedDomains ?? this.permittedDomains ?? undefined,
                 originalRestrictedDomains: this.originalRestrictedDomains,
                 priority: this.priority,
+                deferredBadfilterRegexps: this.deferredBadfilterRegexps,
+            },
+        );
+    }
+
+    /**
+     * Creates a copy of this rule with the badfilter regexp entries whose
+     * coverage still has to be checked against the final `$domain` list.
+     *
+     * Used by {@link Rule.applyBadfilters} when a scan-time pass cannot decide
+     * whether a regexp covers a kept entry until the in-list badfilters have
+     * removed theirs.
+     *
+     * @param deferredBadfilterRegexps Badfilter regexp entries to carry over.
+     *
+     * @returns A copy of this rule with the given pending entries.
+     */
+    private withDeferredBadfilterRegexps(
+        deferredBadfilterRegexps: readonly string[],
+    ): Rule {
+        return new Rule(
+            this.filterListId,
+            this.index,
+            this.node,
+            this.originalText,
+            {
+                permittedDomains: this.permittedDomains ?? undefined,
+                restrictedDomains: this.restrictedDomains ?? undefined,
+                originalPermittedDomains: this.originalPermittedDomains ?? this.permittedDomains ?? undefined,
+                originalRestrictedDomains: this.originalRestrictedDomains,
+                priority: this.priority,
+                deferredBadfilterRegexps,
             },
         );
     }

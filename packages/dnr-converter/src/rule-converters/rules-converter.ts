@@ -631,11 +631,10 @@ export class RulesConverter {
         const applyBadFilterFn = (ruleToTest: Rule): Rule | null => {
             const matchingBadFilterRules = badFilterRulesByHash.get(ruleToTest.hash);
 
-            if (!matchingBadFilterRules) {
-                return ruleToTest;
-            }
-
-            return Rule.applyBadfilters(ruleToTest, matchingBadFilterRules);
+            // An empty list still finalizes the regexp coverage check that the
+            // scan-time pass deferred: a scan-time badfilter must not drop a
+            // rule before an in-list badfilter removes a regexp-covered entry.
+            return Rule.applyBadfilters(ruleToTest, matchingBadFilterRules ?? []);
         };
 
         // For each group of filters' rules apply the badfilter function

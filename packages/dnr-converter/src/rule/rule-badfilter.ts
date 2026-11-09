@@ -26,6 +26,10 @@ interface BadfilterTarget {
     readonly permittedDomains: string[] | null;
     readonly restrictedDomains: string[] | null;
     /**
+     * Whether this is an allowlist (exception) rule.
+     */
+    readonly allowlist: boolean;
+    /**
      * Permitted `$domain` entries as written in the rule text, before any
      * badfilter narrowed the rule. Equal to `permittedDomains` for a parsed rule.
      */
@@ -63,10 +67,11 @@ const REGEXP_METACHARACTERS = new Set([
 /**
  * Reduces the body of an anchored regexp to the single domain it matches.
  *
- * Only an escaped non-alphanumeric character stands for a literal character:
- * `\.` is a dot. A shorthand class (`\w`), a hex or unicode escape (`\x2e`,
- * `\u002e`), a backreference or a control escape matches more than one literal
- * string and makes the pattern non-literal.
+ * Only an escaped non-alphanumeric character that keeps its meaning stands for
+ * a literal character: `\.` is a dot. Other escapes are not decoded: a shorthand
+ * class (`\w`), a hex or unicode escape (`\x2e`, `\u002e`), a backreference, a
+ * control escape or the escaped list separator (`\|`, which MV2 compiles as
+ * alternation) makes the pattern non-literal.
  *
  * @param pattern Regexp body without the anchors and delimiters.
  *
@@ -82,7 +87,11 @@ const getLiteralDomain = (pattern: string): string | null => {
         if (char === '\\') {
             const escaped = pattern[i + 1];
 
-            if (escaped === undefined || /[a-z0-9]/i.test(escaped)) {
+            // An escaped list separator is alternation after MV2 removes the
+            // escape. An escaped alphanumeric character starts a shorthand
+            // class, a code-point escape, a backreference or a control escape.
+            // Neither is a literal character.
+            if (escaped === undefined || escaped === '|' || /[a-z0-9]/i.test(escaped)) {
                 return null;
             }
 
@@ -196,7 +205,15 @@ export enum BadfilterNegationKind {
  * Result of {@link RuleBadfilter.negationScope}.
  */
 export type BadfilterNegation =
-    | { readonly kind: BadfilterNegationKind.None }
+    | {
+        readonly kind: BadfilterNegationKind.None;
+
+        /**
+         * Regexp entries whose coverage must be checked after every badfilter
+         * is applied. Set only when the check is deferred.
+         */
+        readonly deferredRegexpEntries?: readonly string[];
+    }
     | { readonly kind: BadfilterNegationKind.Full }
     | {
         readonly kind: BadfilterNegationKind.Partial;
@@ -211,6 +228,12 @@ export type BadfilterNegation =
          * badfilter cancels. The target rule must exclude them.
          */
         readonly excludedDomains: string[];
+
+        /**
+         * Regexp entries whose coverage must be checked after every badfilter
+         * is applied. Set only when the check is deferred.
+         */
+        readonly deferredRegexpEntries?: readonly string[];
     };
 
 /**
@@ -236,8 +259,9 @@ export class RuleBadfilter {
      * stay mean {@link BadfilterNegationKind.Partial}. A badfilter entry that is
      * a subdomain of a kept target entry becomes an exclusion, because the kept
      * entry still covers it in DNR. A regexp badfilter entry cannot be expressed
-     * as a DNR exclusion, so it cancels the rule completely when it can match a
-     * domain that a kept target entry covers.
+     * as a DNR exclusion: a blocking rule that such an entry may cover is
+     * cancelled completely, except for an anchored literal domain that no kept
+     * target entry covers, while an exception rule is narrowed instead.
      *
      * @param badfilterRule The rule that carries the `$badfilter` modifier.
      * @param targetRule The rule to test for negation.
@@ -245,6 +269,10 @@ export class RuleBadfilter {
      *   has after earlier badfilters narrowed it. Defaults to the target rule's
      *   own list. The intersection check always uses the original list, because
      *   MV2 compares the written rule text.
+     * @param deferRegexpCheck When true, regexp entries are returned for the
+     *   caller to check instead of cancelling the rule here. This lets the
+     *   caller run the check once against the final `$domain` list. Defaults to
+     *   false.
      *
      * @returns How `badfilterRule` affects `targetRule`.
      */
@@ -252,6 +280,7 @@ export class RuleBadfilter {
         badfilterRule: BadfilterTarget,
         targetRule: BadfilterTarget,
         currentPermittedDomains: readonly string[] | null = targetRule.permittedDomains,
+        deferRegexpCheck = false,
     ): BadfilterNegation {
         if (!badfilterRule.enabledModifiers.has(OPTION_NAMES.BADFILTER)) {
             return { kind: BadfilterNegationKind.None };
@@ -296,18 +325,23 @@ export class RuleBadfilter {
             return { kind: BadfilterNegationKind.Full };
         }
 
-        // DNR cannot exclude a regexp domain: `excludedInitiatorDomains`
-        // accepts domain names only. When a badfilter regexp can match a domain
-        // that a kept entry covers, the rule is cancelled completely. Check this
-        // before the no-change case: an earlier badfilter may have removed the
-        // entry that made the two lists intersect, while the regexp still
-        // matches a kept entry.
         const badfilterRegexps = badfilterRule.permittedDomains.filter(isRegexPattern);
-        if (badfilterRegexps.some(
+
+        // DNR cannot exclude a regexp domain: `excludedInitiatorDomains`
+        // accepts domain names only. A blocking rule that a regexp may still
+        // cover is cancelled completely. An exception rule is narrowed instead:
+        // dropping it would block requests that MV2 still allows. The caller may
+        // defer this check to run it once against the final list, after every
+        // badfilter has narrowed the rule.
+        if (!targetRule.allowlist && !deferRegexpCheck && badfilterRegexps.some(
             (regexp) => RuleBadfilter.regexpCoversKeptEntry(regexp, permittedDomains),
         )) {
             return { kind: BadfilterNegationKind.Full };
         }
+
+        const deferredRegexpEntries = deferRegexpCheck && !targetRule.allowlist
+            ? badfilterRegexps
+            : [];
 
         // No entry was removed and no entry needs an exclusion, so the two
         // lists do not overlap.
@@ -315,10 +349,17 @@ export class RuleBadfilter {
             permittedDomains.length === (currentPermittedDomains ?? writtenPermittedDomains).length
             && excludedDomains.length === 0
         ) {
-            return { kind: BadfilterNegationKind.None };
+            return deferredRegexpEntries.length > 0
+                ? { kind: BadfilterNegationKind.None, deferredRegexpEntries }
+                : { kind: BadfilterNegationKind.None };
         }
 
-        return { kind: BadfilterNegationKind.Partial, permittedDomains, excludedDomains };
+        return {
+            kind: BadfilterNegationKind.Partial,
+            permittedDomains,
+            excludedDomains,
+            ...(deferredRegexpEntries.length > 0 ? { deferredRegexpEntries } : {}),
+        };
     }
 
     /**
@@ -483,6 +524,28 @@ export class RuleBadfilter {
 
             return literalDomain === normalizedEntry || literalDomain.endsWith(`.${normalizedEntry}`);
         });
+    }
+
+    /**
+     * Checks whether any of the given badfilter regexp entries may match a
+     * domain that the kept permitted entries cover in DNR.
+     *
+     * @param regexpEntries Regexp entries from the applied badfilters.
+     * @param keptEntries Permitted `$domain` entries that stay in the target.
+     *
+     * @returns True when a regexp may match a domain covered by a kept entry.
+     */
+    public static regexpEntriesCoverKeptEntries(
+        regexpEntries: readonly string[],
+        keptEntries: readonly string[] | null,
+    ): boolean {
+        if (keptEntries === null || keptEntries.length === 0) {
+            return false;
+        }
+
+        return regexpEntries.some(
+            (regexp) => RuleBadfilter.regexpCoversKeptEntry(regexp, keptEntries),
+        );
     }
 
     /**
