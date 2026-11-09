@@ -15,6 +15,21 @@ import { walk } from '../../../src/walker';
 
 const parser = new RuleParserPipeline();
 
+/**
+ * Assert the location invariant for every located node.
+ *
+ * @param ast Parsed rule.
+ */
+function expectLocationsValid(ast: CssInjectionRule): void {
+    walk(ast, {
+        enter: (node) => {
+            if (node.start !== undefined && node.end !== undefined) {
+                expect(node.end).toBeGreaterThanOrEqual(node.start);
+            }
+        },
+    });
+}
+
 describe('UboCssInjectionAstBuilder — :style() rules', () => {
     test('basic :style() with no domains', () => {
         const ast = parser.parse('##body:style(padding: 0;)') as CssInjectionRule;
@@ -475,25 +490,120 @@ describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
         expect(ast.body.declarationList).toBeUndefined();
     });
 
-    test('zero-width attribute value stays zero-width across an excised modifier', () => {
+    test('modifier-like text inside a quoted attribute value stays in the selector', () => {
         const src = '##div[title=":matches-path(/x)"]:style(color:red)';
         const ast = parser.parse(src, options) as CssInjectionRule;
 
         const selectorList = ast.body.selectorList as SelectorList;
         const attribute = selectorList.children[0].children[1] as AttributeSelectorWithValue;
+        const valueStart = src.indexOf('"') + 1;
+        const valueEnd = src.indexOf('"', valueStart);
 
-        expect(attribute.value.value).toBe('');
-        expect(attribute.value.start).toBe(30);
-        expect(attribute.value.end).toBe(attribute.value.start);
+        expect(selectorList.children).toHaveLength(1);
+        expect(attribute.value.value).toBe(':matches-path(/x)');
+        expect(attribute.value.start).toBe(valueStart);
+        expect(attribute.value.end).toBe(valueEnd);
+        expect(src.slice(attribute.value.start, attribute.value.end)).toBe(':matches-path(/x)');
 
-        // No located node may end before it starts.
-        walk(ast, {
-            enter: (node) => {
-                if (node.start !== undefined && node.end !== undefined) {
-                    expect(node.end).toBeGreaterThanOrEqual(node.start);
-                }
-            },
+        // The text inside the string is not a rule modifier.
+        expect(ast.modifiers).toBeUndefined();
+        expect(ast.body.mediaQueryList).toBeUndefined();
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+        expect(declarationList.children).toHaveLength(1);
+        expect(declarationList.children[0].property).toMatchObject({ value: 'color' });
+        expect(declarationList.children[0].value).toMatchObject({ value: 'red' });
+
+        expectLocationsValid(ast);
+    });
+
+    test.each([
+        ['double', '"', ':matches-path(/x)'],
+        ['double', '"', ':matches-media((min-width: 100px))'],
+        ['double', '"', ':style(color:red)'],
+        ['double', '"', ':remove()'],
+        ['single', "'", ':matches-path(/x)'],
+        ['single', "'", ':matches-media((min-width: 100px))'],
+        ['single', "'", ':style(color:red)'],
+        ['single', "'", ':remove()'],
+    ])('%s-quoted attribute value containing %s text is not a rule modifier', (_label, quote, inner) => {
+        const src = `##div[title=${quote}${inner}${quote}]:style(color:blue)`;
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const attribute = selectorList.children[0].children[1] as AttributeSelectorWithValue;
+
+        expect(selectorList.children).toHaveLength(1);
+        expect(attribute.value.value).toBe(inner);
+        expect(src.slice(attribute.value.start, attribute.value.end)).toBe(inner);
+        expect(ast.modifiers).toBeUndefined();
+        expect(ast.body.mediaQueryList).toBeUndefined();
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+        expect(declarationList.children).toHaveLength(1);
+        expect(declarationList.children[0].property).toMatchObject({ value: 'color' });
+        expect(declarationList.children[0].value).toMatchObject({ value: 'blue' });
+
+        expectLocationsValid(ast);
+    });
+
+    test('a real modifier after a quoted string still parses normally', () => {
+        const src = '##div[title=":matches-path(/x)"]:matches-media((min-width: 100px)):style(color:red)';
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const attribute = selectorList.children[0].children[1] as AttributeSelectorWithValue;
+
+        expect(attribute.value.value).toBe(':matches-path(/x)');
+        expect(ast.modifiers).toBeUndefined();
+        expect(ast.body.mediaQueryList?.value).toBe('(min-width: 100px)');
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+        expect(declarationList.children[0].property).toMatchObject({ value: 'color' });
+        expect(declarationList.children[0].value).toMatchObject({ value: 'red' });
+
+        expectLocationsValid(ast);
+    });
+
+    test('an escaped quote does not close the string', () => {
+        const src = '##div[title="a\\":matches-path(/x)\\"b"]:style(color:red)';
+        const ast = parser.parse(src) as CssInjectionRule;
+
+        expect(ast.body.selectorList).toMatchObject({
+            type: 'Raw',
+            value: 'div[title="a\\":matches-path(/x)\\"b"]',
         });
+        expect(ast.modifiers).toBeUndefined();
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test.each([
+        ['double', '"', 'content: ":remove()"'],
+        ['single', "'", "content: ':matches-path(/x)'"],
+    ])('%s-quoted :style() declaration value is not scanned for modifiers', (_label, _quote, declarations) => {
+        const src = `##div:style(${declarations})`;
+        const ast = parser.parse(src, {
+            isLocIncluded: true,
+            parseCssDeclarationList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.modifiers).toBeUndefined();
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+        expect(declarationList.children).toHaveLength(1);
+        expect(declarationList.children[0].property).toMatchObject({ value: 'content' });
+        expect(src.slice(declarationList.children[0].start, declarationList.children[0].end))
+            .toBe(declarations);
+
+        expectLocationsValid(ast);
+    });
+
+    test('modifier-like text inside a string in :not() is not a candidate', () => {
+        const ast = parser.parse('##div:not([title=":matches-path(/x)"])');
+
+        // No real modifier exists, so the rule stays an element hiding rule.
+        expect(ast.type).toBe('ElementHidingRule');
     });
 
     test('whitespace combinator points at one original whitespace run', () => {

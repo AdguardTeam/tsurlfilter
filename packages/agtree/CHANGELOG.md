@@ -63,6 +63,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- uBO CSS injection rules no longer treat modifier-like text inside a quoted
+  CSS string as a rule modifier. Previously
+  `##div[title=":matches-path(/x)"]:style(color:red)` parsed the attribute
+  value as a `:matches-path()` modifier and cut it out of the selector. Now
+  the selector keeps the full attribute value, and only real top-level
+  modifiers apply. The same fix covers `:style()`, `:remove()` and
+  `:matches-media()` text in double- or single-quoted strings, including
+  strings in `:style()` declaration values.
 - `RuleParserPipeline.parseRange` now rejects a non-zero `dataOffset` for
   cosmetic rules. Their structural parsers write at fixed offsets, so a
   non-zero offset previously produced a rule with an empty selector and no

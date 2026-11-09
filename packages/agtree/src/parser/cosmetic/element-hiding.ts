@@ -207,8 +207,27 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
     ): boolean {
         const { types, ends, source } = ctx;
 
+        // Quote token type of the open CSS string (0 = not in a string).
+        // Modifier-like text inside a CSS string is not a rule modifier.
+        let quoteType = 0;
+
         for (let ti = startTi; ti < endTi - 1; ti += 1) {
-            if (types[ti] !== TokenType.Colon) {
+            const t = types[ti];
+
+            if (quoteType !== 0) {
+                // Escaped quote tokens (`Escaped`) never close the string.
+                if (t === quoteType) {
+                    quoteType = 0;
+                }
+                continue;
+            }
+
+            if (t === TokenType.Quote || t === TokenType.Apostrophe) {
+                quoteType = t;
+                continue;
+            }
+
+            if (t !== TokenType.Colon) {
                 continue;
             }
 
@@ -232,9 +251,25 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
 
             // Also check for :not( wrapping :matches-path() or :matches-media()
             if (regionEquals(source, identStart, identEnd, 'not')) {
-                // Look ahead inside :not() for a uBO modifier candidate
+                // Look ahead inside :not() for a uBO modifier candidate.
+                // Skip CSS strings here as well.
+                let innerQuoteType = 0;
                 for (let j = identEndTi + 1; j < endTi; j += 1) {
-                    if (types[j] === TokenType.Colon) {
+                    const jt = types[j];
+
+                    if (innerQuoteType !== 0) {
+                        if (jt === innerQuoteType) {
+                            innerQuoteType = 0;
+                        }
+                        continue;
+                    }
+
+                    if (jt === TokenType.Quote || jt === TokenType.Apostrophe) {
+                        innerQuoteType = jt;
+                        continue;
+                    }
+
+                    if (jt === TokenType.Colon) {
                         const innerEndTi = skipPseudoName(types, j + 1, endTi);
                         if (innerEndTi > j + 1 && innerEndTi < endTi && types[innerEndTi] === TokenType.OpenParen) {
                             const iStart = ends[j];
@@ -292,12 +327,30 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
         // Terminal modifier tracking (style/remove must be last)
         let terminalClosed = false;
 
+        // Quote token type of the open CSS string (0 = not in a string).
+        // Strings are skipped so that modifier-like text and parentheses
+        // inside them do not affect the modifier scan or the depth.
+        let quoteType = 0;
+
         for (let ti = startTi; ti < endTi; ti += 1) {
             const t = types[ti];
 
             // FR-015: after :style()/:remove() closes, only whitespace allowed
             if (terminalClosed && t !== TokenType.Whitespace) {
                 throw new Error(':style() and :remove() can only be used at the end of the selector');
+            }
+
+            if (quoteType !== 0) {
+                // Escaped quote tokens (`Escaped`) never close the string.
+                if (t === quoteType) {
+                    quoteType = 0;
+                }
+                continue;
+            }
+
+            if (t === TokenType.Quote || t === TokenType.Apostrophe) {
+                quoteType = t;
+                continue;
             }
 
             if (t === TokenType.OpenParen) {
