@@ -44,11 +44,12 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  * preregistered domains, so build-time-known scriptlet/JS rules run at
  * `document_start`, before the extension itself finishes starting up.
  *
- * `matchOriginAsFallback: true` makes the registrations cover
- * `about:blank`/srcdoc frames too: the dynamic path treats such frames as
- * covered by their nearest HTTP ancestor's hostname, so the preregistered
- * files must actually be injected there as well — otherwise the rules
- * would be suppressed on both paths.
+ * Only outermost documents are registered, including a prerender whose
+ * frame id is not zero: a subframe's verdict depends on the main frame's
+ * rule and URL (the engine passes those into the subdocument match), and
+ * the page cannot read the main-frame URL when the domains differ. Frames
+ * therefore always keep the dynamic injection path, where the engine
+ * decides.
  *
  * Hostnames not in the list keep the standard dynamic injection path.
  *
@@ -62,24 +63,8 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  *   removed `#%#` JS rule is not harmless — see Known limitations.
  *   Pre-existing tabs are judged against the boot snapshot.
  *
- * Known limitations:
- * - Scriptlet executions are deduped by rule hash, unlike the dynamic
- *   path — both paths rely on scriptlets being idempotent.
- * - A page that started before a sync removed a `#%#` JS rule can execute
- *   it twice: the preregistered file already ran it, and the dynamic path
- *   runs it again because the coordination set dedupes only within one
- *   registration execution and `cleanup` deletes it before page scripts
- *   run. Arbitrary JS is not idempotent.
- * - `$url`-modified rules are never preregistered (the engine is queried
- *   per hostname root) and stay on the dynamic injection path.
- * - `$document`/`$jsinject` exceptions below the root path (e.g.
- *   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for
- *   the host: rules registered on `*://youtube.com/*` still execute on
- *   `/embed/…` — tracked in AG-54564.
- * - With protection disabled on a site (or in inverted allowlist mode),
- *   YouTube embeds on it still run these scriptlets: the registration
- *   covers every frame of the host, while the dynamic path would inject
- *   nothing there — tracked in AG-60054.
+ * Known limitations are listed in the package README together with the
+ * other preregistration constraints; this comment does not repeat them.
  */
 export class PreregisteredScriptsService {
     /**
@@ -377,6 +362,10 @@ export class PreregisteredScriptsService {
         try {
             if (preregistrationEnabled && hostnames.length > 0) {
                 const manifest = await readManifest(scriptsPath);
+
+                // Rule files are named by hash: `buildDomainScripts` drops a
+                // rule without a baked file, and coverage is read from the
+                // descriptors that were built.
                 scripts = await PreregisteredScriptsService.buildDomainScripts(
                     hostnames,
                     scriptsPath,
@@ -452,7 +441,7 @@ export class PreregisteredScriptsService {
      * actual coverage is read separately from the active registrations.
      */
     private static async buildDomainScripts(
-        hostnames: string[],
+        hostnames: readonly string[],
         scriptsPath: string,
         manifest: PreregisteredScriptsManifest,
     ): Promise<ContentScriptDescriptor[]> {
@@ -575,8 +564,8 @@ export class PreregisteredScriptsService {
                         matches: domainToMatchPatterns(hostname),
                         runAt: 'document_start',
                         world: 'MAIN',
-                        allFrames: true,
-                        matchOriginAsFallback: true,
+                        allFrames: false,
+                        matchOriginAsFallback: false,
                         persistAcrossSessions: true,
                     });
 

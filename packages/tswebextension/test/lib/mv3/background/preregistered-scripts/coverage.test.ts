@@ -6,10 +6,7 @@ import {
 } from 'vitest';
 
 import { appContext } from '../../../../../src/lib/mv3/background/app-context';
-import {
-    getCoveredRules,
-    resolveCoverageHost,
-} from '../../../../../src/lib/mv3/background/preregistered-scripts/coverage';
+import { getCoveredRules } from '../../../../../src/lib/mv3/background/preregistered-scripts/coverage';
 import { type FrameMV3 } from '../../../../../src/lib/mv3/tabs/frame';
 
 /**
@@ -27,35 +24,16 @@ const frame = (frameId: number, url: string, parentFrameId = -1): FrameMV3 => ({
     parentFrameId,
 } as unknown as FrameMV3);
 
-describe('resolveCoverageHost', () => {
-    it('returns the lower-cased host of an http frame', () => {
-        expect(resolveCoverageHost(1, frame(0, 'https://YouTube.com/watch'), () => undefined))
-            .toBe('youtube.com');
-    });
-
-    it('walks up to the nearest http ancestor of an opaque frame', () => {
-        const parent = frame(0, 'https://youtube.com/');
-
-        expect(resolveCoverageHost(1, frame(2, 'about:blank', 0), () => parent))
-            .toBe('youtube.com');
-    });
-
-    it('returns null when the chain has no http ancestor', () => {
-        expect(resolveCoverageHost(1, frame(2, 'about:blank', 0), () => undefined))
-            .toBeNull();
-    });
-});
-
 describe('getCoveredRules', () => {
     afterEach(() => {
         appContext.preregisteredScriptRules = undefined;
         appContext.preregisteredScriptRulesAtBoot = undefined;
     });
 
-    it('returns the covered hashes for the resolved host', () => {
+    it('returns the covered hashes of the main frame host', () => {
         appContext.preregisteredScriptRules = new Map([['youtube.com', new Set(['abc'])]]);
 
-        expect(getCoveredRules(1, frame(0, 'https://youtube.com/'), () => undefined))
+        expect(getCoveredRules(frame(0, 'https://YouTube.com/watch')))
             .toEqual(new Set(['abc']));
     });
 
@@ -63,14 +41,43 @@ describe('getCoveredRules', () => {
         appContext.preregisteredScriptRules = new Map([['youtube.com', new Set(['current'])]]);
         appContext.preregisteredScriptRulesAtBoot = new Map([['youtube.com', new Set(['boot'])]]);
 
-        expect(getCoveredRules(1, frame(0, 'https://youtube.com/'), () => undefined, true))
+        expect(getCoveredRules(frame(0, 'https://youtube.com/'), true))
             .toEqual(new Set(['boot']));
     });
 
-    it('returns undefined when there is no coverage', () => {
+    it('returns undefined for any subframe, so the engine decides there', () => {
+        // The frame's verdict depends on the main frame's rule and URL,
+        // which the page cannot read: frames always keep the dynamic path.
+        appContext.preregisteredScriptRules = new Map([['youtube.com', new Set(['abc'])]]);
+
+        expect(getCoveredRules(frame(2, 'https://youtube.com/embed', 0))).toBeUndefined();
+    });
+
+    it('covers an outermost document whose frame id is not zero', () => {
+        // A prerendered outermost document can land under a non-zero frame
+        // id. It has no parent, and the allFrames:false registration runs
+        // there, so it must not fall through to dynamic injection.
+        appContext.preregisteredScriptRules = new Map([['youtube.com', new Set(['abc'])]]);
+
+        expect(getCoveredRules(frame(7, 'https://youtube.com/', -1)))
+            .toEqual(new Set(['abc']));
+    });
+
+    it('returns undefined for a non-http main frame', () => {
+        appContext.preregisteredScriptRules = new Map([['youtube.com', new Set(['abc'])]]);
+
+        expect(getCoveredRules(frame(0, 'about:blank'))).toBeUndefined();
+    });
+
+    it('returns undefined for a host without coverage', () => {
+        appContext.preregisteredScriptRules = new Map([['youtube.com', new Set(['abc'])]]);
+
+        expect(getCoveredRules(frame(0, 'https://example.com/'))).toBeUndefined();
+    });
+
+    it('returns undefined when there is no coverage at all', () => {
         appContext.preregisteredScriptRules = new Map();
 
-        expect(getCoveredRules(1, frame(0, 'https://youtube.com/'), () => undefined))
-            .toBeUndefined();
+        expect(getCoveredRules(frame(0, 'https://youtube.com/'))).toBeUndefined();
     });
 });

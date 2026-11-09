@@ -100,6 +100,8 @@ const makeFrameContext = (
     rawRules: object[] = [makeRawRule(LOCAL_JS_RULE_CONTENT)],
 ): object => ({
     url,
+    frameId: 0,
+    parentFrameId: -1,
     preparedCosmeticResult: {
         localRules: {
             scriptTexts: ['console.log("local")'],
@@ -119,8 +121,7 @@ const makeFrameContext = (
  * frame, returning spies on the local and remote application paths.
  *
  * @param coveredEntries Covered hostname → rule hashes entries.
- * @param frame Frame context returned by the tabs API mock, or a resolver
- * receiving the requested frame id.
+ * @param frame Frame context returned by the tabs API mock.
  * @param frameId Frame id the rules are applied to.
  * @param preExistingDocument Whether to pass `preExistingDocument`.
  *
@@ -128,20 +129,13 @@ const makeFrameContext = (
  */
 const runCosmeticApply = async (
     coveredEntries: Array<[string, Set<string>]>,
-    frame: object | ((frameId: number) => object),
+    frame: object,
     frameId = 0,
     preExistingDocument = false,
 ): Promise<{ applyLocal: MockInstance; applyRemote: MockInstance }> => {
     appContext.preregisteredScriptRules = new Map(coveredEntries);
 
-    const frameMock = vi.mocked(tabsApi.getFrameContext);
-    if (typeof frame === 'function') {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        frameMock.mockImplementation((_tabId: number, id: number) => frame(id) as any);
-    } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        frameMock.mockReturnValue(frame as any);
-    }
+    vi.mocked(tabsApi.getFrameContext).mockReturnValue(frame as ReturnType<typeof tabsApi.getFrameContext>);
 
     const applyLocal = vi.spyOn(CosmeticApi as any, 'applyLocalCosmeticRules');
     const applyRemote = vi.spyOn(CosmeticApi as any, 'applyRemoteCosmeticRules');
@@ -273,39 +267,40 @@ describe('CosmeticApi — preregistered script rules', () => {
             expect(applyLocal).toHaveBeenCalled();
         });
 
-        it('skips local rules for an opaque frame whose parent is a preregistered host', async () => {
-            const childFrame = { ...makeFrameContext('about:blank'), frameId: 1, parentFrameId: 0 };
-            const parentFrame = { ...makeFrameContext('https://youtube.com/'), frameId: 0, parentFrameId: -1 };
+        it('keeps a subframe on the dynamic path even when its own host is covered', async () => {
+            // The frame's verdict depends on the main frame's rule and URL,
+            // which the page cannot read when the domains differ: frames are
+            // never covered, so the engine decides.
+            const childFrame = {
+                ...makeFrameContext('https://youtube.com/embed'),
+                frameId: 1,
+                parentFrameId: 0,
+            };
 
             const { applyLocal } = await runCosmeticApply(
                 [['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
-                (frameId: number) => (frameId === 1 ? childFrame : parentFrame),
+                childFrame,
                 1,
             );
 
-            expect(applyLocal).not.toHaveBeenCalled();
+            expect(applyLocal).toHaveBeenCalled();
         });
 
-        it('keeps $path-qualified rules on the dynamic path in an opaque frame', async () => {
-            // The per-rule `$path` guard cannot evaluate the ancestor's URL
-            // from an about:blank/srcdoc frame, so the preregistered file
-            // never runs such rules there; the dynamic path (which copied
-            // the ancestor's result) must still deliver them.
+        it('injects local rules into an opaque subframe', async () => {
+            // Subframes never take the preregistered path: their verdict
+            // depends on the main frame's rule and URL, and the dynamic path
+            // is the one that sees them. `applyLocal` is called because the
+            // frame is not covered, not because of any per-rule guard.
             const pathRule = makeRawRule(LOCAL_JS_RULE_CONTENT, { pattern: '/tv' });
             const childFrame = {
                 ...makeFrameContext('about:blank', [pathRule]),
                 frameId: 1,
                 parentFrameId: 0,
             };
-            const parentFrame = {
-                ...makeFrameContext('https://youtube.com/tv', [pathRule]),
-                frameId: 0,
-                parentFrameId: -1,
-            };
 
             const { applyLocal } = await runCosmeticApply(
                 [['youtube.com', new Set([await hashRule(pathRule)])]],
-                (frameId: number) => (frameId === 1 ? childFrame : parentFrame),
+                childFrame,
                 1,
             );
 

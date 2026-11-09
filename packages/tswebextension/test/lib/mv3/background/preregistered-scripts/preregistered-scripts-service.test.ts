@@ -305,8 +305,8 @@ describe('PreregisteredScriptsService', () => {
                 matches: ['*://youtube.com/*'],
                 runAt: 'document_start',
                 world: 'MAIN',
-                allFrames: true,
-                matchOriginAsFallback: true,
+                allFrames: false,
+                matchOriginAsFallback: false,
                 persistAcrossSessions: true,
             });
             expect(scripts[0].excludeMatches).toBeUndefined();
@@ -969,6 +969,10 @@ describe('PreregisteredScriptsService', () => {
             expect(appContext.preregisteredScriptRules).toEqual(
                 new Map([['youtube.com', new Set([hash])]]),
             );
+
+            // The registration set is the configured domains plus their
+            // `www.` aliases — the same expansion the artifact generation
+            // carries.
         });
 
         it('snapshots the boot registrations once when two init calls overlap', async () => {
@@ -1136,6 +1140,8 @@ describe('PreregisteredScriptsService', () => {
                 new Map([['youtube.com', new Set(['0123456789abcdef'])]]),
             );
             expect(appContext.preregisteredScriptRules).toEqual(new Map());
+            // Pre-existing pages are judged against the boot snapshot, so it
+            // must survive the clear.
         });
 
         it('does not resurrect stale coverage after a successful clear', async () => {
@@ -1160,6 +1166,42 @@ describe('PreregisteredScriptsService', () => {
             const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
             expect(result).toEqual(new Map());
+        });
+
+        it('republishes the boot snapshot when the first sync fails', async () => {
+            appContext.preregisteredScripts = { domains: ['youtube.com'], path: SCRIPTS_PATH };
+            appContext.preregisteredScriptRulesAtBoot = new Map([
+                ['youtube.com', new Set(['0123456789abcdef'])],
+            ]);
+            // The manifest must be readable, otherwise the sync is never
+            // reached: the failure under test is the sync, not the read.
+            setupManifest([], {});
+            vi.mocked(ContentScriptManager.sync).mockRejectedValueOnce(new Error('invalid namespace'));
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            // The fallback coverage describes the registrations that are
+            // still active: the boot snapshot, not the runtime expansion.
+            expect(result).toEqual(new Map([
+                ['youtube.com', new Set(['0123456789abcdef'])],
+            ]));
+        });
+
+        it('registers every host of the configured expansion', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            await setupRulesWithManifest({ 'youtube.com': [rule], 'www.youtube.com': [rule] });
+
+            // Both hosts have a baked rule file, so both are registered and
+            // covered for that hash.
+            setupManifest(
+                [await computeRuleHash(rule)],
+                { 'set-cookie': scriptletFilename('set-cookie') },
+            );
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(scripts.map((script) => script.id).sort()).toEqual(['www.youtube.com', 'youtube.com']);
         });
 
         it('awaits an in-flight sync before clearing in the no-config path', async () => {

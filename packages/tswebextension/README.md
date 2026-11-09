@@ -343,9 +343,20 @@ Coverage is reported from the registrations actually active after a sync:
 on sync failure the last published coverage is kept (the boot snapshot
 before the first sync), and rules in those sets stay excluded from dynamic
 injection; a rule that cannot be confirmed as covered remains on the
-dynamic path. Documents that loaded before the current service worker
-started are judged against the boot snapshot of the registrations that
-existed then; later documents use the last published coverage.
+dynamic path. Outermost documents that loaded before the current service
+worker started are judged against the boot snapshot of the registrations
+that existed then; later outermost documents use the last published
+coverage. Subframes are not part of either: their coverage is always the
+dynamic path.
+
+Coverage applies to outermost documents only, including a prerendered
+document whose frame id is not zero: a subframe's verdict depends on the
+main frame's rule and URL, and the page cannot read that URL when the
+domains differ. Subframes therefore always stay on the dynamic injection
+path, where the engine sees the main-frame rule; they trade
+`document_start` timing for the correct verdict. The runtime registers the
+configured expansion. A rule with no baked file is dropped and stays on the
+dynamic path.
 
 At runtime, each configured hostname (plus its `www.` alias) is matched
 against the engine with `$path` ignored, the matching rules are hashed, and
@@ -368,14 +379,21 @@ path applied them, and an in-page execution failure is not observable.
 
 Known limitations:
 
+- Scriptlet executions are deduped by rule hash, unlike the dynamic path;
+  both paths rely on scriptlets being idempotent.
 - `$document`/`$jsinject` exceptions below the root path (e.g.
   `@@||youtube.com/embed/$jsinject`) do not cancel preregistration for the
   host: rules registered on `*://youtube.com/*` still execute on `/embed/…`.
   Tracked in AG-54564.
-- With protection disabled on a site (or in inverted allowlist mode),
-  YouTube embeds on it still run these scriptlets: the registration covers
-  every frame of the host, while the dynamic path would inject nothing
-  there. Tracked in AG-60054.
+- Subframes never take the fast path: they are injected dynamically, on
+  `webRequest.onResponseStarted` or `webNavigation.onCommitted`, after the
+  frame's document starts. A frame whose own inline script reads a property
+  before that moment wins the race, and in the cold-start window (browser or
+  service-worker start, while the engine is still being built) the frame may
+  receive no rules at all. The top-level document is unaffected.
+- The preregistered path is shipped for the Chromium-based MV3 targets only:
+  the artifacts are generated and committed for Chromium, Opera and Edge, so
+  the Firefox MV3 package has no preregistration and stays fully dynamic.
 - `$url`-modified rules are never preregistered: the engine is queried per
   hostname root, so they stay on the dynamic injection path.
 - A page that started before a sync removed a `#%#` JS rule can execute it

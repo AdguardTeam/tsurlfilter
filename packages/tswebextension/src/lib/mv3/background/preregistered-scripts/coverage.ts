@@ -1,16 +1,12 @@
 import { type CosmeticRule } from '@adguard/tsurlfilter';
 
+import { NO_PARENT_FRAME_ID } from '../../../common/constants';
 import { logger } from '../../../common/utils/logger';
 import { isHttpRequest } from '../../../common/utils/url';
 import { type FrameMV3 } from '../../tabs/frame';
 import { appContext } from '../app-context';
 
 import { computeRuleHashCached } from './hasher';
-
-/**
- * Looks up a frame context by tab and frame id.
- */
-export type FrameContextLookup = (tabId: number, frameId: number) => FrameMV3 | undefined;
 
 /**
  * Rules whose hash failure has already been logged. Hashing failures are
@@ -20,57 +16,32 @@ export type FrameContextLookup = (tabId: number, frameId: number) => FrameMV3 | 
 const loggedHashFailures = new WeakSet<CosmeticRule>();
 
 /**
- * Resolves the hostname whose preregistered coverage applies to a frame.
- * Opaque frames (`about:blank`, srcdoc) have no own host: their coverage
- * comes from the nearest HTTP(S) ancestor, mirroring the
- * `matchOriginAsFallback: true` semantics of preregistered registrations.
+ * Parses a URL hostname.
  *
- * @param tabId Tab id.
- * @param frameContext Frame context to resolve the host for.
- * @param getFrameContext Injected frame lookup.
+ * @param url URL to parse.
  *
- * @returns Lower-cased hostname or `null` when no HTTP ancestor exists.
+ * @returns Hostname or `null` when unparseable.
  */
-export const resolveCoverageHost = (
-    tabId: number,
-    frameContext: FrameMV3,
-    getFrameContext: FrameContextLookup,
-): string | null => {
-    const visited = new Set<number>();
-    let current: FrameMV3 | undefined = frameContext;
-
-    while (current) {
-        if (isHttpRequest(current.url)) {
-            try {
-                const { hostname } = new URL(current.url);
-                return hostname ? hostname.toLowerCase() : null;
-            } catch {
-                return null;
-            }
-        }
-
-        // Guard against broken parent chains (partially recorded frame
-        // contexts) looping forever.
-        if (visited.has(current.frameId)) {
-            return null;
-        }
-        visited.add(current.frameId);
-
-        current = current.parentFrameId >= 0
-            ? getFrameContext(tabId, current.parentFrameId)
-            : undefined;
+const parseHostname = (url: string): string | null => {
+    try {
+        const { hostname } = new URL(url);
+        return hostname || null;
+    } catch {
+        return null;
     }
-
-    return null;
 };
 
 /**
- * Returns the hashes of preregistered rules covered by the registrations
- * that apply to the frame — those dynamic injection must skip.
+ * Returns the hashes of preregistered rules covered for the frame — those
+ * dynamic injection must skip.
  *
- * @param tabId Tab id.
+ * Only the outermost document takes the fast path, including a prerender
+ * whose frame id is not zero. A subframe's verdict depends on the main
+ * frame's rule and URL (the engine passes those into the subdocument
+ * match), and the page cannot read the main-frame URL when the domains
+ * differ, so every frame stays on the dynamic path and the engine decides.
+ *
  * @param frameContext Frame context.
- * @param getFrameContext Injected frame lookup.
  * @param preExistingDocument Whether the document loaded before the current
  * service worker started: such a document is judged only against the rules
  * from registrations persisted at boot, since a registration updated since
@@ -79,11 +50,17 @@ export const resolveCoverageHost = (
  * @returns Covered rule hashes or `undefined` when there is no coverage.
  */
 export const getCoveredRules = (
-    tabId: number,
     frameContext: FrameMV3,
-    getFrameContext: FrameContextLookup,
     preExistingDocument = false,
 ): ReadonlySet<string> | undefined => {
+    // A prerendered outermost document can have a non-zero frame id.
+    // `onBeforeNavigate` skips only a frame-0 prerender, so the context
+    // lands under that id. The registration still runs there (`allFrames:
+    // false` matches the outermost frame), so coverage must too.
+    if (frameContext.parentFrameId !== NO_PARENT_FRAME_ID || !isHttpRequest(frameContext.url)) {
+        return undefined;
+    }
+
     const coveredRules = preExistingDocument
         ? appContext.preregisteredScriptRulesAtBoot
         : appContext.preregisteredScriptRules;
@@ -92,12 +69,9 @@ export const getCoveredRules = (
         return undefined;
     }
 
-    const host = resolveCoverageHost(tabId, frameContext, getFrameContext);
-    if (!host) {
-        return undefined;
-    }
+    const host = parseHostname(frameContext.url);
 
-    return coveredRules.get(host);
+    return host ? coveredRules.get(host) : undefined;
 };
 
 /**
@@ -110,17 +84,9 @@ export const getCoveredRules = (
  * later) — accepted: rule execution order is not a contract anywhere on the
  * dynamic path.
  *
- * In a non-HTTP frame (`about:blank`, srcdoc, blob:) `$path`-qualified
- * rules always stay on the dynamic path: the frame receives them by
- * copying the nearest HTTP ancestor's result (where the `$path` condition
- * was evaluated against the ancestor's URL), while the per-rule guard in the
- * preregistered file cannot evaluate that URL from the frame and never
- * executes them there. Treating them as covered would lose the rule on both
- * paths.
- *
  * @param rawRules Candidate rules to filter.
  * @param coveredRules Hashes of rules covered by preregistered registrations.
- * @param frameUrl Frame URL, used for logging and to detect non-HTTP frames.
+ * @param frameUrl Frame URL, used for logging.
  *
  * @returns Rules not covered by preregistered content scripts.
  */
@@ -129,16 +95,7 @@ export const filterUncoveredRules = async (
     coveredRules: ReadonlySet<string>,
     frameUrl: string,
 ): Promise<CosmeticRule[]> => {
-    const isHttpFrame = isHttpRequest(frameUrl);
-
     const results = await Promise.all(rawRules.map(async (rule) => {
-        // The preregistered per-rule guard only sees the frame's own
-        // `location`, so in a non-HTTP frame it never executes `$path`-
-        // qualified rules — there is no double execution to avoid.
-        if (!isHttpFrame && rule.pathModifier) {
-            return rule;
-        }
-
         try {
             return coveredRules.has(await computeRuleHashCached(rule)) ? null : rule;
         } catch (e) {
