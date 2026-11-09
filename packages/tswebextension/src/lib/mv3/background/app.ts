@@ -537,7 +537,7 @@ export class TsWebExtension implements AppInterface<
             && previousCollectStats !== this.configuration.settings.collectStats) {
             CollectHitStatsNotifier.notify(
                 this.configuration.settings.collectStats,
-                (tabId) => TsWebExtension.isCollectStatsEnabledForTab(tabId),
+                (tabId, tabUrl) => TsWebExtension.isCollectStatsEnabledForTab(tabId, tabUrl),
             );
         }
 
@@ -896,7 +896,7 @@ export class TsWebExtension implements AppInterface<
         if (previousCollectStats !== isCollectStats) {
             CollectHitStatsNotifier.notify(
                 isCollectStats,
-                (tabId) => TsWebExtension.isCollectStatsEnabledForTab(tabId),
+                (tabId, tabUrl) => TsWebExtension.isCollectStatsEnabledForTab(tabId, tabUrl),
             );
         }
     }
@@ -905,13 +905,25 @@ export class TsWebExtension implements AppInterface<
      * Returns the effective hit stats collection state for a tab.
      *
      * @param tabId Tab identifier.
+     * @param tabUrl Tab URL, if known.
      *
-     * @returns True if hits must be collected for the tab.
+     * @returns Whether hits must be collected for the tab, or `null` when the
+     * tab context is unknown.
      */
-    private static isCollectStatsEnabledForTab(tabId: number): boolean {
+    private static isCollectStatsEnabledForTab(tabId: number, tabUrl?: string): boolean | null {
+        if (tabUrl) {
+            tabsApi.createTabContextIfNotExists(tabId, tabUrl);
+        }
+        tabsApi.updateTabMainFrameRule(tabId);
+
+        const tabContext = tabsApi.getTabContext(tabId);
+        if (!tabContext) {
+            return null;
+        }
+
         return isCollectStatsEnabledForDocument(
             appContext.configuration?.settings.collectStats,
-            tabsApi.getTabContext(tabId)?.mainFrameRule,
+            tabContext.mainFrameRule,
         );
     }
 

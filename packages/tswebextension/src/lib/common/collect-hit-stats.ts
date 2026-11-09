@@ -53,13 +53,14 @@ export class CollectHitStatsNotifier {
      *
      * @param isCollectStats Whether CSS hits must be collected.
      * @param resolveForTab Optional resolver of the effective state for a tab,
-     * e.g. to disable collection on allowlisted pages.
+     * e.g. to disable collection on allowlisted pages. Return `null` when the
+     * state is unknown, so the tab is skipped.
      *
      * @returns Promise resolved when the notifications have been queued.
      */
     public static notify(
         isCollectStats: boolean,
-        resolveForTab?: (tabId: number) => boolean,
+        resolveForTab?: (tabId: number, tabUrl?: string) => boolean | null,
     ): Promise<void> {
         CollectHitStatsNotifier.pending = CollectHitStatsNotifier.pending
             .then(() => CollectHitStatsNotifier.send(isCollectStats, resolveForTab))
@@ -78,10 +79,11 @@ export class CollectHitStatsNotifier {
      *
      * @param isCollectStats Whether CSS hits must be collected.
      * @param resolveForTab Optional resolver of the effective state for a tab.
+     * Return `null` when the state is unknown, so the tab is skipped.
      */
     private static async send(
         isCollectStats: boolean,
-        resolveForTab?: (tabId: number) => boolean,
+        resolveForTab?: (tabId: number, tabUrl?: string) => boolean | null,
     ): Promise<void> {
         const tabs: Tabs.Tab[] = await browser.tabs.query({});
 
@@ -91,8 +93,14 @@ export class CollectHitStatsNotifier {
             }
 
             const effectiveCollectStats = resolveForTab
-                ? resolveForTab(tab.id)
+                ? resolveForTab(tab.id, tab.url)
                 : isCollectStats;
+
+            if (effectiveCollectStats === null) {
+                // The tab state is unknown. Do not send the global value:
+                // it can start collection on an allowlisted document.
+                return;
+            }
 
             const message: SetCollectHitStatsMessage = {
                 handlerName: MESSAGE_HANDLER_NAME,

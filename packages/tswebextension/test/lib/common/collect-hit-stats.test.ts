@@ -58,6 +58,18 @@ describe('CollectHitStatsNotifier', () => {
         ]);
     });
 
+    it('skips tabs with unknown effective state', async () => {
+        browser.tabs.query.resolves([
+            { id: 1, url: 'https://example.org/' },
+            { id: 2, url: 'https://example.net/' },
+        ]);
+        browser.tabs.sendMessage.resolves();
+
+        await CollectHitStatsNotifier.notify(true, () => null);
+
+        expect(browser.tabs.sendMessage.callCount).toBe(0);
+    });
+
     it('does not wait for delivery to a frozen tab', async () => {
         browser.tabs.query.resolves([{ id: 1 }]);
         browser.tabs.sendMessage.returns(new Promise(() => {}));

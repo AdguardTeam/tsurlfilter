@@ -129,11 +129,21 @@ export class MessagesApi {
         }
 
         const tabId = sender.tab?.id;
-        const tabContext = typeof tabId === 'number'
-            ? this.tabsApi.getTabContext(tabId)
-            : undefined;
+        if (typeof tabId !== 'number') {
+            return null;
+        }
 
-        return isCollectStatsEnabledForDocument(collectStats, tabContext?.mainFrameRule);
+        if (sender.tab?.url) {
+            this.tabsApi.createTabContextIfNotExists(tabId, sender.tab.url);
+        }
+        this.tabsApi.updateTabMainFrameRule(tabId);
+
+        const tabContext = this.tabsApi.getTabContext(tabId);
+        if (!tabContext) {
+            return null;
+        }
+
+        return isCollectStatsEnabledForDocument(collectStats, tabContext.mainFrameRule);
     }
 
     /**
@@ -195,6 +205,11 @@ export class MessagesApi {
         if (!frameId) {
             frameId = MAIN_FRAME_ID;
         }
+
+        if (sender.tab.url) {
+            this.tabsApi.createTabContextIfNotExists(tabId, sender.tab.url);
+        }
+        this.tabsApi.updateTabMainFrameRule(tabId);
 
         if (res.data.reapplyHits) {
             return CosmeticApi.reapplyMarkedCosmeticData(res.data.documentUrl, tabId, frameId);

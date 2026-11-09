@@ -73,19 +73,52 @@ const createSender = (frameId?: number, url?: string): any => ({
 describe('MessagesApi', () => {
     describe('handleGetCollectHitStats', () => {
         it('returns the configured collectStats value', async () => {
-            const messagesApi = new MessagesApi({} as any, {} as any);
+            const tabsApi = {
+                createTabContextIfNotExists: vi.fn(),
+                updateTabMainFrameRule: vi.fn(),
+                getTabContext: vi.fn().mockReturnValue({
+                    info: { url: TAB_URL },
+                    mainFrameRule: { isFilteringDisabled: () => false },
+                }),
+            };
+            const messagesApi = new MessagesApi(tabsApi as any, {} as any);
 
             const result = await messagesApi.handleMessage({
                 handlerName: MESSAGE_HANDLER_NAME,
                 type: MessageType.GetCollectHitStats,
                 payload: null,
-            }, {} as any);
+            }, {
+                tab: { id: TAB_ID, url: TAB_URL },
+            } as any);
 
+            expect(tabsApi.createTabContextIfNotExists).toHaveBeenCalledWith(TAB_ID, TAB_URL);
+            expect(tabsApi.updateTabMainFrameRule).toHaveBeenCalledWith(TAB_ID);
             expect(result).toBe(true);
+        });
+
+        it('returns null when the tab context is unknown', async () => {
+            const tabsApi = {
+                createTabContextIfNotExists: vi.fn(),
+                updateTabMainFrameRule: vi.fn(),
+                getTabContext: vi.fn().mockReturnValue(undefined),
+            };
+            const messagesApi = new MessagesApi(tabsApi as any, {} as any);
+
+            const result = await messagesApi.handleMessage({
+                handlerName: MESSAGE_HANDLER_NAME,
+                type: MessageType.GetCollectHitStats,
+                payload: null,
+            }, {
+                tab: { id: TAB_ID, url: TAB_URL },
+            } as any);
+
+            expect(result).toBeNull();
         });
 
         it('returns false for an allowlisted tab', async () => {
             const tabsApi = {
+                createTabContextIfNotExists: vi.fn(),
+                updateTabMainFrameRule: vi.fn(),
                 getTabContext: vi.fn().mockReturnValue({
                     info: { url: TAB_URL },
                     mainFrameRule: { isFilteringDisabled: () => true },
