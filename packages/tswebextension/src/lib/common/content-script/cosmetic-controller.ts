@@ -169,8 +169,11 @@ export class CosmeticControllerCommon {
         if (collectStats || areHitsStatsCollected) {
             // A paused counter is needed when the data has markers but
             // collection is off: the hook must blank them without reporting.
-            // It is also used while marked data is being requested.
-            this.ensureCounter(!collectStats || !areHitsStatsCollected);
+            // It is also used while marked native data is missing or still
+            // being injected, so pending probes survive until reapply.
+            this.ensureCounter(
+                !collectStats || !areHitsStatsCollected || !areNativeHitsStatsCollected,
+            );
         } else {
             this.pendingProbesCollector.stop();
         }

@@ -179,6 +179,78 @@ describe.each(controllers)('%s short-lived probes', (_name, CosmeticController) 
         }
     });
 
+    it('keeps loading probes while native markers are being injected', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            "@property --adguard-hit { syntax: '*'; inherits: false; initial-value: ''; }",
+            "div.pending-native-bait { display: none !important; --adguard-hit: 'adguard0%3B43' !important; }",
+        ].join('\n');
+
+        let resolveReapply!: (value: ContentScriptCosmeticData) => void;
+        let reapplyStartedResolve!: () => void;
+
+        const reapplyPromise = new Promise<ContentScriptCosmeticData>((resolve) => {
+            resolveReapply = resolve;
+        });
+        const reapplyStarted = new Promise<void>((resolve) => {
+            reapplyStartedResolve = resolve;
+        });
+
+        try {
+            const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockImplementation(async (message) => {
+                    const isReapply = message.type === MessageType.GetCosmeticData
+                        && (message.payload as { reapplyHits?: boolean }).reapplyHits;
+
+                    if (isReapply) {
+                        reapplyStartedResolve();
+                        return reapplyPromise;
+                    }
+
+                    return {
+                        ...getCosmeticData([], true),
+                        areNativeHitsStatsCollected: false,
+                    };
+                });
+
+            const cosmeticController = createController(CosmeticController);
+            cosmeticController.init();
+
+            const collectorObserver = MutationObserverMock.last!;
+            const bait = document.createElement('div');
+            bait.className = 'pending-native-bait';
+            collectorObserver.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            await reapplyStarted;
+
+            // The initial CSS is still being injected. The marker is added
+            // before the reapply response resumes the paused counter.
+            document.head.appendChild(style);
+            resolveReapply(getCosmeticData([], true));
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            const stats = sendAppMessageSpy.mock.calls
+                .map(([message]) => message)
+                .filter((message) => message.type === MessageType.SaveCssHitsStats)
+                .flatMap((message) => message.payload as Array<{ filterId: number; ruleIndex: number }>);
+
+            expect(stats).toContainEqual(expect.objectContaining({ filterId: 0, ruleIndex: 43 }));
+        } finally {
+            style.remove();
+            restoreMutationObserver();
+        }
+    });
+
     it('stops the collector when the background does not respond', async () => {
         const restoreMutationObserver = mockMutationObserver();
 
