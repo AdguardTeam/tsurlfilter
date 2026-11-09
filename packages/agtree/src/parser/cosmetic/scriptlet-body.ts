@@ -202,14 +202,6 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
                 bodyEnd,
             );
         }
-        // Check not escaped
-        if (closeParenTi > 0 && types[closeParenTi - 1] === TokenType.Escaped) {
-            throw new AdblockSyntaxError(
-                ADG_ERRORS.NO_CLOSING_PARENTHESIS,
-                tokenStart(ctx, openParenTi),
-                bodyEnd,
-            );
-        }
 
         // Write snippetCallCount = 1
         data[di] = 1;
@@ -387,14 +379,6 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
         // Find closing paren — scan backward from end, skip trailing whitespace
         const closeParenTi = skipWsBack(ctx, bodyEndTi - 1, openParenTi + 1);
         if (types[closeParenTi] !== TokenType.CloseParen) {
-            throw new AdblockSyntaxError(
-                UBO_ERRORS.NO_CLOSING_PARENTHESIS,
-                tokenStart(ctx, openParenTi),
-                bodyEnd,
-            );
-        }
-        // Check not escaped
-        if (closeParenTi > 0 && types[closeParenTi - 1] === TokenType.Escaped) {
             throw new AdblockSyntaxError(
                 UBO_ERRORS.NO_CLOSING_PARENTHESIS,
                 tokenStart(ctx, openParenTi),

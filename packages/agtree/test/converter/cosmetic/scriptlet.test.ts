@@ -80,6 +80,30 @@ describe('Scriptlet conversion', () => {
 
     describe('uBO to ADG', () => {
         test.each([
+            // an escape before the closing parenthesis is one escaped
+            // character, not an escaped `)` (F-022)
+            {
+                actual: String.raw`a.com##+js(acs, Math, '\x)`,
+                expected: [
+                    String.raw`a.com#%#//scriptlet('ubo-acs', 'Math', '\'\x')`,
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: String.raw`tribunnews.com##+js(acs, Math, ='\x)`,
+                expected: [
+                    String.raw`tribunnews.com#%#//scriptlet('ubo-acs', 'Math', '=\'\x')`,
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: String.raw`ashemaletube.*##+js(rpnt, script, /vastURL:.*?'\,/, vastURL: ''\,)`,
+                expected: [
+                    // eslint-disable-next-line max-len
+                    String.raw`ashemaletube.*#%#//scriptlet('ubo-rpnt', 'script', '/vastURL:.*?\',/', 'vastURL: \'\',')`,
+                ],
+                shouldConvert: true,
+            },
             // empty scriptlet
             {
                 actual: 'example.org#@#+js()',

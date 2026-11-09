@@ -63,6 +63,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- A scriptlet argument ending with an escape right before the closing
+  parenthesis, e.g. `a.com##+js(acs, Math, '\\x)`, is parsed again: an escape
+  consumes exactly one character, so the `)` after it closes the call instead
+  of making the rule fail with "no closing parentheses found". An argument
+  whose quote is left unterminated by such an escape keeps its raw text
+  (`'\'` is not treated as a quoted value), matching 4.x.
 - `RuleParserPipeline.parseRange` now rejects a non-zero `dataOffset` for
   cosmetic rules. Their structural parsers write at fixed offsets, so a
   non-zero offset previously produced a rule with an empty selector and no

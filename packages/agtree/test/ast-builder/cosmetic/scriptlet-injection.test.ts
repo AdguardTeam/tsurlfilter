@@ -520,3 +520,41 @@ describe('ScriptletBodyParser — buffer overflow protection', () => {
         });
     });
 });
+
+describe('Scriptlet injection — escape right before the closing parenthesis (F-022)', () => {
+    // An escape consumes exactly one character, so `\x)` is an escaped `x`
+    // followed by a real closing parenthesis. v4.3.0 accepted these; v5 threw
+    // "no closing parentheses" whenever the token before `)` was an escape.
+    test.each([
+        {
+            rule: String.raw`a.com##+js(acs, Math, '\x)`,
+            expected: ['acs', 'Math', String.raw`'\x`],
+        },
+        {
+            rule: String.raw`lnk2.cc##+js(aeld, , '\')`,
+            expected: ['aeld', null, String.raw`'\'`],
+        },
+        {
+            rule: String.raw`ashemaletube.*##+js(rpnt, script, /vastURL:.*?'\,/, vastURL: ''\,)`,
+            expected: ['rpnt', 'script', String.raw`/vastURL:.*?'\,/`, String.raw`vastURL: ''\,`],
+        },
+        {
+            rule: String.raw`tribunnews.com##+js(acs, Math, ='\x)`,
+            expected: ['acs', 'Math', String.raw`='\x`],
+        },
+    ])('parses $rule', ({ rule, expected }) => {
+        const ast = parser.parse(rule) as ScriptletInjectionRule;
+
+        expect(ast.type).toBe('ScriptletInjectionRule');
+        expect(ast.body.children).toHaveLength(1);
+        expect(ast.body.children[0].children.map((param) => param?.value ?? null)).toEqual(expected);
+    });
+
+    test('ADG scriptlet with an unterminated quoted argument still reports the unclosed parameter', () => {
+        // 4.3.0 also rejects this input, but with the precise "unclosed
+        // parameter" error rather than the bogus "no closing parentheses".
+        expect(() => parser.parse(String.raw`example.com#%#//scriptlet('a', 'b\')`)).toThrow(
+            /unclosed parameter/i,
+        );
+    });
+});

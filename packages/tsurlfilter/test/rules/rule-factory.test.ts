@@ -244,3 +244,23 @@ describe('RuleFactory cosmetic content parity', () => {
         expect(viaFactory.getPermittedDomains()).toEqual(viaAst.getPermittedDomains());
     });
 });
+
+describe('RuleFactory scriptlet arguments ending with an escape (F-022)', () => {
+    it('creates a rule from a uBO scriptlet whose argument ends with `\\x`', () => {
+        const rule = createRule(String.raw`a.com##+js(acs, Math, '\x)`, 1);
+        expect(rule).toBeTruthy();
+        expect(rule).toBeInstanceOf(CosmeticRule);
+    });
+
+    it('creates a rule from a uBO scriptlet whose argument is an unterminated quote ending in an escape', () => {
+        const rule = createRule(String.raw`lnk2.cc##+js(aeld, , '\')`, 1);
+        expect(rule).toBeTruthy();
+        expect(rule).toBeInstanceOf(CosmeticRule);
+    });
+
+    it('creates a rule from the converted AdGuard form', () => {
+        const rule = createRule(String.raw`tribunnews.com#%#//scriptlet('ubo-acs', 'Math', '=\'\x')`, 1);
+        expect(rule).toBeTruthy();
+        expect(rule).toBeInstanceOf(CosmeticRule);
+    });
+});

@@ -47,6 +47,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Cosmetic rules whose scriptlet argument ends with an escape right before the
+  closing parenthesis, e.g. `a.com##+js(acs, Math, '\\x)`, are no longer
+  dropped: an escape consumes exactly one character, so the `)` after it
+  closes the scriptlet call.
 - Rule splitting no longer scans the whole rule once per `$` character. Regex
   value regions (`$replace=/…/`, `$removeparam=/…/`) are collected in a single
   pass, so a long rule with many `$` characters inside a regex no longer makes
