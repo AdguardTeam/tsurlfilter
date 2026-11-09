@@ -1,3 +1,5 @@
+import { isPlainHostname } from '../../../common/utils/hostname';
+
 import {
     MANIFEST_FILENAME,
     MANIFEST_SCHEMA_VERSION,
@@ -49,6 +51,7 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         schemaVersion,
         hashes,
         scriptletFiles,
+        dynamicHostnames,
         conditions,
         pageExceptions,
     } = value as Partial<PreregisteredScriptsManifest>;
@@ -71,6 +74,12 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         }
     }
 
+    if (dynamicHostnames !== undefined
+        && (!Array.isArray(dynamicHostnames)
+            || !dynamicHostnames.every((hostname) => typeof hostname === 'string' && isPlainHostname(hostname)))) {
+        throw new Error(`Malformed manifest at ${url}: "dynamicHostnames" must be an array of plain hostnames`);
+    }
+
     if (!Array.isArray(conditions) || !conditions.every((filterId) => Number.isInteger(filterId) && filterId > 0)) {
         throw new Error(`Malformed manifest at ${url}: "conditions" must be an array of filter ids`);
     }
@@ -89,6 +98,7 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
         schemaVersion,
         hashes,
         scriptletFiles,
+        dynamicHostnames,
         pageExceptions,
         conditions,
     };

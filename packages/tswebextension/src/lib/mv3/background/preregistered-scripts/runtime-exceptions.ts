@@ -1,27 +1,8 @@
-/**
- * Copyright (c) 2015-2026 Adguard Software Ltd.
- *
- * @file
- * This file is part of AdGuard Browser Extension (https://github.com/AdguardTeam/AdguardBrowserExtension).
- *
- * AdGuard Browser Extension is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * AdGuard Browser Extension is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with AdGuard Browser Extension. If not, see <http://www.gnu.org/licenses/>.
- */
-
-import { NetworkRule, Request, RequestType } from '@adguard/tsurlfilter';
+import { NetworkRule } from '@adguard/tsurlfilter';
 
 import { convertRuleLine, isExceptionCandidateLine, splitFilterLines } from './filter-lines';
 import { matchesHostScope } from './host-scope';
+import { createPreregisteredPageRequest } from './root-request';
 
 /**
  * Keeps the lines that can carry a page exception: an allowlist rule with
@@ -95,10 +76,10 @@ export const findHostsWithRuntimeExceptions = (
     }
 
     for (const hostname of hostnames) {
-        const rootUrl = `https://${hostname}/`;
         // The gate only decides document requests, so the modifiers are
-        // checked against one.
-        const request = new Request(rootUrl, rootUrl, RequestType.Document);
+        // checked against the same synthetic page request the fingerprint
+        // uses.
+        const request = createPreregisteredPageRequest(hostname);
 
         const affectsHost = rules.some(({ rule, pattern }) => matchesHostScope(pattern, hostname)
             && rule.matchModifiers(request));

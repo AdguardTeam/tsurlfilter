@@ -8,6 +8,7 @@ import {
 
 import { CosmeticOption, CosmeticRule } from '@adguard/tsurlfilter';
 
+import { FiltersStorage } from '../../../../../src/lib/common/storage/filters';
 import { appContext } from '../../../../../src/lib/mv3/background/app-context';
 import {
     type ContentScriptDescriptor,
@@ -25,6 +26,7 @@ import {
 } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
 import { clearManifestCache } from '../../../../../src/lib/mv3/background/preregistered-scripts/manifest-reader';
 import {
+    clearFingerprintCache,
     PreregisteredScriptsService,
 } from '../../../../../src/lib/mv3/background/preregistered-scripts/preregistered-scripts-service';
 
@@ -196,6 +198,8 @@ const scriptletFilename = (name: string): string => `s-${name}.js`;
  * @param scriptletFiles Scriptlet name → per-function filename map.
  * Defaults to an empty map.
  * @param conditions Ids of the filters that carry conditions files.
+ * @param dynamicHostnames Configured hosts the generation keeps on the
+ * dynamic path.
  * @param pageExceptions Filter id → fingerprint map of the baked page
  * exceptions. Defaults to the map a consistent build produces for the enabled
  * filters; a different value simulates a stale generation.
@@ -204,6 +208,7 @@ const setupManifest = (
     hashes: string[] | null,
     scriptletFiles?: Record<string, string>,
     conditions: number[] = [],
+    dynamicHostnames: string[] = [],
     pageExceptions: Record<string, string> = Object.fromEntries(
         vi.mocked(engineApi.getEnabledLocalFiltersIds)().map((id) => [
             String(id),
@@ -230,6 +235,7 @@ const setupManifest = (
                 hashes,
                 scriptletFiles: scriptletFiles ?? {},
                 conditions,
+                dynamicHostnames,
                 pageExceptions,
             }),
         };
@@ -291,6 +297,7 @@ describe('PreregisteredScriptsService', () => {
         vi.clearAllMocks();
         vi.unstubAllGlobals();
         clearManifestCache();
+        clearFingerprintCache();
         appContext.preregisteredScriptRulesAtBoot = undefined;
         appContext.preregisteredScriptRulesAtBootFailed = undefined;
         appContext.preregisteredScriptRules = undefined;
@@ -370,6 +377,72 @@ describe('PreregisteredScriptsService', () => {
             ]);
         });
 
+        it('keeps a host the generation marked dynamic out of the registration', async () => {
+            const youtubeRule = mockScriptletRule('set-cookie', []);
+            const exampleRule = mockScriptletRule('set-cookie', []);
+            setupEngine({ 'youtube.com': [youtubeRule], 'example.org': [exampleRule] });
+            setupManifest(
+                [await computeRuleHash(youtubeRule), await computeRuleHash(exampleRule)],
+                { 'set-cookie': scriptletFilename('set-cookie') },
+                undefined,
+                ['youtube.com'],
+            );
+
+            // The generation settles what the runtime cannot: a `$badfilter`
+            // of another filter cancels this host's exceptions, so the gate
+            // has nothing to apply when that filter is enabled.
+            const result = await PreregisteredScriptsService.sync(
+                true,
+                ['youtube.com', 'example.org'],
+                SCRIPTS_PATH,
+            );
+
+            expect([...result.keys()]).toEqual(['example.org']);
+            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(scripts.map((script) => script.id)).toEqual(['example.org']);
+        });
+
+        it('reads a filter list only once while its checksum is unchanged', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            await setupRulesWithManifest({ 'youtube.com': [rule] });
+            vi.mocked(engineApi.getEnabledLocalFiltersIds).mockReturnValue([1]);
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            // `configure()` syncs on every settings change; an unchanged list
+            // must not be read and parsed again.
+            expect(vi.mocked(FiltersStorage.getRawFilterList)).toHaveBeenCalledTimes(1);
+        });
+
+        it('recomputes the fingerprint when the list checksum changes', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            await setupRulesWithManifest({ 'youtube.com': [rule] });
+            vi.mocked(engineApi.getEnabledLocalFiltersIds).mockReturnValue([1]);
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            // A resource update rewrites the list: the cached fingerprint
+            // describes the previous text and must not be reused.
+            vi.mocked(FiltersStorage.getChecksum).mockResolvedValueOnce('changed-1');
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(vi.mocked(FiltersStorage.getRawFilterList)).toHaveBeenCalledTimes(2);
+        });
+
+        it('recomputes the fingerprint when the covered host set changes', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            await setupRulesWithManifest({ 'youtube.com': [rule] });
+            vi.mocked(engineApi.getEnabledLocalFiltersIds).mockReturnValue([1]);
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            await PreregisteredScriptsService.sync(true, ['example.org'], SCRIPTS_PATH);
+
+            // The host set scopes the fingerprint, so the same list text over
+            // a different scope is a different fingerprint.
+            expect(vi.mocked(FiltersStorage.getRawFilterList)).toHaveBeenCalledTimes(2);
+        });
+
         it('falls back to dynamic injection when the page exceptions of an enabled filter are stale', async () => {
             const rule = mockScriptletRule('set-cookie', ['a', 'b']);
             await setupRulesWithManifest({ 'youtube.com': [rule] });
@@ -379,6 +452,7 @@ describe('PreregisteredScriptsService', () => {
             setupManifest(
                 [await computeRuleHash(rule)],
                 { 'set-cookie': scriptletFilename('set-cookie') },
+                undefined,
                 undefined,
                 { 1: 'ffffffffffffffff' },
             );

@@ -81,6 +81,22 @@ type RegistrationPlan = {
 };
 
 /**
+ * Fingerprints of the filters checked by the last
+ * {@link PreregisteredScriptsService.findStalePageExceptionFilters} call,
+ * keyed by filter id. `doSync()` runs on every `configure()`, and
+ * `FiltersStorage` already stores a checksum per list, so an unchanged list is
+ * compared without reading and parsing its text again.
+ */
+const fingerprintCache = new Map<number, CachedFingerprint>();
+
+/**
+ * Clears the cached page-exception fingerprints. Intended for tests.
+ */
+export const clearFingerprintCache = (): void => {
+    fingerprintCache.clear();
+};
+
+/**
  * Registers persistent (`persistAcrossSessions: true`) content scripts for
  * preregistered domains, so build-time-known scriptlet/JS rules run at
  * `document_start`, before the extension itself finishes starting up.
@@ -119,15 +135,6 @@ export class PreregisteredScriptsService {
      * cannot race on the shared content-script namespace.
      */
     private static syncQueue: Promise<unknown> = Promise.resolve();
-
-    /**
-     * Fingerprints of the filters checked by the last
-     * {@link PreregisteredScriptsService.findStalePageExceptionFilters} call,
-     * keyed by filter id. `doSync()` runs on every `configure()`, and
-     * `FiltersStorage` already stores a checksum per list, so an unchanged
-     * list is compared without reading and parsing its text again.
-     */
-    private static readonly fingerprintCache = new Map<number, CachedFingerprint>();
 
     /**
      * Applies the configuration: snapshots the boot registrations once per
@@ -520,6 +527,21 @@ export class PreregisteredScriptsService {
         // missing from `manifest.hashes`, and coverage is read from the
         // descriptors that were built, so a host the generation does not list
         // is still registered for exactly the rules that have baked files.
+        //
+        // The generation settles one thing the runtime cannot: a `$badfilter`
+        // of another filter can cancel a host's exceptions, and whether that
+        // filter is enabled is known only here. Such a host is listed as
+        // dynamic and must not be registered: the gate has no entry to bake,
+        // so it would let the runner through where the engine disables JS.
+        const dynamicHostnames = new Set(manifest.dynamicHostnames ?? []);
+        if (dynamicHostnames.size > 0) {
+            logger.warn(
+                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: The generation keeps hosts on the'
+                + ' dynamic path because an enabled-filter switch decides their page verdict',
+                [...dynamicHostnames],
+            );
+        }
+
         const runtimeAffected = findHostsWithRuntimeExceptions(
             engineApi.getRuntimeExceptionLines(),
             hostnames,
@@ -532,7 +554,8 @@ export class PreregisteredScriptsService {
             );
         }
 
-        const staticHostnames = hostnames.filter((hostname) => !runtimeAffected.has(hostname));
+        const staticHostnames = hostnames.filter((hostname) => !runtimeAffected.has(hostname)
+            && !dynamicHostnames.has(hostname));
 
         return {
             registeredHostnames: staticHostnames,
@@ -612,7 +635,7 @@ export class PreregisteredScriptsService {
         hostnames: readonly string[],
     ): Promise<string | undefined> {
         const checksum = await FiltersStorage.getChecksum(filterId).catch(() => undefined);
-        const cached = PreregisteredScriptsService.fingerprintCache.get(filterId);
+        const cached = fingerprintCache.get(filterId);
 
         if (checksum !== undefined
             && cached !== undefined
@@ -638,7 +661,7 @@ export class PreregisteredScriptsService {
         const fingerprint = computed[String(filterId)];
 
         if (checksum !== undefined) {
-            PreregisteredScriptsService.fingerprintCache.set(filterId, {
+            fingerprintCache.set(filterId, {
                 checksum,
                 hostnamesKey,
                 fingerprint,

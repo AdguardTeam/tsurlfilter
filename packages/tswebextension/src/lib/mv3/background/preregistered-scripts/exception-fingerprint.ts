@@ -1,8 +1,9 @@
-import { NetworkRule } from '@adguard/tsurlfilter';
+import { NetworkRule, type Request } from '@adguard/tsurlfilter';
 
 import { convertRuleLine, isExceptionCandidateLine, splitFilterLines } from './filter-lines';
 import { hashString } from './hasher';
 import { matchesHostScope } from './host-scope';
+import { createPreregisteredPageRequest } from './root-request';
 
 /**
  * A filter list together with the id it belongs to.
@@ -20,6 +21,34 @@ export type PreregisteredFilterList = {
 };
 
 /**
+ * A covered hostname with the synthetic request the page gate decides on.
+ */
+type HostScope = {
+    /**
+     * Covered hostname.
+     */
+    hostname: string;
+
+    /**
+     * Document request the gate decides on.
+     */
+    request: Request;
+};
+
+/**
+ * Builds the scope entries once per fingerprint, so a rule is not re-checked
+ * with a new request object for every hostname.
+ *
+ * @param hostnames Covered hostnames.
+ *
+ * @returns Hostname with the document request the gate decides on.
+ */
+const toHostScopes = (hostnames: readonly string[]): HostScope[] => hostnames.map((hostname) => ({
+    hostname,
+    request: createPreregisteredPageRequest(hostname),
+}));
+
+/**
  * Describes the page exceptions of one raw filter line that can reach at least
  * one of the given hostnames.
  *
@@ -31,14 +60,14 @@ export type PreregisteredFilterList = {
  *
  * @param line Raw filter line.
  * @param filterId Filter the line belongs to.
- * @param hostnames Preconfigured hostnames the generation covers.
+ * @param hosts Covered hostnames with their root requests.
  *
  * @returns Converted texts of the exception rules the line carries.
  */
 const describePageExceptionRules = (
     line: string,
     filterId: number,
-    hostnames: readonly string[],
+    hosts: readonly HostScope[],
 ): string[] => {
     const ruleTexts: string[] = [];
 
@@ -62,8 +91,17 @@ const describePageExceptionRules = (
         // An exception for a host that is not preregistered cannot change a
         // page of the generation, so an edit to it must not invalidate the
         // baked artifacts.
+        //
+        // The pattern scope alone is not enough: an unanchored pattern (`*`,
+        // an empty one, a bare fragment) can occur inside a URL of any host,
+        // so only the modifiers — `$domain` first of all — say whether the
+        // rule can decide this host's page. The root request is the same one
+        // the runtime exception check uses, and `matchModifiers()` does not
+        // look at `$path`/`$url`, so both sides get the same answer.
         const pattern = rule.getPattern();
-        if (!hostnames.some((hostname) => matchesHostScope(pattern, hostname))) {
+        const reachesHost = hosts.some(({ hostname, request }) => matchesHostScope(pattern, hostname)
+            && rule.matchModifiers(request));
+        if (!reachesHost) {
             continue;
         }
 
@@ -78,14 +116,14 @@ const describePageExceptionRules = (
  *
  * @param content Raw filter list text.
  * @param filterId Id of the filter list the text came from.
- * @param hostnames Preconfigured hostnames the generation covers.
+ * @param hosts Covered hostnames with their root requests.
  *
  * @returns Facts of the page exceptions found in the text.
  */
 const collectExceptionFacts = (
     content: string,
     filterId: number,
-    hostnames: readonly string[],
+    hosts: readonly HostScope[],
 ): string[] => {
     const facts: string[] = [];
 
@@ -97,7 +135,7 @@ const collectExceptionFacts = (
             continue;
         }
 
-        facts.push(...describePageExceptionRules(line, filterId, hostnames));
+        facts.push(...describePageExceptionRules(line, filterId, hosts));
     }
 
     return facts;
@@ -133,9 +171,10 @@ export const computePageExceptionsFingerprint = async (
     lists: readonly PreregisteredFilterList[],
     hostnames: readonly string[],
 ): Promise<Record<string, string>> => {
+    const hosts = toHostScopes(hostnames);
     const facts = lists.map(({ filterId, content }) => ({
         filterId,
-        facts: collectExceptionFacts(content, filterId, hostnames),
+        facts: collectExceptionFacts(content, filterId, hosts),
     }));
     const hashes = await Promise.all(facts.map(async ({ facts: list }) => {
         // The engine's match order does not depend on the list order.

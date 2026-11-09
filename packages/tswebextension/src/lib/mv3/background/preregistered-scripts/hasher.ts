@@ -87,6 +87,15 @@ export interface PreregisteredScriptsManifest {
     scriptletFiles: Record<string, string>;
 
     /**
+     * Hostnames that must keep the dynamic injection path even though they are
+     * configured and have baked rules: a `$badfilter` of another filter
+     * cancels their exceptions, and whether that filter is enabled is known
+     * only at runtime. The gate cannot apply such a cancellation back, so
+     * registering them would disable JS where the engine allows it.
+     */
+    dynamicHostnames?: string[];
+
+    /**
      * Ids of the filters whose page exceptions are baked into
      * `cond-{filterId}.js`. Each file adds the exceptions of one filter to the
      * page gate of the shared bundle; the runtime includes only the files of

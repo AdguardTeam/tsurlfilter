@@ -134,4 +134,59 @@ describe('computePageExceptionsFingerprint', () => {
         expect(covered).toBe(base);
         expect(withOtherSite).not.toBe(base);
     });
+
+    it('ignores an exception added for a host outside the covered set', async () => {
+        // Between two resource updates filter 2 can gain exceptions for other
+        // sites only; that must not invalidate the baked generation.
+        const base = await fingerprint('@@||youtube.com^$document');
+        const updated = await fingerprint([
+            '@@||youtube.com^$document',
+            '@@||balkantelevizija.net^$generichide',
+            '@@||ewybory.eu^$generichide',
+        ].join('\n'));
+
+        expect(updated).toBe(base);
+    });
+
+    it('ignores an unanchored rule the `$domain` keeps away from the host', async () => {
+        // The pattern can occur inside a URL of any host, so only the modifier
+        // decides: an edit for other sites must not invalidate the generation.
+        const base = await fingerprint('@@||youtube.com^$document');
+
+        const foreign = await fingerprint([
+            '@@||youtube.com^$document',
+            '@@*$generichide,domain=cuttlinks.com|exe-links.com',
+        ].join('\n'));
+        expect(foreign).toBe(base);
+
+        const reaching = await fingerprint([
+            '@@||youtube.com^$document',
+            '@@*$generichide,domain=cuttlinks.com|youtube.com',
+        ].join('\n'));
+        expect(reaching).not.toBe(base);
+    });
+
+    it('checks the third-party flag against the page request', async () => {
+        // The page is its own source, so only `~third-party` can apply to it.
+        const base = await fingerprint('@@||youtube.com^$document');
+
+        const thirdParty = await fingerprint([
+            '@@||youtube.com^$document',
+            '@@*$generichide,third-party',
+        ].join('\n'));
+        expect(thirdParty).toBe(base);
+
+        const firstParty = await fingerprint([
+            '@@||youtube.com^$document',
+            '@@*$generichide,~third-party',
+        ].join('\n'));
+        expect(firstParty).not.toBe(base);
+    });
+
+    it('changes when a `$domain` value narrows the rule', async () => {
+        // The pattern stays `*`, only the domain moves: the engine's verdict
+        // on youtube.com changes, so the hash must change too.
+        expect(await fingerprint('@@*$jsinject,domain=youtube.com'))
+            .not.toBe(await fingerprint('@@*$jsinject,domain=music.youtube.com'));
+    });
 });

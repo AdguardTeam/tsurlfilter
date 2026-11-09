@@ -155,6 +155,25 @@ describe('readManifest', () => {
         await expect(readManifest(SCRIPTS_PATH)).resolves.toEqual(VALID_MANIFEST);
     });
 
+    it('accepts a "dynamicHostnames" list the runtime must keep dynamic', async () => {
+        stubManifestFetch(makeManifest({ dynamicHostnames: ['youtube.com'] }));
+
+        await expect(readManifest(SCRIPTS_PATH)).resolves.toEqual({
+            ...VALID_MANIFEST,
+            dynamicHostnames: ['youtube.com'],
+        });
+    });
+
+    it.each([
+        ['a bare string', 'youtube.com'],
+        ['an upper-case host', ['Example.COM']],
+        ['a URL', ['https://youtube.com']],
+    ])('throws when "dynamicHostnames" is %s', async (_shape, dynamicHostnames) => {
+        stubManifestFetch(makeManifest({ dynamicHostnames }));
+
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"dynamicHostnames"');
+    });
+
     it('throws when "pageExceptions" is missing, so a stale gate is never trusted', async () => {
         stubManifestFetch(makeManifest({ pageExceptions: undefined }));
 
