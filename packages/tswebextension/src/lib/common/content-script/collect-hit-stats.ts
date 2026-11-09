@@ -5,20 +5,10 @@
 
 import browser from 'webextension-polyfill';
 
+import { type SetCollectHitStatsMessage } from '../collect-hit-stats';
 import { MESSAGE_HANDLER_NAME, MessageType } from '../message-constants';
 
 import { sendAppMessage } from './send-app-message';
-
-/**
- * Message that changes the hit stats collection state.
- */
-type SetCollectHitStatsMessage = {
-    handlerName: typeof MESSAGE_HANDLER_NAME;
-    type: MessageType.SetCollectHitStats;
-    payload: {
-        isCollectStats: boolean;
-    };
-};
 
 /**
  * Checks whether a message changes the hit stats collection state.

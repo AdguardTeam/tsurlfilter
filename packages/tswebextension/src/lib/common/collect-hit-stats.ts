@@ -6,6 +6,17 @@ import { MESSAGE_HANDLER_NAME, MessageType } from './message-constants';
 import { logger } from './utils/logger';
 
 /**
+ * Message that changes the hit stats collection state.
+ */
+export type SetCollectHitStatsMessage = {
+    handlerName: typeof MESSAGE_HANDLER_NAME;
+    type: MessageType.SetCollectHitStats;
+    payload: {
+        isCollectStats: boolean;
+    };
+};
+
+/**
  * Returns whether CSS hits must be collected for a document.
  *
  * The setting can be enabled globally, but allowlisted documents opt out.
@@ -83,7 +94,7 @@ export class CollectHitStatsNotifier {
                 ? resolveForTab(tab.id)
                 : isCollectStats;
 
-            const message = {
+            const message: SetCollectHitStatsMessage = {
                 handlerName: MESSAGE_HANDLER_NAME,
                 type: MessageType.SetCollectHitStats,
                 payload: { isCollectStats: effectiveCollectStats },
