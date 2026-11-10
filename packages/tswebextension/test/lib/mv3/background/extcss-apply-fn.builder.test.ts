@@ -2,6 +2,10 @@
  * @vitest-environment jsdom
  */
 
+import { statSync, utimesSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { type Plugin } from 'rollup';
 import {
     beforeEach,
@@ -15,7 +19,16 @@ import { type IAffectedElement } from '@adguard/extended-css';
 
 import applyExtendedCss from '../../../../src/lib/mv3/background/extcss-inject-src';
 import { inlineCssHitsHelpers } from '../../../../tasks/inline-css-hits-helpers';
-import { getExtCssBundle, inlineExtCssBundle } from '../../../../tasks/inline-extcss-bundle';
+import { getExtCssBundle, inlineExtCssBundle, resetExtCssBundle } from '../../../../tasks/inline-extcss-bundle';
+
+/**
+ * Inject entry the builder caches its payload for, resolved the same way the
+ * builder resolves it.
+ */
+const EXT_CSS_INJECT_SRC = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    '../../../../src/lib/mv3/background/extcss-inject-src.ts',
+);
 
 // `vi.mock` factories are hoisted above top-level `const` declarations, so the
 // spies must be created via `vi.hoisted` to be referenceable inside the
@@ -123,6 +136,35 @@ describe('inline-extcss-bundle builder', () => {
         // eslint-disable-next-line no-new-func, @typescript-eslint/no-implied-eval
         const getGlobalType = new Function(`${src}; return typeof applyExtendedCss;`);
         expect(getGlobalType()).toBe('function');
+    }, SLOW_BUILD_TIMEOUT_MS);
+
+    it('rebuilds the cached payload when the inject entry mtime changes', async () => {
+        const { atime, mtime } = statSync(EXT_CSS_INJECT_SRC);
+
+        try {
+            const first = getExtCssBundle();
+            // Same entry mtime → the build already started is reused.
+            expect(getExtCssBundle()).toBe(first);
+            const firstPayload = await first;
+
+            // Bump the entry mtime: the cache key changes and the next call
+            // starts a new nested build. The content is untouched, so the
+            // payload itself stays the same.
+            utimesSync(EXT_CSS_INJECT_SRC, atime, new Date(mtime.getTime() + 1000));
+
+            const rebuilt = getExtCssBundle();
+            expect(rebuilt).not.toBe(first);
+            expect(await rebuilt).toBe(firstPayload);
+
+            // The explicit reset drops the cache even when the key matches.
+            resetExtCssBundle();
+            const afterReset = getExtCssBundle();
+            expect(afterReset).not.toBe(rebuilt);
+            await afterReset;
+        } finally {
+            utimesSync(EXT_CSS_INJECT_SRC, atime, mtime);
+            resetExtCssBundle();
+        }
     }, SLOW_BUILD_TIMEOUT_MS);
 
     it('fails the production build if the marker survives into an emitted chunk', () => {
