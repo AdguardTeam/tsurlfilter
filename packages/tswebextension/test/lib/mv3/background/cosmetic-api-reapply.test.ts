@@ -87,6 +87,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         engineApiMock.matchCosmetic.mockReturnValue(cosmeticResult);
 
         tabsApiMock.getFrameContext.mockReturnValue({
+            documentId: 'doc-1',
             preparedCosmeticResult: {
                 cssText: 'unmarked',
                 areHitsStatsCollected: false,
@@ -181,6 +182,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
 
     it('reuses the initial marked CSS injection on reapply', async () => {
         tabsApiMock.getFrameContext.mockReturnValue({
+            documentId: 'doc-1',
             preparedCosmeticResult: {
                 cssText: 'marked',
                 areHitsStatsCollected: true,
@@ -196,6 +198,42 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
 
         expect(insertCSSMock).toHaveBeenCalledTimes(1);
         expect(data.areNativeHitsStatsCollected).toBe(true);
+    });
+
+    it('does not inject marked CSS again when applyCss runs after reapply', async () => {
+        tabsApiMock.getFrameContext.mockReturnValue({
+            documentId: 'doc-1',
+            preparedCosmeticResult: {
+                cssText: 'marked',
+                areHitsStatsCollected: true,
+            },
+        });
+
+        await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+        await applyCss(TAB_ID, FRAME_ID, 'marked');
+
+        expect(insertCSSMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not reuse the cache after a document change', async () => {
+        const frameContext = {
+            documentId: 'doc-1',
+            preparedCosmeticResult: {
+                cssText: 'marked',
+                areHitsStatsCollected: true,
+            },
+        };
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+
+        await applyCss(TAB_ID, FRAME_ID, 'marked');
+        frameContext.documentId = 'doc-2';
+        await applyCss(TAB_ID, FRAME_ID, 'marked');
+
+        expect(insertCSSMock).toHaveBeenCalledTimes(2);
     });
 
     it('reports native hits as collected when there is no native CSS', async () => {

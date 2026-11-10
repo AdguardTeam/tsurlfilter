@@ -70,6 +70,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         engineApiMock.matchCosmetic.mockReturnValue(cosmeticResult);
 
         tabsApiMock.getFrameContext.mockReturnValue({
+            documentId: 'doc-1',
             cosmeticResult,
             preparedCosmeticResult: {
                 cssText: 'unmarked',
@@ -175,6 +176,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
 
     it('reuses the initial marked CSS injection on reapply', async () => {
         tabsApiMock.getFrameContext.mockReturnValue({
+            documentId: 'doc-1',
             cosmeticResult,
             preparedCosmeticResult: {
                 cssText: 'marked',
@@ -192,6 +194,66 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
 
         expect(injectSpy).toHaveBeenCalledTimes(1);
         expect(data.areNativeHitsStatsCollected).toBe(true);
+    });
+
+    it('does not inject marked CSS again when applyCss runs after reapply', async () => {
+        tabsApiMock.getFrameContext.mockReturnValue({
+            documentId: 'doc-1',
+            cosmeticResult,
+            preparedCosmeticResult: {
+                cssText: 'marked',
+                areHitsStatsCollected: true,
+            },
+        });
+        const injectSpy = vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
+
+        await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+        await CosmeticApi.applyCss(TAB_ID, FRAME_ID);
+
+        expect(injectSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not reuse the cache after a document change', async () => {
+        const frameContext = {
+            documentId: 'doc-1',
+            cosmeticResult,
+            preparedCosmeticResult: {
+                cssText: 'marked',
+                areHitsStatsCollected: true,
+            },
+        };
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+        const injectSpy = vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
+
+        await CosmeticApi.applyCss(TAB_ID, FRAME_ID);
+        frameContext.documentId = 'doc-2';
+        await CosmeticApi.applyCss(TAB_ID, FRAME_ID);
+
+        expect(injectSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not use the cache with a synthetic document id', async () => {
+        const frameContext = {
+            tabId: TAB_ID,
+            frameId: FRAME_ID,
+            documentId: `${TAB_ID}-${FRAME_ID}`,
+            cosmeticResult,
+            preparedCosmeticResult: {
+                cssText: 'marked',
+                areHitsStatsCollected: true,
+            },
+        };
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+        const injectSpy = vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
+
+        await CosmeticApi.applyCss(TAB_ID, FRAME_ID);
+        await CosmeticApi.applyCss(TAB_ID, FRAME_ID);
+
+        expect(injectSpy).toHaveBeenCalledTimes(2);
     });
 
     it('reports native hits as collected when there is no native CSS', async () => {

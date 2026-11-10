@@ -30,6 +30,14 @@ type ScriptsAndScriptletsDataMv3 = {
     scriptletDataList: ScriptletData[];
 };
 
+/**
+ * Frame fields used by the marked CSS injection cache.
+ */
+type MarkedCssFrameContext = {
+    documentId?: string;
+    preparedCosmeticResult?: object;
+};
+
 type LogJsRulesParamsMv3 = LogJsRulesParams & {
     /**
      * Computed result which prepared for injection.
@@ -60,7 +68,59 @@ export class CosmeticApi extends CosmeticApiCommon {
      * can be shared by URL-less child frames. The value allows a new prepared
      * result to be injected without repeating it for the same document.
      */
-    private static markedCssInjected = new WeakMap<object, object>();
+    private static markedCssInjected = new WeakMap<object, {
+        injectionKey: object;
+        documentId: string | undefined;
+    }>();
+
+    /**
+     * Returns the prepared result identity used by the injection cache.
+     *
+     * @param frameContext Frame context.
+     *
+     * @returns Cache key or undefined.
+     */
+    private static getInjectionKey(
+        frameContext: MarkedCssFrameContext | undefined,
+    ): object | undefined {
+        return frameContext?.preparedCosmeticResult ?? frameContext;
+    }
+
+    /**
+     * Checks whether marked CSS is applied to the current document.
+     *
+     * @param frameContext Frame context.
+     *
+     * @returns True when the cache matches the frame document and result.
+     */
+    private static hasMarkedCssInjected(frameContext: MarkedCssFrameContext): boolean {
+        const entry = CosmeticApi.markedCssInjected.get(frameContext);
+
+        return frameContext.documentId !== undefined
+            && entry?.documentId === frameContext.documentId
+            && entry.injectionKey === CosmeticApi.getInjectionKey(frameContext);
+    }
+
+    /**
+     * Records marked CSS applied to the current document.
+     *
+     * @param frameContext Frame context.
+     */
+    private static setMarkedCssInjected(frameContext: MarkedCssFrameContext): void {
+        if (frameContext.documentId === undefined) {
+            return;
+        }
+
+        const injectionKey = CosmeticApi.getInjectionKey(frameContext);
+        if (!injectionKey) {
+            return;
+        }
+
+        CosmeticApi.markedCssInjected.set(frameContext, {
+            injectionKey,
+            documentId: frameContext.documentId,
+        });
+    }
 
     /**
      * Actual marked native CSS state per frame context.
@@ -336,12 +396,7 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         // The frame context is only an injection cache key. Old subframes no
         // longer have one, so match from the frame URL and tab context.
-        const injectionKey = frameContext
-            ? frameContext.preparedCosmeticResult ?? frameContext
-            : undefined;
-
-        if (frameContext && injectionKey
-            && CosmeticApi.markedCssInjected.get(frameContext) === injectionKey) {
+        if (frameContext && CosmeticApi.hasMarkedCssInjected(frameContext)) {
             data.areNativeHitsStatsCollected = true;
             CosmeticApi.setNativeHitsMarkersApplied(
                 frameContext,
@@ -386,9 +441,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                     frameContext.preparedCosmeticResult,
                     true,
                 );
-                if (injectionKey) {
-                    CosmeticApi.markedCssInjected.set(frameContext, injectionKey);
-                }
+                CosmeticApi.setMarkedCssInjected(frameContext);
             }
         } catch (e) {
             // Marked ExtendedCss rules are still applied by the content
@@ -623,6 +676,11 @@ export class CosmeticApi extends CosmeticApiCommon {
             return;
         }
 
+        if (CosmeticApi.hasMarkedCssInjected(frameContext)) {
+            CosmeticApi.setNativeHitsMarkersApplied(frameContext, preparedCosmeticResult, true);
+            return;
+        }
+
         if (!cssText) {
             CosmeticApi.setNativeHitsMarkersApplied(frameContext, preparedCosmeticResult, true);
             return;
@@ -640,7 +698,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 preparedCosmeticResult.areHitsStatsCollected,
             );
             if (preparedCosmeticResult.areHitsStatsCollected) {
-                CosmeticApi.markedCssInjected.set(frameContext, preparedCosmeticResult);
+                CosmeticApi.setMarkedCssInjected(frameContext);
             }
         } catch (e) {
             CosmeticApi.setNativeHitsMarkersApplied(frameContext, preparedCosmeticResult, false);
