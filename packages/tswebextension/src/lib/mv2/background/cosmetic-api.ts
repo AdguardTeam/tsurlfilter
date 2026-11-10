@@ -160,6 +160,12 @@ export class CosmeticApi extends CosmeticApiCommon {
     /**
      * Returns content script data for applying cosmetic.
      *
+     * This is not a read-only getter: it also prepares and injects
+     * ExtendedCSS. A frame without a prepared result is matched on demand, and
+     * its ExtendedCSS rules are kept on the frame context; a frame without a
+     * context gets those rules injected from here. Once the app is started,
+     * the method also calls {@link CosmeticApi.applyExtCss} for the frame.
+     *
      * @param frameUrl Frame url.
      * @param tabId Tab id.
      * @param frameId Frame id.
@@ -438,11 +444,11 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * The rules come from the frame's prepared result, or from the data kept
      * on the context when the frame was matched on demand. When they are
-     * non-empty and the current document does not have them yet, the shared
-     * ExtCSS payload is serialized into a code string and injected. When the
-     * rule set is empty or null and an instance was applied to the current
-     * document, the dispose code string is injected instead, so observers and
-     * styles do not leak. Otherwise no code is injected.
+     * non-empty and the current document does not already hold that rule set,
+     * the shared ExtCSS payload is serialized into a code string and injected.
+     * When the rule set is empty or null, the dispose code string is injected
+     * once per document, so observers and styles do not leak even when the
+     * context was recreated. Otherwise no code is injected.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
@@ -465,21 +471,33 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const { extCssDocumentVersion } = frameContext;
 
+        // A boolean cannot describe the applied state: the rule set is
+        // recomputed on every content-script request, so the applied rules are
+        // identified by their serialized signature instead.
+        const appliedSignature = extCssRules?.length
+            ? JSON.stringify([extCssRules, areHitsStatsCollected])
+            : undefined;
+
         let code: string;
 
         if (extCssRules?.length) {
-            // The rules do not change within a document, and a successful
-            // apply already put them into the page. Serializing and parsing
-            // the code string again would only repeat the in-page no-op.
-            if (frameContext.extCssApplied) {
+            // A successful apply already put the same rule set into the page.
+            // Serializing and parsing the code string again would only repeat
+            // the in-page no-op.
+            if (frameContext.extCssAppliedSignature === appliedSignature) {
                 return;
             }
 
             code = serializeExtCssForCode(extCssRules, areHitsStatsCollected, EXTCSS_PROTOCOL);
-        } else if (frameContext.extCssApplied) {
-            code = serializeExtCssDisposeForCode(EXTCSS_PROTOCOL);
         } else {
-            return;
+            // Disposal is unconditional: the instance lives in the document's
+            // isolated world, while the context can be recreated for a
+            // document that already has one. It is sent once per document.
+            if (frameContext.extCssDisposedDocumentVersion === extCssDocumentVersion) {
+                return;
+            }
+
+            code = serializeExtCssDisposeForCode(EXTCSS_PROTOCOL);
         }
 
         // An injection for this document is already in flight, so a second one
@@ -526,7 +544,17 @@ export class CosmeticApi extends CosmeticApiCommon {
             && tabsApi.getFrameContext(tabId, frameId) === frameContext
             && frameContext.extCssDocumentVersion === extCssDocumentVersion
         ) {
-            frameContext.extCssApplied = Boolean(extCssRules?.length);
+            // A successful injection always leaves exactly one of the two
+            // markers set: the document holds the applied rule set, or it was
+            // disposed. An apply retires an earlier disposal and the other way
+            // around, so a later change of the rule set is not skipped.
+            if (appliedSignature !== undefined) {
+                frameContext.extCssAppliedSignature = appliedSignature;
+                frameContext.extCssDisposedDocumentVersion = undefined;
+            } else {
+                frameContext.extCssAppliedSignature = undefined;
+                frameContext.extCssDisposedDocumentVersion = extCssDocumentVersion;
+            }
         }
     }
 

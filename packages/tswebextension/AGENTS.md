@@ -68,8 +68,8 @@ packages/tswebextension/
   (`@adguard/tsurlfilter`, `@adguard/agtree`, etc.). If you get stale-artifact
   type errors, rebuild from the repo root:
   `npx lerna run build --scope=@adguard/tswebextension --include-dependencies`
-- `pnpm test` — run all tests via Vitest (mv2, mv3, common, browser and
-  canvas-native projects). The last two need the Playwright browsers, see
+- `pnpm test` — run all projects in `vitest.config.ts` (mv2, mv3, common,
+  browser and canvas-native). The last two need the Playwright browsers, see
   [Running Tests](DEVELOPMENT.md#running-tests).
 - `pnpm test:mv2` — run MV2 tests only
 - `pnpm test:mv3` — run MV3 tests only
@@ -82,8 +82,10 @@ packages/tswebextension/
 - `pnpm test:e2e:firefox` — run the Firefox browser-mode e2e specs via
   `vitest.firefox.config.ts`. Prerequisite: `npx playwright install firefox`.
   This is a separate gate: `test:prod` does not include it.
-- `pnpm test:prod` — **full validation**: lint + smoke tests + `test:ci` +
-  Chromium `test:e2e` (no cache). Run this before submitting changes.
+- `pnpm test:prod` — **full validation**: lint + smoke tests + `test:ci` (no
+  cache). `test:ci` loads every project in `vitest.config.ts`, so it also runs
+  the Chromium `browser` specs and `canvas-native`. Run this before submitting
+  changes.
 - `pnpm lint` — run ESLint and TypeScript type checking
 - `pnpm lint:code` — run ESLint only
 - `pnpm lint:types` — run TypeScript type checking only
@@ -96,7 +98,8 @@ You MUST follow the following rules for EVERY task that you perform:
   `npx lerna run build --scope=@adguard/tswebextension --include-dependencies`
   (from the repo root). This rebuilds upstream deps (`tsurlfilter`, `agtree`,
   etc.) and avoids stale-artifact type errors. Then run `pnpm test:prod`, which
-  includes lint, smoke tests, `test:ci`, and the Chromium e2e specs.
+  includes lint, smoke tests, and `test:ci`; `test:ci` also runs the Chromium
+  `browser` specs and `canvas-native`.
 
 - You MUST also run `pnpm test:e2e:firefox` (prerequisite:
   `npx playwright install firefox`). `test:prod` does not run the Firefox e2e

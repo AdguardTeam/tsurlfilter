@@ -50,14 +50,16 @@ export class FrameMV2 extends FrameCommon {
     public extCssData?: ExtCssFrameData;
 
     /**
-     * Whether an ExtendedCSS instance with the frame's rules was applied to
-     * the current document.
+     * Signature of the ExtendedCSS rule set applied to the current document.
      *
-     * The frame context is replaced on navigation, and `onCommitted` resets
-     * the flag when the context survives, so it always describes the current
-     * document.
+     * The rule set is not guaranteed to stay the same within a document:
+     * `getContentScriptData` recomputes it on every call, and a configuration
+     * change can produce a different set. Comparing the signature re-injects
+     * the ExtendedCSS data when it changes. The frame context is replaced on
+     * navigation, and `onCommitted` clears the signature when the context
+     * survives, so it always describes the current document.
      */
-    public extCssApplied = false;
+    public extCssAppliedSignature?: string;
 
     /**
      * Number of the document the ExtendedCSS state belongs to.
@@ -67,6 +69,16 @@ export class FrameMV2 extends FrameCommon {
      * records its result only while the counter is unchanged.
      */
     public extCssDocumentVersion = 0;
+
+    /**
+     * Number of the document whose ExtendedCSS instance was disposed.
+     *
+     * The context can be recreated for a document that already has an
+     * instance, so `extCssAppliedSignature` cannot tell whether an instance
+     * must be retired. Disposal is tracked per document, and the injected
+     * dispose function is a no-op when the document holds no instance.
+     */
+    public extCssDisposedDocumentVersion?: number;
 
     /**
      * ExtendedCSS injection that is in flight for this context, if any.

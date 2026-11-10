@@ -286,7 +286,8 @@ COPY --from=test-dnr-converter /out/ /
 
 # ============================================================================
 # Stage: test-tswebextension
-# Runs test:prod (lint + smoke + test:ci) for @adguard/tswebextension
+# Runs test:prod (lint + smoke + test:ci) for @adguard/tswebextension,
+# then the Firefox-only e2e specs (test:e2e:firefox).
 # ============================================================================
 FROM built-tswebextension AS test-tswebextension
 

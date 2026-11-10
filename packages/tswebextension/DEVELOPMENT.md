@@ -112,7 +112,8 @@ pnpm test:e2e
 # Run the Firefox browser-mode e2e specs
 pnpm test:e2e:firefox
 
-# Full validation (lint + smoke + test:ci + Chromium e2e, no cache)
+# Full validation (lint + smoke + test:ci, no cache; test:ci runs every
+# project in vitest.config.ts, including the Chromium browser specs)
 pnpm test:prod
 ```
 
@@ -192,8 +193,9 @@ npx lerna run build --scope @adguard/tswebextension --include-dependencies
 
 ### Issue: `test:prod` fails
 
-**Solution**: `test:prod` combines lint, smoke tests, `test:ci`, and the
-Chromium e2e specs. Ensure the package is built first:
+**Solution**: `test:prod` combines lint, smoke tests, and `test:ci`, which
+runs every project in `vitest.config.ts`, including the Chromium `browser`
+specs. Ensure the package is built first:
 
 ```bash
 pnpm build

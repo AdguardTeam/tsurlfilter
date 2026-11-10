@@ -52,9 +52,13 @@ describe('Frame', () => {
         });
     });
 
-    describe('extCssApplied', () => {
-        it('defaults extCssApplied to false', () => {
-            expect(createFrame().extCssApplied).toBe(false);
+    describe('ExtendedCSS document state', () => {
+        it('has no applied rule set by default', () => {
+            expect(createFrame().extCssAppliedSignature).toBeUndefined();
+        });
+
+        it('has no disposed document by default', () => {
+            expect(createFrame().extCssDisposedDocumentVersion).toBeUndefined();
         });
     });
 });

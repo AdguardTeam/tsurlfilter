@@ -14,9 +14,10 @@ import { EXTCSS_REMOVED_ELEMENTS_KEY } from './content-script/extcss-removed-ele
 import { MESSAGE_HANDLER_NAME, MessageType } from './message-constants';
 
 /**
- * Literal values crossing the `chrome.scripting.executeScript({ func, args })`
- * injection boundary into the self-contained ExtendedCss function
- * (`extCssInjectedApply`).
+ * Literal values crossing the ExtendedCSS injection boundaries into the
+ * self-contained ExtendedCss function (`extCssInjectedApply`): the MV3
+ * `chrome.scripting.executeScript({ func, args })` arguments and the JSON
+ * argument embedded in the MV2 `browser.tabs.executeScript({ code })` string.
  *
  * The injected function is serialized via `toString()` and re-evaluated in
  * the page's ISOLATED world, so it MUST NOT reference module-scope
@@ -66,7 +67,7 @@ const EXTCSS_INSTANCE_KEY = '__adguardExtCss' as const;
 
 /**
  * Canonical {@link ExtCssProtocol} values passed by `ScriptingApi` as
- * serialized `executeScript` arguments.
+ * `executeScript` arguments and serialized into the MV2 code string.
  */
 export const EXTCSS_PROTOCOL: ExtCssProtocol = {
     markerPrefix: CSS_HITS_MARKER_PREFIX,
