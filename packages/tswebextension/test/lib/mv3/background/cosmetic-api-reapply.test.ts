@@ -179,6 +179,25 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(data.areNativeHitsStatsCollected).toBe(true);
     });
 
+    it('reuses the initial marked CSS injection on reapply', async () => {
+        tabsApiMock.getFrameContext.mockReturnValue({
+            preparedCosmeticResult: {
+                cssText: 'marked',
+                areHitsStatsCollected: true,
+            },
+        });
+
+        await applyCss(TAB_ID, FRAME_ID, 'marked');
+        const data = await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(insertCSSMock).toHaveBeenCalledTimes(1);
+        expect(data.areNativeHitsStatsCollected).toBe(true);
+    });
+
     it('reports native hits as collected when there is no native CSS', async () => {
         cosmeticResult = new CosmeticResult();
         engineApiMock.matchCosmetic.mockReturnValue(cosmeticResult);

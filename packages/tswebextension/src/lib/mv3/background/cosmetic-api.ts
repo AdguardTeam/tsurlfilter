@@ -639,6 +639,9 @@ export class CosmeticApi extends CosmeticApiCommon {
                 preparedCosmeticResult,
                 preparedCosmeticResult.areHitsStatsCollected,
             );
+            if (preparedCosmeticResult.areHitsStatsCollected) {
+                CosmeticApi.markedCssInjected.set(frameContext, preparedCosmeticResult);
+            }
         } catch (e) {
             CosmeticApi.setNativeHitsMarkersApplied(frameContext, preparedCosmeticResult, false);
             logger.info(`[tsweb.CosmeticApi.applyCss]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);

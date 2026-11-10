@@ -582,6 +582,9 @@ export class CosmeticApi extends CosmeticApiCommon {
                 preparedCosmeticResult,
                 preparedCosmeticResult.areHitsStatsCollected,
             );
+            if (preparedCosmeticResult.areHitsStatsCollected) {
+                CosmeticApi.markedCssInjected.set(frameContext, preparedCosmeticResult);
+            }
         } catch (e) {
             // Retry injection if it fails
             if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
