@@ -79,6 +79,11 @@ export class CosmeticControllerCommon {
     private hitsMarkersApplied = false;
 
     /**
+     * Whether the applied ExtendedCss rules contain hit markers.
+     */
+    private extendedCssMarkersApplied = false;
+
+    /**
      * Whether a marked-data reapply request is in flight.
      */
     private reapplyInFlight = false;
@@ -195,6 +200,9 @@ export class CosmeticControllerCommon {
 
         CosmeticControllerCommon.repairNativeCss(nativeCssSelectors);
         this.applyExtendedCssRules(extCssRules, !!this.cssHitsCounter);
+        this.extendedCssMarkersApplied = areHitsStatsCollected
+            && !!extCssRules
+            && extCssRules.length > 0;
         this.hitsMarkersApplied = areHitsStatsCollected
             && areNativeHitsStatsCollected
             && !!this.cssHitsCounter;
@@ -319,15 +327,21 @@ export class CosmeticControllerCommon {
                 this.ensureCounter(true);
             }
 
-            const hasMarkedExtendedCss = !!res.extCssRules && res.extCssRules.length > 0;
+            const hasResponseExtendedCss = !!res.extCssRules && res.extCssRules.length > 0;
             const hasMarkedNativeCss = res.areNativeHitsStatsCollected;
 
-            if (res.extCssRules) {
+            if (!this.extendedCssMarkersApplied
+                && res.extCssRules
+                && res.extCssRules.length > 0) {
                 // A response without rules can mean the background lost the
                 // tab context, not that the document has no ExtendedCss rules.
                 // Keep the applied instance in that case.
                 this.applyExtendedCssRules(res.extCssRules, true);
+                this.extendedCssMarkersApplied = true;
             }
+
+            const hasMarkedExtendedCss = this.extendedCssMarkersApplied
+                || hasResponseExtendedCss;
             this.hitsMarkersApplied = hasMarkedNativeCss;
             this.cosmeticDataApplied = true;
             this.reapplyTries = 0;

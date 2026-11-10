@@ -664,6 +664,42 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
         }
     });
 
+    it('does not reapply already marked ExtendedCss rules', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+        const disposeSpy = vi.spyOn(ExtendedCss.prototype, 'dispose');
+        document.body.innerHTML = '<div class="ad_header">text</div>';
+
+        const rules = ['#?#.ad_header:contains(text)'];
+
+        try {
+            const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockImplementation(async (message) => {
+                    const isReapply = message.type === MessageType.GetCosmeticData
+                        && (message.payload as { reapplyHits?: boolean }).reapplyHits;
+
+                    return {
+                        ...getCosmeticData(rules, true),
+                        areNativeHitsStatsCollected: !!isReapply,
+                    };
+                });
+
+            const cosmeticController = createController(CosmeticController);
+            cosmeticController.init();
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            expect(sendAppMessageSpy).toHaveBeenCalledWith(expect.objectContaining({
+                payload: expect.objectContaining({ reapplyHits: true }),
+            }));
+            expect(disposeSpy).not.toHaveBeenCalled();
+        } finally {
+            document.body.innerHTML = '';
+            restoreMutationObserver();
+        }
+    });
+
     it('keeps applied ExtendedCss rules when reapply has no rules', async () => {
         const restoreMutationObserver = mockMutationObserver();
         const disposeSpy = vi.spyOn(ExtendedCss.prototype, 'dispose');
