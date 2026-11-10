@@ -4,6 +4,7 @@ import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import { createNodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
 import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
 import { NotImplementedError } from '../../../src/errors/not-implemented-error';
+import { RuleGenerator } from '../../../src/generator';
 import { type HtmlFilteringRule } from '../../../src/nodes';
 import { SYNTAX_ABP, SYNTAX_ADG, SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 
@@ -1151,28 +1152,178 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div'],
                     },
 
-                    // `[tag-content]` special attribute selector
+                    // `[tag-content]` special attribute selector - the escaped
+                    // literal is emitted as a case-sensitive regexp, because a
+                    // plain uBlock `:has-text()` argument is case-insensitive
                     {
                         actual: '$$div[tag-content="example"]',
-                        expected: ['##^div:has-text(example)'],
+                        expected: ['##^div:has-text(/example/)'],
                     },
 
                     // `[tag-content]` special attribute selector - multiple usages
                     {
                         actual: '$$div[tag-content="a"][tag-content="b"]',
-                        expected: ['##^div:has-text(a):has-text(b)'],
+                        expected: ['##^div:has-text(/a/):has-text(/b/)'],
                     },
 
-                    // `[wildcard]` special attribute selector
+                    // `[tag-content]` special attribute selector with regexp
+                    // metacharacters - they are escaped, so the text is matched
+                    // literally
+                    {
+                        actual: '$$script[tag-content="a(b)[c]{d}$e.f\\g"]',
+                        expected: ['##^script:has-text(/a\\(b\\)\\[c\\]\\{d\\}\\$e\\.f\\\\g/)'],
+                    },
+
+                    // `[tag-content]` value with HTML markup - uBlock `:has-text()`
+                    // matches `textContent`, so the markup cannot be found and the
+                    // rule is kept as-is
+                    {
+                        actual: '$$div[tag-content="<span>ads</span>"]',
+                        expected: ['$$div[tag-content="<span>ads</span>"]'],
+                        shouldConvert: false,
+                    },
+
+                    // `[tag-content]` value with an HTML character reference -
+                    // the reference stays encoded in `innerHTML` but is decoded
+                    // in `textContent`, so the rule is kept as-is
+                    {
+                        actual: '$$div[tag-content="&lt;span&gt;"]',
+                        expected: ['$$div[tag-content="&lt;span&gt;"]'],
+                        shouldConvert: false,
+                    },
+
+                    // other character reference forms are handled the same way
+                    {
+                        actual: '$$div[tag-content="Terms &amp; Conditions"]',
+                        expected: ['$$div[tag-content="Terms &amp; Conditions"]'],
+                        shouldConvert: false,
+                    },
+
+                    // a legacy named reference is decoded without the trailing
+                    // semicolon as well
+                    {
+                        actual: '$$div[tag-content="&copy 2024"]',
+                        expected: ['$$div[tag-content="&copy 2024"]'],
+                        shouldConvert: false,
+                    },
+
+                    // a numeric reference is decoded without the trailing
+                    // semicolon as well
+                    {
+                        actual: '$$div[tag-content="&#39"]',
+                        expected: ['$$div[tag-content="&#39"]'],
+                        shouldConvert: false,
+                    },
+
+                    // an ampersand followed by text that is not a character
+                    // reference stays literal text
+                    {
+                        actual: '$$div[tag-content="AT&T"]',
+                        expected: ['##^div:has-text(/AT&T/)'],
+                    },
+
+                    // `[tag-content]` value with an HTML character reference on
+                    // a raw text element - references are not decoded there, so
+                    // `innerHTML` equals `textContent` and the rule is convertible
+                    {
+                        actual: '$$script[tag-content="&lt;span&gt;"]',
+                        expected: ['##^script:has-text(/&lt;span&gt;/)'],
+                    },
+
+                    // the same for the AG-61477 regression case with `<div>`
+                    {
+                        actual: '$$script[tag-content="&lt;div&gt;"]',
+                        expected: ['##^script:has-text(/&lt;div&gt;/)'],
+                    },
+
+                    // `[tag-content]` value with HTML markup on a raw text element -
+                    // `innerHTML` equals `textContent` for `script`, so the value is
+                    // convertible
+                    {
+                        actual: '$$script[tag-content="document.write(\'<div>\')"]',
+                        expected: ['##^script:has-text(/document\\.write\\(\\x27<div>\\x27\\)/)'],
+                    },
+
+                    // the raw text element is the compound selector with the special
+                    // attribute, not necessarily the first one
+                    {
+                        actual: '$$div > script[tag-content="<div>"]',
+                        expected: ['##^div > script:has-text(/<div>/)'],
+                    },
+
+                    // a type selector followed by other simple selectors still
+                    // identifies the raw text element
+                    {
+                        actual: '$$script.ad[tag-content="<div>"]',
+                        expected: ['##^script.ad:has-text(/<div>/)'],
+                    },
+
+                    // HTML tag names are case-insensitive, so an uppercase type
+                    // selector also identifies a raw text element
+                    {
+                        actual: '$$SCRIPT[tag-content="<div>"]',
+                        expected: ['##^SCRIPT:has-text(/<div>/)'],
+                    },
+
+                    // a compound selector without a type selector has an unknown
+                    // element type, so the markup fallback still applies
+                    {
+                        actual: '$$[tag-content="<span>ads</span>"]',
+                        expected: ['$$[tag-content="<span>ads</span>"]'],
+                        shouldConvert: false,
+                    },
+
+                    // `[wildcard]` special attribute selector - uBlock accepts only
+                    // the `i` flag, so `[\\s\\S]` replaces the dot-all dots
                     {
                         actual: '$$div[wildcard="*example*"]',
-                        expected: ['##^div:has-text(/^.*example.*$/s)'],
+                        expected: ['##^div:has-text(/^[\\s\\S]*example[\\s\\S]*$/)'],
                     },
 
                     // `[wildcard]` special attribute selector - multiple usages
                     {
                         actual: '$$div[wildcard="*example*"][wildcard="*test*"]',
-                        expected: ['##^div:has-text(/^.*example.*$/s):has-text(/^.*test.*$/s)'],
+                        expected: [
+                            '##^div:has-text(/^[\\s\\S]*example[\\s\\S]*$/):has-text(/^[\\s\\S]*test[\\s\\S]*$/)',
+                        ],
+                    },
+
+                    // `[wildcard]` value with HTML markup - same limitation as
+                    // `[tag-content]`, the rule is kept as-is
+                    {
+                        actual: '$$div[wildcard="*<span>*"]',
+                        expected: ['$$div[wildcard="*<span>*"]'],
+                        shouldConvert: false,
+                    },
+
+                    // `[wildcard]` value with an HTML character reference - the
+                    // same limitation as `[tag-content]`
+                    {
+                        actual: '$$div[wildcard="*&amp;*"]',
+                        expected: ['$$div[wildcard="*&amp;*"]'],
+                        shouldConvert: false,
+                    },
+
+                    // a legacy named reference without the trailing semicolon
+                    // is decoded in `textContent` as well
+                    {
+                        actual: '$$div[wildcard="*&nbsp *"]',
+                        expected: ['$$div[wildcard="*&nbsp *"]'],
+                        shouldConvert: false,
+                    },
+
+                    // `[wildcard]` value with HTML markup on a raw text element -
+                    // `innerHTML` equals `textContent` for `style`, so the value is
+                    // convertible
+                    {
+                        actual: '$$style[wildcard="*<div>*"]',
+                        expected: ['##^style:has-text(/^[\\s\\S]*<div>[\\s\\S]*$/)'],
+                    },
+
+                    // the same for a character reference on `style`
+                    {
+                        actual: '$$style[wildcard="*&lt;div&gt;*"]',
+                        expected: ['##^style:has-text(/^[\\s\\S]*&lt;div&gt;[\\s\\S]*$/)'],
                     },
 
                     // `:contains()` special pseudo-class selector
@@ -1227,59 +1378,86 @@ describe('HtmlRuleConverter', () => {
                     // `:has-text()` and `[tag-content]` special selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"]:has-text(b)',
-                        expected: ['##^div:has-text(a):has-text(b)'],
+                        expected: ['##^div:has-text(/a/):has-text(b)'],
                     },
 
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]',
-                        expected: ['##^div:has-text(a):has-text(/^.*example.*$/s)'],
+                        expected: ['##^div:has-text(/a/):has-text(/^[\\s\\S]*example[\\s\\S]*$/)'],
                     },
 
                     // `[tag-content]` and `:contains()` special simple selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"]:contains(b)',
-                        expected: ['##^div:has-text(a):has-text(b)'],
+                        expected: ['##^div:has-text(/a/):has-text(b)'],
                     },
 
                     // `[wildcard]` and `:contains()` special simple selectors - mixed usage
                     {
                         actual: '$$div[wildcard="*example*"]:contains(b)',
-                        expected: ['##^div:has-text(/^.*example.*$/s):has-text(b)'],
+                        expected: ['##^div:has-text(/^[\\s\\S]*example[\\s\\S]*$/):has-text(b)'],
                     },
 
                     // `[tag-content]`, `[wildcard]` and `:contains()` special simple selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]:contains(b)',
-                        expected: ['##^div:has-text(a):has-text(/^.*example.*$/s):has-text(b)'],
+                        expected: [
+                            '##^div:has-text(/a/):has-text(/^[\\s\\S]*example[\\s\\S]*$/):has-text(b)',
+                        ],
                     },
 
                     // `[tag-content]` with `""` escaped double quotes in a
                     // double-quoted value
                     {
                         actual: '$$div[tag-content="a""b"]',
-                        expected: ['##^div:has-text(a"b)'],
+                        expected: ['##^div:has-text(/a\\x22b/)'],
                     },
 
                     // `[tag-content]` with `""` in a single-quoted value: both
-                    // quotes stay literal
+                    // quotes stay literal and are emitted as hex escapes
                     {
                         actual: '$$div[tag-content=\'x===""\']',
-                        expected: ['##^div:has-text(x==="")'],
+                        expected: ['##^div:has-text(/x===\\x22\\x22/)'],
+                    },
+
+                    // `[tag-content]` with double quotes around the text
+                    {
+                        actual: "$$div[tag-content='\"foo\" bar']",
+                        expected: ['##^div:has-text(/\\x22foo\\x22 bar/)'],
+                    },
+
+                    // `[tag-content]` with single quotes around the text
+                    {
+                        actual: '$$div[tag-content="\'foo\' bar"]',
+                        expected: ['##^div:has-text(/\\x27foo\\x27 bar/)'],
+                    },
+
+                    // `[tag-content]` with only double quotes around the text
+                    {
+                        actual: "$$div[tag-content='\"foo\"']",
+                        expected: ['##^div:has-text(/\\x22foo\\x22/)'],
                     },
 
                     // `[wildcard]` with `""` escaped double quotes in a
                     // double-quoted value
                     {
                         actual: '$$div[wildcard="*a""b*"]',
-                        expected: ['##^div:has-text(/^.*a"b.*$/s)'],
+                        expected: ['##^div:has-text(/^[\\s\\S]*a\\x22b[\\s\\S]*$/)'],
                     },
 
                     // `[wildcard]` with `""` in a single-quoted value: both
-                    // quotes stay literal
+                    // quotes stay literal and are emitted as hex escapes
                     {
                         actual: '$$div[wildcard=\'*a""b*\']',
-                        expected: ['##^div:has-text(/^.*a""b.*$/s)'],
+                        expected: ['##^div:has-text(/^[\\s\\S]*a\\x22\\x22b[\\s\\S]*$/)'],
+                    },
+
+                    // `[wildcard]` special attribute selector - the task
+                    // AG-61477 regression case
+                    {
+                        actual: '$$div[wildcard="*ads*"]',
+                        expected: ['##^div:has-text(/^[\\s\\S]*ads[\\s\\S]*$/)'],
                     },
 
                     // A normal attribute selector keeps its literal quotes and
@@ -1294,7 +1472,16 @@ describe('HtmlRuleConverter', () => {
                     // those quotes
                     {
                         actual: '$$div[data-x="""a"""][tag-content="c"]',
-                        expected: ['##^div[data-x="\\"a\\""]:has-text(c)'],
+                        expected: ['##^div[data-x="\\"a\\""]:has-text(/c/)'],
+                    },
+
+                    // `[tag-content]` with markup in one complex selector of a selector
+                    // list - the whole rule is kept as-is, because dropping only that
+                    // selector would change the rule
+                    {
+                        actual: '$$div[tag-content="<b>ads</b>"], span',
+                        expected: ['$$div[tag-content="<b>ads</b>"], span'],
+                        shouldConvert: false,
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperlyNew(
@@ -1438,6 +1625,26 @@ describe('HtmlRuleConverter', () => {
                         input: '$$:contains()',
                         error: "Special pseudo-class selector 'contains' requires an argument",
                     },
+
+                    // invalid special pseudo-class selector - uBlock drops a text
+                    // argument when characters follow the closing quote. The
+                    // argument of the AG-61686 case is `"foo" bar`: it starts
+                    // with a double quote, and the closing quote is not last.
+                    {
+                        input: '$$div:contains("foo" bar)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: '\"foo\" bar'",
+                    },
+                    {
+                        input: '$$div:contains("foo" )',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: '\"foo\" '",
+                    },
+                    {
+                        input: '$$div:contains("foo"bar)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: '\"foo\"bar'",
+                    },
                 ])("should not convert '$input'", ({ input, error }) => {
                     if (typeof input !== 'string') {
                         expect(() => {
@@ -1474,7 +1681,11 @@ describe('HtmlRuleConverter', () => {
                     },
                     {
                         actual: '$$div[tag-content="example"]',
-                        expected: ['##^div:has-text(example)'],
+                        expected: ['##^div:has-text(/example/)'],
+                    },
+                    {
+                        actual: '$$div[wildcard="*example*"]',
+                        expected: ['##^div:has-text(/^[\\s\\S]*example[\\s\\S]*$/)'],
                     },
                     {
                         actual: '$$div:contains(example)',
@@ -1517,6 +1728,199 @@ describe('HtmlRuleConverter', () => {
                     expect(() => {
                         HtmlRuleConverter.convertToUbo(parser.parse(input as string) as HtmlFilteringRule);
                     }).toThrowError(error);
+                });
+            });
+
+            /**
+             * With the default parser options the body stays a raw node.
+             * `convertBody()` parses and re-serializes it before
+             * `isUnconvertible` is checked, so a kept-as-is special attribute
+             * selector must not make its complex selector empty.
+             */
+            describe('raw - unconvertible cases', () => {
+                test.each([
+                    {
+                        actual: '$$[tag-content="<span>ads</span>"]',
+                        expected: ['$$[tag-content="<span>ads</span>"]'],
+                        shouldConvert: false,
+                    },
+                    {
+                        actual: '$$[wildcard="*<b>*"]',
+                        expected: ['$$[wildcard="*<b>*"]'],
+                        shouldConvert: false,
+                    },
+                    {
+                        actual: '$$div[tag-content="<b>ads</b>"], span',
+                        expected: ['$$div[tag-content="<b>ads</b>"], span'],
+                        shouldConvert: false,
+                    },
+                    {
+                        actual: '$$div[tag-content="&lt;span&gt;"]',
+                        expected: ['$$div[tag-content="&lt;span&gt;"]'],
+                        shouldConvert: false,
+                    },
+                    {
+                        actual: '$$div[tag-content="&copy 2024"]',
+                        expected: ['$$div[tag-content="&copy 2024"]'],
+                        shouldConvert: false,
+                    },
+                ])("should keep '$actual' as-is", (testData) => {
+                    expect(testData).toBeConvertedProperlyNew(HtmlRuleConverter, 'convertToUbo');
+                });
+            });
+
+            /**
+             * The uBlock `:has-text()` semantics, see
+             * https://github.com/gorhill/uBlock/blob/master/src/js/html-filtering.js:
+             * - `PSelectorHasTextTask` tests `node.textContent`;
+             * - `regexFromString()` accepts only the `i` flag;
+             * - a plain argument is escaped and matched case-insensitively.
+             */
+            describe('uBlock :has-text() semantics', () => {
+                /**
+                 * Converts an AdGuard HTML filtering rule to uBlock syntax and
+                 * returns the generated rule text.
+                 *
+                 * @param rule Rule to convert.
+                 *
+                 * @returns Generated converted rule text.
+                 */
+                const convertToUboText = (rule: string): string => {
+                    const conversionResult = HtmlRuleConverter.convertToUbo(
+                        parser.parse(rule, { parseHtmlFilteringRuleBodies: true }) as HtmlFilteringRule,
+                    );
+
+                    expect(conversionResult.isConverted).toBe(true);
+                    expect(conversionResult.result).toHaveLength(1);
+
+                    return RuleGenerator.generate(conversionResult.result[0]);
+                };
+
+                /**
+                 * Extracts the `:has-text()` regexp argument from a converted
+                 * rule.
+                 *
+                 * @param ruleText Converted rule text.
+                 *
+                 * @returns Resulting RegExp object.
+                 */
+                const extractHasTextRegexp = (ruleText: string): RegExp => {
+                    const match = /:has-text\(\/(.+)\/([a-z]*)\)/.exec(ruleText);
+
+                    if (match === null) {
+                        throw new Error(`No :has-text() regexp found in '${ruleText}'`);
+                    }
+
+                    const [, source, flags] = match;
+
+                    return new RegExp(source, flags);
+                };
+
+                // `[tag-content="ads"]` is case-sensitive in AdGuard, so the
+                // converted regexp must not carry the `i` flag
+                test('should convert [tag-content] to a case-sensitive regexp', () => {
+                    const ruleText = convertToUboText('$$div[tag-content="ads"]');
+
+                    expect(ruleText).toBe('##^div:has-text(/ads/)');
+
+                    const regexp = extractHasTextRegexp(ruleText);
+
+                    expect(regexp.flags).toBe('');
+                    expect(regexp.test('ads')).toBe(true);
+                    expect(regexp.test('ADS')).toBe(false);
+                });
+
+                // `[wildcard]` is a glob, which is case-sensitive in AdGuard,
+                // and the generated regexp must be valid for uBlock: only the
+                // `i` flag is accepted there
+                test('should convert [wildcard] to a uBlock-compatible regexp', () => {
+                    const ruleText = convertToUboText('$$div[wildcard="*ads*"]');
+
+                    expect(ruleText).toBe('##^div:has-text(/^[\\s\\S]*ads[\\s\\S]*$/)');
+
+                    const regexp = extractHasTextRegexp(ruleText);
+
+                    expect(regexp.flags).toBe('');
+                    expect(regexp.test('ads')).toBe(true);
+                    expect(regexp.test('ADS')).toBe(false);
+                });
+
+                // uBlock does not support the dot-all `s` flag, so the glob
+                // dots must match line terminators through `[\s\S]`
+                test('should match [wildcard] text across lines', () => {
+                    const ruleText = convertToUboText('$$div[wildcard="*ads*banner*"]');
+
+                    expect(ruleText).toBe('##^div:has-text(/^[\\s\\S]*ads[\\s\\S]*banner[\\s\\S]*$/)');
+
+                    const regexp = extractHasTextRegexp(ruleText);
+
+                    expect(regexp.test('prefix\nads\nmid\nbanner\nsuffix')).toBe(true);
+                    // The glob requires both parts of the text
+                    expect(regexp.test('prefix\nads\nmid')).toBe(false);
+                });
+
+                // Markup in the value cannot be found in the `textContent` of
+                // an element that has child nodes
+                test('should keep rules with markup in [tag-content] as-is', () => {
+                    const ruleText = '$$div[tag-content="<span>ads</span>"]';
+                    const rule = parser.parse(
+                        ruleText,
+                        { parseHtmlFilteringRuleBodies: true },
+                    ) as HtmlFilteringRule;
+
+                    const conversionResult = HtmlRuleConverter.convertToUbo(rule);
+
+                    expect(conversionResult.isConverted).toBe(false);
+                    expect(conversionResult.result).toHaveLength(1);
+                    expect(conversionResult.result[0]).toBe(rule);
+                });
+
+                // `innerHTML` equals `textContent` for script, so a value with
+                // markup is present in the text that uBlock matches
+                test('should convert markup in [tag-content] for script', () => {
+                    const ruleText = convertToUboText('$$script[tag-content="document.write(\'<div>\')"]');
+
+                    expect(ruleText).toBe('##^script:has-text(/document\\.write\\(\\x27<div>\\x27\\)/)');
+
+                    const regexp = extractHasTextRegexp(ruleText);
+
+                    expect(regexp.test("document.write('<div>')")).toBe(true);
+                });
+
+                // uBlock parses the `:has-text()` argument with CSS-tree before
+                // it reads the regexp, so an unescaped quote starts a CSS string
+                // and the rule is rejected. The converter emits `\x27` / `\x22`,
+                // which are literal quotes for the RegExp.
+                test('should escape an apostrophe in [tag-content]', () => {
+                    const ruleText = convertToUboText('$$div[tag-content="it\'s"]');
+
+                    expect(ruleText).toBe('##^div:has-text(/it\\x27s/)');
+
+                    const regexp = extractHasTextRegexp(ruleText);
+
+                    expect(regexp.test("it's")).toBe(true);
+                    expect(regexp.test('its')).toBe(false);
+                });
+
+                test('should escape a double quote in [wildcard]', () => {
+                    const ruleText = convertToUboText('$$div[wildcard="*a""b*"]');
+
+                    expect(ruleText).toBe('##^div:has-text(/^[\\s\\S]*a\\x22b[\\s\\S]*$/)');
+
+                    const regexp = extractHasTextRegexp(ruleText);
+
+                    expect(regexp.test('prefix a"b suffix')).toBe(true);
+                    expect(regexp.test('prefix ab suffix')).toBe(false);
+                });
+
+                test('should escape an apostrophe that follows a backslash in [tag-content]', () => {
+                    const ruleText = convertToUboText('$$script[tag-content="a\\\'b"]');
+
+                    expect(ruleText).toBe('##^script:has-text(/a\\\\\\x27b/)');
+
+                    const regexp = extractHasTextRegexp(ruleText);
+
+                    expect(regexp.test("a\\'b")).toBe(true);
                 });
             });
         });

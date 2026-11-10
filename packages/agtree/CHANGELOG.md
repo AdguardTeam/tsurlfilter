@@ -11,6 +11,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `RegExpUtils.globToUboRegExp()` is exported. It converts a glob to a
+  uBlock-compatible regular expression with no flags.
+- `RegExpUtils.escapeRegexSpecials()` accepts an optional `escapeQuotes`
+  argument. It defaults to `false`, so the existing behavior does not
+  change. When it is `true`, single and double quotes are emitted as
+  `\x27` and `\x22`.
 - `collectRegexValueRegions()` and the `RegexValueRegion` type are exported
   from `@adguard/agtree/utils`. They locate the `=/…/` regex value regions of
   a network rule, including the replacement part of `$replace`, without
@@ -63,6 +69,18 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- ADG→uBO conversion now emits a `[tag-content]` value as a case-sensitive
+  escaped `:has-text()` regular expression. Single and double quotes are
+  emitted as `\x27` and `\x22`, so CSS-tree does not break the rule.
+- ADG→uBO conversion now emits a `[wildcard]` value as a uBlock-compatible
+  regular expression. `[\s\S]` replaces the unsupported `s` flag for the
+  dot-all match.
+- ADG→uBO conversion now keeps a rule as-is when a `[tag-content]` or
+  `[wildcard]` value contains HTML markup or an HTML character reference
+  and the element is not `script` or `style`. uBlock matches `textContent`,
+  so the converted rule would match nothing.
+- ADG→uBO conversion now raises a conversion error for a `:contains()`
+  argument that uBlock would drop, e.g. `:contains("foo" bar)`.
 - `RuleParserPipeline.parseRange` now rejects a non-zero `dataOffset` for
   cosmetic rules. Their structural parsers write at fixed offsets, so a
   non-zero offset previously produced a rule with an empty selector and no
