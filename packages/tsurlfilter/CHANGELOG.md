@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added `normalizeAllowlistDomain()` — it turns an allowlist entry into the domain
+  it describes: lower case, without the scheme, the credentials, the port, the path,
+  the query or the fragment that an imported or an old entry may carry, and without
+  the `www.` prefix and the root label dot the generated rule covers anyway.
 - Added the `fingerprinting` value for `$stealth`
   (`StealthOptionName.Fingerprinting`).
 - Added `Engine.getDocumentOrStealthExceptionRules()` to retrieve `$stealth`
@@ -31,6 +35,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Allowlist rules generated for a domain are now anchored to the URL host, so an
+  entry for `example.com` no longer disables filtering on hosts that only start
+  with it, e.g. `example.community` or `example.com.evil.org`, and no longer
+  matches a URL that merely contains `//example.com` in its path or query. A
+  `*.example.com` entry keeps the same host boundary, so it no longer covers such
+  hosts either.
+- Allowlist entries are lowercased and their regexp metacharacters are escaped, a
+  URL with credentials or a root label dot (`https://user:pass@example.com/`,
+  `https://example.com./`) is matched by its host, and entries without a domain — a
+  bare `*.`, `*` or `**` — are rejected instead of producing a rule that matched
+  every URL (`*.`) or only URLs containing `www.` (`*`).
+- An entry that carries a URL is reduced to the domain it names, so
+  `example.com/path`, `example.com?x=1`, `example.com:8080`,
+  `https://user@example.com./` and `example.com\path` all cover `example.com`,
+  while `www.*` keeps its prefix and covers the hosts under `www.`.
+- A `*` inside an allowlist entry now matches within the host only, so `example.*`
+  no longer allowlists `https://example.com@evil.org/` and `*example.com` no longer
+  matches `https://evil.org//example.com/`. The `*.` form is anchored the same way,
+  so `*.example.*` and the MV3 `*.` twin of `*example.com` keep their host boundary
+  too.
 - `$badfilter` incorrectly negated rules with different values of value-bearing
   modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
   `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when

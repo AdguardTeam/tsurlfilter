@@ -218,6 +218,17 @@ describe('canvas policy compiler', () => {
         }
     });
 
+    it('ignores allowlist entries that describe no host', () => {
+        for (const allowlist of [new Allowlist(), new AllowlistApi()]) {
+            for (const domain of ['*', '**', '*.', 'www.']) {
+                configureAllowlist(allowlist, [domain]);
+                // Such an entry produces no rule, so it must not become a match-all exclusion.
+                expect(CanvasPolicyCompiler.compile([], allowlist))
+                    .toEqual(CanvasPolicyCompiler.compile([], disabledAllowlist));
+            }
+        }
+    });
+
     it.each([
         ['a|b.com', 'https://a/', false],
         ['a|b.com', 'https://b.com/', false],
