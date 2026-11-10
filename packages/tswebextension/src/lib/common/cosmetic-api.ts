@@ -44,7 +44,8 @@ export type ContentScriptCosmeticData = {
     isAppStarted: boolean;
 
     /**
-     * Are marked ExtendedCss rules collected.
+     * Whether hit stats collection is enabled for this document, after the
+     * allowlist check.
      */
     areHitsStatsCollected: boolean;
 
