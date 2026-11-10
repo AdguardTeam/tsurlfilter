@@ -147,7 +147,6 @@ describe('MessagesApi', () => {
         beforeEach(() => {
             vi.mocked(CosmeticApi.getContentScriptData).mockReset();
             vi.mocked(CosmeticApi.waitForPendingCssInjection).mockReset();
-            vi.mocked(CosmeticApi.waitForPendingCssInjection).mockResolvedValue(undefined);
         });
 
         it('does not rematch the main frame rule from the stale tab url', async () => {
@@ -163,13 +162,18 @@ describe('MessagesApi', () => {
                 nativeCssSelectors: null,
             };
             vi.mocked(CosmeticApi.getContentScriptData).mockReturnValue(data);
+            let resolveWait!: () => void;
+            const waitPromise = new Promise<void>((resolve) => {
+                resolveWait = resolve;
+            });
+            vi.mocked(CosmeticApi.waitForPendingCssInjection).mockReturnValue(waitPromise);
             const messagesApi = new MessagesApi(
                 { isStarted: true } as any,
                 tabsApi as any,
                 {} as any,
             );
 
-            const result = await messagesApi.handleMessage({
+            const resultPromise = messagesApi.handleMessage({
                 handlerName: MESSAGE_HANDLER_NAME,
                 type: MessageType.GetCosmeticData,
                 payload: { documentUrl: TAB_URL },
@@ -178,10 +182,17 @@ describe('MessagesApi', () => {
                 frameId: 0,
             } as any);
 
+            await Promise.resolve();
+
+            expect(CosmeticApi.getContentScriptData).not.toHaveBeenCalled();
+            expect(CosmeticApi.waitForPendingCssInjection).toHaveBeenCalledWith(TAB_ID, 0);
+
+            resolveWait();
+            const result = await resultPromise;
+
             expect(result).toBe(data);
             expect(tabsApi.createTabContextIfNotExists).toHaveBeenCalledWith(TAB_ID, TAB_URL);
             expect(tabsApi.updateTabMainFrameRule).not.toHaveBeenCalled();
-            expect(CosmeticApi.waitForPendingCssInjection).toHaveBeenCalledWith(TAB_ID, 0);
             expect(CosmeticApi.getContentScriptData).toHaveBeenCalledWith(TAB_URL, TAB_ID, 0);
         });
     });
