@@ -386,6 +386,45 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(data.areNativeHitsStatsCollected).toBe(false);
     });
 
+    it('stops retrying when the frame navigates during the retry delay', async () => {
+        vi.useFakeTimers();
+
+        const frameContext = {
+            documentId: 'doc-1',
+            cosmeticResult,
+            preparedCosmeticResult: {
+                cssText: 'marked',
+                areHitsStatsCollected: true,
+            },
+        };
+        const nextFrameContext = {
+            documentId: 'doc-2',
+            cosmeticResult: new CosmeticResult(),
+            preparedCosmeticResult: {
+                cssText: 'next',
+                areHitsStatsCollected: true,
+            },
+        };
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+        const injectSpy = vi.spyOn(CosmeticApi, 'injectCss')
+            .mockRejectedValue(new Error('injection failed'));
+
+        const resultPromise = CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        await vi.advanceTimersByTimeAsync(0);
+        tabsApiMock.getFrameContext.mockReturnValue(nextFrameContext);
+        await vi.advanceTimersByTimeAsync(10);
+
+        const data = await resultPromise;
+
+        expect(injectSpy).toHaveBeenCalledTimes(1);
+        expect(data.areNativeHitsStatsCollected).toBe(false);
+    });
+
     it('retries marked CSS injection after a transient failure', async () => {
         const injectSpy = vi.spyOn(CosmeticApi, 'injectCss')
             .mockRejectedValueOnce(new Error('transient failure'))

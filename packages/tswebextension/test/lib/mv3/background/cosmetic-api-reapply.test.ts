@@ -359,6 +359,42 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(data.areNativeHitsStatsCollected).toBe(false);
     });
 
+    it('stops retrying when the frame navigates during the retry delay', async () => {
+        vi.useFakeTimers();
+
+        const frameContext = {
+            documentId: 'doc-1',
+            preparedCosmeticResult: {
+                cssText: 'marked',
+                areHitsStatsCollected: true,
+            },
+        };
+        const nextFrameContext = {
+            documentId: 'doc-2',
+            preparedCosmeticResult: {
+                cssText: 'next',
+                areHitsStatsCollected: true,
+            },
+        };
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+        insertCSSMock.mockRejectedValue(new Error('injection failed'));
+
+        const resultPromise = CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        await vi.advanceTimersByTimeAsync(0);
+        tabsApiMock.getFrameContext.mockReturnValue(nextFrameContext);
+        await vi.advanceTimersByTimeAsync(10);
+
+        const data = await resultPromise;
+
+        expect(insertCSSMock).toHaveBeenCalledTimes(1);
+        expect(data.areNativeHitsStatsCollected).toBe(false);
+    });
+
     it('retries marked CSS injection after a transient failure', async () => {
         insertCSSMock
             .mockRejectedValueOnce(new Error('transient failure'))

@@ -679,15 +679,16 @@ export class CosmeticApi extends CosmeticApiCommon {
                 throw e;
             }
 
-            if (tabsApi.getFrameContext(tabId, frameId) !== frameContext) {
-                // The frame navigated. Do not inject the old document's CSS
-                // into the new document.
-                throw e;
-            }
-
             await new Promise<void>((resolve) => {
                 setTimeout(resolve, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             });
+
+            if (tabsApi.getFrameContext(tabId, frameId) !== frameContext) {
+                // The frame navigated while waiting. Do not inject the old
+                // document's CSS into the new document.
+                throw e;
+            }
+
             await CosmeticApi.injectMarkedCssWithRetries(
                 tabId,
                 frameId,
