@@ -688,6 +688,8 @@ export class CosmeticApi extends CosmeticApiCommon {
         cssText: string,
         tries: number,
     ): Promise<void> {
+        const { documentId } = frameContext;
+
         try {
             await CosmeticApi.injectCss(tabId, frameId, cssText);
             const { areHitsStatsCollected } = preparedCosmeticResult;
@@ -704,6 +706,15 @@ export class CosmeticApi extends CosmeticApiCommon {
                 await new Promise<void>((resolve) => {
                     setTimeout(resolve, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
                 });
+
+                const currentFrameContext = tabsApi.getFrameContext(tabId, frameId);
+                if (currentFrameContext !== frameContext
+                    || currentFrameContext.documentId !== documentId) {
+                    // The frame navigated while waiting. Do not inject the
+                    // old document's CSS into the new document.
+                    return;
+                }
+
                 await CosmeticApi.injectPreparedCssWithRetries(
                     tabId,
                     frameId,
