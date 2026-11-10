@@ -31,7 +31,7 @@ describe('web request api', () => {
     describe('onCommitted', () => {
         it('resets the ExtendedCSS applied state of the committed document', () => {
             vi.mocked(tabsApi.getFrameContext).mockReturnValue({
-                extCssAppliedSignature: '["rule",false]',
+                extCssAppliedData: { extCssRules: ['rule'], areHitsStatsCollected: false },
                 extCssDocumentVersion: 3,
             } as ReturnType<typeof tabsApi.getFrameContext>);
 
@@ -50,7 +50,7 @@ describe('web request api', () => {
 
             expect(tabsApi.updateFrameContext).toHaveBeenCalledWith(1, MAIN_FRAME_ID, {
                 documentId: 'new-document-id',
-                extCssAppliedSignature: undefined,
+                extCssAppliedData: undefined,
                 extCssDocumentVersion: 4,
             });
         });

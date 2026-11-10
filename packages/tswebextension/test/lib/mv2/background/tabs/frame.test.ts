@@ -54,7 +54,7 @@ describe('Frame', () => {
 
     describe('ExtendedCSS document state', () => {
         it('has no applied rule set by default', () => {
-            expect(createFrame().extCssAppliedSignature).toBeUndefined();
+            expect(createFrame().extCssAppliedData).toBeUndefined();
         });
 
         it('has no disposed document by default', () => {

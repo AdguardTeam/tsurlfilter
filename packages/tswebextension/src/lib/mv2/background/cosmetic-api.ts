@@ -308,6 +308,8 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param retry Schedules the next attempt.
      * @param onFailure Handles the error of the last allowed attempt.
      * @param tries Number of the current attempt.
+     * @param maxTries Number of the last allowed attempt. Zero allows a single
+     * attempt without a retry.
      *
      * @returns True if the injection succeeded, otherwise false.
      */
@@ -316,13 +318,14 @@ export class CosmeticApi extends CosmeticApiCommon {
         retry: () => void,
         onFailure: (error: unknown) => void,
         tries: number,
+        maxTries = CosmeticApi.INJECTION_MAX_TRIES,
     ): Promise<boolean> {
         try {
             await inject();
 
             return true;
         } catch (e) {
-            if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
+            if (tries < maxTries) {
                 setTimeout(retry, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
                 onFailure(e);
@@ -448,7 +451,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * the shared ExtCSS payload is serialized into a code string and injected.
      * When the rule set is empty or null, the dispose code string is injected
      * once per document, so observers and styles do not leak even when the
-     * context was recreated. Otherwise no code is injected.
+     * context was recreated. The dispose is not retried, and the document is
+     * recorded as disposed even when the attempt fails. Otherwise no code is
+     * injected.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
@@ -471,12 +476,11 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const { extCssDocumentVersion } = frameContext;
 
-        // A boolean cannot describe the applied state: the rule set is
-        // recomputed on every content-script request, so the applied rules are
-        // identified by their serialized signature instead.
-        const appliedSignature = extCssRules?.length
-            ? JSON.stringify([extCssRules, areHitsStatsCollected])
-            : undefined;
+        // A dispose is a no-op in the page when the document holds no
+        // instance, so it is attempted once: a chain of failed injections
+        // would have no better chance, and the document is recorded as
+        // disposed even when the attempt fails.
+        const maxTries = extCssRules?.length ? CosmeticApi.INJECTION_MAX_TRIES : 0;
 
         let code: string;
 
@@ -484,7 +488,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             // A successful apply already put the same rule set into the page.
             // Serializing and parsing the code string again would only repeat
             // the in-page no-op.
-            if (frameContext.extCssAppliedSignature === appliedSignature) {
+            if (CosmeticApi.isExtCssApplied(frameContext, extCssData)) {
                 return;
             }
 
@@ -524,15 +528,14 @@ export class CosmeticApi extends CosmeticApiCommon {
                 logger.debug(`[tsweb.CosmeticApi.applyExtCss]: error occurred during injection into tabId ${tabId} and frameId ${frameId}`, e);
             },
             tries,
+            maxTries,
         );
 
         // Keep the marker until the chain ends: a failed attempt schedules its
         // retry after a delay, and an event arriving in that gap must not start
         // a second chain. The last attempt has no retry, so it clears the
         // marker and lets a later event try again.
-        if (frameContext.extCssInjectionMarker === marker
-            && (isInjected || tries >= CosmeticApi.INJECTION_MAX_TRIES)
-        ) {
+        if (frameContext.extCssInjectionMarker === marker && (isInjected || tries >= maxTries)) {
             frameContext.extCssInjectionMarker = undefined;
         }
 
@@ -540,22 +543,60 @@ export class CosmeticApi extends CosmeticApiCommon {
         // captured object would land on the discarded document. A commit of
         // the same frame keeps the context and bumps the document version, so
         // an injection started for the previous document records nothing.
-        if (isInjected
-            && tabsApi.getFrameContext(tabId, frameId) === frameContext
-            && frameContext.extCssDocumentVersion === extCssDocumentVersion
-        ) {
-            // A successful injection always leaves exactly one of the two
-            // markers set: the document holds the applied rule set, or it was
-            // disposed. An apply retires an earlier disposal and the other way
-            // around, so a later change of the rule set is not skipped.
-            if (appliedSignature !== undefined) {
-                frameContext.extCssAppliedSignature = appliedSignature;
-                frameContext.extCssDisposedDocumentVersion = undefined;
+        const isSameDocument = tabsApi.getFrameContext(tabId, frameId) === frameContext
+            && frameContext.extCssDocumentVersion === extCssDocumentVersion;
+
+        // A successful injection always leaves exactly one of the two markers
+        // set: the document holds the applied rule set, or it was disposed. An
+        // apply retires an earlier disposal and the other way around, so a
+        // later change of the rule set is not skipped.
+        if (isSameDocument) {
+            if (extCssRules?.length) {
+                // A failed apply records nothing, so a later event retries it.
+                if (isInjected) {
+                    frameContext.extCssAppliedData = {
+                        extCssRules,
+                        areHitsStatsCollected,
+                    };
+                    frameContext.extCssDisposedDocumentVersion = undefined;
+                }
             } else {
-                frameContext.extCssAppliedSignature = undefined;
+                // A failed dispose is not retried, so the document is recorded
+                // as disposed anyway: a second attempt would run with the same
+                // permissions. An instance the document still holds is retired
+                // on the next commit or when the context is recreated.
+                frameContext.extCssAppliedData = undefined;
                 frameContext.extCssDisposedDocumentVersion = extCssDocumentVersion;
             }
         }
+    }
+
+    /**
+     * Checks whether the current document already holds the given ExtendedCSS
+     * rule set.
+     *
+     * The rule set is compared by value: the on-demand path rebuilds the rule
+     * strings on every request, so the same rules can arrive in a new array.
+     *
+     * @param frameContext Frame context.
+     * @param extCssData ExtendedCSS data resolved for the frame now.
+     *
+     * @returns True if the document holds this rule set, otherwise false.
+     */
+    private static isExtCssApplied(frameContext: FrameMV2, extCssData: ExtCssFrameData): boolean {
+        const { extCssAppliedData } = frameContext;
+        const { extCssRules, areHitsStatsCollected } = extCssData;
+
+        if (!extCssAppliedData
+            || !extCssRules
+            || extCssAppliedData.areHitsStatsCollected !== areHitsStatsCollected
+            || extCssAppliedData.extCssRules.length !== extCssRules.length
+        ) {
+            return false;
+        }
+
+        return extCssAppliedData.extCssRules
+            .every((rule, index) => rule === extCssRules[index]);
     }
 
     /**

@@ -16,6 +16,24 @@ export type ExtCssFrameData = {
 };
 
 /**
+ * ExtendedCSS rule set that a document holds.
+ *
+ * The applied rules are never empty, unlike the data resolved for a frame,
+ * which carries null when no rule matches.
+ */
+export type ExtCssAppliedData = {
+    /**
+     * ExtendedCSS rule strings the document holds.
+     */
+    extCssRules: string[];
+
+    /**
+     * Whether ExtendedCSS hits statistics are collected for the rule set.
+     */
+    areHitsStatsCollected: boolean;
+};
+
+/**
  * Prepared cosmetic result for MV2.
  *
  * This type represents the processed cosmetic data extracted from the initial cosmetic result.
@@ -50,16 +68,16 @@ export class FrameMV2 extends FrameCommon {
     public extCssData?: ExtCssFrameData;
 
     /**
-     * Signature of the ExtendedCSS rule set applied to the current document.
+     * ExtendedCSS rule set that the current document holds.
      *
      * The rule set is not guaranteed to stay the same within a document:
      * `getContentScriptData` recomputes it on every call, and a configuration
-     * change can produce a different set. Comparing the signature re-injects
-     * the ExtendedCSS data when it changes. The frame context is replaced on
-     * navigation, and `onCommitted` clears the signature when the context
-     * survives, so it always describes the current document.
+     * change can produce a different set. Comparing the stored rule set
+     * re-injects the ExtendedCSS data when it changes. The frame context is
+     * replaced on navigation, and `onCommitted` clears the rule set when the
+     * context survives, so it always describes the current document.
      */
-    public extCssAppliedSignature?: string;
+    public extCssAppliedData?: ExtCssAppliedData;
 
     /**
      * Number of the document the ExtendedCSS state belongs to.
@@ -74,7 +92,7 @@ export class FrameMV2 extends FrameCommon {
      * Number of the document whose ExtendedCSS instance was disposed.
      *
      * The context can be recreated for a document that already has an
-     * instance, so `extCssAppliedSignature` cannot tell whether an instance
+     * instance, so `extCssAppliedData` cannot tell whether an instance
      * must be retired. Disposal is tracked per document, and the injected
      * dispose function is a no-op when the document holds no instance.
      */

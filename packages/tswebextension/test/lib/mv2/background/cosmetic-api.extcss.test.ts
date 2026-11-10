@@ -12,7 +12,11 @@ import { logger } from '../../../../src/lib/common/utils/logger';
 import { tabsApi } from '../../../../src/lib/mv2/background/api';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { serializeExtCssDisposeForCode, serializeExtCssForCode } from '../../../../src/lib/mv2/background/extcss-code';
-import { FrameMV2, type PreparedCosmeticResultMV2 } from '../../../../src/lib/mv2/background/tabs/frame';
+import {
+    type ExtCssAppliedData,
+    FrameMV2,
+    type PreparedCosmeticResultMV2,
+} from '../../../../src/lib/mv2/background/tabs/frame';
 import { TabsApi } from '../../../../src/lib/mv2/background/tabs/tabs-api';
 
 vi.mock('../../../../src/lib/mv2/background/api', () => ({
@@ -48,17 +52,17 @@ const makePrepared = (
 });
 
 /**
- * Builds the applied rule-set signature the API compares against.
+ * Builds the applied rule set the API records for the given rules.
  *
- * @param extCssRules ExtCSS rules, or null when none match.
+ * @param extCssRules ExtCSS rules the document holds.
  * @param areHitsStatsCollected Whether hits statistics are collected.
  *
- * @returns The signature.
+ * @returns The applied rule set.
  */
-const makeAppliedSignature = (
-    extCssRules: string[] | null,
+const makeAppliedData = (
+    extCssRules: string[],
     areHitsStatsCollected = false,
-): string => JSON.stringify([extCssRules, areHitsStatsCollected]);
+): ExtCssAppliedData => ({ extCssRules, areHitsStatsCollected });
 
 /**
  * Creates a frame context with the given prepared result.
@@ -81,8 +85,8 @@ const makeFrameContext = (
     });
     frameContext.preparedCosmeticResult = preparedCosmeticResult;
     if (isApplied) {
-        frameContext.extCssAppliedSignature = makeAppliedSignature(
-            preparedCosmeticResult?.extCssRules ?? null,
+        frameContext.extCssAppliedData = makeAppliedData(
+            preparedCosmeticResult?.extCssRules ?? [],
             preparedCosmeticResult?.areHitsStatsCollected ?? false,
         );
     }
@@ -252,8 +256,8 @@ describe('CosmeticApi.applyExtCss', () => {
         await CosmeticApi.applyExtCss(1, 0);
 
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
-        expect(original.extCssAppliedSignature).toBeUndefined();
-        expect(replacement.extCssAppliedSignature).toBeUndefined();
+        expect(original.extCssAppliedData).toBeUndefined();
+        expect(replacement.extCssAppliedData).toBeUndefined();
     });
 
     it('does not mark a document that was committed during the injection', async () => {
@@ -270,12 +274,12 @@ describe('CosmeticApi.applyExtCss', () => {
 
         // A same-URL commit keeps the context and bumps the document version.
         frameContext.extCssDocumentVersion += 1;
-        frameContext.extCssAppliedSignature = undefined;
+        frameContext.extCssAppliedData = undefined;
 
         resolveInjection();
         await injection;
 
-        expect(frameContext.extCssAppliedSignature).toBeUndefined();
+        expect(frameContext.extCssAppliedData).toBeUndefined();
     });
 
     it('does not inject again while an injection is in flight', async () => {
@@ -296,7 +300,7 @@ describe('CosmeticApi.applyExtCss', () => {
         resolveInjection();
         await injection;
 
-        expect(frameContext.extCssAppliedSignature).toBe(makeAppliedSignature(rules));
+        expect(frameContext.extCssAppliedData).toEqual(makeAppliedData(rules));
     });
 
     it('records the applied rule set after a successful apply', async () => {
@@ -306,7 +310,7 @@ describe('CosmeticApi.applyExtCss', () => {
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(frameContext.extCssAppliedSignature).toBe(makeAppliedSignature(rules));
+        expect(frameContext.extCssAppliedData).toEqual(makeAppliedData(rules));
     });
 
     it('re-injects when the stored rule set changes', async () => {
@@ -347,12 +351,12 @@ describe('CosmeticApi.applyExtCss', () => {
         await CosmeticApi.applyExtCss(1, 0);
 
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
-        expect(frameContext.extCssAppliedSignature).toBeUndefined();
+        expect(frameContext.extCssAppliedData).toBeUndefined();
 
         await vi.advanceTimersByTimeAsync(10);
 
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
-        expect(frameContext.extCssAppliedSignature).toBe(makeAppliedSignature(rules));
+        expect(frameContext.extCssAppliedData).toEqual(makeAppliedData(rules));
     });
 
     it('keeps the in-flight marker while a retry is pending', async () => {
@@ -436,13 +440,78 @@ describe('CosmeticApi.applyExtCss', () => {
         );
     });
 
-    it('does not record the disposal when it fails', async () => {
+    it('attempts the disposal once and records it even when it fails', async () => {
+        vi.useFakeTimers();
         const frameContext = makeFrameContext(makePrepared(null));
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
         vi.mocked(TabsApi.injectScript).mockRejectedValue(new Error('Missing host permission'));
 
-        await CosmeticApi.applyExtCss(1, 0, 100);
+        await CosmeticApi.applyExtCss(1, 0);
 
-        expect(frameContext.extCssDisposedDocumentVersion).toBeUndefined();
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+
+        await vi.advanceTimersByTimeAsync(20);
+
+        // The dispose has no retry, so a failed attempt cannot arm a second
+        // chain, and the document is recorded as disposed all the same.
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        expect(frameContext.extCssInjectionMarker).toBeUndefined();
+        expect(frameContext.extCssDisposedDocumentVersion).toBe(0);
+    });
+
+    it('does not dispose again from a later event after a failed attempt', async () => {
+        const frameContext = makeFrameContext(makePrepared(null));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        vi.mocked(TabsApi.injectScript).mockRejectedValue(new Error('Missing host permission'));
+
+        await CosmeticApi.applyExtCss(1, 0);
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+    });
+
+    it('skips the injection when an equal rule set was applied', async () => {
+        const frameContext = makeFrameContext(
+            makePrepared(['.ad:has(.child) { display: none !important; }']),
+            true,
+        );
+        // The on-demand path rebuilds the rule strings on every request, so
+        // the applied state is compared by value rather than by reference.
+        frameContext.preparedCosmeticResult = makePrepared(
+            ['.ad:has(.child) { display: none !important; }'],
+        );
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScript).not.toHaveBeenCalled();
+    });
+
+    it('re-injects when only the hits statistics flag changes', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules), true);
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        frameContext.preparedCosmeticResult = makePrepared(rules, true);
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScript).toHaveBeenCalledWith(
+            1,
+            0,
+            serializeExtCssForCode(rules, true, EXTCSS_PROTOCOL),
+        );
+    });
+
+    it('does not serialize the rule set to check the applied state', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules), true);
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        const stringifySpy = vi.spyOn(JSON, 'stringify');
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScript).not.toHaveBeenCalled();
+        expect(stringifySpy).not.toHaveBeenCalled();
     });
 });

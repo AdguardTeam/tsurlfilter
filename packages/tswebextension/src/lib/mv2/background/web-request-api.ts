@@ -955,7 +955,7 @@ export class WebRequestApi {
             frameId,
             {
                 documentId: documentId || TabsApi.generateId(tabId, frameId),
-                extCssAppliedSignature: undefined,
+                extCssAppliedData: undefined,
                 extCssDocumentVersion: (frameContext?.extCssDocumentVersion ?? 0) + 1,
             },
         );
