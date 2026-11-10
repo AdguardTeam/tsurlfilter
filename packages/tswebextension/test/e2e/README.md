@@ -11,10 +11,11 @@ custom property is **non-inheriting** so it is observed only on the matched
 host element and not on its descendants — are only meaningful in a real
 browser with a real CSS cascade. They cannot be verified in jsdom.
 
-The MV2 ExtCSS code string is also checked in real Gecko. The spec evaluates
-the string with `new Function` in a regular page with a stubbed `chrome`, so
-it covers Gecko parsing and the resulting DOM changes. It does not cover
-`tabs.executeScript` itself or the isolated world.
+The MV2 ExtCSS code string is also checked in real Gecko. The spec installs
+the prebuilt engine asset (as the background does) and evaluates the string
+with `new Function` in a regular page with a stubbed `chrome`, so it covers
+Gecko parsing and the resulting DOM changes. It does not cover
+`tabs.executeScript` itself, the isolated world, or the asset file injection.
 
 ## Layout
 

@@ -23,6 +23,8 @@ export const DOCUMENT_BLOCKING_PATH = path.join(__dirname, '../extension/pages/d
 
 export const ASSISTANT_INJECT_PATH = path.join(__dirname, '../extension/pages/assistant-inject');
 
+export const EXT_CSS_INJECT_PATH = path.join(__dirname, '../extension/pages/extcss-inject');
+
 export const USER_DATA_PATH = path.join(__dirname, '../tmp');
 
 export const TESTCASES_BASE_URL = 'https://testcases.agrd.dev';
@@ -42,6 +44,7 @@ export const DEFAULT_EXTENSION_CONFIG: ConfigurationMV2 = {
     verbose: false,
     settings: {
         assistantUrl: `${BuildOutput.AssistantInject}.js`,
+        extCssScriptUrl: `${BuildOutput.ExtCssInject}.js`,
         collectStats: true,
         debugScriptlets: false,
         allowlistInverted: false,

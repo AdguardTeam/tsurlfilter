@@ -20,10 +20,12 @@ const escapeLineSeparators = (json: string): string => json
 /**
  * Serialized source of the shared apply payload.
  *
- * `String(extCssInjectedApply)` re-serializes the inlined engine, and MV2
- * builds a code string for each injection that is not skipped as already
- * applied and for each injection retry. The function source never changes, so
- * it is serialized once here.
+ * `String(extCssInjectedApply)` serializes only the wiring function: the
+ * ExtendedCss engine and the CSS-hits helpers travel in the prebuilt
+ * `extcss-inject.js` asset, which the caller injects first. MV2 builds a code
+ * string for each injection that is not skipped as already applied and for
+ * each injection retry. The function source never changes, so it is
+ * serialized once here.
  */
 const EXTCSS_APPLY_SOURCE = String(extCssInjectedApply);
 
@@ -40,7 +42,9 @@ const EXTCSS_DISPOSE_SOURCE = String(extCssInjectedDispose);
  *
  * The code is `(<function source>)(<rules JSON>, <boolean>, <protocol JSON>);`.
  * The browser's own `executeScript` parser evaluates the string in the
- * frame's isolated world; product code does not evaluate it.
+ * frame's isolated world; product code does not evaluate it. The code carries
+ * the rule strings only — the engine must already be installed by the
+ * prebuilt script asset, and the payload fails when it is not.
  *
  * @param cssRules ExtendedCSS rule strings to apply.
  * @param collectStats Whether to collect CSS hits statistics.

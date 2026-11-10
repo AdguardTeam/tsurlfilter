@@ -259,6 +259,7 @@ export class AdguardApi {
             settings: {
                 documentBlockingPageUrl: this.configuration.documentBlockingPageUrl,
                 assistantUrl: 'adguard-assistant.js',
+                extCssScriptUrl: 'adguard-extcss.js',
                 filteringEnabled: this.configuration.filteringEnabled,
                 debugScriptlets: false,
                 stealthModeEnabled: true,

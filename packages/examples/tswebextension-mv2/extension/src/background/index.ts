@@ -42,6 +42,7 @@ const defaultConfig: ConfigurationMV2 = {
     verbose: false,
     settings: {
         assistantUrl: `${BuildOutput.AssistantInject}.js`,
+        extCssScriptUrl: `${BuildOutput.ExtCssInject}.js`,
         filteringEnabled: true,
         stealthModeEnabled: true,
         collectStats: true,

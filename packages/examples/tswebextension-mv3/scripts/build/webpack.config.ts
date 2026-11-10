@@ -24,6 +24,7 @@ const HIDE_DOCUMENT_REFERRER_SCRIPT = path.join(
     __dirname,
     '../../extension/pages/content-script/hide-document-referrer',
 );
+const EXT_CSS_INJECT = path.join(__dirname, '../../extension/pages/content-script/extcss-inject');
 const BUILD_PATH = path.resolve(__dirname, '../../build');
 const FILTERS_DIR = path.resolve(__dirname, '../../extension/filters');
 
@@ -69,6 +70,7 @@ export const config: Configuration = {
         'assistant-inject': ASSISTANT_INJECT,
         'gpc': GPC_SCRIPT,
         'hide-document-referrer': HIDE_DOCUMENT_REFERRER_SCRIPT,
+        'extcss-inject': EXT_CSS_INJECT,
     },
     output: {
         path: BUILD_PATH,

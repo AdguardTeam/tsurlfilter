@@ -10,6 +10,7 @@ import {
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { tabsApi } from '../../../../src/lib/mv2/background/api';
+import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { serializeExtCssDisposeForCode, serializeExtCssForCode } from '../../../../src/lib/mv2/background/extcss-code';
 import {
@@ -27,7 +28,13 @@ vi.mock('../../../../src/lib/mv2/background/api', () => ({
 }));
 
 vi.mock('../../../../src/lib/mv2/background/app-context', () => ({
-    appContext: {},
+    appContext: {
+        configuration: {
+            settings: {
+                extCssScriptUrl: 'extcss-inject.js',
+            },
+        },
+    },
 }));
 
 vi.mock('../../../../src/lib/mv2/background/services/local-script-rules-service', () => ({
@@ -98,6 +105,7 @@ describe('CosmeticApi.applyExtCss', () => {
         vi.restoreAllMocks();
         vi.mocked(tabsApi.getFrameContext).mockReset();
         vi.spyOn(TabsApi, 'injectScript').mockResolvedValue();
+        vi.spyOn(TabsApi, 'injectScriptFile').mockResolvedValue();
     });
 
     afterEach(() => {
@@ -117,6 +125,46 @@ describe('CosmeticApi.applyExtCss', () => {
             0,
             serializeExtCssForCode(rules, false, EXTCSS_PROTOCOL),
         );
+    });
+
+    it('injects the prebuilt engine script before the serialized apply code', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScriptFile).toHaveBeenCalledTimes(1);
+        expect(TabsApi.injectScriptFile).toHaveBeenCalledWith(1, 0, 'extcss-inject.js');
+        // The engine has to be installed before the rules are applied.
+        expect(vi.mocked(TabsApi.injectScriptFile).mock.invocationCallOrder[0])
+            .toBeLessThan(vi.mocked(TabsApi.injectScript).mock.invocationCallOrder[0]);
+    });
+
+    it('does not inject the engine script when disposing', async () => {
+        vi.mocked(tabsApi.getFrameContext)
+            .mockReturnValue(makeFrameContext(makePrepared(null)));
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScriptFile).not.toHaveBeenCalled();
+    });
+
+    it('does not inject the rules when the engine script url is not configured', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
+        const { configuration } = appContext;
+        appContext.configuration = undefined;
+        const errorSpy = vi.spyOn(logger, 'error');
+
+        try {
+            await CosmeticApi.applyExtCss(1, 0);
+
+            expect(TabsApi.injectScriptFile).not.toHaveBeenCalled();
+            expect(TabsApi.injectScript).not.toHaveBeenCalled();
+            expect(errorSpy).toHaveBeenCalledTimes(1);
+        } finally {
+            appContext.configuration = configuration;
+        }
     });
 
     it('forwards areHitsStatsCollected to the serializer', async () => {
@@ -272,6 +320,12 @@ describe('CosmeticApi.applyExtCss', () => {
 
         const injection = CosmeticApi.applyExtCss(1, 0);
 
+        // The engine asset is injected before the code string, so the code
+        // call happens in a microtask and the injection is still in flight.
+        await vi.waitFor(() => {
+            expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        });
+
         // A same-URL commit keeps the context and bumps the document version.
         frameContext.extCssDocumentVersion += 1;
         frameContext.extCssAppliedData = undefined;
@@ -404,13 +458,21 @@ describe('CosmeticApi.applyExtCss', () => {
 
         const first = CosmeticApi.applyExtCss(1, 0);
 
+        // Wait until the code-string injection of the first call is in flight:
+        // it runs after the engine asset call, in a microtask.
+        await vi.waitFor(() => {
+            expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        });
+
         // A same-URL commit keeps the context and bumps the document version,
         // so the commit handler starts its own injection for the new document.
         frameContext.extCssDocumentVersion += 1;
 
         const second = CosmeticApi.applyExtCss(1, 0);
 
-        expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
+        await vi.waitFor(() => {
+            expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
+        });
 
         resolveFirst();
         await first;

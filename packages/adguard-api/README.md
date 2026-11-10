@@ -64,6 +64,16 @@ AdGuard API is a filtering library that provides the following features:
   import '@adguard/api/assistant';
   ```
 
+1. Import `adguard-extcss` at the top of your ExtendedCss script entry
+
+  ```ts
+  import '@adguard/api/extcss';
+  ```
+
+  The produced file installs the ExtendedCss engine, and the background
+  injects it into a frame before the matching rules. Ship it under the name
+  `adguard-extcss.js`, which the library passes as `settings.extCssScriptUrl`.
+
 ## Required web accessible resources
 
 AdGuard API requires [web accessible resources][webaccessibleresources] from the

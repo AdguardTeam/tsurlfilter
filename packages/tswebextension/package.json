@@ -8,6 +8,7 @@
         "dist/assistant-inject.js",
         "dist/content-script.js",
         "dist/content-script.mv3.js",
+        "dist/extcss-inject.js",
         "dist/gpc.mv3.js",
         "dist/hide-document-referrer.mv3.js"
     ],
@@ -48,6 +49,9 @@
         "./assistant-inject": {
             "types": "./dist/types/assistant-inject.d.ts",
             "default": "./dist/assistant-inject.js"
+        },
+        "./extcss-inject": {
+            "default": "./dist/extcss-inject.js"
         },
         "./filters-storage": {
             "types": "./dist/types/filters-storage.d.ts",
@@ -138,6 +142,7 @@
         "@rollup/plugin-json": "catalog:",
         "@rollup/plugin-node-resolve": "catalog:",
         "@rollup/plugin-swc": "catalog:",
+        "@rollup/plugin-terser": "catalog:",
         "@rollup/plugin-typescript": "catalog:",
         "@swc-node/register": "catalog:",
         "@swc/core": "catalog:",

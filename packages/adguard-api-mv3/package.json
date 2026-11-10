@@ -17,6 +17,9 @@
         "./assistant": {
             "types": "./dist/types/content-script/assistant.d.ts",
             "default": "./dist/adguard-assistant.js"
+        },
+        "./extcss": {
+            "default": "./dist/adguard-extcss.js"
         }
     },
     "scripts": {

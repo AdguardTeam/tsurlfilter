@@ -14,11 +14,13 @@ export type ExtendedCssHit = RuleInfoBasic & {
 
 /**
  * Shared CSS-hits parser, serializer and collector, used by MV2's
- * `ElementUtils`/`CssHitsCounter` and, inlined by `inlineCssHitsHelpers`, by
- * MV3's `extCssInjectedApply`.
+ * `ElementUtils`/`CssHitsCounter` and by the injected `extCssInjectedApply`.
  *
- * Only type-only imports are allowed here: the transpiled module is inlined
- * into the injected function and must have no free identifiers.
+ * The injected function cannot import anything (it is serialized via
+ * `toString()`), so the module is bundled into the prebuilt ExtendedCss script
+ * asset and reached through the engine object the asset installs. Only
+ * type-only imports are allowed here: a runtime import would be bundled into
+ * the asset and could pull the whole library into the injected payload.
  */
 
 /**
@@ -258,8 +260,9 @@ function collectExtendedCssHits(
 }
 
 /**
- * Shared CSS-hits helpers object. Exported for the MV2 runtime import; MV3
- * inlines the whole module into `extCssInjectedApply` at build time.
+ * Shared CSS-hits helpers object. Exported for the MV2 runtime import; the
+ * prebuilt ExtendedCss script asset bundles it so the injected apply function
+ * can collect hits.
  */
 const cssHitsHelpers = {
     parseInfo,

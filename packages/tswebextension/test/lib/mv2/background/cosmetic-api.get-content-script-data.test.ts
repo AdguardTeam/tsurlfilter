@@ -53,6 +53,7 @@ describe('CosmeticApi.getContentScriptData', () => {
         appContext.configuration = {
             settings: {
                 collectStats: false,
+                extCssScriptUrl: 'extcss-inject.js',
             },
         } as unknown as ConfigurationMV2Context;
 
@@ -89,7 +90,7 @@ describe('CosmeticApi.getContentScriptData', () => {
         });
     });
 
-    it('injects the on-demand rules when the frame has no context', () => {
+    it('injects the on-demand rules when the frame has no context', async () => {
         const rules = ['.ad:has(.child) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
         vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
@@ -97,11 +98,15 @@ describe('CosmeticApi.getContentScriptData', () => {
 
         CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
 
-        expect(injectSpy).toHaveBeenCalledWith(
-            tabId,
-            frameId,
-            serializeExtCssForCode(rules, false, EXTCSS_PROTOCOL),
-        );
+        // The engine asset is injected first, so the code string follows in a
+        // microtask.
+        await vi.waitFor(() => {
+            expect(injectSpy).toHaveBeenCalledWith(
+                tabId,
+                frameId,
+                serializeExtCssForCode(rules, false, EXTCSS_PROTOCOL),
+            );
+        });
     });
 
     it('retries the context-less injection after a failure', async () => {
@@ -114,6 +119,9 @@ describe('CosmeticApi.getContentScriptData', () => {
             .mockResolvedValueOnce();
 
         CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+
+        // Let the engine asset call and the first code-string call settle.
+        await vi.advanceTimersByTimeAsync(0);
 
         expect(injectSpy).toHaveBeenCalledTimes(1);
 

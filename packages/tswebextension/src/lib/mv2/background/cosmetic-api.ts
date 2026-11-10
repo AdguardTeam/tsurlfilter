@@ -448,12 +448,12 @@ export class CosmeticApi extends CosmeticApiCommon {
      * The rules come from the frame's prepared result, or from the data kept
      * on the context when the frame was matched on demand. When they are
      * non-empty and the current document does not already hold that rule set,
-     * the shared ExtCSS payload is serialized into a code string and injected.
-     * When the rule set is empty or null, the dispose code string is injected
-     * once per document, so observers and styles do not leak even when the
-     * context was recreated. The dispose is not retried, and the document is
-     * recorded as disposed even when the attempt fails. Otherwise no code is
-     * injected.
+     * the prebuilt engine script is injected first and the rule strings are
+     * serialized into a code string and injected second. When the rule set is
+     * empty or null, the dispose code string is injected once per document, so
+     * observers and styles do not leak even when the context was recreated.
+     * The dispose is not retried, and the document is recorded as disposed
+     * even when the attempt fails. Otherwise no code is injected.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
@@ -483,12 +483,21 @@ export class CosmeticApi extends CosmeticApiCommon {
         const maxTries = extCssRules?.length ? CosmeticApi.INJECTION_MAX_TRIES : 0;
 
         let code: string;
+        let extCssScriptUrl: string | undefined;
 
         if (extCssRules?.length) {
             // A successful apply already put the same rule set into the page.
             // Serializing and parsing the code string again would only repeat
             // the in-page no-op.
             if (CosmeticApi.isExtCssApplied(frameContext, extCssData)) {
+                return;
+            }
+
+            extCssScriptUrl = appContext.configuration?.settings.extCssScriptUrl;
+
+            if (!extCssScriptUrl) {
+                logger.error(`[tsweb.CosmeticApi.applyExtCss]: settings.extCssScriptUrl is not set, ExtendedCss rules are not applied in tabId ${tabId} and frameId ${frameId}`);
+
                 return;
             }
 
@@ -519,8 +528,18 @@ export class CosmeticApi extends CosmeticApiCommon {
         const marker = { documentVersion: extCssDocumentVersion };
         frameContext.extCssInjectionMarker = marker;
 
+        // The engine has to be in the document before its rules, so a retry
+        // repeats both injections: the file is a cheap no-op that reinstalls
+        // the engine, and the code string applies the rules on top of it.
+        const inject = extCssScriptUrl
+            ? async (): Promise<void> => {
+                await TabsApi.injectScriptFile(tabId, frameId, extCssScriptUrl);
+                await TabsApi.injectScript(tabId, frameId, code);
+            }
+            : (): Promise<void> => TabsApi.injectScript(tabId, frameId, code);
+
         const isInjected = await CosmeticApi.injectWithRetry(
-            () => TabsApi.injectScript(tabId, frameId, code),
+            inject,
             () => {
                 CosmeticApi.applyExtCss(tabId, frameId, tries + 1);
             },
@@ -606,6 +625,8 @@ export class CosmeticApi extends CosmeticApiCommon {
      * the shared retry budget is the only protection against a transient
      * injection failure. A repeated call is a no-op in the page, because the
      * payload returns early when the retained instance has the same rules.
+     * The prebuilt engine script is injected before the rule strings, and the
+     * pair is repeated on a retry.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
@@ -620,10 +641,21 @@ export class CosmeticApi extends CosmeticApiCommon {
         areHitsStatsCollected: boolean,
         tries = 0,
     ): Promise<void> {
+        const extCssScriptUrl = appContext.configuration?.settings.extCssScriptUrl;
+
+        if (!extCssScriptUrl) {
+            logger.error(`[tsweb.CosmeticApi.injectExtCssWithoutContext]: settings.extCssScriptUrl is not set, ExtendedCss rules are not applied in tabId ${tabId} and frameId ${frameId}`);
+
+            return;
+        }
+
         const code = serializeExtCssForCode(extCssRules, areHitsStatsCollected, EXTCSS_PROTOCOL);
 
         await CosmeticApi.injectWithRetry(
-            () => TabsApi.injectScript(tabId, frameId, code),
+            async () => {
+                await TabsApi.injectScriptFile(tabId, frameId, extCssScriptUrl);
+                await TabsApi.injectScript(tabId, frameId, code);
+            },
             () => {
                 CosmeticApi.injectExtCssWithoutContext(
                     tabId,

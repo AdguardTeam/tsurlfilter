@@ -35,8 +35,9 @@ describe('Element utils - parsing', () => {
 
     it('does not throw on malformed percent-escape in content', () => {
         // `decodeURIComponent` throws `URIError` on a malformed escape. The
-        // helper is also inlined into the MV3 injected apply function, where
-        // such a throw would break cosmetic application on every pass.
+        // helper is also bundled into the ExtendedCss script asset the injected
+        // apply function reads, where such a throw would break cosmetic
+        // application on every pass.
         expect(() => ElementUtils.parseInfo("'adguard100%'", 'adguard')).not.toThrow();
         expect(ElementUtils.parseInfo("'adguard100%'", 'adguard')).toBeNull();
 

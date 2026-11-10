@@ -48,6 +48,7 @@ Table of content:
                 - [filteringEnabled](#filteringenabled)
                 - [documentBlockingPageUrl](#documentblockingpageurl)
                 - [assistantUrl](#assistanturl)
+                - [extCssScriptUrl](#extcssscripturl)
                 - [gpcScriptUrl (MV3 only)](#gpcscripturl-mv3-only)
                 - [hideDocumentReferrerScriptUrl (MV3 only)](#hidedocumentreferrerscripturl-mv3-only)
                 - [stealthConfig](#stealthconfig)
@@ -159,6 +160,26 @@ const build = async () => {
 
 If path is not defined, the resources will be loaded to `build/war`
 relative to your current working directory by default
+
+**Note:**
+
+ExtendedCss rules are applied by a prebuilt script asset. Copy it into the
+extension build and pass its path relative to the extension root as
+`settings.extCssScriptUrl`:
+
+```ts
+import { copy } from 'fs-extra';
+
+await copy(
+    'node_modules/@adguard/tswebextension/dist/extcss-inject.js',
+    'build/extcss-inject.js',
+);
+// ...
+settings: { extCssScriptUrl: 'extcss-inject.js', /* ... */ }
+```
+
+The background injects the file into a frame before the ExtendedCss rules, so
+an extension that does not ship the file gets no ExtendedCss filtering.
 
 ## Canvas protection
 
@@ -330,6 +351,7 @@ In this project, the `sideEffects` field is defined as follows in the `package.j
     "dist/assistant-inject.js",
     "dist/content-script.js",
     "dist/content-script.mv3.js",
+    "dist/extcss-inject.js",
     "dist/gpc.mv3.js",
     "dist/hide-document-referrer.mv3.js"
 ]
@@ -354,6 +376,11 @@ on-demand.
 Same approach with dynamic injecting we use for stealth options GPC and Hide
 Document Referrer. Handlers for these options will dynamically register content
 scripts via `scripting.registerContentScript`.
+
+The ExtendedCss engine follows the same pattern: `dist/extcss-inject.js`
+installs the engine in the document's ISOLATED world, and the background
+injects it before the matching rules. A consumer bundler must keep the file
+and the extension must ship it under `settings.extCssScriptUrl`.
 
 ## API
 
@@ -577,6 +604,16 @@ Redirect url for blocking rules with `$document` modifier.
 type: `string`
 
 Path to the assembled `@adguard/assistant` module. Necessary for lazy on-demand loading of the assistant.
+
+##### extCssScriptUrl
+
+type: `string`
+
+Path to the prebuilt script that applies ExtendedCss rules. Copy
+`dist/extcss-inject.js` from this package into the extension and pass its path
+relative to the extension root. The background injects this file into a frame
+before it injects the matching ExtendedCss rules, so the extension must ship
+it. Without the option ExtendedCss rules do not apply.
 
 ##### gpcScriptUrl (MV3 only)
 

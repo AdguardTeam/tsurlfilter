@@ -80,4 +80,26 @@ const assistantInjectScriptConfig = {
     plugins,
 };
 
-export default [backgroundConfig, contentScriptConfig, assistantInjectScriptConfig];
+/**
+ * The prebuilt ExtendedCss script asset.
+ *
+ * The file is a single self-contained script the background injects into a
+ * frame before the ExtendedCss rules, so it must stay a separate copyable
+ * file. It re-exports the asset of `@adguard/tswebextension`, which the
+ * consumer's bundler resolves when the file is copied into the extension.
+ */
+const extCssInjectScriptConfig = {
+    cache,
+    input: 'src/content-script/extcss.ts',
+    output: [
+        {
+            file: `${OUTPUT_PATH}/adguard-extcss.js`,
+            format: 'esm',
+            sourcemap: true,
+        },
+    ],
+    external: ['@adguard/tswebextension/extcss-inject'],
+    plugins,
+};
+
+export default [backgroundConfig, contentScriptConfig, assistantInjectScriptConfig, extCssInjectScriptConfig];

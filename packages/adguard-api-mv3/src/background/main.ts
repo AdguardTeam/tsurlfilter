@@ -245,6 +245,7 @@ export class AdguardApi {
             userrules,
             settings: {
                 assistantUrl: 'adguard-assistant.js',
+                extCssScriptUrl: 'adguard-extcss.js',
                 // Related stealth option is disabled
                 gpcScriptUrl: 'whatever',
                 // Related stealth option is disabled

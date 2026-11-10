@@ -7,6 +7,10 @@ import {
     vi,
 } from 'vitest';
 
+// Installs the engine the way the background does: the prebuilt script asset
+// goes into the document before the rule strings.
+import '../../../../src/lib/common/extcss-engine';
+
 import { extCssInjectedApply, extCssInjectedDispose } from '../../../../src/lib/common/extcss-apply-fn';
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
 import { logger } from '../../../../src/lib/common/utils/logger';
@@ -18,6 +22,16 @@ import { tabsApi } from '../../../../src/lib/mv3/tabs/tabs-api';
 vi.mock('../../../../src/lib/mv3/tabs/tabs-api', () => ({
     tabsApi: {
         getFrameContext: vi.fn(),
+    },
+}));
+
+vi.mock('../../../../src/lib/mv3/background/app-context', () => ({
+    appContext: {
+        configuration: {
+            settings: {
+                extCssScriptUrl: 'extcss-inject.js',
+            },
+        },
     },
 }));
 
@@ -72,7 +86,26 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
             frameId: 0,
             cssRules: rules,
             collectStats: false,
+            scriptUrl: 'extcss-inject.js',
         });
+    });
+
+    it('does not inject the rules when the engine script url is not configured', async () => {
+        const rules = ['div:has(.ad) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
+        const { appContext } = await import('../../../../src/lib/mv3/background/app-context');
+        const { configuration } = appContext;
+        appContext.configuration = undefined;
+        const errorSpy = vi.spyOn(logger, 'error');
+
+        try {
+            await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+            expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
+            expect(errorSpy).toHaveBeenCalledTimes(1);
+        } finally {
+            appContext.configuration = configuration;
+        }
     });
 
     it('forwards areHitsStatsCollected from the prepared result to executeExtCss', async () => {
@@ -88,6 +121,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
             frameId: 0,
             cssRules: rules,
             collectStats: true,
+            scriptUrl: 'extcss-inject.js',
         });
     });
 
@@ -115,6 +149,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
             documentId: 'document-1',
             cssRules: rules,
             collectStats: false,
+            scriptUrl: 'extcss-inject.js',
         });
     });
 
@@ -206,8 +241,8 @@ describe('CosmeticApi.applyCosmeticRules — end-to-end in jsdom', () => {
     it('the injected func hides a matching :has() element when executed', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        // Drive the real inlined `extCssInjectedApply` through the injection
-        // call shape that `executeExtCss` would hand to
+        // Drive the real `extCssInjectedApply` through the injection call
+        // shape that `executeExtCss` would hand to
         // `chrome.scripting.executeScript`.
         vi.spyOn(ScriptingApi, 'executeExtCss').mockImplementation(async (params) => {
             extCssInjectedApply(params.cssRules, params.collectStats, EXTCSS_PROTOCOL);

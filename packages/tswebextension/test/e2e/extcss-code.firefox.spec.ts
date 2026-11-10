@@ -8,6 +8,10 @@ import {
 } from 'vitest';
 
 import { EXTCSS_PROTOCOL } from '../../src/lib/common/extcss-protocol';
+// Installs the engine on the page the way the background does: the prebuilt
+// script asset is injected before the rule strings, and the code string reads
+// the engine back from it.
+import '../../src/lib/common/extcss-engine';
 import { serializeExtCssDisposeForCode, serializeExtCssForCode } from '../../src/lib/mv2/background/extcss-code';
 
 /**
@@ -103,5 +107,25 @@ describe('MV2 ExtCSS code string in Firefox', () => {
 
         expect(getComputedStyle(ad).display).toBe('block');
         expect(getRetainedInstance()).toBeNull();
+    });
+
+    it('fails instead of applying when the engine asset was not loaded', () => {
+        document.body.innerHTML = '<div class="ad"><span class="child"></span></div>';
+        const engine = window[EXTCSS_PROTOCOL.engineKey];
+        delete window[EXTCSS_PROTOCOL.engineKey];
+
+        try {
+            expect(() => evaluateCode(serializeExtCssForCode(
+                ['.ad:has(.child) { display: none !important; }'],
+                false,
+                EXTCSS_PROTOCOL,
+            ))).toThrow(/ExtendedCss engine is not loaded/);
+
+            const ad = document.querySelector('.ad') as HTMLElement;
+            expect(getComputedStyle(ad).display).toBe('block');
+            expect(getRetainedInstance()).toBeNull();
+        } finally {
+            window[EXTCSS_PROTOCOL.engineKey] = engine;
+        }
     });
 });

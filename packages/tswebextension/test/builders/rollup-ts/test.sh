@@ -66,4 +66,31 @@ fi
 
 rm $tswebextension
 
+# check that the prebuilt ExtendedCss script asset is shipped
+# The asset is injected by the background before the rule strings, so it must
+# exist in `dist`, install the engine under the key the injected apply function
+# reads, and stay small enough to inject into every frame with ExtCSS rules.
+# Current payload: ~56 KB minified with the bundled engine. Raise this only
+# when a genuine engine or helper growth lands, never to silence a regression.
+extcss_asset="$package_dist/extcss-inject.js"
+max_extcss_size=70000
+if [ ! -f "$extcss_asset" ]; then
+    echo "Shipped ExtendedCss script asset is missing: $extcss_asset"
+    echo "Testing bundling with rollup-ts ended with error"
+    exit 1
+fi
+if ! grep -q "__adguardExtCssEngine" "$extcss_asset"; then
+    echo "Shipped ExtendedCss script asset does not install the engine global"
+    echo "Testing bundling with rollup-ts ended with error"
+    exit 1
+fi
+extcss_size=$(wc -c < "$extcss_asset" | tr -d ' ')
+if [ "$extcss_size" -gt $max_extcss_size ]; then
+    echo "Shipped ExtendedCss script asset is more than $max_extcss_size bytes with size $extcss_size"
+    echo "Testing bundling with rollup-ts ended with error"
+    exit 1
+else
+    echo "Shipped ExtendedCss script asset is less than or equal to $max_extcss_size bytes with size $extcss_size"
+fi
+
 echo "Testing bundling with rollup-ts ended successfully"

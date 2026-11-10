@@ -9,7 +9,8 @@
     "exports": {
         ".": "./dist/adguard-api.js",
         "./content-script": "./dist/adguard-content.js",
-        "./assistant": "./dist/adguard-assistant.js"
+        "./assistant": "./dist/adguard-assistant.js",
+        "./extcss": "./dist/adguard-extcss.js"
     },
     "typesVersions": {
         "*": {

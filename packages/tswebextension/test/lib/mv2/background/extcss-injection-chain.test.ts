@@ -10,6 +10,10 @@ import {
     vi,
 } from 'vitest';
 
+// Installs the engine the way the background does: the prebuilt script asset
+// goes into the document before the rule strings.
+import '../../../../src/lib/common/extcss-engine';
+
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
 import { tabsApi } from '../../../../src/lib/mv2/background/api';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
@@ -24,7 +28,13 @@ vi.mock('../../../../src/lib/mv2/background/api', () => ({
 }));
 
 vi.mock('../../../../src/lib/mv2/background/app-context', () => ({
-    appContext: {},
+    appContext: {
+        configuration: {
+            settings: {
+                extCssScriptUrl: 'extcss-inject.js',
+            },
+        },
+    },
 }));
 
 vi.mock('../../../../src/lib/mv2/background/services/local-script-rules-service', () => ({
@@ -69,15 +79,24 @@ describe('MV2 ExtCSS injection chain', () => {
         document.body.innerHTML = '';
     });
 
-    it('passes the serialized payload to executeScript and the page applies it', async () => {
+    it('injects the engine asset, then the serialized rules, and the page applies them', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext());
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(browser.tabs.executeScript.callCount).toBe(1);
+        expect(browser.tabs.executeScript.callCount).toBe(2);
 
-        const [tabId, injectDetails] = browser.tabs.executeScript.firstCall.args;
+        const [assetTabId, assetDetails] = browser.tabs.executeScript.firstCall.args;
+        expect(assetTabId).toBe(1);
+        expect(assetDetails).toEqual({
+            file: 'extcss-inject.js',
+            frameId: 0,
+            runAt: 'document_start',
+            matchAboutBlank: true,
+        });
+
+        const [tabId, injectDetails] = browser.tabs.executeScript.secondCall.args;
         expect(tabId).toBe(1);
         expect(injectDetails).toEqual({
             code: serializeExtCssForCode(RULES, false, EXTCSS_PROTOCOL),
@@ -86,7 +105,9 @@ describe('MV2 ExtCSS injection chain', () => {
             matchAboutBlank: true,
         });
 
-        // Evaluate exactly what the browser receives, not a rebuilt copy.
+        // Evaluate exactly what the browser receives, not a rebuilt copy. The
+        // engine comes from the asset, which the test setup installs the same
+        // way the background does.
         runInThisContext(injectDetails.code);
 
         const ad = document.querySelector('.ad') as HTMLElement;

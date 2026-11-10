@@ -1,39 +1,7 @@
 import { type ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
 
-import type { cssHitsHelpers as cssHitsHelpersImpl, ExtendedCssHit } from './content-script/utils/css-hits-helpers';
-import type applyExtendedCssImpl from './extcss-inject-src';
+import { type ExtendedCssHit } from './content-script/utils/css-hits-helpers';
 import { type ExtCssProtocol } from './extcss-protocol';
-
-// Type-only decls for symbols supplied by build-time inlining (see the
-// inlineExtCssBundle plugin). Erased at runtime; they exist only so the source
-// type-checks before the inliner swaps in the real definitions. The
-// `import type` declarations above are likewise erased — they provide the real
-// module types instead of hand-rolled mirrors, without affecting `toString()`
-// serialization.
-// eslint-disable-next-line @typescript-eslint/naming-convention -- build-time marker, replaced by the inliner
-declare function __INLINE_EXTCSS_BUNDLE__(): void;
-
-/**
- * Build-time marker replaced by `tasks/inline-css-hits-helpers.ts`. The
- * inlined code defines a local `cssHitsHelpers` object (the SAME source as
- * MV2's `ElementUtils`) so the `beforeStyleApplied` callback below can call
- * `parseExtendedStyleInfo()` and `elementToString()` without any
- * module-scope references.
- */
-// eslint-disable-next-line @typescript-eslint/naming-convention -- build-time marker, replaced by the inliner
-declare function __INLINE_CSS_HITS_HELPERS__(): void;
-
-/**
- * Inlined by `__INLINE_CSS_HITS_HELPERS__()` at build time. Type-only decl so
- * the source type-checks before the inliner swaps in the real object.
- */
-declare const cssHitsHelpers: typeof cssHitsHelpersImpl;
-
-/**
- * The apply IIFE entry: returns the applied ExtendedCss instance, accepts an
- * optional beforeStyleApplied callback (for CSS-hits stats).
- */
-declare const applyExtendedCss: typeof applyExtendedCssImpl;
 
 /**
  * Self-contained ExtendedCSS apply function shared by MV2 and MV3.
@@ -45,14 +13,14 @@ declare const applyExtendedCss: typeof applyExtendedCssImpl;
  * NEVER called in the background — it is serialized by `toString()` and
  * re-evaluated in the page's ISOLATED world, so it MUST NOT reference any
  * outer-scope identifier: only literal source in this body (and `window`)
- * survives. The `inlineExtCssBundle` build plugin replaces the inlining
- * marker call below with the private minified ExtendedCss apply IIFE (built
- * in-memory from the library's public root export), which defines
- * `applyExtendedCss` as a function-scoped `var`. Every injection-boundary
- * literal (message handler name, message type, marker prefix, instance key)
- * arrives via the `protocol` argument — the shared `EXTCSS_PROTOCOL`
- * constant is the single source of truth. Self-containment is pinned by the
- * `String(extCssInjectedApply)` unit tests.
+ * survives. The engine itself is NOT part of this body: the background first
+ * injects the prebuilt `extcss-inject.js` script asset, which installs
+ * `{ applyExtendedCss, cssHitsHelpers }` under `protocol.engineKey` in the
+ * same ISOLATED world (see `extcss-engine.ts`). Every injection-boundary
+ * literal (message handler name, message type, marker prefix, instance key,
+ * engine key) arrives via the `protocol` argument — the shared
+ * `EXTCSS_PROTOCOL` constant is the single source of truth. Self-containment
+ * is pinned by the `String(extCssInjectedApply)` unit tests.
  *
  * A call whose rule strings match the ones the retained instance was built
  * from is a no-op: the instance is neither disposed nor rebuilt, so repeated
@@ -69,8 +37,9 @@ declare const applyExtendedCss: typeof applyExtendedCssImpl;
  * required argument (not a module-scope default) so the serialized body has
  * zero free identifiers.
  *
- * @throws The error that made the new apply fail, after the previous rule
- * strings have been re-applied so the page stays protected.
+ * @throws Error when the ExtendedCss engine asset was not injected into the
+ * document first, and the error that made the new apply fail, after the
+ * previous rule strings have been re-applied so the page stays protected.
  */
 export const extCssInjectedApply = (
     cssRules: string[],
@@ -106,9 +75,8 @@ export const extCssInjectedApply = (
     // statistics are collected), so an unchanged rule set also means an
     // unchanged callback registration.
     //
-    // The check runs before the inlined bundle is evaluated, so a repeated
-    // call does not evaluate the engine. It does not avoid parsing the code
-    // string, which the browser does before the function runs.
+    // The check runs before the engine is read, so a repeated call
+    // stays a pure no-op and never touches the engine state.
     if (
         previousRules
         && previousRules.length === cssRules.length
@@ -117,17 +85,28 @@ export const extCssInjectedApply = (
         return;
     }
 
-    __INLINE_EXTCSS_BUNDLE__();
+    /**
+     * Engine installed by the prebuilt script asset. The background injects
+     * the asset right before this function, so a missing engine means the
+     * asset could not be loaded — or the document navigated between the two
+     * injections, in which case this document never received it. Applying the
+     * rules is impossible in both cases, and applying stale rules must not
+     * happen, so the call fails loudly instead.
+     */
+    const engine = window[protocol.engineKey];
 
-    // Inlined CSS-hits helpers — the SAME source used by MV2's
-    // `ElementUtils` and `CssHitsCounter`. Defines a local `cssHitsHelpers`
-    // object with `collectExtendedCssHits()` so the `beforeStyleApplied`
-    // callback below can use it without any module-scope references (which
-    // would not survive toString()-based serialization for
+    if (!engine) {
+        throw new Error('ExtendedCss engine is not loaded: inject the extcss script asset first');
+    }
+
+    // The CSS-hits helpers — the SAME source used by MV2's `ElementUtils` and
+    // `CssHitsCounter` — arrive with the engine asset, so they are reachable
+    // here without any module-scope reference (which would not survive
+    // toString()-based serialization for
     // `chrome.scripting.executeScript({ func })`).
-    __INLINE_CSS_HITS_HELPERS__();
+    const { applyExtendedCss, cssHitsHelpers } = engine;
 
-    // The inlined helpers keep no state between injections, so the dedupe map
+    // The helpers keep no state between injections, so the dedupe map
     // is created here, retained on the instance and passed explicitly. Nodes
     // reported before a re-apply are skipped, while nodes matched for the
     // first time by the new instance are still reported.
@@ -190,10 +169,10 @@ export const extCssInjectedApply = (
     };
 
     /**
-     * CSS-hits callback. Uses the inlined `cssHitsHelpers` (defined above by
-     * the build-time helpers inliner) — the SAME source that MV2's
-     * `CssHitsCounter` uses — so both manifest versions collect hits one way.
-     * The behavior tests in `extcss-apply-fn.test.ts` cover the inlined path.
+     * CSS-hits callback. Uses the `cssHitsHelpers` installed by the engine
+     * asset — the SAME source that MV2's `CssHitsCounter` uses — so both
+     * manifest versions collect hits one way. The behavior tests in
+     * `extcss-apply-fn.test.ts` cover this path.
      *
      * @param el The affected element whose style is about to be applied.
      *

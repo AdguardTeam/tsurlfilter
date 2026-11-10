@@ -11,6 +11,10 @@ import {
     vi,
 } from 'vitest';
 
+// Installs the engine the way the background does: the prebuilt script asset
+// goes into the document before the rule strings.
+import '../../../src/lib/common/extcss-engine';
+
 import { extCssInjectedApply, extCssInjectedDispose } from '../../../src/lib/common/extcss-apply-fn';
 import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../src/lib/common/extcss-protocol';
 
@@ -35,7 +39,7 @@ const createSerializedApply = (): typeof extCssInjectedApply => {
     return new Function(`return (${String(extCssInjectedApply)});`)() as typeof extCssInjectedApply;
 };
 
-describe('extCssInjectedApply (inlined bundle)', () => {
+describe('extCssInjectedApply (prebuilt engine asset)', () => {
     it('hides a matching :has() element after being called', () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
@@ -74,8 +78,8 @@ describe('extCssInjectedApply (inlined bundle)', () => {
         // `escapeRegExp`, which contains `$&`. jsdom normalizes `color: red`
         // to `rgb(255, 0, 0)` (parentheses are regex metacharacters that
         // `escapeRegExp` must escape), so this rule only hides the element when
-        // the inlined engine is intact. With the corrupted inliner the
-        // escaped value becomes garbage and the regex no longer matches.
+        // the bundled engine is intact. A corrupted script asset build turns
+        // the escaped value into garbage and the regex no longer matches.
         document.body.innerHTML = '<div class="ad" style="color: red">ad</div>';
 
         createSerializedApply()(
@@ -215,8 +219,28 @@ function stubOneShotThrowingMutationObserver(): void {
     vi.stubGlobal('MutationObserver', OneShotThrowingMutationObserver);
 }
 
+/**
+ * Reinstalls the ExtendedCss engine with `window.MutationObserver` stubbed for
+ * its first construction.
+ *
+ * The engine reads the native observer when its module is evaluated, and the
+ * prebuilt script asset is such a module. A document that loads the asset after
+ * the stub — which is what this helper models — therefore gets an engine whose
+ * first observer construction throws.
+ */
+const installEngineWithOneShotThrowingObserver = async (): Promise<void> => {
+    stubOneShotThrowingMutationObserver();
+
+    try {
+        vi.resetModules();
+        await import('../../../src/lib/common/extcss-engine');
+    } finally {
+        vi.unstubAllGlobals();
+    }
+};
+
 describe('extCssInjectedApply — atomic re-apply', () => {
-    it('restores the previous filtering when the new apply throws', () => {
+    it('restores the previous filtering when the new apply throws', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
         createSerializedApply()(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
@@ -229,17 +253,13 @@ describe('extCssInjectedApply — atomic re-apply', () => {
         expect(w.__adguardExtCss).toBeTruthy();
 
         // Force the next apply to throw deterministically.
-        stubOneShotThrowingMutationObserver();
+        await installEngineWithOneShotThrowingObserver();
 
-        try {
-            expect(() => createSerializedApply()(
-                ['.never-matches { display: none !important; }'],
-                false,
-                EXTCSS_PROTOCOL,
-            )).toThrow('simulated apply failure');
-        } finally {
-            vi.unstubAllGlobals();
-        }
+        expect(() => createSerializedApply()(
+            ['.never-matches { display: none !important; }'],
+            false,
+            EXTCSS_PROTOCOL,
+        )).toThrow('simulated apply failure');
 
         // The failed apply must NOT leave the page unprotected: the previous
         // rule strings are re-applied on a fresh instance.
@@ -249,7 +269,7 @@ describe('extCssInjectedApply — atomic re-apply', () => {
         expect(ad.style.getPropertyPriority('display')).toBe('important');
     });
 
-    it('reverts the failed apply\'s styles before restoring the previous rule set', () => {
+    it('reverts the failed apply\'s styles before restoring the previous rule set', async () => {
         document.body.innerHTML = '<div class="ad">ad</div>';
 
         createSerializedApply()(['.ad { display: none !important; }'], false, EXTCSS_PROTOCOL);
@@ -259,17 +279,13 @@ describe('extCssInjectedApply — atomic re-apply', () => {
 
         // The failing apply matches `.ad` and sets `visibility: hidden` before
         // the observer construction throws.
-        stubOneShotThrowingMutationObserver();
+        await installEngineWithOneShotThrowingObserver();
 
-        try {
-            expect(() => createSerializedApply()(
-                ['.ad { visibility: hidden !important; }'],
-                false,
-                EXTCSS_PROTOCOL,
-            )).toThrow('simulated apply failure');
-        } finally {
-            vi.unstubAllGlobals();
-        }
+        expect(() => createSerializedApply()(
+            ['.ad { visibility: hidden !important; }'],
+            false,
+            EXTCSS_PROTOCOL,
+        )).toThrow('simulated apply failure');
 
         // The failed instance is disposed by the inject source, so its style is
         // reverted instead of becoming the restored instance's `originalStyle`
@@ -477,6 +493,9 @@ describe('extCssInjectedApply — CSS hits stats', () => {
             instanceKey: '__customExtCss',
             // eslint-disable-next-line no-underscore-dangle -- deliberate test marker key
             removedElementsKey: '__customExtCssRemoved',
+            // The engine asset is installed under the shared key: the custom
+            // protocol must keep pointing at it, otherwise nothing can apply.
+            engineKey: EXTCSS_PROTOCOL.engineKey,
         } as unknown as ExtCssProtocol;
         const customMarkerRule = '.ad:has(.child) { display: none !important; '
             + 'content: \'custommarker1%3B2\' !important; }';
@@ -604,6 +623,39 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         const msg = sendMessageSpy.mock.calls[0][0] as any;
         // The serialized element must escape the " in the data-x value.
         expect(msg.payload[0].element).toBe('<div data-x="a\\"b" class="ad">');
+    });
+});
+
+describe('extCssInjectedApply — prebuilt engine asset', () => {
+    it('reads the engine installed by the script asset protocol key', () => {
+        const engine = window[EXTCSS_PROTOCOL.engineKey];
+        expect(engine).toBeDefined();
+
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+
+        createSerializedApply()(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+
+        const ad = document.querySelector('.ad') as HTMLElement;
+        expect(ad.style.getPropertyValue('display')).toBe('none');
+    });
+
+    it('throws instead of applying when the engine asset was not injected', () => {
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+        const engine = window[EXTCSS_PROTOCOL.engineKey];
+        delete window[EXTCSS_PROTOCOL.engineKey];
+
+        try {
+            expect(() => createSerializedApply()(
+                ['.ad:has(.child) { display: none !important; }'],
+                false,
+                EXTCSS_PROTOCOL,
+            )).toThrow(/ExtendedCss engine is not loaded/);
+
+            const ad = document.querySelector('.ad') as HTMLElement;
+            expect(ad.style.getPropertyValue('display')).toBe('');
+        } finally {
+            window[EXTCSS_PROTOCOL.engineKey] = engine;
+        }
     });
 });
 

@@ -158,6 +158,14 @@ export const settingsConfigValidator = zod.object({
     assistantUrl: zod.string(),
 
     /**
+     * Path to the prebuilt script that applies ExtendedCss rules in pages.
+     * Necessary for ExtendedCss filtering: the background injects this file
+     * into a frame before it injects the matching rule strings. Copy it into
+     * the extension from `@adguard/tswebextension/dist/extcss-inject.js`.
+     */
+    extCssScriptUrl: zod.string(),
+
+    /**
      * Stealth mode options.
      */
     stealth: stealthConfigValidator,

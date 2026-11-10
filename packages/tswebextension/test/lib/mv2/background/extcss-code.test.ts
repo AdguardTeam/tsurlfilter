@@ -16,9 +16,23 @@ import {
     vi,
 } from 'vitest';
 
+// Installs the engine the way the background does: the prebuilt script asset
+// goes into the document before the rule strings.
+import '../../../../src/lib/common/extcss-engine';
+
 import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../../src/lib/common/extcss-protocol';
 import { serializeExtCssDisposeForCode, serializeExtCssForCode } from '../../../../src/lib/mv2/background/extcss-code';
-import { APPLY_FN_MAX_BYTES } from '../../common/extcss-payload-size';
+
+/**
+ * Size ceiling for the serialized MV2 apply code string.
+ *
+ * The string carries only the wiring function and the rule strings: the
+ * ExtendedCss engine and the CSS-hits helpers travel in the prebuilt
+ * `extcss-inject.js` asset. Measured value on 2026-11-10: ~4.3 KB with a
+ * representative rule set, so the ceiling is a regression guard against the
+ * engine creeping back into the payload.
+ */
+const APPLY_CODE_MAX_BYTES = 16 * 1024;
 
 // Resolve the serializer source path relative to THIS test file's directory.
 // `readFileSync` resolves relative paths against `process.cwd()` (the package
@@ -145,6 +159,7 @@ describe('extcss-code serializer', () => {
             handlerName: 'customHandler',
             messageType: 'customMessage',
             instanceKey: '__customExtCss',
+            engineKey: EXTCSS_PROTOCOL.engineKey,
         } as unknown as ExtCssProtocol;
         const rules = ['.ad:has(.child) { display: none !important; }'];
         const code = serializeExtCssForCode(rules, false, protocol);
@@ -218,7 +233,21 @@ describe('extcss-code serializer', () => {
             EXTCSS_PROTOCOL,
         );
 
-        expect(Buffer.byteLength(code, 'utf8')).toBeLessThan(APPLY_FN_MAX_BYTES);
+        expect(Buffer.byteLength(code, 'utf8')).toBeLessThan(APPLY_CODE_MAX_BYTES);
+    });
+
+    it('does not carry the ExtendedCss engine', () => {
+        // The engine travels in the prebuilt script asset, so the payload must
+        // stay free of engine internals: a payload that carries them again
+        // would exceed the cap above and resent the engine on every apply.
+        const code = serializeExtCssForCode(
+            ['.ad:has(.child) { display: none !important; }'],
+            false,
+            EXTCSS_PROTOCOL,
+        );
+
+        expect(code).not.toContain('class ExtendedCss');
+        expect(code).not.toContain('@adguard/extended-css');
     });
 
     it('executes the apply code with hits collection and sends SaveCssHitsStats', async () => {

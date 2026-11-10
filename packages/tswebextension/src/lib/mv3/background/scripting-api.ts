@@ -108,6 +108,12 @@ export type ExecuteExtCssParams = ExecuteExtCssTarget & {
      * injected func.
      */
     collectStats: boolean;
+
+    /**
+     * Path to the prebuilt ExtendedCss script asset, relative to the extension
+     * root. Injected into the frame before the rules.
+     */
+    scriptUrl: string;
 };
 
 /**
@@ -294,22 +300,29 @@ export class ScriptingApi {
     }
 
     /**
-     * Injects the pre-bundled ExtendedCss engine and the matching rule strings
-     * into the target frame and applies them. Runs in the ISOLATED world
-     * (ExtendedCss only needs DOM access; `MutationObserver` in the isolated
-     * world observes the same DOM, including page-JS mutations) and injects
-     * immediately at `onCommitted` to minimize ad flash.
+     * Injects the prebuilt ExtendedCss script asset and the matching rule
+     * strings into the target frame and applies them. Runs in the ISOLATED
+     * world (ExtendedCss only needs DOM access; `MutationObserver` in the
+     * isolated world observes the same DOM, including page-JS mutations) and
+     * injects immediately at `onCommitted` to minimize ad flash.
      *
-     * The `func` is the static, self-contained `extCssInjectedApply` function
-     * whose body contains the inlined `@adguard/extended-css` engine. Inlining
-     * the engine into `func` needs no consumer packaging or configuration
-     * changes and makes the engine + rules a single atomic injection. The
-     * service-worker CSP only forbids runtime code assembly, so a pre-built
-     * `files` injection would satisfy it as well.
+     * The asset is a static, prebuilt file that installs the engine on the
+     * document's ISOLATED world; the second call is the static
+     * `extCssInjectedApply` function, which reads the engine back and applies
+     * the rule strings. Both calls target the same frame, and both are bound
+     * to the document when its id is known, so a navigation cannot split the
+     * pair: the second call fails instead. When the id is not known, a
+     * navigation between the calls loses the installed engine with the old
+     * document, so the second call fails on the missing engine rather than
+     * applying the rules to a different document.
+     *
+     * The `files` injection also satisfies the service-worker CSP, which
+     * forbids runtime code assembly.
      *
      * @param params Parameters for executing ExtendedCss.
      *
-     * @returns Promise that resolves when the engine + rules are injected.
+     * @returns Promise that resolves when the engine and the rules are
+     * injected.
      */
     public static async executeExtCss(params: ExecuteExtCssParams): Promise<void> {
         const {
@@ -318,7 +331,20 @@ export class ScriptingApi {
             documentId,
             cssRules,
             collectStats,
+            scriptUrl,
         } = params;
+
+        /**
+         * Using `files` here is safe: the url is a static file from the
+         * extension's directory, i.e. pre-built and verified.
+         */
+        await chrome.scripting.executeScript({
+            target: ScriptingApi.buildExtCssTarget({ tabId, frameId, documentId }),
+            files: [scriptUrl],
+            injectImmediately: true,
+            world: 'ISOLATED',
+        });
+
         await chrome.scripting.executeScript({
             target: ScriptingApi.buildExtCssTarget({ tabId, frameId, documentId }),
             func: extCssInjectedApply,

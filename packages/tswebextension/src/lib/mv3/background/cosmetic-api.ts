@@ -428,11 +428,12 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Injects ExtendedCss rules into the specified tab and frame directly from
      * the background via the Scripting API.
      *
-     * The injection is bound to the frame context's document, so a navigation
-     * between queueing and executing it cannot apply the rules to a different
-     * document. When there are no matching rules (empty or null), nothing is
-     * applied; an instance already injected into this document is disposed
-     * instead, so a stale instance cannot stay active. The disposal is
+     * The prebuilt engine asset is injected first and the rule strings second,
+     * and both injections are bound to the frame context's document, so a
+     * navigation between queueing and executing them cannot apply the rules to
+     * a different document. When there are no matching rules (empty or null),
+     * nothing is applied; an instance already injected into this document is
+     * disposed instead, so a stale instance cannot stay active. The disposal is
      * unconditional, because only the document itself knows whether it holds
      * an instance.
      *
@@ -473,12 +474,21 @@ export class CosmeticApi extends CosmeticApiCommon {
                 return;
             }
 
+            const extCssScriptUrl = appContext.configuration?.settings.extCssScriptUrl;
+
+            if (!extCssScriptUrl) {
+                logger.error(`[tsweb.CosmeticApi.applyExtCssRules]: settings.extCssScriptUrl is not set, ExtendedCss rules are not applied in tabId ${tabId} and frameId ${frameId}`);
+
+                return;
+            }
+
             await ScriptingApi.executeExtCss({
                 tabId,
                 frameId,
                 documentId,
                 cssRules: extCssRules,
                 collectStats: areHitsStatsCollected,
+                scriptUrl: extCssScriptUrl,
             });
         } catch (e) {
             logger.info(`[tsweb.CosmeticApi.applyExtCssRules]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);

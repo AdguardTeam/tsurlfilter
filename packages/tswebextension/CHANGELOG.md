@@ -38,6 +38,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   elements they hide no longer flash during page load.
 - MV2 `:contains()` now uses the `init()` snapshot of the native
   `textContent` getter, matching MV3.
+- **BREAKING:** ExtendedCSS is now applied from a prebuilt script asset: the
+  background injects `dist/extcss-inject.js` (the new `./extcss-inject` entry
+  point) into a frame before it passes the matching rule strings. The new
+  required `settings.extCssScriptUrl` option must point to that file copied
+  into the extension, and ExtendedCSS rules do not apply without it. The
+  engine no longer travels in every apply payload, and the build-time
+  inliners are removed.
 
 ### Deprecated
 

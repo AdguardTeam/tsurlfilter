@@ -27,7 +27,15 @@ import { TabsCosmeticInjector } from '../../../../src/lib/mv3/tabs/tabs-cosmetic
 import { createCosmeticRule } from '../../../helpers/rule-creator';
 
 vi.mock('../../../../src/lib/mv3/background/engine-api');
-vi.mock('../../../../src/lib/mv3/background/app-context');
+vi.mock('../../../../src/lib/mv3/background/app-context', () => ({
+    appContext: {
+        configuration: {
+            settings: {
+                extCssScriptUrl: 'extcss-inject.js',
+            },
+        },
+    },
+}));
 
 const testScriptFn = (): void => {
     // eslint-disable-next-line no-console

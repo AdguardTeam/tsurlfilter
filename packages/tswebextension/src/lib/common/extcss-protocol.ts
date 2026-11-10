@@ -11,7 +11,45 @@
 
 import { CSS_HITS_MARKER_PREFIX } from './constants';
 import { EXTCSS_REMOVED_ELEMENTS_KEY } from './content-script/extcss-removed-elements';
+import { type cssHitsHelpers as cssHitsHelpersImpl } from './content-script/utils/css-hits-helpers';
+import type applyExtendedCssImpl from './extcss-inject-src';
 import { MESSAGE_HANDLER_NAME, MessageType } from './message-constants';
+
+/**
+ * `window` key under which the prebuilt ExtendedCss script asset installs the
+ * engine, so the injected apply function can reach it without carrying the
+ * engine source itself. Typed as a literal so a typo in
+ * {@link EXTCSS_PROTOCOL} or in the asset entry fails the type check.
+ */
+export const EXTCSS_ENGINE_KEY = '__adguardExtCssEngine' as const;
+
+/**
+ * Engine payload installed by the prebuilt `extcss-inject.js` script asset and
+ * read by the injected apply function from the document's ISOLATED world.
+ */
+export type ExtCssEngine = {
+    /**
+     * Applies rule strings to the current document and returns the retained
+     * instance.
+     */
+    applyExtendedCss: typeof applyExtendedCssImpl;
+
+    /**
+     * CSS-hits helpers used by the `beforeStyleApplied` callback.
+     */
+    cssHitsHelpers: typeof cssHitsHelpersImpl;
+};
+
+declare global {
+    interface Window {
+        /**
+         * ExtendedCss engine installed by the prebuilt `extcss-inject.js`
+         * script asset. Absent until the background injects that asset into the
+         * document.
+         */
+        [EXTCSS_ENGINE_KEY]?: ExtCssEngine;
+    }
+}
 
 /**
  * Literal values crossing the ExtendedCSS injection boundaries into the
@@ -56,6 +94,13 @@ export type ExtCssProtocol = {
      * does not put them back into the page as probes.
      */
     removedElementsKey: typeof EXTCSS_REMOVED_ELEMENTS_KEY;
+
+    /**
+     * `window` key under which the prebuilt ExtendedCss script asset installs
+     * the engine, so the injected function can apply rules without carrying
+     * the engine source.
+     */
+    engineKey: typeof EXTCSS_ENGINE_KEY;
 };
 
 /**
@@ -75,4 +120,5 @@ export const EXTCSS_PROTOCOL: ExtCssProtocol = {
     messageType: MessageType.SaveCssHitsStats,
     instanceKey: EXTCSS_INSTANCE_KEY,
     removedElementsKey: EXTCSS_REMOVED_ELEMENTS_KEY,
+    engineKey: EXTCSS_ENGINE_KEY,
 };

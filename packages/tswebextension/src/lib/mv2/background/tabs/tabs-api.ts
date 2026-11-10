@@ -140,6 +140,26 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
     }
 
     /**
+     * Injects a script file to the frame by tab id and frame id.
+     *
+     * @param tabId Tab ID.
+     * @param frameId Frame ID.
+     * @param file Path to the script file, relative to the extension root.
+     *
+     * @throws Error if the script injection fails.
+     */
+    public static async injectScriptFile(tabId: number, frameId: number, file: string): Promise<void> {
+        const injectDetails: ExtensionTypes.InjectDetails = {
+            file,
+            frameId,
+            runAt: 'document_start',
+            matchAboutBlank: true,
+        };
+
+        await browser.tabs.executeScript(tabId, injectDetails);
+    }
+
+    /**
      * Injects css styles to the frame by tab id and frame id.
      *
      * @param tabId Tab ID.

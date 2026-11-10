@@ -66,6 +66,7 @@ describe('DocumentBlockingService', () => {
             allowlistEnabled: false,
             documentBlockingPageUrl: 'chrome-extension://abc/blocking.html',
             assistantUrl: '/assistant-inject.js',
+            extCssScriptUrl: '/extcss-inject.js',
             stealthModeEnabled: false,
             gpcScriptUrl: '/gpc.js',
             hideDocumentReferrerScriptUrl: '/hide-referrer.js',
