@@ -440,7 +440,6 @@ export class TsWebExtension implements AppInterface<
         if (tabUrl) {
             this.tabsApi.createTabContextIfNotExists(tabId, tabUrl);
         }
-        this.tabsApi.updateTabMainFrameRule(tabId);
 
         const tabContext = this.tabsApi.getTabContext(tabId);
         if (!tabContext) {

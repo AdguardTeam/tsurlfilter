@@ -151,7 +151,6 @@ export class MessagesApi {
         if (sender.tab?.url) {
             this.tabsApi.createTabContextIfNotExists(tabId, sender.tab.url);
         }
-        this.tabsApi.updateTabMainFrameRule(tabId);
 
         const tabContext = this.tabsApi.getTabContext(tabId);
         if (!tabContext) {
@@ -199,7 +198,8 @@ export class MessagesApi {
         if (sender.tab.url) {
             this.tabsApi.createTabContextIfNotExists(tabId, sender.tab.url);
         }
-        this.tabsApi.updateTabMainFrameRule(tabId);
+
+        await CosmeticApi.waitForPendingCssInjection(tabId, frameId);
 
         if (res.data.reapplyHits) {
             return CosmeticApi.reapplyMarkedCosmeticData(res.data.documentUrl, tabId, frameId);

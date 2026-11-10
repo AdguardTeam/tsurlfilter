@@ -235,6 +235,7 @@ describe('TsWebExtension', () => {
 
             // Ensure the next call is a real change and notifies.
             instance.configuration.settings.collectStats = false;
+            const updateMainFrameRuleSpy = vi.spyOn(tabsApi, 'updateTabMainFrameRule');
             const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
 
             instance.setCollectHitStats(true);
@@ -242,6 +243,9 @@ describe('TsWebExtension', () => {
             const resolver = notifySpy.mock.calls[0][1] as (tabId: number) => boolean;
             expect(resolver(allowlistedTabId)).toBe(false);
             expect(resolver(regularTabId)).toBe(true);
+            // The navigation handler owns mainFrameRule. Rematching it from
+            // the tab URL can restore a stale allowlist rule.
+            expect(updateMainFrameRuleSpy).not.toHaveBeenCalled();
         });
 
         it('should update stealthModeEnabled correctly', async () => {

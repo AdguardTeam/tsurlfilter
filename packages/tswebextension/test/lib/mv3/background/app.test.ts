@@ -322,6 +322,7 @@ describe('TsWebExtension MV3 collect hit stats notifications', () => {
                 ? { mainFrameRule: { isFilteringDisabled: (): boolean => true } }
                 : { mainFrameRule: { isFilteringDisabled: (): boolean => false } }
         )) as never);
+        const updateMainFrameRuleSpy = vi.spyOn(tabsApi, 'updateTabMainFrameRule');
         const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
 
         instance.setCollectHitStats(true);
@@ -329,5 +330,8 @@ describe('TsWebExtension MV3 collect hit stats notifications', () => {
         const resolver = notifySpy.mock.calls[0][1] as (tabId: number) => boolean;
         expect(resolver(allowlistedTabId)).toBe(false);
         expect(resolver(regularTabId)).toBe(true);
+        // The navigation handler owns mainFrameRule. Rematching it from
+        // the tab URL can restore a stale allowlist rule.
+        expect(updateMainFrameRuleSpy).not.toHaveBeenCalled();
     });
 });
