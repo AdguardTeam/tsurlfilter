@@ -70,7 +70,7 @@ const setupMocks = (
     vi.spyOn(CosmeticApi, 'applyCosmeticRules');
     vi.spyOn(CosmeticApi, 'logScriptRules');
     vi.spyOn(ScriptingApi, 'insertCSS');
-    // ExtendedCSS is injected directly from the background.
+    // ExtendedCss is injected directly from the background.
     vi.spyOn(ScriptingApi, 'executeExtCss');
     // TODO (Slava): add tests for executeScriptText. AG-39122
 
@@ -159,7 +159,7 @@ describe('TabsCosmeticInjector', () => {
             cosmeticResult.CSS.append(createCosmeticRule('##h1', localFilterId));
             cosmeticResult.CSS.append(createCosmeticRule('##h2', customFilterId));
             cosmeticResult.CSS.append(createCosmeticRule('##h3', userFilterId));
-            // An ExtendedCSS rule (non-native pseudo-class) injected directly
+            // An ExtendedCss rule (non-native pseudo-class) injected directly
             // from the background via scripting.executeScript.
             cosmeticResult.CSS.append(createCosmeticRule('##div:contains(ad)', localFilterId));
 
@@ -202,7 +202,7 @@ describe('TabsCosmeticInjector', () => {
                     },
                 );
 
-                // ExtendedCSS rules are injected directly from the background
+                // ExtendedCss rules are injected directly from the background
                 // via the scripting API.
                 expect(ScriptingApi.executeExtCss).toHaveBeenCalledTimes(1);
                 expect(ScriptingApi.executeExtCss).toHaveBeenCalledWith(
@@ -286,7 +286,7 @@ describe('TabsCosmeticInjector', () => {
             // depending on the way how they are stored in the engine.
             const preparedCosmeticResult = {
                 cssText: CosmeticApi.getCssText(cosmeticResult),
-                // ExtendedCSS rules computed without hits markers.
+                // ExtendedCss rules computed without hits markers.
                 extCssRules: CosmeticApi.getExtCssRules(cosmeticResult, {
                     areHitsStatsCollected: false,
                     isNativeHasSupported: true,

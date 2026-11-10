@@ -9,7 +9,7 @@ import { HIDING_STYLE } from '../../mv2/common/hidden-style';
 /**
  * This class applies cosmetic rules in page context.
  *
- * ExtendedCSS rules are applied directly from the MV3 background service worker
+ * ExtendedCss rules are applied directly from the MV3 background service worker
  * via `chrome.scripting.executeScript` (see `CosmeticApi.applyCosmeticRules`).
  * The content script is responsible only for:
  * - repairing invalid grouped native CSS selectors that the background
@@ -129,7 +129,7 @@ export class CosmeticController {
         }
 
         // Native-only CSS hits counting: reads the `--adguard-hit` custom
-        // property from computed styles. ExtendedCSS-rule hits are reported
+        // property from computed styles. ExtendedCss-rule hits are reported
         // separately by the background-injected `extCssInjectedApply`
         // callback, so this counter reads ONLY native CSS markers.
         // Created at most once per document — repeated `process()` runs

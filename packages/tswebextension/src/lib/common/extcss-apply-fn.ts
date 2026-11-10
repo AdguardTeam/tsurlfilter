@@ -134,14 +134,23 @@ export const extCssInjectedApply = (
     const countedHits = previous?.countedHits ?? new WeakMap<Element, Set<string>>();
 
     /**
+     * Marker-stripped copies of the parsed rules, keyed by the original rule.
+     * ExtendedCss keys its `appliedRules` fast path on rule object identity,
+     * so the callback must return the same copy on every mutation pass.
+     */
+    const cleanedRules = new WeakMap<
+        IAffectedElement['rules'][number],
+        IAffectedElement['rules'][number]
+    >();
+
+    /**
      * Elements removed by a `:remove()` rule of this or a previous apply.
      * Retained on `window` — the injected function shares the document's
      * ISOLATED world with the content script — so the content-script
      * `CssHitsCounter` does not put them back into the page as probes.
      */
-    const removedElements = (w[protocol.removedElementsKey] as WeakSet<Element> | undefined)
-        ?? new WeakSet<Element>();
-    w[protocol.removedElementsKey] = removedElements;
+    const removedElements = window[protocol.removedElementsKey] ?? new WeakSet<Element>();
+    window[protocol.removedElementsKey] = removedElements;
 
     /**
      * Hits collected by {@link beforeStyleApplied} during the current apply
@@ -184,8 +193,7 @@ export const extCssInjectedApply = (
      * CSS-hits callback. Uses the inlined `cssHitsHelpers` (defined above by
      * the build-time helpers inliner) — the SAME source that MV2's
      * `CssHitsCounter` uses — so both manifest versions collect hits one way.
-     * The contract test (test/lib/common/css-hits-protocol.test.ts)
-     * pins both paths to identical outputs.
+     * The behavior tests in `extcss-apply-fn.test.ts` cover the inlined path.
      *
      * @param el The affected element whose style is about to be applied.
      *
@@ -208,6 +216,7 @@ export const extCssInjectedApply = (
             protocol.markerPrefix,
             true,
             countedHits,
+            cleanedRules,
         );
 
         if (hits.length > 0) {
@@ -234,11 +243,11 @@ export const extCssInjectedApply = (
     };
 
     // Dispose the previous instance BEFORE applying a new one: dispose()
-    // reverts its elements to their pre-ExtCSS `cssText`, so the new instance
+    // reverts its elements to the `cssText` they had before, so the new instance
     // snapshots clean `originalStyle` values (a disposal after the apply would
     // otherwise resurrect the previous instance's inline styles later). Its
     // rule strings are kept aside (`previousRules`) and re-applied if the new
-    // apply throws, so a failed apply never leaves the page without ExtendedCSS
+    // apply throws, so a failed apply never leaves the page without ExtendedCss
     // filtering until the next navigation.
     if (previous) {
         try {

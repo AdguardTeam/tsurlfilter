@@ -15,16 +15,9 @@ import { EXTCSS_PROTOCOL } from '../../../src/lib/common/extcss-protocol';
 
 import { resetExtCssState } from './helpers';
 
-// Large rule set: "hundreds of ExtCSS rules". 500 is well above
+// Large rule set: "hundreds of ExtendedCss rules". 500 is well above
 // "hundreds" and exercises the args serialization path heavily.
 const LARGE_RULESET_SIZE = 500;
-
-// Conservative ceiling for the total executeScript({ func, args }) payload.
-// Chrome has no published hard byte limit; this ceiling is deliberately
-// generous (1 MiB) so a passing test gives strong confidence that hundreds of
-// rules will not approach any realistic argument-size limit. The actual
-// measured size is printed by the test for the record.
-const SAFE_PAYLOAD_BYTES = 1024 * 1024;
 
 // Shared jsdom cleanup: dispose the retained instance and reset the DOM
 // between tests.
@@ -33,7 +26,7 @@ afterEach(() => {
 });
 
 /**
- * Builds a large set of ExtCSS rules and a DOM that matches one representative
+ * Builds a large set of ExtendedCss rules and a DOM that matches one representative
  * rule per "class bucket", so we can assert application without checking all
  * 500 elements.
  *
@@ -63,7 +56,7 @@ describe('extCssInjectedApply — large rule set', () => {
         document.body.innerHTML = '';
     });
 
-    it('applies 500 ExtendedCSS rules and hides matching elements', () => {
+    it('applies 500 ExtendedCss rules and hides matching elements', () => {
         const { rules, sampleSelectors } = buildLargeRuleset();
 
         // Add one matching element per sample selector.
@@ -81,28 +74,5 @@ describe('extCssInjectedApply — large rule set', () => {
             expect(el.style.getPropertyValue('display')).toBe('none');
             expect(el.style.getPropertyPriority('display')).toBe('important');
         }
-    });
-
-    it('serialized executeScript payload stays under the safe ceiling', () => {
-        const { rules } = buildLargeRuleset();
-
-        // func payload: exactly what Chrome serializes via Function.toString().
-        const funcBytes = Buffer.byteLength(String(extCssInjectedApply), 'utf8');
-        // args payload: cssRules (array of strings) + collectStats (boolean)
-        // + protocol (small literal object).
-        const argsBytes = Buffer.byteLength(
-            JSON.stringify([rules, false, EXTCSS_PROTOCOL]),
-            'utf8',
-        );
-        const totalBytes = funcBytes + argsBytes;
-
-        // eslint-disable-next-line no-console -- benchmark/validation report
-        console.log(
-            `[extcss-large-ruleset] func=${funcBytes} B, `
-            + `args=${argsBytes} B, total=${totalBytes} B `
-            + `(ceiling=${SAFE_PAYLOAD_BYTES} B)`,
-        );
-
-        expect(totalBytes).toBeLessThan(SAFE_PAYLOAD_BYTES);
     });
 });

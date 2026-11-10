@@ -223,7 +223,7 @@ describe('CssHitsCounter', () => {
         cssHitsCounter.stop();
     });
 
-    it('counts every element matched by the same ExtendedCSS rule', () => {
+    it('counts every element matched by the same ExtendedCss rule', () => {
         const onCssHitsFound = vi.fn();
         const cssHitsCounter = new CssHitsCounter(onCssHitsFound);
         // Drop the native hits of the fixture counted on construction.
@@ -366,7 +366,7 @@ describe('CssHitsCounter', () => {
         style.remove();
     });
 
-    it('does not restore a probe removed by an ExtendedCSS :remove() rule (MV3)', () => {
+    it('does not restore a probe removed by an ExtendedCss :remove() rule (MV3)', () => {
         // In MV3 ExtendedCss runs in the background-injected function, so the
         // counter's own `countAffectedByExtendedCss` callback never runs. The
         // injected function records the removed nodes on `window`; the counter

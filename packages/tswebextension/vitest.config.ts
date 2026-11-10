@@ -120,6 +120,10 @@ export default defineConfig({
                 test: {
                     name: 'canvas-native',
                     include: ['test/e2e/canvas-protection/**/*.spec.ts'],
+                    // Same as the other projects: no benchmarks here, so an
+                    // unfiltered `vitest bench` does not collect the MV3 bench
+                    // without the MV3-only plugins.
+                    benchmark: { include: [] },
                     browser: {
                         enabled: true,
                         provider: playwright(),

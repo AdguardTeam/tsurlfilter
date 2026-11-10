@@ -522,6 +522,13 @@ export class SimpleRegex {
     /**
      * Converts a string representation of a regular expression into a RegExp object.
      *
+     * Only the flags `i`, `s`, `u`, and `v` are kept. The `g` and `y` flags
+     * make `RegExp.test()` stateful because they advance `lastIndex`, so they
+     * are dropped to keep matching stateless. The `u` and `v` flags are kept
+     * because they change how the pattern is parsed (e.g. `\p{L}` is a Unicode
+     * property only with `u`), not just how it is matched. The remaining flags
+     * (`m`, `d`) are not supported by the HTML filtering engine.
+     *
      * @param literal String representation of the regular expression.
      *
      * @returns A RegExp object if the input is a valid regular expression literal, otherwise the original string.
@@ -555,7 +562,18 @@ export class SimpleRegex {
         }
 
         try {
-            return new RegExp(pattern, flags);
+            // Compile the original literal first. This keeps the fallback for
+            // invalid literals, including invalid or duplicate flags.
+            const regexp = new RegExp(pattern, flags);
+
+            // Keep only the flags the HTML filtering engine supports. `g` and
+            // `y` make `RegExp.test()` stateful because they advance
+            // `lastIndex`, so the result depends on the previous match. `u`
+            // and `v` are kept because they change how the pattern is parsed,
+            // not just how it is matched.
+            const supportedFlags = regexp.flags.replace(/[^isuv]/g, '');
+
+            return new RegExp(regexp.source, supportedFlags);
         } catch (e) {
             logger.warn(`[tsurl.SimpleRegex.fromLiteral]: Invalid regular expression literal: ${literal}:`, e);
             return literal;

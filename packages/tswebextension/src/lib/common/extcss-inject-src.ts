@@ -16,7 +16,7 @@ import { type ExtCssConfiguration, ExtendedCss, type IAffectedElement } from '@a
  * mock it, which is required for the `:contains()` pseudo-class to work
  * correctly in injected scripts.
  *
- * @param cssRules Array of ExtendedCSS rule strings to apply.
+ * @param cssRules Array of ExtendedCss rule strings to apply.
  * @param beforeStyleApplied Optional callback invoked for each affected
  * element before its style is set; used for CSS hits statistics.
  *

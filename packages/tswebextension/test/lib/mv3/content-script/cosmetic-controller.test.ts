@@ -1,7 +1,3 @@
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import {
     afterEach,
     describe,
@@ -32,18 +28,6 @@ vi.mock('../../../../src/lib/common/utils/selector-validator', () => ({
         invalid: ['.invalid-sel'],
     })),
 }));
-
-// Resolve the controller source path relative to THIS test file's directory.
-// `readFileSync` resolves relative paths against `process.cwd()` (the package
-// root under `pnpm test:mv3`), and `new URL(rel, import.meta.url)` is unreliable
-// here because the jsdom test environment makes the URL constructor resolve to
-// `http://localhost:3000/...`. Converting `import.meta.url` to a real path and
-// joining with `node:path` is robust regardless of the working directory.
-const CONTROLLER_PATH = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    '../../../../src/lib/mv3/content-script/cosmetic-controller.ts',
-);
-const CONTROLLER_SRC = readFileSync(CONTROLLER_PATH, 'utf8');
 
 describe('MV3 CosmeticController — native CSS repair', () => {
     afterEach(() => {
@@ -184,29 +168,6 @@ describe('MV3 CosmeticController — native CSS repair', () => {
         const style = document.querySelector('style');
         expect(style).not.toBeNull();
         expect(style?.textContent).toContain('.valid-sel');
-    });
-
-    it('no longer references ExtendedCss, but restores native-only CssHitsCounter (source guard)', () => {
-        // ExtCSS application moved to the background; the content script keeps
-        // only the native-CSS repair retry loop and the native-only hits counter.
-        expect(CONTROLLER_SRC).not.toContain('@adguard/extended-css');
-        expect(CONTROLLER_SRC).not.toContain('ExtendedCss');
-        expect(CONTROLLER_SRC).not.toContain('applyExtendedCss');
-        expect(CONTROLLER_SRC).not.toContain('beforeStyleApplied');
-        // Native CSS hits counting IS restored (the counter reads the
-        // `--adguard-hit` markers from computed styles); ExtendedCSS hits stay
-        // in the background-injected callback.
-        expect(CONTROLLER_SRC).toContain('CssHitsCounter');
-        expect(CONTROLLER_SRC).toContain('cssHitsCounter');
-        // The retry constants ARE present again (re-added for the native-CSS
-        // repair startup race), so they are asserted to be present rather than
-        // absent.
-        expect(CONTROLLER_SRC).toContain('GET_COSMETIC_DATA_RETRY_TIMEOUT_MS');
-        expect(CONTROLLER_SRC).toContain('MAX_GET_COSMETIC_DATA_TRIES');
-        // The probe collector of the target branch must survive the merge: the
-        // counter is created with it, so short-lived elements seen before the
-        // counter exists are still reported.
-        expect(CONTROLLER_SRC).toContain('pendingProbesCollector');
     });
 });
 

@@ -425,7 +425,7 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Injects ExtendedCSS rules into the specified tab and frame directly from
+     * Injects ExtendedCss rules into the specified tab and frame directly from
      * the background via the Scripting API.
      *
      * The injection is bound to the frame context's document, so a navigation
@@ -441,7 +441,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * markers and the injected func registers a `beforeStyleApplied` callback
      * that reports hits back to the background.
      *
-     * @param frameContext Frame context with the prepared ExtCSS rules.
+     * @param frameContext Frame context with the prepared ExtendedCss rules.
      *
      * @returns A promise that resolves when the rules are injected.
      */
@@ -562,7 +562,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * onCommitted and apply them then.
      *
      * @returns A promise that resolves when the cosmetic rules are applied. The
-     * ExtendedCSS injection is deliberately left floating, so it may still be
+     * ExtendedCss injection is deliberately left floating, so it may still be
      * in flight when the promise resolves.
      */
     public static async applyCosmeticRules(
@@ -596,7 +596,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 CosmeticApi.applyCss(tabId, frameId, frameContext.preparedCosmeticResult.cssText),
             );
 
-            // Deliberately not awaited: the ExtCSS payload is ~50 KB and has
+            // Deliberately not awaited: the ExtendedCss payload is ~50 KB and has
             // to be compiled and executed in every matched frame, while
             // `processOpenTabs` awaits this method before `isAppStarted` is
             // set, so awaiting it delays startup for every open tab. The
@@ -604,7 +604,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             // `applyExtCssRules` catches and logs its own errors, so this
             // catch only guards against an unhandled rejection.
             CosmeticApi.applyExtCssRules(frameContext).catch((e: unknown) => {
-                logger.error(`[tsweb.CosmeticApi.applyCosmeticRules]: unhandled ExtCSS injection rejection for tabId ${tabId} and frameId ${frameId} `, e);
+                logger.error(`[tsweb.CosmeticApi.applyCosmeticRules]: unhandled ExtendedCss injection rejection for tabId ${tabId} and frameId ${frameId} `, e);
             });
         }
 

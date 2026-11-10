@@ -23,11 +23,23 @@ afterEach(() => {
     resetExtCssState();
 });
 
+/**
+ * Rebuilds the injected function from its serialized source, the way
+ * `chrome.scripting.executeScript({ func })` does, so a module-scope
+ * reference in the body fails with a `ReferenceError` here too.
+ *
+ * @returns A fresh copy of {@link extCssInjectedApply} with no closure.
+ */
+const createSerializedApply = (): typeof extCssInjectedApply => {
+    // eslint-disable-next-line no-new-func, @typescript-eslint/no-implied-eval
+    return new Function(`return (${String(extCssInjectedApply)});`)() as typeof extCssInjectedApply;
+};
+
 describe('extCssInjectedApply (inlined bundle)', () => {
     it('hides a matching :has() element after being called', () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        createSerializedApply()(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
@@ -41,7 +53,7 @@ describe('extCssInjectedApply (inlined bundle)', () => {
         // builder test "calls init() before apply()" instead.
         document.body.innerHTML = '<div class="ad">adsbygoogle</div>';
 
-        extCssInjectedApply(['.ad:contains(adsbygoogle) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        createSerializedApply()(['.ad:contains(adsbygoogle) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
@@ -51,42 +63,10 @@ describe('extCssInjectedApply (inlined bundle)', () => {
     it('does not hide non-matching elements', () => {
         document.body.innerHTML = '<div class="ad"><span class="other">ad</span></div>';
 
-        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        createSerializedApply()(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('');
-    });
-
-    it('is a self-contained function (toString contains the inlined engine)', () => {
-        // The inlined IIFE assigns `applyExtendedCss`; ensure the engine code
-        // is embedded in the function source so it survives executeScript
-        // serialization (closure variables would not).
-        expect(String(extCssInjectedApply)).toContain('applyExtendedCss');
-    });
-
-    it('is self-contained — the instance key arrives via the protocol argument', () => {
-        // extCssInjectedApply is serialized via Function.toString() and re-executed in the
-        // page's ISOLATED world by executeScript({ func }). Any module-scope
-        // identifier referenced in the body becomes a free identifier there
-        // (ReferenceError, or `undefined`), so the retain/dispose key MUST
-        // arrive via the serialized `protocol` argument — not as a body
-        // literal duplicated across call sites, and not as a module-scope ref.
-        const src = String(extCssInjectedApply);
-        expect(src).toContain('protocol.instanceKey');
-        expect(src).not.toContain('__adguardExtCss');
-        expect(src).not.toContain('EXTCSS_INSTANCE_KEY');
-        expect(src).not.toContain('EXTCSS_PROTOCOL');
-    });
-
-    // Regression: the build-time inliner must not let `String.prototype.replace`
-    // interpret `$` patterns in the bundle source. The bundle contains `$&`
-    // inside its `escapeRegExp` utilities; with a string replacement that would
-    // be substituted with the matched marker text, corrupting the inlined
-    // engine and breaking regex-dependent pseudo-classes.
-    it('preserves raw `$&` in the inlined engine source', () => {
-        expect(String(extCssInjectedApply)).toContain('$&');
-        // The marker call must not survive inlining.
-        expect(String(extCssInjectedApply)).not.toContain('__INLINE_EXTCSS_BUNDLE__');
     });
 
     it('hides a matching :matches-css() element (exercises escapeRegExp)', () => {
@@ -98,7 +78,7 @@ describe('extCssInjectedApply (inlined bundle)', () => {
         // escaped value becomes garbage and the regex no longer matches.
         document.body.innerHTML = '<div class="ad" style="color: red">ad</div>';
 
-        extCssInjectedApply(
+        createSerializedApply()(
             ['.ad:matches-css(color: rgb(255, 0, 0)) { display: none !important; }'],
             false,
             EXTCSS_PROTOCOL,
@@ -114,7 +94,7 @@ describe('extCssInjectedApply — re-apply in the same document', () => {
     it('disposes the previous instance on re-apply (old styles reverted, old observer stopped)', async () => {
         // First injection: rule A hides `.ad:has(.child)`.
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
-        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        createSerializedApply()(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
 
@@ -123,7 +103,7 @@ describe('extCssInjectedApply — re-apply in the same document', () => {
         // new isolated world, so it cannot hit this path. The previous
         // instance must be disposed: its styles are reverted synchronously by
         // dispose().
-        extCssInjectedApply(['.other:has(.x) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        createSerializedApply()(['.other:has(.x) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         // Old instance's styles reverted → `.ad` is visible again.
         expect(ad.style.getPropertyValue('display')).toBe('');
@@ -239,7 +219,7 @@ describe('extCssInjectedApply — atomic re-apply', () => {
     it('restores the previous filtering when the new apply throws', () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        createSerializedApply()(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
@@ -252,7 +232,7 @@ describe('extCssInjectedApply — atomic re-apply', () => {
         stubOneShotThrowingMutationObserver();
 
         try {
-            expect(() => extCssInjectedApply(
+            expect(() => createSerializedApply()(
                 ['.never-matches { display: none !important; }'],
                 false,
                 EXTCSS_PROTOCOL,
@@ -272,7 +252,7 @@ describe('extCssInjectedApply — atomic re-apply', () => {
     it('reverts the failed apply\'s styles before restoring the previous rule set', () => {
         document.body.innerHTML = '<div class="ad">ad</div>';
 
-        extCssInjectedApply(['.ad { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        createSerializedApply()(['.ad { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
@@ -282,7 +262,7 @@ describe('extCssInjectedApply — atomic re-apply', () => {
         stubOneShotThrowingMutationObserver();
 
         try {
-            expect(() => extCssInjectedApply(
+            expect(() => createSerializedApply()(
                 ['.ad { visibility: hidden !important; }'],
                 false,
                 EXTCSS_PROTOCOL,
@@ -303,13 +283,13 @@ describe('extCssInjectedApply — atomic re-apply', () => {
         document.body.innerHTML = '<div class="ad">ad</div>';
 
         // First injection: `.ad` is hidden.
-        extCssInjectedApply(['.ad { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        createSerializedApply()(['.ad { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
 
         // Second injection matches the same element with a different property.
-        extCssInjectedApply(['.ad { visibility: hidden !important; }'], false, EXTCSS_PROTOCOL);
+        createSerializedApply()(['.ad { visibility: hidden !important; }'], false, EXTCSS_PROTOCOL);
 
         // The previous instance is disposed BEFORE the new one applies, so the
         // new instance snapshots the element's clean `cssText`: the old style
@@ -330,7 +310,7 @@ describe('extCssInjectedApply — atomic re-apply', () => {
 describe('extCssInjectedApply — continuous observation', () => {
     it('hides a matching element added dynamically after extCssInjectedApply', async () => {
         document.body.innerHTML = '';
-        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        createSerializedApply()(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         // Append a matching element after the call.
         const ad = document.createElement('div');
@@ -367,7 +347,7 @@ describe('extCssInjectedApply — CSS hits stats', () => {
     it('sends a SaveCssHitsStats message when collectStats is on and a rule carries a marker', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+        createSerializedApply()([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         // Flush microtasks so the deferred sendMessage (via Promise.resolve().then(...))
         // is recorded by the spy.
@@ -392,7 +372,7 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         document.body.innerHTML = '<div id="first" class="ad"><span class="child">ad</span></div>'
             + '<div id="second" class="ad"><span class="child">ad</span></div>';
 
-        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+        createSerializedApply()([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         await new Promise((resolve) => { setTimeout(resolve, 0); });
 
@@ -412,7 +392,7 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         document.body.innerHTML = '<div class="ad">ad</div>';
         const ad = document.querySelector('.ad') as HTMLElement;
 
-        extCssInjectedApply(['.ad:remove()'], true, EXTCSS_PROTOCOL);
+        createSerializedApply()(['.ad:remove()'], true, EXTCSS_PROTOCOL);
 
         const removed = (window as unknown as Record<string, WeakSet<Element>>)[EXTCSS_PROTOCOL.removedElementsKey];
 
@@ -424,7 +404,7 @@ describe('extCssInjectedApply — CSS hits stats', () => {
     it('reports a hit for an element matched after the apply', async () => {
         document.body.innerHTML = '<div id="first" class="ad"><span class="child">ad</span></div>';
 
-        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+        createSerializedApply()([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         await new Promise((resolve) => { setTimeout(resolve, 0); });
         expect(sendMessageSpy).toHaveBeenCalledTimes(1);
@@ -445,14 +425,6 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         expect(msg.payload[0].element).toBe('<div id="added" class="ad">');
     });
 
-    it('uses .catch() — not try/catch — to swallow the async sendMessage rejection', () => {
-        const src = String(extCssInjectedApply);
-        // The fire-and-forget reporter MUST attach .catch(); a synchronous
-        // try/catch cannot catch the async rejection from sendMessage in MV3.
-        expect(src).toContain('Promise.resolve(');
-        expect(src).toMatch(/\.catch\s*\(/);
-    });
-
     it('swallows a rejected sendMessage so no unhandled rejection escapes beforeStyleApplied', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
@@ -469,7 +441,7 @@ describe('extCssInjectedApply — CSS hits stats', () => {
 
         try {
             // Must not throw synchronously; an uncaught throw would fail here.
-            extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+            createSerializedApply()([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
             // Flush microtasks so the rejected sendMessage promise settles and
             // the .catch() handler runs.
@@ -485,32 +457,9 @@ describe('extCssInjectedApply — CSS hits stats', () => {
     it('registers no beforeStyleApplied and sends no message when collectStats is off', () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        extCssInjectedApply(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        createSerializedApply()(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         expect(sendMessageSpy).not.toHaveBeenCalled();
-    });
-
-    it('is self-contained — protocol literals arrive via the protocol argument', () => {
-        const src = String(extCssInjectedApply);
-        // The hit-bridge protocol values (marker prefix, handler name, message
-        // type) MUST arrive via the serialized `protocol` argument — the
-        // shared `EXTCSS_PROTOCOL` constant is the single source of truth, so
-        // the literals must NOT be duplicated in the injected function body.
-        expect(src).not.toMatch(/['"]adguard['"]/);
-        expect(src).not.toMatch(/['"]tsWebExtension['"]/);
-        expect(src).not.toMatch(/['"]saveCssHitsStats['"]/);
-        // The body reads them from the `protocol` parameter.
-        expect(src).toContain('protocol.markerPrefix');
-        expect(src).toContain('protocol.handlerName');
-        expect(src).toContain('protocol.messageType');
-        // No module-scope identifier leaks for these concepts.
-        expect(src).not.toMatch(/\bEXTCSS_PROTOCOL\b/);
-        expect(src).not.toMatch(/\bMESSAGE_HANDLER_NAME\b/);
-        expect(src).not.toMatch(/\bMessageType\b/);
-        expect(src).not.toMatch(/\bCSS_HITS_MARKER_PREFIX\b/);
-        expect(src).not.toMatch(/\bHANDLER_NAME\b/);
-        expect(src).not.toMatch(/\bCONTENT_ATTR_PREFIX\b/);
-        expect(src).not.toMatch(/\bSAVE_CSS_HITS_STATS\b/);
     });
 
     it('uses the passed-in protocol values, not the shared defaults', async () => {
@@ -533,7 +482,7 @@ describe('extCssInjectedApply — CSS hits stats', () => {
             + 'content: \'custommarker1%3B2\' !important; }';
 
         try {
-            extCssInjectedApply([customMarkerRule], true, customProtocol);
+            createSerializedApply()([customMarkerRule], true, customProtocol);
 
             // Flush microtasks so the deferred sendMessage is recorded by the spy.
             await new Promise((resolve) => { setTimeout(resolve, 0); });
@@ -569,53 +518,6 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         }
     });
 
-    it('inlines the CSS-hits helpers (shared with MV2 ElementUtils) with no external refs', () => {
-        const src = String(extCssInjectedApply);
-
-        // The inlined helpers must define cssHitsHelpers locally so the
-        // beforeStyleApplied callback can call parseExtendedStyleInfo() and
-        // elementToString() without unresolved free identifiers.
-        expect(src).toContain('cssHitsHelpers');
-        expect(src).toContain('parseExtendedStyleInfo');
-        expect(src).toContain('elementToString');
-
-        // The build-time marker CALL must not survive inlining.
-        // (Comments mentioning the marker name are OK — only an unresolved
-        // call would be a free identifier.)
-        expect(src).not.toMatch(/__INLINE_CSS_HITS_HELPERS__\s*\(\s*\)\s*;/);
-
-        // No code-level reference to the MV2 ElementUtils class — the helper
-        // functions must be accessed via the inlined `cssHitsHelpers`, not
-        // through an imported `ElementUtils.` class. (JSDoc comments that
-        // merely *mention* ElementUtils descriptively are fine.)
-        expect(src).not.toMatch(/ElementUtils\s*\./);
-    });
-
-    // Integration-style coverage for the IAffectedElement callback contract:
-    // the inlined @adguard/extended-css apply IIFE invokes beforeStyleApplied
-    // with { node: Element, rules: { style: CSSStyleDeclaration }[] }. The
-    // "sends a SaveCssHitsStats message ..." test above exercises this real
-    // contract end-to-end (marker flows rules[].style.content -> message),
-    // so a drift in the callback argument shape fails the suite. This pins
-    // the expected shape explicitly.
-    it('exercises the real beforeStyleApplied IAffectedElement contract { node, rules }', async () => {
-        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
-
-        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
-
-        // Flush microtasks so the deferred sendMessage is recorded by the spy.
-        await new Promise((resolve) => { setTimeout(resolve, 0); });
-
-        // If the inlined bundle passed a differently-shaped object, the
-        // content marker would never be read and no message would be sent.
-        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
-        const msg = sendMessageSpy.mock.calls[0][0] as any;
-        expect(msg.payload[0].filterId).toBe(1);
-        expect(msg.payload[0].ruleIndex).toBe(2);
-        // node was an Element with localName 'div' and a class attribute.
-        expect(msg.payload[0].element).toBe('<div class="ad">');
-    });
-
     // Regression: the per-node dedup guard must prevent duplicate hits when
     // the same element is re-styled by the throttled MutationObserver. The
     // applied copy of the rule loses the marker, and the node/rule pair is
@@ -623,7 +525,7 @@ describe('extCssInjectedApply — CSS hits stats', () => {
     it('does not send duplicate hits for the same element and rule', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+        createSerializedApply()([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         // Flush microtasks so the deferred sendMessage is recorded by the spy.
         await new Promise((resolve) => { setTimeout(resolve, 0); });
@@ -640,7 +542,7 @@ describe('extCssInjectedApply — CSS hits stats', () => {
     it('does not report the hits again when the same document is re-injected', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+        createSerializedApply()([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         await new Promise((resolve) => { setTimeout(resolve, 0); });
         expect(sendMessageSpy).toHaveBeenCalledTimes(1);
@@ -649,7 +551,7 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         // firing while `processOpenTabs` is still running — receives the same
         // marker-carrying rule strings, so it is a no-op. The retained
         // per-node dedupe state keeps the hit above from being reported again.
-        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+        createSerializedApply()([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         await new Promise((resolve) => { setTimeout(resolve, 0); });
         expect(sendMessageSpy).toHaveBeenCalledTimes(1);
@@ -658,7 +560,7 @@ describe('extCssInjectedApply — CSS hits stats', () => {
     it('reports hits for elements matched after a re-injection', async () => {
         document.body.innerHTML = '<div id="first" class="ad"><span class="child">ad</span></div>';
 
-        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+        createSerializedApply()([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         await new Promise((resolve) => { setTimeout(resolve, 0); });
         expect(sendMessageSpy).toHaveBeenCalledTimes(1);
@@ -666,7 +568,7 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         // A re-injection with the same rule strings is a no-op, so the
         // retained instance and its callback stay in place: elements matched
         // for the first time are still reported by that observer.
-        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+        createSerializedApply()([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         await new Promise((resolve) => { setTimeout(resolve, 0); });
         expect(sendMessageSpy).toHaveBeenCalledTimes(1);
@@ -688,13 +590,12 @@ describe('extCssInjectedApply — CSS hits stats', () => {
 
     // Regression: attribute values containing double-quotes must be escaped
     // (\" -> backslash-quote) in the element serialization, matching MV2's
-    // ElementUtils.elementToString. See the shared contract test in
-    // css-hits-protocol.test.ts.
+    // ElementUtils.elementToString.
     it('correctly escapes double-quotes in attribute values when serializing element', async () => {
         // Single-quoted HTML attribute value containing a literal "
         document.body.innerHTML = '<div data-x=\'a"b\' class="ad"><span class="child">ad</span></div>';
 
-        extCssInjectedApply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+        createSerializedApply()([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         // Flush microtasks so the deferred sendMessage is recorded by the spy.
         await new Promise((resolve) => { setTimeout(resolve, 0); });
@@ -709,7 +610,7 @@ describe('extCssInjectedApply — CSS hits stats', () => {
 describe('extCssInjectedDispose', () => {
     it('disposes the retained instance and reverts its styles', () => {
         document.body.innerHTML = '<div class="ad">ad</div>';
-        extCssInjectedApply(['.ad { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        createSerializedApply()(['.ad { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
@@ -720,7 +621,7 @@ describe('extCssInjectedDispose', () => {
     });
 
     it('clears the retained instance so a second call is a no-op', () => {
-        extCssInjectedApply(['.ad { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        createSerializedApply()(['.ad { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         const w = window as unknown as Record<string, unknown>;
         expect(w[EXTCSS_PROTOCOL.instanceKey]).toBeTruthy();

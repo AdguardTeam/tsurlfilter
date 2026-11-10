@@ -546,4 +546,24 @@ describe('WebRequestApi MV3 onCommitted', () => {
         expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).not.toHaveBeenCalled();
         expect(vi.mocked(CosmeticApi.applyCosmeticRules)).not.toHaveBeenCalled();
     });
+
+    it('applies cosmetics for a prerender commit in a sub-frame', () => {
+        // Activation recommits only the main frame, so an iframe that already
+        // committed during the prerender never gets a second commit. Its
+        // cosmetics must be applied now instead of being skipped with the
+        // main frame's prerender commit.
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
+
+        (WebRequestApi as any).onCommitted({
+            tabId: 1,
+            frameId: 7,
+            parentFrameId: 0,
+            documentId: 'prerendered-iframe-document-id',
+            url: 'https://frame.example/',
+            timeStamp: 456,
+            documentLifecycle: DocumentLifecycle.Prerender,
+        });
+
+        expect(vi.mocked(CosmeticApi.applyCosmeticRules)).toHaveBeenCalledWith(1, 7, true);
+    });
 });

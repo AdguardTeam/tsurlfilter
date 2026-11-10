@@ -370,7 +370,7 @@ describe('CosmeticFrameProcessor', () => {
                 documentLifecycle: DocumentLifecycle.Active,
             });
 
-            // ExtCSS rules carry no hits markers when stats collection is off
+            // ExtendedCss rules carry no hits markers when stats collection is off
             // (the next suite covers the stats-on case), and isNativeHasSupported
             // is always true for MV3.
             expect(vi.mocked(CosmeticApi.getExtCssRules)).toHaveBeenCalledWith(

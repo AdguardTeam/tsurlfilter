@@ -33,7 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   injection path — removed from the content scripts (`GetCosmeticData`
   returns `extCssRules: null`, `@adguard/extended-css` is no longer
   instantiated in the content-script bundles). In MV2 the background
-  serializes the shared payload into a `tabs.executeScript` code string.
+  serializes the shared payload into a `tabs.executeScript` code string, and
+  in MV3 the background inserts them as soon as a document commits, so the
+  elements they hide no longer flash during page load.
 - MV2 `:contains()` now uses the `init()` snapshot of the native
   `textContent` getter, matching MV3.
 
@@ -72,6 +74,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Inverted allowlist entries with uppercase letters not matching their sites.
 - `$stealth` exception rules shown as `<dynamic rule text is not specified>`
   instead of their text in the MV3 filtering log.
+- HTML filtering rules whose selector starts with `html` or `:root` now
+  match the document root and continue matching from it, e.g.
+  `$$html > body > script` and `$$:root div`.
+- HTML filtering `:contains()` regexp arguments now ignore all flags except
+  `i`, `s`, and the Unicode flags `u` and `v`. Matching is stateless and does
+  not depend on the previously matched element (via [@adguard/tsurlfilter]).
 - HTML filtering rules with `:-abp-contains()` and `:has-text()` now work,
   and HTML filtering rules with an empty `:contains()` argument are now
   rejected (via [@adguard/tsurlfilter]).
@@ -83,12 +91,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   skipped for documents that loaded before the background engine started:
   the content script now retries `GetCosmeticData` while the background
   answers `undefined`, instead of giving up on the first response.
-- ExtendedCSS hits are now counted for every element matched by a rule, in MV2
+- ExtendedCss hits are now counted for every element matched by a rule, in MV2
   and MV3. Previously only the first element matched by a rule was counted and
   elements matched later were not.
 - Malformed CSS hit markers no longer break cosmetic application in MV2: a
   `URIError` from `decodeURIComponent` is treated as a non-matching marker
   instead of propagating.
+- Spaces around a quoted HTML filtering `:contains()` argument are no longer
+  trimmed (via [@adguard/tsurlfilter]): `$$div:contains( "foo" )` now matches
+  the text `"foo"` with a space on each side.
+- `$removeparam` regexp values with the `g` or `y` flag are now matched
+  statelessly: matching no longer depends on the previously tested URL
+  parameter, so all matching parameters are removed.
 
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
 [AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475
