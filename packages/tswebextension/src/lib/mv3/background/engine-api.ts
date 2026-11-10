@@ -204,6 +204,10 @@ export class EngineApi {
                 ignoreJS: false,
                 ignoreUnsafe: false,
             });
+            // The allowlist is a runtime-only page-exception source: without
+            // its lines a preregistered host would keep its baked gate while
+            // the user expects the page unfiltered.
+            runtimeExceptionLines.push(...collectExceptionLines(allowlistRulesList));
         }
 
         /*

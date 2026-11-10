@@ -6,7 +6,10 @@ import {
     vi,
 } from 'vitest';
 
-import { MANIFEST_SCHEMA_VERSION } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
+import {
+    hashString,
+    MANIFEST_SCHEMA_VERSION,
+} from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
 import {
     clearManifestCache,
     readManifest,
@@ -85,7 +88,10 @@ describe('readManifest', () => {
     it('keeps the conditions list', async () => {
         // The reader does not know which filters are enabled: it validates the
         // ids and leaves the selection to the runtime.
-        stubManifestFetch(makeManifest({ conditions: [2, 3] }));
+        stubManifestFetch(makeManifest({
+            conditions: [2, 3],
+            pageExceptions: { 2: VALID_MANIFEST.pageExceptions[2], 3: VALID_MANIFEST.pageExceptions[2] },
+        }));
 
         const manifest = await readManifest(SCRIPTS_PATH);
 
@@ -186,6 +192,37 @@ describe('readManifest', () => {
         stubManifestFetch(makeManifest({ pageExceptions: { 2: '' } }));
 
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"2"');
+    });
+
+    it('accepts an empty-fingerprint entry without a conditions file', async () => {
+        // The build keeps a fingerprint for every filter list and writes a
+        // conditions file only for the filters that carry exceptions.
+        stubManifestFetch(makeManifest({
+            conditions: [3],
+            pageExceptions: { 2: await hashString(''), 3: VALID_MANIFEST.pageExceptions[2] },
+        }));
+
+        await expect(readManifest(SCRIPTS_PATH)).resolves.toBeDefined();
+    });
+
+    it('throws when exceptions were baked for a filter without a conditions file', async () => {
+        // The fingerprint would match and the gate would trust it, while the
+        // file is never registered: the filter's exceptions would be lost.
+        stubManifestFetch(makeManifest({ conditions: [] }));
+
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('no entry in "conditions"');
+    });
+
+    it('throws when a conditions id has no fingerprint', async () => {
+        stubManifestFetch(makeManifest({ conditions: [2, 3] }));
+
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('has no fingerprint');
+    });
+
+    it('throws when a page-exceptions key is not a filter id', async () => {
+        stubManifestFetch(makeManifest({ pageExceptions: { youtube: VALID_MANIFEST.pageExceptions[2] } }));
+
+        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('is not a filter id');
     });
 
     it('passes an abort signal to fetch, so a hung request cannot stall the sync', async () => {

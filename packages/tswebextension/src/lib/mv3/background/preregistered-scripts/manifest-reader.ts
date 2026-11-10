@@ -1,6 +1,7 @@
 import { isPlainHostname } from '../../../common/utils/hostname';
 
 import {
+    hashString,
     MANIFEST_FILENAME,
     MANIFEST_SCHEMA_VERSION,
     type PreregisteredScriptsManifest,
@@ -12,6 +13,13 @@ import {
  * so a hanging request means the worker is stuck, not slow.
  */
 const MANIFEST_FETCH_TIMEOUT_MS = 5000;
+
+/**
+ * Fingerprint of a filter without page exceptions. The build keeps a
+ * fingerprint for every filter list and writes a conditions file only for the
+ * filters whose set is not empty, so both maps must agree on that boundary.
+ */
+const EMPTY_FINGERPRINT = hashString('');
 
 /**
  * Parsed manifests per scripts path, including failed reads. Artifacts are
@@ -38,11 +46,12 @@ export const clearManifestCache = (): void => {
  * @param value Parsed JSON value.
  * @param url Manifest URL, for error messages.
  *
- * @returns The manifest, narrowed to {@link PreregisteredScriptsManifest}.
+ * @returns Resolves to the manifest, narrowed to
+ * {@link PreregisteredScriptsManifest}.
  *
  * @throws If a field is missing or has the wrong type.
  */
-const validateManifest = (value: unknown, url: string): PreregisteredScriptsManifest => {
+const validateManifest = async (value: unknown, url: string): Promise<PreregisteredScriptsManifest> => {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
         throw new Error(`Malformed manifest at ${url}: expected an object`);
     }
@@ -91,6 +100,32 @@ const validateManifest = (value: unknown, url: string): PreregisteredScriptsMani
     for (const [filterId, fingerprint] of Object.entries(pageExceptions)) {
         if (typeof fingerprint !== 'string' || fingerprint.length === 0) {
             throw new Error(`Malformed manifest at ${url}: filter "${filterId}" must map to a fingerprint`);
+        }
+
+        if (!/^[1-9]\d*$/.test(filterId)) {
+            throw new Error(`Malformed manifest at ${url}: "pageExceptions" key "${filterId}" is not a filter id`);
+        }
+    }
+
+    // The conditions list decides which files the runtime registers, so the
+    // two maps must describe the same set: a filter whose exceptions were
+    // baked but whose id is missing from `conditions` would pass the
+    // fingerprint check while its `cond-{filterId}.js` is never registered,
+    // and the page would silently lose those exceptions.
+    const conditionIds = new Set(conditions.map(String));
+    const emptyFingerprint = await EMPTY_FINGERPRINT;
+
+    for (const filterId of conditionIds) {
+        if (!(filterId in pageExceptions)) {
+            throw new Error(`Malformed manifest at ${url}: "conditions" filter "${filterId}"`
+                + ' has no fingerprint in "pageExceptions"');
+        }
+    }
+
+    for (const [filterId, fingerprint] of Object.entries(pageExceptions)) {
+        if (fingerprint !== emptyFingerprint && !conditionIds.has(filterId)) {
+            throw new Error(`Malformed manifest at ${url}: "pageExceptions" filter "${filterId}"`
+                + ' has no entry in "conditions"');
         }
     }
 

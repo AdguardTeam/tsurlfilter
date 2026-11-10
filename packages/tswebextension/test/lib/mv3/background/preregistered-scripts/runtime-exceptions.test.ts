@@ -75,6 +75,14 @@ describe('findHostsWithRuntimeExceptions', () => {
             .toEqual(['www.youtube.com', 'youtube.com']);
     });
 
+    it('flags the host of the runtime allowlist rule and no other host', () => {
+        // The allowlist generates `@@///(www\.)?host/$document,important`:
+        // the page must stay unfiltered, and the pattern names its host, so
+        // the other preregistered hosts keep the gate.
+        expect(affected(['@@///(www\\.)?youtube\\.com/$document,important']))
+            .toEqual(['www.youtube.com', 'youtube.com']);
+    });
+
     it('ignores rules that cannot change the JS verdict', () => {
         // `$stealth` is allowlist-only and touches neither cosmetic nor
         // document-level options, blocking rules cannot win a cosmetic slot,

@@ -36,6 +36,13 @@ describe('matchesHostScope', () => {
         // A `|`-anchored pattern without a scheme is still an unanchored match
         // for the host part: over-inclusion is the safe direction.
         ['|youtube.com^', 'youtube.com', true],
+        // The runtime allowlist is generated as `///(www\.)?host/`: a
+        // scheme-less document exception for the host and its `www.` alias.
+        // Read as any other unanchored pattern it would cover every host.
+        ['///(www\\.)?youtube\\.com/', 'youtube.com', true],
+        ['///(www\\.)?youtube\\.com/', 'www.youtube.com', true],
+        ['///(www\\.)?youtube\\.com/', 'music.youtube.com', false],
+        ['///(www\\.)?youtube\\.com/', 'example.org', false],
         // A port is part of the pattern's authority, not of the hostname.
         ['||youtube.com:8080/path', 'youtube.com', true],
         // The pattern's host part is compared case-insensitively.

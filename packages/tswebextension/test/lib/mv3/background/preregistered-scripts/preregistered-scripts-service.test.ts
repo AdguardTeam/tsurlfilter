@@ -19,7 +19,9 @@ import { engineApi } from '../../../../../src/lib/mv3/background/engine-api';
 import {
     CLEANUP_FILENAME,
     computeRuleHash,
+    getConditionsFilename,
     getRuleFilename,
+    hashString,
     MANIFEST_FILENAME,
     MANIFEST_SCHEMA_VERSION,
     SHARED_BUNDLE_FILENAME,
@@ -197,7 +199,8 @@ const scriptletFilename = (name: string): string => `s-${name}.js`;
  * (404) manifest.
  * @param scriptletFiles Scriptlet name → per-function filename map.
  * Defaults to an empty map.
- * @param conditions Ids of the filters that carry conditions files.
+ * @param conditions Ids of the filters that carry conditions files. Defaults
+ * to every filter of the fingerprint map: the two must describe the same set.
  * @param dynamicHostnames Configured hosts the generation keeps on the
  * dynamic path.
  * @param pageExceptions Filter id → fingerprint map of the baked page
@@ -207,7 +210,7 @@ const scriptletFilename = (name: string): string => `s-${name}.js`;
 const setupManifest = (
     hashes: string[] | null,
     scriptletFiles?: Record<string, string>,
-    conditions: number[] = [],
+    conditions?: number[],
     dynamicHostnames: string[] = [],
     pageExceptions: Record<string, string> = Object.fromEntries(
         vi.mocked(engineApi.getEnabledLocalFiltersIds)().map((id) => [
@@ -234,7 +237,7 @@ const setupManifest = (
                 schemaVersion: MANIFEST_SCHEMA_VERSION,
                 hashes,
                 scriptletFiles: scriptletFiles ?? {},
-                conditions,
+                conditions: conditions ?? Object.keys(pageExceptions).map(Number),
                 dynamicHostnames,
                 pageExceptions,
             }),
@@ -298,6 +301,7 @@ describe('PreregisteredScriptsService', () => {
         vi.unstubAllGlobals();
         clearManifestCache();
         clearFingerprintCache();
+        fingerprintState.value = { 1: DEFAULT_FINGERPRINT };
         appContext.preregisteredScriptRulesAtBoot = undefined;
         appContext.preregisteredScriptRulesAtBootFailed = undefined;
         appContext.preregisteredScriptRules = undefined;
@@ -366,10 +370,12 @@ describe('PreregisteredScriptsService', () => {
                 persistAcrossSessions: true,
             });
             expect(scripts[0].excludeMatches).toBeUndefined();
-            // Shared bundle first, then the scriptlet function file,
-            // per-hash files sorted, cleanup last (it deletes the
+            // The conditions file of the enabled filter, whose fingerprint the
+            // manifest carries, then the shared bundle, the scriptlet function
+            // file, per-hash files sorted and cleanup last (it deletes the
             // coordination property before page scripts run).
             expect(scripts[0].js).toEqual([
+                `${SCRIPTS_PATH}/${getConditionsFilename(1)}`,
                 `${SCRIPTS_PATH}/${SHARED_BUNDLE_FILENAME}`,
                 `${SCRIPTS_PATH}/${scriptletFilename('set-cookie')}`,
                 `${SCRIPTS_PATH}/${getRuleFilename(hash)}`,
@@ -567,8 +573,9 @@ describe('PreregisteredScriptsService', () => {
 
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
             expect(scripts).toHaveLength(1);
-            // Shared bundle + the scriptlet function file + the per-hash file + cleanup.
-            expect(scripts[0].js).toHaveLength(4);
+            // The conditions file + shared bundle + the scriptlet function
+            // file + the per-hash file + cleanup.
+            expect(scripts[0].js).toHaveLength(5);
         });
 
         it('excludes $url-scoped rules even when their hash is in the manifest', async () => {
@@ -665,8 +672,9 @@ describe('PreregisteredScriptsService', () => {
 
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
             expect(scripts).toHaveLength(1);
-            // Shared bundle + function file + one per-hash file (the local rule only) + cleanup.
-            expect(scripts[0].js).toHaveLength(4);
+            // Conditions file + shared bundle + function file + one per-hash
+            // file (the local rule only) + cleanup.
+            expect(scripts[0].js).toHaveLength(5);
         });
 
         it('keeps the domain registered when a single rule fails to hash', async () => {
@@ -684,7 +692,7 @@ describe('PreregisteredScriptsService', () => {
             expect(result.get('youtube.com'))
                 .toEqual(new Set([await computeRuleHash(goodRule)]));
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-            expect(scripts[0].js).toHaveLength(4); // bundle + function file + the one valid rule + cleanup
+            expect(scripts[0].js).toHaveLength(5); // conditions + bundle + function file + the one valid rule + cleanup
         });
     });
 
@@ -742,6 +750,8 @@ describe('PreregisteredScriptsService', () => {
                 [await computeRuleHash(rule)],
                 { 'set-cookie': scriptletFilename('set-cookie') },
                 [1, 2, 3],
+                undefined,
+                { 1: DEFAULT_FINGERPRINT, 2: DEFAULT_FINGERPRINT, 3: DEFAULT_FINGERPRINT },
             );
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
@@ -757,8 +767,19 @@ describe('PreregisteredScriptsService', () => {
         });
 
         it('registers no conditions files when the manifest carries none', async () => {
+            // A generation without page exceptions: the fingerprints are the
+            // empty-list hash and no conditions file was written.
+            const empty = await hashString('');
+            fingerprintState.value = { 1: empty };
             const rule = mockScriptletRule('set-cookie', []);
-            await setupRulesWithManifest({ 'youtube.com': [rule] });
+            setupEngine({ 'youtube.com': [rule] });
+            setupManifest(
+                [await computeRuleHash(rule)],
+                { 'set-cookie': scriptletFilename('set-cookie') },
+                [],
+                [],
+                { 1: empty },
+            );
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
@@ -837,7 +858,7 @@ describe('PreregisteredScriptsService', () => {
             expect(result.get('youtube.com'))
                 .toEqual(new Set([await computeRuleHash(keptRule)]));
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-            expect(scripts[0].js).toHaveLength(4); // bundle + function file + the covered rule + cleanup
+            expect(scripts[0].js).toHaveLength(5); // conditions + bundle + function file + the covered rule + cleanup
         });
     });
 
@@ -863,7 +884,7 @@ describe('PreregisteredScriptsService', () => {
             expect(result.get('youtube.com')).toEqual(new Set([await computeRuleHash(keptRule)]));
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
             expect(scripts).toHaveLength(1);
-            expect(scripts[0].js).toHaveLength(4); // bundle + function file + the covered rule + cleanup
+            expect(scripts[0].js).toHaveLength(5); // conditions + bundle + function file + the covered rule + cleanup
         });
 
         it('asks the engine to ignore the exception URL conditions', async () => {
