@@ -63,6 +63,27 @@ import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 const ADG_HTML_CONVERSION_MAX_LENGTH = 65535;
 
 /**
+ * Pattern for the value of the `[min-length]` and `[max-length]` special
+ * attribute selectors.
+ *
+ * CoreLibs parses these values with `strtoimax(value, &end, 10)`, so leading
+ * whitespace and a leading `+` are accepted, while trailing whitespace and
+ * other number formats are not: `" 5"` and `"+5"` are valid, `"5 "` and
+ * `"1e2"` are not.
+ */
+const ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN = /^\s*\+?\d+$/;
+
+/**
+ * Pattern for the argument of the uBlock `:min-text-length()` special
+ * pseudo-class.
+ *
+ * In uBlock, the argument is validated with a digits-only pattern
+ * (`compileInteger` in its static-filtering-parser), so `( 5 )` and `(1e2)`
+ * are rejected.
+ */
+const UBO_MIN_TEXT_LENGTH_ARGUMENT_PATTERN = /^\d+$/;
+
+/**
  * Supported special pseudo-classes from uBlock.
  *
  * Note: If new pseudo-classes are added here, ensure to update
@@ -122,6 +143,12 @@ const SUPPORTED_ADG_PSEUDO_CLASSES = new Set<string>([
 ]);
 
 /**
+ * Set of {@link SPECIAL_PSEUDO_CLASS_NAMES}: all special pseudo-classes
+ * shared with the parser, including the AdGuard `:-abp-contains()` alias.
+ */
+const SPECIAL_PSEUDO_CLASS_NAME_SET = new Set<string>(SPECIAL_PSEUDO_CLASS_NAMES);
+
+/**
  * Markers of special pseudo-class selectors with raw-text arguments,
  * used to detect special selector markers in raw (unparseable) HTML
  * filtering rule bodies. Derived from {@link SPECIAL_PSEUDO_CLASS_NAMES},
@@ -178,6 +205,7 @@ export const ERROR_MESSAGES = {
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT: "Argument of special pseudo-class selector '%s' must be an integer, got '%s'",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE: "Argument of special pseudo-class selector '%s' must be a positive integer, got '%s'",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_TOO_LARGE: "Argument of special pseudo-class selector '%s' must not exceed %s, got '%s'",
+    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INVALID_IN_UBO: "Argument of special pseudo-class selector '%s' is not valid in uBlock Origin: '%s'",
     SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED: "Special pseudo-class selector '%s' is not supported in conversion",
 } as const;
 /* eslint-enable max-len */
@@ -459,19 +487,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // converts to a length-matching regular expression
             case AdgAttributeSelectors.MinLength:
             case AdgAttributeSelectors.MaxLength: {
-                // Validate length value
-                HtmlRuleConverter.assertValidLengthValue(
-                    name,
-                    value,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
-                );
+                const length = HtmlRuleConverter.resolveAdgLengthAttributeValue(name, value);
 
-                // It's safe to cast to number here after validation
-                const length = Number(value);
-
-                let min: number | null = null;
-                let max: number | null = null;
+                let min: string | null = null;
+                let max: string | null = null;
 
                 if (name === AdgAttributeSelectors.MinLength) {
                     min = length;
@@ -501,9 +520,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Handles special pseudo-class selectors during AdGuard to AdGuard conversion:
      * - `:contains(text)` -> kept as-is
-     * - `:-abp-contains(text)` -> kept as-is
      * - `:has-text(text)` -> `:contains(text)`
      *   `:has-text()` is a documented synonym for `:contains()` in AdGuard products.
+     *
+     * Note: `:-abp-contains()` does not reach this method. The converter
+     * validates its argument and keeps it as-is in `convertBody` (see AG-61400).
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
@@ -533,7 +554,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 ));
             }
 
-            // `:contains()` and `:-abp-contains()` are kept as-is in AdGuard rules
+            // `:contains()` is kept as-is in AdGuard rules
             default: {
                 return true;
             }
@@ -565,7 +586,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @returns A {@link SimpleSelector} to add to the current complex selector.
      *
-     * @throws If AdGuard-specific pseudo-class selector is found in uBlock rule.
+     * @throws If `:contains()` is found in a uBlock rule (mixed syntax).
      */
     private static convertSpecialPseudoClassSelectorUboToAdg(name: string, argument: string): SimpleSelector {
         switch (name) {
@@ -587,6 +608,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     argument,
                     ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT,
                     ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE,
+                    UBO_MIN_TEXT_LENGTH_ARGUMENT_PATTERN,
                 );
 
                 // It's safe to cast to number here after validation
@@ -634,7 +656,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - `[wildcard="*content*"]` -> `:has-text(/*.content*./s)`
      *   convert search pattern to regular expression
      * - `[min-length="min"]` -> `:min-text-length(min)`
-     *   direct conversion, no changes to value
+     *   the value is validated and normalized to plain digits, since uBlock
+     *   accepts only digits (e.g. `" 5"` and `"+5"` become `5`)
      * - `[max-length]` is skipped.
      *
      * @param name Name of the special attribute selector.
@@ -663,19 +686,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
             }
 
             // `[min-length="min"]` -> `:min-text-length(min)`
-            // direct conversion, no changes to value
             case AdgAttributeSelectors.MinLength: {
-                // Validate length value
-                HtmlRuleConverter.assertValidLengthValue(
-                    name,
-                    value,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
-                );
-
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.MinTextLength,
-                    value,
+                    // uBlock validates the argument with a digits-only pattern,
+                    // so the value is normalized to plain decimal digits (e.g.
+                    // `" 5"` and `"+5"` -> `5`).
+                    HtmlRuleConverter.resolveAdgLengthAttributeValue(name, value),
                 );
             }
 
@@ -697,20 +714,34 @@ export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Handles special pseudo-class selectors during AdGuard to uBlock conversion:
      * - `:contains(text)` -> `:has-text(text)`
-     *   direct conversion, no changes to argument.
+     *   direct conversion, no changes to argument. A text argument that
+     *   uBlock would reject (e.g. `:contains("foo" )`) is not converted.
+     *
+     * Note: `:-abp-contains()` does not reach this method. It is an AdGuard
+     * alias of `:contains()`, but its uBlock mapping is not implemented yet
+     * (see AG-61400), so `convertBody` keeps it as-is.
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
      *
      * @returns A {@link SimpleSelector} to add to the current complex selector.
      *
-     * @throws If uBlock-specific pseudo-class selector is found in AdGuard rule.
+     * @throws If uBlock-specific pseudo-class selector is found in AdGuard rule,
+     * or the argument is not valid in uBlock.
      */
     private static convertSpecialPseudoClassSelectorAdgToUbo(name: string, argument: string): SimpleSelector {
         switch (name) {
             // `:contains(text)` -> `:has-text(text)`
             // direct conversion, no changes to argument
             case AdgPseudoClasses.Contains: {
+                if (!HtmlRuleConverter.isUboTextArgumentSupported(argument)) {
+                    throw new RuleConversionError(sprintf(
+                        ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INVALID_IN_UBO,
+                        name,
+                        argument,
+                    ));
+                }
+
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.HasText,
                     argument,
@@ -752,9 +783,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      */
     private static collectLengthConstraints(
         selectors: (SimpleSelector | SelectorCombinator)[],
-    ): { min: number | null; max: number | null } | null {
-        const minValues: number[] = [];
-        const maxValues: number[] = [];
+    ): { min: string | null; max: string | null } | null {
+        const minValues: string[] = [];
+        const maxValues: string[] = [];
 
         for (let i = 0; i < selectors.length; i += 1) {
             const selector = selectors[i];
@@ -778,17 +809,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             const { value } = selector.value;
 
-            HtmlRuleConverter.assertValidLengthValue(
-                name,
-                value,
-                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
-                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
-            );
+            const normalizedValue = HtmlRuleConverter.resolveAdgLengthAttributeValue(name, value);
 
             if (name === AdgAttributeSelectors.MinLength) {
-                minValues.push(Number(value));
+                minValues.push(normalizedValue);
             } else {
-                maxValues.push(Number(value));
+                maxValues.push(normalizedValue);
             }
         }
 
@@ -796,19 +822,23 @@ export class HtmlRuleConverter extends RuleConverterBase {
             return null;
         }
 
-        let min: number | null = null;
-        let max: number | null = null;
+        let min: string | null = null;
+        let max: string | null = null;
 
-        if (minValues.length > 1) {
-            min = Math.max(...minValues);
-        } else if (minValues.length === 1) {
-            [min] = minValues;
+        if (minValues.length > 0) {
+            min = minValues.reduce((largest, current) => (
+                HtmlRuleConverter.compareLengthDigitStrings(current, largest) > 0
+                    ? current
+                    : largest
+            ));
         }
 
-        if (maxValues.length > 1) {
-            max = Math.min(...maxValues);
-        } else if (maxValues.length === 1) {
-            [max] = maxValues;
+        if (maxValues.length > 0) {
+            max = maxValues.reduce((smallest, current) => (
+                HtmlRuleConverter.compareLengthDigitStrings(current, smallest) < 0
+                    ? current
+                    : smallest
+            ));
         }
 
         return { min, max };
@@ -1061,11 +1091,14 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     }
 
                     case 'PseudoClassSelector': {
-                        // Not a special pseudo-class selector - clone as-is after the switch
-                        if (
-                            !SUPPORTED_ADG_PSEUDO_CLASSES.has(selector.name.value)
-                            && !SUPPORTED_UBO_PSEUDO_CLASSES.has(selector.name.value)
-                        ) {
+                        const name = selector.name.value;
+                        const isSupported = SUPPORTED_ADG_PSEUDO_CLASSES.has(name)
+                            || SUPPORTED_UBO_PSEUDO_CLASSES.has(name);
+
+                        // Not a special pseudo-class selector - clone as-is after
+                        // the switch. The shared list is checked as well, so every
+                        // name added there gets its argument validated automatically.
+                        if (!isSupported && !SPECIAL_PSEUDO_CLASS_NAME_SET.has(name)) {
                             break;
                         }
 
@@ -1073,11 +1106,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         if (!selector.argument || selector.argument.value === EMPTY) {
                             throw new RuleConversionError(sprintf(
                                 ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED,
-                                selector.name.value,
+                                name,
                             ));
                         }
 
-                        const name = selector.name.value;
+                        // Only the special pseudo-classes supported for conversion
+                        // reach the callbacks. The `:-abp-contains()` alias is kept
+                        // as-is for now (see AG-61400).
+                        if (!isSupported) {
+                            break;
+                        }
+
                         const argument = selector.argument.value;
 
                         // Invoke callback and:
@@ -1206,7 +1245,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
         convertedSelectors: (SimpleSelector | SelectorCombinator)[],
         tagContentValues: string[],
         wildcardGlobValues: string[],
-        lengthConstraints: { min: number | null; max: number | null } | null,
+        lengthConstraints: { min: string | null; max: string | null } | null,
     ): void {
         // Nothing was deferred
         if (
@@ -1434,6 +1473,54 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
+     * Checks whether uBlock Origin accepts a plain-text argument in an HTML
+     * filtering `:has-text()` pseudo-class.
+     *
+     * The parser reads a text argument with `compileText()`, which calls
+     * `unquoteString()`. The unquoting must consume the whole argument,
+     * otherwise uBlock rejects the rule. For example, uBlock accepts `"foo"`
+     * and unquotes it to `foo`, but rejects `"foo" ` because the space follows
+     * the closing quote.
+     *
+     * @param argument Argument to check.
+     *
+     * @returns `true` if uBlock Origin accepts the argument, `false` otherwise.
+     */
+    private static isUboTextArgumentSupported(argument: string): boolean {
+        if (argument === EMPTY) {
+            return false;
+        }
+
+        const quote = argument.charAt(0);
+        if (quote !== DOUBLE_QUOTE && quote !== SINGLE_QUOTE) {
+            return true;
+        }
+
+        let index = 1;
+
+        while (index < argument.length) {
+            const char = argument.charAt(index);
+
+            if (char === quote) {
+                index += 1;
+                break;
+            }
+
+            if (char === BACKSLASH) {
+                index += 1;
+
+                if (index === argument.length) {
+                    break;
+                }
+            }
+
+            index += 1;
+        }
+
+        return index === argument.length;
+    }
+
+    /**
      * Asserts that the given array is not empty.
      *
      * @param array Array to check.
@@ -1451,12 +1538,88 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
+     * Validates and normalizes the value of the `[min-length]` or
+     * `[max-length]` special attribute selector.
+     *
+     * The returned value is a string of plain decimal digits with no leading
+     * whitespace, no leading `+` and no leading zeros (except a single `0` for
+     * zero). The value never goes through a JavaScript `number`, so large
+     * values are neither rounded nor converted to exponent notation.
+     *
+     * The value is not bounded by {@link ADG_HTML_CONVERSION_MAX_LENGTH}:
+     * that constant bounds only the regular expression generated from uBlock
+     * `:min-text-length()`. AdGuard products apply the `[min-length]` and
+     * `[max-length]` attributes natively, and uBlock applies
+     * `:min-text-length()` natively.
+     *
+     * @param name Name of the special attribute selector.
+     * @param value Original attribute value.
+     *
+     * @returns Normalized value as a string of decimal digits.
+     *
+     * @throws If the value is not a valid non-negative integer.
+     */
+    private static resolveAdgLengthAttributeValue(name: string, value: string): string {
+        HtmlRuleConverter.assertValidLengthValue(
+            name,
+            value,
+            ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
+            ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
+            ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN,
+        );
+
+        return HtmlRuleConverter.normalizeLengthDigits(value);
+    }
+
+    /**
+     * Normalizes a validated length value to plain decimal digits.
+     *
+     * Strips the leading whitespace and the optional `+` allowed by
+     * {@link ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN}, then strips leading zeros.
+     * The pattern already rejects trailing whitespace, so only the leading
+     * side needs stripping. A zero result is kept as a single `0`.
+     *
+     * @param value Validated length value.
+     *
+     * @returns Normalized value as a string of decimal digits.
+     */
+    private static normalizeLengthDigits(value: string): string {
+        const digits = value.trimStart().replace(/^\+/, '');
+        const withoutLeadingZeros = digits.replace(/^0+/, '');
+
+        return withoutLeadingZeros === EMPTY ? '0' : withoutLeadingZeros;
+    }
+
+    /**
+     * Compares two normalized strings of decimal digits without `number`
+     * conversion, so large values keep their full precision.
+     *
+     * @param left First normalized digit string.
+     * @param right Second normalized digit string.
+     *
+     * @returns A negative number if `left` is less than `right`, `0` if they
+     * are equal, and a positive number if `left` is greater than `right`.
+     */
+    private static compareLengthDigitStrings(left: string, right: string): number {
+        if (left.length !== right.length) {
+            return left.length > right.length ? 1 : -1;
+        }
+
+        if (left === right) {
+            return 0;
+        }
+
+        return left > right ? 1 : -1;
+    }
+
+    /**
      * Asserts that the given special attribute / pseudo-class length value is valid.
      *
      * @param name Name of the attribute or pseudo-class.
      * @param value Value to parse.
      * @param notIntErrorMessage Error message when the value is not an integer.
      * @param notPositiveErrorMessage Error message when the value is not positive.
+     * @param valuePattern Pattern that the value must match to be an integer.
      *
      * @throws If the value is not a valid number or not positive.
      */
@@ -1465,23 +1628,28 @@ export class HtmlRuleConverter extends RuleConverterBase {
         value: string,
         notIntErrorMessage: string,
         notPositiveErrorMessage: string,
+        valuePattern: RegExp,
     ): void {
         const parsed = Number(value);
 
-        if (Number.isNaN(parsed)) {
+        // A negative value is a valid number, but not a valid length. Check it
+        // before the pattern check to keep the dedicated error message.
+        if (parsed < 0) {
             throw new RuleConversionError(
                 sprintf(
-                    notIntErrorMessage,
+                    notPositiveErrorMessage,
                     name,
                     value,
                 ),
             );
         }
 
-        if (parsed < 0) {
+        // The pattern is stricter than `Number()`: it also rejects `NaN`
+        // (`abc`), `1e2`, `Infinity` and whitespace-only values.
+        if (!valuePattern.test(value)) {
             throw new RuleConversionError(
                 sprintf(
-                    notPositiveErrorMessage,
+                    notIntErrorMessage,
                     name,
                     value,
                 ),

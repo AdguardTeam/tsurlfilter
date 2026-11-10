@@ -68,6 +68,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Inverted allowlist entries with uppercase letters not matching their sites.
 - `$stealth` exception rules shown as `<dynamic rule text is not specified>`
   instead of their text in the MV3 filtering log.
+- HTML filtering rules whose selector starts with `html` or `:root` now
+  match the document root and continue matching from it, e.g.
+  `$$html > body > script` and `$$:root div`.
+- HTML filtering `:contains()` regexp arguments now ignore all flags except
+  `i`, `s`, and the Unicode flags `u` and `v`. Matching is stateless and does
+  not depend on the previously matched element (via [@adguard/tsurlfilter]).
 - HTML filtering rules with `:-abp-contains()` and `:has-text()` now work,
   and HTML filtering rules with an empty `:contains()` argument are now
   rejected (via [@adguard/tsurlfilter]).
@@ -85,6 +91,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Malformed CSS hit markers no longer break cosmetic application in MV2: a
   `URIError` from `decodeURIComponent` is treated as a non-matching marker
   instead of propagating.
+- Spaces around a quoted HTML filtering `:contains()` argument are no longer
+  trimmed (via [@adguard/tsurlfilter]): `$$div:contains( "foo" )` now matches
+  the text `"foo"` with a space on each side.
+- `$removeparam` regexp values with the `g` or `y` flag are now matched
+  statelessly: matching no longer depends on the previously tested URL
+  parameter, so all matching parameters are removed.
 
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
 [AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475
