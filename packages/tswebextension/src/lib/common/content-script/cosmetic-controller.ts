@@ -29,9 +29,20 @@ export class CosmeticControllerCommon {
     private static MAX_GET_COSMETIC_DATA_TRIES = 200;
 
     /**
+     * Maximum retries for a rejected {@link MessageType.GetCosmeticData}
+     * request. Kept separate from the app-start retry budget.
+     */
+    private static MAX_GET_COSMETIC_DATA_REJECTION_TRIES = 5;
+
+    /**
      * Number of {@link MessageType.GetCosmeticData} requests.
      */
     private tries = 0;
+
+    /**
+     * Number of retries after a rejected cosmetic-data request.
+     */
+    private rejectionTries = 0;
 
     /**
      * Number of reapply requests made after collection was enabled.
@@ -118,13 +129,15 @@ export class CosmeticControllerCommon {
             });
 
             if (res) {
+                this.rejectionTries = 0;
                 this.applyCosmetic(res);
                 return;
             }
         } catch {
-            // Keep collecting probes while a retry can still succeed.
-            if (this.tries <= CosmeticControllerCommon.MAX_GET_COSMETIC_DATA_TRIES) {
-                this.tries += 1;
+            // Keep collecting probes while a short retry can still succeed.
+            if (this.rejectionTries
+                < CosmeticControllerCommon.MAX_GET_COSMETIC_DATA_REJECTION_TRIES) {
+                this.rejectionTries += 1;
                 setTimeout(
                     this.process,
                     CosmeticControllerCommon.GET_COSMETIC_DATA_RETRY_TIMEOUT_MS,

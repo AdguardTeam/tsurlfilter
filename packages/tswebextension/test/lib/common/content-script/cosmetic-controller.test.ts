@@ -296,6 +296,35 @@ describe.each(controllers)('%s short-lived probes', (_name, CosmeticController) 
         }
     });
 
+    it('stops retrying rejected cosmetic data after a small budget', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+        vi.useFakeTimers();
+
+        try {
+            const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockRejectedValue(new Error('permanent failure'));
+
+            const cosmeticController = createController(CosmeticController);
+            cosmeticController.init();
+
+            const {
+                MAX_GET_COSMETIC_DATA_REJECTION_TRIES: maxRetries,
+                GET_COSMETIC_DATA_RETRY_TIMEOUT_MS: retryTimeout,
+            } = (CosmeticControllerCommon as unknown as {
+                MAX_GET_COSMETIC_DATA_REJECTION_TRIES: number;
+                GET_COSMETIC_DATA_RETRY_TIMEOUT_MS: number;
+            });
+
+            await vi.advanceTimersByTimeAsync(retryTimeout * (maxRetries + 5));
+
+            expect(maxRetries).toBeLessThanOrEqual(10);
+            expect(sendAppMessageSpy).toHaveBeenCalledTimes(maxRetries + 1);
+        } finally {
+            vi.useRealTimers();
+            restoreMutationObserver();
+        }
+    });
+
     it('stops the collector when hits stats are not collected', async () => {
         const restoreMutationObserver = mockMutationObserver();
 
