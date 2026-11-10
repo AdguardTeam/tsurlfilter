@@ -338,7 +338,7 @@ describe('HtmlRuleConverter', () => {
                     },
 
                     // `:-abp-contains()` special pseudo-class selector (AdGuard alias of
-                    // `:contains()`, leave as-is for now - see AG-61400)
+                    // `:contains()`, kept as-is)
                     {
                         actual: '$$div:-abp-contains(foo)',
                         expected: ['$$div:-abp-contains(foo)'],
@@ -932,15 +932,6 @@ describe('HtmlRuleConverter', () => {
                         actual: '##^div:has-text(/ex.*ple/i)',
                         expected: ['$$div:contains(/ex.*ple/i)'],
                     },
-
-                    // `:-abp-contains()` special pseudo-class selector (AdGuard
-                    // alias of `:contains()`). This direction is permissive by
-                    // design: the alias is kept as-is, without a mixed-syntax
-                    // error.
-                    {
-                        actual: '##^div:-abp-contains(foo)',
-                        expected: ['$$div:-abp-contains(foo)'],
-                    },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperly(
                         HtmlRuleConverter,
@@ -1121,6 +1112,13 @@ describe('HtmlRuleConverter', () => {
                     // invalid simple selector - mixed syntax (AdGuard special pseudo-class selector)
                     {
                         input: '##^div:contains(example)',
+                        error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
+                    },
+
+                    // invalid simple selector - mixed syntax (`:-abp-contains()`
+                    // is an AdGuard-only alias of `:contains()`)
+                    {
+                        input: '##^div:-abp-contains(foo)',
                         error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
                     },
                 ])("should not convert '$input'", ({ input, error }) => {
@@ -1512,12 +1510,18 @@ describe('HtmlRuleConverter', () => {
                     },
 
                     // `:-abp-contains()` special pseudo-class selector (AdGuard alias of
-                    // `:contains()`). The alias is not mapped to `:has-text()` yet
-                    // (see AG-61400), so the selector is kept as-is. This is the known
-                    // interim output; the expectation must change with AG-61400.
+                    // `:contains()`), converted exactly like `:contains()`
                     {
                         actual: '$$div:-abp-contains(foo)',
-                        expected: ['##^div:-abp-contains(foo)'],
+                        expected: ['##^div:has-text(foo)'],
+                    },
+
+                    // `:-abp-contains()` special pseudo-class selector - spaces around
+                    // the argument are part of the matched text, so they survive the
+                    // conversion, same as for `:contains()`
+                    {
+                        actual: '$$div:-abp-contains( "foo" )',
+                        expected: ['##^div:has-text( "foo" )'],
                     },
 
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
@@ -1772,6 +1776,12 @@ describe('HtmlRuleConverter', () => {
                         input: '$$div:contains("foo" )',
                         // eslint-disable-next-line max-len
                         error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: '\"foo\" '",
+                    },
+                    // `:-abp-contains()` alias - validated exactly like `:contains()`
+                    {
+                        input: '$$div:-abp-contains("foo" )',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector '-abp-contains' is not valid in uBlock Origin: '\"foo\" '",
                     },
                     {
                         input: '$$div:contains("foo"bar)',

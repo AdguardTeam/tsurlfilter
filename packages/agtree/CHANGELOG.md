@@ -72,6 +72,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `$$[max-length="100"]`, `$$*[max-length="100"]` and
   `$$[max-length="1"] > [max-length="2"]`, because the resulting all-`*`
   selector matches almost every element.
+- ADG→uBO conversion now maps the `:-abp-contains()` alias to
+  `:has-text()`, the same as `:contains()`, e.g. `$$div:-abp-contains(foo)`
+  becomes `##^div:has-text(foo)`. Previously the alias was kept as-is, and
+  uBlock Origin rejected the converted rule.
 
 ### Security
 
