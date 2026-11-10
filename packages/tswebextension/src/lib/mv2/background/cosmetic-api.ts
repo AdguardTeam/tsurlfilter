@@ -3,6 +3,7 @@ import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 import { isCollectStatsEnabledForDocument } from '../../common/collect-hit-stats';
 import { USER_FILTER_ID } from '../../common/constants';
 import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParams } from '../../common/cosmetic-api';
+import { type PreparedCosmeticResultCommon } from '../../common/tabs/frame';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { CssCapabilities } from '../../common/utils/css-capabilities';
 import { logger } from '../../common/utils/logger';
@@ -32,6 +33,16 @@ type MarkedCssFrameContext = {
     documentId?: string;
     preparedCosmeticResult?: object;
     cosmeticResult?: object;
+};
+
+/**
+ * In-flight marked CSS injection for a frame context.
+ */
+type CssInjectionInFlight = {
+    preparedCosmeticResult: object;
+    documentId: string | undefined;
+    areHitsStatsCollected: boolean;
+    promise: Promise<void>;
 };
 
 type LogJsRulesParamsMv2 = LogJsRulesParams & {
@@ -147,6 +158,37 @@ export class CosmeticApi extends CosmeticApiCommon {
         preparedCosmeticResult: object | undefined;
         applied: boolean;
     }>();
+
+    /**
+     * Marked CSS injections currently in progress, keyed by frame context.
+     */
+    private static cssInjectionInFlight = new WeakMap<object, CssInjectionInFlight>();
+
+    /**
+     * Waits for a marked CSS injection that is still in progress.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     */
+    public static async waitForPendingCssInjection(
+        tabId: number,
+        frameId: number,
+    ): Promise<void> {
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+        if (!frameContext) {
+            return;
+        }
+
+        const pending = CosmeticApi.cssInjectionInFlight.get(frameContext);
+        if (!pending
+            || !pending.areHitsStatsCollected
+            || pending.preparedCosmeticResult !== frameContext.preparedCosmeticResult
+            || pending.documentId !== frameContext.documentId) {
+            return;
+        }
+
+        await pending.promise;
+    }
 
     /**
      * Records whether marked native CSS is applied for a frame.
@@ -377,6 +419,8 @@ export class CosmeticApi extends CosmeticApiCommon {
         tabId: number,
         frameId: number,
     ): Promise<ContentScriptCosmeticData> {
+        await CosmeticApi.waitForPendingCssInjection(tabId, frameId);
+
         const data = CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
 
         if (!data.areHitsStatsCollected) {
@@ -623,52 +667,114 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Injects prepared CSS and retries transient failures.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @param frameContext Frame context that was matched for {@link cssText}.
+     * @param preparedCosmeticResult Prepared cosmetic result.
+     * @param cssText CSS text to inject.
+     * @param tries Number of tries already made.
+     *
+     * @returns A promise that resolves when the CSS is injected or the retry
+     * budget is exhausted.
+     */
+    private static async injectPreparedCssWithRetries(
+        tabId: number,
+        frameId: number,
+        frameContext: MarkedCssFrameContext,
+        preparedCosmeticResult: PreparedCosmeticResultCommon,
+        cssText: string,
+        tries: number,
+    ): Promise<void> {
+        try {
+            await CosmeticApi.injectCss(tabId, frameId, cssText);
+            const { areHitsStatsCollected } = preparedCosmeticResult;
+            CosmeticApi.setNativeHitsMarkersApplied(
+                frameContext,
+                preparedCosmeticResult,
+                areHitsStatsCollected,
+            );
+            if (areHitsStatsCollected) {
+                CosmeticApi.setMarkedCssInjected(frameContext);
+            }
+        } catch (e) {
+            if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
+                await new Promise<void>((resolve) => {
+                    setTimeout(resolve, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
+                });
+                await CosmeticApi.injectPreparedCssWithRetries(
+                    tabId,
+                    frameId,
+                    frameContext,
+                    preparedCosmeticResult,
+                    cssText,
+                    tries + 1,
+                );
+            } else {
+                CosmeticApi.setNativeHitsMarkersApplied(frameContext, preparedCosmeticResult, false);
+                logger.debug('[tsweb.CosmeticApi.injectPreparedCssWithRetries]: error occurred during injection', e);
+            }
+        }
+    }
+
+    /**
      * Injects css to specified tab id and frame id.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
      * @param tries Number of tries for the injection in case of failure.
+     *
+     * @returns A promise that resolves when the CSS is injected or the retry
+     * budget is exhausted.
      */
-    public static async applyCss(tabId: number, frameId: number, tries = 0): Promise<void> {
+    public static applyCss(tabId: number, frameId: number, tries = 0): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
         const preparedCosmeticResult = frameContext?.preparedCosmeticResult;
 
         if (!frameContext || !preparedCosmeticResult) {
-            return;
+            return Promise.resolve();
+        }
+
+        const pending = CosmeticApi.cssInjectionInFlight.get(frameContext);
+        if (pending
+            && pending.preparedCosmeticResult === preparedCosmeticResult
+            && pending.documentId === frameContext.documentId) {
+            return pending.promise;
         }
 
         if (CosmeticApi.hasMarkedCssInjected(frameContext)) {
             CosmeticApi.setNativeHitsMarkersApplied(frameContext, preparedCosmeticResult, true);
-            return;
+            return Promise.resolve();
         }
 
         const { cssText } = preparedCosmeticResult;
         if (!cssText) {
             CosmeticApi.setNativeHitsMarkersApplied(frameContext, preparedCosmeticResult, true);
-            return;
+            return Promise.resolve();
         }
 
-        try {
-            await CosmeticApi.injectCss(tabId, frameId, cssText);
-            CosmeticApi.setNativeHitsMarkersApplied(
-                frameContext,
-                preparedCosmeticResult,
-                preparedCosmeticResult.areHitsStatsCollected,
-            );
-            if (preparedCosmeticResult.areHitsStatsCollected) {
-                CosmeticApi.setMarkedCssInjected(frameContext);
+        const promise = CosmeticApi.injectPreparedCssWithRetries(
+            tabId,
+            frameId,
+            frameContext,
+            preparedCosmeticResult,
+            cssText,
+            tries,
+        ).finally(() => {
+            if (CosmeticApi.cssInjectionInFlight.get(frameContext)?.promise === promise) {
+                CosmeticApi.cssInjectionInFlight.delete(frameContext);
             }
-        } catch (e) {
-            // Retry injection if it fails
-            if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
-                setTimeout(() => {
-                    CosmeticApi.applyCss(tabId, frameId, tries + 1);
-                }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
-            } else {
-                CosmeticApi.setNativeHitsMarkersApplied(frameContext, preparedCosmeticResult, false);
-                logger.debug('[tsweb.CosmeticApi.applyCss]: error occurred during injection', e);
-            }
-        }
+        });
+
+        CosmeticApi.cssInjectionInFlight.set(frameContext, {
+            preparedCosmeticResult,
+            documentId: frameContext.documentId,
+            areHitsStatsCollected: preparedCosmeticResult.areHitsStatsCollected,
+            promise,
+        });
+
+        return promise;
     }
 }
 

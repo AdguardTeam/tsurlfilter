@@ -217,6 +217,41 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(injectSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('waits for an in-flight initial injection before reapplying', async () => {
+        tabsApiMock.getFrameContext.mockReturnValue({
+            documentId: 'doc-1',
+            cosmeticResult,
+            preparedCosmeticResult: {
+                cssText: 'marked',
+                areHitsStatsCollected: true,
+            },
+        });
+
+        let resolveInjection!: () => void;
+        const injection = new Promise<void>((resolve) => {
+            resolveInjection = resolve;
+        });
+        const injectSpy = vi.spyOn(CosmeticApi, 'injectCss').mockReturnValue(injection);
+
+        const applyPromise = CosmeticApi.applyCss(TAB_ID, FRAME_ID);
+        const reapplyPromise = CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        await Promise.resolve();
+
+        expect(injectSpy).toHaveBeenCalledTimes(1);
+
+        resolveInjection();
+        await applyPromise;
+        const data = await reapplyPromise;
+
+        expect(injectSpy).toHaveBeenCalledTimes(1);
+        expect(data.areNativeHitsStatsCollected).toBe(true);
+    });
+
     it('does not reuse the cache after a document change', async () => {
         const frameContext = {
             documentId: 'doc-1',
@@ -334,6 +369,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
             },
         };
         tabsApiMock.getFrameContext
+            .mockReturnValueOnce(frameContext)
             .mockReturnValueOnce(frameContext)
             .mockReturnValueOnce(frameContext)
             .mockReturnValue(nextFrameContext);
