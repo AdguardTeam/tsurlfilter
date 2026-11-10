@@ -376,6 +376,34 @@ export class RuleBadfilter {
     }
 
     /**
+     * Groups `$badfilter` rules by pattern hash.
+     *
+     * A badfilter rule can only negate a rule with the same pattern, so a rule
+     * only needs the badfilters with its own hash.
+     *
+     * @param badfilterRules Rules that carry the `$badfilter` modifier.
+     *
+     * @returns Map from pattern hash to the badfilter rules with that hash.
+     */
+    public static groupByHash<T extends { readonly hash: number }>(
+        badfilterRules: readonly T[],
+    ): Map<number, T[]> {
+        const result = new Map<number, T[]>();
+
+        badfilterRules.forEach((rule) => {
+            const existing = result.get(rule.hash);
+
+            if (existing) {
+                existing.push(rule);
+            } else {
+                result.set(rule.hash, [rule]);
+            }
+        });
+
+        return result;
+    }
+
+    /**
      * Checks whether a `$badfilter` rule disables the target rule only partially.
      *
      * This is the case when at least one of the two rules has a permitted

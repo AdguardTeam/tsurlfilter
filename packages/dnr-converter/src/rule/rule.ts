@@ -34,6 +34,17 @@ export type { HttpHeaderMatcher } from './rule-types';
 const DOMAIN_LIST_PIPE_SEPARATOR = '|';
 
 /**
+ * Token for the scan-time pass that defers the badfilter regexp coverage check.
+ *
+ * {@link Rule.applyBadfilters} runs the check by default. The scan-time pass
+ * passes this token to carry the check to the conversion pass instead, because
+ * an in-list badfilter may remove an entry that a regexp covers. The token is
+ * not exported from the package root, so external callers cannot defer the
+ * check.
+ */
+export const DEFER_REGEXP_CHECK: unique symbol = Symbol('defer-regexp-check');
+
+/**
  * Maps canonical content-type modifier names to their DNR `ResourceType`
  * equivalents. Only modifier names that correspond to adblock filter syntax
  * content-type options are included here (excluded `webtransport` and `webbundle`).
@@ -1038,18 +1049,16 @@ export class Rule {
      * badfilter is applied is dropped, and an exception rule is kept narrowed
      * instead.
      *
-     * The regexp coverage check runs against the final list of this call, but a
-     * rule can be narrowed in two passes: `badFilterRules` during scanning and
-     * the in-list badfilters during conversion. When the scan-time call passes
-     * `finalizeRegexpCheck = false`, the entries are carried on the narrowed
-     * rule so the next call runs the check after the in-list badfilters removed
-     * their domains.
+     * The regexp coverage check runs against the final list of this call. The
+     * scan-time pass passes {@link DEFER_REGEXP_CHECK} to carry the check to the
+     * conversion pass instead, because an in-list badfilter may remove an entry
+     * that a regexp covers. The token is internal to the package, so a public
+     * call always finalizes the check.
      *
      * @param targetRule The rule to apply the badfilter rules to.
      * @param badfilterRules Rules that carry the `$badfilter` modifier.
-     * @param finalizeRegexpCheck When false, the regexp coverage check is
-     *   deferred to the next call instead of dropping the rule here. Defaults to
-     *   true.
+     * @param deferRegexpCheck Internal token for the scan-time pass. Omit it to
+     *   run the regexp coverage check and drop the rule when it is needed.
      *
      * @returns The narrowed rule, or `null` when a badfilter cancels it
      *   completely.
@@ -1057,7 +1066,7 @@ export class Rule {
     public static applyBadfilters(
         targetRule: Rule,
         badfilterRules: readonly Rule[],
-        finalizeRegexpCheck = true,
+        deferRegexpCheck?: typeof DEFER_REGEXP_CHECK,
     ): Rule | null {
         let current = targetRule;
         let excludedDomains: string[] = [];
@@ -1091,10 +1100,14 @@ export class Rule {
         // badfilter may remove the entry that a regexp covers, while a later one
         // may remove the regexp-matched entry instead, so checking inside the
         // loop would make the result depend on the badfilter order.
-        if (finalizeRegexpCheck && !targetRule.allowlist && RuleBadfilter.regexpEntriesCoverKeptEntries(
-            deferredRegexpEntries,
-            current.permittedDomains,
-        )) {
+        if (
+            deferRegexpCheck !== DEFER_REGEXP_CHECK
+            && !targetRule.allowlist
+            && RuleBadfilter.regexpEntriesCoverKeptEntries(
+                deferredRegexpEntries,
+                current.permittedDomains,
+            )
+        ) {
             return null;
         }
 
@@ -1132,20 +1145,7 @@ export class Rule {
             throw new Error('Cannot set permitted domains on a rule without a permitted $domain list');
         }
 
-        return new Rule(
-            this.filterListId,
-            this.index,
-            this.node,
-            this.originalText,
-            {
-                permittedDomains,
-                restrictedDomains: this.restrictedDomains ?? undefined,
-                originalPermittedDomains: this.originalPermittedDomains ?? this.permittedDomains ?? undefined,
-                originalRestrictedDomains: this.originalRestrictedDomains,
-                priority: this.priority,
-                deferredBadfilterRegexps: this.deferredBadfilterRegexps,
-            },
-        );
+        return this.copyWithOverrides({ permittedDomains });
     }
 
     /**
@@ -1183,20 +1183,7 @@ export class Rule {
             ...excludedDomains,
         ])];
 
-        return new Rule(
-            this.filterListId,
-            this.index,
-            this.node,
-            this.originalText,
-            {
-                permittedDomains: this.permittedDomains,
-                restrictedDomains: mergedExcludedDomains,
-                originalPermittedDomains: this.originalPermittedDomains ?? this.permittedDomains ?? undefined,
-                originalRestrictedDomains: this.originalRestrictedDomains,
-                priority: this.priority,
-                deferredBadfilterRegexps: this.deferredBadfilterRegexps,
-            },
-        );
+        return this.copyWithOverrides({ restrictedDomains: mergedExcludedDomains });
     }
 
     /**
@@ -1214,6 +1201,22 @@ export class Rule {
     private withDeferredBadfilterRegexps(
         deferredBadfilterRegexps: readonly string[],
     ): Rule {
+        return this.copyWithOverrides({ deferredBadfilterRegexps });
+    }
+
+    /**
+     * Creates a copy of this rule with the given overrides.
+     *
+     * Copies keep the written rule text, the pattern hash, the written `$domain`
+     * entries, the priority and the deferred badfilter regexp entries, so a
+     * narrowed rule still matches its `$badfilter` and a later pass can finish
+     * the regexp check.
+     *
+     * @param overrides Fields that the copy changes.
+     *
+     * @returns A copy of this rule with the given overrides.
+     */
+    private copyWithOverrides(overrides: RuleOverrides): Rule {
         return new Rule(
             this.filterListId,
             this.index,
@@ -1225,7 +1228,8 @@ export class Rule {
                 originalPermittedDomains: this.originalPermittedDomains ?? this.permittedDomains ?? undefined,
                 originalRestrictedDomains: this.originalRestrictedDomains,
                 priority: this.priority,
-                deferredBadfilterRegexps,
+                deferredBadfilterRegexps: this.deferredBadfilterRegexps,
+                ...overrides,
             },
         );
     }

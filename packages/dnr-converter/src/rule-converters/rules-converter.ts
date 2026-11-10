@@ -103,6 +103,7 @@ import {
 import { type FilterConverterOptions } from '../filter-converter/filter-converter-options';
 import { UrlTransformRulesConverter } from '../grouped-rules-converters/url-transform-converter';
 import { Rule } from '../rule/rule';
+import { RuleBadfilter } from '../rule/rule-badfilter';
 import { type ScannedFilter } from '../rules-scanner';
 import { type Source } from '../ruleset/source-map';
 import { isSafeRule } from '../utils/is-safe-rule';
@@ -624,7 +625,7 @@ export class RulesConverter {
 
         // A badfilter rule can only negate a rule with the same pattern, so a
         // rule only needs the badfilters with its own pattern hash.
-        const badFilterRulesByHash = RulesConverter.groupBadFilterRulesByHash(allBadFilterRules);
+        const badFilterRulesByHash = RuleBadfilter.groupByHash(allBadFilterRules);
 
         // Define the badfilter function: it drops a fully cancelled rule and
         // narrows the `$domain` list of a partly cancelled one.
@@ -661,31 +662,5 @@ export class RulesConverter {
 
             return [filterId, filtered];
         });
-    }
-
-    /**
-     * Groups `$badfilter` rules by pattern hash.
-     *
-     * A badfilter rule can only negate a rule with the same pattern, so a rule
-     * only needs the badfilters with its own hash.
-     *
-     * @param badFilterRules Rules that carry the `$badfilter` modifier.
-     *
-     * @returns Map from pattern hash to the badfilter rules with that hash.
-     */
-    private static groupBadFilterRulesByHash(badFilterRules: readonly Rule[]): Map<number, Rule[]> {
-        const result: Map<number, Rule[]> = new Map();
-
-        badFilterRules.forEach((rule) => {
-            const existing = result.get(rule.hash);
-
-            if (existing) {
-                existing.push(rule);
-            } else {
-                result.set(rule.hash, [rule]);
-            }
-        });
-
-        return result;
     }
 }

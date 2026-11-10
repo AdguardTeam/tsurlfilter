@@ -106,7 +106,8 @@ import {
     ResourcesPathError,
 } from '../errors/converter-options-errors';
 import { type IFilter } from '../filter/types';
-import { Rule } from '../rule/rule';
+import { DEFER_REGEXP_CHECK, Rule } from '../rule/rule';
+import { RuleBadfilter } from '../rule/rule-badfilter';
 import { type ConvertedRules } from '../rule-converters';
 import { RulesConverter } from '../rule-converters/rules-converter';
 import { RulesScanner, type ScannedFilter } from '../rules-scanner';
@@ -376,9 +377,7 @@ export class FilterConverter {
         let applyBadFiltersFn: ((r: Rule) => Rule | null) | undefined;
 
         if (options?.badFilterRules && options.badFilterRules.length > 0) {
-            const badFilterHashMap = FilterConverter.buildRulesBadFilterHashMap(
-                options.badFilterRules,
-            );
+            const badFilterHashMap = RuleBadfilter.groupByHash(options.badFilterRules);
 
             applyBadFiltersFn = (r: Rule): Rule | null => {
                 const fastMatched = badFilterHashMap.get(r.hash);
@@ -389,7 +388,7 @@ export class FilterConverter {
 
                 // The in-list badfilters are applied later, so a regexp check
                 // here could drop a rule before they remove a covered entry.
-                return Rule.applyBadfilters(r, fastMatched, false);
+                return Rule.applyBadfilters(r, fastMatched, DEFER_REGEXP_CHECK);
             };
         }
 
@@ -516,32 +515,6 @@ export class FilterConverter {
             errors,
             limitations,
         };
-    }
-
-    /**
-     * Creates dictionary where key is hash of network rule and value is array
-     * of rules with this hash.
-     *
-     * @param badFilterRules A flat list of `$badfilter` network rules.
-     *
-     * @returns Dictionary with all $badfilter rules indexed by hash.
-     */
-    private static buildRulesBadFilterHashMap(
-        badFilterRules: Rule[],
-    ): Map<number, Rule[]> {
-        const result: Map<number, Rule[]> = new Map();
-
-        badFilterRules.forEach((r) => {
-            const { hash } = r;
-            const existing = result.get(hash);
-            if (existing) {
-                existing.push(r);
-            } else {
-                result.set(hash, [r]);
-            }
-        });
-
-        return result;
     }
 
     /**
