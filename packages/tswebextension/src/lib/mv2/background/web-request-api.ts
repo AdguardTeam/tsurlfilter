@@ -275,6 +275,7 @@ export class WebRequestApi {
         browser.webNavigation.onCommitted.addListener(WebRequestApi.onCommittedOperaHook);
         browser.webNavigation.onCommitted.addListener(WebRequestApi.onCommitted);
         browser.webNavigation.onBeforeNavigate.addListener(WebRequestApi.onBeforeNavigate);
+        browser.webNavigation.onHistoryStateUpdated.addListener(WebRequestApi.onHistoryStateUpdated);
         browser.webNavigation.onDOMContentLoaded.addListener(WebRequestApi.onDomContentLoaded);
         browser.webNavigation.onCompleted.addListener(WebRequestApi.deleteFrameContext);
         browser.webNavigation.onErrorOccurred.addListener(WebRequestApi.deleteFrameContext);
@@ -295,6 +296,7 @@ export class WebRequestApi {
         browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommitted);
         browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommittedOperaHook);
         browser.webNavigation.onBeforeNavigate.removeListener(WebRequestApi.onBeforeNavigate);
+        browser.webNavigation.onHistoryStateUpdated.removeListener(WebRequestApi.onHistoryStateUpdated);
         browser.webNavigation.onDOMContentLoaded.removeListener(WebRequestApi.onDomContentLoaded);
         browser.webNavigation.onCompleted.removeListener(WebRequestApi.deleteFrameContext);
         browser.webNavigation.onErrorOccurred.removeListener(WebRequestApi.deleteFrameContext);
@@ -842,6 +844,31 @@ export class WebRequestApi {
         }
 
         CosmeticApi.injectCosmetic(tabId, frameId);
+    }
+
+    /**
+     * Handles a same-document history update.
+     *
+     * The tab URL is updated by the Tabs API, but no navigation event updates
+     * the document-level rule, so it must be matched from the new URL.
+     *
+     * @param details Event details.
+     */
+    private static onHistoryStateUpdated(
+        details: WebNavigation.OnHistoryStateUpdatedDetailsType,
+    ): void {
+        const { tabId, frameId, url } = details;
+
+        if (frameId !== MAIN_FRAME_ID || !isHttpOrWsRequest(url)) {
+            return;
+        }
+
+        const tabContext = tabsApi.getTabContext(tabId);
+        if (!tabContext) {
+            return;
+        }
+
+        tabsApi.setMainFrameRule(tabId, MAIN_FRAME_ID, documentApi.matchFrame(url));
     }
 
     /**

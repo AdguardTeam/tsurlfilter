@@ -204,6 +204,7 @@ export class WebRequestApi {
         // and it provides better types compared to 'browser' from webextension-polyfill.
         chrome.webNavigation.onBeforeNavigate.addListener(WebRequestApi.onBeforeNavigate);
         chrome.webNavigation.onCommitted.addListener(WebRequestApi.onCommitted);
+        chrome.webNavigation.onHistoryStateUpdated.addListener(WebRequestApi.onHistoryStateUpdated);
         browser.webNavigation.onErrorOccurred.addListener(WebRequestApi.deleteFrameContext);
         browser.webNavigation.onCompleted.addListener(WebRequestApi.deleteFrameContext);
     }
@@ -223,6 +224,7 @@ export class WebRequestApi {
         // browser.webNavigation Events
         chrome.webNavigation.onBeforeNavigate.removeListener(WebRequestApi.onBeforeNavigate);
         chrome.webNavigation.onCommitted.removeListener(WebRequestApi.onCommitted);
+        chrome.webNavigation.onHistoryStateUpdated.removeListener(WebRequestApi.onHistoryStateUpdated);
         browser.webNavigation.onErrorOccurred.removeListener(WebRequestApi.deleteFrameContext);
         browser.webNavigation.onCompleted.removeListener(WebRequestApi.deleteFrameContext);
     }
@@ -553,6 +555,31 @@ export class WebRequestApi {
         }
 
         cookieFiltering.onHeadersReceived(context);
+    }
+
+    /**
+     * Handles a same-document history update.
+     *
+     * The tab URL is updated by the Tabs API, but no navigation event updates
+     * the document-level rule, so it must be matched from the new URL.
+     *
+     * @param details Event details.
+     */
+    private static onHistoryStateUpdated(
+        details: chrome.webNavigation.WebNavigationTransitionCallbackDetails,
+    ): void {
+        const { tabId, frameId, url } = details;
+
+        if (frameId !== MAIN_FRAME_ID || !isHttpOrWsRequest(url)) {
+            return;
+        }
+
+        const tabContext = tabsApi.getTabContext(tabId);
+        if (!tabContext) {
+            return;
+        }
+
+        tabsApi.setMainFrameRule(tabId, MAIN_FRAME_ID, DocumentApi.matchFrame(url));
     }
 
     /**

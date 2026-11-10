@@ -12,6 +12,7 @@ import { defaultFilteringLog } from '../../../../src/lib/common/filtering-log';
 import { DocumentLifecycle } from '../../../../src/lib/common/interfaces';
 import { ContentType } from '../../../../src/lib/common/request-type';
 import { CosmeticFrameProcessor } from '../../../../src/lib/mv3/background/cosmetic-frame-processor';
+import { DocumentApi } from '../../../../src/lib/mv3/background/document-api';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
 import { RequestBlockingApi } from '../../../../src/lib/mv3/background/request/request-blocking-api';
 import { requestContextStorage } from '../../../../src/lib/mv3/background/request/request-context-storage';
@@ -55,8 +56,10 @@ vi.mock('../../../../src/lib/mv3/tabs/tabs-api', () => ({
     tabsApi: {
         createTabContextIfNotExists: vi.fn(),
         setFrameContext: vi.fn(),
+        getTabContext: vi.fn(),
         getTabFrameRule: vi.fn(),
         incrementTabBlockedRequestCount: vi.fn(),
+        setMainFrameRule: vi.fn(),
     },
 }));
 
@@ -105,6 +108,30 @@ vi.mock('../../../../src/lib/mv3/background/services/remove-param-injection-serv
         injectRemoveParam: vi.fn(),
     },
 }));
+
+describe('WebRequestApi MV3 history state handling', () => {
+    it('updates the main frame rule from the new history URL', () => {
+        const rule = { isFilteringDisabled: (): boolean => true } as never;
+        vi.mocked(DocumentApi.matchFrame).mockReturnValue(rule);
+        vi.mocked(tabsApi.getTabContext).mockReturnValue({} as never);
+
+        const details = {
+            tabId: 1,
+            frameId: 0,
+            url: 'https://example.org/new-page',
+            documentId: 'document-id',
+            transitionType: 'link',
+            transitionQualifiers: [],
+            timeStamp: Date.now(),
+        };
+
+        // @ts-ignore - accessing private method for testing
+        WebRequestApi.onHistoryStateUpdated(details);
+
+        expect(DocumentApi.matchFrame).toHaveBeenCalledWith(details.url);
+        expect(tabsApi.setMainFrameRule).toHaveBeenCalledWith(1, 0, rule);
+    });
+});
 
 describe('WebRequestApi MV3 prefetch handling', () => {
     const createBeforeRequestContext = (): {

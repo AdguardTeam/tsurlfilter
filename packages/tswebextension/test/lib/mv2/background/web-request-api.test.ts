@@ -10,7 +10,12 @@ import { type WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { MAIN_FRAME_ID } from '../../../../src/lib/common/constants';
-import { canvasInjection, engineApi, tabsApi } from '../../../../src/lib/mv2/background/api';
+import {
+    canvasInjection,
+    documentApi,
+    engineApi,
+    tabsApi,
+} from '../../../../src/lib/mv2/background/api';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { type RequestContext } from '../../../../src/lib/mv2/background/request/request-context-storage';
 import { WebRequestApi } from '../../../../src/lib/mv2/background/web-request-api';
@@ -45,6 +50,30 @@ describe('web request api', () => {
 
             expect(tabsApi.getTabContext).not.toHaveBeenCalled();
             expect(engineApi.matchRequest).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('onHistoryStateUpdated', () => {
+        it('updates the main frame rule from the new history URL', () => {
+            const rule = { isFilteringDisabled: (): boolean => true } as never;
+            vi.mocked(documentApi.matchFrame).mockReturnValue(rule);
+            vi.mocked(tabsApi.getTabContext).mockReturnValue({} as never);
+
+            const details: WebNavigation.OnHistoryStateUpdatedDetailsType = {
+                tabId: 1,
+                frameId: MAIN_FRAME_ID,
+                url: 'https://example.org/new-page',
+                documentId: 'document-id',
+                transitionType: 'link',
+                transitionQualifiers: [],
+                timeStamp: Date.now(),
+            };
+
+            // @ts-ignore - accessing private method for testing
+            WebRequestApi.onHistoryStateUpdated(details);
+
+            expect(documentApi.matchFrame).toHaveBeenCalledWith(details.url);
+            expect(tabsApi.setMainFrameRule).toHaveBeenCalledWith(1, MAIN_FRAME_ID, rule);
         });
     });
 
