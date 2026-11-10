@@ -572,9 +572,11 @@ export class PreregisteredScriptsService {
      * loaded lists.
      *
      * The build writes a fingerprint per filter into the manifest; the same
-     * map is recomputed here for the enabled filters, scoped to the hostnames
-     * of the manifest. A filter without a baked entry counts as stale too —
-     * its exceptions were not baked at all, so nothing describes them.
+     * map is recomputed here for the enabled filters, scoped to the configured
+     * hostnames, expanded the way the generation expands them — the manifest
+     * itself carries no host list. A filter without a baked entry counts as
+     * stale too — its exceptions were not baked at all, so nothing describes
+     * them.
      *
      * The fingerprint is cached per filter and reused while the stored list
      * checksum and the covered host set stay the same, so the common case —

@@ -25,16 +25,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `@adguard/tswebextension/mv3/preregistered-scripts/build-contract`.
   The `manifest.json` format and filename contract are shared by the build and
   runtime.
-- The preregistered scripts manifest carries `conditions` — the ids of the
-  filters whose `$document`/`$jsinject` exceptions are baked into
+- The preregistered scripts manifest carries `conditions` — the list of filter
+  ids whose `$document`/`$jsinject` exceptions are baked into
   `cond-{filterId}.js`. The service registers the files of the enabled
   filters before the shared bundle, so a filter's exceptions stop applying
   when the filter is disabled.
 - The manifest now carries `dynamicHostnames` — the covered hostnames that
-  stayed on the dynamic path during the generation because a user rule or a
-  custom filter can change their page verdict. The baked `conditions` map may
-  have an entry for them, so the service skips them instead of applying a
-  verdict that does not describe the engine.
+  stayed on the dynamic path during the generation because a `$badfilter` in
+  another filter cancels their exceptions, and only the runtime knows whether
+  that filter is enabled. The baked `conditions` files may have an entry for
+  them, so the service skips them instead of applying a verdict that does not
+  describe the engine.
 - The manifest now carries `pageExceptions` — a map of filter id to a
   fingerprint of the allowlist rules that filter's conditions file was baked
   from, computed by `computePageExceptionsFingerprint()`. The hash covers the

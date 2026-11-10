@@ -58,8 +58,9 @@ describe('computePageExceptionsFingerprint', () => {
 
         expect(generichideFirst).not.toBe(jsinjectFirst);
 
-        // Same tie on a path-scoped pair: `youtube.com/watch` is the key of
-        // both rules, so only the list order decides.
+        // Same tie on a path-scoped pair: the hostname table keys both rules
+        // by `youtube.com`, the path is checked after the lookup, so only the
+        // list order decides.
         expect(await fingerprint([
             '@@||youtube.com/watch$generichide',
             '@@||youtube.com/watch?v=$jsinject',
@@ -76,14 +77,18 @@ describe('computePageExceptionsFingerprint', () => {
             .toBe(await fingerprint(content, ['youtube.com', 'www.youtube.com']));
     });
 
-    it('changes when a covered hostname is added', async () => {
+    it('changes when a covered hostname is added or replaced', async () => {
         // A rule for a whole domain reaches a new subdomain too, but the baked
         // conditions map has no entry for it, so the generation must be
-        // invalidated even though the rules did not change.
-        const base = await fingerprint('@@||youtube.com^$generichide', ['youtube.com']);
-        const wider = await fingerprint('@@||youtube.com^$generichide', ['music.youtube.com', 'youtube.com']);
+        // invalidated even though the rules did not change. The replaced case
+        // keeps the number of facts: only the host tag separates it.
+        const content = '@@||youtube.com^$generichide';
+        const apex = await fingerprint(content, ['youtube.com']);
+        const wider = await fingerprint(content, ['music.youtube.com', 'youtube.com']);
+        const replaced = await fingerprint(content, ['music.youtube.com']);
 
-        expect(wider).not.toBe(base);
+        expect(wider).not.toBe(apex);
+        expect(replaced).not.toBe(apex);
     });
 
     it('changes when an exception is added or removed', async () => {
@@ -163,11 +168,15 @@ describe('computePageExceptionsFingerprint', () => {
 
     it('counts an exception only once its hostname is covered', async () => {
         const base = await fingerprint('@@||youtube.com^$document');
+        const covered = await fingerprint('@@||youtube.com^$document', [...HOSTS, 'example.org']);
         const withOtherSite = await fingerprint(
             ['@@||youtube.com^$document', '@@||example.org^$generichide'].join('\n'),
             [...HOSTS, 'example.org'],
         );
 
+        // The scope itself is not hashed, only the facts it keeps: the rule
+        // does not reach `example.org`, so the extra host adds no fact.
+        expect(covered).toBe(base);
         expect(withOtherSite).not.toBe(base);
     });
 
