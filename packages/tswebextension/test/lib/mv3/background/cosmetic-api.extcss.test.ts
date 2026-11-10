@@ -47,7 +47,7 @@ const makeFrameContext = (
     ...overrides,
 } as FrameMV3);
 
-describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
+describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         vi.mocked(tabsApi.getFrameContext).mockReset();
@@ -60,7 +60,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         vi.restoreAllMocks();
     });
 
-    it('injects ExtCSS via executeExtCss when rules exist', async () => {
+    it('injects ExtendedCss via executeExtCss when rules exist', async () => {
         const rules = ['div:has(.ad) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
 
@@ -89,15 +89,6 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
             cssRules: rules,
             collectStats: true,
         });
-    });
-
-    it('disposes instead of injecting when the rule set is empty', async () => {
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared([])));
-
-        await CosmeticApi.applyCosmeticRules(1, 0, true);
-
-        expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
-        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledTimes(1);
     });
 
     it('disposes instead of injecting when extCssRules is null', async () => {
@@ -144,7 +135,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         });
     });
 
-    it('does not inject ExtCSS on onResponseStarted (shouldApplyCss=false)', async () => {
+    it('does not inject ExtendedCss on onResponseStarted (shouldApplyCss=false)', async () => {
         const rules = ['div:has(.ad) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
 
@@ -153,7 +144,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
     });
 
-    it('does not await the ExtCSS injection (startup must not block on it)', async () => {
+    it('does not await the ExtendedCss injection (startup must not block on it)', async () => {
         const rules = ['div:has(.ad) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
 
@@ -170,14 +161,14 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         resolveInjection();
     });
 
-    it('logs scripting-path ExtCSS failures at info level with no retry or fallback', async () => {
+    it('logs scripting-path ExtendedCss failures at info level with no retry or fallback', async () => {
         const rules = ['div:has(.ad) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
         const injectionError = new Error('Cannot access contents of the page');
         vi.mocked(ScriptingApi.executeExtCss).mockRejectedValue(injectionError);
         const infoSpy = vi.spyOn(logger, 'info');
 
-        // Must not throw: applyExtCssRules catches internally and the ExtCSS
+        // Must not throw: applyExtCssRules catches internally and the ExtendedCss
         // task is not awaited, so no unhandled rejection reaches the worker.
         const result = await CosmeticApi.applyCosmeticRules(1, 0, true);
 

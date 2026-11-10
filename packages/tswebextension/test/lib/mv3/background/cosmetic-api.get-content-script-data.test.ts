@@ -38,7 +38,7 @@ vi.mock('../../../../src/lib/common/utils/create-frame-match-query', () => ({
     createFrameMatchQuery: vi.fn(() => ({})),
 }));
 
-describe('CosmeticApi.getContentScriptData (MV3) — ExtCSS removed from content script', () => {
+describe('CosmeticApi.getContentScriptData (MV3) — ExtendedCss removed from content script', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         matchCosmeticMock.mockReset();
@@ -52,7 +52,7 @@ describe('CosmeticApi.getContentScriptData (MV3) — ExtCSS removed from content
         vi.spyOn(CosmeticApi, 'getNativeCssSelectors').mockReturnValue(['.native-sel']);
     });
 
-    it('returns extCssRules: null and does NOT compute ExtCSS rules', () => {
+    it('returns extCssRules: null and does NOT compute ExtendedCss rules', () => {
         const extCssSpy = vi
             .spyOn(CosmeticApi, 'getExtCssRules')
             .mockReturnValue(['should-not-be-used']);

@@ -40,12 +40,12 @@ tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
 # `dist`: the Chrome Web Store review narrative for script-rule execution
 # (`JS_RULES_EXECUTION`) and the policy notes around `chrome.scripting` must be
 # readable in the shipped bundles, so stripping them is not an option.
-# Current payload: 77,192 bytes. The ExtendedCSS work moved affected-element
+# Current payload: 76,686 bytes. The ExtendedCss work moved affected-element
 # hit collection into `css-hits-helpers.ts`, which the content script now
-# imports at runtime: +1.3 KB of code and +6.2 KB of its documentation. That is
-# a genuine increase, so the budget moves with it. Raise this only when a
-# genuine size increase lands, never to silence a regression.
-max_size=78000
+# imports at runtime; the long JSDoc blocks of that module were condensed, so
+# the budget moves only slightly. Raise this only when a genuine size increase
+# lands, never to silence a regression.
+max_size=77500
 package_dist="node_modules/@adguard/tswebextension/dist"
 if ! filesize=$(node measure-payload.mjs "$package_dist/css-hits-counter.js"); then
     echo "Failed to measure the shipped css-hits-counter payload"

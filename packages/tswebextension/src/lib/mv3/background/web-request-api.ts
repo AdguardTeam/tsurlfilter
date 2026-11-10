@@ -874,13 +874,17 @@ export class WebRequestApi {
         } = details;
 
         /**
-         * A prerender commit belongs to a hidden document: `handleFrame` skips
-         * its cosmetic recalculation, so updating the frame context here would
-         * drop the visible document's prepared state and leave it without
+         * A prerendered main frame belongs to a hidden document: `handleFrame`
+         * skips its cosmetic recalculation, so updating the frame context here
+         * would drop the visible document's prepared state and leave it without
          * cosmetics if the prerender is discarded. Mirrors the prerender
          * guards in `onBeforeRequest` and `onBeforeNavigate`.
+         *
+         * Only the main frame is skipped: activation recommits the main frame
+         * but not an iframe that already committed during the prerender, so a
+         * skipped iframe would never receive its cosmetics.
          */
-        if (documentLifecycle === DocumentLifecycle.Prerender) {
+        if (frameId === MAIN_FRAME_ID && documentLifecycle === DocumentLifecycle.Prerender) {
             return;
         }
 

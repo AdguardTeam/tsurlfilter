@@ -40,7 +40,7 @@ declare const cssHitsHelpers: typeof cssHitsHelpersImpl;
 declare const applyExtendedCss: typeof applyExtendedCssImpl;
 
 /**
- * Self-contained ExtendedCSS apply function injected into pages via
+ * Self-contained ExtendedCss apply function injected into pages via
  * `chrome.scripting.executeScript({ func, args })`.
  *
  * NEVER called in the service worker — it is serialized by `toString()` and
@@ -55,7 +55,7 @@ declare const applyExtendedCss: typeof applyExtendedCssImpl;
  * constant is the single source of truth. Self-containment is pinned by the
  * `String(extCssInjectedApply)` unit tests.
  *
- * @param cssRules ExtendedCSS rule strings to apply to the current document.
+ * @param cssRules ExtendedCss rule strings to apply to the current document.
  * @param collectStats When true, register a CSS-hits `beforeStyleApplied`
  * callback (else nothing is registered and no overhead is incurred). The
  * callback is registered on every injection; the per-node dedupe state is
@@ -108,14 +108,23 @@ export const extCssInjectedApply = (
     const countedHits = previous?.countedHits ?? new WeakMap<Element, Set<string>>();
 
     /**
+     * Marker-stripped copies of the parsed rules, keyed by the original rule.
+     * ExtendedCss keys its `appliedRules` fast path on rule object identity,
+     * so the callback must return the same copy on every mutation pass.
+     */
+    const cleanedRules = new WeakMap<
+        IAffectedElement['rules'][number],
+        IAffectedElement['rules'][number]
+    >();
+
+    /**
      * Elements removed by a `:remove()` rule of this or a previous apply.
      * Retained on `window` — the injected function shares the document's
      * ISOLATED world with the content script — so the content-script
      * `CssHitsCounter` does not put them back into the page as probes.
      */
-    const removedElements = (w[protocol.removedElementsKey] as WeakSet<Element> | undefined)
-        ?? new WeakSet<Element>();
-    w[protocol.removedElementsKey] = removedElements;
+    const removedElements = window[protocol.removedElementsKey] ?? new WeakSet<Element>();
+    window[protocol.removedElementsKey] = removedElements;
 
     /**
      * Hits collected by {@link beforeStyleApplied} during the current apply
@@ -158,8 +167,7 @@ export const extCssInjectedApply = (
      * CSS-hits callback. Uses the inlined `cssHitsHelpers` (defined above by
      * the build-time helpers inliner) — the SAME source that MV2's
      * `CssHitsCounter` uses — so both manifest versions collect hits one way.
-     * The contract test (test/lib/mv3/background/css-hits-protocol.test.ts)
-     * pins both paths to identical outputs.
+     * The behavior tests in `extcss-apply-fn.test.ts` cover the inlined path.
      *
      * @param el The affected element whose style is about to be applied.
      *
@@ -179,6 +187,7 @@ export const extCssInjectedApply = (
             protocol.markerPrefix,
             true,
             countedHits,
+            cleanedRules,
         );
 
         if (hits.length > 0) {
@@ -205,11 +214,11 @@ export const extCssInjectedApply = (
     };
 
     // Dispose the previous instance BEFORE applying a new one: dispose()
-    // reverts its elements to their pre-ExtCSS `cssText`, so the new instance
+    // reverts its elements to the `cssText` they had before, so the new instance
     // snapshots clean `originalStyle` values (a disposal after the apply would
     // otherwise resurrect the previous instance's inline styles later). Its
     // rule strings are kept aside (`previousRules`) and re-applied if the new
-    // apply throws, so a failed apply never leaves the page without ExtendedCSS
+    // apply throws, so a failed apply never leaves the page without ExtendedCss
     // filtering until the next navigation.
     if (previous) {
         try {
@@ -251,7 +260,7 @@ export const extCssInjectedApply = (
 };
 
 /**
- * Self-contained ExtendedCSS disposal function injected into pages via
+ * Self-contained ExtendedCss disposal function injected into pages via
  * `chrome.scripting.executeScript({ func, args })` when the rule set is empty.
  * The disposal is unconditional — the background cannot tell whether the
  * document still holds an instance — and is a no-op when it does not. Disposes

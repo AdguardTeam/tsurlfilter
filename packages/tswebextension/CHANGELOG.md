@@ -29,9 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `@types/webextension-polyfill` >= 0.12.6, since the previous alias is gone.
 - Updated [@adguard/extended-css] to `v2.3.0`, which adds support for uBlock Origin
   `:remove-attr()` and `:remove-class()` pseudo-classes [AdguardBrowserExtension#3538].
-- ExtendedCSS rules in MV3 are now applied by the background service worker
-  via `chrome.scripting.executeScript` instead of the content script. In MV2,
-  the content script still applies ExtendedCSS rules.
+- ExtendedCss rules in MV3 now apply sooner: the background service worker
+  injects them as soon as a document commits, so the elements they hide no
+  longer flash during page load.
 
 ### Deprecated
 
@@ -79,7 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   skipped for documents that loaded before the background engine started:
   the content script now retries `GetCosmeticData` while the background
   answers `undefined`, instead of giving up on the first response.
-- ExtendedCSS hits are now counted for every element matched by a rule, in MV2
+- ExtendedCss hits are now counted for every element matched by a rule, in MV2
   and MV3. Previously only the first element matched by a rule was counted and
   elements matched later were not.
 - Malformed CSS hit markers no longer break cosmetic application in MV2: a

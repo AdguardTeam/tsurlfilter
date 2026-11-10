@@ -84,7 +84,7 @@ export type ExecuteCombinedScriptParams = ExecuteTarget & {
 };
 
 /**
- * Target of an ExtendedCSS injection.
+ * Target of an ExtendedCss injection.
  */
 type ExecuteExtCssTarget = ExecuteTarget & {
     /**
@@ -94,11 +94,11 @@ type ExecuteExtCssTarget = ExecuteTarget & {
 };
 
 /**
- * Parameters for executing the ExtendedCSS engine + rules.
+ * Parameters for executing the ExtendedCss engine + rules.
  */
 export type ExecuteExtCssParams = ExecuteExtCssTarget & {
     /**
-     * ExtendedCSS rule strings to apply.
+     * ExtendedCss rule strings to apply.
      */
     cssRules: string[];
 
@@ -293,7 +293,7 @@ export class ScriptingApi {
     }
 
     /**
-     * Injects the pre-bundled ExtendedCSS engine and the matching rule strings
+     * Injects the pre-bundled ExtendedCss engine and the matching rule strings
      * into the target frame and applies them. Runs in the ISOLATED world
      * (ExtendedCss only needs DOM access; `MutationObserver` in the isolated
      * world observes the same DOM, including page-JS mutations) and injects
@@ -306,24 +306,18 @@ export class ScriptingApi {
      * service-worker CSP only forbids runtime code assembly, so a pre-built
      * `files` injection would satisfy it as well.
      *
-     * @param params Parameters for executing ExtendedCSS.
-     * @param params.tabId The ID of the tab.
-     * @param params.frameId The ID of the frame.
-     * @param params.documentId The ID of the document the rules were prepared
-     * for, when known.
-     * @param params.cssRules ExtendedCSS rule strings to apply.
-     * @param params.collectStats Whether to register the CSS-hits
-     * `beforeStyleApplied` callback in the injected func.
+     * @param params Parameters for executing ExtendedCss.
      *
      * @returns Promise that resolves when the engine + rules are injected.
      */
-    public static async executeExtCss({
-        tabId,
-        frameId,
-        documentId,
-        cssRules,
-        collectStats,
-    }: ExecuteExtCssParams): Promise<void> {
+    public static async executeExtCss(params: ExecuteExtCssParams): Promise<void> {
+        const {
+            tabId,
+            frameId,
+            documentId,
+            cssRules,
+            collectStats,
+        } = params;
         await chrome.scripting.executeScript({
             target: ScriptingApi.buildExtCssTarget({ tabId, frameId, documentId }),
             func: extCssInjectedApply,
@@ -338,7 +332,7 @@ export class ScriptingApi {
      * document (if any) by injecting the self-contained
      * {@link extCssInjectedDispose} function.
      *
-     * Called whenever the matched ExtendedCSS rule set is empty. The disposal
+     * Called whenever the matched ExtendedCss rule set is empty. The disposal
      * is unconditional: the background cannot tell whether the document still
      * holds an instance (a BFCache restore or a prerender activation recreates
      * the frame context), so the injected function is a no-op without one.
@@ -366,7 +360,7 @@ export class ScriptingApi {
     }
 
     /**
-     * Builds the `executeScript` target for the ExtendedCSS functions.
+     * Builds the `executeScript` target for the ExtendedCss functions.
      *
      * The rules are prepared for a specific document, while `frameIds`
      * resolves to whatever document the frame holds at execution time: a

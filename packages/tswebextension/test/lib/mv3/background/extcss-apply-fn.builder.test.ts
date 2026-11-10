@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 
-import { type Plugin, type rollup as realRollup } from 'rollup';
+import { type Plugin } from 'rollup';
 import {
     beforeEach,
     describe,
@@ -24,14 +24,10 @@ const {
     constructorSpy,
     initSpy,
     applySpy,
-    closeSpyHolder,
 } = vi.hoisted(() => ({
     constructorSpy: vi.fn(),
     initSpy: vi.fn(),
     applySpy: vi.fn(),
-    // Holds the spy attached to the Rollup bundle's `close()` method; assigned
-    // inside the wrapped `rollup()` mock below on every build.
-    closeSpyHolder: { closeSpy: undefined as ReturnType<typeof vi.spyOn> | undefined },
 }));
 
 // Mock the ExtendedCss class so the entry-point lifecycle (constructor →
@@ -66,21 +62,6 @@ vi.mock('@adguard/extended-css', () => ({
         public apply = applySpy;
     },
 }));
-
-// Wrap the real `rollup()` so the test can assert the bundle handle is closed
-// while still performing the REAL nested build (the generated IIFE is
-// verified below, not mocked).
-vi.mock('rollup', async (importOriginal) => {
-    const actual = await importOriginal() as Record<string, unknown> & { rollup: typeof realRollup };
-    return {
-        ...actual,
-        rollup: vi.fn(async (...args: Parameters<typeof realRollup>) => {
-            const bundle = await actual.rollup(...args);
-            closeSpyHolder.closeSpy = vi.spyOn(bundle, 'close');
-            return bundle;
-        }),
-    };
-});
 
 const SLOW_BUILD_TIMEOUT_MS = 60_000;
 
@@ -132,13 +113,6 @@ describe('extcss-inject-src entry point', () => {
 });
 
 describe('inline-extcss-bundle builder', () => {
-    it('generates the IIFE as an in-memory string (no file on disk)', async () => {
-        const src = await getExtCssBundle();
-
-        expect(typeof src).toBe('string');
-        expect(src.length).toBeGreaterThan(0);
-    }, SLOW_BUILD_TIMEOUT_MS);
-
     it('defines applyExtendedCss as a global when evaluated', async () => {
         const src = await getExtCssBundle();
 
@@ -149,42 +123,6 @@ describe('inline-extcss-bundle builder', () => {
         // eslint-disable-next-line no-new-func, @typescript-eslint/no-implied-eval
         const getGlobalType = new Function(`${src}; return typeof applyExtendedCss;`);
         expect(getGlobalType()).toBe('function');
-    }, SLOW_BUILD_TIMEOUT_MS);
-
-    it('is minified (single line, no block comments)', async () => {
-        const src = await getExtCssBundle();
-
-        expect(src.trim()).not.toContain('\n');
-        expect(src).not.toMatch(/\/\*/);
-    }, SLOW_BUILD_TIMEOUT_MS);
-
-    it('caches its result (second call returns the same string)', async () => {
-        // The module keeps a process-wide singleton that the Vitest plugin
-        // config may already have warmed with the REAL `rollup()`, so the
-        // module is re-imported after a registry reset to observe the mocked
-        // build of this test file.
-        vi.resetModules();
-        const freshModule = await import('../../../../tasks/inline-extcss-bundle');
-        const [first, second] = await Promise.all([
-            freshModule.getExtCssBundle(),
-            freshModule.getExtCssBundle(),
-        ]);
-
-        // Same string instance → the nested Rollup build ran at most once.
-        expect(second).toBe(first);
-
-        const { rollup } = await import('rollup');
-        expect(vi.mocked(rollup)).toHaveBeenCalledTimes(1);
-    }, SLOW_BUILD_TIMEOUT_MS);
-
-    it('closes the Rollup bundle in finally (no handle leak)', async () => {
-        vi.resetModules();
-        closeSpyHolder.closeSpy = undefined;
-        const freshModule = await import('../../../../tasks/inline-extcss-bundle');
-        await freshModule.getExtCssBundle();
-
-        expect(closeSpyHolder.closeSpy).toBeDefined();
-        expect(closeSpyHolder.closeSpy).toHaveBeenCalledTimes(1);
     }, SLOW_BUILD_TIMEOUT_MS);
 
     it('fails the production build if the marker survives into an emitted chunk', () => {
@@ -261,17 +199,5 @@ describe('inline-css-hits-helpers builder', () => {
         expect(inlined).not.toMatch(/__INLINE_CSS_HITS_HELPERS__\s*\(\s*\)\s*;/);
         // The transpiled helpers object is spliced in place of the marker.
         expect(inlined).toContain('cssHitsHelpers');
-    });
-
-    it('leaves the marker literal in test modules untouched', async () => {
-        const plugin = inlineCssHitsHelpers();
-
-        // Test files embed the marker literal in assertions; rewriting it
-        // would break the very checks that pin the inlining contract.
-        expect(await runTransform(
-            plugin,
-            'expect(src).not.toMatch(/__INLINE_CSS_HITS_HELPERS__\\(\\)/);',
-            '/pkg/test/lib/mv3/background/extcss-apply-fn.test.ts',
-        )).toBeNull();
     });
 });

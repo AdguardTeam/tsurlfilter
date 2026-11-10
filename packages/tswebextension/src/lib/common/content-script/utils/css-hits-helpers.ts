@@ -3,7 +3,7 @@ import { type IAffectedElement } from '@adguard/extended-css';
 import { type RuleInfoBasic } from '../../rule-info';
 
 /**
- * A CSS hit collected from an ExtendedCSS affected element.
+ * A CSS hit collected from an ExtendedCss affected element.
  */
 export type ExtendedCssHit = RuleInfoBasic & {
     /**
@@ -13,24 +13,12 @@ export type ExtendedCssHit = RuleInfoBasic & {
 };
 
 /**
- * Shared CSS-hits parser, element serializer and hit collector.
+ * Shared CSS-hits parser, serializer and collector, used by MV2's
+ * `ElementUtils`/`CssHitsCounter` and, inlined by `inlineCssHitsHelpers`, by
+ * MV3's `extCssInjectedApply`.
  *
- * Used by:
- * - MV2 content-script `ElementUtils` and `CssHitsCounter` (runtime import —
- *   regular ESM).
- * - MV3 background-injected `extCssInjectedApply` (build-time inlined via the
- *   `inlineCssHitsHelpers` Rollup plugin; see
- *   `tasks/inline-css-hits-helpers.ts`).
- *
- * This module MUST NOT have any runtime-side-effect imports. The only imports
- * (`RuleInfoBasic`, `IAffectedElement`) are type-only imports that are erased
- * by the compiler. The transpiled output is a set of standalone function
- * declarations plus a `cssHitsHelpers` object — fully self-contained with no
- * free identifiers.
- *
- * The round-trip contract is pinned by
- * `test/lib/mv3/background/css-hits-protocol.test.ts`, which asserts identical
- * output between the MV2 `ElementUtils` path and the MV3 inlined path.
+ * Only type-only imports are allowed here: the transpiled module is inlined
+ * into the injected function and must have no free identifiers.
  */
 
 /**
@@ -70,11 +58,7 @@ function parseInfo(content: string, attributeMarker: string): RuleInfoBasic | nu
     try {
         filterIdAndRuleText = decodeURIComponent(content);
     } catch {
-        // A malformed percent-escape must not break cosmetic application:
-        // treat such content as non-matching. This guard covers both paths that
-        // use the helper — MV2's `ElementUtils` (runtime import) and MV3's
-        // background-injected `extCssInjectedApply` (build-time inlined) — so
-        // MV2 no longer propagates `URIError` from `decodeURIComponent` here.
+        // A malformed percent-escape must not break cosmetic application.
         return null;
     }
     // 'content' value may include open and close quotes.
@@ -124,10 +108,7 @@ function parseExtendedStyleInfo(
 }
 
 /**
- * Serializes an HTML element to a compact string.
- *
- * Produces `<tagname attr="value" ...>` with a single trailing `>` (no
- * closing tag, no self-closing slash).
+ * Serializes an element as `<tag attr="value" ...>` (no closing tag).
  *
  * @param element Element to serialize.
  *
@@ -154,9 +135,7 @@ function elementToString(element: Element): string {
 }
 
 /**
- * Registers a hit for a node and reports whether it was registered before.
- *
- * Each node/rule pair is reported once, like the native CSS hits counter does.
+ * Registers a node/rule hit and reports whether it was already registered.
  *
  * @param node Affected node, if any.
  * @param hitKey Rule key in the `filterId;ruleIndex` form.
@@ -190,22 +169,19 @@ function registerHit(
 }
 
 /**
- * Collects the CSS hits of an ExtendedCSS affected element: reads the hits
- * marker from every matched rule's `content`, strips the marker from the copy
- * of the rule that is applied to this node, and returns the collected hits.
- *
- * Shared by the MV2 `CssHitsCounter.countAffectedByExtendedCss` callback and
- * the MV3 injected `beforeStyleApplied` callback, so both report hits the same
- * way. The marker is stripped per element, not on the shared parsed rule, so
- * every element matched by a rule is reported instead of only the first one.
+ * Collects the CSS hits of an affected element: reads the marker from every
+ * matched rule's `content`, strips it from the element's own rule copy, and
+ * returns the (deduped) hits.
  *
  * @param affectedEl Affected element from ExtendedCss.
  * @param attributeMarker Marker prefix (e.g. `'adguard'`).
  * @param serializeElement Whether to serialize the affected node with
  * {@link elementToString}. When false, the node itself is reported.
- * @param countedHits Per-node reported hits, kept by the caller: the MV2
- * `CssHitsCounter` or the MV3 injected instance. A re-apply reports only the
- * hits that are new, and two counters in one document never share the state.
+ * @param countedHits Per-node reported hits, kept by the caller. A re-apply
+ * reports only the hits that are new.
+ * @param cleanedRules Cleaned rule copies, kept by the caller. ExtendedCss
+ * keys its `appliedRules` fast path on rule identity, so the copy must be
+ * stable across passes.
  *
  * @returns Collected hits.
  */
@@ -214,6 +190,10 @@ function collectExtendedCssHits(
     attributeMarker: string,
     serializeElement: boolean,
     countedHits: WeakMap<Element, Set<string>>,
+    cleanedRules: WeakMap<
+        IAffectedElement['rules'][number],
+        IAffectedElement['rules'][number]
+    >,
 ): ExtendedCssHit[] {
     const hits: ExtendedCssHit[] = [];
 
@@ -246,7 +226,16 @@ function collectExtendedCssHits(
         // Replace the rule in the element's own rules array with a copy that
         // has the marker stripped: the marker must never be painted on the
         // node, while the shared parsed rule keeps it for the other elements.
-        rules[i] = { ...rule, style: { ...style, content: '' } };
+        // The copy is cached per original rule so its identity stays stable:
+        // ExtendedCss marks applied rules in a WeakSet keyed by the rule
+        // object, and a fresh copy on every pass would defeat that fast path.
+        let cleanedRule = cleanedRules.get(rule);
+        if (cleanedRule === undefined) {
+            cleanedRule = { ...rule, style: { ...style, content: '' } };
+            cleanedRules.set(rule, cleanedRule);
+        }
+
+        rules[i] = cleanedRule;
 
         const { filterId, ruleIndex } = ruleInfo;
 
@@ -269,12 +258,8 @@ function collectExtendedCssHits(
 }
 
 /**
- * Shared CSS-hits helpers object.
- *
- * Exported for MV2 runtime import. For MV3, the entire module body (all
- * function declarations plus this object literal) is transpiled to plain
- * JavaScript and inlined inside `extCssInjectedApply` by the
- * `inlineCssHitsHelpers` Rollup plugin.
+ * Shared CSS-hits helpers object. Exported for the MV2 runtime import; MV3
+ * inlines the whole module into `extCssInjectedApply` at build time.
  */
 const cssHitsHelpers = {
     parseInfo,

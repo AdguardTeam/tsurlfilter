@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { dirname, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -118,26 +118,39 @@ export const buildExtCssBundle = async (): Promise<string> => {
     }
 };
 
-// Singleton: the nested build runs once per build; the result is shared by
-// every plugin instance (build config, Vitest projects) until `buildStart`
-// drops it in watch mode.
+// Singleton: the nested build runs once per entry version; the result is
+// shared by every plugin instance (build config, Vitest projects) until the
+// entry changes or `buildStart` runs.
 let bundlePromise: Promise<string> | undefined;
 
 /**
+ * Modification time of the inject entry that produced {@link bundlePromise}.
+ * The nested Rollup + terser build is expensive, and `addWatchFile` already
+ * re-runs `buildStart` when the entry changes, so the cache is keyed on the
+ * entry instead of being dropped on every (incremental) build.
+ */
+let bundleSourceMtimeMs: number | undefined;
+
+/**
  * Drops the cached ExtendedCss IIFE so the next {@link getExtCssBundle} call
- * rebuilds it. Used by {@link inlineExtCssBundle} on every (re)build.
+ * rebuilds it. Used by the tests to force a rebuild.
  */
 export const resetExtCssBundle = (): void => {
     bundlePromise = undefined;
+    bundleSourceMtimeMs = undefined;
 };
 
 /**
- * Returns the cached ExtendedCss injection IIFE, building it on first use.
+ * Returns the cached ExtendedCss injection IIFE, building it on first use and
+ * rebuilding it when the inject entry changes.
  *
  * @returns Promise resolving to the minified IIFE source.
  */
 export const getExtCssBundle = (): Promise<string> => {
-    if (bundlePromise === undefined) {
+    const { mtimeMs } = statSync(EXT_CSS_INJECT_SRC);
+
+    if (bundlePromise === undefined || bundleSourceMtimeMs !== mtimeMs) {
+        bundleSourceMtimeMs = mtimeMs;
         bundlePromise = buildExtCssBundle().catch((e: unknown) => {
             // Do not cache a rejection: watch mode and repeated runs must be
             // able to rebuild the payload after a transient failure.
@@ -145,6 +158,7 @@ export const getExtCssBundle = (): Promise<string> => {
             throw e;
         });
     }
+
     return bundlePromise;
 };
 
@@ -160,11 +174,9 @@ export const inlineExtCssBundle = (): Plugin => ({
 
     // Warm the cache so the async nested build overlaps with the rest of
     // the pipeline; Vite dev servers (Vitest) also await async buildStart hooks.
-    // Every (re)build drops the cached payload first: watch mode re-runs this
-    // hook, so a change to the inject entry must rebuild the IIFE instead of
-    // keeping the first one inlined for the whole session.
+    // The cache is keyed on the entry mtime, so watch mode rebuilds the IIFE
+    // when the entry changes and keeps it otherwise.
     async buildStart(): Promise<void> {
-        resetExtCssBundle();
         this.addWatchFile(EXT_CSS_INJECT_SRC);
         await getExtCssBundle();
     },
@@ -177,10 +189,9 @@ export const inlineExtCssBundle = (): Plugin => ({
             return null;
         }
 
-        // Associate the inject entry with THIS module: `buildStart` alone only
-        // drops the cache, while Rollup/Vite keeps serving the cached
-        // transform result of a module whose own source did not change, so
-        // the previous payload would stay inlined until the watcher restarts.
+        // Associate the inject entry with THIS module: Rollup/Vite keeps
+        // serving the cached transform result of a module whose own source did
+        // not change, so the watcher must also rerun when the entry changes.
         this.addWatchFile(EXT_CSS_INJECT_SRC);
 
         // Await the cache here too, so pipelines that skip buildStart still work.

@@ -17,9 +17,9 @@ export type PreparedCosmeticResultMV3 = PreparedCosmeticResultCommon & {
     areHitsStatsCollected: boolean;
 
     /**
-     * ExtendedCSS rule strings (`selector { style }`) to inject directly from
+     * ExtendedCss rule strings (`selector { style }`) to inject directly from
      * the background via `chrome.scripting.executeScript`. `null` when there
-     * are no matching ExtCSS rules, in which case nothing is applied and a
+     * are no matching ExtendedCss rules, in which case nothing is applied and a
      * previously injected instance is disposed, if any.
      */
     extCssRules: string[] | null;

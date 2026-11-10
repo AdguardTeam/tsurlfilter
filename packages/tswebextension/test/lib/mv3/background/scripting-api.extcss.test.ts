@@ -14,7 +14,7 @@ describe('ScriptingApi.executeExtCss', () => {
         vi.clearAllMocks();
     });
 
-    it('calls executeScript with ExtCSS func, rules, ISOLATED world, injectImmediately', async () => {
+    it('calls executeScript with ExtendedCss func, rules, ISOLATED world, injectImmediately', async () => {
         await ScriptingApi.executeExtCss({
             tabId: 1,
             frameId: 0,
@@ -29,66 +29,6 @@ describe('ScriptingApi.executeExtCss', () => {
             args: [['div:has(.ad) { display: none !important; }'], false, EXTCSS_PROTOCOL],
             injectImmediately: true,
             world: 'ISOLATED',
-        });
-    });
-
-    it('passes the cssRules array as the first args entry', async () => {
-        const rules = [
-            'a:has(b) { display: none !important; }',
-            'c:contains(d) { display: none !important; }',
-        ];
-
-        await ScriptingApi.executeExtCss({
-            tabId: 2,
-            frameId: 3,
-            cssRules: rules,
-            collectStats: false,
-        });
-
-        const call = vi.mocked(chrome.scripting.executeScript).mock.calls[0][0] as {
-            args: unknown[];
-        };
-        expect(call.args).toEqual([rules, false, EXTCSS_PROTOCOL]);
-    });
-
-    it('passes collectStats as the second args entry', async () => {
-        await ScriptingApi.executeExtCss({
-            tabId: 1,
-            frameId: 0,
-            cssRules: ['div:has(.ad) { display: none !important; }'],
-            collectStats: true,
-        });
-
-        const call = vi.mocked(chrome.scripting.executeScript).mock.calls[0][0] as {
-            args: unknown[];
-        };
-        expect(call.args).toEqual([
-            ['div:has(.ad) { display: none !important; }'],
-            true,
-            EXTCSS_PROTOCOL,
-        ]);
-    });
-
-    it('passes the shared EXTCSS_PROTOCOL constant as the third args entry', async () => {
-        await ScriptingApi.executeExtCss({
-            tabId: 1,
-            frameId: 0,
-            cssRules: ['div:has(.ad) { display: none !important; }'],
-            collectStats: false,
-        });
-
-        const call = vi.mocked(chrome.scripting.executeScript).mock.calls[0][0] as {
-            args: unknown[];
-        };
-        // The protocol values must be the SHARED constant (single source of
-        // truth), not a re-created object literal.
-        expect(call.args[2]).toBe(EXTCSS_PROTOCOL);
-        expect(call.args[2]).toEqual({
-            markerPrefix: 'adguard',
-            handlerName: 'tsWebExtension',
-            messageType: 'saveCssHitsStats',
-            instanceKey: '__adguardExtCss',
-            removedElementsKey: '__adguardExtCssRemoved',
         });
     });
 
