@@ -7,6 +7,7 @@ import {
     vi,
 } from 'vitest';
 
+import { ExtCssGuardError } from '../../../../src/lib/common/extcss-guard-error';
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
 import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
 
@@ -110,13 +111,18 @@ describe('ScriptingApi.executeExtCss', () => {
             .mockResolvedValueOnce([])
             .mockResolvedValueOnce([{ result: { error, message } }]);
 
-        await expect(ScriptingApi.executeExtCss({
+        const injection = ScriptingApi.executeExtCss({
             tabId: 1,
             frameId: 0,
             cssRules: ['div:has(.ad) { display: none !important; }'],
             collectStats: false,
             scriptUrl: SCRIPT_URL,
-        })).rejects.toThrow(message);
+        });
+
+        // The caller tells a terminal engine guard failure from a transient
+        // injection error by the error type.
+        await expect(injection).rejects.toThrow(message);
+        await expect(injection).rejects.toBeInstanceOf(ExtCssGuardError);
     });
 });
 

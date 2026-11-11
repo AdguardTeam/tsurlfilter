@@ -164,7 +164,7 @@ relative to your current working directory by default
 **Note:**
 
 ExtendedCss rules are applied by a prebuilt script asset. Copy it into the
-extension build and pass its path relative to the extension root as
+extension build and pass its path from the extension root as
 `settings.extCssScriptUrl`:
 
 ```ts
@@ -175,8 +175,12 @@ await copy(
     'build/extcss-inject.js',
 );
 // ...
-settings: { extCssScriptUrl: 'extcss-inject.js', /* ... */ }
+settings: { extCssScriptUrl: '/extcss-inject.js', /* ... */ }
 ```
+
+Start the path with a slash: Firefox resolves a relative `file` path against
+the calling page, not the extension root, so a background page in a
+subdirectory would look for the asset next to itself.
 
 The background injects the file into a frame before the ExtendedCss rules, so
 an extension that does not ship the file gets no ExtendedCss filtering.
@@ -611,14 +615,19 @@ type: `string`
 
 Path to the prebuilt script that applies ExtendedCss rules. Copy
 `dist/extcss-inject.js` from this package into the extension and pass its path
-relative to the extension root. The background injects this file into a frame
-before it injects the matching ExtendedCss rules, so the extension must ship
-it. Without the option ExtendedCss rules do not apply.
+from the extension root, starting with a slash, e.g. `/extcss-inject.js`.
+Firefox resolves a relative path against the calling page, so the leading
+slash is required when the background page lives in a subdirectory. The
+background injects this file into a frame before it injects the matching
+ExtendedCss rules, so the extension must ship it. Without the option
+ExtendedCss rules do not apply.
 
-The file must come from the same package version. The asset carries its build
-version. When the versions differ, the apply function reports the failure to
-the background, which logs it through the existing injection-failure logging
-instead of running an older engine.
+The option is required: a configuration persisted by a previous version no
+longer passes validation, so merge the stored settings with the new defaults
+on upgrade. The file must also come from the same package version. The asset
+carries its build version. When the versions differ, the apply function
+reports the failure to the background, which logs it as an error instead of
+running an older engine.
 
 ##### gpcScriptUrl (MV3 only)
 

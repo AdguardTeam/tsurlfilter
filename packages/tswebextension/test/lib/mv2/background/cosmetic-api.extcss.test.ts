@@ -325,9 +325,39 @@ describe('CosmeticApi.applyExtCss', () => {
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        // The frame shows another document now, so it gets no code string.
+        expect(TabsApi.injectScriptFile).toHaveBeenCalledTimes(1);
+        expect(TabsApi.injectScript).not.toHaveBeenCalled();
         expect(original.extCssAppliedData).toBeUndefined();
         expect(replacement.extCssAppliedData).toBeUndefined();
+    });
+
+    it('does not inject the code when the document changed while the asset was injected', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        let resolveAsset!: () => void;
+        vi.mocked(TabsApi.injectScriptFile).mockImplementation(() => new Promise<void>((resolve) => {
+            resolveAsset = resolve;
+        }));
+
+        const injection = CosmeticApi.applyExtCss(1, 0);
+
+        await vi.waitFor(() => {
+            expect(TabsApi.injectScriptFile).toHaveBeenCalledTimes(1);
+        });
+
+        // A same-URL commit keeps the context and bumps the document version.
+        frameContext.extCssDocumentVersion += 1;
+
+        resolveAsset();
+        await injection;
+
+        // The too-late code string would have replaced the new document's
+        // rules, so it is not injected at all.
+        expect(TabsApi.injectScript).not.toHaveBeenCalled();
+        expect(frameContext.extCssAppliedData).toBeUndefined();
     });
 
     it('does not mark a document that was committed during the injection', async () => {
@@ -435,27 +465,31 @@ describe('CosmeticApi.applyExtCss', () => {
         expect(frameContext.extCssAppliedData).toEqual(rules);
     });
 
-    it('retries a resolved engine guard failure and records only the successful apply', async () => {
+    it('does not retry a resolved engine guard failure and logs it as an error', async () => {
         vi.useFakeTimers();
         const rules = ['.ad:has(.child) { display: none !important; }'];
         const frameContext = makeFrameContext(makePrepared(rules));
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
-        vi.mocked(TabsApi.injectScript)
-            .mockResolvedValueOnce({
-                error: 'engine-not-loaded' as ExtCssApplyResult['error'],
-                message: 'ExtendedCss engine is not loaded',
-            })
-            .mockResolvedValueOnce(undefined);
+        vi.mocked(TabsApi.injectScript).mockResolvedValueOnce({
+            error: 'engine-not-loaded' as ExtCssApplyResult['error'],
+            message: 'ExtendedCss engine is not loaded',
+        });
+        const errorSpy = vi.spyOn(logger, 'error');
 
         await CosmeticApi.applyExtCss(1, 0);
 
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
         expect(frameContext.extCssAppliedData).toBeUndefined();
+        // No retry is pending, so a later event may try again.
+        expect(frameContext.extCssInjectionMarker).toBeUndefined();
+        expect(errorSpy).toHaveBeenCalledWith(
+            expect.stringContaining('engine-not-loaded'),
+        );
 
+        // Another attempt cannot install the missing asset.
         await vi.advanceTimersByTimeAsync(10);
 
-        expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
-        expect(frameContext.extCssAppliedData).toEqual(rules);
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
     });
 
     it('keeps the in-flight marker while a retry is pending', async () => {

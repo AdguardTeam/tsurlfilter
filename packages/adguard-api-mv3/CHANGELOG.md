@@ -11,10 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- ExtendedCSS rules are now applied from the prebuilt `dist/adguard-extcss.js`
-  asset (the `@adguard/api-mv3/extcss` entry point), which the background
-  injects before the rules. The extension must ship this file, otherwise
-  ExtendedCSS rules do not apply.
+- ExtendedCSS rules are now applied from the `@adguard/api-mv3/extcss` entry
+  point, which the background injects before the rules. The entry imports
+  `@adguard/tswebextension/extcss-inject`, so it is an entry point for your
+  bundler, not a file to copy: build it with your extension and ship the
+  result as `adguard-extcss.js`. Without that file ExtendedCSS rules do not
+  apply.
 
 ### Deprecated
 

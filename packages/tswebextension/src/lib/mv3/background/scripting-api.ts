@@ -2,6 +2,7 @@ import { type Source } from '@adguard/scriptlets';
 import { type ScriptletData } from '@adguard/tsurlfilter';
 
 import { extCssInjectedApply, extCssInjectedDispose } from '../../common/extcss-apply-fn';
+import { ExtCssGuardError } from '../../common/extcss-guard-error';
 import { EXTCSS_PROTOCOL } from '../../common/extcss-protocol';
 
 import { appContext } from './app-context';
@@ -323,6 +324,10 @@ export class ScriptingApi {
      *
      * @returns Promise that resolves when the engine and the rules are
      * injected.
+     *
+     * @throws {ExtCssGuardError} If the injected apply function reports an
+     * engine guard failure. The caller reports it as a terminal failure: a
+     * missing or stale asset cannot be fixed by another attempt.
      */
     public static async executeExtCss(params: ExecuteExtCssParams): Promise<void> {
         const {
@@ -358,7 +363,7 @@ export class ScriptingApi {
         // errors retain their previous null-result behavior.
         const applyResult = injectionResults?.[0]?.result;
         if (applyResult) {
-            throw new Error(applyResult.message);
+            throw new ExtCssGuardError(applyResult);
         }
     }
 

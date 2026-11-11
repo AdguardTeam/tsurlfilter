@@ -94,6 +94,7 @@ describe('CosmeticApi.getContentScriptData', () => {
         const rules = ['.ad:has(.child) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
         vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
+        const fileSpy = vi.spyOn(TabsApi, 'injectScriptFile').mockResolvedValue();
         const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
 
         CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
@@ -107,6 +108,13 @@ describe('CosmeticApi.getContentScriptData', () => {
                 serializeExtCssForCode(rules, false, EXTCSS_PROTOCOL),
             );
         });
+
+        // The payload applies the rules through the engine that only this
+        // asset installs.
+        expect(fileSpy).toHaveBeenCalledTimes(1);
+        expect(fileSpy).toHaveBeenCalledWith(tabId, frameId, 'extcss-inject.js');
+        expect(fileSpy.mock.invocationCallOrder[0])
+            .toBeLessThan(injectSpy.mock.invocationCallOrder[0]);
     });
 
     it('retries the context-less injection after a failure', async () => {

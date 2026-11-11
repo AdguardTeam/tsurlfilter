@@ -2,6 +2,7 @@ import { type CosmeticRule, type ScriptletData } from '@adguard/tsurlfilter';
 
 import { BACKGROUND_TAB_ID } from '../../common/constants';
 import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParams } from '../../common/cosmetic-api';
+import { ExtCssGuardError } from '../../common/extcss-guard-error';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl } from '../../common/utils/url';
@@ -491,6 +492,14 @@ export class CosmeticApi extends CosmeticApiCommon {
                 scriptUrl: extCssScriptUrl,
             });
         } catch (e) {
+            // An engine guard failure is terminal: the asset is missing or
+            // stale, so it reaches the default log level as an error.
+            if (e instanceof ExtCssGuardError) {
+                logger.error(`[tsweb.CosmeticApi.applyExtCssRules]: ${e.message} (guard ${e.code}, tabId ${tabId}, frameId ${frameId})`);
+
+                return;
+            }
+
             logger.info(`[tsweb.CosmeticApi.applyExtCssRules]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
         }
     }

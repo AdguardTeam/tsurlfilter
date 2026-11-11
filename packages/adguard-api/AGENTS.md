@@ -21,8 +21,8 @@ engine.
 - **Testing**: No unit test suite (integration tested via example extension)
 - **Linting**: ESLint (airbnb-typescript base), `eslint-plugin-jsdoc`
 - **Output Format**: ESM bundles (`dist/adguard-api.js`,
-  `dist/adguard-content.js`, `dist/adguard-assistant.js`), type declarations
-  (`dist/types/`)
+  `dist/adguard-content.js`, `dist/adguard-assistant.js`,
+  `dist/adguard-extcss.js`), type declarations (`dist/types/`)
 - **Target Platform**: Browser extensions (Manifest V2)
 - **Project Type**: Package inside the `tsurlfilter` pnpm monorepo
 
@@ -77,10 +77,11 @@ You MUST follow the following rules for EVERY task that you perform:
 
 ### I. Architecture
 
-1. **Three export paths.** The package exposes three entry points: main API
-   (`.`), content script (`./content-script`), and assistant
-   (`./assistant`). New public API MUST be exported through the appropriate
-   barrel file.
+1. **Four export paths.** The package exposes four entry points: main API
+   (`.`), content script (`./content-script`), assistant (`./assistant`), and
+   the ExtendedCss engine asset (`./extcss`), which the background injects
+   into a page before the ExtendedCss rules. New public API MUST be exported
+   through the appropriate barrel file.
 
    **Rationale**: Separates background and content script contexts, which run
    in different browser environments.

@@ -225,7 +225,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
         );
     });
 
-    it('logs an engine guard failure returned by a resolved Chromium injection', async () => {
+    it('logs an engine guard failure returned by a resolved Chromium injection at error level', async () => {
         const rules = ['div:has(.ad) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
         vi.mocked(ScriptingApi.executeExtCss).mockRestore();
@@ -240,17 +240,20 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
                     message,
                 },
             }]);
+        const errorSpy = vi.spyOn(logger, 'error');
         const infoSpy = vi.spyOn(logger, 'info');
 
         await CosmeticApi.applyCosmeticRules(1, 0, true);
 
+        // A guard failure is deterministic, so it reaches the default log
+        // level instead of the debug-only injection-failure path.
         await vi.waitFor(() => {
-            expect(infoSpy).toHaveBeenCalledTimes(1);
+            expect(errorSpy).toHaveBeenCalledTimes(1);
         });
-        expect(infoSpy).toHaveBeenCalledWith(
-            expect.stringContaining('[tsweb.CosmeticApi.applyExtCssRules]'),
-            expect.objectContaining({ message }),
+        expect(errorSpy).toHaveBeenCalledWith(
+            expect.stringContaining(`${message} (guard engine-not-loaded, tabId 1, frameId 0)`),
         );
+        expect(infoSpy).not.toHaveBeenCalled();
     });
 });
 
