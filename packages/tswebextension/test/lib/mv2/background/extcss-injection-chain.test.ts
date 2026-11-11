@@ -127,7 +127,7 @@ describe('MV2 ExtCSS injection chain', () => {
         }]));
 
         // Exhaust the retry budget so this test checks the final frame state.
-        await CosmeticApi.applyExtCss(1, 0, 100);
+        await CosmeticApi.applyExtCss(1, 0, 100, 0);
 
         expect(browser.tabs.executeScript.callCount).toBe(2);
         expect(frameContext.extCssAppliedData).toBeUndefined();

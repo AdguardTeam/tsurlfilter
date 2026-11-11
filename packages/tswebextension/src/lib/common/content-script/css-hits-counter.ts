@@ -170,8 +170,9 @@ export class CssHitsCounter {
 
     /**
      * Elements ExtendedCss removed with a `:remove()` rule; never restore
-     * them. MV2 records them on this instance, MV3 in the injected function's
-     * `window` set, which wins when it exists.
+     * them. The injected payload of both MV2 and MV3 records them in the
+     * document's `window` set, which wins when it exists; the instance set
+     * only covers a document where no injection has run yet.
      *
      * @returns Elements removed by ExtendedCss.
      */

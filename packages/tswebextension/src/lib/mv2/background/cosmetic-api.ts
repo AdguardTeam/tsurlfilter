@@ -162,9 +162,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * This is not a read-only getter: it also prepares and injects
      * ExtendedCSS. A frame without a prepared result is matched on demand, and
-     * its ExtendedCSS rules are kept on the frame context; a frame without a
-     * context gets those rules injected from here. Once the app is started,
-     * the method also calls {@link CosmeticApi.applyExtCss} for the frame.
+     * its ExtendedCSS rules are kept on the frame context. Once the app is
+     * started, a frame without a context gets those rules injected from here,
+     * and the method also calls {@link CosmeticApi.applyExtCss} for the frame.
      *
      * @param frameUrl Frame url.
      * @param tabId Tab id.
@@ -254,7 +254,7 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         // The content script can ask after the frame's injection events have
         // already passed, e.g. for a page loaded while the app was stopped.
-        // The applied flag skips a frame that already has the rules.
+        // `applyExtCss` skips a document that already holds this rule set.
         if (isAppStarted) {
             CosmeticApi.applyExtCss(tabId, frameId);
         }
@@ -450,19 +450,45 @@ export class CosmeticApi extends CosmeticApiCommon {
      * non-empty and the current document does not already hold that rule set,
      * the prebuilt engine script is injected first and the rule strings are
      * serialized into a code string and injected second. When the rule set is
-     * empty or null, the dispose code string is injected once per document, so
-     * observers and styles do not leak even when the context was recreated.
-     * The dispose is not retried, and the document is recorded as disposed
-     * even when the attempt fails. Otherwise no code is injected.
+     * empty or null, the dispose code string is injected once per document,
+     * but only when the context may describe a document that holds an
+     * instance: it applied one, or the startup pass created it. The dispose is
+     * not retried, and the document is recorded as disposed even when the
+     * attempt fails. Otherwise no code is injected.
+     *
+     * A context that describes a navigation that has not committed gets no
+     * injection at all: the frame still shows the previous document, and the
+     * commit handler injects the incoming document's rules once it is the
+     * displayed one.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
      * @param tries Number of tries for the injection in case of failure.
+     * @param documentVersion Number of the document the retry chain belongs
+     * to. The chain ends when the context has moved to another document.
      */
-    public static async applyExtCss(tabId: number, frameId: number, tries = 0): Promise<void> {
+    public static async applyExtCss(
+        tabId: number,
+        frameId: number,
+        tries = 0,
+        documentVersion?: number,
+    ): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         if (!frameContext) {
+            return;
+        }
+
+        const { extCssDocumentVersion } = frameContext;
+
+        // A retry belongs to the document it was scheduled for: a commit
+        // since then starts its own chain from the commit handler, so this
+        // one must not send the previous document's payload next to it.
+        if (tries > 0 && documentVersion !== extCssDocumentVersion) {
+            return;
+        }
+
+        if (frameContext.extCssAwaitingCommit) {
             return;
         }
 
@@ -472,9 +498,16 @@ export class CosmeticApi extends CosmeticApiCommon {
             return;
         }
 
-        const { extCssRules, areHitsStatsCollected } = extCssData;
+        const { extCssRules } = extCssData;
 
-        const { extCssDocumentVersion } = frameContext;
+        // An injection for this document is already in flight, so a second one
+        // would send the same payload again and start its own retry chain. A
+        // retry continues the chain it belongs to and passes this check.
+        if (tries === 0
+            && frameContext.extCssInjectionMarker === extCssDocumentVersion
+        ) {
+            return;
+        }
 
         // A dispose is a no-op in the page when the document holds no
         // instance, so it is attempted once: a chain of failed injections
@@ -489,7 +522,9 @@ export class CosmeticApi extends CosmeticApiCommon {
             // A successful apply already put the same rule set into the page.
             // Serializing and parsing the code string again would only repeat
             // the in-page no-op.
-            if (CosmeticApi.isExtCssApplied(frameContext, extCssData)) {
+            if (CosmeticApi.isExtCssApplied(frameContext, extCssRules)) {
+                CosmeticApi.releaseExtCssInjectionMarker(frameContext, extCssDocumentVersion);
+
                 return;
             }
 
@@ -501,32 +536,32 @@ export class CosmeticApi extends CosmeticApiCommon {
                 return;
             }
 
-            code = serializeExtCssForCode(extCssRules, areHitsStatsCollected, EXTCSS_PROTOCOL);
+            code = serializeExtCssForCode(
+                extCssRules,
+                extCssData.areHitsStatsCollected,
+                EXTCSS_PROTOCOL,
+            );
         } else {
-            // Disposal is unconditional: the instance lives in the document's
-            // isolated world, while the context can be recreated for a
-            // document that already has one. It is sent once per document.
-            if (frameContext.extCssDisposedDocumentVersion === extCssDocumentVersion) {
+            // The document may hold an instance only when this context applied
+            // one to it, or when the startup pass created the context for a
+            // page that was already loaded. A context replaced for a
+            // navigation that never commits describes no document of its own,
+            // so it must not dispose the displayed page's instance.
+            const mayHoldInstance = Boolean(frameContext.extCssAppliedData)
+                || frameContext.extCssInstanceMayExist;
+
+            if (!mayHoldInstance
+                || frameContext.extCssDisposedDocumentVersion === extCssDocumentVersion
+            ) {
+                CosmeticApi.releaseExtCssInjectionMarker(frameContext, extCssDocumentVersion);
+
                 return;
             }
 
             code = serializeExtCssDisposeForCode(EXTCSS_PROTOCOL);
         }
 
-        // An injection for this document is already in flight, so a second one
-        // would send the same payload again and start its own retry chain. A
-        // retry continues the chain it belongs to and must pass this check.
-        if (tries === 0
-            && frameContext.extCssInjectionMarker?.documentVersion === extCssDocumentVersion
-        ) {
-            return;
-        }
-
-        // The marker object identifies this call, so a call whose await
-        // outlives a commit cannot release the marker of the call that
-        // replaced it.
-        const marker = { documentVersion: extCssDocumentVersion };
-        frameContext.extCssInjectionMarker = marker;
+        frameContext.extCssInjectionMarker = extCssDocumentVersion;
 
         // The engine has to be in the document before its rules, so a retry
         // repeats both injections: the file is a cheap no-op that reinstalls
@@ -547,7 +582,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         const isInjected = await CosmeticApi.injectWithRetry(
             inject,
             () => {
-                CosmeticApi.applyExtCss(tabId, frameId, tries + 1);
+                CosmeticApi.applyExtCss(tabId, frameId, tries + 1, extCssDocumentVersion);
             },
             (e) => {
                 logger.debug(`[tsweb.CosmeticApi.applyExtCss]: error occurred during injection into tabId ${tabId} and frameId ${frameId}`, e);
@@ -560,7 +595,9 @@ export class CosmeticApi extends CosmeticApiCommon {
         // retry after a delay, and an event arriving in that gap must not start
         // a second chain. The last attempt has no retry, so it clears the
         // marker and lets a later event try again.
-        if (frameContext.extCssInjectionMarker === marker && (isInjected || tries >= maxTries)) {
+        if (frameContext.extCssInjectionMarker === extCssDocumentVersion
+            && (isInjected || tries >= maxTries)
+        ) {
             frameContext.extCssInjectionMarker = undefined;
         }
 
@@ -579,10 +616,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             if (extCssRules?.length) {
                 // A failed apply records nothing, so a later event retries it.
                 if (isInjected) {
-                    frameContext.extCssAppliedData = {
-                        extCssRules,
-                        areHitsStatsCollected,
-                    };
+                    frameContext.extCssAppliedData = extCssRules;
                     frameContext.extCssDisposedDocumentVersion = undefined;
                 }
             } else {
@@ -597,31 +631,46 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Releases the in-flight marker when the given call owns it.
+     *
+     * A retry that ends for a reason other than an injection result, such as
+     * a rule set that is already applied, would otherwise leave the marker set
+     * and skip every later event for the document.
+     *
+     * @param frameContext Frame context.
+     * @param documentVersion Number of the document the call belongs to.
+     */
+    private static releaseExtCssInjectionMarker(
+        frameContext: FrameMV2,
+        documentVersion: number,
+    ): void {
+        if (frameContext.extCssInjectionMarker === documentVersion) {
+            frameContext.extCssInjectionMarker = undefined;
+        }
+    }
+
+    /**
      * Checks whether the current document already holds the given ExtendedCSS
      * rule set.
      *
      * The rule set is compared by value: the on-demand path rebuilds the rule
      * strings on every request, so the same rules can arrive in a new array.
+     * The hits statistics flag is not compared, because the payload's own
+     * guard keeps its rule strings and skips any call with the same ones.
      *
      * @param frameContext Frame context.
-     * @param extCssData ExtendedCSS data resolved for the frame now.
+     * @param extCssRules ExtendedCSS rule strings resolved for the frame now.
      *
      * @returns True if the document holds this rule set, otherwise false.
      */
-    private static isExtCssApplied(frameContext: FrameMV2, extCssData: ExtCssFrameData): boolean {
-        const { extCssAppliedData } = frameContext;
-        const { extCssRules, areHitsStatsCollected } = extCssData;
+    private static isExtCssApplied(frameContext: FrameMV2, extCssRules: string[]): boolean {
+        const appliedRules = frameContext.extCssAppliedData;
 
-        if (!extCssAppliedData
-            || !extCssRules
-            || extCssAppliedData.areHitsStatsCollected !== areHitsStatsCollected
-            || extCssAppliedData.extCssRules.length !== extCssRules.length
-        ) {
+        if (!appliedRules || appliedRules.length !== extCssRules.length) {
             return false;
         }
 
-        return extCssAppliedData.extCssRules
-            .every((rule, index) => rule === extCssRules[index]);
+        return appliedRules.every((rule, index) => rule === extCssRules[index]);
     }
 
     /**

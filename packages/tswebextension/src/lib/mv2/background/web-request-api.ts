@@ -385,7 +385,7 @@ export class WebRequestApi {
                  * Set in the beginning to let other events know that cosmetic result
                  * will be calculated in this event to avoid double calculation.
                  */
-                tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
+                const newFrameContext = new FrameMV2({
                     tabId,
                     frameId,
                     parentFrameId,
@@ -393,7 +393,13 @@ export class WebRequestApi {
                     timeStamp: timestamp,
                     documentId,
                     parentDocumentId,
-                }));
+                });
+
+                // The requested document has not committed, so the frame still
+                // shows the previous one and must not receive its rules.
+                newFrameContext.extCssAwaitingCommit = true;
+
+                tabsApi.setFrameContext(tabId, frameId, newFrameContext);
             }
         }
 
@@ -904,7 +910,7 @@ export class WebRequestApi {
          * Set in the beginning to let other events know that cosmetic result
          * will be calculated in this event to avoid double calculation.
          */
-        tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
+        const newFrameContext = new FrameMV2({
             tabId,
             frameId,
             parentFrameId,
@@ -912,7 +918,13 @@ export class WebRequestApi {
             timeStamp,
             documentId,
             parentDocumentId,
-        }));
+        });
+
+        // The navigation has not committed, so the frame still shows the
+        // previous document and must not receive the incoming document's rules.
+        newFrameContext.extCssAwaitingCommit = true;
+
+        tabsApi.setFrameContext(tabId, frameId, newFrameContext);
 
         // TODO: Check, should we record this event for filtering log.
 
@@ -949,13 +961,16 @@ export class WebRequestApi {
         // This updates the document id and resets the ExtendedCSS state: a
         // commit starts a new document, and the context can survive a same-URL
         // reload, so neither the previous document's applied rule set nor an
-        // injection started for it may describe the new one.
+        // injection started for it may describe the new one. The commit also
+        // ends the wait of a replaced context: this document is displayed now,
+        // and the injection below belongs to it.
         tabsApi.updateFrameContext(
             tabId,
             frameId,
             {
                 documentId: documentId || TabsApi.generateId(tabId, frameId),
                 extCssAppliedData: undefined,
+                extCssAwaitingCommit: false,
                 extCssDocumentVersion: (frameContext?.extCssDocumentVersion ?? 0) + 1,
             },
         );
