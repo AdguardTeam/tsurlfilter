@@ -1273,6 +1273,86 @@ describe('HTML filtering rules (content rules)', () => {
         });
     });
 
+    it('correctly parses html rules - regexp-like [tag-content] value stays literal', () => {
+        // `[tag-content="/ads/"]` matches the literal substring `/ads/`, not
+        // the regexp /ads/. The converter escapes the value, so `:contains()`
+        // compiles an escaped regexp and the literal text is matched
+        // (CoreLibs parity).
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$div[tag-content="/ads/"]',
+        );
+
+        expect(convertedRuleText).toBe(String.raw`example.org$$div:contains(/\/ads\//)`);
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selectorList = rule.getHtmlSelectorList();
+        const { specialSelectors } = selectorList!.selectors[0][0];
+
+        expect(specialSelectors).toHaveLength(1);
+        expect(specialSelectors[0].name).toBe(HtmlSpecialSelectorName.Contains);
+
+        const { value } = specialSelectors[0];
+        expect(value).toBeInstanceOf(RegExp);
+
+        // The literal substring `/ads/` matches
+        expect((value as RegExp).test('text with /ads/ inside')).toBe(true);
+        // The bare word `ads` does not match
+        expect((value as RegExp).test('text with only ads inside')).toBe(false);
+    });
+
+    it('correctly parses html rules - PCRE2-only regexp-like [tag-content] value stays literal', () => {
+        // `/a++/` is valid PCRE2 but invalid JavaScript. CoreLibs compiles the
+        // `:contains()` argument with PCRE2, so the converter escapes the value
+        // even though JavaScript cannot compile it as a regexp.
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$div[tag-content="/a++/"]',
+        );
+
+        expect(convertedRuleText).toBe(String.raw`example.org$$div:contains(/\/a\+\+\//)`);
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selectorList = rule.getHtmlSelectorList();
+        const { specialSelectors } = selectorList!.selectors[0][0];
+
+        expect(specialSelectors).toHaveLength(1);
+        expect(specialSelectors[0].name).toBe(HtmlSpecialSelectorName.Contains);
+
+        const { value } = specialSelectors[0];
+        expect(value).toBeInstanceOf(RegExp);
+
+        // The literal substring `/a++/` matches
+        expect((value as RegExp).test('text with /a++/ inside')).toBe(true);
+        // A sequence of `a` characters does not match
+        expect((value as RegExp).test('text with aaa inside')).toBe(false);
+    });
+
+    it('correctly parses html rules - slashes-only [tag-content] value stays literal', () => {
+        // CoreLibs reads `///` as the regexp `/` and ignores escapes when it
+        // finds the delimiter, so a raw `:contains(///)` would match any text
+        // with a slash. The converter escapes the value instead, and the
+        // escaped regexp matches the literal `///`.
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$div[tag-content="///"]',
+        );
+
+        expect(convertedRuleText).toBe(String.raw`example.org$$div:contains(/\/\/\//)`);
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selectorList = rule.getHtmlSelectorList();
+        const { specialSelectors } = selectorList!.selectors[0][0];
+
+        expect(specialSelectors).toHaveLength(1);
+        expect(specialSelectors[0].name).toBe(HtmlSpecialSelectorName.Contains);
+
+        const { value } = specialSelectors[0];
+        expect(value).toBeInstanceOf(RegExp);
+
+        // The literal substring `///` matches
+        expect((value as RegExp).test('text with /// inside')).toBe(true);
+        // A single slash does not match
+        expect((value as RegExp).test('text with / inside')).toBe(false);
+    });
+
     it('correctly parses html rules - contains with quoted regexp argument (literal)', () => {
         // A quoted regexp-lookalike is NOT a regexp: the wrapping quotes
         // are literal characters of the matched text (CoreLibs parity)

@@ -1,4 +1,6 @@
 /* eslint-disable prefer-regex-literals */
+import { RegExpUtils } from '@adguard/agtree';
+
 import { logger } from '../utils/logger';
 import {
     findNextUnescapedIndex,
@@ -522,10 +524,20 @@ export class SimpleRegex {
     /**
      * Converts a string representation of a regular expression into a RegExp object.
      *
-     * Like CoreLibs, the last `/` is treated as the delimiter: a `/` inside the
-     * pattern can be escaped (`\/`), follow an escaped backslash (`\\/`), or be
-     * located inside a character class, so the closing delimiter cannot be
-     * reliably found by scanning for the first unescaped `/`.
+     * The argument is split the same way CoreLibs does in `extract_regex()`:
+     * the last `/` is the delimiter, every trailing ASCII lowercase letter is
+     * a flag, an empty pattern means literal text, and the `end === 1`
+     * underflow class (`/ads`) has no representable pattern. The split is
+     * implemented by {@link RegExpUtils.parseCoreLibsRegexArgument}, which is
+     * also used by the ADG→ADG converter, so the engine and the converter
+     * parse a `:contains()` argument the same way and cannot drift apart.
+     *
+     * The pattern is still compiled with the JavaScript `RegExp` constructor,
+     * because the HTML filtering engine evaluates it with JavaScript. A
+     * pattern that JavaScript rejects stays a string, e.g. the PCRE2-only
+     * `/a++/` (AG-61623), as do arguments that CoreLibs itself rejects, e.g.
+     * `/a\/` and `/a[b/` (AG-61628). This is the pre-existing engine
+     * behavior; only the split is shared with CoreLibs.
      *
      * Only the flags `i`, `s`, `u`, and `v` are kept. The `g` and `y` flags
      * make `RegExp.test()` stateful because they advance `lastIndex`, so they
@@ -539,25 +551,18 @@ export class SimpleRegex {
      * @returns A RegExp object if the input is a valid regular expression literal, otherwise the original string.
      */
     public static fromLiteral(literal: string): string | RegExp {
-        // Early check for regexp marker
-        if (literal.length < 2 || !literal.startsWith('/')) {
+        const parts = RegExpUtils.parseCoreLibsRegexArgument(literal);
+
+        // No representable pattern: plain text, an empty pattern, the
+        // `end === 1` underflow class, or an argument CoreLibs matches
+        // literally. These cases were already treated as strings before this
+        // change, so the behavior is unchanged.
+        if (parts === null) {
             return literal;
         }
-
-        // The last `/` closes the pattern. `//` and literals without a closing
-        // delimiter have no pattern and are returned as plain strings.
-        const delimiterIndex = literal.lastIndexOf('/');
-        if (delimiterIndex < 2) {
-            return literal;
-        }
-
-        const pattern = literal.slice(1, delimiterIndex);
-        const flags = literal.slice(delimiterIndex + 1);
 
         try {
-            // Compile the original literal first. This keeps the fallback for
-            // invalid literals, including invalid or duplicate flags.
-            const regexp = new RegExp(pattern, flags);
+            const regexp = new RegExp(parts.pattern, parts.flags);
 
             // Keep only the flags the HTML filtering engine supports. `g` and
             // `y` make `RegExp.test()` stateful because they advance
@@ -568,7 +573,10 @@ export class SimpleRegex {
 
             return new RegExp(regexp.source, supportedFlags);
         } catch (e) {
-            logger.warn(`[tsurl.SimpleRegex.fromLiteral]: Invalid regular expression literal: ${literal}:`, e);
+            logger.warn(
+                `[tsurl.SimpleRegex.fromLiteral]: Invalid regular expression literal: ${literal}:`,
+                e,
+            );
             return literal;
         }
     }

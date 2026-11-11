@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `RegExpUtils.parseCoreLibsRegexArgument()` and
+  `RegExpUtils.isCoreLibsRegexArgument()` are now exported. The first splits
+  the `:contains()` arguments that CoreLibs reads as normal regular
+  expressions; the second also covers the underflow class, e.g. `/ads`.
 - `SPECIAL_PSEUDO_CLASS_NAMES` is now exported, so consumers can use the
   same list of special pseudo-class names as the parser and the converter.
 - `RegExpUtils.globToUboRegExp()` is now exported. It converts a glob to a
@@ -72,6 +76,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `$$[max-length="100"]`, `$$*[max-length="100"]` and
   `$$[max-length="1"] > [max-length="2"]`, because the resulting all-`*`
   selector matches almost every element.
+- `[tag-content]` values that CoreLibs reads as regular expressions, e.g.
+  `/ads/`, are now escaped when converted to a standalone `:contains()`
+  argument during ADG→ADG conversion, so they still match the literal text.
+  The check mirrors CoreLibs' `:contains()` argument scanner, so values
+  such as `/a++/`, `/a\/`, `///`, and `/ads` are escaped instead of becoming
+  dead or over-broad rules.
 
 ### Security
 

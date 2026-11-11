@@ -264,6 +264,118 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(example)'],
                     },
 
+                    // `[tag-content]` with a value that looks like a regexp literal: the value is a
+                    // literal substring, so it is emitted as an escaped regexp and stays literal
+                    {
+                        actual: '$$div[tag-content="/ads/"]',
+                        expected: [String.raw`$$div:contains(/\/ads\//)`],
+                    },
+
+                    // `[tag-content]` with a regexp-like value containing regexp specials: the
+                    // backslash is preserved and escaped together with the other special characters
+                    {
+                        actual: String.raw`$$div[tag-content="/a\d+/"]`,
+                        expected: [String.raw`$$div:contains(/\/a\\d\+\//)`],
+                    },
+
+                    // `[tag-content]` with a regexp-like value and a flag tail: the argument still
+                    // has the regexp literal shape, so it is escaped as well
+                    {
+                        actual: '$$div[tag-content="/ads/i"]',
+                        expected: [String.raw`$$div:contains(/\/ads\/i/)`],
+                    },
+
+                    // `[tag-content]` with an escaped backslash before the closing slash: the
+                    // backslash escapes the next backslash, not the slash, so the value still
+                    // has the regexp literal shape and is escaped as well
+                    {
+                        actual: String.raw`$$div[tag-content="/a\\/"]`,
+                        expected: [String.raw`$$div:contains(/\/a\\\\\//)`],
+                    },
+
+                    // `[tag-content]` with an escaped backslash inside a character class: the
+                    // `]` after it closes the class, so the value still has the regexp literal
+                    // shape and is escaped as well
+                    {
+                        actual: String.raw`$$div[tag-content="/a[\\]b/"]`,
+                        expected: [String.raw`$$div:contains(/\/a\[\\\\\]b\//)`],
+                    },
+
+                    // `[tag-content]` with a PCRE2-only regexp literal: `/a++/` is valid PCRE2
+                    // but invalid JavaScript, and CoreLibs compiles `:contains()` with PCRE2,
+                    // so the value must be escaped as well
+                    {
+                        actual: '$$div[tag-content="/a++/"]',
+                        expected: [String.raw`$$div:contains(/\/a\+\+\//)`],
+                    },
+
+                    // `[tag-content]` with a value that only CoreLibs reads as a regexp: it
+                    // takes the last slash as the delimiter and ignores escapes, so `/a\/` is
+                    // the invalid PCRE2 pattern `a\` and CoreLibs rejects the raw rule. The
+                    // escaped form matches the literal text instead
+                    {
+                        actual: String.raw`$$div[tag-content="/a\/"]`,
+                        expected: [String.raw`$$div:contains(/\/a\\\//)`],
+                    },
+
+                    // A slash inside an unterminated character class: a JavaScript literal
+                    // scanner finds no closing slash, while CoreLibs takes the last slash as
+                    // the delimiter and rejects the raw pattern `a[b`
+                    {
+                        actual: '$$div[tag-content="/a[b/"]',
+                        expected: [String.raw`$$div:contains(/\/a\[b\//)`],
+                    },
+
+                    // `///` is the regular expression `/` for CoreLibs, so the raw value would
+                    // match any text with a slash. The escaped form matches the literal `///`
+                    {
+                        actual: '$$div[tag-content="///"]',
+                        expected: [String.raw`$$div:contains(/\/\/\//)`],
+                    },
+
+                    // `[tag-content]` with a leading slash but no closing slash: not a normal
+                    // CoreLibs regexp, but `/` followed only by lowercase letters makes
+                    // CoreLibs strip all letters, read the leading slash as the delimiter,
+                    // and take the regexp branch with an underflowed length. The escaped
+                    // form matches the literal text instead
+                    {
+                        actual: '$$div[tag-content="/ads"]',
+                        expected: [String.raw`$$div:contains(/\/ads/)`],
+                    },
+
+                    // Same underflow class with two lowercase letters
+                    {
+                        actual: '$$div[tag-content="/ab"]',
+                        expected: [String.raw`$$div:contains(/\/ab/)`],
+                    },
+
+                    // A digit before the lowercase letters stops the flag stripping at a
+                    // non-slash character, so CoreLibs matches the raw value as literal text
+                    {
+                        actual: '$$div[tag-content="/1ab"]',
+                        expected: ['$$div:contains(/1ab)'],
+                    },
+
+                    // Stripping the trailing lowercase letter leaves an empty pattern, so
+                    // CoreLibs matches the raw value as literal text
+                    {
+                        actual: '$$div[tag-content="//a"]',
+                        expected: ['$$div:contains(//a)'],
+                    },
+
+                    // An uppercase flag is not stripped, and the last character is not a
+                    // slash, so CoreLibs matches the raw value as literal text
+                    {
+                        actual: '$$div[tag-content="/ads/I"]',
+                        expected: ['$$div:contains(/ads/I)'],
+                    },
+
+                    // `[tag-content]` with a plain value: the raw value is kept
+                    {
+                        actual: '$$div[tag-content="ads"]',
+                        expected: ['$$div:contains(ads)'],
+                    },
+
                     // `[tag-content]` special attribute selector - multiple usages are merged into
                     // a single regex `:contains()`, with each literal as a lookahead: CoreLibs allows
                     // at most one literal `:contains()` per selector

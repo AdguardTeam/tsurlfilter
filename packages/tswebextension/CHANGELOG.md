@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTML filtering `[tag-content]` values that CoreLibs reads as a regular
+  expression, e.g. `/ads/`, now match the literal text (via
+  [@adguard/tsurlfilter]): `$$div[tag-content="/ads/"]` no longer matches a
+  plain `ads` substring.
 - HTML filtering `:contains()` regexp arguments that end with an escaped
   backslash (`/foo\\/`) or have one in a character class (`/[\\]/`) are now
   compiled as regexps instead of being matched as text (via

@@ -548,10 +548,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Handles special attribute selectors during AdGuard to AdGuard conversion:
      * - `[tag-content="content"]` -> `:contains(content)`
-     *   direct conversion, no changes to value. The value is emitted raw:
-     *   any quotes in it are literal characters of the text to match, not
-     *   a transport encoding to strip later. This mirrors CoreLibs, which
-     *   never unquotes `:contains()` arguments.
+     *   direct conversion, no changes to value. Any quotes in the value are
+     *   literal characters of the text to match, not a transport encoding to
+     *   strip later. This mirrors CoreLibs, which never unquotes `:contains()`
+     *   arguments. For AdGuard to AdGuard conversion the value is emitted by
+     *   {@link HtmlRuleConverter.appendSpecialAttributePseudoClasses}, which
+     *   turns a value that CoreLibs reads as a regular expression into an
+     *   escaped regular expression, so that it still matches literally.
      * - `[wildcard="*content*"]` -> `:contains(/^.*content.*$/s)`
      *   convert search pattern to regular expression
      * - `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/s)`
@@ -573,10 +576,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // `[tag-content="content"]` -> `:contains(content)`
             // direct conversion, no changes to value
             case AdgAttributeSelectors.TagContent: {
-                // The value is emitted raw: quotes within the value are
-                // literal characters to match, not a transport encoding —
-                // same as CoreLibs, which never unquotes `:contains()`
-                // arguments.
+                // The node returned here is discarded in ADG→ADG conversion:
+                // convertBody defers `[tag-content]` and emits the value in
+                // appendSpecialAttributePseudoClasses, which escapes a value
+                // that CoreLibs reads as a regular expression. Quotes within
+                // the value are literal characters to match, not a transport
+                // encoding — same as CoreLibs, which never unquotes
+                // `:contains()` arguments.
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
                     value,
@@ -1551,7 +1557,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * pseudo-class ("chain-safe"):
      *
      * - it must not be empty and must not start with a slash — a leading `/`
-     *   makes the argument look like a regular expression to CoreLibs;
+     *   may make the argument look like a regular expression to CoreLibs. A
+     *   value that looks like a regular expression literal is still valid as
+     *   the only special selector, and
+     *   {@link HtmlRuleConverter.appendSpecialAttributePseudoClasses} emits it
+     *   as an escaped regular expression so that it matches literally;
      * - it must not contain quotes, parentheses, brackets, braces,
      *   backslashes or colons — CoreLibs' special pseudo-class argument
      *   scanner splits a `:contains()` chain at the next free `:`, and any
@@ -1586,7 +1596,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *   `[max-length="..."]` as two regex `:contains()` pseudo-classes;
      * - a literal `:contains()` may be chained in front of a single regex
      *   `:contains()` only when it is chain-safe, see
-     *   {@link HtmlRuleConverter.isChainSafeLiteral}.
+     *   {@link HtmlRuleConverter.isChainSafeLiteral};
+     * - a standalone `[tag-content]` value that CoreLibs reads as a regular
+     *   expression (e.g. `/ads/`) is emitted as an escaped regular expression
+     *   (e.g. `/\/ads\//`), so the value stays a literal substring match. The
+     *   check mirrors CoreLibs' `:contains()` argument scanner, not the
+     *   JavaScript literal grammar — see
+     *   {@link RegExpUtils.isCoreLibsRegexArgument}.
      *
      * Combinations which cannot be represented as such a chain — an unsafe
      * literal plus any regex-like constraint, or several regex-like
@@ -1638,9 +1654,26 @@ export class HtmlRuleConverter extends RuleConverterBase {
             && (literalChainSafe || !needsRegexContains);
 
         if (emitLiteralStandalone) {
+            const literal = tagContentValues[0];
+
+            // A value that CoreLibs reads as a regular expression must be
+            // emitted as an escaped regular expression: CoreLibs compiles
+            // such an argument into a `RegExp`, but a `[tag-content]` value
+            // is always a literal substring match. The check mirrors
+            // CoreLibs' `extract_regex()`: it takes the last slash as the
+            // delimiter and ignores escapes and character classes, so values
+            // such as `/a++/`, `/a\/`, and `///` are escaped too. The check
+            // also covers `/` followed only by lowercase letters, e.g.
+            // `/ads`: CoreLibs strips those letters as flags, reads the
+            // leading slash as the delimiter, and takes the regexp branch. A
+            // value that CoreLibs matches as literal text stays raw.
+            const argument = RegExpUtils.isCoreLibsRegexArgument(literal)
+                ? `${SLASH}${RegExpUtils.escapeRegexSpecials(literal)}${SLASH}`
+                : literal;
+
             convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
                 AdgPseudoClasses.Contains,
-                tagContentValues[0],
+                argument,
             ));
         }
 
