@@ -1524,6 +1524,12 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div:has-text( "foo" )'],
                     },
 
+                    // `:-abp-contains()` special pseudo-class selector - regexp are handled
+                    {
+                        actual: '$$div:-abp-contains(/ex.*ple/i)',
+                        expected: ['##^div:has-text(/ex.*ple/i)'],
+                    },
+
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]',

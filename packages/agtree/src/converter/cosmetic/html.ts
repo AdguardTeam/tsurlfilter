@@ -634,8 +634,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * Handles special pseudo-class selectors during AdGuard to AdGuard conversion:
      * - `:contains(text)` -> kept as-is
      * - `:-abp-contains(text)` -> kept as-is
-     *   `:-abp-contains()` is an AdGuard alias of `:contains()`, so it is not
-     *   rewritten to `:contains()`.
+     *   `:-abp-contains()` is a native AdGuard spelling, so ADG→ADG
+     *   conversion preserves the author's spelling instead of normalizing it.
      * - `:has-text(text)` -> `:contains(text)`
      *   `:has-text()` is a documented synonym for `:contains()` in AdGuard products.
      *
@@ -667,8 +667,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 ));
             }
 
-            // `:contains()` and its `:-abp-contains()` alias are kept as-is
-            // in AdGuard rules
+            // `:contains()` and its `:-abp-contains()` alias are native
+            // AdGuard spellings, so they are kept as-is
             default: {
                 return true;
             }

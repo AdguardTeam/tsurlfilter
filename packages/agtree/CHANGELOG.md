@@ -76,6 +76,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `:has-text()`, the same as `:contains()`, e.g. `$$div:-abp-contains(foo)`
   becomes `##^div:has-text(foo)`. Previously the alias was kept as-is, and
   uBlock Origin rejected the converted rule.
+- uBO→ADG conversion now rejects `:-abp-contains()` in uBlock HTML filtering
+  rules as mixed AdGuard and uBlock syntax, the same as `:contains()`.
+  Previously the alias was carried over into the converted AdGuard rule.
 
 ### Security
 
