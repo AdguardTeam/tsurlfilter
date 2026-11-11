@@ -30,10 +30,15 @@ import {
 } from '../../nodes';
 import {
     BACKSLASH,
+    CLOSE_CURLY_BRACKET,
+    CLOSE_PARENTHESIS,
+    CLOSE_SQUARE_BRACKET,
     COLON,
     DOUBLE_QUOTE,
     EMPTY,
     EQUALS,
+    OPEN_CURLY_BRACKET,
+    OPEN_PARENTHESIS,
     OPEN_SQUARE_BRACKET,
     REGEX_MARKER,
     SINGLE_QUOTE,
@@ -139,44 +144,6 @@ const SPECIAL_ATTRIBUTE_SELECTOR_PATTERN = new RegExp(
  * @see {@link https://html.spec.whatwg.org/multipage/syntax.html#raw-text-elements}
  */
 const RAW_TEXT_ELEMENTS = new Set<string>(['script', 'style']);
-
-/**
- * Named HTML character references that browsers decode even without the
- * trailing semicolon (the legacy references of the HTML named character
- * references table).
- *
- * Other named references are decoded only with a trailing semicolon, while
- * numeric references are decoded with or without it.
- *
- * @see {@link https://html.spec.whatwg.org/multipage/named-characters.html}
- */
-const LEGACY_HTML_CHARACTER_REFERENCE_NAMES = [
-    'AElig', 'AMP', 'Aacute', 'Acirc', 'Agrave', 'Aring', 'Atilde', 'Auml',
-    'COPY', 'Ccedil', 'ETH', 'Eacute', 'Ecirc', 'Egrave', 'Euml', 'GT',
-    'Iacute', 'Icirc', 'Igrave', 'Iuml', 'LT', 'Ntilde', 'Oacute', 'Ocirc',
-    'Ograve', 'Oslash', 'Otilde', 'Ouml', 'QUOT', 'REG', 'THORN', 'Uacute',
-    'Ucirc', 'Ugrave', 'Uuml', 'Yacute',
-    'aacute', 'acirc', 'acute', 'aelig', 'agrave', 'amp', 'aring', 'atilde',
-    'auml', 'brvbar', 'ccedil', 'cedil', 'cent', 'copy', 'curren', 'deg',
-    'divide', 'eacute', 'ecirc', 'egrave', 'eth', 'euml', 'frac12', 'frac14',
-    'frac34', 'gt', 'iacute', 'icirc', 'iexcl', 'igrave', 'iquest', 'iuml',
-    'laquo', 'lt', 'macr', 'micro', 'middot', 'nbsp', 'not', 'ntilde',
-    'oacute', 'ocirc', 'ograve', 'ordf', 'ordm', 'oslash', 'otilde', 'ouml',
-    'para', 'plusmn', 'pound', 'quot', 'raquo', 'reg', 'sect', 'shy', 'sup1',
-    'sup2', 'sup3', 'szlig', 'thorn', 'times', 'uacute', 'ucirc', 'ugrave',
-    'uml', 'uuml', 'yacute', 'yen', 'yuml',
-];
-
-/**
- * Matches an HTML character reference that a browser decodes in an element's
- * `textContent`: any named or numeric reference with a trailing semicolon, a
- * numeric reference without it, or a legacy named reference without it.
- */
-const HTML_CHARACTER_REFERENCE_REGEXP = new RegExp(
-    `&(?:#[0-9]+;?|#[xX][0-9a-fA-F]+;?|[a-zA-Z][a-zA-Z0-9]*;|${
-        LEGACY_HTML_CHARACTER_REFERENCE_NAMES.join('|')
-    })`,
-);
 
 /**
  * Pattern matching [tag-content] values that are NOT chain-safe, i.e. cannot
@@ -397,10 +364,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * Note: a valid ADG rule may be kept as-is with `isConverted: false` when
      * a special attribute selector cannot be represented in uBlock without
-     * changing its matching semantics, e.g. HTML markup or an HTML character
-     * reference in `[tag-content]`/`[wildcard]` for an element other than
-     * `script`/`style`, see {@link HtmlRuleConverter.containsHtmlMarkup},
-     * {@link HtmlRuleConverter.containsHtmlCharacterReference} and
+     * changing its matching semantics, e.g. HTML markup or an ampersand in
+     * `[tag-content]`/`[wildcard]` for an element other than `script`/`style`,
+     * see {@link HtmlRuleConverter.containsHtmlMarkup},
+     * {@link HtmlRuleConverter.containsHtmlAmpersand} and
      * {@link HtmlRuleConverter.isRawTextElement}. Callers must not treat
      * `isConverted: false` as proof of rule invalidity.
      *
@@ -430,15 +397,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
         let isUnconvertible = false;
 
         const onSpecialAttributeSelector: OnSpecialAttributeSelectorCallback = (name, value, typeSelector) => {
-            // The markup and character reference checks do not apply to raw
-            // text elements: their `innerHTML` equals `textContent`, so the
-            // value is still present in the text that uBlock matches.
+            // The markup and ampersand checks do not apply to raw text
+            // elements: their `innerHTML` equals `textContent`, so the value is
+            // still present in the text that uBlock matches.
             if (
                 (name === AdgAttributeSelectors.TagContent
                     || name === AdgAttributeSelectors.Wildcard)
                 && (
                     HtmlRuleConverter.containsHtmlMarkup(value)
-                    || HtmlRuleConverter.containsHtmlCharacterReference(value)
+                    || HtmlRuleConverter.containsHtmlAmpersand(value)
                 )
                 && !HtmlRuleConverter.isRawTextElement(typeSelector)
             ) {
@@ -708,32 +675,28 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Checks whether a special attribute selector value contains an HTML
-     * character reference, e.g. `&lt;`, `&amp;`, `&#39;` or `&copy 2024`.
+     * Checks whether a special attribute selector value contains an ampersand.
      *
      * AdGuard `[tag-content]` and `[wildcard]` match the element HTML
-     * (`innerHTML`), where a character reference stays encoded, while uBlock
-     * `:has-text()` matches the decoded `textContent`. A value with a
-     * character reference can therefore never be found in uBlock's
-     * `textContent`, i.e. the converted rule would match nothing. Such rules
-     * are kept as-is instead.
+     * (`innerHTML`), where a literal `&` in text or in an attribute value is
+     * serialized as `&amp;`, and where an HTML character reference stays
+     * encoded. The uBlock `:has-text()` matcher tests `textContent`, where a
+     * character reference is decoded and a literal `&` stays `&`. Any `&`
+     * therefore changes the matching semantics, so such rules are kept as-is
+     * instead.
+     * This check also covers every character reference, e.g. `&lt;`, `&amp;`,
+     * `&#39;` or `&copy 2024`.
      *
-     * Browsers decode numeric references and the legacy named references
-     * listed in the HTML specification even without the trailing semicolon,
-     * e.g. `&#39` and `&copy 2024`, so those forms are detected as well.
-     * Other named references require the semicolon.
-     *
-     * Exception: character references are not decoded in raw text elements
-     * either, so their `innerHTML` and `textContent` stay equal, see
+     * Exception: a literal `&` survives in raw text elements, where
+     * `innerHTML` and `textContent` are equal, see
      * {@link HtmlRuleConverter.isRawTextElement}.
      *
      * @param value Value of the special attribute selector.
      *
-     * @returns `true` if the value contains an HTML character reference,
-     * otherwise `false`.
+     * @returns `true` if the value contains an ampersand, otherwise `false`.
      */
-    private static containsHtmlCharacterReference(value: string): boolean {
-        return HTML_CHARACTER_REFERENCE_REGEXP.test(value);
+    private static containsHtmlAmpersand(value: string): boolean {
+        return value.includes('&');
     }
 
     /**
@@ -770,11 +733,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *   direct conversion, no changes to value
      * - `[max-length]` is skipped.
      *
-     * Note: values that contain HTML markup or an HTML character reference are
-     * passed to this method only for raw text elements, where `innerHTML`
-     * equals `textContent`; for other elements such rules are kept as-is, see
+     * Note: values that contain HTML markup or an ampersand are passed to this
+     * method only for raw text elements, where `innerHTML` equals
+     * `textContent`; for other elements such rules are kept as-is, see
      * {@link HtmlRuleConverter.containsHtmlMarkup},
-     * {@link HtmlRuleConverter.containsHtmlCharacterReference} and
+     * {@link HtmlRuleConverter.containsHtmlAmpersand} and
      * {@link HtmlRuleConverter.isRawTextElement}.
      *
      * @param name Name of the special attribute selector.
@@ -844,6 +807,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - `:has-text(text)` -> kept as-is
      *   `:has-text()` is native uBlock syntax and a documented synonym of
      *   `:contains()` in AdGuard products, so no conversion is needed.
+     *
+     * Known limitation: uBlock matches a plain `:has-text()` argument
+     * case-insensitively against `textContent`, while AdGuard matches
+     * `:contains()` case-sensitively against `innerHTML`. The argument is
+     * kept as-is, so a `:contains()` value with markup or an ampersand, or a
+     * value whose case matters, can still diverge after conversion. This is
+     * outside the scope of the `[tag-content]` and `[wildcard]` fix.
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
@@ -1229,7 +1199,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                         const name = selector.name.value;
                         const { value } = selector.value;
-                        const typeSelector = HtmlRuleConverter.getCompoundTypeSelector(selectors, j);
 
                         // [tag-content] and [wildcard] are deferred in ADG→ADG
                         // conversion: their emission may need to be merged with
@@ -1274,7 +1243,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         // - add returned simple selector if it's not boolean
                         // - skip adding if returned value is false
                         // - keep original simple selector if returned value is true
-                        const result = onSpecialAttributeSelector(name, value, typeSelector);
+                        const result = onSpecialAttributeSelector(
+                            name,
+                            value,
+                            HtmlRuleConverter.getCompoundTypeSelector(selectors, j),
+                        );
                         if (typeof result !== 'boolean') {
                             convertedSelectors.push(result);
                             continue;
@@ -1674,11 +1647,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * Checks whether uBlock Origin accepts a plain-text argument in an HTML
      * filtering `:has-text()` pseudo-class.
      *
-     * The parser reads a text argument with `compileText()`, which calls
-     * `unquoteString()`. The unquoting must consume the whole argument,
-     * otherwise uBlock rejects the rule. For example, uBlock accepts `"foo"`
-     * and unquotes it to `foo`, but rejects `"foo" ` because the space follows
-     * the closing quote.
+     * The uBlock parser first parses the whole cosmetic filter with CSS-tree
+     * and discards the rule if that parse fails. Thus quotes, parentheses,
+     * brackets and braces must be balanced over the whole argument, and a
+     * trailing backslash is not valid.
+     *
+     * After that, uBlock reads the text argument with `compileText()`, which
+     * calls `unquoteString()`. When the argument starts with a quote, the
+     * matching closing quote must be the last character, because the unquoting
+     * must consume the whole argument. For example, uBlock accepts `"foo"` and
+     * unquotes it to `foo`, but rejects `"foo" ` and `"foo"bar` because
+     * characters follow the closing quote.
      *
      * @param argument Argument to check.
      *
@@ -1689,8 +1668,68 @@ export class HtmlRuleConverter extends RuleConverterBase {
             return false;
         }
 
-        const quote = argument.charAt(0);
-        if (quote !== DOUBLE_QUOTE && quote !== SINGLE_QUOTE) {
+        const closingDelimiters: Record<string, string> = {
+            [CLOSE_PARENTHESIS]: OPEN_PARENTHESIS,
+            [CLOSE_SQUARE_BRACKET]: OPEN_SQUARE_BRACKET,
+            [CLOSE_CURLY_BRACKET]: OPEN_CURLY_BRACKET,
+        };
+
+        let quote: string | null = null;
+        const delimiters: string[] = [];
+
+        for (let i = 0; i < argument.length; i += 1) {
+            const char = argument.charAt(i);
+
+            // A backslash escapes the next character. CSS-tree rejects a
+            // trailing backslash.
+            if (char === BACKSLASH) {
+                i += 1;
+
+                if (i === argument.length) {
+                    return false;
+                }
+
+                continue;
+            }
+
+            if (quote !== null) {
+                if (char === quote) {
+                    quote = null;
+                }
+
+                continue;
+            }
+
+            if (char === SINGLE_QUOTE || char === DOUBLE_QUOTE) {
+                quote = char;
+                continue;
+            }
+
+            if (
+                char === OPEN_PARENTHESIS
+                || char === OPEN_SQUARE_BRACKET
+                || char === OPEN_CURLY_BRACKET
+            ) {
+                delimiters.push(char);
+                continue;
+            }
+
+            const openingDelimiter = closingDelimiters[char];
+
+            if (openingDelimiter !== undefined && delimiters.pop() !== openingDelimiter) {
+                return false;
+            }
+        }
+
+        if (quote !== null || delimiters.length !== 0) {
+            return false;
+        }
+
+        // uBlock unquotes only when the argument starts with a quote, and the
+        // closing quote must then be the last character of the argument.
+        const firstChar = argument.charAt(0);
+
+        if (firstChar !== SINGLE_QUOTE && firstChar !== DOUBLE_QUOTE) {
             return true;
         }
 
@@ -1699,23 +1738,20 @@ export class HtmlRuleConverter extends RuleConverterBase {
         while (index < argument.length) {
             const char = argument.charAt(index);
 
-            if (char === quote) {
-                index += 1;
-                break;
-            }
-
             if (char === BACKSLASH) {
                 index += 1;
 
                 if (index === argument.length) {
-                    break;
+                    return false;
                 }
+            } else if (char === firstChar) {
+                return index === argument.length - 1;
             }
 
             index += 1;
         }
 
-        return index === argument.length;
+        return false;
     }
 
     /**

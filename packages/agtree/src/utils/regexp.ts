@@ -487,7 +487,7 @@ export class RegExpUtils {
      * @returns RegExp string compatible with uBlock.
      *
      * @example
-     * // Returns '/^[\\s\\S]*foo[\\s\\S]*bar[\\s\\S]*$/'
+     * // Returns '/^[\s\S]*foo[\s\S]*bar[\s\S]*$/'
      * RegExpUtils.globToUboRegExp('*foo*bar*');
      */
     public static globToUboRegExp(glob: string): string {

@@ -1215,11 +1215,20 @@ describe('HtmlRuleConverter', () => {
                         shouldConvert: false,
                     },
 
-                    // an ampersand followed by text that is not a character
-                    // reference stays literal text
+                    // an ampersand changes the matching semantics on a non-raw
+                    // element: `innerHTML` serializes it as `&amp;`, while
+                    // `textContent` keeps it, so the rule is kept as-is
                     {
                         actual: '$$div[tag-content="AT&T"]',
-                        expected: ['##^div:has-text(/AT&T/)'],
+                        expected: ['$$div[tag-content="AT&T"]'],
+                        shouldConvert: false,
+                    },
+
+                    // an unknown named reference contains a bare `&` as well
+                    {
+                        actual: '$$div[tag-content="&foo;"]',
+                        expected: ['$$div[tag-content="&foo;"]'],
+                        shouldConvert: false,
                     },
 
                     // `[tag-content]` value with an HTML character reference on
@@ -1354,6 +1363,17 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div:contains(/ex.*ple/i)',
                         expected: ['##^div:has-text(/ex.*ple/i)'],
+                    },
+
+                    // `:contains()` special pseudo-class selector - balanced
+                    // brackets are valid CSS tokens and stay supported
+                    {
+                        actual: '$$div:contains(foo(bar))',
+                        expected: ['##^div:has-text(foo(bar))'],
+                    },
+                    {
+                        actual: '$$div:contains(/a(b)c/)',
+                        expected: ['##^div:has-text(/a(b)c/)'],
                     },
 
                     // `:has-text()` special pseudo-class selector - native uBlock
@@ -1644,6 +1664,30 @@ describe('HtmlRuleConverter', () => {
                         input: '$$div:contains("foo"bar)',
                         // eslint-disable-next-line max-len
                         error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: '\"foo\"bar'",
+                    },
+
+                    // invalid special pseudo-class selector - CSS-tree cannot
+                    // parse an unterminated quoted argument
+                    {
+                        input: '$$div:contains("foo)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: '\"foo'",
+                    },
+
+                    // invalid special pseudo-class selector - a quote inside a
+                    // plain argument starts an unterminated CSS string
+                    {
+                        input: "$$div:contains(it's)",
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: 'it's'",
+                    },
+
+                    // invalid special pseudo-class selector - an unbalanced
+                    // opening parenthesis fails the CSS-tree parse as well
+                    {
+                        input: '$$div:contains((function(g,b,a,c,e,d)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: '(function(g,b,a,c,e,d'",
                     },
                 ])("should not convert '$input'", ({ input, error }) => {
                     if (typeof input !== 'string') {

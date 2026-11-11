@@ -76,11 +76,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   regular expression. `[\s\S]` replaces the unsupported `s` flag for the
   dot-all match.
 - ADG→uBO conversion now keeps a rule as-is when a `[tag-content]` or
-  `[wildcard]` value contains HTML markup or an HTML character reference
-  and the element is not `script` or `style`. uBlock matches `textContent`,
-  so the converted rule would match nothing.
+  `[wildcard]` value contains HTML markup or an ampersand and the element
+  is not `script` or `style`. uBlock matches `textContent`, so the
+  converted rule would match different text.
 - ADG→uBO conversion now raises a conversion error for a `:contains()`
-  argument that uBlock would drop, e.g. `:contains("foo" bar)`.
+  argument that uBlock would drop, e.g. an argument with an unterminated
+  quote, an unbalanced bracket, or text after a closing quote.
 - `RuleParserPipeline.parseRange` now rejects a non-zero `dataOffset` for
   cosmetic rules. Their structural parsers write at fixed offsets, so a
   non-zero offset previously produced a rule with an empty selector and no
