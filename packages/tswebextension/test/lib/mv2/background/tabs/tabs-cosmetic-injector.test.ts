@@ -31,6 +31,7 @@ vi.mock('../../../../../src/lib/mv2/background/document-api');
 describe('TabsCosmeticInjector', () => {
     let tabsCosmeticInjector: TabsCosmeticInjector;
     let engineApi: EngineApi;
+    let tabsApi: TabsApi;
 
     beforeAll(() => {
         extSessionStorage.init();
@@ -47,7 +48,7 @@ describe('TabsCosmeticInjector', () => {
         const allowlist = new Allowlist();
         engineApi = new EngineApi(allowlist, appContext, stealthApi);
         const documentApi = new DocumentApi(allowlist, engineApi);
-        const tabsApi = new TabsApi(documentApi);
+        tabsApi = new TabsApi(documentApi);
         tabsCosmeticInjector = new TabsCosmeticInjector(documentApi, tabsApi, engineApi);
     });
 
@@ -110,6 +111,9 @@ describe('TabsCosmeticInjector', () => {
             await tabsCosmeticInjector.processOpenTabs();
 
             expect(CosmeticApi.applyExtCss).toHaveBeenCalledWith(tabId, frameId);
+            // The page was loaded before the app started, so its document may
+            // hold an instance applied before the current code ran.
+            expect(tabsApi.getFrameContext(tabId, frameId)?.extCssInstanceMayExist).toBe(true);
         });
 
         it('processOpenTabs skips ExtCSS for non-browser tabs', async () => {

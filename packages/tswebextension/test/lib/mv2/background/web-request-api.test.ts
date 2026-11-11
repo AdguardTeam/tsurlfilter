@@ -9,7 +9,8 @@ import { type WebNavigation } from 'webextension-polyfill';
 
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { MAIN_FRAME_ID } from '../../../../src/lib/common/constants';
+import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../../../src/lib/common/constants';
+import { DocumentLifecycle } from '../../../../src/lib/common/interfaces';
 import { canvasInjection, engineApi, tabsApi } from '../../../../src/lib/mv2/background/api';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { type RequestContext } from '../../../../src/lib/mv2/background/request/request-context-storage';
@@ -28,10 +29,31 @@ describe('web request api', () => {
         expect(true).toBe(true);
     });
 
+    describe('onBeforeNavigate', () => {
+        it('marks the replaced context as awaiting its commit', () => {
+            // @ts-ignore - accessing private method for testing
+            WebRequestApi.onBeforeNavigate({
+                tabId: 1,
+                frameId: MAIN_FRAME_ID,
+                parentFrameId: NO_PARENT_FRAME_ID,
+                url: 'https://example.com/file.zip',
+                timeStamp: Date.now(),
+                documentId: 'document-id',
+                documentLifecycle: DocumentLifecycle.Active,
+            });
+
+            expect(tabsApi.setFrameContext).toHaveBeenCalledWith(
+                1,
+                MAIN_FRAME_ID,
+                expect.objectContaining({ extCssAwaitingCommit: true }),
+            );
+        });
+    });
+
     describe('onCommitted', () => {
         it('resets the ExtendedCSS applied state of the committed document', () => {
             vi.mocked(tabsApi.getFrameContext).mockReturnValue({
-                extCssAppliedData: { extCssRules: ['rule'], areHitsStatsCollected: false },
+                extCssAppliedData: ['rule'],
                 extCssDocumentVersion: 3,
             } as ReturnType<typeof tabsApi.getFrameContext>);
 
@@ -51,6 +73,7 @@ describe('web request api', () => {
             expect(tabsApi.updateFrameContext).toHaveBeenCalledWith(1, MAIN_FRAME_ID, {
                 documentId: 'new-document-id',
                 extCssAppliedData: undefined,
+                extCssAwaitingCommit: false,
                 extCssDocumentVersion: 4,
             });
         });

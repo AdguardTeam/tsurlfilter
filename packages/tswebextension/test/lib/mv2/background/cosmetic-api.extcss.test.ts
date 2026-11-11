@@ -12,11 +12,7 @@ import { logger } from '../../../../src/lib/common/utils/logger';
 import { tabsApi } from '../../../../src/lib/mv2/background/api';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { serializeExtCssDisposeForCode, serializeExtCssForCode } from '../../../../src/lib/mv2/background/extcss-code';
-import {
-    type ExtCssAppliedData,
-    FrameMV2,
-    type PreparedCosmeticResultMV2,
-} from '../../../../src/lib/mv2/background/tabs/frame';
+import { FrameMV2, type PreparedCosmeticResultMV2 } from '../../../../src/lib/mv2/background/tabs/frame';
 import { TabsApi } from '../../../../src/lib/mv2/background/tabs/tabs-api';
 
 vi.mock('../../../../src/lib/mv2/background/api', () => ({
@@ -52,29 +48,18 @@ const makePrepared = (
 });
 
 /**
- * Builds the applied rule set the API records for the given rules.
- *
- * @param extCssRules ExtCSS rules the document holds.
- * @param areHitsStatsCollected Whether hits statistics are collected.
- *
- * @returns The applied rule set.
- */
-const makeAppliedData = (
-    extCssRules: string[],
-    areHitsStatsCollected = false,
-): ExtCssAppliedData => ({ extCssRules, areHitsStatsCollected });
-
-/**
  * Creates a frame context with the given prepared result.
  *
  * @param preparedCosmeticResult Prepared cosmetic result, if any.
  * @param isApplied Whether the prepared rule set is already applied to the document.
+ * @param mayHoldInstance Whether the context may hold an instance it did not apply.
  *
  * @returns The frame context.
  */
 const makeFrameContext = (
     preparedCosmeticResult?: PreparedCosmeticResultMV2,
     isApplied = false,
+    mayHoldInstance = false,
 ): FrameMV2 => {
     const frameContext = new FrameMV2({
         url: 'https://example.com/',
@@ -84,11 +69,9 @@ const makeFrameContext = (
         timeStamp: Date.now(),
     });
     frameContext.preparedCosmeticResult = preparedCosmeticResult;
+    frameContext.extCssInstanceMayExist = mayHoldInstance;
     if (isApplied) {
-        frameContext.extCssAppliedData = makeAppliedData(
-            preparedCosmeticResult?.extCssRules ?? [],
-            preparedCosmeticResult?.areHitsStatsCollected ?? false,
-        );
+        frameContext.extCssAppliedData = preparedCosmeticResult?.extCssRules ?? [];
     }
     return frameContext;
 };
@@ -135,7 +118,7 @@ describe('CosmeticApi.applyExtCss', () => {
 
     it('injects the serialized dispose code when rules are empty', async () => {
         vi.mocked(tabsApi.getFrameContext)
-            .mockReturnValue(makeFrameContext(makePrepared([])));
+            .mockReturnValue(makeFrameContext(makePrepared([]), false, true));
 
         await CosmeticApi.applyExtCss(1, 0);
 
@@ -149,7 +132,7 @@ describe('CosmeticApi.applyExtCss', () => {
 
     it('injects the serialized dispose code when rules are null', async () => {
         vi.mocked(tabsApi.getFrameContext)
-            .mockReturnValue(makeFrameContext(makePrepared(null)));
+            .mockReturnValue(makeFrameContext(makePrepared(null), false, true));
 
         await CosmeticApi.applyExtCss(1, 0);
 
@@ -161,8 +144,17 @@ describe('CosmeticApi.applyExtCss', () => {
         );
     });
 
-    it('disposes once per document even when no instance was reported', async () => {
-        const frameContext = makeFrameContext(makePrepared([]));
+    it('does not dispose for a context that cannot hold an instance', async () => {
+        vi.mocked(tabsApi.getFrameContext)
+            .mockReturnValue(makeFrameContext(makePrepared([])));
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScript).not.toHaveBeenCalled();
+    });
+
+    it('disposes once per document for a context that may hold an instance', async () => {
+        const frameContext = makeFrameContext(makePrepared([]), false, true);
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
 
         await CosmeticApi.applyExtCss(1, 0);
@@ -173,7 +165,7 @@ describe('CosmeticApi.applyExtCss', () => {
     });
 
     it('disposes again for the next document', async () => {
-        const frameContext = makeFrameContext(makePrepared([]));
+        const frameContext = makeFrameContext(makePrepared([]), false, true);
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
 
         await CosmeticApi.applyExtCss(1, 0);
@@ -186,7 +178,7 @@ describe('CosmeticApi.applyExtCss', () => {
 
     it('disposes again after a rule set is applied later in the same document', async () => {
         const rules = ['.ad:has(.child) { display: none !important; }'];
-        const frameContext = makeFrameContext(makePrepared([]));
+        const frameContext = makeFrameContext(makePrepared([]), false, true);
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
 
         await CosmeticApi.applyExtCss(1, 0);
@@ -198,6 +190,36 @@ describe('CosmeticApi.applyExtCss', () => {
         await CosmeticApi.applyExtCss(1, 0);
 
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(3);
+    });
+
+    it('disposes for a document whose instance this context applied', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        frameContext.preparedCosmeticResult = makePrepared([]);
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
+        expect(TabsApi.injectScript).toHaveBeenLastCalledWith(
+            1,
+            0,
+            serializeExtCssDisposeForCode(EXTCSS_PROTOCOL),
+        );
+    });
+
+    it('does not inject into a context that awaits its commit', async () => {
+        const frameContext = makeFrameContext(
+            makePrepared(['.ad:has(.child) { display: none !important; }']),
+        );
+        frameContext.extCssAwaitingCommit = true;
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScript).not.toHaveBeenCalled();
     });
 
     it('does not inject when the frame context is missing', async () => {
@@ -300,7 +322,7 @@ describe('CosmeticApi.applyExtCss', () => {
         resolveInjection();
         await injection;
 
-        expect(frameContext.extCssAppliedData).toEqual(makeAppliedData(rules));
+        expect(frameContext.extCssAppliedData).toEqual(rules);
     });
 
     it('records the applied rule set after a successful apply', async () => {
@@ -310,7 +332,7 @@ describe('CosmeticApi.applyExtCss', () => {
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(frameContext.extCssAppliedData).toEqual(makeAppliedData(rules));
+        expect(frameContext.extCssAppliedData).toEqual(rules);
     });
 
     it('re-injects when the stored rule set changes', async () => {
@@ -331,7 +353,7 @@ describe('CosmeticApi.applyExtCss', () => {
     });
 
     it('records the disposed document after a successful dispose', async () => {
-        const frameContext = makeFrameContext(makePrepared(null));
+        const frameContext = makeFrameContext(makePrepared(null), false, true);
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
 
         await CosmeticApi.applyExtCss(1, 0);
@@ -356,7 +378,7 @@ describe('CosmeticApi.applyExtCss', () => {
         await vi.advanceTimersByTimeAsync(10);
 
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
-        expect(frameContext.extCssAppliedData).toEqual(makeAppliedData(rules));
+        expect(frameContext.extCssAppliedData).toEqual(rules);
     });
 
     it('keeps the in-flight marker while a retry is pending', async () => {
@@ -432,7 +454,7 @@ describe('CosmeticApi.applyExtCss', () => {
         vi.mocked(TabsApi.injectScript).mockRejectedValue(error);
         const debugSpy = vi.spyOn(logger, 'debug');
 
-        await CosmeticApi.applyExtCss(1, 0, 100);
+        await CosmeticApi.applyExtCss(1, 0, 100, 0);
 
         expect(debugSpy).toHaveBeenCalledWith(
             expect.stringContaining('[tsweb.CosmeticApi.applyExtCss]'),
@@ -440,9 +462,65 @@ describe('CosmeticApi.applyExtCss', () => {
         );
     });
 
+    it('ends a retry chain when the document changed', async () => {
+        vi.useFakeTimers();
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        let resolveSecond!: () => void;
+        vi.mocked(TabsApi.injectScript)
+            .mockRejectedValueOnce(new Error('Missing host permission'))
+            .mockImplementationOnce(() => new Promise<void>((resolve) => {
+                resolveSecond = resolve;
+            }));
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        // A same-URL commit keeps the context and starts its own chain from
+        // the commit handler, which is still in flight when the retry fires.
+        frameContext.extCssDocumentVersion += 1;
+        frameContext.extCssAppliedData = undefined;
+        const second = CosmeticApi.applyExtCss(1, 0);
+
+        await vi.advanceTimersByTimeAsync(10);
+
+        // The retry belongs to the previous document, so it neither sends its
+        // payload again nor releases the marker of the new chain.
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
+        expect(frameContext.extCssInjectionMarker).toBe(1);
+
+        resolveSecond();
+        await second;
+
+        expect(frameContext.extCssInjectionMarker).toBeUndefined();
+    });
+
+    it('releases its marker when a retry finds the rules applied', async () => {
+        vi.useFakeTimers();
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        vi.mocked(TabsApi.injectScript).mockRejectedValueOnce(new Error('Missing host permission'));
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(frameContext.extCssInjectionMarker).toBe(0);
+
+        // Another path put the rules into the document while the retry waited.
+        frameContext.extCssAppliedData = rules;
+
+        await vi.advanceTimersByTimeAsync(10);
+
+        // Nothing is left to do, so the chain ends and a later event can try
+        // again instead of being skipped by a marker nobody owns.
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        expect(frameContext.extCssInjectionMarker).toBeUndefined();
+    });
+
     it('attempts the disposal once and records it even when it fails', async () => {
         vi.useFakeTimers();
-        const frameContext = makeFrameContext(makePrepared(null));
+        const frameContext = makeFrameContext(makePrepared(null), false, true);
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
         vi.mocked(TabsApi.injectScript).mockRejectedValue(new Error('Missing host permission'));
 
@@ -460,7 +538,7 @@ describe('CosmeticApi.applyExtCss', () => {
     });
 
     it('does not dispose again from a later event after a failed attempt', async () => {
-        const frameContext = makeFrameContext(makePrepared(null));
+        const frameContext = makeFrameContext(makePrepared(null), false, true);
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
         vi.mocked(TabsApi.injectScript).mockRejectedValue(new Error('Missing host permission'));
 
@@ -487,7 +565,7 @@ describe('CosmeticApi.applyExtCss', () => {
         expect(TabsApi.injectScript).not.toHaveBeenCalled();
     });
 
-    it('re-injects when only the hits statistics flag changes', async () => {
+    it('skips the injection when only the hits statistics flag changes', async () => {
         const rules = ['.ad:has(.child) { display: none !important; }'];
         const frameContext = makeFrameContext(makePrepared(rules), true);
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
@@ -496,11 +574,9 @@ describe('CosmeticApi.applyExtCss', () => {
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(TabsApi.injectScript).toHaveBeenCalledWith(
-            1,
-            0,
-            serializeExtCssForCode(rules, true, EXTCSS_PROTOCOL),
-        );
+        // The payload keeps its rule strings and skips any call with the same
+        // ones, so a flag-only change would never reach the page.
+        expect(TabsApi.injectScript).not.toHaveBeenCalled();
     });
 
     it('does not serialize the rule set to check the applied state', async () => {

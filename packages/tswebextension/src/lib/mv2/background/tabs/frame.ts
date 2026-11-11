@@ -16,24 +16,6 @@ export type ExtCssFrameData = {
 };
 
 /**
- * ExtendedCSS rule set that a document holds.
- *
- * The applied rules are never empty, unlike the data resolved for a frame,
- * which carries null when no rule matches.
- */
-export type ExtCssAppliedData = {
-    /**
-     * ExtendedCSS rule strings the document holds.
-     */
-    extCssRules: string[];
-
-    /**
-     * Whether ExtendedCSS hits statistics are collected for the rule set.
-     */
-    areHitsStatsCollected: boolean;
-};
-
-/**
  * Prepared cosmetic result for MV2.
  *
  * This type represents the processed cosmetic data extracted from the initial cosmetic result.
@@ -68,7 +50,7 @@ export class FrameMV2 extends FrameCommon {
     public extCssData?: ExtCssFrameData;
 
     /**
-     * ExtendedCSS rule set that the current document holds.
+     * ExtendedCSS rule strings that the current document holds.
      *
      * The rule set is not guaranteed to stay the same within a document:
      * `getContentScriptData` recomputes it on every call, and a configuration
@@ -76,8 +58,12 @@ export class FrameMV2 extends FrameCommon {
      * re-injects the ExtendedCSS data when it changes. The frame context is
      * replaced on navigation, and `onCommitted` clears the rule set when the
      * context survives, so it always describes the current document.
+     *
+     * The hits statistics flag is not part of the state: the payload keeps its
+     * rule strings, and its guard compares only them, so a flag-only change
+     * never reaches the page.
      */
-    public extCssAppliedData?: ExtCssAppliedData;
+    public extCssAppliedData?: string[];
 
     /**
      * Number of the document the ExtendedCSS state belongs to.
@@ -99,13 +85,36 @@ export class FrameMV2 extends FrameCommon {
     public extCssDisposedDocumentVersion?: number;
 
     /**
+     * Whether the context may describe a document that holds an ExtendedCSS
+     * instance this context did not apply.
+     *
+     * The startup pass creates a context for a page that was already loaded,
+     * so that page can hold an instance applied before the current code ran.
+     * Such a document needs a dispose even though no apply is recorded for it.
+     * Only the startup pass sets the flag, and `onCommitted` clears it: a new
+     * document starts without an instance.
+     */
+    public extCssInstanceMayExist = false;
+
+    /**
+     * Whether the context describes a navigation that has not committed.
+     *
+     * The request and navigation handlers replace the frame context as soon as
+     * a new document starts loading, while the frame still shows the previous
+     * document. ExtendedCSS injection waits for the commit, so the incoming
+     * document's rules never reach the displayed one. A navigation that never
+     * commits, such as a download, keeps the flag and gets no injection.
+     */
+    public extCssAwaitingCommit = false;
+
+    /**
      * ExtendedCSS injection that is in flight for this context, if any.
      *
      * Injection events can arrive before the previous injection resolves. The
      * marker stops them from sending the same payload again and from starting
-     * their own retry chain. It also identifies the call that owns it, so a
-     * stale injection cannot release the marker of a newer one, and its
-     * document version lets a commit start its own injection.
+     * their own retry chain. It holds the number of the document the injection
+     * belongs to, so a commit starts its own injection while a stale injection
+     * cannot release the marker of a newer one.
      */
-    public extCssInjectionMarker?: { documentVersion: number };
+    public extCssInjectionMarker?: number;
 }

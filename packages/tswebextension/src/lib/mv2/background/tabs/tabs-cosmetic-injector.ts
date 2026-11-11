@@ -103,7 +103,7 @@ export class TabsCosmeticInjector {
 
             const calculatedDocumentId = documentId || TabsApi.generateId(tabId, frameId);
 
-            this.tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
+            const newFrameContext = new FrameMV2({
                 tabId,
                 frameId,
                 parentFrameId,
@@ -111,7 +111,14 @@ export class TabsCosmeticInjector {
                 timeStamp: currentTime,
                 parentDocumentId: calculatedParentDocumentId,
                 documentId: calculatedDocumentId,
-            }));
+            });
+
+            // The page was already loaded when the app started, so its
+            // document can hold an ExtendedCSS instance applied before the
+            // current code ran, and it needs a dispose even without an apply.
+            newFrameContext.extCssInstanceMayExist = true;
+
+            this.tabsApi.setFrameContext(tabId, frameId, newFrameContext);
 
             this.cosmeticFrameProcessor.handleFrame({
                 tabId,
