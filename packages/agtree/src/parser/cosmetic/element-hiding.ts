@@ -10,6 +10,7 @@
 import { UboPseudoName } from '../../common/ubo-selector-common';
 import { cssStringLength, isCssStringUnterminated } from '../../css/tokenizer/css-token-mapping';
 import { TokenType } from '../../tokenizer/token-types';
+import { isExtendedCssPseudoClass } from '../../utils/extended-css-pseudo-classes';
 import type { ParserContext } from '../context';
 import { regionEquals, tokenStart } from '../context';
 import { MODIFIER_FLAG_NEGATED, NO_VALUE } from '../network/constants';
@@ -232,14 +233,16 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
 
     /**
      * Cheap candidate check: linear scan of body tokens for any
-     * Colon + Ident + OpenParen pattern outside quoted CSS strings where the
-     * ident matches a known uBO modifier name.
+     * Colon + Ident + OpenParen pattern whose ident matches a known uBO
+     * modifier name.
      *
-     * A quote is a CSS string delimiter only inside `[...]`, so only strings
-     * there are skipped. In an extended-CSS argument a quote is plain text,
-     * and skipping it would hide real modifiers. `Escaped` tokens do not
-     * close a string. An unterminated quote (for example, a lone quote in a
-     * regex or procedural argument) is a plain token.
+     * This gate is intentionally context-free: it may return `true` for
+     * modifier-like text inside a quoted CSS string or inside an extended-CSS
+     * argument, where {@link scanUboModifiers} then correctly finds no
+     * modifier. A false positive only costs one extra scan, while keeping the
+     * gate free of string and bracket tracking means an ambiguous bracket (for
+     * example a literal `[` in a `:has-text()` argument) cannot produce a
+     * false negative and hide a real modifier.
      *
      * Zero string allocations — uses regionEquals for comparison.
      *
@@ -255,26 +258,9 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
         endTi: number,
     ): boolean {
         const { types, ends, source } = ctx;
-        let bracketDepth = 0;
 
         for (let ti = startTi; ti < endTi - 1; ti += 1) {
-            const t = types[ti];
-
-            // Skip a terminated CSS string span inside `[...]`: modifier-like
-            // text inside a string is not a rule modifier.
-            const stringLength = cssStringSpanLength(types, ti, endTi, bracketDepth > 0);
-            if (stringLength > 0) {
-                ti += stringLength - 1;
-                continue;
-            }
-
-            if (t === TokenType.OpenSquare) {
-                bracketDepth += 1;
-            } else if (t === TokenType.CloseSquare && bracketDepth > 0) {
-                bracketDepth -= 1;
-            }
-
-            if (t !== TokenType.Colon) {
+            if (types[ti] !== TokenType.Colon) {
                 continue;
             }
 
@@ -299,29 +285,10 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
             // Also check for :not( wrapping :matches-path() or :matches-media()
             if (regionEquals(source, identStart, identEnd, 'not')) {
                 // Look ahead inside :not() for a uBO modifier candidate.
-                // Skip terminated CSS strings inside `[...]` here as well.
-                let innerBracketDepth = 0;
+                // Kept as a cheap early exit; the outer loop would reach the
+                // same inner colon anyway (see AG-61882).
                 for (let j = identEndTi + 1; j < endTi; j += 1) {
-                    const jt = types[j];
-
-                    const innerStringLength = cssStringSpanLength(
-                        types,
-                        j,
-                        endTi,
-                        innerBracketDepth > 0,
-                    );
-                    if (innerStringLength > 0) {
-                        j += innerStringLength - 1;
-                        continue;
-                    }
-
-                    if (jt === TokenType.OpenSquare) {
-                        innerBracketDepth += 1;
-                    } else if (jt === TokenType.CloseSquare && innerBracketDepth > 0) {
-                        innerBracketDepth -= 1;
-                    }
-
-                    if (jt === TokenType.Colon) {
+                    if (types[j] === TokenType.Colon) {
                         const innerEndTi = skipPseudoName(types, j + 1, endTi);
                         if (innerEndTi > j + 1 && innerEndTi < endTi && types[innerEndTi] === TokenType.OpenParen) {
                             const iStart = ends[j];
@@ -366,6 +333,14 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
         let seenMask = 0;
         let uboModCount = 0;
 
+        // Raw extended-CSS argument tracking: `:has-text()`, `:matches-path()`,
+        // `:xpath()` and similar take plain text, so `[` / `]` and quotes
+        // inside them are not CSS syntax. `rawDepth` is the parenthesis depth
+        // of the innermost open raw argument (0 = none), and `rawOpenAtTi` is
+        // the `(` token that starts the argument being tracked.
+        let rawDepth = 0;
+        let rawOpenAtTi = -1;
+
         // Current open modifier state (-1 = no modifier open)
         let curModBit = 0;
         let curModNameStart = 0;
@@ -388,36 +363,50 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                 throw new Error(':style() and :remove() can only be used at the end of the selector');
             }
 
-            // Skip a terminated CSS string span so that modifier-like text
-            // and parentheses inside it do not affect the scan or the depth.
-            // A quote is a CSS string delimiter only inside `[...]` or in a
-            // `:style()` value; in an extended-CSS argument it is plain text.
-            const insideStyleValue = curModOpen && curModBit === UBO_MOD_BIT_STYLE;
-            const stringLength = cssStringSpanLength(
-                types,
-                ti,
-                endTi,
-                bracketDepth > 0 || insideStyleValue,
-            );
-            if (stringLength > 0) {
-                ti += stringLength - 1;
-                continue;
-            }
+            // Inside a raw extended-CSS argument every character is plain
+            // text: do not start a CSS string, count attribute brackets, or
+            // detect modifiers there. Parentheses are still balanced to find
+            // the end of the argument.
+            const insideRawArgument = rawDepth > 0;
 
-            if (t === TokenType.OpenSquare) {
-                bracketDepth += 1;
-                continue;
-            }
-
-            if (t === TokenType.CloseSquare) {
-                if (bracketDepth > 0) {
-                    bracketDepth -= 1;
+            if (!insideRawArgument) {
+                // Skip a terminated CSS string span so that modifier-like text
+                // and parentheses inside it do not affect the scan or the
+                // depth. A quote is a CSS string delimiter only inside an
+                // attribute selector or in a `:style()` value.
+                const insideStyleValue = curModOpen && curModBit === UBO_MOD_BIT_STYLE;
+                const stringLength = cssStringSpanLength(
+                    types,
+                    ti,
+                    endTi,
+                    bracketDepth > 0 || insideStyleValue,
+                );
+                if (stringLength > 0) {
+                    ti += stringLength - 1;
+                    continue;
                 }
-                continue;
+
+                if (t === TokenType.OpenSquare) {
+                    if (!insideStyleValue) {
+                        bracketDepth += 1;
+                    }
+                    continue;
+                }
+
+                if (t === TokenType.CloseSquare) {
+                    if (!insideStyleValue && bracketDepth > 0) {
+                        bracketDepth -= 1;
+                    }
+                    continue;
+                }
             }
 
             if (t === TokenType.OpenParen) {
                 depth += 1;
+                if (ti === rawOpenAtTi) {
+                    rawDepth = depth;
+                    rawOpenAtTi = -1;
+                }
             } else if (t === TokenType.CloseParen) {
                 depth -= 1;
 
@@ -491,6 +480,18 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                     }
                 }
 
+                // The closing parenthesis of a raw extended-CSS argument
+                // returns the scan to normal selector context.
+                if (rawDepth > 0 && depth < rawDepth) {
+                    rawDepth = 0;
+                }
+
+                continue;
+            }
+
+            // Modifier-like text inside a raw extended-CSS argument is plain
+            // text, so do not detect modifiers there.
+            if (insideRawArgument) {
                 continue;
             }
 
@@ -608,6 +609,12 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                             // Skip ident span and OpenParen token
                             ti = identEndTi;
                             depth += 1;
+
+                            // :matches-path() / :matches-media() values are
+                            // raw text, not CSS selector syntax.
+                            if (modBit === UBO_MOD_BIT_MATCHES_PATH || modBit === UBO_MOD_BIT_MATCHES_MEDIA) {
+                                rawDepth = depth;
+                            }
                         } else {
                             // FR-006: other modifiers cannot be nested
                             throw new Error(
@@ -630,7 +637,19 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                         // Skip ident span and OpenParen token
                         ti = identEndTi;
                         depth += 1;
+
+                        // :matches-path() / :matches-media() values are raw
+                        // text, not CSS selector syntax.
+                        if (modBit === UBO_MOD_BIT_MATCHES_PATH || modBit === UBO_MOD_BIT_MATCHES_MEDIA) {
+                            rawDepth = depth;
+                        }
                     }
+                } else if (isExtendedCssPseudoClass(source, identStart, identEnd)) {
+                    // The argument of an Extended CSS pseudo-class is raw
+                    // text: `[` / `]` and quotes inside it are plain
+                    // characters, so the opening parenthesis starts a raw
+                    // region instead of selector context.
+                    rawOpenAtTi = identEndTi;
                 }
             }
         }

@@ -697,6 +697,32 @@ describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
             declaration: 'color:red',
             mediaQuery: '(max-width: 600px)',
         },
+        {
+            name: 'a literal [ and apostrophe in :has-text() before a quoted attribute and :style()',
+            rule: "##div:has-text([It's])[title='x']:style(content:'y')",
+            selector: "div:has-text([It's])[title='x']",
+            declaration: "content:'y'",
+        },
+        {
+            name: 'an unbalanced [ in :has-text() before a quoted attribute and another :has-text()',
+            rule: "##div:has-text([)[title='x']:has-text(It's):style(content:'y')",
+            selector: "div:has-text([)[title='x']:has-text(It's)",
+            declaration: "content:'y'",
+        },
+        {
+            name: 'a literal [ in :matches-path() before a quoted attribute and :style()',
+            rule: "##div:matches-path(/[/)[title='x']:style(content:'y')",
+            selector: "div[title='x']",
+            declaration: "content:'y'",
+            modifierValue: '/[/',
+        },
+        {
+            name: 'a literal [ and apostrophe in :has-text() before :matches-media()',
+            rule: "##div:has-text([It's]):matches-media((min-width: 1px)):style(color:red)",
+            selector: "div:has-text([It's])",
+            declaration: 'color:red',
+            mediaQuery: '(min-width: 1px)',
+        },
     ])('$name parses as a CSS injection rule', ({
         rule,
         selector,

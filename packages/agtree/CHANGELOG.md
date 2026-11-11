@@ -70,6 +70,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   the selector keeps the full attribute value, and only real top-level
   modifiers apply. The same fix covers `:style()`, `:remove()` and
   `:matches-media()` text in double- or single-quoted attribute values.
+  The argument of an extended-CSS pseudo-class (`:has-text()`, `:contains()`,
+  `:matches-path()`, …) is treated as plain text, so a literal `[` or quote
+  inside it is not mistaken for attribute syntax and does not hide a later
+  `:style()`, e.g. `##div:has-text([It's])[title='x']:style(content:'y')`.
   A quoted string in a `:style()` declaration value also no longer creates a
   modifier: such rules used to fail with
   `:remove() cannot be nested inside a pseudo-class`
