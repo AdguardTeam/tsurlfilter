@@ -2921,13 +2921,17 @@ example 10
 <br/>
 <b>MV3 limitations:</b>
 <br/>
-Exceptions are supported for exact conditions and clean domain exclusions;
-path-level subtraction is not expressible in DNR. Exceptions are resolved
-only by the standalone CSP conversion (`convertCspRules()`): the regular
-`convert()` still rejects an allowlist `$csp` rule. Examples with exceptions
-below are converted by that pass, the rest by `convert()`. An `$important`
-blocking rule keeps its policy even against a value-less exception, while
-MV2 cancels it.
+Exceptions are resolved only by the standalone CSP conversion
+(`convertCspRules()`): the regular `convert()` still rejects an allowlist
+`$csp` rule. An exception is applied when it has the exact conditions of the
+blocker, when it is wider than the blocker's domain (`@@||example.org^$csp`
+also cancels `||example.org/path$csp=...` and `||sub.example.org^$csp=...`),
+or when it has no pattern and covers the whole blocker (`@@$csp=...`).
+Path-level subtraction is not expressible in DNR. Any exception applies only when it
+outranks the blocking rule, so an `$important` blocking rule keeps its policy
+against a value-less and against a valued exception, while MV2 cancels it.
+Examples with exceptions below are converted by that pass, the rest by
+`convert()`.
 <br/>
 Rules with the same matching condition and the same policy are combined into
 one, but only within the scope of one static filter or within the scope of all

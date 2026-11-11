@@ -318,6 +318,32 @@ describe('CspRulesResolver.resolve', () => {
         });
     });
 
+    it('rejects the exclusion of an exception whose domain covers the target domains', () => {
+        const rules = createRules(
+            "*$csp=script-src 'none',domain=sub.example.com",
+            '@@||example.com^$csp,domain=sub.example.com',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('rejects the exclusion of an exception for the target domain itself', () => {
+        const rules = createRules(
+            "$csp=script-src 'none',domain=a.com",
+            '@@||a.com^$csp,domain=a.com',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
     it('excludes a domain whose $domain does not overlap the target domains', () => {
         const rules = createRules(
             "*$csp=script-src 'none',domain=example.com",
@@ -826,6 +852,32 @@ describe('CspRulesResolver.resolve', () => {
         const rules = createRules(
             "||example.com^$csp=script-src 'none'",
             '@@*$csp',
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('lets a pattern-less exception cancel a blocker narrowed by $domain', () => {
+        const rules = createRules(
+            "*$csp=script-src 'none',domain=example.com",
+            "@@$csp=script-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('lets a `*`-only exception cancel a third-party blocker', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',third-party",
+            "@@*$csp=script-src 'none'",
         );
 
         expect(CspRulesResolver.resolve(rules)).toEqual({

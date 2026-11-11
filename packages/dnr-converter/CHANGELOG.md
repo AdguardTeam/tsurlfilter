@@ -9,11 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Partial `$csp` exception support for exact conditions and clean domain
-  exclusions, including a standalone CSP conversion API which resolves
-  exceptions across all filters at once. It parses only candidate lines instead
-  of the whole filter list; the regular `convert()` still rejects an allowlist
-  `$csp` rule and owns `$badfilter` lines.
+- Partial `$csp` exception support for exact conditions, exceptions which are
+  wider than the blocker, and clean domain exclusions, including a standalone
+  CSP conversion API which resolves exceptions across all filters at once. It
+  parses only candidate lines instead of the whole filter list; the regular
+  `convert()` still rejects an allowlist `$csp` rule and owns `$badfilter`
+  lines.
 - `TooManyError`, `isCspDeclarativeRule`, `UnexpectedConversionError`,
   `RuleScanError`, `isRuleScanError` and `isUnavailableFilterSourceError` are now
   exported, so an error can be checked with `instanceof`.
@@ -60,21 +61,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lose a part of its condition is rejected and reported instead of matching
   more than written. An exception whose condition cannot be built at all, e.g. a
   domain label punycode cannot encode, is reported the same way instead of
-  failing the whole conversion. An exception with `$domain` does not exclude a
-  domain from a blocker with the additional `main_frame` rule, which matches
-  by the target host, and an exception whose `$domain`, `$to` or `$denyallow`
-  value contains a port is rejected, since a DNR domain list cannot hold one.
+  failing the whole conversion. An exception whose `$domain`, `$to` or
+  `$denyallow` value contains a port is rejected, since a DNR domain list
+  cannot hold one.
 - An exception with a permitted `$domain` against a blocker with the additional
   `main_frame` rule is rejected only when the excluded domain overlaps the
   target domains: `*$csp=x,domain=a.com` + `@@||cdn.example.net^$csp,domain=a.com`
   is resolvable, while an exception for `sub.a.com` stays rejected.
-- `ConversionResult` of the standalone CSP conversion gained
-  `withoutSourceFilters()`, which rebuilds the ruleset without the rules of
-  given source filters, so an unreadable filter can be kept from its own
-  ruleset instead of losing its CSP rules with the shared list.
-- A value-less `$csp` exception does not cancel an `$important` blocking rule,
-  while MV2 cancels it: `$important` keeps its documented priority over
-  exceptions.
+- A `$csp` exception does not cancel a blocking rule with a higher priority, so
+  `$important` wins over a value-less exception
+  (`@@||example.com^$csp` keeps `||example.com^$csp=...,important`) and over a
+  valued one, while MV2 cancels the blocking rule: `$important` keeps its
+  documented priority over exceptions.
 - A filter whose content cannot be read no longer fails the whole conversion:
   the standalone CSP pass skips it and reports an `UnavailableFilterSourceError`.
 - The `$csp` directive is no longer replaced by a following value-bearing

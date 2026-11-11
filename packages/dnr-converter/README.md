@@ -73,15 +73,22 @@ MV3 limitations (inherent to the Declarative Net Request API) are:
 - `$redirect` — allowlist rules not supported
 - `$csp` — exceptions are supported only through `convertCspRules()`, which
   sees all filters at once; the regular `convert()` still rejects an allowlist
-  `$csp` rule. Exceptions are supported for exact conditions and clean domain
-  exclusions; path-level subtraction is not expressible in DNR, and an
-  exception with `$domain` against a blocker that also gets the `main_frame`
-  rule is reported instead of applied, e.g. `@@||a.com^$csp,domain=a.com`
-  with `$csp=...,domain=a.com`. A value-less
-  exception applies only when it outranks the blocking rule, so
-  `@@||example.com^$csp` does not cancel `||example.com^$csp=...,important`;
-  this differs from MV2, where the value-less exception wins, and from what the
-  filtering log shows in MV3
+  `$csp` rule. An exception is applied when it has the exact conditions of the
+  blocker, when it is wider than the blocker's domain (`@@||example.com^$csp=x`
+  also cancels `||example.com/path$csp=x` and `||sub.example.com^$csp=x`), or
+  when it has no pattern and covers the whole blocker (`@@$csp=x` and
+  `@@*$csp=x` cancel `*$csp=x,domain=a.com` and `||a.com^$csp=x,third-party`).
+  Path-level subtraction is not expressible in DNR. An exception with `$domain` against a
+  blocker that also gets the `main_frame` rule is reported instead of applied
+  when the excluded domain overlaps the blocker's `$domain`, e.g.
+  `@@||a.com^$csp,domain=a.com` with `$csp=...,domain=a.com`, while
+  `@@||cdn.example.net^$csp,domain=a.com` against `$csp=...,domain=a.com` is
+  applied. Any exception applies only when it outranks the blocking rule, so
+  `@@||example.com^$csp` does not cancel `||example.com^$csp=...,important`,
+  and `@@||example.com^$csp=script-src 'none'` does not cancel
+  `||example.com^$csp=script-src 'none',important` either; this differs from
+  MV2, where the value-less exception wins, and from what the filtering log
+  shows in MV3
 - `$removeparam`, `$removeheader`, `$permissions` — allowlist rules
   not supported; rules with identical conditions are combined only within the
   same filter, not across filters
@@ -290,6 +297,7 @@ const rulesToDisable = await converter.computeRulesToDisable(
 | `getDeclarativeRules()` | `Promise<DeclarativeRule[]>` | All converted DNR rules (lazy) |
 | `getUnsafeRules()` | `Promise<DeclarativeRule[]>` | Unsafe rules subset (lazy) |
 | `getRulesById(id)` | `Promise<SourceRuleAndFilterId[]>` | Source rules for a DNR rule |
+| `getSourceRuleIndexes(declarativeRuleId)` | `Promise<SourceRuleIdxAndFilterId[]>` | Filter id and source rule index of each source of a DNR rule |
 | `getBadFilterRules()` | `NetworkRule[]` | `$badfilter` rules in this set |
 | `getRulesHashMap()` | `IRulesHashMap` | Hash map for fast `$badfilter` matching |
 | `getMetadataRulesCount()` | `number` | Metadata rules in the ruleset file the rule set was read from (0 if not read from a file) |

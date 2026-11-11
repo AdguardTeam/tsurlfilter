@@ -257,15 +257,9 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
                 [],
             );
 
-            // The mocked log must run the steps it wraps, otherwise
-            // `configure()` stops before applying anything.
-            vi.mocked(declarativeFilteringLog.withUpdateLock).mockImplementation(async (operation) => {
-                await operation();
-            });
-            vi.mocked(declarativeFilteringLog.withStoppedListener).mockImplementation(async (operation) => {
-                await operation();
-            });
-            vi.spyOn(configureBoundaries, 'syncRulesetsWithIdb').mockResolvedValue(undefined);
+            // Reuse the shared boundary setup and override only what this
+            // block asserts, so a new boundary is added in one place.
+            prepareConfigure();
             vi.spyOn(configureBoundaries, 'getFiltersUpdateInfo').mockResolvedValue({
                 staticFilters: [staticFilter],
                 customFilters: [],
@@ -273,9 +267,6 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
                 filtersIdsToDisable: [],
             });
             vi.spyOn(configureBoundaries, 'loadStaticRulesets').mockResolvedValue([staticRuleset]);
-            vi.spyOn(FiltersApi, 'updateFiltering').mockResolvedValue({ errors: [] });
-            vi.spyOn(StealthService, 'applySettings').mockResolvedValue({} as never);
-            vi.spyOn(CspService, 'addCspReportBlockingRule').mockResolvedValue(undefined);
             Object.defineProperty(browser, 'declarativeNetRequest', {
                 configurable: true,
                 value: { getEnabledRulesets: vi.fn().mockResolvedValue([getRulesetId(staticFilter.getId())]) },
