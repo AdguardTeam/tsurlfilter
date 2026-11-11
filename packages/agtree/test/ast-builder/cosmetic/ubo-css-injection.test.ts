@@ -579,9 +579,9 @@ describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
     });
 
     test.each([
-        ['double', '"', 'content: ":remove()"'],
-        ['single', "'", "content: ':matches-path(/x)'"],
-    ])('%s-quoted :style() declaration value is not scanned for modifiers', (_label, _quote, declarations) => {
+        ['double', 'content: ":remove()"'],
+        ['single', "content: ':matches-path(/x)'"],
+    ])('%s-quoted :style() declaration value is not scanned for modifiers', (_label, declarations) => {
         const src = `##div:style(${declarations})`;
         const ast = parser.parse(src, {
             isLocIncluded: true,
@@ -637,7 +637,89 @@ describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
         expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
     });
 
-    test('modifier-like text inside a string in :not() is not a candidate', () => {
+    test.each<{
+        name: string;
+        rule: string;
+        selector: string;
+        declaration: string;
+        modifierValue?: string;
+        mediaQuery?: string;
+    }>([
+        {
+            name: 'a lone apostrophe in :has-text() before a quoted :style() value',
+            rule: "##div:has-text(It's):style(content:'x')",
+            selector: "div:has-text(It's)",
+            declaration: "content:'x'",
+        },
+        {
+            name: 'a lone apostrophe in :has-text() before a quoted url()',
+            rule: "##.banner:has-text(Don't):style(background-image: url('a.png'))",
+            selector: ".banner:has-text(Don't)",
+            declaration: "background-image: url('a.png')",
+        },
+        {
+            name: 'a lone apostrophe in :matches-path() before a quoted :style() value',
+            rule: "##div:matches-path(/can't/):style(content:'x')",
+            selector: 'div',
+            declaration: "content:'x'",
+            modifierValue: "/can't/",
+        },
+        {
+            name: 'a lone apostrophe in :matches-path() before a quoted url()',
+            rule: "##div:matches-path(/can't/):style(background:url('a.png'))",
+            selector: 'div',
+            declaration: "background:url('a.png')",
+            modifierValue: "/can't/",
+        },
+        {
+            name: 'a lone apostrophe and a quoted attribute value before :style()',
+            rule: "##div:has-text(Don't)[title='x']:style(color:red)",
+            selector: "div:has-text(Don't)[title='x']",
+            declaration: 'color:red',
+        },
+        {
+            name: 'a regex apostrophe and a quoted attribute value before :style()',
+            rule: "##.ad:has-text(/it's/)[title='x']:style(color:red)",
+            selector: ".ad:has-text(/it's/)[title='x']",
+            declaration: 'color:red',
+        },
+        {
+            name: 'a lone apostrophe and a quoted attribute value before :matches-media()',
+            rule: "##div:has-text(It's)[title='x']:matches-media((min-width: 1px)):style(color:red)",
+            selector: "div:has-text(It's)[title='x']",
+            declaration: 'color:red',
+            mediaQuery: '(min-width: 1px)',
+        },
+        {
+            name: 'two :has-text() arguments with lone apostrophes around :matches-media()',
+            rule: "##div:has-text(It's):matches-media((max-width: 600px)):has-text(Don't):style(color:red)",
+            selector: "div:has-text(It's):has-text(Don't)",
+            declaration: 'color:red',
+            mediaQuery: '(max-width: 600px)',
+        },
+    ])('$name parses as a CSS injection rule', ({
+        rule,
+        selector,
+        declaration,
+        modifierValue,
+        mediaQuery,
+    }) => {
+        const ast = parser.parse(rule) as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: selector });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: declaration });
+        expect(ast.body.mediaQueryList?.value).toBe(mediaQuery);
+
+        if (modifierValue === undefined) {
+            expect(ast.modifiers).toBeUndefined();
+        } else {
+            expect(ast.modifiers?.children).toHaveLength(1);
+            expect(ast.modifiers?.children[0].value?.value).toBe(modifierValue);
+        }
+    });
+
+    test('modifier-like text inside a string in :not() is not a rule modifier', () => {
         const ast = parser.parse('##div:not([title=":matches-path(/x)"])') as ElementHidingRule;
 
         // No real modifier exists, so the rule stays an element hiding rule.

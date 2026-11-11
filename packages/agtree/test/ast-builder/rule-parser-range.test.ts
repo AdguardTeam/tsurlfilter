@@ -123,6 +123,22 @@ describe('RuleParserPipeline.parseRange — cosmetic rules', () => {
         expect(result.end).toBe(source.length);
     });
 
+    test('uBO modifier detection does not read past the range end', () => {
+        // The string in the :style() value is unterminated within the rule.
+        // A scan bounded by `ctx.tokenCount` instead of `endTi` would treat
+        // the trailing line break as a bad-string terminator, skip the rest
+        // of the body and lose the :style() part.
+        const source = "example.com##div:style(content:'x)\n";
+        const result = parseSubRange(source, 0, source.trimEnd().length, 0);
+
+        expect(result.type).toBe('CssInjectionRule');
+
+        if (result.type === 'CssInjectionRule') {
+            expect(result.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+            expect(result.body.declarationList).toMatchObject({ type: 'Raw', value: "content:'x" });
+        }
+    });
+
     test('parseRange produces correct result with parse() as baseline', () => {
         // Compare parseRange output against parse() output for multiple rules
         const rules = [
