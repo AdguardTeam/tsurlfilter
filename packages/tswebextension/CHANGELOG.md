@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- History API `$removeparam` rules now parse regexp values the same way as
+  network `$removeparam`. A value with an escaped slash, e.g. `/utm_\/(a|b)`,
+  no longer disables all History API `$removeparam` rules on the page.
 - HTML filtering `[tag-content]` values that CoreLibs reads as a regular
   expression, e.g. `/ads/`, now match the literal text (via
   [@adguard/tsurlfilter]): `$$div[tag-content="/ads/"]` no longer matches a

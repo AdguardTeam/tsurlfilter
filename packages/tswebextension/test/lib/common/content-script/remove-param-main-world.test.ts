@@ -7,6 +7,8 @@ import {
     vi,
 } from 'vitest';
 
+import { RemoveParamModifier } from '@adguard/tsurlfilter';
+
 import { patchHistoryForRemoveParam } from '../../../../src/lib/common/content-script/remove-param-main-world';
 import { type RemoveParamDescriptor } from '../../../../src/lib/common/utils/remove-param-rules';
 
@@ -67,7 +69,20 @@ describe('patchHistoryForRemoveParam', () => {
         const createFunction = new Function(`return (${body})`) as () => typeof patchHistoryForRemoveParam;
         const serializedFunction = createFunction();
 
-        expect(() => serializedFunction([], TEST_NONCE, TEST_SECRET)).not.toThrow();
+        // A regexp descriptor makes the serialized body run `parseValue` and
+        // the per-descriptor `catch`. A module-level identifier inside the
+        // parser throws a `ReferenceError` that the catch swallows, so pass a
+        // regexp descriptor and check that the parameter is removed, not only
+        // that the call does not throw: otherwise a broken MV2 build becomes
+        // a silent no-op.
+        expect(() => serializedFunction([descriptor('/^utm_/')], TEST_NONCE, TEST_SECRET)).not.toThrow();
+        mockReplaceState.mockClear();
+        window.history.pushState({}, '', '/page?utm_source=g&safe=1');
+
+        expect(mockReplaceState).toHaveBeenCalled();
+        const calledUrl = mockReplaceState.mock.calls[0][2] as string;
+        expect(calledUrl).toContain('safe=1');
+        expect(calledUrl).not.toContain('utm_source');
     });
 
     it('patches History API even when descriptors are empty', () => {
@@ -173,6 +188,77 @@ describe('patchHistoryForRemoveParam', () => {
         expect(calledUrl).toContain('safe=1');
         expect(calledUrl).not.toContain('utm_source');
         expect(calledUrl).not.toContain('utm_medium');
+    });
+
+    it('parses a regexp literal with an escaped slash and names other params', () => {
+        const descriptors: RemoveParamDescriptor[] = [
+            descriptor('/utm_\\/(a|b)'),
+            descriptor('utm_source', false, 1, 1),
+        ];
+
+        patchHistoryForRemoveParam(descriptors, TEST_NONCE, TEST_SECRET);
+        mockReplaceState.mockClear();
+
+        window.history.pushState({}, '', '/page?utm_/(a)=x&utm_/a=y&utm_source=z&safe=1');
+
+        expect(mockReplaceState).toHaveBeenCalled();
+        const calledUrl = mockReplaceState.mock.calls[0][2] as string;
+        expect(calledUrl).toContain('safe=1');
+        expect(calledUrl).not.toContain('utm_source');
+        // The escaped-slash pattern matches `utm_/a` but not the literal
+        // `utm_/(a)` parameter, so the latter must survive.
+        expect(calledUrl).toContain('utm_/(a)=x');
+        // The regexp matches `utm_/a`, so this parameter is removed.
+        expect(calledUrl).not.toContain('utm_/a');
+    });
+
+    it.each([
+        ['utm_source', '/page?utm_source=g&safe=1'],
+        ['/^utm_/', '/page?utm_source=g&utm_medium=c&safe=1'],
+        ['/utm_/y', '/page?utm_medium=foo&safe=1'],
+        ['/utm_\\/(a|b)', '/page?utm_/a=y&utm_/(a)=x&safe=1'],
+        ['/a\\//', '/page?a/b=1&safe=1'],
+        // The engine keeps only the flags between the first and second
+        // unescaped slashes: `/x/i/` -> `/x/gi`, `/a/g/i` -> `/a/g`.
+        ['/x/i/', '/page?X=1&y=2'],
+        ['/a/g/i', '/page?abc=1&a=2&safe=3'],
+        // A lone `/` is an empty regexp for the engine, so it matches every
+        // parameter. This case must not fall back to a literal pattern.
+        ['/', '/page?a=1&b=2'],
+    ])('matches the engine for the %s removeparam value', (value, url) => {
+        const absoluteUrl = new URL(url, document.baseURI).href;
+        const expected = new RemoveParamModifier(value).removeParameters(absoluteUrl);
+
+        patchHistoryForRemoveParam([descriptor(value)], TEST_NONCE, TEST_SECRET);
+        mockReplaceState.mockClear();
+
+        window.history.pushState({}, '', url);
+
+        const actual = mockReplaceState.mock.calls.length > 0
+            ? mockReplaceState.mock.calls[0][2] as string
+            : window.location.href;
+
+        expect(actual).toBe(expected);
+    });
+
+    it('skips invalid removeparam regexp literals during initial injection', () => {
+        const descriptors: RemoveParamDescriptor[] = [
+            // Invalid pattern: an unterminated group.
+            descriptor('/utm_('),
+            // Invalid flags.
+            descriptor('/utm_/zz'),
+            descriptor('utm_source', false, 1, 2),
+        ];
+
+        expect(() => patchHistoryForRemoveParam(descriptors, TEST_NONCE, TEST_SECRET)).not.toThrow();
+        mockReplaceState.mockClear();
+
+        window.history.pushState({}, '', '/page?utm_source=g&safe=1');
+
+        expect(mockReplaceState).toHaveBeenCalled();
+        const calledUrl = mockReplaceState.mock.calls[0][2] as string;
+        expect(calledUrl).toContain('safe=1');
+        expect(calledUrl).not.toContain('utm_source');
     });
 
     it.each(['g', 'y'])(
@@ -398,6 +484,42 @@ describe('patchHistoryForRemoveParam', () => {
             const calledUrl = mockReplaceState.mock.calls[0][2] as string;
             expect(calledUrl).toContain('q=test');
             expect(calledUrl).not.toContain('utm_source');
+        });
+
+        it('skips invalid descriptors in the updater and applies valid ones', () => {
+            // Navigate to a URL that the updater must clean immediately.
+            window.history.pushState({}, '', '/page?utm_source=g&safe=1');
+            mockReplaceState.mockClear();
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const updater = (window as any)[NONCE];
+            expect(typeof updater).toBe('function');
+
+            const invalidDescriptors: RemoveParamDescriptor[] = [
+                descriptor('/utm_('),
+                descriptor('/utm_/zz'),
+            ];
+
+            // Broken descriptors must not abort the update.
+            expect(() => updater(SECRET, [
+                ...invalidDescriptors,
+                descriptor('utm_source', false, 2, 2),
+            ])).not.toThrow();
+
+            // The valid descriptor is applied to the current URL.
+            expect(mockReplaceState).toHaveBeenCalled();
+            const calledUrl = mockReplaceState.mock.calls[0][2] as string;
+            expect(calledUrl).toContain('safe=1');
+            expect(calledUrl).not.toContain('utm_source');
+
+            // The updater works for later navigations as well.
+            mockReplaceState.mockClear();
+            window.history.pushState({}, '', '/other?utm_source=ad&safe=2');
+
+            expect(mockReplaceState).toHaveBeenCalled();
+            const secondUrl = mockReplaceState.mock.calls[0][2] as string;
+            expect(secondUrl).toContain('safe=2');
+            expect(secondUrl).not.toContain('utm_source');
         });
 
         it('clears descriptors when empty array is received', () => {
