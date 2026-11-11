@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `RegExpUtils.parseCoreLibsRegexArgument()` and
+  `RegExpUtils.isCoreLibsRegexArgument()` are now exported. The first splits
+  the `:contains()` arguments that CoreLibs reads as normal regular
+  expressions; the second also covers the underflow class, e.g. `/ads`.
 - `collectRegexValueRegions()` and the `RegexValueRegion` type are exported
   from `@adguard/agtree/utils`. They locate the `=/…/` regex value regions of
   a network rule, including the replacement part of `$replace`, without
@@ -63,6 +67,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `[tag-content]` values that CoreLibs reads as regular expressions, e.g.
+  `/ads/`, are now escaped when converted to a standalone `:contains()`
+  argument during ADG→ADG conversion, so they still match the literal text.
+  The check mirrors CoreLibs' `:contains()` argument scanner, so values
+  such as `/a++/`, `/a\/`, `///`, and `/ads` are escaped instead of becoming
+  dead or over-broad rules.
 - `RuleParserPipeline.parseRange` now rejects a non-zero `dataOffset` for
   cosmetic rules. Their structural parsers write at fixed offsets, so a
   non-zero offset previously produced a rule with an empty selector and no

@@ -211,6 +211,7 @@ export {
     ADBLOCK_URL_SEPARATOR_REGEX,
     ADBLOCK_WILDCARD,
     ADBLOCK_WILDCARD_REGEX,
+    type RegexLiteralParts,
     SPECIAL_REGEX_SYMBOLS,
     RegExpUtils,
 } from './utils/regexp';
