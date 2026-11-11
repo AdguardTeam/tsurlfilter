@@ -46,6 +46,34 @@ interface BadfilterTarget {
 }
 
 /**
+ * Domains that a `$domain` entry covers in DNR, precomputed for overlap checks.
+ */
+interface DomainScope {
+    /**
+     * Domains that the entry expands to: the entry itself, or every popular TLD
+     * expansion for a wildcard TLD entry.
+     */
+    readonly expansions: readonly string[];
+
+    /**
+     * Set of {@link DomainScope.expansions} for constant-time lookups.
+     */
+    readonly expansionSet: ReadonlySet<string>;
+
+    /**
+     * All label-boundary suffixes of the expansions, including the expansions
+     * themselves.
+     */
+    readonly suffixSet: ReadonlySet<string>;
+
+    /**
+     * The same suffixes as a list, so a scope can be compared with another
+     * expansion set without rebuilding them.
+     */
+    readonly suffixes: readonly string[];
+}
+
+/**
  * Separates the entries of a written modifier list.
  *
  * A separator escaped with a backslash belongs to the value, not to the list.
@@ -484,13 +512,40 @@ export class RuleBadfilter {
             );
         });
 
-        const excludedDomains = badfilterDomains.filter((badfilterDomain) => {
-            const normalizedBadfilter = RuleBadfilter.normalizeForComparison(badfilterDomain);
+        // Build each scope once instead of expanding wildcard entries for every
+        // pair: 100 wildcard entries on each side would otherwise compare
+        // 175x175 expansions per pair.
+        const badfilterScopes = badfilterEntries.map((entry) => (
+            isRegexPattern(entry) ? null : RuleBadfilter.getOverlapScope(entry)
+        ));
+        const permittedScopes = new Map<string, DomainScope>();
+        permittedDomains.forEach((targetDomain) => {
+            const normalizedTarget = RuleBadfilter.normalizeForComparison(targetDomain);
 
-            return permittedDomains.some((targetDomain) => RuleBadfilter.entriesOverlap(
-                normalizedBadfilter,
-                RuleBadfilter.normalizeForComparison(targetDomain),
-            ));
+            if (!isRegexPattern(normalizedTarget)) {
+                permittedScopes.set(normalizedTarget, RuleBadfilter.getOverlapScope(normalizedTarget));
+            }
+        });
+
+        const excludedDomains = badfilterDomains.filter((badfilterDomain, index) => {
+            const normalizedBadfilter = badfilterEntries[index];
+            const badfilterScope = badfilterScopes[index];
+
+            // A regexp entry overlaps only an identically written entry.
+            if (badfilterScope === null) {
+                return permittedDomains.some(
+                    (targetDomain) => RuleBadfilter.normalizeForComparison(targetDomain) === normalizedBadfilter,
+                );
+            }
+
+            return permittedDomains.some((targetDomain) => {
+                const targetScope = permittedScopes.get(
+                    RuleBadfilter.normalizeForComparison(targetDomain),
+                );
+
+                return targetScope !== undefined
+                    && RuleBadfilter.scopesOverlap(badfilterScope, targetScope);
+            });
         });
 
         return {
@@ -578,32 +633,74 @@ export class RuleBadfilter {
     }
 
     /**
-     * Checks whether two `$domain` entries cover at least one common domain.
+     * Builds the overlap scope of a non-regexp `$domain` entry.
      *
-     * Used for exclusions: a badfilter entry that only overlaps a kept target
-     * entry still cancels the target on the overlap, so the kept entry has to
-     * exclude it. A regexp entry overlaps only an identically written entry. A
-     * wildcard TLD entry is expanded with {@link POPULAR_TLDS}, the same list
+     * A wildcard TLD entry is expanded with {@link POPULAR_TLDS}, the same list
      * that `RegularRuleConverter.prepareDeclarativeDomains` uses for the
-     * declarative condition.
+     * declarative condition. The entry is expanded once, and the expansions,
+     * their set and all their label-boundary suffixes are reused for every
+     * comparison in the same narrowing pass.
      *
-     * @param first First domain entry.
-     * @param second Second domain entry.
+     * @param entry Normalized domain entry.
      *
-     * @returns True when the two entries cover a common domain.
+     * @returns Domains that the entry covers and their suffix sets.
      */
-    private static entriesOverlap(first: string, second: string): boolean {
-        if (isRegexPattern(first) || isRegexPattern(second)) {
-            return first === second;
+    private static getOverlapScope(entry: string): DomainScope {
+        const expansions = RuleBadfilter.expandWildcardTld(entry);
+        const suffixes: string[] = [];
+
+        expansions.forEach((domain) => {
+            suffixes.push(...RuleBadfilter.getDomainSuffixes(domain));
+        });
+
+        return {
+            expansions,
+            expansionSet: new Set(expansions),
+            suffixSet: new Set(suffixes),
+            suffixes,
+        };
+    }
+
+    /**
+     * Returns the domain itself and every parent domain at a label boundary.
+     *
+     * @param domain Domain name.
+     *
+     * @returns Suffix domains of `domain`.
+     */
+    private static getDomainSuffixes(domain: string): string[] {
+        const suffixes: string[] = [];
+        let current = domain;
+
+        while (true) {
+            suffixes.push(current);
+
+            const separator = current.indexOf('.');
+            if (separator === -1) {
+                break;
+            }
+
+            current = current.slice(separator + 1);
         }
 
-        const firstDomains = RuleBadfilter.expandWildcardTld(first);
-        const secondDomains = RuleBadfilter.expandWildcardTld(second);
+        return suffixes;
+    }
 
-        return firstDomains.some((firstDomain) => secondDomains.some(
-            (secondDomain) => RuleBadfilter.isEntryUnder(firstDomain, secondDomain)
-                || RuleBadfilter.isEntryUnder(secondDomain, firstDomain),
-        ));
+    /**
+     * Checks whether two precomputed scopes cover at least one common domain.
+     *
+     * A first expansion that is a suffix of a second expansion means that the
+     * first domain is under the second one; the reverse direction checks the
+     * suffixes of the first scope against the second expansion set.
+     *
+     * @param first First scope.
+     * @param second Second scope.
+     *
+     * @returns True when the scopes overlap.
+     */
+    private static scopesOverlap(first: DomainScope, second: DomainScope): boolean {
+        return first.expansions.some((domain) => second.suffixSet.has(domain))
+            || first.suffixes.some((suffix) => second.expansionSet.has(suffix));
     }
 
     /**
