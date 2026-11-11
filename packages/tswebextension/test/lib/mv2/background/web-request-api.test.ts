@@ -7,13 +7,19 @@ import {
 } from 'vitest';
 import { type WebNavigation } from 'webextension-polyfill';
 
+import { HTTPMethod } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../../../src/lib/common/constants';
 import { DocumentLifecycle } from '../../../../src/lib/common/interfaces';
+import { ContentType } from '../../../../src/lib/common/request-type';
 import { canvasInjection, engineApi, tabsApi } from '../../../../src/lib/mv2/background/api';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
-import { type RequestContext } from '../../../../src/lib/mv2/background/request/request-context-storage';
+import { type OnBeforeRequestDetailsType } from '../../../../src/lib/mv2/background/request/events/request-events';
+import {
+    type RequestContext,
+    RequestContextState,
+} from '../../../../src/lib/mv2/background/request/request-context-storage';
 import { WebRequestApi } from '../../../../src/lib/mv2/background/web-request-api';
 
 vi.mock('../../../../src/lib/mv2/background/api');
@@ -27,6 +33,41 @@ describe('web request api', () => {
     it('stop', () => {
         WebRequestApi.stop();
         expect(true).toBe(true);
+    });
+
+    describe('onBeforeRequest', () => {
+        it('marks a replaced document context as awaiting its commit', () => {
+            const context = {
+                requestType: RequestType.Document,
+                tabId: 1,
+                frameId: MAIN_FRAME_ID,
+                requestUrl: 'https://example.com/file.zip',
+                referrerUrl: 'https://example.com/',
+                eventId: 'event-id',
+                requestId: 'request-id',
+                state: RequestContextState.BeforeRequest,
+                contentType: ContentType.Document,
+                timestamp: Date.now(),
+                thirdParty: false,
+                method: HTTPMethod.GET,
+                requestFrameId: MAIN_FRAME_ID,
+            } as RequestContext;
+
+            const details = {
+                parentFrameId: NO_PARENT_FRAME_ID,
+                documentId: 'document-id',
+                documentLifecycle: DocumentLifecycle.Active,
+            } as OnBeforeRequestDetailsType;
+
+            // @ts-ignore - accessing private method for testing
+            WebRequestApi.onBeforeRequest({ context, details });
+
+            expect(tabsApi.setFrameContext).toHaveBeenCalledWith(
+                1,
+                MAIN_FRAME_ID,
+                expect.objectContaining({ extCssAwaitingCommit: true }),
+            );
+        });
     });
 
     describe('onBeforeNavigate', () => {
