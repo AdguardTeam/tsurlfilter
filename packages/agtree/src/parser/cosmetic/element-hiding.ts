@@ -59,6 +59,46 @@ function skipPseudoName(types: Uint8Array, startTi: number, limit: number): numb
 }
 
 /**
+ * Length of a CSS string that starts at `ti`, or `0` when `ti` is not an
+ * opening quote, `allowString` is `false`, or the string is unterminated.
+ *
+ * A quote is a CSS string delimiter only inside `[...]` or in a `:style()`
+ * value. In an extended-CSS argument such as `:has-text(It's)` or
+ * `:matches-path(/can't/)` it is plain text, so the caller decides whether a
+ * string may start at `ti`. An unterminated quote is a plain token, matching
+ * the behavior before string skipping.
+ *
+ * @param types Token type array.
+ * @param ti Token index to check.
+ * @param endTi Exclusive upper bound.
+ * @param allowString Whether a CSS string may start at `ti`.
+ *
+ * @returns Span length in tokens, or `0` if no terminated string starts here.
+ */
+function cssStringSpanLength(
+    types: Uint8Array,
+    ti: number,
+    endTi: number,
+    allowString: boolean,
+): number {
+    if (!allowString) {
+        return 0;
+    }
+
+    const t = types[ti];
+    if (t !== TokenType.Quote && t !== TokenType.Apostrophe) {
+        return 0;
+    }
+
+    const spanLength = cssStringLength(types, ti, endTi);
+    if (isCssStringUnterminated(types, ti, spanLength)) {
+        return 0;
+    }
+
+    return spanLength;
+}
+
+/**
  * Options accepted by {@link ElementHidingParser.parse}.
  */
 export interface ElementHidingParserOptions {
@@ -195,8 +235,9 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
      * Colon + Ident + OpenParen pattern outside quoted CSS strings where the
      * ident matches a known uBO modifier name.
      *
-     * Terminated `Quote`/`Apostrophe` spans are skipped, so modifier-like
-     * text inside a CSS string is not a candidate. `Escaped` tokens do not
+     * A quote is a CSS string delimiter only inside `[...]`, so only strings
+     * there are skipped. In an extended-CSS argument a quote is plain text,
+     * and skipping it would hide real modifiers. `Escaped` tokens do not
      * close a string. An unterminated quote (for example, a lone quote in a
      * regex or procedural argument) is a plain token.
      *
@@ -214,18 +255,23 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
         endTi: number,
     ): boolean {
         const { types, ends, source } = ctx;
+        let bracketDepth = 0;
 
         for (let ti = startTi; ti < endTi - 1; ti += 1) {
             const t = types[ti];
 
-            // Skip a terminated CSS string span: modifier-like text inside a
-            // string is not a rule modifier. A lone quote is a plain token.
-            if (t === TokenType.Quote || t === TokenType.Apostrophe) {
-                const stringLength = cssStringLength(types, ti, endTi);
-                if (!isCssStringUnterminated(types, ti, stringLength)) {
-                    ti += stringLength - 1;
-                    continue;
-                }
+            // Skip a terminated CSS string span inside `[...]`: modifier-like
+            // text inside a string is not a rule modifier.
+            const stringLength = cssStringSpanLength(types, ti, endTi, bracketDepth > 0);
+            if (stringLength > 0) {
+                ti += stringLength - 1;
+                continue;
+            }
+
+            if (t === TokenType.OpenSquare) {
+                bracketDepth += 1;
+            } else if (t === TokenType.CloseSquare && bracketDepth > 0) {
+                bracketDepth -= 1;
             }
 
             if (t !== TokenType.Colon) {
@@ -253,16 +299,26 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
             // Also check for :not( wrapping :matches-path() or :matches-media()
             if (regionEquals(source, identStart, identEnd, 'not')) {
                 // Look ahead inside :not() for a uBO modifier candidate.
-                // Skip terminated CSS strings here as well.
+                // Skip terminated CSS strings inside `[...]` here as well.
+                let innerBracketDepth = 0;
                 for (let j = identEndTi + 1; j < endTi; j += 1) {
                     const jt = types[j];
 
-                    if (jt === TokenType.Quote || jt === TokenType.Apostrophe) {
-                        const stringLength = cssStringLength(types, j, endTi);
-                        if (!isCssStringUnterminated(types, j, stringLength)) {
-                            j += stringLength - 1;
-                            continue;
-                        }
+                    const innerStringLength = cssStringSpanLength(
+                        types,
+                        j,
+                        endTi,
+                        innerBracketDepth > 0,
+                    );
+                    if (innerStringLength > 0) {
+                        j += innerStringLength - 1;
+                        continue;
+                    }
+
+                    if (jt === TokenType.OpenSquare) {
+                        innerBracketDepth += 1;
+                    } else if (jt === TokenType.CloseSquare && innerBracketDepth > 0) {
+                        innerBracketDepth -= 1;
                     }
 
                     if (jt === TokenType.Colon) {
@@ -306,6 +362,7 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
 
         // Local scalar state — no allocations
         let depth = 0;
+        let bracketDepth = 0;
         let seenMask = 0;
         let uboModCount = 0;
 
@@ -333,14 +390,30 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
 
             // Skip a terminated CSS string span so that modifier-like text
             // and parentheses inside it do not affect the scan or the depth.
-            // An unterminated quote (for example, in a regex value) is a
-            // plain token, matching the behavior before string skipping.
-            if (t === TokenType.Quote || t === TokenType.Apostrophe) {
-                const stringLength = cssStringLength(types, ti, endTi);
-                if (!isCssStringUnterminated(types, ti, stringLength)) {
-                    ti += stringLength - 1;
-                    continue;
+            // A quote is a CSS string delimiter only inside `[...]` or in a
+            // `:style()` value; in an extended-CSS argument it is plain text.
+            const insideStyleValue = curModOpen && curModBit === UBO_MOD_BIT_STYLE;
+            const stringLength = cssStringSpanLength(
+                types,
+                ti,
+                endTi,
+                bracketDepth > 0 || insideStyleValue,
+            );
+            if (stringLength > 0) {
+                ti += stringLength - 1;
+                continue;
+            }
+
+            if (t === TokenType.OpenSquare) {
+                bracketDepth += 1;
+                continue;
+            }
+
+            if (t === TokenType.CloseSquare) {
+                if (bracketDepth > 0) {
+                    bracketDepth -= 1;
                 }
+                continue;
             }
 
             if (t === TokenType.OpenParen) {
