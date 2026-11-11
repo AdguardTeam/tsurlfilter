@@ -161,6 +161,7 @@ describe('extcss-code serializer', () => {
             instanceKey: '__customExtCss',
             engineKey: EXTCSS_PROTOCOL.engineKey,
             engineVersion: EXTCSS_PROTOCOL.engineVersion,
+            applyErrors: EXTCSS_PROTOCOL.applyErrors,
         } as unknown as ExtCssProtocol;
         const rules = ['.ad:has(.child) { display: none !important; }'];
         const code = serializeExtCssForCode(rules, false, protocol);

@@ -38,6 +38,37 @@ export const EXTCSS_ENGINE_KEY = '__adguardExtCssEngine' as const;
 export const EXTCSS_ENGINE_VERSION: string = packageJson.version;
 
 /**
+ * Engine guard failures reported by the injected apply function.
+ */
+export enum ExtCssApplyError {
+    /**
+     * The engine asset did not install its global object.
+     */
+    EngineNotLoaded = 'engine-not-loaded',
+
+    /**
+     * The installed engine asset has another package version.
+     */
+    EngineVersionMismatch = 'engine-version-mismatch',
+}
+
+/**
+ * Failure returned by the injected apply function. A successful apply returns
+ * `undefined`; other apply errors keep their existing exception behavior.
+ */
+export type ExtCssApplyResult = {
+    /**
+     * Engine guard failure code.
+     */
+    error: ExtCssApplyError;
+
+    /**
+     * Error message for the background to throw and log.
+     */
+    message: string;
+};
+
+/**
  * Engine payload installed by the prebuilt `extcss-inject.js` script asset and
  * read by the injected apply function from the document's ISOLATED world.
  */
@@ -127,6 +158,23 @@ export type ExtCssProtocol = {
      * instead of running an older engine.
      */
     engineVersion: string;
+
+    /**
+     * Failure codes returned by the injected function. They arrive through the
+     * serialized protocol so the self-contained function does not duplicate
+     * protocol literals.
+     */
+    applyErrors: {
+        /**
+         * Missing engine failure code.
+         */
+        engineNotLoaded: ExtCssApplyError.EngineNotLoaded;
+
+        /**
+         * Engine version mismatch failure code.
+         */
+        engineVersionMismatch: ExtCssApplyError.EngineVersionMismatch;
+    };
 };
 
 /**
@@ -148,4 +196,8 @@ export const EXTCSS_PROTOCOL: ExtCssProtocol = {
     removedElementsKey: EXTCSS_REMOVED_ELEMENTS_KEY,
     engineKey: EXTCSS_ENGINE_KEY,
     engineVersion: EXTCSS_ENGINE_VERSION,
+    applyErrors: {
+        engineNotLoaded: ExtCssApplyError.EngineNotLoaded,
+        engineVersionMismatch: ExtCssApplyError.EngineVersionMismatch,
+    },
 };

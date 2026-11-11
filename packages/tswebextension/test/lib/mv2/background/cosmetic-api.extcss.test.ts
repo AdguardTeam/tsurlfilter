@@ -7,7 +7,7 @@ import {
     vi,
 } from 'vitest';
 
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
+import { EXTCSS_PROTOCOL, type ExtCssApplyResult } from '../../../../src/lib/common/extcss-protocol';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { tabsApi } from '../../../../src/lib/mv2/background/api';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
@@ -104,7 +104,7 @@ describe('CosmeticApi.applyExtCss', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         vi.mocked(tabsApi.getFrameContext).mockReset();
-        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue();
+        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
         vi.spyOn(TabsApi, 'injectScriptFile').mockResolvedValue();
     });
 
@@ -400,7 +400,30 @@ describe('CosmeticApi.applyExtCss', () => {
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
         vi.mocked(TabsApi.injectScript)
             .mockRejectedValueOnce(new Error('Missing host permission'))
-            .mockResolvedValueOnce();
+            .mockResolvedValueOnce(undefined);
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        expect(frameContext.extCssAppliedData).toBeUndefined();
+
+        await vi.advanceTimersByTimeAsync(10);
+
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
+        expect(frameContext.extCssAppliedData).toEqual(makeAppliedData(rules));
+    });
+
+    it('retries a resolved engine guard failure and records only the successful apply', async () => {
+        vi.useFakeTimers();
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        vi.mocked(TabsApi.injectScript)
+            .mockResolvedValueOnce({
+                error: 'engine-not-loaded' as ExtCssApplyResult['error'],
+                message: 'ExtendedCss engine is not loaded',
+            })
+            .mockResolvedValueOnce(undefined);
 
         await CosmeticApi.applyExtCss(1, 0);
 

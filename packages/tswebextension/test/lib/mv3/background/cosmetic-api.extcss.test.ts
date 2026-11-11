@@ -4,6 +4,7 @@ import {
     describe,
     expect,
     it,
+    type Mock,
     vi,
 } from 'vitest';
 
@@ -221,6 +222,34 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
         expect(infoSpy).toHaveBeenCalledWith(
             expect.stringContaining(expectedMessage),
             injectionError,
+        );
+    });
+
+    it('logs an engine guard failure returned by a resolved Chromium injection', async () => {
+        const rules = ['div:has(.ad) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
+        vi.mocked(ScriptingApi.executeExtCss).mockRestore();
+        const executeScript = vi.mocked(chrome.scripting.executeScript) as unknown as Mock;
+        const message = 'ExtendedCss engine is not loaded';
+        executeScript
+            .mockReset()
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([{
+                result: {
+                    error: 'engine-not-loaded',
+                    message,
+                },
+            }]);
+        const infoSpy = vi.spyOn(logger, 'info');
+
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        await vi.waitFor(() => {
+            expect(infoSpy).toHaveBeenCalledTimes(1);
+        });
+        expect(infoSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[tsweb.CosmeticApi.applyExtCssRules]'),
+            expect.objectContaining({ message }),
         );
     });
 });

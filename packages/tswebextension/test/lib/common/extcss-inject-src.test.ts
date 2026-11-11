@@ -103,4 +103,13 @@ describe('extcss-inject-src entry point', () => {
         expect(mocked.init).toBe(initSpy);
         expect(mocked.apply).toBe(applySpy);
     });
+
+    it('preserves errors from the ExtendedCss apply operation', () => {
+        const error = new Error('apply failed');
+        applySpy.mockImplementationOnce(() => {
+            throw error;
+        });
+
+        expect(() => applyExtendedCss(['.ad { display: none !important; }'])).toThrow(error);
+    });
 });

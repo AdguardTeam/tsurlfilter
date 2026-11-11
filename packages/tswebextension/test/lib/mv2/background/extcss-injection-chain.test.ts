@@ -14,7 +14,7 @@ import {
 // goes into the document before the rule strings.
 import '../../../../src/lib/common/extcss-engine';
 
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
+import { EXTCSS_PROTOCOL, type ExtCssApplyResult } from '../../../../src/lib/common/extcss-protocol';
 import { tabsApi } from '../../../../src/lib/mv2/background/api';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { serializeExtCssForCode } from '../../../../src/lib/mv2/background/extcss-code';
@@ -71,11 +71,13 @@ describe('MV2 ExtCSS injection chain', () => {
     beforeEach(() => {
         vi.mocked(tabsApi.getFrameContext).mockReset();
         browser.tabs.executeScript.resetHistory();
+        browser.tabs.executeScript.resetBehavior();
         document.body.innerHTML = '';
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
+        browser.tabs.executeScript.resetBehavior();
         document.body.innerHTML = '';
     });
 
@@ -113,5 +115,21 @@ describe('MV2 ExtCSS injection chain', () => {
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
         expect(ad.style.getPropertyPriority('display')).toBe('important');
+    });
+
+    it('does not record an apply when Chromium resolves with an engine guard failure', async () => {
+        const frameContext = makeFrameContext();
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        browser.tabs.executeScript.onFirstCall().returns(Promise.resolve([]));
+        browser.tabs.executeScript.onSecondCall().returns(Promise.resolve([{
+            error: 'engine-version-mismatch' as ExtCssApplyResult['error'],
+            message: 'ExtendedCss engine version mismatch',
+        }]));
+
+        // Exhaust the retry budget so this test checks the final frame state.
+        await CosmeticApi.applyExtCss(1, 0, 100);
+
+        expect(browser.tabs.executeScript.callCount).toBe(2);
+        expect(frameContext.extCssAppliedData).toBeUndefined();
     });
 });

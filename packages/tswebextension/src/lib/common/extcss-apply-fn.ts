@@ -1,7 +1,7 @@
 import { type ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
 
 import { type ExtendedCssHit } from './content-script/utils/css-hits-helpers';
-import { type ExtCssProtocol } from './extcss-protocol';
+import { type ExtCssApplyResult, type ExtCssProtocol } from './extcss-protocol';
 
 /**
  * Self-contained ExtendedCSS apply function shared by MV2 and MV3.
@@ -37,16 +37,19 @@ import { type ExtCssProtocol } from './extcss-protocol';
  * required argument (not a module-scope default) so the serialized body has
  * zero free identifiers.
  *
- * @throws Error when the ExtendedCss engine asset was not injected into the
- * document first or was built by another package version, and the error that
- * made the new apply fail, after the previous rule strings have been
- * re-applied so the page stays protected.
+ * @returns `undefined` on success, or an explicit failure when the engine is
+ * missing or has another version. Returning the guard failures lets the
+ * background observe them even when the browser resolves `executeScript`
+ * after an in-page exception.
+ *
+ * @throws The error that made the new apply fail, after the previous rule
+ * strings have been re-applied so the page stays protected.
  */
 export const extCssInjectedApply = (
     cssRules: string[],
     collectStats: boolean,
     protocol: ExtCssProtocol,
-): void => {
+): ExtCssApplyResult | undefined => {
     /**
      * Retained ExtendedCss instance together with the rule strings it was
      * built from and the per-node hits dedupe state. The rule strings are kept
@@ -83,7 +86,7 @@ export const extCssInjectedApply = (
         && previousRules.length === cssRules.length
         && previousRules.every((rule, index) => rule === cssRules[index])
     ) {
-        return;
+        return undefined;
     }
 
     /**
@@ -92,23 +95,30 @@ export const extCssInjectedApply = (
      * asset could not be loaded — or the document navigated between the two
      * injections, in which case this document never received it. Applying the
      * rules is impossible in both cases, and applying stale rules must not
-     * happen, so the call fails loudly instead.
+     * happen, so the call reports the failure to the background instead.
      */
     const engine = window[protocol.engineKey];
 
     if (!engine) {
-        throw new Error('ExtendedCss engine is not loaded: inject the extcss script asset first');
+        return {
+            error: protocol.applyErrors.engineNotLoaded,
+            message: 'ExtendedCss engine is not loaded: inject the extcss script asset first',
+        };
     }
 
     // A stale copy of the asset — one shipped by another package version —
-    // would run an older engine next to the current background code. Fail
-    // loudly instead, so the mismatch is diagnosable instead of silent.
+    // would run an older engine next to the current background code. Report it
+    // to the background instead, so the mismatch is diagnosable instead of
+    // silent.
     if (engine.version !== protocol.engineVersion) {
         const mismatch = `ExtendedCss engine version mismatch: asset ${engine.version}, `
             + `expected ${protocol.engineVersion}; `
             + 'ship the asset from the same package version';
 
-        throw new Error(mismatch);
+        return {
+            error: protocol.applyErrors.engineVersionMismatch,
+            message: mismatch,
+        };
     }
 
     // The CSS-hits helpers — the SAME source used by MV2's `ElementUtils` and
@@ -277,6 +287,8 @@ export const extCssInjectedApply = (
         }
         throw e;
     }
+
+    return undefined;
 };
 
 /**

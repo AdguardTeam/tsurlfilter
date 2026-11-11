@@ -26,11 +26,13 @@ const getRetainedInstance = (): unknown => (window as unknown as Record<string, 
  * `tabs.executeScript({ code })` parser does.
  *
  * @param code Code string to evaluate.
+ *
+ * @returns The apply result returned by the evaluated expression.
  */
-const evaluateCode = (code: string): void => {
-    // Deliberate eval: the test verifies the string the extension injects.
-    // eslint-disable-next-line no-new-func, @typescript-eslint/no-implied-eval
-    new Function(code)();
+const evaluateCode = (code: string): unknown => {
+    // Deliberate indirect eval: match executeScript completion-value semantics.
+    // eslint-disable-next-line no-eval
+    return (0, eval)(code);
 };
 
 describe('MV2 ExtCSS code string in Firefox', () => {
@@ -109,17 +111,22 @@ describe('MV2 ExtCSS code string in Firefox', () => {
         expect(getRetainedInstance()).toBeNull();
     });
 
-    it('fails instead of applying when the engine asset was not loaded', () => {
+    it('reports a failure instead of applying when the engine asset was not loaded', () => {
         document.body.innerHTML = '<div class="ad"><span class="child"></span></div>';
         const engine = window[EXTCSS_PROTOCOL.engineKey];
         delete window[EXTCSS_PROTOCOL.engineKey];
 
         try {
-            expect(() => evaluateCode(serializeExtCssForCode(
+            const result = evaluateCode(serializeExtCssForCode(
                 ['.ad:has(.child) { display: none !important; }'],
                 false,
                 EXTCSS_PROTOCOL,
-            ))).toThrow(/ExtendedCss engine is not loaded/);
+            ));
+
+            expect(result).toEqual({
+                error: EXTCSS_PROTOCOL.applyErrors.engineNotLoaded,
+                message: expect.stringContaining('ExtendedCss engine is not loaded'),
+            });
 
             const ad = document.querySelector('.ad') as HTMLElement;
             expect(getComputedStyle(ad).display).toBe('block');

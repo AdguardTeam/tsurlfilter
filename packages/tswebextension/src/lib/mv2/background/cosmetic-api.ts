@@ -2,7 +2,7 @@ import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
 import { USER_FILTER_ID } from '../../common/constants';
 import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParams } from '../../common/cosmetic-api';
-import { EXTCSS_PROTOCOL } from '../../common/extcss-protocol';
+import { EXTCSS_PROTOCOL, type ExtCssApplyResult } from '../../common/extcss-protocol';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { CssCapabilities } from '../../common/utils/css-capabilities';
 import { logger } from '../../common/utils/logger';
@@ -534,7 +534,13 @@ export class CosmeticApi extends CosmeticApiCommon {
         const inject = extCssScriptUrl
             ? async (): Promise<void> => {
                 await TabsApi.injectScriptFile(tabId, frameId, extCssScriptUrl);
-                await TabsApi.injectScript(tabId, frameId, code);
+                const result = await TabsApi.injectScript<ExtCssApplyResult | undefined>(tabId, frameId, code);
+
+                // Chromium resolves executeScript after an in-page exception,
+                // so only the explicit engine guard result reaches this path.
+                if (result) {
+                    throw new Error(result.message);
+                }
             }
             : (): Promise<void> => TabsApi.injectScript(tabId, frameId, code);
 
@@ -654,7 +660,11 @@ export class CosmeticApi extends CosmeticApiCommon {
         await CosmeticApi.injectWithRetry(
             async () => {
                 await TabsApi.injectScriptFile(tabId, frameId, extCssScriptUrl);
-                await TabsApi.injectScript(tabId, frameId, code);
+                const result = await TabsApi.injectScript<ExtCssApplyResult | undefined>(tabId, frameId, code);
+
+                if (result) {
+                    throw new Error(result.message);
+                }
             },
             () => {
                 CosmeticApi.injectExtCssWithoutContext(

@@ -498,6 +498,7 @@ describe('extCssInjectedApply — CSS hits stats', () => {
             // can apply.
             engineKey: EXTCSS_PROTOCOL.engineKey,
             engineVersion: EXTCSS_PROTOCOL.engineVersion,
+            applyErrors: EXTCSS_PROTOCOL.applyErrors,
         } as unknown as ExtCssProtocol;
         const customMarkerRule = '.ad:has(.child) { display: none !important; '
             + 'content: \'custommarker1%3B2\' !important; }';
@@ -641,17 +642,22 @@ describe('extCssInjectedApply — prebuilt engine asset', () => {
         expect(ad.style.getPropertyValue('display')).toBe('none');
     });
 
-    it('throws instead of applying when the engine asset was not injected', () => {
+    it('reports a failure instead of applying when the engine asset was not injected', () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
         const engine = window[EXTCSS_PROTOCOL.engineKey];
         delete window[EXTCSS_PROTOCOL.engineKey];
 
         try {
-            expect(() => createSerializedApply()(
+            const result = createSerializedApply()(
                 ['.ad:has(.child) { display: none !important; }'],
                 false,
                 EXTCSS_PROTOCOL,
-            )).toThrow(/ExtendedCss engine is not loaded/);
+            );
+
+            expect(result).toEqual({
+                error: EXTCSS_PROTOCOL.applyErrors.engineNotLoaded,
+                message: expect.stringContaining('ExtendedCss engine is not loaded'),
+            });
 
             const ad = document.querySelector('.ad') as HTMLElement;
             expect(ad.style.getPropertyValue('display')).toBe('');
@@ -660,7 +666,7 @@ describe('extCssInjectedApply — prebuilt engine asset', () => {
         }
     });
 
-    it('throws instead of applying when the engine asset has another version', () => {
+    it('reports a failure instead of applying when the engine asset has another version', () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
         const engine = window[EXTCSS_PROTOCOL.engineKey];
 
@@ -672,11 +678,16 @@ describe('extCssInjectedApply — prebuilt engine asset', () => {
         window[EXTCSS_PROTOCOL.engineKey] = { ...engine, version: '0.0.0-other' };
 
         try {
-            expect(() => createSerializedApply()(
+            const result = createSerializedApply()(
                 ['.ad:has(.child) { display: none !important; }'],
                 false,
                 EXTCSS_PROTOCOL,
-            )).toThrow(/ExtendedCss engine version mismatch/);
+            );
+
+            expect(result).toEqual({
+                error: EXTCSS_PROTOCOL.applyErrors.engineVersionMismatch,
+                message: expect.stringContaining('ExtendedCss engine version mismatch'),
+            });
 
             const ad = document.querySelector('.ad') as HTMLElement;
             expect(ad.style.getPropertyValue('display')).toBe('');

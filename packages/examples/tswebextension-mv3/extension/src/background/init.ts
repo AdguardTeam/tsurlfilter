@@ -15,8 +15,18 @@ const loadAndPersistConfig = async (): Promise<void> => {
     }
 
     const saved = await storage.get<Configuration>(StorageKeys.Config);
+    const defaults = loadDefaultConfig();
 
-    appState.config = saved ?? loadDefaultConfig();
+    appState.config = saved
+        ? {
+            ...defaults,
+            ...saved,
+            settings: {
+                ...defaults.settings,
+                ...saved.settings,
+            },
+        }
+        : defaults;
 
     if (!saved) {
         await storage.set(StorageKeys.Config, appState.config);

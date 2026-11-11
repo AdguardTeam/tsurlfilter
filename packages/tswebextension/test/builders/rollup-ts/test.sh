@@ -93,6 +93,7 @@ if ! grep -q "$extcss_version" "$extcss_asset"; then
     echo "Testing bundling with rollup-ts ended with error"
     exit 1
 fi
+node check-extcss-asset.mjs "$extcss_asset" "$extcss_version"
 extcss_size=$(wc -c < "$extcss_asset" | tr -d ' ')
 if [ "$extcss_size" -gt $max_extcss_size ]; then
     echo "Shipped ExtendedCss script asset is more than $max_extcss_size bytes with size $extcss_size"

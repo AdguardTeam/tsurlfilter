@@ -345,13 +345,21 @@ export class ScriptingApi {
             world: 'ISOLATED',
         });
 
-        await chrome.scripting.executeScript({
+        const injectionResults = await chrome.scripting.executeScript({
             target: ScriptingApi.buildExtCssTarget({ tabId, frameId, documentId }),
             func: extCssInjectedApply,
             args: [cssRules, collectStats, EXTCSS_PROTOCOL],
             injectImmediately: true,
             world: 'ISOLATED',
         });
+
+        // Chromium resolves executeScript when the injected function throws,
+        // so the engine guards return an explicit failure instead. Other apply
+        // errors retain their previous null-result behavior.
+        const applyResult = injectionResults?.[0]?.result;
+        if (applyResult) {
+            throw new Error(applyResult.message);
+        }
     }
 
     /**

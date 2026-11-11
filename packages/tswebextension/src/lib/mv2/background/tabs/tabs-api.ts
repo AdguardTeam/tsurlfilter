@@ -126,9 +126,11 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
      * @param frameId Frame ID.
      * @param code Script text to be injected.
      *
+     * @returns Result of the injected code's last expression.
+     *
      * @throws Error if the script injection fails.
      */
-    public static async injectScript(tabId: number, frameId: number, code: string): Promise<void> {
+    public static async injectScript<T = void>(tabId: number, frameId: number, code: string): Promise<T> {
         const injectDetails: ExtensionTypes.InjectDetails = {
             code,
             frameId,
@@ -136,7 +138,9 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
             matchAboutBlank: true,
         };
 
-        await browser.tabs.executeScript(tabId, injectDetails);
+        const results = await browser.tabs.executeScript(tabId, injectDetails);
+
+        return results?.[0] as T;
     }
 
     /**

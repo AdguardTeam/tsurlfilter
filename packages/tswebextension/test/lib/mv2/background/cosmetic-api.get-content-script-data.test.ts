@@ -94,7 +94,7 @@ describe('CosmeticApi.getContentScriptData', () => {
         const rules = ['.ad:has(.child) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
         vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
-        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue();
+        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
 
         CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
 
@@ -116,7 +116,7 @@ describe('CosmeticApi.getContentScriptData', () => {
         vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
         const injectSpy = vi.spyOn(TabsApi, 'injectScript')
             .mockRejectedValueOnce(new Error('Missing host permission'))
-            .mockResolvedValueOnce();
+            .mockResolvedValueOnce(undefined);
 
         CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
 
@@ -152,7 +152,7 @@ describe('CosmeticApi.getContentScriptData', () => {
         appContext.isAppStarted = false;
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
         vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
-        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue();
+        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
 
         CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
 

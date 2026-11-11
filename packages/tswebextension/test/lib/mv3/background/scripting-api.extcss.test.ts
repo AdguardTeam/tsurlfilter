@@ -3,6 +3,7 @@ import {
     describe,
     expect,
     it,
+    type Mock,
     vi,
 } from 'vitest';
 
@@ -90,6 +91,32 @@ describe('ScriptingApi.executeExtCss', () => {
         })).rejects.toThrow('Cannot load script');
 
         expect(chrome.scripting.executeScript).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        {
+            name: 'missing engine',
+            error: 'engine-not-loaded',
+            message: 'ExtendedCss engine is not loaded',
+        },
+        {
+            name: 'engine version mismatch',
+            error: 'engine-version-mismatch',
+            message: 'ExtendedCss engine version mismatch',
+        },
+    ])('throws when Chromium resolves the apply call with a $name failure', async ({ error, message }) => {
+        const executeScript = vi.mocked(chrome.scripting.executeScript) as unknown as Mock;
+        executeScript
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([{ result: { error, message } }]);
+
+        await expect(ScriptingApi.executeExtCss({
+            tabId: 1,
+            frameId: 0,
+            cssRules: ['div:has(.ad) { display: none !important; }'],
+            collectStats: false,
+            scriptUrl: SCRIPT_URL,
+        })).rejects.toThrow(message);
     });
 });
 

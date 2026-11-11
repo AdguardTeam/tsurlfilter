@@ -44,8 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   required `settings.extCssScriptUrl` option must point to that file copied
   into the extension, and ExtendedCSS rules do not apply without it. The
   engine no longer travels in every apply payload, and the build-time
-  inliners are removed. The asset carries its build version, and an asset
-  copied from another package version is rejected with a logged error.
+  inliners are removed. The asset carries its build version. When an asset
+  comes from another package version, the apply function reports the failure
+  to the background, which logs it through the existing injection-failure
+  logging.
 
 ### Deprecated
 
