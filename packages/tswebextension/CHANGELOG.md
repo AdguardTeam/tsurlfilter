@@ -21,9 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `dynamicRules.limitations` and `sessionRules.limitations` for the two separate
   quotas, so the session overflow never reaches the dynamic counters, and
   `dynamicRules.counts` with the final counts, rebuilt CSP rules included.
-  `configure()` logs the errors of built-in CSP rules and the session
-  limitations; `dynamicRules.errors` and `dynamicRules.limitations` are left to
-  the consumer.
+  `configure()` logs the errors of built-in CSP rules at the debug level, since
+  built-in filters always hold a few `$csp` exceptions which DNR cannot
+  express, and the session limitations; `dynamicRules.errors` and
+  `dynamicRules.limitations` are left to the consumer.
 - `UnexpectedConversionError`, `RuleScanError`, `isRuleScanError` and
   `DynamicRulesCounts` are now re-exported, so consumers can check errors with
   `instanceof` and use the counters type.

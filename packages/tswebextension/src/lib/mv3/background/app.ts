@@ -547,7 +547,10 @@ export class TsWebExtension implements AppInterface<
             res.cspRules = { errors: cspRules.staticErrors };
 
             if (res.cspRules.errors.length > 0) {
-                logger.warn(
+                // Built-in filters always hold a few `$csp` exceptions which
+                // DNR cannot express, so this would warn on every configure()
+                // for every user: keep the payload for diagnostics only.
+                logger.debug(
                     '[tsweb.TsWebExtension.applyFilteringConfiguration]: '
                     + 'cannot convert some CSP rules of built-in filters:',
                     res.cspRules.errors,

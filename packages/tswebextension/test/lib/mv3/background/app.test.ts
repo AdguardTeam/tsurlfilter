@@ -220,12 +220,15 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
          *
          * @param staticFilterRules Rules of the built-in filter.
          * @param userRules User rules.
+         * @param unreadableStaticFilter Whether the content of the built-in
+         * filter cannot be read, so the CSP pass reports it.
          *
          * @returns The mocks the assertions are made against and the result.
          */
         const runConfigure = async (
             staticFilterRules: string[],
             userRules: string[],
+            unreadableStaticFilter = false,
         ): Promise<{
             prepareDynamicFiltering: ReturnType<typeof vi.fn>;
             limitRebuiltCspRules: ReturnType<typeof vi.fn>;
@@ -236,6 +239,10 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
         }> => {
             const { createFilter } = await import('../helpers');
             const staticFilter = createFilter(staticFilterRules, 1);
+            if (unreadableStaticFilter) {
+                vi.spyOn(staticFilter, 'getContent').mockRejectedValue(new Error('filter source is offline'));
+            }
+
             const userFilter = createFilter(userRules, USER_FILTER_ID);
             const { RulesetWithSourceMap } = await import('@adguard/dnr-converter');
             const staticRuleset = new RulesetWithSourceMap(
@@ -369,6 +376,26 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
             appContext.isStorageInitialized = true;
             const rollback = await runFailingConfigure(["$csp=script-src 'none'"], []);
             expect(rollback).toHaveBeenCalledOnce();
+        });
+
+        it('logs the CSP errors of built-in filters at the debug level', async () => {
+            // Built-in filters always hold `$csp` exceptions which DNR cannot
+            // express, so a warning here would appear on every configure().
+            appContext.isStorageInitialized = true;
+            const debug = vi.spyOn(logger, 'debug');
+            const warn = vi.spyOn(logger, 'warn');
+            const { configure } = await runConfigure(["$csp=script-src 'none'"], [], true);
+
+            await configure();
+
+            expect(debug).toHaveBeenCalledWith(
+                expect.stringContaining('cannot convert some CSP rules of built-in filters'),
+                expect.any(Array),
+            );
+            expect(warn).not.toHaveBeenCalledWith(
+                expect.stringContaining('cannot convert some CSP rules of built-in filters'),
+                expect.anything(),
+            );
         });
     });
 
