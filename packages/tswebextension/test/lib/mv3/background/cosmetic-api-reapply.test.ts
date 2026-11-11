@@ -220,7 +220,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(insertCSSMock).toHaveBeenCalledTimes(1);
     });
 
-    it('waits for an in-flight initial injection before reapplying', async () => {
+    it('deduplicates applyCss calls while the injection is in flight', async () => {
         tabsApiMock.getFrameContext.mockReturnValue({
             documentId: 'doc-1',
             preparedCosmeticResult: {
@@ -235,23 +235,17 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         });
         insertCSSMock.mockReturnValue(injection);
 
-        const applyPromise = applyCss(TAB_ID, FRAME_ID, 'marked');
-        const reapplyPromise = CosmeticApi.reapplyMarkedCosmeticData(
-            'https://example.org/',
-            TAB_ID,
-            FRAME_ID,
-        );
+        const first = applyCss(TAB_ID, FRAME_ID, 'marked');
+        const second = applyCss(TAB_ID, FRAME_ID, 'marked');
 
         await Promise.resolve();
 
         expect(insertCSSMock).toHaveBeenCalledTimes(1);
 
         resolveInjection();
-        await applyPromise;
-        const data = await reapplyPromise;
+        await Promise.all([first, second]);
 
         expect(insertCSSMock).toHaveBeenCalledTimes(1);
-        expect(data.areNativeHitsStatsCollected).toBe(true);
     });
 
     it('does not reuse the cache after a document change', async () => {
@@ -343,7 +337,6 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
             },
         };
         tabsApiMock.getFrameContext
-            .mockReturnValueOnce(frameContext)
             .mockReturnValueOnce(frameContext)
             .mockReturnValueOnce(frameContext)
             .mockReturnValue(nextFrameContext);

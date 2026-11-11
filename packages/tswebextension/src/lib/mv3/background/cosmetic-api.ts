@@ -2,7 +2,12 @@ import { type CosmeticRule, type ScriptletData } from '@adguard/tsurlfilter';
 
 import { isCollectStatsEnabledForDocument } from '../../common/collect-hit-stats';
 import { BACKGROUND_TAB_ID } from '../../common/constants';
-import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParams } from '../../common/cosmetic-api';
+import {
+    type ContentScriptCosmeticData,
+    CosmeticApiCommon,
+    type LogJsRulesParams,
+    type MarkedCssFrameContext,
+} from '../../common/cosmetic-api';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl } from '../../common/utils/url';
@@ -30,24 +35,6 @@ type ScriptsAndScriptletsDataMv3 = {
     scriptletDataList: ScriptletData[];
 };
 
-/**
- * Frame fields used by the marked CSS injection cache.
- */
-type MarkedCssFrameContext = {
-    documentId?: string;
-    preparedCosmeticResult?: object;
-};
-
-/**
- * In-flight marked CSS injection for a frame context.
- */
-type CssInjectionInFlight = {
-    preparedCosmeticResult: object;
-    documentId: string | undefined;
-    areHitsStatsCollected: boolean;
-    promise: Promise<void>;
-};
-
 type LogJsRulesParamsMv3 = LogJsRulesParams & {
     /**
      * Computed result which prepared for injection.
@@ -71,126 +58,17 @@ export class CosmeticApi extends CosmeticApiCommon {
     private static readonly INJECTION_MAX_TRIES = 100;
 
     /**
-     * Last prepared cosmetic result whose marked native CSS was injected after
-     * live enable, keyed by the frame context.
-     *
-     * The frame context is unique per frame, while `preparedCosmeticResult`
-     * can be shared by URL-less child frames. The value allows a new prepared
-     * result to be injected without repeating it for the same document.
-     */
-    private static markedCssInjected = new WeakMap<object, {
-        injectionKey: object;
-        documentId: string | undefined;
-    }>();
-
-    /**
-     * Returns the prepared result identity used by the injection cache.
-     *
-     * @param frameContext Frame context.
-     *
-     * @returns Cache key or undefined.
-     */
-    private static getInjectionKey(
-        frameContext: MarkedCssFrameContext | undefined,
-    ): object | undefined {
-        return frameContext?.preparedCosmeticResult ?? frameContext;
-    }
-
-    /**
-     * Checks whether marked CSS is applied to the current document.
-     *
-     * @param frameContext Frame context.
-     *
-     * @returns True when the cache matches the frame document and result.
-     */
-    private static hasMarkedCssInjected(frameContext: MarkedCssFrameContext): boolean {
-        const entry = CosmeticApi.markedCssInjected.get(frameContext);
-
-        return frameContext.documentId !== undefined
-            && entry?.documentId === frameContext.documentId
-            && entry.injectionKey === CosmeticApi.getInjectionKey(frameContext);
-    }
-
-    /**
-     * Records marked CSS applied to the current document.
-     *
-     * @param frameContext Frame context.
-     */
-    private static setMarkedCssInjected(frameContext: MarkedCssFrameContext): void {
-        if (frameContext.documentId === undefined) {
-            return;
-        }
-
-        const injectionKey = CosmeticApi.getInjectionKey(frameContext);
-        if (!injectionKey) {
-            return;
-        }
-
-        CosmeticApi.markedCssInjected.set(frameContext, {
-            injectionKey,
-            documentId: frameContext.documentId,
-        });
-    }
-
-    /**
-     * Actual marked native CSS state per frame context.
-     *
-     * The prepared result only records whether its stylesheet was built with
-     * markers. Injection can fail after that, so the content script must read
-     * the actual result.
-     */
-    private static nativeHitsMarkersApplied = new WeakMap<object, {
-        preparedCosmeticResult: object | undefined;
-        applied: boolean;
-    }>();
-
-    /**
-     * Marked CSS injections currently in progress, keyed by frame context.
-     */
-    private static cssInjectionInFlight = new WeakMap<object, CssInjectionInFlight>();
-
-    /**
      * Waits for a marked CSS injection that is still in progress.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
-     */
-    public static async waitForPendingCssInjection(
-        tabId: number,
-        frameId: number,
-    ): Promise<void> {
-        const frameContext = tabsApi.getFrameContext(tabId, frameId);
-        if (!frameContext) {
-            return;
-        }
-
-        const pending = CosmeticApi.cssInjectionInFlight.get(frameContext);
-        if (!pending
-            || !pending.areHitsStatsCollected
-            || pending.preparedCosmeticResult !== frameContext.preparedCosmeticResult
-            || pending.documentId !== frameContext.documentId) {
-            return;
-        }
-
-        await pending.promise;
-    }
-
-    /**
-     * Records whether marked native CSS is applied for a frame.
      *
-     * @param frameContext Frame context.
-     * @param preparedCosmeticResult Prepared result used for the frame.
-     * @param applied Whether marked native CSS is applied.
+     * @returns A promise that resolves when the pending injection settles.
      */
-    private static setNativeHitsMarkersApplied(
-        frameContext: object,
-        preparedCosmeticResult: object | undefined,
-        applied: boolean,
-    ): void {
-        CosmeticApi.nativeHitsMarkersApplied.set(frameContext, {
-            preparedCosmeticResult,
-            applied,
-        });
+    public static waitForPendingCssInjection(tabId: number, frameId: number): Promise<void> {
+        return CosmeticApiCommon.waitForPendingCssInjectionForContext(
+            tabsApi.getFrameContext(tabId, frameId),
+        );
     }
 
     /**
@@ -421,8 +299,6 @@ export class CosmeticApi extends CosmeticApiCommon {
         tabId: number,
         frameId: number,
     ): Promise<ContentScriptCosmeticData> {
-        await CosmeticApi.waitForPendingCssInjection(tabId, frameId);
-
         const data = CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
 
         if (!data.areHitsStatsCollected) {
@@ -756,43 +632,18 @@ export class CosmeticApi extends CosmeticApiCommon {
             return Promise.resolve();
         }
 
-        const pending = CosmeticApi.cssInjectionInFlight.get(frameContext);
-        if (pending
-            && pending.preparedCosmeticResult === preparedCosmeticResult
-            && pending.documentId === frameContext.documentId) {
-            return pending.promise;
-        }
-
-        if (CosmeticApi.hasMarkedCssInjected(frameContext)) {
-            CosmeticApi.setNativeHitsMarkersApplied(frameContext, preparedCosmeticResult, true);
-            return Promise.resolve();
-        }
-
-        if (!cssText) {
-            CosmeticApi.setNativeHitsMarkersApplied(frameContext, preparedCosmeticResult, true);
-            return Promise.resolve();
-        }
-
-        const promise = CosmeticApi.injectPreparedCss(
-            tabId,
-            frameId,
+        return CosmeticApiCommon.applyCssWithCache({
             frameContext,
             preparedCosmeticResult,
             cssText,
-        ).finally(() => {
-            if (CosmeticApi.cssInjectionInFlight.get(frameContext)?.promise === promise) {
-                CosmeticApi.cssInjectionInFlight.delete(frameContext);
-            }
+            inject: () => CosmeticApi.injectPreparedCss(
+                tabId,
+                frameId,
+                frameContext,
+                preparedCosmeticResult,
+                cssText as string,
+            ),
         });
-
-        CosmeticApi.cssInjectionInFlight.set(frameContext, {
-            preparedCosmeticResult,
-            documentId: frameContext.documentId,
-            areHitsStatsCollected: preparedCosmeticResult.areHitsStatsCollected,
-            promise,
-        });
-
-        return promise;
     }
 
     /**

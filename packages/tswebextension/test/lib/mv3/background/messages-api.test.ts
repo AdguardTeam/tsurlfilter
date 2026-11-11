@@ -146,6 +146,7 @@ describe('MessagesApi', () => {
     describe('handleGetCosmeticData', () => {
         beforeEach(() => {
             vi.mocked(CosmeticApi.getContentScriptData).mockReset();
+            vi.mocked(CosmeticApi.reapplyMarkedCosmeticData).mockReset();
             vi.mocked(CosmeticApi.waitForPendingCssInjection).mockReset();
         });
 
@@ -194,6 +195,59 @@ describe('MessagesApi', () => {
             expect(tabsApi.createTabContextIfNotExists).toHaveBeenCalledWith(TAB_ID, TAB_URL);
             expect(tabsApi.updateTabMainFrameRule).not.toHaveBeenCalled();
             expect(CosmeticApi.getContentScriptData).toHaveBeenCalledWith(TAB_URL, TAB_ID, 0);
+        });
+
+        it('waits for the pending injection before reapply', async () => {
+            const tabsApi = {
+                createTabContextIfNotExists: vi.fn(),
+                updateTabMainFrameRule: vi.fn(),
+            };
+            const data = {
+                isAppStarted: true,
+                areHitsStatsCollected: true,
+                areNativeHitsStatsCollected: true,
+                extCssRules: null,
+                nativeCssSelectors: null,
+            };
+            vi.mocked(CosmeticApi.reapplyMarkedCosmeticData).mockResolvedValue(data);
+            let resolveWait!: () => void;
+            const waitPromise = new Promise<void>((resolve) => {
+                resolveWait = resolve;
+            });
+            vi.mocked(CosmeticApi.waitForPendingCssInjection).mockReturnValue(waitPromise);
+            const messagesApi = new MessagesApi(
+                { isStarted: true } as any,
+                tabsApi as any,
+                {} as any,
+            );
+
+            const resultPromise = messagesApi.handleMessage({
+                handlerName: MESSAGE_HANDLER_NAME,
+                type: MessageType.GetCosmeticData,
+                payload: {
+                    documentUrl: TAB_URL,
+                    reapplyHits: true,
+                },
+            }, {
+                tab: { id: TAB_ID, url: TAB_URL },
+                frameId: 0,
+            } as any);
+
+            await Promise.resolve();
+
+            expect(CosmeticApi.reapplyMarkedCosmeticData).not.toHaveBeenCalled();
+            expect(CosmeticApi.waitForPendingCssInjection).toHaveBeenCalledWith(TAB_ID, 0);
+
+            resolveWait();
+            const result = await resultPromise;
+
+            expect(result).toBe(data);
+            expect(CosmeticApi.reapplyMarkedCosmeticData).toHaveBeenCalledWith(
+                TAB_URL,
+                TAB_ID,
+                0,
+            );
+            expect(tabsApi.updateTabMainFrameRule).not.toHaveBeenCalled();
         });
     });
 

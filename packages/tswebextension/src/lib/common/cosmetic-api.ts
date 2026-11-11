@@ -4,6 +4,7 @@ import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 import { LF, SEMICOLON } from './constants';
 import { defaultFilteringLog, FilteringEventType } from './filtering-log';
 import { type ContentType } from './request-type';
+import { type PreparedCosmeticResultCommon } from './tabs/frame';
 import { CssCapabilities } from './utils/css-capabilities';
 import { nanoid } from './utils/nanoid';
 import { getRuleTexts, type RuleTextProvider } from './utils/rule-text-provider';
@@ -92,6 +93,58 @@ export type CosmeticOptions = {
      * @default false
      */
     areHitsStatsCollected?: boolean;
+};
+
+/**
+ * Frame fields used by the marked CSS injection cache.
+ */
+export type MarkedCssFrameContext = {
+    /**
+     * Tab id.
+     */
+    tabId?: number;
+
+    /**
+     * Frame id.
+     */
+    frameId?: number;
+
+    /**
+     * Document id.
+     */
+    documentId?: string;
+
+    /**
+     * Prepared cosmetic result.
+     */
+    preparedCosmeticResult?: PreparedCosmeticResultCommon;
+
+    /**
+     * Cosmetic result.
+     */
+    cosmeticResult?: CosmeticResult;
+};
+
+/**
+ * In-flight marked CSS injection for a frame context.
+ */
+type CssInjectionInFlight = {
+    preparedCosmeticResult: PreparedCosmeticResultCommon;
+    documentId: string | undefined;
+    areHitsStatsCollected: boolean;
+    promise: Promise<void>;
+};
+
+/**
+ * Parameters for applying prepared CSS with the shared injection cache.
+ */
+type ApplyCssWithCacheParams = {
+    frameContext: MarkedCssFrameContext;
+    preparedCosmeticResult: PreparedCosmeticResultCommon;
+    cssText: string | undefined;
+    inject: () => Promise<void>;
+    includeCosmeticResult?: boolean;
+    checkSyntheticDocumentId?: boolean;
 };
 
 /**
@@ -201,6 +254,218 @@ export class CosmeticApiCommon {
             return CosmeticApiCommon.CONTENT_ATTR_RE.test(ruleContent);
         },
     };
+
+    /**
+     * Last prepared cosmetic result whose marked native CSS was injected after
+     * live enable, keyed by the frame context.
+     */
+    protected static markedCssInjected = new WeakMap<object, {
+        injectionKey: object;
+        documentId: string | undefined;
+    }>();
+
+    /**
+     * Actual marked native CSS state per frame context.
+     */
+    protected static nativeHitsMarkersApplied = new WeakMap<object, {
+        preparedCosmeticResult: PreparedCosmeticResultCommon | undefined;
+        applied: boolean;
+    }>();
+
+    /**
+     * Marked CSS injections currently in progress, keyed by frame context.
+     */
+    protected static cssInjectionInFlight = new WeakMap<object, CssInjectionInFlight>();
+
+    /**
+     * Returns the prepared result identity used by the injection cache.
+     *
+     * @param frameContext Frame context.
+     * @param includeCosmeticResult Whether to fall back to the cosmetic result.
+     *
+     * @returns Cache key or undefined.
+     */
+    protected static getInjectionKey(
+        frameContext: MarkedCssFrameContext | undefined,
+        includeCosmeticResult = false,
+    ): object | undefined {
+        return frameContext?.preparedCosmeticResult
+            ?? (includeCosmeticResult ? frameContext?.cosmeticResult : undefined)
+            ?? frameContext;
+    }
+
+    /**
+     * Checks whether marked CSS is applied to the current document.
+     *
+     * @param frameContext Frame context.
+     * @param options Cache lookup options.
+     * @param options.includeCosmeticResult Whether to fall back to the cosmetic result.
+     * @param options.checkSyntheticDocumentId Whether to reject synthetic document ids.
+     *
+     * @returns True when the cache matches the frame document and result.
+     */
+    protected static hasMarkedCssInjected(
+        frameContext: MarkedCssFrameContext,
+        options: {
+            includeCosmeticResult?: boolean;
+            checkSyntheticDocumentId?: boolean;
+        } = {},
+    ): boolean {
+        const {
+            includeCosmeticResult = false,
+            checkSyntheticDocumentId = false,
+        } = options;
+
+        if (frameContext.documentId === undefined) {
+            return false;
+        }
+
+        if (checkSyntheticDocumentId
+            && frameContext.tabId !== undefined
+            && frameContext.frameId !== undefined
+            && frameContext.documentId === `${frameContext.tabId}-${frameContext.frameId}`) {
+            return false;
+        }
+
+        const entry = CosmeticApiCommon.markedCssInjected.get(frameContext);
+
+        return entry?.documentId === frameContext.documentId
+            && entry.injectionKey === CosmeticApiCommon.getInjectionKey(
+                frameContext,
+                includeCosmeticResult,
+            );
+    }
+
+    /**
+     * Records marked CSS applied to the current document.
+     *
+     * @param frameContext Frame context.
+     * @param includeCosmeticResult Whether to fall back to the cosmetic result.
+     */
+    protected static setMarkedCssInjected(
+        frameContext: MarkedCssFrameContext,
+        includeCosmeticResult = false,
+    ): void {
+        if (frameContext.documentId === undefined) {
+            return;
+        }
+
+        const injectionKey = CosmeticApiCommon.getInjectionKey(
+            frameContext,
+            includeCosmeticResult,
+        );
+        if (!injectionKey) {
+            return;
+        }
+
+        CosmeticApiCommon.markedCssInjected.set(frameContext, {
+            injectionKey,
+            documentId: frameContext.documentId,
+        });
+    }
+
+    /**
+     * Records whether marked native CSS is applied for a frame.
+     *
+     * @param frameContext Frame context.
+     * @param preparedCosmeticResult Prepared result used for the frame.
+     * @param applied Whether marked native CSS is applied.
+     */
+    protected static setNativeHitsMarkersApplied(
+        frameContext: object,
+        preparedCosmeticResult: PreparedCosmeticResultCommon | undefined,
+        applied: boolean,
+    ): void {
+        CosmeticApiCommon.nativeHitsMarkersApplied.set(frameContext, {
+            preparedCosmeticResult,
+            applied,
+        });
+    }
+
+    /**
+     * Waits for a marked CSS injection that is still in progress.
+     *
+     * @param frameContext Frame context.
+     */
+    protected static async waitForPendingCssInjectionForContext(
+        frameContext: MarkedCssFrameContext | undefined,
+    ): Promise<void> {
+        if (!frameContext) {
+            return;
+        }
+
+        const pending = CosmeticApiCommon.cssInjectionInFlight.get(frameContext);
+        if (!pending
+            || !pending.areHitsStatsCollected
+            || pending.preparedCosmeticResult !== frameContext.preparedCosmeticResult
+            || pending.documentId !== frameContext.documentId) {
+            return;
+        }
+
+        await pending.promise;
+    }
+
+    /**
+     * Applies prepared CSS through the shared injection cache.
+     *
+     * @param params Injection parameters.
+     *
+     * @returns A promise that resolves when the CSS is injected or the retry
+     * budget is exhausted.
+     */
+    protected static applyCssWithCache(params: ApplyCssWithCacheParams): Promise<void> {
+        const {
+            frameContext,
+            preparedCosmeticResult,
+            cssText,
+            inject,
+            includeCosmeticResult = false,
+            checkSyntheticDocumentId = false,
+        } = params;
+
+        const pending = CosmeticApiCommon.cssInjectionInFlight.get(frameContext);
+        if (pending
+            && pending.preparedCosmeticResult === preparedCosmeticResult
+            && pending.documentId === frameContext.documentId) {
+            return pending.promise;
+        }
+
+        if (CosmeticApiCommon.hasMarkedCssInjected(frameContext, {
+            includeCosmeticResult,
+            checkSyntheticDocumentId,
+        })) {
+            CosmeticApiCommon.setNativeHitsMarkersApplied(
+                frameContext,
+                preparedCosmeticResult,
+                true,
+            );
+            return Promise.resolve();
+        }
+
+        if (!cssText) {
+            CosmeticApiCommon.setNativeHitsMarkersApplied(
+                frameContext,
+                preparedCosmeticResult,
+                true,
+            );
+            return Promise.resolve();
+        }
+
+        const promise = inject().finally(() => {
+            if (CosmeticApiCommon.cssInjectionInFlight.get(frameContext)?.promise === promise) {
+                CosmeticApiCommon.cssInjectionInFlight.delete(frameContext);
+            }
+        });
+
+        CosmeticApiCommon.cssInjectionInFlight.set(frameContext, {
+            preparedCosmeticResult,
+            documentId: frameContext.documentId,
+            areHitsStatsCollected: preparedCosmeticResult.areHitsStatsCollected,
+            promise,
+        });
+
+        return promise;
+    }
 
     /**
      * Builds stylesheets from rules.
