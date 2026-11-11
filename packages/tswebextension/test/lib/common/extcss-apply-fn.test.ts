@@ -493,9 +493,11 @@ describe('extCssInjectedApply — CSS hits stats', () => {
             instanceKey: '__customExtCss',
             // eslint-disable-next-line no-underscore-dangle -- deliberate test marker key
             removedElementsKey: '__customExtCssRemoved',
-            // The engine asset is installed under the shared key: the custom
-            // protocol must keep pointing at it, otherwise nothing can apply.
+            // The engine asset is installed under the shared key and version:
+            // the custom protocol must keep pointing at it, otherwise nothing
+            // can apply.
             engineKey: EXTCSS_PROTOCOL.engineKey,
+            engineVersion: EXTCSS_PROTOCOL.engineVersion,
         } as unknown as ExtCssProtocol;
         const customMarkerRule = '.ad:has(.child) { display: none !important; '
             + 'content: \'custommarker1%3B2\' !important; }';
@@ -650,6 +652,31 @@ describe('extCssInjectedApply — prebuilt engine asset', () => {
                 false,
                 EXTCSS_PROTOCOL,
             )).toThrow(/ExtendedCss engine is not loaded/);
+
+            const ad = document.querySelector('.ad') as HTMLElement;
+            expect(ad.style.getPropertyValue('display')).toBe('');
+        } finally {
+            window[EXTCSS_PROTOCOL.engineKey] = engine;
+        }
+    });
+
+    it('throws instead of applying when the engine asset has another version', () => {
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+        const engine = window[EXTCSS_PROTOCOL.engineKey];
+
+        if (!engine) {
+            throw new Error('The test setup must install the engine asset');
+        }
+
+        // A stale copy of the asset, e.g. one shipped by an older package.
+        window[EXTCSS_PROTOCOL.engineKey] = { ...engine, version: '0.0.0-other' };
+
+        try {
+            expect(() => createSerializedApply()(
+                ['.ad:has(.child) { display: none !important; }'],
+                false,
+                EXTCSS_PROTOCOL,
+            )).toThrow(/ExtendedCss engine version mismatch/);
 
             const ad = document.querySelector('.ad') as HTMLElement;
             expect(ad.style.getPropertyValue('display')).toBe('');

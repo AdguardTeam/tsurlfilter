@@ -615,6 +615,10 @@ relative to the extension root. The background injects this file into a frame
 before it injects the matching ExtendedCss rules, so the extension must ship
 it. Without the option ExtendedCss rules do not apply.
 
+The file must come from the same package version: the asset carries its build
+version, and the injected function rejects an asset stamped with a different
+one, so a stale copy is reported instead of running an older engine.
+
 ##### gpcScriptUrl (MV3 only)
 
 type: `string`

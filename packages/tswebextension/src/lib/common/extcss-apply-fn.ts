@@ -38,8 +38,9 @@ import { type ExtCssProtocol } from './extcss-protocol';
  * zero free identifiers.
  *
  * @throws Error when the ExtendedCss engine asset was not injected into the
- * document first, and the error that made the new apply fail, after the
- * previous rule strings have been re-applied so the page stays protected.
+ * document first or was built by another package version, and the error that
+ * made the new apply fail, after the previous rule strings have been
+ * re-applied so the page stays protected.
  */
 export const extCssInjectedApply = (
     cssRules: string[],
@@ -97,6 +98,17 @@ export const extCssInjectedApply = (
 
     if (!engine) {
         throw new Error('ExtendedCss engine is not loaded: inject the extcss script asset first');
+    }
+
+    // A stale copy of the asset — one shipped by another package version —
+    // would run an older engine next to the current background code. Fail
+    // loudly instead, so the mismatch is diagnosable instead of silent.
+    if (engine.version !== protocol.engineVersion) {
+        const mismatch = `ExtendedCss engine version mismatch: asset ${engine.version}, `
+            + `expected ${protocol.engineVersion}; `
+            + 'ship the asset from the same package version';
+
+        throw new Error(mismatch);
     }
 
     // The CSS-hits helpers — the SAME source used by MV2's `ElementUtils` and

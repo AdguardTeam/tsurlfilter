@@ -84,6 +84,15 @@ if ! grep -q "__adguardExtCssEngine" "$extcss_asset"; then
     echo "Testing bundling with rollup-ts ended with error"
     exit 1
 fi
+# The asset is stamped with the package version and the background rejects an
+# asset built by another version, so a stale copy in a consumer extension is
+# reported instead of silently running an older engine.
+extcss_version=$(node -p "require('./node_modules/@adguard/tswebextension/package.json').version")
+if ! grep -q "$extcss_version" "$extcss_asset"; then
+    echo "Shipped ExtendedCss script asset is not stamped with the package version $extcss_version"
+    echo "Testing bundling with rollup-ts ended with error"
+    exit 1
+fi
 extcss_size=$(wc -c < "$extcss_asset" | tr -d ' ')
 if [ "$extcss_size" -gt $max_extcss_size ]; then
     echo "Shipped ExtendedCss script asset is more than $max_extcss_size bytes with size $extcss_size"

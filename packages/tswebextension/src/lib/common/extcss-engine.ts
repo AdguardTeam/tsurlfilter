@@ -26,13 +26,14 @@
  */
 import { cssHitsHelpers } from './content-script/utils/css-hits-helpers';
 import applyExtendedCss from './extcss-inject-src';
-import { EXTCSS_ENGINE_KEY, type ExtCssEngine } from './extcss-protocol';
+import { EXTCSS_ENGINE_KEY, EXTCSS_ENGINE_VERSION, type ExtCssEngine } from './extcss-protocol';
 
 /**
  * Engine payload the injected apply function reads back from the document's
  * ISOLATED world.
  */
 const engine: ExtCssEngine = {
+    version: EXTCSS_ENGINE_VERSION,
     applyExtendedCss,
     cssHitsHelpers,
 };

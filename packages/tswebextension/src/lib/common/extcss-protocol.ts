@@ -9,6 +9,8 @@
  * background modules that need it.
  */
 
+import packageJson from '../../../package.json';
+
 import { CSS_HITS_MARKER_PREFIX } from './constants';
 import { EXTCSS_REMOVED_ELEMENTS_KEY } from './content-script/extcss-removed-elements';
 import { type cssHitsHelpers as cssHitsHelpersImpl } from './content-script/utils/css-hits-helpers';
@@ -24,10 +26,27 @@ import { MESSAGE_HANDLER_NAME, MessageType } from './message-constants';
 export const EXTCSS_ENGINE_KEY = '__adguardExtCssEngine' as const;
 
 /**
+ * Version of this package, stamped into the prebuilt script asset and into the
+ * protocol. The injected function refuses an engine built by another version,
+ * so a stale asset copied by a consumer fails loudly instead of running an
+ * older engine next to the current background code.
+ *
+ * NOTE: read straight from `package.json`, as
+ * {@link TSWEBEXTENSION_VERSION} does, so the asset and the background always
+ * agree without an extra runtime import.
+ */
+export const EXTCSS_ENGINE_VERSION: string = packageJson.version;
+
+/**
  * Engine payload installed by the prebuilt `extcss-inject.js` script asset and
  * read by the injected apply function from the document's ISOLATED world.
  */
 export type ExtCssEngine = {
+    /**
+     * Package version the asset was built from.
+     */
+    version: string;
+
     /**
      * Applies rule strings to the current document and returns the retained
      * instance.
@@ -101,6 +120,13 @@ export type ExtCssProtocol = {
      * the engine source.
      */
     engineKey: typeof EXTCSS_ENGINE_KEY;
+
+    /**
+     * Package version the protocol belongs to. The injected function refuses an
+     * engine asset built by another version, so a stale copy is reported
+     * instead of running an older engine.
+     */
+    engineVersion: string;
 };
 
 /**
@@ -121,4 +147,5 @@ export const EXTCSS_PROTOCOL: ExtCssProtocol = {
     instanceKey: EXTCSS_INSTANCE_KEY,
     removedElementsKey: EXTCSS_REMOVED_ELEMENTS_KEY,
     engineKey: EXTCSS_ENGINE_KEY,
+    engineVersion: EXTCSS_ENGINE_VERSION,
 };
