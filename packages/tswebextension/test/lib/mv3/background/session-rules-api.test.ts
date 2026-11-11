@@ -107,6 +107,50 @@ describe('SessionRulesApi', () => {
         expect(limitations).toEqual([]);
     });
 
+    it('keeps CSP rules of an unreadable static ruleset only', async () => {
+        const createCspRule = (id: number, value: string): DeclarativeRule => ({
+            id,
+            action: {
+                type: RuleActionType.ModifyHeaders,
+                responseHeaders: [{
+                    header: 'Content-Security-Policy',
+                    operation: 'append',
+                    value,
+                }],
+            },
+            condition: {},
+        } as DeclarativeRule);
+        // A readable filter is represented in the rebuilt list, a filter whose
+        // content could not be read is not, so only the latter keeps its rules.
+        const staleReadableCspRule = createCspRule(2, "script-src 'none'");
+        const unreadableCspRule = createCspRule(3, "img-src 'self'");
+        const rebuiltCspRule = createCspRule(4, "script-src 'self'");
+        const updateSessionRules = vi.fn().mockResolvedValue(undefined);
+
+        chrome.declarativeNetRequest = {
+            getSessionRules: vi.fn().mockResolvedValue([]),
+            updateSessionRules,
+            MAX_NUMBER_OF_SESSION_RULES: 5000,
+            MAX_NUMBER_OF_UNSAFE_SESSION_RULES: 5000,
+            MAX_NUMBER_OF_REGEX_RULES: 1000,
+        } as unknown as typeof chrome.declarativeNetRequest;
+
+        await SessionRulesApi.updateSessionRules(
+            [
+                createRuleset('ruleset_1', [staleReadableCspRule]),
+                createRuleset('ruleset_2', [unreadableCspRule]),
+            ],
+            undefined,
+            [rebuiltCspRule],
+            createRuleset('_csp', []),
+            [2],
+        );
+
+        const [{ addRules }] = updateSessionRules.mock.calls[0];
+        expect(addRules.map((rule: DeclarativeRule) => rule.action.responseHeaders?.[0].value))
+            .toEqual(["script-src 'self'", "img-src 'self'"]);
+    });
+
     it('preserves the previous source map when the browser update fails', async () => {
         const previousSource: [string, number] = ['ruleset_1', 2];
         SessionRulesApi.sourceMapForUnsafeRules.set(7, previousSource);

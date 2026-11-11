@@ -141,6 +141,8 @@ describe('CspRulesManager', () => {
         expect(result.staticErrors).toHaveLength(1);
         expect(result.dynamicErrors).toHaveLength(0);
         expect(isUnavailableFilterSourceError(result.staticErrors[0])).toBe(true);
+        // The caller keeps the rules of such a filter from its own ruleset.
+        expect(result.unreadableStaticFilterIds).toEqual([3]);
     });
 
     it('reports an unreadable dynamic filter in the dynamic channel', async () => {
@@ -157,5 +159,6 @@ describe('CspRulesManager', () => {
 
         expect(result.dynamicErrors).toHaveLength(1);
         expect(result.staticErrors).toHaveLength(0);
+        expect(result.unreadableStaticFilterIds).toEqual([]);
     });
 });

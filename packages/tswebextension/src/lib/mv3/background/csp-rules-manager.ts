@@ -3,7 +3,6 @@ import {
     type DeclarativeRule,
     FilterConverter,
     type IFilter,
-    type IFilteredRuleset,
     type IRulesetWithSourceMap,
     isConversionError,
     isRuleScanError,
@@ -28,11 +27,13 @@ export type CspRulesResult = Omit<ConversionResult<IRulesetWithSourceMap>, 'limi
     dynamicRules: DeclarativeRule[];
 
     /**
-     * Ruleset of the static CSP rules, rebuilt without the rules of
-     * unreadable static filters: the shared ruleset holds no rules of such a
-     * filter, so reading per-source rules from it would lose the whole filter.
+     * Ids of unreadable static filters.
+     *
+     * Their content cannot be read, so their CSP rules are absent from
+     * `staticRules` and the caller must keep them from the static rulesets
+     * instead of dropping them with the stale ones.
      */
-    staticRuleset: IRulesetWithSourceMap | IFilteredRuleset;
+    unreadableStaticFilterIds: number[];
 
     /**
      * CSP conversion errors originating from static filters.
@@ -80,16 +81,12 @@ export class CspRulesManager {
         const staticFilterIds = new Set(staticFilters.map((filter) => filter.getId()));
         const dynamicFilterIds = new Set(dynamicFilters.map((filter) => filter.getId()));
 
-        // A filter whose content could not be read is not present in the
-        // shared ruleset, so the static group is rebuilt without its sources:
-        // the caller can still resolve which filters the rules belong to.
+        // A filter whose content could not be read is absent from the rebuilt
+        // rules, so the caller must keep its rules from the static rulesets.
         const unreadableStaticFilterIds = conversionResult.errors
             .filter(isUnavailableFilterSourceError)
             .map(({ filterId }) => filterId)
             .filter((filterId) => staticFilterIds.has(filterId));
-        const staticConversionResult = unreadableStaticFilterIds.length > 0 && conversionResult.withoutSourceFilters
-            ? conversionResult.withoutSourceFilters(unreadableStaticFilterIds)
-            : conversionResult;
 
         const declarativeRules = await conversionResult.ruleset.getDeclarativeRules();
         const staticRules: DeclarativeRule[] = [];
@@ -131,7 +128,7 @@ export class CspRulesManager {
             ...conversionResult,
             staticRules,
             dynamicRules,
-            staticRuleset: staticConversionResult.ruleset,
+            unreadableStaticFilterIds,
             staticErrors: CspRulesManager.filterErrors(conversionResult.errors, staticFilterIds),
             dynamicErrors: CspRulesManager.filterErrors(conversionResult.errors, dynamicFilterIds),
         };

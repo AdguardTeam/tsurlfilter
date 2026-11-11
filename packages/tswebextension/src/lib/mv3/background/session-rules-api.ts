@@ -2,7 +2,7 @@ import browser from 'webextension-polyfill';
 
 import {
     type DeclarativeRule,
-    type IFilteredRuleset,
+    getRulesetId,
     type IRulesetWithSourceMap,
     isCspDeclarativeRule,
     type LimitationError,
@@ -167,9 +167,8 @@ export class SessionRulesApi {
      * @param rebuiltCspRules Globally rebuilt CSP rules from static filters.
      * @param cspRuleset Source ruleset for rebuilt CSP rules.
      * @param unreadableCspFilterIds Ids of the source filters whose content
-     * could not be read during the CSP pass; the rules of such a filter are
-     * kept from its own ruleset instead of the rebuilt list, because the
-     * rebuilt list has none.
+     * could not be read during the CSP pass; the rebuilt list has none of
+     * their rules, so the rules of such a filter are kept from its own ruleset.
      *
      * @returns Limitations for session rules omitted due to the browser quotas.
      */
@@ -177,7 +176,7 @@ export class SessionRulesApi {
         enabledStaticRulesets: IRulesetWithSourceMap[],
         declarativeRulesToCancel?: UpdateStaticRulesOptions[] | undefined,
         rebuiltCspRules?: DeclarativeRule[],
-        cspRuleset?: IRulesetWithSourceMap | IFilteredRuleset,
+        cspRuleset?: IRulesetWithSourceMap,
         unreadableCspFilterIds?: number[],
     ): Promise<LimitationError[]> {
         const rulesToCancel = new Map<string, number[]>(
@@ -203,6 +202,12 @@ export class SessionRulesApi {
             });
         }
 
+        // A filter whose content could not be read has no rules in the rebuilt
+        // list, so the metadata CSP rules of its own ruleset are kept: dropping
+        // them would silently lose the whole filter's policies, while taking
+        // them from the shared ruleset would duplicate the readable ones.
+        const unreadableCspRulesetIds = new Set((unreadableCspFilterIds ?? []).map(getRulesetId));
+
         // Apply $badfilter rules from dynamic rules to static rules.
         unsafeRulesFromStaticFilters.push(...await Promise.all(
             enabledStaticRulesets.map(async (r) => {
@@ -210,38 +215,17 @@ export class SessionRulesApi {
 
                 const rulesToRemove = rulesToCancel.get(r.getId()) || [];
                 const activeRules = rules.filter((rule) => !rulesToRemove.includes(rule.id));
+                const isStaleCspRuleset = rebuiltCspRules !== undefined
+                    && !unreadableCspRulesetIds.has(r.getId());
 
                 return {
                     ruleset: r,
-                    rules: rebuiltCspRules === undefined
-                        ? activeRules
-                        : activeRules.filter((rule) => !isCspDeclarativeRule(rule)),
+                    rules: isStaleCspRuleset
+                        ? activeRules.filter((rule) => !isCspDeclarativeRule(rule))
+                        : activeRules,
                 };
             }),
         ));
-
-        // The rebuilt CSP list has no rules of a source filter whose content
-        // could not be read, so the rules of such a filter are re-added from
-        // the shared CSP ruleset itself, rebuilt without the read sources:
-        // stripping every metadata CSP rule instead would silently drop the
-        // filter's policies.
-        if (
-            cspRuleset !== undefined
-            && unreadableCspFilterIds !== undefined
-            && unreadableCspFilterIds.length > 0
-        ) {
-            if (typeof (cspRuleset as IFilteredRuleset).getFilteredDeclarativeRules !== 'function') {
-                throw new Error('The CSP ruleset cannot be rebuilt without the unreadable source filters');
-            }
-
-            const keptCspRules = await (cspRuleset as IFilteredRuleset)
-                .getFilteredDeclarativeRules(unreadableCspFilterIds);
-
-            unsafeRulesFromStaticFilters.push({
-                ruleset: cspRuleset,
-                rules: keptCspRules,
-            });
-        }
 
         // Before collecting rules to enable, record which browser session
         // rules should be removed.

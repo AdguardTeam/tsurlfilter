@@ -243,7 +243,6 @@ export class RulesConverter {
             resolvedFilters,
             options,
             excludedRequestDomains,
-            true,
         );
 
         return {
@@ -266,9 +265,6 @@ export class RulesConverter {
      * @param filters Filter IDs with grouped rules.
      * @param options Options for conversion.
      * @param excludedRequestDomains Domains excluded from resolved CSP rules.
-     * @param withScannedRules Whether to carry the scanned rules of each
-     * filter in the result, so a ruleset can be rebuilt without the rules of a
-     * source filter later.
      *
      * @returns Converted rules.
      */
@@ -276,14 +272,12 @@ export class RulesConverter {
         filters: FiltersIdsWithGroupedRules,
         options?: FilterConverterOptions,
         excludedRequestDomains: Map<Rule, string[]> = new Map(),
-        withScannedRules = false,
     ): Promise<ConvertedRules> {
         let converted: ConvertedRules = {
             sourceMapValues: [],
             declarativeRules: [],
             errors: [],
         };
-        const scannedRulesByFilter: [number, Rule[]][] = [];
 
         /**
          * Set to store unique IDs of declarative rules, it will be modified
@@ -298,10 +292,6 @@ export class RulesConverter {
         const uniqueIds = new Set<number>();
 
         for (const [filterId, groupedRules] of filters) {
-            if (withScannedRules) {
-                scannedRulesByFilter.push([filterId, Object.values(groupedRules).flat()]);
-            }
-
             const {
                 sourceMapValues,
                 declarativeRules,
@@ -333,10 +323,6 @@ export class RulesConverter {
 
         if (!RulesConverter.checkRulesHaveCorrectIds(converted.declarativeRules)) {
             throw new Error('Declarative rules have incorrect identifiers.');
-        }
-
-        if (withScannedRules) {
-            converted.scannedRulesByFilter = scannedRulesByFilter;
         }
 
         return converted;

@@ -1,7 +1,6 @@
 import { type DeclarativeRule } from '../declarative-rule';
 import { type ConversionError } from '../errors/conversion-errors';
 import { type LimitationError } from '../errors/limitation-errors';
-import { type Rule } from '../rule/rule';
 import { type Source } from '../ruleset/source-map';
 
 /**
@@ -27,12 +26,4 @@ export interface ConvertedRules {
      * List of limitations occurred during conversion.
      */
     limitations?: LimitationError[];
-
-    /**
-     * Scanned rules of each filter, after `$badfilter` is applied. Present
-     * only when the conversion needs them later, e.g. {@link RulesConverter}
-     * `.convertCspRules()` uses them to rebuild a ruleset without the rules of
-     * an unreadable source filter.
-     */
-    scannedRulesByFilter?: [number, Rule[]][];
 }
