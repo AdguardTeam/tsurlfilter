@@ -7,6 +7,7 @@ import type {
     CssDeclarationList,
     CssInjectionRule,
     CssInjectionRuleBody,
+    ElementHidingRule,
     Raw,
     SelectorList,
 } from '../../../src/nodes';
@@ -518,15 +519,15 @@ describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
     });
 
     test.each([
-        ['double', '"', ':matches-path(/x)'],
-        ['double', '"', ':matches-media((min-width: 100px))'],
-        ['double', '"', ':style(color:red)'],
-        ['double', '"', ':remove()'],
-        ['single', "'", ':matches-path(/x)'],
-        ['single', "'", ':matches-media((min-width: 100px))'],
-        ['single', "'", ':style(color:red)'],
-        ['single', "'", ':remove()'],
-    ])('%s-quoted attribute value containing %s text is not a rule modifier', (_label, quote, inner) => {
+        ['double', ':matches-path(/x)', '"'],
+        ['double', ':matches-media((min-width: 100px))', '"'],
+        ['double', ':style(color:red)', '"'],
+        ['double', ':remove()', '"'],
+        ['single', ':matches-path(/x)', "'"],
+        ['single', ':matches-media((min-width: 100px))', "'"],
+        ['single', ':style(color:red)', "'"],
+        ['single', ':remove()', "'"],
+    ])('%s-quoted attribute value containing %s is not a rule modifier', (_label, inner, quote) => {
         const src = `##div[title=${quote}${inner}${quote}]:style(color:blue)`;
         const ast = parser.parse(src, options) as CssInjectionRule;
 
@@ -599,11 +600,53 @@ describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
         expectLocationsValid(ast);
     });
 
+    test('a lone quote in a :matches-path() regex does not disable modifier detection', () => {
+        const ast = parser.parse("##div:matches-path(/'/):style(color:red)") as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].name.value).toBe('matches-path');
+        expect(ast.modifiers?.children[0].value?.value).toBe("/'/");
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test('a lone apostrophe in a :has-text() argument does not disable modifier detection', () => {
+        const ast = parser.parse("##div:has-text(It's):style(color:red)") as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.body.selectorList).toMatchObject({
+            type: 'Raw',
+            value: "div:has-text(It's)",
+        });
+        expect(ast.modifiers).toBeUndefined();
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test('a real modifier after an unterminated string still parses', () => {
+        const ast = parser.parse(
+            "##div:has-text(It's):matches-media((min-width: 100px)):style(color:red)",
+        ) as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.body.selectorList).toMatchObject({
+            type: 'Raw',
+            value: "div:has-text(It's)",
+        });
+        expect(ast.body.mediaQueryList?.value).toBe('(min-width: 100px)');
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
     test('modifier-like text inside a string in :not() is not a candidate', () => {
-        const ast = parser.parse('##div:not([title=":matches-path(/x)"])');
+        const ast = parser.parse('##div:not([title=":matches-path(/x)"])') as ElementHidingRule;
 
         // No real modifier exists, so the rule stays an element hiding rule.
         expect(ast.type).toBe('ElementHidingRule');
+        expect(ast.body.selectorList).toMatchObject({
+            type: 'Raw',
+            value: 'div:not([title=":matches-path(/x)"])',
+        });
+        expect(ast.modifiers).toBeUndefined();
     });
 
     test('whitespace combinator points at one original whitespace run', () => {

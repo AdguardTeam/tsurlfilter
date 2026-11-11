@@ -8,6 +8,7 @@
  */
 
 import { UboPseudoName } from '../../common/ubo-selector-common';
+import { cssStringLength, isCssStringUnterminated } from '../../css/tokenizer/css-token-mapping';
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { regionEquals, tokenStart } from '../context';
@@ -191,7 +192,14 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
 
     /**
      * Cheap candidate check: linear scan of body tokens for any
-     * Colon + Ident pattern where the ident matches a known uBO modifier name.
+     * Colon + Ident + OpenParen pattern outside quoted CSS strings where the
+     * ident matches a known uBO modifier name.
+     *
+     * Terminated `Quote`/`Apostrophe` spans are skipped, so modifier-like
+     * text inside a CSS string is not a candidate. `Escaped` tokens do not
+     * close a string. An unterminated quote (for example, a lone quote in a
+     * regex or procedural argument) is a plain token.
+     *
      * Zero string allocations — uses regionEquals for comparison.
      *
      * @param ctx Parser context.
@@ -207,24 +215,17 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
     ): boolean {
         const { types, ends, source } = ctx;
 
-        // Quote token type of the open CSS string (0 = not in a string).
-        // Modifier-like text inside a CSS string is not a rule modifier.
-        let quoteType = 0;
-
         for (let ti = startTi; ti < endTi - 1; ti += 1) {
             const t = types[ti];
 
-            if (quoteType !== 0) {
-                // Escaped quote tokens (`Escaped`) never close the string.
-                if (t === quoteType) {
-                    quoteType = 0;
-                }
-                continue;
-            }
-
+            // Skip a terminated CSS string span: modifier-like text inside a
+            // string is not a rule modifier. A lone quote is a plain token.
             if (t === TokenType.Quote || t === TokenType.Apostrophe) {
-                quoteType = t;
-                continue;
+                const stringLength = cssStringLength(types, ti, endTi);
+                if (!isCssStringUnterminated(types, ti, stringLength)) {
+                    ti += stringLength - 1;
+                    continue;
+                }
             }
 
             if (t !== TokenType.Colon) {
@@ -252,21 +253,16 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
             // Also check for :not( wrapping :matches-path() or :matches-media()
             if (regionEquals(source, identStart, identEnd, 'not')) {
                 // Look ahead inside :not() for a uBO modifier candidate.
-                // Skip CSS strings here as well.
-                let innerQuoteType = 0;
+                // Skip terminated CSS strings here as well.
                 for (let j = identEndTi + 1; j < endTi; j += 1) {
                     const jt = types[j];
 
-                    if (innerQuoteType !== 0) {
-                        if (jt === innerQuoteType) {
-                            innerQuoteType = 0;
-                        }
-                        continue;
-                    }
-
                     if (jt === TokenType.Quote || jt === TokenType.Apostrophe) {
-                        innerQuoteType = jt;
-                        continue;
+                        const stringLength = cssStringLength(types, j, endTi);
+                        if (!isCssStringUnterminated(types, j, stringLength)) {
+                            j += stringLength - 1;
+                            continue;
+                        }
                     }
 
                     if (jt === TokenType.Colon) {
@@ -327,11 +323,6 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
         // Terminal modifier tracking (style/remove must be last)
         let terminalClosed = false;
 
-        // Quote token type of the open CSS string (0 = not in a string).
-        // Strings are skipped so that modifier-like text and parentheses
-        // inside them do not affect the modifier scan or the depth.
-        let quoteType = 0;
-
         for (let ti = startTi; ti < endTi; ti += 1) {
             const t = types[ti];
 
@@ -340,17 +331,16 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                 throw new Error(':style() and :remove() can only be used at the end of the selector');
             }
 
-            if (quoteType !== 0) {
-                // Escaped quote tokens (`Escaped`) never close the string.
-                if (t === quoteType) {
-                    quoteType = 0;
-                }
-                continue;
-            }
-
+            // Skip a terminated CSS string span so that modifier-like text
+            // and parentheses inside it do not affect the scan or the depth.
+            // An unterminated quote (for example, in a regex value) is a
+            // plain token, matching the behavior before string skipping.
             if (t === TokenType.Quote || t === TokenType.Apostrophe) {
-                quoteType = t;
-                continue;
+                const stringLength = cssStringLength(types, ti, endTi);
+                if (!isCssStringUnterminated(types, ti, stringLength)) {
+                    ti += stringLength - 1;
+                    continue;
+                }
             }
 
             if (t === TokenType.OpenParen) {
