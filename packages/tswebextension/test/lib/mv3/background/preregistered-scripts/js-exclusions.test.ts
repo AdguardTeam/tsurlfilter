@@ -45,9 +45,11 @@ describe('resolveHostExclusions', () => {
         }]);
 
         // A scheme-anchored pattern never matches the apex, so excluding an
-        // apex page would drop a page the engine does not disable.
+        // apex page would drop a page the engine does not disable. The
+        // exclusion keeps the scheme of the rule: the engine disables JS on
+        // https only.
         expect(exclusions.has('youtube.com')).toBe(false);
-        expect(exclusions.get('www.youtube.com')).toEqual(['*://www.youtube.com/ads*']);
+        expect(exclusions.get('www.youtube.com')).toEqual(['https://www.youtube.com/ads*']);
     });
 
     it('bakes every disabling exception of the host', () => {
@@ -140,6 +142,108 @@ describe('resolveHostExclusions', () => {
         expect(dynamicHosts.get('youtube.com')).toContain('a higher-ranked exception keeps JS injection on');
     });
 
+    it('is not shielded by an exception of another site', () => {
+        // A keeping exception of another site reaches the cosmetic slot but
+        // not this host, so it must not outrank the disabling one and send
+        // the host to the dynamic path.
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@||example.org^$generichide\n@@||youtube.com/video$jsinject\n',
+        }]);
+
+        expect(dynamicHosts.size).toBe(0);
+        expect(exclusions.get('youtube.com')).toEqual(['*://youtube.com/video*']);
+    });
+
+    it('keeps the scheme of a scheme-anchored exception', () => {
+        const { exclusions } = scan([{
+            filterId: 2,
+            content: '@@|http://youtube.com/ads$document\n',
+        }]);
+
+        // The engine disables JS on the http page only, and the registration
+        // matches both schemes, so an any-scheme exclusion would drop rules
+        // on the https page the engine allows.
+        expect(exclusions.get('youtube.com')).toEqual(['http://youtube.com/ads*']);
+    });
+
+    it('treats a bare host token as the host the author meant', () => {
+        const { exclusions } = scan([{
+            filterId: 2,
+            content: '@@youtube.com/ads$document\n',
+        }]);
+
+        // A bare pattern is a substring search: it matches the host it starts
+        // with and, being unanchored, every subdomain of it.
+        expect(exclusions.get('youtube.com')).toEqual(['*://youtube.com/ads*']);
+        expect(exclusions.get('www.youtube.com')).toEqual(['*://www.youtube.com/ads*']);
+    });
+
+    it('keeps a host dynamic when a bare pattern disables every URL of it', () => {
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@youtube.com^$document\n',
+        }]);
+
+        // Without the `||` anchor the rule still matches the host and its
+        // subdomains: the host cannot be registered at all.
+        expect(exclusions.size).toBe(0);
+        expect(dynamicHosts.get('youtube.com')).toBe('@@youtube.com^$document');
+        expect(dynamicHosts.get('www.youtube.com')).toBe('@@youtube.com^$document');
+    });
+
+    it('reads a leading dot as "a label is required"', () => {
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@.youtube.com/ads$document\n',
+        }]);
+
+        // The dot is part of the substring, so the rule matches
+        // `www.youtube.com/ads` but not `youtube.com/ads`.
+        expect(dynamicHosts.size).toBe(0);
+        expect(exclusions.has('youtube.com')).toBe(false);
+        expect(exclusions.get('www.youtube.com')).toEqual(['*://www.youtube.com/ads*']);
+    });
+
+    it('keeps a host dynamic when a wildcard or truncated host reaches it', () => {
+        const wildcard = scan([{
+            filterId: 2,
+            content: '@@||*.youtube.com/ads$document\n',
+        }]);
+        const truncated = scan([{
+            filterId: 2,
+            content: '@@||youtube.$document\n',
+        }]);
+
+        // Both reach the host in the engine (a wildcard host and a truncated
+        // host part are prefixes of the hostname), but no match-pattern
+        // anchor can pin the exclusion to the registered host.
+        expect(wildcard.dynamicHosts.get('www.youtube.com')).toContain('not anchored to its name');
+        expect(truncated.dynamicHosts.has('youtube.com')).toBe(true);
+    });
+
+    it('keeps a host dynamic when an exception matches every URL', () => {
+        const { exclusions, dynamicHosts } = scan([{ filterId: 2, content: '@@$jsinject\n' }]);
+
+        // `@@$jsinject` disables JS everywhere; no registration is safe.
+        expect(exclusions.size).toBe(0);
+        expect(dynamicHosts.get('youtube.com')).toContain('matches every URL');
+    });
+
+    it('ignores a document-slot exception the engine cannot match on a main frame', () => {
+        // `@@*` has neither a hostname nor a shortcut, so the engine files it
+        // in the domains table; that table cannot match a main-frame request
+        // (it has no source), so the exception never decides the JS verdict
+        // there — and it must not shield the disabling one either.
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@*$urlblock,domain=youtube.com\n@@||youtube.com/video$jsinject\n',
+        }]);
+
+        expect(dynamicHosts.size).toBe(0);
+        expect(exclusions.get('youtube.com')).toEqual(['*://youtube.com/video*']);
+    });
+
     it('reports host-less exceptions instead of baking them', () => {
         const { exclusions, dynamicHosts, unanchoredExceptions } = scan([{
             filterId: 2,
@@ -151,5 +255,40 @@ describe('resolveHostExclusions', () => {
         expect(exclusions.size).toBe(0);
         expect(dynamicHosts.size).toBe(0);
         expect(unanchoredExceptions).toEqual(['@@/prison/universal.php$document']);
+    });
+
+    it('excludes the lowercased form of a mixed-case path', () => {
+        const { exclusions, caseVariantExceptions } = scan([{
+            filterId: 2,
+            content: '@@||youtube.com/Ads$document\n',
+        }]);
+
+        // The engine compares the path case-insensitively, the browser does
+        // not: the written form covers the URL as the rule spells it, the
+        // lowercased one covers the usual spelling.
+        expect(exclusions.get('youtube.com')).toEqual(['*://youtube.com/Ads*', '*://youtube.com/ads*']);
+        expect(caseVariantExceptions).toEqual(['@@||youtube.com/Ads$document']);
+    });
+
+    it('keeps the written case when the exception is $match-case', () => {
+        const { exclusions, caseVariantExceptions } = scan([{
+            filterId: 2,
+            content: '@@||youtube.com/Ads$document,match-case\n',
+        }]);
+
+        // `$match-case` makes the engine compare the path case-sensitively,
+        // so a lowercased exclusion would drop a page the engine allows.
+        expect(exclusions.get('youtube.com')).toEqual(['*://youtube.com/Ads*']);
+        expect(caseVariantExceptions).toEqual([]);
+    });
+
+    it('does not report a lowercased path as a case variant', () => {
+        const { exclusions, caseVariantExceptions } = scan([{
+            filterId: 2,
+            content: '@@||youtube.com/my_video_ad$document\n',
+        }]);
+
+        expect(exclusions.get('youtube.com')).toEqual(['*://youtube.com/my_video_ad*']);
+        expect(caseVariantExceptions).toEqual([]);
     });
 });

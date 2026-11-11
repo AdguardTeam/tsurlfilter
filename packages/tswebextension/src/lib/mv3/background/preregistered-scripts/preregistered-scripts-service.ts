@@ -480,9 +480,17 @@ export class PreregisteredScriptsService {
 
         if (exclusions.unanchoredExceptions.length > 0) {
             logger.debug(
-                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: Exceptions without a host apply'
-                + ' to every site and cannot be excluded from a registration',
+                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: Exceptions that name no host'
+                + ' stay unapplied on preregistered pages; the host keeps its registration',
                 exclusions.unanchoredExceptions,
+            );
+        }
+
+        if (exclusions.caseVariantExceptions.length > 0) {
+            logger.debug(
+                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: Case-ambiguous paths are'
+                + ' excluded as written and lowercased; the engine compares them case-insensitively',
+                exclusions.caseVariantExceptions,
             );
         }
 

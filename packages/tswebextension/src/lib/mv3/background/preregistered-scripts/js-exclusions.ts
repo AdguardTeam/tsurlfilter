@@ -51,9 +51,17 @@ export interface JsExclusions {
     /**
      * Rule texts of the exceptions that name no host (`@@/path$document`).
      * They match every site, so no single exclusion can express them; they
-     * are reported, never fatal.
+     * are reported and stay unapplied on preregistered pages, never fatal.
      */
     unanchoredExceptions: string[];
+
+    /**
+     * Rule texts of the exceptions whose path is written in mixed case. The
+     * engine compares it case-insensitively while `excludeMatches` does not,
+     * so only the written and the lowercased form are excluded; other case
+     * variants of the same URL still get the script.
+     */
+    caseVariantExceptions: string[];
 }
 
 /**
@@ -62,9 +70,16 @@ export interface JsExclusions {
 const SCHEME_SEPARATOR = '://';
 
 /**
- * Scheme a preregistered document is loaded over.
+ * Schemes a preregistered document can be loaded over: the registration uses
+ * the `*` scheme wildcard, so an exclusion anchored to one of them still lies
+ * inside its `matches`.
  */
-const PREREGISTERED_SCHEME = 'https';
+const DOCUMENT_SCHEMES = new Set(['http', 'https']);
+
+/**
+ * Scheme wildcard of an exclusion that covers both document schemes.
+ */
+const ANY_SCHEME = '*';
 
 /**
  * Characters a match-pattern path can carry. Everything else (a wildcard
@@ -91,6 +106,24 @@ type PatternHost = {
      * Text after the host: the path, or a terminator.
      */
     rest: string;
+
+    /**
+     * Scheme of an anchored pattern, or {@link ANY_SCHEME}.
+     */
+    scheme: string;
+
+    /**
+     * Whether the pattern anchors the host. A bare `host/path` pattern is a
+     * substring search instead, so its host token can also occur inside a
+     * longer host or the query of another site.
+     */
+    anchored: boolean;
+
+    /**
+     * Whether the pattern needs a label before its host part (`host` was
+     * written with a leading dot): it matches `www.host` but not `host`.
+     */
+    requiresLabel: boolean;
 };
 
 /**
@@ -105,29 +138,36 @@ type PatternHost = {
 const parsePatternHost = (pattern: string): PatternHost | undefined => {
     let rest: string;
     let allowSubdomains = false;
+    let scheme = ANY_SCHEME;
+    let anchored = true;
+    let requiresLabel = false;
 
     if (pattern.startsWith(SimpleRegex.MASK_START_URL)) {
         rest = pattern.slice(SimpleRegex.MASK_START_URL.length);
         allowSubdomains = true;
     } else if (pattern.startsWith(SimpleRegex.MASK_PIPE)) {
-        const anchored = pattern.slice(SimpleRegex.MASK_PIPE.length);
-        const schemeIndex = anchored.indexOf(SCHEME_SEPARATOR);
+        const pipeAnchored = pattern.slice(SimpleRegex.MASK_PIPE.length);
+        const schemeIndex = pipeAnchored.indexOf(SCHEME_SEPARATOR);
         if (schemeIndex < 0) {
             return undefined;
         }
-        // A document is loaded over `https` in every target the artifacts
-        // ship for: a rule anchored to another scheme never matches.
-        if (anchored.slice(0, schemeIndex).toLowerCase() !== PREREGISTERED_SCHEME) {
+        scheme = pipeAnchored.slice(0, schemeIndex).toLowerCase();
+        // A document is loaded over http(s) only, so an exception anchored to
+        // another scheme never matches one.
+        if (!DOCUMENT_SCHEMES.has(scheme)) {
             return undefined;
         }
-        rest = anchored.slice(schemeIndex + SCHEME_SEPARATOR.length);
+        rest = pipeAnchored.slice(schemeIndex + SCHEME_SEPARATOR.length);
     } else if (pattern.startsWith(SCHEME_SEPARATOR)) {
         rest = pattern.slice(SCHEME_SEPARATOR.length);
     } else {
-        // A scheme-less pattern that starts with a host-looking token
-        // (`host/path`, `.host/path`): the leading dot is not special in the
-        // engine, it is part of the substring the rule looks for.
-        const bare = pattern.startsWith('.') ? pattern.slice(1) : pattern;
+        // A bare `host/path` or `.host/path` is a substring search, not a host
+        // anchor: the same text can sit inside a longer host or a query. The
+        // leading dot is not special in the engine either, it is part of the
+        // substring, so it still requires a label before the host part.
+        anchored = false;
+        requiresLabel = pattern.startsWith('.');
+        const bare = requiresLabel ? pattern.slice(1) : pattern;
         const [firstToken = ''] = bare.split(/[/^?#]/);
         if (!/^[\w*%-]+(\.[\w*%-]+)+$/.test(firstToken)) {
             return undefined;
@@ -144,47 +184,125 @@ const parsePatternHost = (pattern: string): PatternHost | undefined => {
         host,
         allowSubdomains,
         rest: rest.slice(host.length),
+        scheme,
+        anchored,
+        requiresLabel,
     };
 };
 
 /**
- * Checks whether the pattern covers the hostname.
+ * Escapes a literal for a regular expression.
  *
- * @param patternHost Host part of the pattern.
+ * @param text Literal text.
+ *
+ * @returns Escaped text.
+ */
+const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Checks whether a host pattern with wildcards matches the hostname. The
+ * engine's `*` spans dots, so the comparison is a glob, not a label match.
+ *
+ * @param host Host part of the pattern.
  * @param hostname Hostname to check.
  *
- * @returns True when the pattern can match some URL of the hostname.
+ * @returns True when the pattern matches the hostname.
  */
-const hostCovers = (patternHost: PatternHost, hostname: string): boolean => {
-    const host = patternHost.host.toLowerCase();
-    // A wildcard host cannot be compared with the target without a matcher,
-    // and a host that neither equals nor suffixes the target belongs to
-    // another site: both are "not this host".
-    if (host.includes('*')) {
-        return false;
-    }
+const matchesWildcardHost = (host: string, hostname: string): boolean => {
+    const source = host.split('*').map(escapeRegExp).join('.*');
 
-    return hostname === host || (patternHost.allowSubdomains && hostname.endsWith(`.${host}`));
+    return new RegExp(`^${source}$`).test(hostname);
 };
 
 /**
- * Builds the `excludeMatches` pattern for one exception of the host.
+ * Resolves how a pattern's host part relates to the registered hostname.
  *
  * @param patternHost Host part of the pattern.
  * @param hostname Hostname the registration is for.
  *
- * @returns Match pattern, or `undefined` when the pattern cannot be expressed
+ * @returns `"host"` when the pattern is pinned to this hostname, `"unknown"`
+ * when the engine reaches the host but a match-pattern anchor cannot express
+ * it, `"other"` when the pattern belongs to another site.
+ */
+const resolveScope = (
+    patternHost: PatternHost,
+    hostname: string,
+): 'host' | 'unknown' | 'other' => {
+    const host = patternHost.host.toLowerCase();
+
+    if (!patternHost.anchored) {
+        // A substring search cannot be pinned: the host token can also occur
+        // inside a longer host or a query, and a wildcard token cannot be
+        // compared with the target at all.
+        if (host.includes('*')) {
+            return 'other';
+        }
+
+        if (host === hostname) {
+            // The text has to occur inside the URL of the host: with a leading
+            // dot it needs a label before it (`www.`), so the apex is out.
+            return patternHost.requiresLabel ? 'other' : 'host';
+        }
+
+        return hostname.endsWith(`.${host}`) ? 'host' : 'other';
+    }
+
+    if (hostname === host || (patternHost.allowSubdomains && hostname.endsWith(`.${host}`))) {
+        return 'host';
+    }
+
+    // A wildcard host (`||*.youtube.com`) reaches the hostname in the engine,
+    // but no exclusion can be anchored to it. The engine's `*` spans dots, so
+    // the comparison is a glob.
+    if (host.includes('*')) {
+        return matchesWildcardHost(host, hostname) ? 'unknown' : 'other';
+    }
+
+    // An unterminated host part is a prefix match (`||youtube.` reaches
+    // `youtube.com`): the pattern reaches, the host name does not match.
+    const terminated = /^[/^?#]/.test(patternHost.rest);
+
+    return !terminated && hostname.startsWith(host) ? 'unknown' : 'other';
+};
+
+/**
+ * Builds the `excludeMatches` patterns for one exception of the host.
+ *
+ * @param patternHost Host part of the pattern.
+ * @param hostname Hostname the registration is for.
+ * @param caseSensitive Whether the rule carries `$match-case`.
+ *
+ * @returns Match patterns, or `undefined` when the pattern cannot be expressed
  * (a host-wide exception, a wildcard path, a query, a regexp).
  */
-const toExcludePattern = (patternHost: PatternHost, hostname: string): string | undefined => {
+const toExcludePatterns = (
+    patternHost: PatternHost,
+    hostname: string,
+    caseSensitive: boolean,
+): string[] | undefined => {
     const path = patternHost.rest;
     if (!MATCH_PATTERN_PATH.test(path)) {
         return undefined;
     }
 
     // The engine matches the pattern as `host` followed by the path, and the
-    // registration covers the host only: the exclusion is anchored to it.
-    return `*://${hostname}${path}*`;
+    // registration covers the host only: the exclusion is anchored to it. A
+    // scheme-anchored exception keeps its scheme, so the other scheme — where
+    // the engine does not disable JS — is not excluded.
+    const prefix = `${patternHost.scheme}://${hostname}`;
+    const written = `${prefix}${path}*`;
+
+    if (caseSensitive) {
+        return [written];
+    }
+
+    // Without `$match-case` the engine compares the URL case-insensitively,
+    // while `excludeMatches` does not (probed in a browser: `/Ads` does not
+    // exclude `/ads`). The lowercased form covers the usual spelling and the
+    // engine agrees it is excluded; other case variants stay uncovered.
+    const lowercasePath = path.toLowerCase();
+
+    return lowercasePath === path ? [written] : [written, `${prefix}${lowercasePath}*`];
 };
 
 /**
@@ -249,7 +367,12 @@ const collectCandidates = (sources: readonly ExceptionSource[]): NetworkRule[] =
 const buildHostExclusions = (
     candidates: readonly NetworkRule[],
     hostname: string,
-): { patterns: string[]; dynamic?: string; unanchored?: string[] } => {
+): {
+    patterns: string[];
+    dynamic?: string;
+    unanchored?: string[];
+    caseVariants?: string[];
+} => {
     const rootUrl = getPreregisteredRootUrl(hostname);
 
     const cosmeticRequest = createPreregisteredPageRequest(hostname);
@@ -302,21 +425,37 @@ const buildHostExclusions = (
 
     const patterns = new Set<string>();
     const unanchored: string[] = [];
+    const caseVariants: string[] = [];
 
     for (const rule of disabling) {
         const text = rule.getText() ?? rule.getPattern();
         const patternHost = parsePatternHost(rule.getPattern());
 
-        // A host-less pattern matches every URL of every site, so it cannot be
-        // singled out by an exclusion; a pattern naming another host cannot
-        // match this host's pages in the engine either (a generic exception
-        // like `.queue*.vk.com/` is not baked for every host).
+        // A pattern that names no host can still match every URL: `@@$document`
+        // and `@@*$document` disable JS everywhere, so no registration of any
+        // host is safe there.
         if (!patternHost) {
+            if (rule.getPattern() === '' || rule.getPattern() === '*') {
+                return {
+                    patterns: [],
+                    dynamic: `${text}: the exception matches every URL`,
+                };
+            }
+
             unanchored.push(text);
             continue;
         }
 
-        if (!hostCovers(patternHost, hostname)) {
+        const scope = resolveScope(patternHost, hostname);
+
+        if (scope === 'unknown') {
+            return {
+                patterns: [],
+                dynamic: `${text}: the pattern reaches the host but is not anchored to its name`,
+            };
+        }
+
+        if (scope === 'other') {
             continue;
         }
 
@@ -327,18 +466,26 @@ const buildHostExclusions = (
             return { patterns: [], dynamic: text };
         }
 
-        const pattern = toExcludePattern(patternHost, hostname);
-        if (!pattern) {
+        const rulePatterns = toExcludePatterns(
+            patternHost,
+            hostname,
+            rule.isOptionEnabled(NetworkRuleOption.MatchCase),
+        );
+        if (!rulePatterns) {
             return {
                 patterns: [],
                 dynamic: `${text}: the exception cannot be expressed as an excludeMatches pattern`,
             };
         }
 
-        patterns.add(pattern);
+        rulePatterns.forEach((pattern) => patterns.add(pattern));
+
+        if (rulePatterns.length > 1) {
+            caseVariants.push(text);
+        }
     }
 
-    return { patterns: [...patterns].sort(), unanchored };
+    return { patterns: [...patterns].sort(), unanchored, caseVariants };
 };
 
 /**
@@ -356,17 +503,29 @@ export const resolveHostExclusions = (
     const exclusions = new Map<string, string[]>();
     const dynamicHosts = new Map<string, string>();
     const unanchoredExceptions = new Set<string>();
+    const caseVariantExceptions = new Set<string>();
 
     if (hostnames.length === 0) {
-        return { exclusions, dynamicHosts, unanchoredExceptions: [] };
+        return {
+            exclusions,
+            dynamicHosts,
+            unanchoredExceptions: [],
+            caseVariantExceptions: [],
+        };
     }
 
     const candidates = collectCandidates(sources);
 
     for (const hostname of hostnames) {
-        const { patterns, dynamic, unanchored } = buildHostExclusions(candidates, hostname);
+        const {
+            patterns,
+            dynamic,
+            unanchored,
+            caseVariants,
+        } = buildHostExclusions(candidates, hostname);
 
         unanchored?.forEach((text) => unanchoredExceptions.add(text));
+        caseVariants?.forEach((text) => caseVariantExceptions.add(text));
 
         if (dynamic) {
             dynamicHosts.set(hostname, dynamic);
@@ -382,6 +541,7 @@ export const resolveHostExclusions = (
         exclusions,
         dynamicHosts,
         unanchoredExceptions: [...unanchoredExceptions].sort(),
+        caseVariantExceptions: [...caseVariantExceptions].sort(),
     };
 };
 
