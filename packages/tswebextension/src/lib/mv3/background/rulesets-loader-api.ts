@@ -2,6 +2,7 @@ import { type IDBPDatabase } from 'idb';
 import browser from 'webextension-polyfill';
 
 import { AGTREE_VERSION } from '@adguard/agtree';
+import { CSS_TOKENIZER_VERSION } from '@adguard/css-tokenizer';
 import {
     extractRulesetId,
     getRulesetId,
@@ -37,23 +38,27 @@ import { logger } from '../../common/utils/logger';
  *
  * 2. **In-Memory Cache**: Fast access layer for frequently accessed data within a session
  *    - `idbChecksumsCache`: Caches checksums from IDB with composite keys `<rulesetsPath>_<rulesetId>`
+ *    - `idbFilterListVersionsCache`: Caches the versions of the libraries that
+ *      prepared the cached filter lists with the same composite keys
  *    - `rulesetsCache`: Caches fully created IRulesetWithSourceMap instances
  *    - `metadataRulesetsCache`: Caches metadata rule sets by path
  *    - It is empty after every service worker restart.
  *
  * ## Cache Synchronization:
  * The source of truth for data freshness is the checksum of the rule set file
- * stored in the metadata rule set (`ruleset_0`).
+ * stored in the metadata rule set (`ruleset_0`) together with the version of
+ * the libraries that prepared the cached filter list.
  * When the checksum in IDB differs, or the cached filter list was prepared by
  * another version of the libraries, the rule set file is read again: the
  * preprocessed filter list is written to {@link FiltersStorage} first, then the
- * rule set data together with the new checksum in one IDB transaction. If any
- * step fails, the `rulesets` store keeps the previous checksum (the `filters`
- * store may already hold the new filter list) and the next start syncs again.
+ * rule set data together with the new checksum and filter list version in one
+ * IDB transaction. If any step fails, the `rulesets` store keeps the previous
+ * checksum (the `filters` store may already hold the new filter list) and the
+ * next start syncs again.
  *
  * The main functionalities include:
  * - Initializing the rule sets loader to prepare it for fetching rule sets.
- * - Fetching checksums of rule sets from disk (source of truth).
+ * - Fetching checksums of rule sets from disk.
  * - Synchronizing rule sets with IDB when checksums change.
  * - Creating new {@link IRulesetWithSourceMap} instances with lazy loading capabilities.
  *
@@ -111,7 +116,7 @@ export class RulesetsLoaderApi {
      * the rule set file did not change, because the conversion output may
      * differ between library releases.
      */
-    private static readonly FILTER_LIST_VERSION = `${TSURLFILTER_VERSION}/${AGTREE_VERSION}`;
+    private static readonly FILTER_LIST_VERSION = `${TSURLFILTER_VERSION}/${AGTREE_VERSION}/${CSS_TOKENIZER_VERSION}`;
 
     /**
      * Cache of metadata rule sets.

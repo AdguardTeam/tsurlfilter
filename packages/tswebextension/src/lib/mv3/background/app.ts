@@ -60,7 +60,8 @@ type ConfigurationResult = {
      * The rule set is created on demand, because creating a rule set for the
      * first time requires runtime filter list preparation, which is too
      * expensive for the startup path. Call it after the configuration is
-     * applied. Repeated calls for the same filter return the same promise.
+     * applied. Repeated calls for the same filter share the pending creation.
+     * A failed creation is not cached, so a later call retries it.
      *
      * @param filterId Filter id.
      *
@@ -880,10 +881,9 @@ export class TsWebExtension implements AppInterface<
      * @param staticFilters List of static {@link IFilter}.
      * @param enabledRulesetsIds Ids of rule sets enabled in the browser.
      *
-     * @returns Enabled static {@link IRulesetWithSourceMap|rule sets}, or an
-     * empty list if an error occurred during the rule scanning step, a
-     * function to create the rule set of a single disabled filter, and a
-     * function to create all disabled rule sets.
+     * @returns Enabled static {@link IRulesetWithSourceMap|rule sets} that
+     * were created successfully, a function to create the rule set of a
+     * single disabled filter, and a function to create all disabled rule sets.
      */
     private static async loadStaticRulesets(
         rulesetsPath: ConfigurationMV3['rulesetsPath'],
@@ -917,6 +917,12 @@ export class TsWebExtension implements AppInterface<
          */
         const disabledRulesetsPromises = new Map<number, Promise<IRulesetWithSourceMap | undefined>>();
 
+        /**
+         * Serializes rule set creation, so the batch and the per-filter
+         * callers prepare one rule set at a time.
+         */
+        let creationQueue: Promise<unknown> = Promise.resolve();
+
         const loadDisabledFilter = (filterId: number): Promise<IRulesetWithSourceMap | undefined> => {
             if (!disabledFilterIds.has(filterId)) {
                 return Promise.resolve(undefined);
@@ -925,12 +931,17 @@ export class TsWebExtension implements AppInterface<
             let promise = disabledRulesetsPromises.get(filterId);
             if (!promise) {
                 const rulesetId = getRulesetId(filterId);
-                promise = rulesetsLoaderApi.createRuleset(rulesetId, staticFilters)
+                promise = creationQueue
+                    .then(() => rulesetsLoaderApi.createRuleset(rulesetId, staticFilters))
                     .catch((e) => {
+                        // Do not cache a failed creation, so a later call can
+                        // retry it.
+                        disabledRulesetsPromises.delete(filterId);
                         logger.error(`[tsweb.TsWebExtension.loadStaticRulesets]: cannot create rule set ${rulesetId} due to: `, e);
                         return undefined;
                     });
                 disabledRulesetsPromises.set(filterId, promise);
+                creationQueue = promise;
             }
 
             return promise;
@@ -951,17 +962,18 @@ export class TsWebExtension implements AppInterface<
             .filter((id) => enabledIds.has(id))
             .map((id) => rulesetsLoaderApi.createRuleset(id, staticFilters));
 
-        try {
-            const enabled = await Promise.all(staticRulesetsTasks);
+        const enabledResults = await Promise.allSettled(staticRulesetsTasks);
+        const enabled: IRulesetWithSourceMap[] = [];
 
-            return { enabled, loadDisabledFilter, loadDisabled };
-        } catch (e) {
-            const filterListIds = staticFilters.map((f) => f.getId());
-
-            logger.error(`[tsweb.TsWebExtension.loadStaticRulesets]: cannot scan rules of filter list with ids ${filterListIds} due to: `, e);
-
-            return { enabled: [], loadDisabledFilter, loadDisabled };
+        for (const result of enabledResults) {
+            if (result.status === 'fulfilled') {
+                enabled.push(result.value);
+            } else {
+                logger.error('[tsweb.TsWebExtension.loadStaticRulesets]: cannot create a rule set of an enabled filter due to: ', result.reason);
+            }
         }
+
+        return { enabled, loadDisabledFilter, loadDisabled };
     }
 
     /**

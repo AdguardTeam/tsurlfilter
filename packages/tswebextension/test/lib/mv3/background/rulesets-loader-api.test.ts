@@ -10,12 +10,14 @@ import {
 import browser from 'webextension-polyfill';
 
 import { AGTREE_VERSION } from '@adguard/agtree';
+import { CSS_TOKENIZER_VERSION } from '@adguard/css-tokenizer';
 import {
     type CompactRulesetContent,
     Filter,
     FilterConverter,
     getRulesetId,
     getRulesetPath,
+    type IFilter,
     InvalidMetadataChunksError,
     type IRulesetWithSourceMap,
     isSafeRule,
@@ -52,7 +54,7 @@ const METADATA_RULESET = getRulesetId(METADATA_RULESET_ID);
  * Version of the libraries that prepared a cached filter list, as stored by
  * the loader.
  */
-const FILTER_LIST_VERSION = `${TSURLFILTER_VERSION}/${AGTREE_VERSION}`;
+const FILTER_LIST_VERSION = `${TSURLFILTER_VERSION}/${AGTREE_VERSION}/${CSS_TOKENIZER_VERSION}`;
 
 /**
  * Prefixes of the keys the loader writes to the rulesets store. They are
@@ -628,8 +630,12 @@ describe('TsWebExtension.loadStaticRulesets', () => {
         expect(enabled.map((ruleset) => ruleset.getId())).toEqual([RULESET_ID]);
         expect(countFetches(LARGE_RULESET_ID)).toBe(0);
 
-        // The per-filter loader creates only the requested ruleset.
-        const deferredRuleset = await loadDisabledFilter(LARGE_FILTER_ID);
+        // Start the batch while the per-filter creation is still in flight, so
+        // the test pins that both share the same pending creation.
+        const perFilterPromise = loadDisabledFilter(LARGE_FILTER_ID);
+        const batchPromise = loadDisabled();
+
+        const deferredRuleset = await perFilterPromise;
 
         expect(deferredRuleset?.getId()).toBe(LARGE_RULESET_ID);
         expect(deferredRuleset?.getMetadataRulesCount())
@@ -639,7 +645,7 @@ describe('TsWebExtension.loadStaticRulesets', () => {
 
         // The batch reuses the per-filter promise instead of creating the
         // ruleset again.
-        const deferredRulesets = await loadDisabled();
+        const deferredRulesets = await batchPromise;
 
         expect(deferredRulesets).toHaveLength(1);
         expect(deferredRulesets[0]).toBe(deferredRuleset);
@@ -692,5 +698,65 @@ describe('TsWebExtension.loadStaticRulesets', () => {
         const deferredRulesets = await loadDisabled();
 
         expect(deferredRulesets.map((ruleset) => ruleset.getId())).toEqual([RULESET_ID]);
+    });
+
+    it('retries a disabled ruleset after a failed creation', async () => {
+        serveRulesets({
+            [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES),
+            [LARGE_RULESET_ID]: await buildRulesetFile(LARGE_FILTER_ID, getLargeFilterRules(10)),
+        });
+        serveRulesets({
+            [RULESET_ID]: files.get(getRulesetPath(RULESET_ID))!,
+            [LARGE_RULESET_ID]: toLegacyRulesetFile(readServedRuleset(LARGE_RULESET_ID)),
+        });
+        mockManifest([RULESET_ID, LARGE_RULESET_ID]);
+
+        const { loadDisabledFilter } = await loadStaticRulesets([]);
+
+        expect(await loadDisabledFilter(LARGE_FILTER_ID)).toBeUndefined();
+
+        // Replace the failed ruleset with a valid one and retry the same
+        // filter: the failed creation must not be cached.
+        serveRulesets({
+            [RULESET_ID]: files.get(getRulesetPath(RULESET_ID))!,
+            [LARGE_RULESET_ID]: await buildRulesetFile(LARGE_FILTER_ID, getLargeFilterRules(10)),
+        });
+
+        expect((await loadDisabledFilter(LARGE_FILTER_ID))?.getId()).toBe(LARGE_RULESET_ID);
+    });
+
+    it('creates per-filter rulesets one at a time', async () => {
+        serveRulesets({
+            [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES),
+            [LARGE_RULESET_ID]: await buildRulesetFile(LARGE_FILTER_ID, getLargeFilterRules(10)),
+        });
+        mockManifest([RULESET_ID, LARGE_RULESET_ID]);
+
+        const { loadDisabledFilter } = await loadStaticRulesets([]);
+        const originalCreateRuleset = RulesetsLoaderApi.prototype.createRuleset;
+        let active = 0;
+        let maxActive = 0;
+        const createRulesetSpy = vi.spyOn(RulesetsLoaderApi.prototype, 'createRuleset')
+            .mockImplementation(function createRuleset(
+                this: RulesetsLoaderApi,
+                rulesetId: string,
+                filterList: IFilter[],
+            ) {
+                active += 1;
+                maxActive = Math.max(maxActive, active);
+
+                return originalCreateRuleset.call(this, rulesetId, filterList)
+                    .finally(() => {
+                        active -= 1;
+                    });
+            });
+
+        await Promise.all([
+            loadDisabledFilter(FILTER_ID),
+            loadDisabledFilter(LARGE_FILTER_ID),
+        ]);
+
+        expect(maxActive).toBe(1);
+        createRulesetSpy.mockRestore();
     });
 });
