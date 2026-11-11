@@ -9,6 +9,7 @@ import {
 import { type IFilter } from '@adguard/dnr-converter';
 import { Engine } from '@adguard/tsurlfilter';
 
+import { ALLOWLIST_FILTER_ID } from '../../../../src/lib/common/constants';
 import { EngineApi } from '../../../../src/lib/mv3/background/engine-api';
 
 /**
@@ -55,6 +56,26 @@ describe('EngineApi.startEngine — exception sources', () => {
             { filterId: 2, lines: ['@@||youtube.com/my_video_ad$document'] },
             { filterId: 0, lines: ['@@||youtube.com/watch$document'] },
         ]);
+    });
+
+    it('collects the generated rule of the user allowlist', async () => {
+        // The allowlist is a document-level exception on the hosts the user
+        // allowlisted: the engine disables JS there, so the scan has to see it.
+        vi.spyOn(Engine, 'createAsync').mockResolvedValue(undefined as never);
+
+        const api = new EngineApi();
+        await api.startEngine({
+            verbose: false,
+            localFilters: [],
+            remoteFilters: [],
+            userRulesFilter: makeFilter(0, ''),
+            allowlistRulesList: '@@///(www\\.)?youtube\\.com/$document,important',
+        });
+
+        expect(api.getExceptionSources()).toEqual([{
+            filterId: ALLOWLIST_FILTER_ID,
+            lines: ['@@///(www\\.)?youtube\\.com/$document,important'],
+        }]);
     });
 
     it('starts empty, so a sync before the engine start registers no exclusions', () => {

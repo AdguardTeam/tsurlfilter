@@ -50,8 +50,9 @@ const getRuleDomains = (rule: NetworkRule): string[] => [
  *
  * The tables are tried in `RuleTable` order and the first one that accepts the
  * rule keeps it. The predicates live with the tables, so the engine and this
- * function cannot drift apart. Used by build tools that have to reproduce the
- * engine's tie-break order without copying the routing.
+ * function cannot drift apart. Kept internal: the only caller outside the
+ * engine is `NetworkRule.isInDomainsTable()`, which exposes the question, not
+ * the routing.
  *
  * @param rule Network rule.
  *

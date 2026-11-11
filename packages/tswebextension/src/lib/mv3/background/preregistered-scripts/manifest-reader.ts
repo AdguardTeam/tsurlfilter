@@ -99,10 +99,10 @@ const fetchManifest = async (scriptsPath: string): Promise<PreregisteredScriptsM
 };
 
 /**
- * Fetches the build-time manifest shipped next to the artifacts. It lists
- * the rule hashes with matching generated files, the scriptlet name →
- * function-file map, the hosts the generation leaves on the dynamic path and
- * the `excludeMatches` patterns of each registered host.
+ * Fetches the build-time manifest shipped next to the artifacts: the schema
+ * version, the rule hashes with matching generated files and the scriptlet
+ * name → function-file map. The URL exclusions are not part of it — they are
+ * resolved at runtime from the live rule set.
  *
  * The manifest is this package's own build output, but it is still
  * validated: a missing, unreadable, malformed, or version-mismatched

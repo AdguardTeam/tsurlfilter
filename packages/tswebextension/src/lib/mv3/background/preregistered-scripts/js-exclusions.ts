@@ -126,11 +126,6 @@ type PatternHost = {
      */
     anchored: boolean;
 
-    /**
-     * Whether the pattern needs a label before its host part (`host` was
-     * written with a leading dot): it matches `www.host` but not `host`.
-     */
-    requiresLabel: boolean;
 };
 
 /**
@@ -147,7 +142,6 @@ const parsePatternHost = (pattern: string): PatternHost | undefined => {
     let allowSubdomains = false;
     let scheme = ANY_SCHEME;
     let anchored = true;
-    let requiresLabel = false;
 
     if (pattern.startsWith(SimpleRegex.MASK_START_URL)) {
         rest = pattern.slice(SimpleRegex.MASK_START_URL.length);
@@ -173,8 +167,9 @@ const parsePatternHost = (pattern: string): PatternHost | undefined => {
         // leading dot is not special in the engine either, it is part of the
         // substring, so it still requires a label before the host part.
         anchored = false;
-        requiresLabel = pattern.startsWith('.');
-        const bare = requiresLabel ? pattern.slice(1) : pattern;
+        // The leading dot is part of the substring, not an anchor: it is
+        // stripped to read the host token.
+        const bare = pattern.startsWith('.') ? pattern.slice(1) : pattern;
         const [firstToken = ''] = bare.split(/[/^?#]/);
         if (!/^[\w*%-]+(\.[\w*%-]+)+$/.test(firstToken)) {
             return undefined;
@@ -193,7 +188,6 @@ const parsePatternHost = (pattern: string): PatternHost | undefined => {
         rest: rest.slice(host.length),
         scheme,
         anchored,
-        requiresLabel,
     };
 };
 
@@ -204,6 +198,22 @@ const parsePatternHost = (pattern: string): PatternHost | undefined => {
  *
  * @returns Escaped text.
  */
+/**
+ * Checks whether a rule without a host part still matches the root page of the
+ * hostname. Such an exception decides the very page the registration covers
+ * and no exclusion can express it.
+ *
+ * @param rule Candidate rule.
+ * @param hostname Hostname of the registration.
+ *
+ * @returns True when the rule matches a root page of the host.
+ */
+const reachesRootPage = (rule: NetworkRule, hostname: string): boolean => (
+    [`https://${hostname}/`, `http://${hostname}/`].some((url) => (
+        rule.match(new Request(url, '', RequestType.Document))
+    ))
+);
+
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
@@ -238,20 +248,15 @@ const resolveScope = (
     const host = patternHost.host.toLowerCase();
 
     if (!patternHost.anchored) {
-        // A substring search cannot be pinned: the host token can also occur
-        // inside a longer host or a query, and a wildcard token cannot be
-        // compared with the target at all.
+        // A substring search cannot be pinned: `youtube.com/ads` also matches
+        // `https://youtube.com/watch?u=youtube.com/ads`, so the reach of the
+        // rule is wider than the URL prefix an exclusion could name. Only a
+        // token that names this host at a label boundary is about it at all.
         if (host.includes('*')) {
             return 'other';
         }
 
-        if (host === hostname) {
-            // The text has to occur inside the URL of the host: with a leading
-            // dot it needs a label before it (`www.`), so the apex is out.
-            return patternHost.requiresLabel ? 'other' : 'host';
-        }
-
-        return hostname.endsWith(`.${host}`) ? 'host' : 'other';
+        return host === hostname || hostname.endsWith(`.${host}`) ? 'unknown' : 'other';
     }
 
     if (hostname === host || (patternHost.allowSubdomains && hostname.endsWith(`.${host}`))) {
@@ -265,11 +270,13 @@ const resolveScope = (
         return matchesWildcardHost(host, hostname) ? 'unknown' : 'other';
     }
 
-    // An unterminated host part is a prefix match (`||youtube.` reaches
-    // `youtube.com`): the pattern reaches, the host name does not match.
+    // An unterminated host part is a prefix match: `||youtube` and `||youtube.`
+    // both reach `www.youtube.com`, while their text does not name it.
     const terminated = /^[/^?#]/.test(patternHost.rest);
 
-    return !terminated && hostname.startsWith(host) ? 'unknown' : 'other';
+    return !terminated && (hostname.startsWith(host) || hostname.includes(`.${host}`))
+        ? 'unknown'
+        : 'other';
 };
 
 /**
@@ -289,6 +296,14 @@ const toExcludePattern = (
 ): string | undefined => {
     const path = patternHost.rest;
     if (!MATCH_PATTERN_PATH.test(path)) {
+        return undefined;
+    }
+
+    // `$match-case` makes the engine compare the whole URL case-sensitively.
+    // The exclusion names the hostname of the registration, which is
+    // lowercased, so an uppercase spelling in the pattern would exclude a page
+    // the engine allows.
+    if (caseSensitive && patternHost.host !== patternHost.host.toLowerCase()) {
         return undefined;
     }
 
@@ -436,6 +451,17 @@ const buildHostExclusions = (
             // A host-less pattern is a substring search: it may match a page
             // of the host, but no exclusion can express it. Reported for the
             // debug log; the owner accepted the pages it covers.
+            // The extension generates such a rule for its own allowlist
+            // (`@@///(www\.)?host/$document,important`): it names no host but
+            // matches the root page, so the host cannot stay preregistered.
+            if (reachesRootPage(rule, hostname)) {
+                return {
+                    patterns: [],
+                    dynamic: `${text}: the exception names no host but matches the page`,
+                    unanchored,
+                };
+            }
+
             unanchored.push(text);
             continue;
         }

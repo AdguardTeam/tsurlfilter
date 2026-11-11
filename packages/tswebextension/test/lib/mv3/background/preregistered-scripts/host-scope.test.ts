@@ -3,10 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { matchesHostScope } from '../../../../../src/lib/mv3/background/preregistered-scripts/host-scope';
 
 /**
- * Pins the predicate the build-time scanner and the runtime must agree on:
- * it decides which hosts a baked gate entry applies to. A change here
- * silently changes the preregistration coverage, and the build side lives in
- * another repository, so every branch is spelled out.
+ * Pins the reach predicate of the runtime exclusion scan: it picks the rules a
+ * host's registration has to exclude. A change here silently changes the
+ * preregistration coverage, so every branch is spelled out.
  */
 describe('matchesHostScope', () => {
     it.each([

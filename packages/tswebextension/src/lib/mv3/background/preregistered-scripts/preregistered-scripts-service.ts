@@ -69,10 +69,10 @@ type RegistrationPlan = {
  *
  * Hostnames not in the list keep the standard dynamic injection path.
  *
- * A host that user rules or custom filters can affect keeps the dynamic path
- * as well: those lists exist only at runtime, so the baked artifacts cannot
- * account for them, and a wrong verdict there either runs scriptlets on a
- * page the user excluded or suppresses them where the engine allows them.
+ * User rules, custom filters and the user allowlist are part of the rule set
+ * the exclusions are resolved from, so they become `excludeMatches` like a
+ * built-in exception. Only a host whose exceptions the browser cannot express
+ * as a pattern falls back to the dynamic path.
  *
  * Known timing windows (accepted by design, self-healing on navigation):
  * - Documents are judged against the latest reported coverage, not the

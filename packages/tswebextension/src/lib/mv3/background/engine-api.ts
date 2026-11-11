@@ -202,6 +202,12 @@ export class EngineApi {
                 ignoreJS: false,
                 ignoreUnsafe: false,
             });
+            // The generated `@@...$document` rule disables JS injection on
+            // every allowlisted host, so the exclusion scan has to see it.
+            exceptionSources.push({
+                filterId: ALLOWLIST_FILTER_ID,
+                lines: collectExceptionLines(allowlistRulesList),
+            });
         }
 
         /*
