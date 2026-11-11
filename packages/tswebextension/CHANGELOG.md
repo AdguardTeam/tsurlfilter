@@ -16,9 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and inverted wildcard entries covering one level below the domain, as frame
   matching does. The filtering log shows the `$stealth` exception that keeps
   a document native [AdguardBrowserExtension#3475].
-- MV3: `ConfigurationResult.loadDisabledStaticFilters()` creates the static
-  rulesets of the filters not enabled in the browser on demand, one at a time,
-  so the caller can read their rule counters off the startup path.
+- MV3: `ConfigurationResult.loadDisabledStaticFilter()` and
+  `loadDisabledStaticFilters()` create the static rulesets of the filters not
+  enabled in the browser on demand, so the caller can read their rule counters
+  off the startup path. The per-filter loader lets callers wait only for the
+  counter they need; the batch loader creates the rest one at a time.
 
 ### Changed
 

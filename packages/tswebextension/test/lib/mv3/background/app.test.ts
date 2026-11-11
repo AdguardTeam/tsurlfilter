@@ -38,6 +38,7 @@ const configureBoundaries = TsWebExtension as unknown as {
         enabledRulesetsIds: string[],
     ) => Promise<{
         enabled: IRulesetWithSourceMap[];
+        loadDisabledFilter: (filterId: number) => Promise<IRulesetWithSourceMap | undefined>;
         loadDisabled: () => Promise<IRulesetWithSourceMap[]>;
     }>;
     removeAllFilteringRules: () => Promise<void>;
@@ -78,7 +79,9 @@ const prepareConfigure = (): void => {
         staticFilters: [], customFilters: [], filtersIdsToEnable: [], filtersIdsToDisable: [],
     });
     vi.spyOn(configureBoundaries, 'loadStaticRulesets').mockResolvedValue({
-        enabled: [], loadDisabled: vi.fn().mockResolvedValue([]),
+        enabled: [],
+        loadDisabledFilter: vi.fn().mockResolvedValue(undefined),
+        loadDisabled: vi.fn().mockResolvedValue([]),
     });
     vi.spyOn(FiltersApi, 'updateFiltering').mockResolvedValue({ errors: [] });
     vi.spyOn(StealthService, 'applySettings').mockResolvedValue({} as never);
@@ -221,8 +224,9 @@ describe('TsWebExtension MV3 static rulesets', () => {
         appContext.isStorageInitialized = true;
         prepareConfigure();
         const loadStaticRulesets = vi.spyOn(configureBoundaries, 'loadStaticRulesets');
+        const loadDisabledFilter = vi.fn().mockResolvedValue(undefined);
         const loadDisabled = vi.fn().mockResolvedValue([]);
-        loadStaticRulesets.mockResolvedValue({ enabled: [], loadDisabled });
+        loadStaticRulesets.mockResolvedValue({ enabled: [], loadDisabledFilter, loadDisabled });
         const getEnabledRulesets = vi.fn().mockResolvedValue(['ruleset_2']);
         Object.defineProperty(browser, 'declarativeNetRequest', {
             configurable: true, value: { getEnabledRulesets },
@@ -246,6 +250,8 @@ describe('TsWebExtension MV3 static rulesets', () => {
         );
         // Disabled rulesets are created only when the caller asks for them.
         expect(loadDisabled).not.toHaveBeenCalled();
+        expect(loadDisabledFilter).not.toHaveBeenCalled();
+        expect(result.loadDisabledStaticFilter).toBe(loadDisabledFilter);
         expect(result.loadDisabledStaticFilters).toBe(loadDisabled);
     });
 
@@ -259,6 +265,7 @@ describe('TsWebExtension MV3 static rulesets', () => {
         const result = await instance.configure(config);
 
         expect(result.staticFilters).toEqual([]);
+        expect(await result.loadDisabledStaticFilter(2)).toBeUndefined();
         expect(await result.loadDisabledStaticFilters()).toEqual([]);
     });
 });

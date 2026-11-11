@@ -598,10 +598,12 @@ describe('TsWebExtension.loadStaticRulesets', () => {
      *
      * @param enabledRulesetsIds Ids of rulesets enabled in the browser.
      *
-     * @returns Created enabled rulesets and a loader of the disabled ones.
+     * @returns Created enabled rulesets, a loader of a single disabled
+     * ruleset, and a loader of all disabled rulesets.
      */
     const loadStaticRulesets = (enabledRulesetsIds: string[]): Promise<{
         enabled: IRulesetWithSourceMap[];
+        loadDisabledFilter: (filterId: number) => Promise<IRulesetWithSourceMap | undefined>;
         loadDisabled: () => Promise<IRulesetWithSourceMap[]>;
     }> => {
         // `loadStaticRulesets` is private: `configure()` would need the whole
@@ -621,22 +623,34 @@ describe('TsWebExtension.loadStaticRulesets', () => {
         // Only filter 1 is enabled; the large ruleset is not created until
         // requested to keep the runtime filter list preparation off the
         // startup path.
-        const { enabled, loadDisabled } = await loadStaticRulesets([RULESET_ID]);
+        const { enabled, loadDisabledFilter, loadDisabled } = await loadStaticRulesets([RULESET_ID]);
 
         expect(enabled.map((ruleset) => ruleset.getId())).toEqual([RULESET_ID]);
         expect(countFetches(LARGE_RULESET_ID)).toBe(0);
 
+        // The per-filter loader creates only the requested ruleset.
+        const deferredRuleset = await loadDisabledFilter(LARGE_FILTER_ID);
+
+        expect(deferredRuleset?.getId()).toBe(LARGE_RULESET_ID);
+        expect(deferredRuleset?.getMetadataRulesCount())
+            .toBe(readServedRuleset(LARGE_RULESET_ID).metadataRulesCount);
+        expect(deferredRuleset?.getSafeRulesCount()).toBe(largeRules.length);
+        expect(countFetches(LARGE_RULESET_ID)).toBe(1);
+
+        // The batch reuses the per-filter promise instead of creating the
+        // ruleset again.
         const deferredRulesets = await loadDisabled();
 
-        expect(deferredRulesets.map((ruleset) => [ruleset.getId(), ruleset.getMetadataRulesCount()])).toEqual([
-            [LARGE_RULESET_ID, readServedRuleset(LARGE_RULESET_ID).metadataRulesCount],
-        ]);
-        expect(deferredRulesets[0].getSafeRulesCount()).toBe(largeRules.length);
+        expect(deferredRulesets).toHaveLength(1);
+        expect(deferredRulesets[0]).toBe(deferredRuleset);
         expect(countFetches(LARGE_RULESET_ID)).toBe(1);
 
         // Repeated calls share the result instead of creating rulesets again.
         expect(loadDisabled()).toBe(loadDisabled());
         expect(await loadDisabled()).toBe(deferredRulesets);
+
+        // An enabled filter has no disabled ruleset.
+        expect(await loadDisabledFilter(FILTER_ID)).toBeUndefined();
     });
 
     it('returns nothing when there are no disabled rulesets', async () => {
@@ -645,9 +659,10 @@ describe('TsWebExtension.loadStaticRulesets', () => {
         });
         mockManifest([RULESET_ID]);
 
-        const { enabled, loadDisabled } = await loadStaticRulesets([RULESET_ID]);
+        const { enabled, loadDisabledFilter, loadDisabled } = await loadStaticRulesets([RULESET_ID]);
 
         expect(enabled.map((ruleset) => ruleset.getId())).toEqual([RULESET_ID]);
+        expect(await loadDisabledFilter(FILTER_ID)).toBeUndefined();
         expect(await loadDisabled()).toEqual([]);
     });
 
@@ -665,9 +680,14 @@ describe('TsWebExtension.loadStaticRulesets', () => {
         mockManifest([RULESET_ID, LARGE_RULESET_ID]);
 
         // Nothing is enabled, so both rulesets are created on demand.
-        const { enabled, loadDisabled } = await loadStaticRulesets([]);
+        const { enabled, loadDisabledFilter, loadDisabled } = await loadStaticRulesets([]);
 
         expect(enabled).toEqual([]);
+
+        // The failed ruleset resolves with undefined, while the rest are
+        // created.
+        expect(await loadDisabledFilter(LARGE_FILTER_ID)).toBeUndefined();
+        expect((await loadDisabledFilter(FILTER_ID))?.getId()).toBe(RULESET_ID);
 
         const deferredRulesets = await loadDisabled();
 

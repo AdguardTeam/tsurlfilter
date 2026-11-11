@@ -1,6 +1,7 @@
 import browser from 'webextension-polyfill';
 
 import {
+    extractRulesetId,
     Filter,
     getRulesetId,
     type IFilter,
@@ -53,6 +54,22 @@ type ConfigurationResult = {
     staticFilters: IRulesetWithSourceMap[];
 
     /**
+     * Creates the static rule set of the filter that is not enabled in the
+     * browser, e.g. to read its rule counter for the rules limits checks.
+     *
+     * The rule set is created on demand, because creating a rule set for the
+     * first time requires runtime filter list preparation, which is too
+     * expensive for the startup path. Call it after the configuration is
+     * applied. Repeated calls for the same filter return the same promise.
+     *
+     * @param filterId Filter id.
+     *
+     * @returns Promise resolved with the rule set, or `undefined` if the
+     * filter is enabled in the browser or its rule set failed to be created.
+     */
+    loadDisabledStaticFilter: (filterId: number) => Promise<IRulesetWithSourceMap | undefined>;
+
+    /**
      * Creates the static rule sets of the filters that are not enabled in the
      * browser, e.g. to read their rule counters for the rules limits checks.
      *
@@ -79,10 +96,23 @@ type StaticRulesets = {
     enabled: IRulesetWithSourceMap[];
 
     /**
+     * Lazily creates the rule set of a filter not enabled in the browser.
+     */
+    loadDisabledFilter: (filterId: number) => Promise<IRulesetWithSourceMap | undefined>;
+
+    /**
      * Lazily creates the rule sets not enabled in the browser.
      */
     loadDisabled: () => Promise<IRulesetWithSourceMap[]>;
 };
+
+/**
+ * Resolves with no rule set, used when filtering is disabled and no rule sets
+ * are created.
+ *
+ * @returns Promise resolved with `undefined`.
+ */
+const loadNoRuleset = async (): Promise<IRulesetWithSourceMap | undefined> => undefined;
 
 /**
  * Resolves with no rule sets, used when filtering is disabled and no rule
@@ -420,6 +450,7 @@ export class TsWebExtension implements AppInterface<
                 errors: [],
             },
             staticFilters: [],
+            loadDisabledStaticFilter: loadNoRuleset,
             loadDisabledStaticFilters: loadNoRulesets,
         };
 
@@ -456,6 +487,7 @@ export class TsWebExtension implements AppInterface<
             // created on demand, see `ConfigurationResult.loadDisabledStaticFilters`.
             const {
                 enabled: enabledStaticRulesets,
+                loadDisabledFilter: loadDisabledStaticFilter,
                 loadDisabled: loadDisabledStaticRulesets,
             } = await TsWebExtension.loadStaticRulesets(
                 configuration.rulesetsPath,
@@ -556,6 +588,7 @@ export class TsWebExtension implements AppInterface<
             }
 
             res.staticFilters = enabledStaticRulesets;
+            res.loadDisabledStaticFilter = loadDisabledStaticFilter;
             res.loadDisabledStaticFilters = loadDisabledStaticRulesets;
         } else {
             await TsWebExtension.removeAllFilteringRules();
@@ -848,8 +881,9 @@ export class TsWebExtension implements AppInterface<
      * @param enabledRulesetsIds Ids of rule sets enabled in the browser.
      *
      * @returns Enabled static {@link IRulesetWithSourceMap|rule sets}, or an
-     * empty list if an error occurred during the rule scanning step, and a
-     * function to create the disabled ones.
+     * empty list if an error occurred during the rule scanning step, a
+     * function to create the rule set of a single disabled filter, and a
+     * function to create all disabled rule sets.
      */
     private static async loadStaticRulesets(
         rulesetsPath: ConfigurationMV3['rulesetsPath'],
@@ -869,15 +903,45 @@ export class TsWebExtension implements AppInterface<
             .filter((id) => id !== getRulesetId(METADATA_RULESET_ID));
 
         const enabledIds = new Set(enabledRulesetsIds);
-        const disabledRulesetsIds = manifestRulesetsIds.filter((id) => !enabledIds.has(id));
+        const disabledFilterIds = new Set(
+            manifestRulesetsIds
+                .filter((id) => !enabledIds.has(id))
+                .map((id) => extractRulesetId(id))
+                .filter((id): id is number => id !== null),
+        );
+
+        /**
+         * Cache of the on-demand disabled ruleset loading by filter id, so
+         * the batch and the per-filter callers share one creation per
+         * ruleset.
+         */
+        const disabledRulesetsPromises = new Map<number, Promise<IRulesetWithSourceMap | undefined>>();
+
+        const loadDisabledFilter = (filterId: number): Promise<IRulesetWithSourceMap | undefined> => {
+            if (!disabledFilterIds.has(filterId)) {
+                return Promise.resolve(undefined);
+            }
+
+            let promise = disabledRulesetsPromises.get(filterId);
+            if (!promise) {
+                const rulesetId = getRulesetId(filterId);
+                promise = rulesetsLoaderApi.createRuleset(rulesetId, staticFilters)
+                    .catch((e) => {
+                        logger.error(`[tsweb.TsWebExtension.loadStaticRulesets]: cannot create rule set ${rulesetId} due to: `, e);
+                        return undefined;
+                    });
+                disabledRulesetsPromises.set(filterId, promise);
+            }
+
+            return promise;
+        };
 
         let disabledRulesetsPromise: Promise<IRulesetWithSourceMap[]> | null = null;
 
         const loadDisabled = (): Promise<IRulesetWithSourceMap[]> => {
             disabledRulesetsPromise ??= TsWebExtension.createRulesetsOneByOne(
-                rulesetsLoaderApi,
-                disabledRulesetsIds,
-                staticFilters,
+                [...disabledFilterIds],
+                loadDisabledFilter,
             );
 
             return disabledRulesetsPromise;
@@ -890,13 +954,13 @@ export class TsWebExtension implements AppInterface<
         try {
             const enabled = await Promise.all(staticRulesetsTasks);
 
-            return { enabled, loadDisabled };
+            return { enabled, loadDisabledFilter, loadDisabled };
         } catch (e) {
             const filterListIds = staticFilters.map((f) => f.getId());
 
             logger.error(`[tsweb.TsWebExtension.loadStaticRulesets]: cannot scan rules of filter list with ids ${filterListIds} due to: `, e);
 
-            return { enabled: [], loadDisabled };
+            return { enabled: [], loadDisabledFilter, loadDisabled };
         }
     }
 
@@ -907,25 +971,24 @@ export class TsWebExtension implements AppInterface<
      * it keeps the peak memory and the longest event loop block to those of a
      * single rule set, instead of parsing all rule set files at once.
      *
-     * @param rulesetsLoaderApi Rule sets loader.
-     * @param rulesetsIds Ids of rule sets to create.
-     * @param staticFilters List of static {@link IFilter}.
+     * @param filterIds Ids of filters to create the rule sets for.
+     * @param loadRuleset Loads the rule set of a filter, or resolves with
+     * `undefined` if it cannot be created.
      *
-     * @returns Created rule sets in the order of `rulesetsIds`.
+     * @returns Created rule sets in the order of `filterIds`.
      */
     private static async createRulesetsOneByOne(
-        rulesetsLoaderApi: RulesetsLoaderApi,
-        rulesetsIds: string[],
-        staticFilters: IFilter[],
+        filterIds: number[],
+        loadRuleset: (filterId: number) => Promise<IRulesetWithSourceMap | undefined>,
     ): Promise<IRulesetWithSourceMap[]> {
         const rulesets: IRulesetWithSourceMap[] = [];
 
-        for (const rulesetId of rulesetsIds) {
-            try {
-                // eslint-disable-next-line no-await-in-loop
-                rulesets.push(await rulesetsLoaderApi.createRuleset(rulesetId, staticFilters));
-            } catch (e) {
-                logger.error(`[tsweb.TsWebExtension.createRulesetsOneByOne]: cannot create rule set ${rulesetId} due to: `, e);
+        for (const filterId of filterIds) {
+            // eslint-disable-next-line no-await-in-loop
+            const ruleset = await loadRuleset(filterId);
+
+            if (ruleset) {
+                rulesets.push(ruleset);
             }
         }
 
