@@ -73,8 +73,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `||example.com^$domain=foo.com|bar.com` stopped applying on `bar.com` after
   `||example.com^$domain=foo.com,badfilter`. The converter now narrows the
   `$domain` list of the target rule, as MV2 and CoreLibs do: it removes a target
-  entry that the badfilter covers and excludes a badfilter subdomain that a kept
-  target entry still covers. Regular expression domains keep their case in the
+  entry that the badfilter covers and excludes a badfilter entry that overlaps a
+  kept target entry. Regular expression domains keep their case in the
   comparison, so `$domain=/A/` no longer cancels `$domain=/a/`, and this
   exception applies only while neither rule has a negated `~domain`; otherwise
   the whole text is compared. A target rule without `$domain` is still cancelled

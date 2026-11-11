@@ -122,8 +122,8 @@ When neither rule negates a domain (`~domain`) and the two `$domain` lists
 share an identically written entry, a `$badfilter` rule cancels the target
 rule only for the domains that the badfilter covers. The converter narrows
 the `$domain` list of the target rule: it removes a target entry that a
-badfilter entry covers, and it excludes a badfilter entry that a kept target
-entry still covers. A `$badfilter` without `$domain` cancels the target rule
+badfilter entry covers, and it excludes a badfilter entry that overlaps a kept
+target entry. A `$badfilter` without `$domain` cancels the target rule
 completely. While either rule negates a domain, the `$domain` entries stay in
 the text and the whole text is compared, so the rule is cancelled only when
 the whole text matches. For example, for these two rules:

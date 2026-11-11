@@ -1040,9 +1040,9 @@ export class Rule {
      *
      * A rule that a badfilter cancels completely is dropped. A rule that a
      * badfilter cancels only for some domains keeps the remaining domains of its
-     * permitted `$domain` list, and excludes the badfilter domains that the kept
-     * entries still cover, because a declarative rule cannot be disabled for a
-     * part of its domains.
+     * permitted `$domain` list, and excludes the badfilter domains that overlap
+     * the kept entries, because a declarative rule cannot be disabled for a part
+     * of its domains.
      *
      * Regexp entries in the badfilter `$domain` lists cannot be represented as
      * DNR exclusions. A blocking rule that any of them may cover after every
@@ -1152,8 +1152,8 @@ export class Rule {
      * Creates a copy of this rule with additional restricted `$domain` entries.
      *
      * Merges the entries with the exclusions that earlier badfilters added. Used
-     * by {@link Rule.applyBadfilters} when a badfilter cancels a subdomain of a
-     * kept permitted domain. The text as written in the filter list, the pattern
+     * by {@link Rule.applyBadfilters} when a badfilter entry overlaps a kept
+     * permitted domain. The text as written in the filter list, the pattern
      * hash and the priority stay unchanged, so a `$badfilter` rule keeps matching
      * this rule by the same text.
      *

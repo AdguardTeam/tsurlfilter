@@ -605,7 +605,8 @@ export class RulesConverter {
      *
      * A rule that a badfilter cancels completely is dropped. A rule that a
      * badfilter cancels only partly keeps the remaining domains of its permitted
-     * `$domain` list and excludes the domains that the kept entries still cover.
+     * `$domain` list and excludes the badfilter domains that overlap the kept
+     * entries.
      *
      * @param scannedFilters List of {@link ScannedFilter}.
      *

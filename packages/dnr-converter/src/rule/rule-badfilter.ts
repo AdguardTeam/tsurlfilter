@@ -196,7 +196,7 @@ export enum BadfilterNegationKind {
     /**
      * The badfilter rule cancels the target rule only for the domains that the
      * badfilter covers: a target entry it covers is removed, and a badfilter
-     * entry that a kept target entry still covers is excluded.
+     * entry that overlaps a kept target entry is excluded.
      */
     Partial = 'partial',
 }
@@ -224,8 +224,8 @@ export type BadfilterNegation =
         readonly permittedDomains: string[];
 
         /**
-         * Domains that the kept permitted entries still cover, but that the
-         * badfilter cancels. The target rule must exclude them.
+         * Domains that overlap a kept permitted entry but are cancelled by the
+         * badfilter. The target rule must exclude them.
          */
         readonly excludedDomains: string[];
 
@@ -256,12 +256,13 @@ export class RuleBadfilter {
      * The badfilter entries are then subtracted from the target list: an empty
      * result means {@link BadfilterNegationKind.Full}, no removed entry and no
      * exclusion means {@link BadfilterNegationKind.None}, and the entries that
-     * stay mean {@link BadfilterNegationKind.Partial}. A badfilter entry that is
-     * a subdomain of a kept target entry becomes an exclusion, because the kept
-     * entry still covers it in DNR. A regexp badfilter entry cannot be expressed
-     * as a DNR exclusion: a blocking rule that such an entry may cover is
-     * cancelled completely, except for an anchored literal domain that no kept
-     * target entry covers, while an exception rule is narrowed instead.
+     * stay mean {@link BadfilterNegationKind.Partial}. A badfilter entry that
+     * overlaps a kept target entry becomes an exclusion, because the kept entry
+     * still matches the overlapping domains in DNR. A regexp badfilter entry
+     * cannot be expressed as a DNR exclusion: a blocking rule that such an
+     * entry may cover is cancelled completely, except for an anchored literal
+     * domain that no kept target entry covers, while an exception rule is
+     * narrowed instead.
      *
      * @param badfilterRule The rule that carries the `$badfilter` modifier.
      * @param targetRule The rule to test for negation.
