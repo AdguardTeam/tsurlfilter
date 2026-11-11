@@ -69,8 +69,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   value as a `:matches-path()` modifier and cut it out of the selector. Now
   the selector keeps the full attribute value, and only real top-level
   modifiers apply. The same fix covers `:style()`, `:remove()` and
-  `:matches-media()` text in double- or single-quoted strings, including
-  strings in `:style()` declaration values.
+  `:matches-media()` text in double- or single-quoted attribute values.
+  A quoted string in a `:style()` declaration value also no longer creates a
+  modifier: such rules used to fail with
+  `:remove() cannot be nested inside a pseudo-class`
+  (or the equivalent `:matches-path()` / `:matches-media()` error) and now
+  parse as CSS injection rules, e.g.
+  `##div:style(content: ":remove()")`.
 - `RuleParserPipeline.parseRange` now rejects a non-zero `dataOffset` for
   cosmetic rules. Their structural parsers write at fixed offsets, so a
   non-zero offset previously produced a rule with an empty selector and no
