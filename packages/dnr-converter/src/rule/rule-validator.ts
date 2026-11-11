@@ -146,13 +146,6 @@ export class RuleDeclarativeValidator {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         name: string,
     ): UnsupportedModifierError | null {
-        const value = rule.advancedModifierValue;
-
-        // $removeheader without a value is valid
-        if (!value) {
-            return null;
-        }
-
         // Check if the header resolves to a valid (non-forbidden) name
         const hasValidResponseHeader = rule.getApplicableHeaderName(false) !== null;
         const hasValidRequestHeader = rule.getApplicableHeaderName(true) !== null;

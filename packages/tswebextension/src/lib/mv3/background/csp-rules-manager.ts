@@ -9,6 +9,8 @@ import {
     isUnavailableFilterSourceError,
 } from '@adguard/dnr-converter';
 
+import { logger } from '../../common/utils/logger';
+
 /**
  * Result of rebuilding CSP rules from all active filters.
  *
@@ -87,6 +89,19 @@ export class CspRulesManager {
             .filter(isUnavailableFilterSourceError)
             .map(({ filterId }) => filterId)
             .filter((filterId) => staticFilterIds.has(filterId));
+
+        // A plain `Error` carries no filter id - `groupConvertedRules()` pushes
+        // one when a source mapping is missing - so `filterErrors()` can route
+        // it to neither channel: report it instead of dropping it silently.
+        conversionResult.errors
+            .filter((error) => (
+                !isConversionError(error)
+                && !isRuleScanError(error)
+                && !isUnavailableFilterSourceError(error)
+            ))
+            .forEach((error) => {
+                logger.warn('[tsweb.CspRulesManager.build]: cannot route a CSP conversion error:', error);
+            });
 
         const declarativeRules = await conversionResult.ruleset.getDeclarativeRules();
         const staticRules: DeclarativeRule[] = [];
