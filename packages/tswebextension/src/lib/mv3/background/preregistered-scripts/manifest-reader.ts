@@ -1,7 +1,4 @@
-import { isPlainHostname } from '../../../common/utils/hostname';
-
 import {
-    hashString,
     MANIFEST_FILENAME,
     MANIFEST_SCHEMA_VERSION,
     type PreregisteredScriptsManifest,
@@ -13,13 +10,6 @@ import {
  * so a hanging request means the worker is stuck, not slow.
  */
 const MANIFEST_FETCH_TIMEOUT_MS = 5000;
-
-/**
- * Fingerprint of a filter without page exceptions. The build keeps a
- * fingerprint for every filter list and writes a conditions file only for the
- * filters whose set is not empty, so both maps must agree on that boundary.
- */
-const EMPTY_FINGERPRINT = hashString('');
 
 /**
  * Parsed manifests per scripts path, including failed reads. Artifacts are
@@ -46,12 +36,11 @@ export const clearManifestCache = (): void => {
  * @param value Parsed JSON value.
  * @param url Manifest URL, for error messages.
  *
- * @returns Resolves to the manifest, narrowed to
- * {@link PreregisteredScriptsManifest}.
+ * @returns The manifest, narrowed to {@link PreregisteredScriptsManifest}.
  *
  * @throws If a field is missing or has the wrong type.
  */
-const validateManifest = async (value: unknown, url: string): Promise<PreregisteredScriptsManifest> => {
+const validateManifest = (value: unknown, url: string): PreregisteredScriptsManifest => {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
         throw new Error(`Malformed manifest at ${url}: expected an object`);
     }
@@ -60,9 +49,6 @@ const validateManifest = async (value: unknown, url: string): Promise<Preregiste
         schemaVersion,
         hashes,
         scriptletFiles,
-        dynamicHostnames,
-        conditions,
-        pageExceptions,
     } = value as Partial<PreregisteredScriptsManifest>;
 
     if (schemaVersion !== MANIFEST_SCHEMA_VERSION) {
@@ -83,59 +69,10 @@ const validateManifest = async (value: unknown, url: string): Promise<Preregiste
         }
     }
 
-    if (dynamicHostnames !== undefined
-        && (!Array.isArray(dynamicHostnames)
-            || !dynamicHostnames.every((hostname) => typeof hostname === 'string' && isPlainHostname(hostname)))) {
-        throw new Error(`Malformed manifest at ${url}: "dynamicHostnames" must be an array of plain hostnames`);
-    }
-
-    if (!Array.isArray(conditions) || !conditions.every((filterId) => Number.isInteger(filterId) && filterId > 0)) {
-        throw new Error(`Malformed manifest at ${url}: "conditions" must be an array of filter ids`);
-    }
-
-    if (typeof pageExceptions !== 'object' || pageExceptions === null || Array.isArray(pageExceptions)) {
-        throw new Error(`Malformed manifest at ${url}: "pageExceptions" must be a filter id → fingerprint object`);
-    }
-
-    for (const [filterId, fingerprint] of Object.entries(pageExceptions)) {
-        if (typeof fingerprint !== 'string' || fingerprint.length === 0) {
-            throw new Error(`Malformed manifest at ${url}: filter "${filterId}" must map to a fingerprint`);
-        }
-
-        if (!/^[1-9]\d*$/.test(filterId)) {
-            throw new Error(`Malformed manifest at ${url}: "pageExceptions" key "${filterId}" is not a filter id`);
-        }
-    }
-
-    // The conditions list decides which files the runtime registers, so the
-    // two maps must describe the same set: a filter whose exceptions were
-    // baked but whose id is missing from `conditions` would pass the
-    // fingerprint check while its `cond-{filterId}.js` is never registered,
-    // and the page would silently lose those exceptions.
-    const conditionIds = new Set(conditions.map(String));
-    const emptyFingerprint = await EMPTY_FINGERPRINT;
-
-    for (const filterId of conditionIds) {
-        if (!(filterId in pageExceptions)) {
-            throw new Error(`Malformed manifest at ${url}: "conditions" filter "${filterId}"`
-                + ' has no fingerprint in "pageExceptions"');
-        }
-    }
-
-    for (const [filterId, fingerprint] of Object.entries(pageExceptions)) {
-        if (fingerprint !== emptyFingerprint && !conditionIds.has(filterId)) {
-            throw new Error(`Malformed manifest at ${url}: "pageExceptions" filter "${filterId}"`
-                + ' has no entry in "conditions"');
-        }
-    }
-
     return {
         schemaVersion,
         hashes,
         scriptletFiles,
-        dynamicHostnames,
-        pageExceptions,
-        conditions,
     };
 };
 
@@ -164,9 +101,8 @@ const fetchManifest = async (scriptsPath: string): Promise<PreregisteredScriptsM
 /**
  * Fetches the build-time manifest shipped next to the artifacts. It lists
  * the rule hashes with matching generated files, the scriptlet name →
- * function-file map, the ids of the filters whose page exceptions are
- * baked into conditions files and the fingerprint those exceptions were
- * baked from.
+ * function-file map, the hosts the generation leaves on the dynamic path and
+ * the `excludeMatches` patterns of each registered host.
  *
  * The manifest is this package's own build output, but it is still
  * validated: a missing, unreadable, malformed, or version-mismatched

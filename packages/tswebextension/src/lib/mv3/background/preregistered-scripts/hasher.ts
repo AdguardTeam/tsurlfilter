@@ -3,8 +3,8 @@ import { type CosmeticRule } from '@adguard/tsurlfilter';
 import { normalizeDomain } from '../../../common/utils/hostname';
 
 /**
- * Coordination key: the `window` property name shared by the conditions
- * files, the shared bundle, the per-rule files and the cleanup file.
+ * Coordination key: the `window` property name shared by the shared bundle,
+ * the per-rule files and the cleanup file.
  *
  * Fixed forever: the cleanup file deletes the property before any page
  * script runs, so rotation buys no stealth. A stable key keeps the
@@ -31,24 +31,6 @@ export const CLEANUP_FILENAME = 'cleanup.js';
  */
 export const getRuleFilename = (hash: string): string => {
     return `${hash}.js`;
-};
-
-/**
- * Filename prefix of the per-filter conditions files: each file carries the
- * network exceptions of one filter for the page gate. The filename is derived
- * from the filter id, so the manifest stores ids only.
- */
-export const CONDITIONS_FILENAME_PREFIX = 'cond-';
-
-/**
- * Returns the conditions filename for a filter id.
- *
- * @param filterId Filter id.
- *
- * @returns Conditions filename.
- */
-export const getConditionsFilename = (filterId: number): string => {
-    return `${CONDITIONS_FILENAME_PREFIX}${filterId}.js`;
 };
 
 /**
@@ -85,34 +67,6 @@ export interface PreregisteredScriptsManifest {
      * scriptlet has no entry here stays on the dynamic injection path.
      */
     scriptletFiles: Record<string, string>;
-
-    /**
-     * Hostnames that must keep the dynamic injection path even though they are
-     * configured and have baked rules: a `$badfilter` of another filter
-     * cancels their exceptions, and whether that filter is enabled is known
-     * only at runtime. The gate cannot apply such a cancellation back, so
-     * registering them would disable JS where the engine allows it.
-     */
-    dynamicHostnames?: string[];
-
-    /**
-     * Ids of the filters whose page exceptions are baked into
-     * `cond-{filterId}.js`. Each file adds the exceptions of one filter to the
-     * page gate of the shared bundle; the runtime includes only the files of
-     * enabled filters, so disabling a filter also drops its exceptions — the
-     * same way the engine stops applying them.
-     */
-    conditions: number[];
-
-    /**
-     * Filter id → fingerprint of that filter's page exceptions, the ones its
-     * conditions file was baked from (`computePageExceptionsFingerprint`).
-     * The runtime recomputes the map for the enabled filters and compares: a
-     * mismatch means the lists changed since the generation, and applying
-     * stale exceptions would disable pages the engine does not disable (or
-     * miss new ones), so preregistration falls back to the dynamic path.
-     */
-    pageExceptions: Record<string, string>;
 }
 
 /**
@@ -310,8 +264,8 @@ export const expandHostnames = (domains: string[]): string[] => {
  *
  * @param filePath Script file path from a registration descriptor.
  *
- * @returns The rule hash, or `null` for non-rule files (conditions
- * `cond-*.js`, shared bundle, per-function `s-*.js`, cleanup).
+ * @returns The rule hash, or `null` for non-rule files (shared bundle,
+ * per-function `s-*.js`, cleanup).
  */
 export const getRuleHashFromFilePath = (filePath: string): string | null => {
     const match = RULE_FILE_PATH_REGEX.exec(filePath);

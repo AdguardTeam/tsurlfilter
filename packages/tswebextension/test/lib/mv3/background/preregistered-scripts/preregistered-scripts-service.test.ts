@@ -8,7 +8,8 @@ import {
 
 import { CosmeticOption, CosmeticRule } from '@adguard/tsurlfilter';
 
-import { FiltersStorage } from '../../../../../src/lib/common/storage/filters';
+import { USER_FILTER_ID } from '../../../../../src/lib/common/constants';
+import { logger } from '../../../../../src/lib/common/utils/logger';
 import { appContext } from '../../../../../src/lib/mv3/background/app-context';
 import {
     type ContentScriptDescriptor,
@@ -19,16 +20,14 @@ import { engineApi } from '../../../../../src/lib/mv3/background/engine-api';
 import {
     CLEANUP_FILENAME,
     computeRuleHash,
-    getConditionsFilename,
     getRuleFilename,
-    hashString,
     MANIFEST_FILENAME,
     MANIFEST_SCHEMA_VERSION,
     SHARED_BUNDLE_FILENAME,
 } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
+import { collectExceptionLines } from '../../../../../src/lib/mv3/background/preregistered-scripts/js-exclusions';
 import { clearManifestCache } from '../../../../../src/lib/mv3/background/preregistered-scripts/manifest-reader';
 import {
-    clearFingerprintCache,
     PreregisteredScriptsService,
 } from '../../../../../src/lib/mv3/background/preregistered-scripts/preregistered-scripts-service';
 
@@ -37,38 +36,7 @@ vi.mock('../../../../../src/lib/mv3/background/engine-api', () => ({
         matchCosmetic: vi.fn(),
         isLocalFilter: vi.fn(),
         isCosmeticRuleAllowlisted: vi.fn().mockReturnValue(false),
-        getEnabledLocalFiltersIds: vi.fn().mockReturnValue([]),
-        getRuntimeExceptionLines: vi.fn().mockReturnValue([]),
-    },
-}));
-
-/**
- * Fingerprints the mocked runtime computes for the loaded filters. Tests that
- * want a stale generation set a different value in the manifest.
- */
-const DEFAULT_FINGERPRINT = 'aabbccddeeff0011';
-
-const RUNTIME_PAGE_EXCEPTIONS: Record<string, string> = { 1: DEFAULT_FINGERPRINT };
-
-const fingerprintState = vi.hoisted(() => ({ value: { 1: 'aabbccddeeff0011' } as Record<string, string> }));
-
-vi.mock('../../../../../src/lib/mv3/background/preregistered-scripts/exception-fingerprint', () => ({
-    // Every loaded filter gets a fingerprint, so only the explicit overrides
-    // in a test look stale.
-    computePageExceptionsFingerprint: vi.fn(async (lists: Array<{ filterId: number }>) => (
-        Object.fromEntries(lists.map(({ filterId }) => [
-            String(filterId),
-            fingerprintState.value[String(filterId)] ?? 'aabbccddeeff0011',
-        ]))
-    )),
-}));
-
-vi.mock('../../../../../src/lib/common/storage/filters', () => ({
-    FiltersStorage: {
-        getRawFilterList: vi.fn(async () => ''),
-        // A stable checksum per filter: the service caches a fingerprint
-        // while it stays the same.
-        getChecksum: vi.fn(async (filterId: number) => `checksum-${filterId}`),
+        getExceptionSources: vi.fn().mockReturnValue([]),
     },
 }));
 
@@ -153,8 +121,8 @@ const mockJsRule = (content: string, filterListId = 1): any => ({
  * would once the JS cosmetic bit is cleared.
  *
  * @param rulesByDomain Map of domain → rules to return for that domain.
- * @param localFilterIds Ids the engine reports as local: they pick the
- * conditions files of the manifest and drive the local-rule checks.
+ * @param localFilterIds Ids the engine reports as local: they drive the
+ * local-rule checks.
  * @param disableJsForDomains Domains for which `matchCosmetic` should report
  * no script rules (simulating an allowlist rule).
  */
@@ -178,7 +146,6 @@ const setupEngine = (
     vi.mocked(engineApi.isLocalFilter).mockImplementation(
         (filterListId: number) => localFilterIds.includes(filterListId),
     );
-    vi.mocked(engineApi.getEnabledLocalFiltersIds).mockReturnValue(localFilterIds);
 };
 
 /**
@@ -199,25 +166,10 @@ const scriptletFilename = (name: string): string => `s-${name}.js`;
  * (404) manifest.
  * @param scriptletFiles Scriptlet name → per-function filename map.
  * Defaults to an empty map.
- * @param conditions Ids of the filters that carry conditions files. Defaults
- * to every filter of the fingerprint map: the two must describe the same set.
- * @param dynamicHostnames Configured hosts the generation keeps on the
- * dynamic path.
- * @param pageExceptions Filter id → fingerprint map of the baked page
- * exceptions. Defaults to the map a consistent build produces for the enabled
- * filters; a different value simulates a stale generation.
  */
 const setupManifest = (
     hashes: string[] | null,
     scriptletFiles?: Record<string, string>,
-    conditions?: number[],
-    dynamicHostnames: string[] = [],
-    pageExceptions: Record<string, string> = Object.fromEntries(
-        vi.mocked(engineApi.getEnabledLocalFiltersIds)().map((id) => [
-            String(id),
-            RUNTIME_PAGE_EXCEPTIONS[String(id)] ?? DEFAULT_FINGERPRINT,
-        ]),
-    ),
 ): void => {
     // sinon-chrome exposes getURL via a getter — replace the whole global.
     const getURL = vi.fn((p: string) => `chrome-extension://test/${p}`);
@@ -237,12 +189,25 @@ const setupManifest = (
                 schemaVersion: MANIFEST_SCHEMA_VERSION,
                 hashes,
                 scriptletFiles: scriptletFiles ?? {},
-                conditions: conditions ?? Object.keys(pageExceptions).map(Number),
-                dynamicHostnames,
-                pageExceptions,
             }),
         };
     }));
+};
+
+/**
+ * Sets the exception sources the service derives the URL exclusions from.
+ *
+ * @param sources Filter id and raw content of each source.
+ */
+const setupExceptionSources = (
+    sources: { filterId: number; content: string }[],
+): void => {
+    vi.mocked(engineApi.getExceptionSources).mockReturnValue(
+        sources.map(({ filterId, content }) => ({
+            filterId,
+            lines: collectExceptionLines(content),
+        })),
+    );
 };
 
 /**
@@ -250,8 +215,8 @@ const setupManifest = (
  * — the state a consistent build produces.
  *
  * @param rulesByDomain Map of domain → rules to return for that domain.
- * @param localFilterIds Ids the engine reports as local: they pick the
- * conditions files of the manifest and drive the local-rule checks.
+ * @param localFilterIds Ids the engine reports as local: they drive the
+ * local-rule checks.
  * @param disableJsForDomains Domains for which `matchCosmetic` should report
  * no script rules (simulating an allowlist rule).
  */
@@ -300,8 +265,6 @@ describe('PreregisteredScriptsService', () => {
         vi.clearAllMocks();
         vi.unstubAllGlobals();
         clearManifestCache();
-        clearFingerprintCache();
-        fingerprintState.value = { 1: DEFAULT_FINGERPRINT };
         appContext.preregisteredScriptRulesAtBoot = undefined;
         appContext.preregisteredScriptRulesAtBootFailed = undefined;
         appContext.preregisteredScriptRules = undefined;
@@ -327,7 +290,7 @@ describe('PreregisteredScriptsService', () => {
             registryState.descriptors = [];
         });
         vi.mocked(DocumentApi.matchFrame).mockReset().mockReturnValue(null);
-        vi.mocked(engineApi.getRuntimeExceptionLines).mockReturnValue([]);
+        vi.mocked(engineApi.getExceptionSources).mockReturnValue([]);
     });
 
     describe('sync — early exits', () => {
@@ -369,13 +332,11 @@ describe('PreregisteredScriptsService', () => {
                 matchOriginAsFallback: false,
                 persistAcrossSessions: true,
             });
-            expect(scripts[0].excludeMatches).toBeUndefined();
-            // The conditions file of the enabled filter, whose fingerprint the
-            // manifest carries, then the shared bundle, the scriptlet function
-            // file, per-hash files sorted and cleanup last (it deletes the
-            // coordination property before page scripts run).
+            expect(scripts[0].excludeMatches).toEqual([]);
+            // Shared bundle first, then the scriptlet function file, per-hash
+            // files sorted, cleanup last (it deletes the coordination property
+            // before page scripts run).
             expect(scripts[0].js).toEqual([
-                `${SCRIPTS_PATH}/${getConditionsFilename(1)}`,
                 `${SCRIPTS_PATH}/${SHARED_BUNDLE_FILENAME}`,
                 `${SCRIPTS_PATH}/${scriptletFilename('set-cookie')}`,
                 `${SCRIPTS_PATH}/${getRuleFilename(hash)}`,
@@ -390,89 +351,36 @@ describe('PreregisteredScriptsService', () => {
             setupManifest(
                 [await computeRuleHash(youtubeRule), await computeRuleHash(exampleRule)],
                 { 'set-cookie': scriptletFilename('set-cookie') },
-                undefined,
-                ['youtube.com'],
             );
+            // An exception the browser cannot express as a match pattern: the
+            // registration would run the script on a page the engine
+            // suppresses, so the host keeps the dynamic path.
+            setupExceptionSources([{
+                filterId: 2,
+                content: '@@||youtube.com/*.php?__query=$document\n',
+            }]);
+            const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
 
-            // The generation settles what the runtime cannot: a `$badfilter`
-            // of another filter cancels this host's exceptions, so the gate
-            // has nothing to apply when that filter is enabled.
             const result = await PreregisteredScriptsService.sync(
                 true,
                 ['youtube.com', 'example.org'],
                 SCRIPTS_PATH,
             );
 
+            // Only the affected host falls back: the other one keeps its
+            // registration.
             expect([...result.keys()]).toEqual(['example.org']);
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
             expect(scripts.map((script) => script.id)).toEqual(['example.org']);
+            expect(warn.mock.calls.map(([message]) => String(message))
+                .some((message) => message.includes('Keeping hostnames on the dynamic path'))).toBe(true);
+            warn.mockRestore();
         });
 
-        it('reads a filter list only once while its checksum is unchanged', async () => {
-            const rule = mockScriptletRule('set-cookie', []);
-            await setupRulesWithManifest({ 'youtube.com': [rule] });
-            vi.mocked(engineApi.getEnabledLocalFiltersIds).mockReturnValue([1]);
-
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-
-            // `configure()` syncs on every settings change; an unchanged list
-            // must not be read and parsed again.
-            expect(vi.mocked(FiltersStorage.getRawFilterList)).toHaveBeenCalledTimes(1);
-        });
-
-        it('recomputes the fingerprint when the list checksum changes', async () => {
-            const rule = mockScriptletRule('set-cookie', []);
-            await setupRulesWithManifest({ 'youtube.com': [rule] });
-            vi.mocked(engineApi.getEnabledLocalFiltersIds).mockReturnValue([1]);
-
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-
-            // A resource update rewrites the list: the cached fingerprint
-            // describes the previous text and must not be reused.
-            vi.mocked(FiltersStorage.getChecksum).mockResolvedValueOnce('changed-1');
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-
-            expect(vi.mocked(FiltersStorage.getRawFilterList)).toHaveBeenCalledTimes(2);
-        });
-
-        it('recomputes the fingerprint when the covered host set changes', async () => {
-            const rule = mockScriptletRule('set-cookie', []);
-            await setupRulesWithManifest({ 'youtube.com': [rule] });
-            vi.mocked(engineApi.getEnabledLocalFiltersIds).mockReturnValue([1]);
-
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-            await PreregisteredScriptsService.sync(true, ['example.org'], SCRIPTS_PATH);
-
-            // The host set scopes the fingerprint, so the same list text over
-            // a different scope is a different fingerprint.
-            expect(vi.mocked(FiltersStorage.getRawFilterList)).toHaveBeenCalledTimes(2);
-        });
-
-        it('falls back to dynamic injection when the page exceptions of an enabled filter are stale', async () => {
-            const rule = mockScriptletRule('set-cookie', ['a', 'b']);
-            await setupRulesWithManifest({ 'youtube.com': [rule] });
-
-            // The lists changed since the generation: the baked conditions
-            // files describe exceptions the engine no longer has.
-            setupManifest(
-                [await computeRuleHash(rule)],
-                { 'set-cookie': scriptletFilename('set-cookie') },
-                undefined,
-                undefined,
-                { 1: 'ffffffffffffffff' },
-            );
-
-            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-
-            expect(result.size).toBe(0);
-            expect(ContentScriptManager.sync).toHaveBeenCalledWith('preregistered', []);
-        });
-
-        it('keeps a host on the dynamic path when runtime rules can change its verdict', async () => {
-            // The page gate is baked from the built-in lists only, so a user
-            // rule or a custom filter changing the JS verdict for a host must
-            // leave that host to the engine — and only that host.
+        it('turns a user rule into an exclusion instead of dropping the host', async () => {
+            // User rules are part of the rule set the engine matches with, so
+            // a path-scoped exception from them is honored by the registration
+            // itself — the host keeps the fast path.
             const youtubeRule = mockScriptletRule('set-cookie', []);
             const exampleRule = mockScriptletRule('set-cookie', []);
             setupEngine({ 'youtube.com': [youtubeRule], 'example.org': [exampleRule] });
@@ -480,8 +388,10 @@ describe('PreregisteredScriptsService', () => {
                 [await computeRuleHash(youtubeRule), await computeRuleHash(exampleRule)],
                 { 'set-cookie': scriptletFilename('set-cookie') },
             );
-            vi.mocked(engineApi.getRuntimeExceptionLines)
-                .mockReturnValue(['@@||youtube.com/feed/trending$document']);
+            setupExceptionSources([{
+                filterId: USER_FILTER_ID,
+                content: '@@||youtube.com/feed/trending$document\n',
+            }]);
 
             const result = await PreregisteredScriptsService.sync(
                 true,
@@ -489,9 +399,12 @@ describe('PreregisteredScriptsService', () => {
                 SCRIPTS_PATH,
             );
 
-            expect([...result.keys()]).toEqual(['example.org']);
+            expect([...result.keys()]).toEqual(['youtube.com', 'example.org']);
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-            expect(scripts.map((script) => script.id)).toEqual(['example.org']);
+            const youtube = scripts.find((script) => script.id === 'youtube.com');
+            expect(youtube?.excludeMatches).toEqual(['*://youtube.com/feed/trending*']);
+            const example = scripts.find((script) => script.id === 'example.org');
+            expect(example?.excludeMatches).toEqual([]);
         });
 
         it('does not treat prototype properties as scriptlet function files', async () => {
@@ -573,9 +486,9 @@ describe('PreregisteredScriptsService', () => {
 
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
             expect(scripts).toHaveLength(1);
-            // The conditions file + shared bundle + the scriptlet function
-            // file + the per-hash file + cleanup.
-            expect(scripts[0].js).toHaveLength(5);
+            // Shared bundle + the scriptlet function file + the per-hash
+            // file + cleanup.
+            expect(scripts[0].js).toHaveLength(4);
         });
 
         it('excludes $url-scoped rules even when their hash is in the manifest', async () => {
@@ -672,9 +585,9 @@ describe('PreregisteredScriptsService', () => {
 
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
             expect(scripts).toHaveLength(1);
-            // Conditions file + shared bundle + function file + one per-hash
-            // file (the local rule only) + cleanup.
-            expect(scripts[0].js).toHaveLength(5);
+            // Shared bundle + function file + one per-hash file (the local
+            // rule only) + cleanup.
+            expect(scripts[0].js).toHaveLength(4);
         });
 
         it('keeps the domain registered when a single rule fails to hash', async () => {
@@ -692,7 +605,7 @@ describe('PreregisteredScriptsService', () => {
             expect(result.get('youtube.com'))
                 .toEqual(new Set([await computeRuleHash(goodRule)]));
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-            expect(scripts[0].js).toHaveLength(5); // conditions + bundle + function file + the one valid rule + cleanup
+            expect(scripts[0].js).toHaveLength(4); // bundle + function file + the one valid rule + cleanup
         });
     });
 
@@ -742,49 +655,58 @@ describe('PreregisteredScriptsService', () => {
         });
     });
 
-    describe('sync — page-gate conditions', () => {
-        it('registers the conditions files of the enabled filters before the shared bundle', async () => {
-            const rule = mockScriptletRule('set-cookie', []);
-            setupEngine({ 'youtube.com': [rule] }, [1, 3]);
-            setupManifest(
-                [await computeRuleHash(rule)],
-                { 'set-cookie': scriptletFilename('set-cookie') },
-                [1, 2, 3],
-                undefined,
-                { 1: DEFAULT_FINGERPRINT, 2: DEFAULT_FINGERPRINT, 3: DEFAULT_FINGERPRINT },
-            );
-
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-            // Only the enabled filters' files, sorted by filter id, ahead of
-            // the bundle whose gate reads them.
-            expect(scripts[0].js?.slice(0, 3)).toEqual([
-                `${SCRIPTS_PATH}/cond-1.js`,
-                `${SCRIPTS_PATH}/cond-3.js`,
-                `${SCRIPTS_PATH}/${SHARED_BUNDLE_FILENAME}`,
-            ]);
-        });
-
-        it('registers no conditions files when the manifest carries none', async () => {
-            // A generation without page exceptions: the fingerprints are the
-            // empty-list hash and no conditions file was written.
-            const empty = await hashString('');
-            fingerprintState.value = { 1: empty };
+    describe('sync — excludeMatches', () => {
+        it('passes the exclusions of the host to the registration', async () => {
             const rule = mockScriptletRule('set-cookie', []);
             setupEngine({ 'youtube.com': [rule] });
             setupManifest(
                 [await computeRuleHash(rule)],
                 { 'set-cookie': scriptletFilename('set-cookie') },
-                [],
-                [],
-                { 1: empty },
             );
+            setupExceptionSources([{
+                filterId: 2,
+                content: '@@||youtube.com/my_video_ad$document\n',
+            }]);
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            // The browser skips the script on these URLs, so the pages the
+            // engine excludes never receive it.
+            expect(scripts[0].excludeMatches).toEqual(['*://youtube.com/my_video_ad*']);
             expect(scripts[0].js?.[0]).toBe(`${SCRIPTS_PATH}/${SHARED_BUNDLE_FILENAME}`);
+        });
+
+        it('resolves a $badfilter of another enabled filter', async () => {
+            // Both filters are in the engine, so the cancellation is final and
+            // nothing is excluded — the host keeps the fast path instead of
+            // falling back to the dynamic injection.
+            const rule = mockScriptletRule('set-cookie', []);
+            setupEngine({ 'youtube.com': [rule] });
+            setupManifest(
+                [await computeRuleHash(rule)],
+                { 'set-cookie': scriptletFilename('set-cookie') },
+            );
+            setupExceptionSources([
+                { filterId: 2, content: '@@||youtube.com/my_video_ad$document\n' },
+                { filterId: 3, content: '@@||youtube.com/my_video_ad$document,badfilter\n' },
+            ]);
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect([...result.keys()]).toEqual(['youtube.com']);
+            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(scripts[0].excludeMatches).toEqual([]);
+        });
+
+        it('registers without exclusions when no exception disables JS', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            await setupRulesWithManifest({ 'youtube.com': [rule] });
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(scripts[0].excludeMatches).toEqual([]);
         });
     });
 
@@ -858,7 +780,7 @@ describe('PreregisteredScriptsService', () => {
             expect(result.get('youtube.com'))
                 .toEqual(new Set([await computeRuleHash(keptRule)]));
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-            expect(scripts[0].js).toHaveLength(5); // conditions + bundle + function file + the covered rule + cleanup
+            expect(scripts[0].js).toHaveLength(4); // bundle + function file + the covered rule + cleanup
         });
     });
 
@@ -884,7 +806,7 @@ describe('PreregisteredScriptsService', () => {
             expect(result.get('youtube.com')).toEqual(new Set([await computeRuleHash(keptRule)]));
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
             expect(scripts).toHaveLength(1);
-            expect(scripts[0].js).toHaveLength(5); // conditions + bundle + function file + the covered rule + cleanup
+            expect(scripts[0].js).toHaveLength(4); // bundle + function file + the covered rule + cleanup
         });
 
         it('asks the engine to ignore the exception URL conditions', async () => {

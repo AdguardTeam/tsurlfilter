@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
-import { MatchMode, Pattern } from '../../src/rules/pattern';
+import { Pattern } from '../../src/rules/pattern';
 
 describe('Pattern Tests', () => {
     it('matches shortcut simple cases', () => {
@@ -157,36 +157,13 @@ describe('Pattern Tests', () => {
         )).toBeFalsy();
     });
 
-    describe('getPatternMatcher', () => {
-        it.each([
-            ['example', { mode: MatchMode.Shortcut, shortcut: 'example' }],
-            ['/example/*', { mode: MatchMode.Shortcut, shortcut: '/example/' }],
-            ['||example.org^', { mode: MatchMode.Hostname, hostname: 'example.org' }],
-            ['||example.org/path', {
-                mode: MatchMode.Regex,
-                source: '^(http|https|ws|wss):\\/\\/([a-z0-9-_.]+\\.)?example\\.org\\/path',
-                flags: 'i',
-            }],
-            ['||^', { mode: MatchMode.Invalid }],
-            ['/(/', { mode: MatchMode.Invalid }],
-        ])('describes %s', (patternText, expected) => {
-            expect(new Pattern(patternText).getPatternMatcher()).toEqual(expected);
-        });
+    it('does not shortcut the `pattern*` shape with $match-case', () => {
+        const pattern = new Pattern('/example/*', true);
+        const request = new Request('https://example.org/EXAMPLE/x', null, RequestType.Document);
 
-        it('keeps $match-case on the regex path, so the case is respected', () => {
-            expect(new Pattern('example', true).getPatternMatcher()).toEqual({
-                mode: MatchMode.Regex,
-                source: 'example',
-                flags: '',
-            });
-        });
-
-        it('does not shortcut the `pattern*` shape with $match-case', () => {
-            const pattern = new Pattern('/example/*', true);
-            const request = new Request('https://example.org/EXAMPLE/x', null, RequestType.Document);
-
-            expect(pattern.getPatternMatcher().mode).toBe(MatchMode.Regex);
-            expect(pattern.matchPattern(request, false)).toBeFalsy();
-        });
+        // A substring search is case-insensitive: `$match-case` must keep the
+        // regex, otherwise the rule matches a page it does not match in the
+        // engine.
+        expect(pattern.matchPattern(request, false)).toBeFalsy();
     });
 });

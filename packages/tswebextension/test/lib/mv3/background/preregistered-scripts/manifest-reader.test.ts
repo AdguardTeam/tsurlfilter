@@ -6,10 +6,7 @@ import {
     vi,
 } from 'vitest';
 
-import {
-    hashString,
-    MANIFEST_SCHEMA_VERSION,
-} from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
+import { MANIFEST_SCHEMA_VERSION } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
 import {
     clearManifestCache,
     readManifest,
@@ -25,8 +22,6 @@ const VALID_MANIFEST = {
     schemaVersion: MANIFEST_SCHEMA_VERSION,
     hashes: ['0123456789abcdef'],
     scriptletFiles: { 'set-cookie': 's-set-cookie.js' },
-    conditions: [2],
-    pageExceptions: { 2: '0123456789abcdef' },
 };
 
 /**
@@ -85,25 +80,6 @@ describe('readManifest', () => {
         await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('404');
     });
 
-    it('keeps the conditions list', async () => {
-        // The reader does not know which filters are enabled: it validates the
-        // ids and leaves the selection to the runtime.
-        stubManifestFetch(makeManifest({
-            conditions: [2, 3],
-            pageExceptions: { 2: VALID_MANIFEST.pageExceptions[2], 3: VALID_MANIFEST.pageExceptions[2] },
-        }));
-
-        const manifest = await readManifest(SCRIPTS_PATH);
-
-        expect(manifest.conditions).toEqual([2, 3]);
-    });
-
-    it('throws when "conditions" is not a list of filter ids', async () => {
-        stubManifestFetch(makeManifest({ conditions: ['../cond-2.js'] }));
-
-        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('filter ids');
-    });
-
     it('throws on manifests written under another schema version', async () => {
         stubManifestFetch(makeManifest({ schemaVersion: MANIFEST_SCHEMA_VERSION + 1 }));
 
@@ -159,70 +135,6 @@ describe('readManifest', () => {
         // The host list is not part of the contract: coverage comes from
         // the built descriptors, so the field is dropped.
         await expect(readManifest(SCRIPTS_PATH)).resolves.toEqual(VALID_MANIFEST);
-    });
-
-    it('accepts a "dynamicHostnames" list the runtime must keep dynamic', async () => {
-        stubManifestFetch(makeManifest({ dynamicHostnames: ['youtube.com'] }));
-
-        await expect(readManifest(SCRIPTS_PATH)).resolves.toEqual({
-            ...VALID_MANIFEST,
-            dynamicHostnames: ['youtube.com'],
-        });
-    });
-
-    it.each([
-        ['a bare string', 'youtube.com'],
-        ['an upper-case host', ['Example.COM']],
-        ['a URL', ['https://youtube.com']],
-    ])('throws when "dynamicHostnames" is %s', async (_shape, dynamicHostnames) => {
-        stubManifestFetch(makeManifest({ dynamicHostnames }));
-
-        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"dynamicHostnames"');
-    });
-
-    it('throws when "pageExceptions" is missing, so a stale gate is never trusted', async () => {
-        stubManifestFetch(makeManifest({ pageExceptions: undefined }));
-
-        // Without the fingerprint the runtime cannot tell whether the baked
-        // exceptions still describe the loaded filters.
-        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"pageExceptions"');
-    });
-
-    it('throws when a page-exceptions entry is not a fingerprint', async () => {
-        stubManifestFetch(makeManifest({ pageExceptions: { 2: '' } }));
-
-        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('"2"');
-    });
-
-    it('accepts an empty-fingerprint entry without a conditions file', async () => {
-        // The build keeps a fingerprint for every filter list and writes a
-        // conditions file only for the filters that carry exceptions.
-        stubManifestFetch(makeManifest({
-            conditions: [3],
-            pageExceptions: { 2: await hashString(''), 3: VALID_MANIFEST.pageExceptions[2] },
-        }));
-
-        await expect(readManifest(SCRIPTS_PATH)).resolves.toBeDefined();
-    });
-
-    it('throws when exceptions were baked for a filter without a conditions file', async () => {
-        // The fingerprint would match and the gate would trust it, while the
-        // file is never registered: the filter's exceptions would be lost.
-        stubManifestFetch(makeManifest({ conditions: [] }));
-
-        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('no entry in "conditions"');
-    });
-
-    it('throws when a conditions id has no fingerprint', async () => {
-        stubManifestFetch(makeManifest({ conditions: [2, 3] }));
-
-        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('has no fingerprint');
-    });
-
-    it('throws when a page-exceptions key is not a filter id', async () => {
-        stubManifestFetch(makeManifest({ pageExceptions: { youtube: VALID_MANIFEST.pageExceptions[2] } }));
-
-        await expect(readManifest(SCRIPTS_PATH)).rejects.toThrow('is not a filter id');
     });
 
     it('passes an abort signal to fetch, so a hung request cannot stall the sync', async () => {

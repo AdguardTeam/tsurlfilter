@@ -6,8 +6,8 @@ import { getRuleHashFromFilePath } from './hasher';
 
 /**
  * Derives the covered rule hashes per hostname from content-script
- * descriptors, ignoring non-rule files (conditions `cond-*.js`, shared
- * bundle, per-function `s-*.js`, cleanup).
+ * descriptors, ignoring non-rule files (shared bundle, per-function
+ * `s-*.js`, cleanup).
  *
  * @param descriptors Content-script descriptors.
  *

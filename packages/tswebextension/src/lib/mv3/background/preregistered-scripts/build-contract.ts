@@ -10,9 +10,7 @@ export {
     CLEANUP_FILENAME,
     COORDINATION_KEY,
     computeRuleHash,
-    CONDITIONS_FILENAME_PREFIX,
     expandHostnames,
-    getConditionsFilename,
     getRuleFilename,
     hashString,
     MANIFEST_FILENAME,
@@ -22,6 +20,3 @@ export {
     SHARED_BUNDLE_FILENAME,
 } from './hasher';
 export type { PreregisteredScriptsManifest } from './hasher';
-export { computePageExceptionsFingerprint } from './exception-fingerprint';
-export type { PreregisteredFilterList } from './exception-fingerprint';
-export { matchesHostScope } from './host-scope';

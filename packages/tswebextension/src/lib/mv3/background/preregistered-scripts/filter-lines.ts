@@ -3,9 +3,9 @@
  * Line-level helpers of the page-exception pipeline: how a filter list is
  * split and how a raw line is normalized before parsing.
  *
- * Both the fingerprint (build) and the runtime exception lookup must read a
- * list identically, otherwise the fingerprint compares strings the engine
- * never sees. They live here, next to `hasher.ts`, so there is one copy.
+ * The exclusion scan must read a list the way the engine does, otherwise it
+ * parses strings the engine never sees. They live here, next to `hasher.ts`,
+ * so there is one copy.
  */
 
 import { RawRuleConverter } from '@adguard/agtree';

@@ -21,8 +21,8 @@ import { logger } from '../../common/utils/logger';
 import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 
 import { type ConfigurationMV3 } from './configuration';
+import { collectExceptionLines, type ExceptionSource } from './preregistered-scripts/js-exclusions';
 import { createPreregisteredRootRequest } from './preregistered-scripts/root-request';
-import { collectExceptionLines } from './preregistered-scripts/runtime-exceptions';
 import { type ITrustedFilter } from './trusted-filter';
 import { UserScriptsApi } from './user-scripts-api';
 
@@ -93,11 +93,13 @@ export class EngineApi {
     private userFilterId: number = USER_FILTER_ID;
 
     /**
-     * Candidate page-exception lines of the runtime-only lists (user rules and
-     * custom filters). The page gate is baked from the built-in lists only, so
-     * the runtime has to know whether these lists can change its verdict.
+     * Candidate page-exception lines of every list the engine was created
+     * with, per filter id. The preregistered-scripts service derives the URL
+     * exclusions of a registration from them, so the exclusions describe the
+     * same rule set the engine matches with — including `$badfilter`
+     * cancellations by another filter and the user's own rules.
      */
-    private runtimeExceptionLines: readonly string[] = [];
+    private exceptionSources: readonly ExceptionSource[] = [];
 
     /**
      * Starts the engine with the provided bunch of rules,
@@ -116,11 +118,7 @@ export class EngineApi {
         } = config;
 
         const lists: EngineFactoryFilterList[] = [];
-        const runtimeExceptionLines: string[] = [];
-        // Only the filters that actually reached the engine: a filter whose
-        // content failed to load has no rules, so its conditions file must
-        // not be registered either.
-        const localRulesFiltersIds: number[] = [];
+        const exceptionSources: ExceptionSource[] = [];
 
         /**
          * Local (built-in) filters are always applied and are trusted.
@@ -140,7 +138,7 @@ export class EngineApi {
                     ignoreJS: false,
                     ignoreUnsafe: false,
                 });
-                localRulesFiltersIds.push(filter.getId());
+                exceptionSources.push({ filterId: filter.getId(), lines: collectExceptionLines(content) });
             } catch (e) {
                 const filterId = localFilters[i].getId();
                 logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for filter ${filterId} due to: `, e);
@@ -161,7 +159,7 @@ export class EngineApi {
                         ignoreJS: !filter.isTrusted(),
                         ignoreUnsafe: !filter.isTrusted(),
                     });
-                    runtimeExceptionLines.push(...collectExceptionLines(content));
+                    exceptionSources.push({ filterId: filter.getId(), lines: collectExceptionLines(content) });
                 } catch (e) {
                     const filterId = remoteFilters[i].getId();
                     logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for filter ${filterId} due to: `, e);
@@ -189,7 +187,7 @@ export class EngineApi {
                     ignoreJS: false,
                     ignoreUnsafe: false,
                 });
-                runtimeExceptionLines.push(...collectExceptionLines(userrules));
+                exceptionSources.push({ filterId: USER_FILTER_ID, lines: collectExceptionLines(userrules) });
             }
         } catch (e) {
             const filterId = userRulesFilter.getId();
@@ -204,10 +202,6 @@ export class EngineApi {
                 ignoreJS: false,
                 ignoreUnsafe: false,
             });
-            // The allowlist is a runtime-only page-exception source: without
-            // its lines a preregistered host would keep its baked gate while
-            // the user expects the page unfiltered.
-            runtimeExceptionLines.push(...collectExceptionLines(allowlistRulesList));
         }
 
         /*
@@ -223,9 +217,9 @@ export class EngineApi {
 
         // Update IDs of loaded to engine filters for split local and remote
         // scripts.
-        this.localRulesFiltersIds = localRulesFiltersIds;
+        this.localRulesFiltersIds = localFilters.map((filter) => filter.getId());
         this.userFilterId = userRulesFilter.getId();
-        this.runtimeExceptionLines = runtimeExceptionLines;
+        this.exceptionSources = exceptionSources;
 
         // Update configuration of engine.
         setConfiguration({
@@ -376,16 +370,6 @@ export class EngineApi {
     }
 
     /**
-     * Returns the ids of the enabled local (built-in) filters the engine was
-     * created with. Custom filters and user rules are not included.
-     *
-     * @returns Enabled local filter ids.
-     */
-    public getEnabledLocalFiltersIds(): readonly number[] {
-        return this.localRulesFiltersIds;
-    }
-
-    /**
      * Checks if a JS/scriptlet rule is cancelled on a hostname by an allowlist
      * exception (user rules, custom filters).
      *
@@ -425,16 +409,15 @@ export class EngineApi {
     }
 
     /**
-     * Returns the page-exception candidate lines of the runtime-only lists:
-     * user rules and custom filters. They are not baked into the page gate,
-     * so the preregistered-scripts service uses them to keep an affected host
-     * on the dynamic path.
+     * Returns the page-exception candidate lines of every list the engine was
+     * created with, per filter id. The preregistered-scripts service derives
+     * the URL exclusions of a registration from them.
      *
-     * @returns Candidate lines, without duplicates removal; empty until the
-     * engine is started.
+     * @returns Sources of the enabled filters; empty until the engine is
+     * started.
      */
-    public getRuntimeExceptionLines(): readonly string[] {
-        return this.runtimeExceptionLines;
+    public getExceptionSources(): readonly ExceptionSource[] {
+        return this.exceptionSources;
     }
 
     /**

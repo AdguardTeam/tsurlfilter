@@ -3,51 +3,6 @@ import { type Request } from '../request';
 import { SimpleRegex } from './simple-regex';
 
 /**
- * Mode of {@link PatternMatcher}.
- *
- * A string enum, not a union of literals: the values reach the build tools
- * that replicate the engine's decision, and a member name is what makes a
- * comparison there a compile-time reference instead of a bare string.
- */
-export enum MatchMode {
-    /**
-     * The pattern is compared by hostname.
-     */
-    Hostname = 'hostname',
-
-    /**
-     * The pattern is a substring search.
-     */
-    Shortcut = 'shortcut',
-
-    /**
-     * The pattern is a regular expression.
-     */
-    Regex = 'regex',
-
-    /**
-     * The pattern cannot be compiled, so the engine never matches it.
-     */
-    Invalid = 'invalid',
-}
-
-/**
- * How the engine matches a rule pattern, resolved by `Pattern.prepare()`:
- * `||host^` is compared by hostname, a pattern identical to its shortcut (or
- * the `shortcut*` shape) is a substring search, everything else is a regex.
- * `invalid` marks a pattern whose regex cannot be compiled — the engine never
- * matches it.
- *
- * `$match-case` disables the shortcut mode: `prepare()` skips the
- * case-insensitive shortcut branch then and the pattern comes back as `regex`.
- */
-export type PatternMatcher =
-    | { mode: MatchMode.Hostname; hostname: string }
-    | { mode: MatchMode.Shortcut; shortcut: string }
-    | { mode: MatchMode.Regex; source: string; flags: string }
-    | { mode: MatchMode.Invalid };
-
-/**
  * Rule pattern class.
  *
  * This class parses rule pattern text to simple fields.
@@ -284,34 +239,5 @@ export class Pattern {
         }
 
         return this.patternDomainSpecific;
-    }
-
-    /**
-     * Resolves how this pattern is matched, without matching a request.
-     *
-     * Consumers that replicate the engine's decision outside its process
-     * (build tools baking a page-side gate) need the same fast-path split the
-     * engine uses: a hostname comparison, a substring search or a regex.
-     *
-     * @returns Prepared pattern conditions.
-     */
-    public getPatternMatcher(): PatternMatcher {
-        this.prepare();
-
-        if (this.patternShortcut) {
-            return { mode: MatchMode.Shortcut, shortcut: this.shortcut };
-        }
-
-        // The same truthy check as `matchPattern()`: an empty hostname means
-        // the pattern was not recognized as a hostname one.
-        if (this.hostname) {
-            return { mode: MatchMode.Hostname, hostname: this.hostname };
-        }
-
-        if (this.regexInvalid || !this.regex) {
-            return { mode: MatchMode.Invalid };
-        }
-
-        return { mode: MatchMode.Regex, source: this.regex.source, flags: this.regex.flags };
     }
 }

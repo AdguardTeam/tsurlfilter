@@ -36,7 +36,7 @@ import {
     OPTIONS_DELIMITER,
 } from './network-rule-options';
 import { type NetworkRuleOption as NetworkRuleOptionType, OptionFlags } from './option-flags';
-import { Pattern, type PatternMatcher } from './pattern';
+import { Pattern } from './pattern';
 import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
 import { SimpleRegex } from './simple-regex';
 
@@ -1175,16 +1175,6 @@ export class NetworkRule implements IRule {
         }
 
         return true;
-    }
-
-    /**
-     * Returns how the engine matches this rule's pattern, without matching a
-     * request.
-     *
-     * @returns Prepared pattern conditions.
-     */
-    public getPatternMatcher(): PatternMatcher {
-        return this.pattern.getPatternMatcher();
     }
 
     /**

@@ -25,32 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `@adguard/tswebextension/mv3/preregistered-scripts/build-contract`.
   The `manifest.json` format and filename contract are shared by the build and
   runtime.
-- The preregistered scripts manifest carries `conditions` — the list of filter
-  ids whose `$document`/`$jsinject` exceptions are baked into
-  `cond-{filterId}.js`. The service registers the files of the enabled
-  filters before the shared bundle, so a filter's exceptions stop applying
-  when the filter is disabled.
-- The manifest now carries `dynamicHostnames` — the covered hostnames that
-  stayed on the dynamic path during the generation because a `$badfilter` in
-  another filter cancels their exceptions, and only the runtime knows whether
-  that filter is enabled. The baked `conditions` files may have an entry for
-  them, so the service skips them instead of applying a verdict that does not
-  describe the engine.
-- The manifest now carries `pageExceptions` — a map of filter id to a
-  fingerprint of the allowlist rules that filter's conditions file was baked
-  from, computed by `computePageExceptionsFingerprint()`. The hash covers the
-  converted text of every exception tagged with the hostname it reaches, in
-  list order: an edit to any modifier value that changes the engine verdict,
-  a reorder of two exceptions that tie, and a new covered hostname all
-  invalidate the generation, while an exception for another site does not.
-  The service recomputes it for the enabled filters and falls back to dynamic
-  injection when one of them does not match, so exceptions baked from lists
-  that have since changed are never applied; a filter disabled at runtime has
-  no conditions file registered and is not compared.
-- A registered host is kept on the dynamic path when a user rule or a custom
-  filter can change the page's JS verdict for it. Those lists are runtime
-  only, so the baked page gate cannot account for them: the engine decides on
-  the dynamic path with the full rule set.
+- A preregistered registration carries `excludeMatches` — the URLs of the host
+  whose `$document`/`$jsinject` exceptions disable JS injection, so the
+  browser never injects the content script there. The patterns are resolved on
+  every sync from the allowlist lines of the filters the engine was created
+  with, so a `$badfilter` of another filter and a user rule or a custom filter
+  resolve against the rules the engine actually matches with. A host whose
+  exceptions the browser cannot express keeps the dynamic injection path,
+  where the engine decides.
 
 ### Changed
 

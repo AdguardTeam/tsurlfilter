@@ -22,9 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `NetworkRule.matchModifiers()` — checks a rule's modifier conditions
   without testing the pattern, for tools that replicate the engine's decision
   outside its process.
-- `NetworkRule.getPatternMatcher()` with the `PatternMatcher` and `MatchMode`
-  types — describe how a pattern is matched (hostname, shortcut or regex)
-  without matching a request. The `Pattern` class itself is exported too.
 - `RuleTable` and `getRuleTable()` — the lookup table the engine stores a rule
   in, so build tools can reproduce the engine's tie-break order instead of
   copying the routing. The table predicates are shared with `addRule()`.

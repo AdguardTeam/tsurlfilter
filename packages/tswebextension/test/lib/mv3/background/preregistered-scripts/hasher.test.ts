@@ -6,7 +6,6 @@ import {
     computeRuleHashCached,
     COORDINATION_KEY,
     expandHostnames,
-    getConditionsFilename,
     getRuleFilename,
     getRuleHashFromFilePath,
     hashString,
@@ -216,12 +215,8 @@ describe('getRuleHashFromFilePath', () => {
         expect(getRuleHashFromFilePath('filters/preregistered-scripts/scriptlets-bundle.js')).toBeNull();
         expect(getRuleHashFromFilePath('filters/preregistered-scripts/cleanup.js')).toBeNull();
         expect(getRuleHashFromFilePath('filters/preregistered-scripts/s-deadbeefdeadbeef.js')).toBeNull();
-        expect(getRuleHashFromFilePath(`filters/preregistered-scripts/${getConditionsFilename(2)}`))
+        expect(getRuleHashFromFilePath('filters/preregistered-scripts/cond-2.js'))
             .toBeNull();
-    });
-
-    it('derives the conditions filename from the filter id', () => {
-        expect(getConditionsFilename(2)).toBe('cond-2.js');
     });
 
     it('returns null for malformed hashes', () => {

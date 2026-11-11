@@ -1,24 +1,21 @@
-import { FiltersStorage } from '../../../common/storage/filters';
 import { logger } from '../../../common/utils/logger';
 import { appContext } from '../app-context';
 import { type PreregisteredScriptsConfig } from '../configuration';
 import { type ContentScriptDescriptor, ContentScriptManager } from '../content-script-manager';
 import { engineApi } from '../engine-api';
 
-import { computePageExceptionsFingerprint, type PreregisteredFilterList } from './exception-fingerprint';
 import {
     CLEANUP_FILENAME,
     computeRuleHashCached,
     expandHostnames,
-    getConditionsFilename,
     getRuleFilename,
     type PreregisteredScriptsManifest,
     SHARED_BUNDLE_FILENAME,
 } from './hasher';
 import { getHostnameScriptRules } from './hostname-rule-resolver';
+import { type JsExclusions, resolveHostExclusions } from './js-exclusions';
 import { readManifest } from './manifest-reader';
 import { deriveCoverage, readActiveRegistrations, snapshotBootRegistrations } from './registrations-reader';
-import { findHostsWithRuntimeExceptions } from './runtime-exceptions';
 
 /**
  * Namespace for content script registration. Must be stable across sessions.
@@ -31,28 +28,6 @@ export const PREREGISTERED_SCRIPTS_NAMESPACE = 'preregistered';
  * of `crypto.subtle` hashing when the hostname list grows.
  */
 const HOST_LOOKUP_BATCH_SIZE = 8;
-
-/**
- * A fingerprint computed by
- * {@link PreregisteredScriptsService.findStalePageExceptionFilters}, valid
- * while the list checksum and the covered host set stay the same.
- */
-type CachedFingerprint = {
-    /**
-     * Checksum of the filter list the fingerprint was computed from.
-     */
-    checksum: string;
-
-    /**
-     * Covered hostnames, joined; a new host changes the scope.
-     */
-    hostnamesKey: string;
-
-    /**
-     * The fingerprint itself.
-     */
-    fingerprint: string;
-};
 
 /**
  * Converts a hostname into a URL match pattern for `matches`.
@@ -78,22 +53,6 @@ type RegistrationPlan = {
      * Descriptors to register; empty when the generation is not trusted.
      */
     scripts: ContentScriptDescriptor[];
-};
-
-/**
- * Fingerprints of the filters checked by the last
- * {@link PreregisteredScriptsService.findStalePageExceptionFilters} call,
- * keyed by filter id. `doSync()` runs on every `configure()`, and
- * `FiltersStorage` already stores a checksum per list, so an unchanged list is
- * compared without reading and parsing its text again.
- */
-const fingerprintCache = new Map<number, CachedFingerprint>();
-
-/**
- * Clears the cached page-exception fingerprints. Intended for tests.
- */
-export const clearFingerprintCache = (): void => {
-    fingerprintCache.clear();
 };
 
 /**
@@ -483,20 +442,16 @@ export class PreregisteredScriptsService {
     /**
      * Resolves what a sync registers for the shipped generation.
      *
-     * The conditions files carry network exceptions baked at build time, and
-     * they stay correct only while the filter lists they were built from are
-     * still loaded. The build stores a fingerprint of that exception set in
-     * the manifest; when it no longer matches the loaded lists, applying the
-     * baked exceptions would disable pages the engine filters normally (and
-     * miss new ones), so nothing is registered and every host stays on the
-     * dynamic path, where the engine decides.
+     * The URL exclusions are derived from the live rule set — the filters the
+     * engine was created with, including custom filters and user rules — so
+     * they describe exactly what the engine decides: a `$badfilter` of
+     * another filter resolves against the same enabled-filter set, and a
+     * user's `$document` exception is honored instead of switching the host
+     * off. The pages whose exceptions disable JS become `excludeMatches`, so
+     * the browser does not inject the content script there at all.
      *
-     * A host that a user rule or a custom filter can affect is not registered
-     * at all: those lists are runtime-only, the baked page gate knows nothing
-     * about them, and a wrong verdict there either runs scriptlets on a page
-     * the user excluded or suppresses them where the engine allows them. The
-     * host keeps the dynamic path, where the engine decides with the full rule
-     * set.
+     * A host whose exceptions the browser cannot express keeps the dynamic
+     * path, where the engine decides.
      *
      * @param hostnames Configured hostnames, expanded.
      * @param scriptsPath Extension-relative path to preregistered scripts.
@@ -508,54 +463,31 @@ export class PreregisteredScriptsService {
         scriptsPath: string,
     ): Promise<RegistrationPlan> {
         const manifest = await readManifest(scriptsPath);
-        const staleFilters = await PreregisteredScriptsService.findStalePageExceptionFilters(manifest, hostnames);
-
-        if (staleFilters) {
-            logger.warn(
-                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: Page exceptions changed since the'
-                + ' generation, falling back to dynamic injection until the next full generation',
-                staleFilters,
-            );
-
-            return {
-                registeredHostnames: [],
-                scripts: [],
-            };
-        }
 
         // Rule files are named by hash. `buildDomainScripts` drops rules
         // missing from `manifest.hashes`, and coverage is read from the
         // descriptors that were built, so a host the generation does not list
         // is still registered for exactly the rules that have baked files.
-        //
-        // The generation settles one thing the runtime cannot: a `$badfilter`
-        // of another filter can cancel a host's exceptions, and whether that
-        // filter is enabled is known only here. Such a host is listed as
-        // dynamic and must not be registered: the gate has no entry to bake,
-        // so it would let the runner through where the engine disables JS.
-        const dynamicHostnames = new Set(manifest.dynamicHostnames ?? []);
-        if (dynamicHostnames.size > 0) {
+        const exclusions = resolveHostExclusions(engineApi.getExceptionSources(), hostnames);
+
+        if (exclusions.dynamicHosts.size > 0) {
             logger.warn(
-                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: The generation keeps hosts on the'
-                + ' dynamic path because an enabled-filter switch decides their page verdict',
-                [...dynamicHostnames],
+                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: Keeping hostnames on the'
+                + ' dynamic path: an exception disables JS there and the browser cannot exclude the pages',
+                [...exclusions.dynamicHosts.entries()],
             );
         }
 
-        const runtimeAffected = findHostsWithRuntimeExceptions(
-            engineApi.getRuntimeExceptionLines(),
-            hostnames,
-        );
-        if (runtimeAffected.size > 0) {
-            logger.warn(
-                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: User rules or custom filters'
-                + ' can change the page verdict for some hostnames, keeping them on the dynamic path',
-                [...runtimeAffected],
+        if (exclusions.unanchoredExceptions.length > 0) {
+            logger.debug(
+                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: Exceptions without a host apply'
+                + ' to every site and cannot be excluded from a registration',
+                exclusions.unanchoredExceptions,
             );
         }
 
-        const staticHostnames = hostnames.filter((hostname) => !runtimeAffected.has(hostname)
-            && !dynamicHostnames.has(hostname));
+        const staticHostnames = hostnames
+            .filter((hostname) => !exclusions.dynamicHosts.has(hostname));
 
         return {
             registeredHostnames: staticHostnames,
@@ -563,114 +495,9 @@ export class PreregisteredScriptsService {
                 [...staticHostnames],
                 scriptsPath,
                 manifest,
+                exclusions,
             ),
         };
-    }
-
-    /**
-     * Lists the filters whose baked page exceptions no longer describe the
-     * loaded lists.
-     *
-     * The build writes a fingerprint per filter into the manifest; the same
-     * map is recomputed here for the enabled filters, scoped to the configured
-     * hostnames, expanded the way the generation expands them — the manifest
-     * itself carries no host list. A filter without a baked entry counts as
-     * stale too — its exceptions were not baked at all, so nothing describes
-     * them.
-     *
-     * The fingerprint is cached per filter and reused while the stored list
-     * checksum and the covered host set stay the same, so the common case —
-     * a sync triggered by a settings change — does not read and parse the
-     * lists at all.
-     *
-     * @param manifest Build-time manifest.
-     * @param hostnames Preregistered hostnames the comparison is scoped to.
-     *
-     * @returns Ids of the filters whose baked exceptions must not be applied,
-     * or `null` when the baked exceptions describe the loaded lists.
-     */
-    private static async findStalePageExceptionFilters(
-        manifest: PreregisteredScriptsManifest,
-        hostnames: readonly string[],
-    ): Promise<string[] | null> {
-        const filterIds = engineApi.getEnabledLocalFiltersIds();
-        // The generation baked its conditions files for the hosts the
-        // configuration lists, so the same expansion scopes the comparison.
-        const hostnamesKey = hostnames.join('\n');
-
-        const checked = await Promise.all(filterIds.map(async (filterId) => {
-            const fingerprint = await PreregisteredScriptsService
-                .resolveFilterFingerprint(filterId, hostnamesKey, hostnames);
-
-            return {
-                filterId,
-                // `undefined` means the list could not be read: nothing
-                // describes its exceptions, so it must not be applied.
-                stale: fingerprint === undefined
-                    || manifest.pageExceptions[filterId] !== fingerprint,
-            };
-        }));
-
-        const stale = checked
-            .filter(({ stale: isStale }) => isStale)
-            .map(({ filterId }) => String(filterId));
-
-        return stale.length > 0 ? stale : null;
-    }
-
-    /**
-     * Returns the current fingerprint of one filter's page exceptions.
-     *
-     * The fingerprint is a pure function of the list text, so an unchanged
-     * checksum means the cached value still holds: comparing it costs no read
-     * of the list and no parsing.
-     *
-     * @param filterId Filter id.
-     * @param hostnamesKey Covered hostnames, joined.
-     * @param hostnames Covered hostnames.
-     *
-     * @returns Fingerprint, or `undefined` when the list could not be read.
-     */
-    private static async resolveFilterFingerprint(
-        filterId: number,
-        hostnamesKey: string,
-        hostnames: readonly string[],
-    ): Promise<string | undefined> {
-        const checksum = await FiltersStorage.getChecksum(filterId).catch(() => undefined);
-        const cached = fingerprintCache.get(filterId);
-
-        if (checksum !== undefined
-            && cached !== undefined
-            && cached.checksum === checksum
-            && cached.hostnamesKey === hostnamesKey) {
-            return cached.fingerprint;
-        }
-
-        const content = await FiltersStorage.getRawFilterList(filterId).catch((e) => {
-            logger.error(
-                `[tsweb.PreregisteredScriptsService.resolveFilterFingerprint]: cannot read filter ${filterId}`,
-                e,
-            );
-            return undefined;
-        });
-
-        if (content === undefined) {
-            return undefined;
-        }
-
-        const lists: PreregisteredFilterList[] = [{ filterId, content }];
-        const computed = await computePageExceptionsFingerprint(lists, hostnames);
-        const fingerprint = computed[String(filterId)];
-
-        if (checksum !== undefined) {
-            fingerprintCache.set(filterId, {
-                checksum,
-                hostnamesKey,
-                fingerprint,
-            });
-        }
-
-        return fingerprint;
     }
 
     /**
@@ -682,14 +509,14 @@ export class PreregisteredScriptsService {
      * generated file for them). A hostname with no surviving rules is not
      * registered.
      *
-     * The page-gate conditions of the enabled filters are registered before
-     * the shared bundle: their files append the network exceptions to the
-     * list the bundle's gate reads, so a disabled filter's exceptions stop
-     * applying.
+     * The pages whose network exceptions disable JS are excluded from the
+     * registration (`excludeMatches`), so the browser never injects the
+     * script there — the same verdict the engine returns for them.
      *
      * @param hostnames Preregistered hostnames (already normalized).
      * @param scriptsPath Extension-relative path to preregistered scripts.
      * @param manifest Build-time manifest.
+     * @param exclusions URL exclusions resolved from the live rule set.
      *
      * @returns Content-script descriptors for the covered hostnames. The
      * actual coverage is read separately from the active registrations.
@@ -698,22 +525,11 @@ export class PreregisteredScriptsService {
         hostnames: readonly string[],
         scriptsPath: string,
         manifest: PreregisteredScriptsManifest,
+        exclusions: JsExclusions,
     ): Promise<ContentScriptDescriptor[]> {
         const manifestHashes = new Set(manifest.hashes);
         const sharedBundlePath = `${scriptsPath}/${SHARED_BUNDLE_FILENAME}`;
         const cleanupPath = `${scriptsPath}/${CLEANUP_FILENAME}`;
-
-        // Page-gate conditions of the enabled filters only: the gate must
-        // stop applying an exception as soon as its filter is disabled,
-        // exactly like the engine does. The files run before the shared
-        // bundle and append to its conditions list; their mutual order is
-        // irrelevant, the gate picks the winner by priority. Sorted, so a
-        // reordered filter list does not rebuild the descriptors.
-        const enabledFilterIds = new Set(engineApi.getEnabledLocalFiltersIds());
-        const conditionFiles = [...manifest.conditions]
-            .sort((a, b) => a - b)
-            .filter((filterId) => enabledFilterIds.has(filterId))
-            .map((filterId) => `${scriptsPath}/${getConditionsFilename(filterId)}`);
 
         const scripts: ContentScriptDescriptor[] = [];
         const degradedRules = new Set<string>();
@@ -815,10 +631,10 @@ export class PreregisteredScriptsService {
                         return failedHashCount;
                     }
 
+                    const hostExclusions = exclusions.exclusions.get(hostname) ?? [];
                     const ruleFiles = [...coveredHashes]
                         .map((hash) => `${scriptsPath}/${getRuleFilename(hash)}`);
                     const js = [
-                        ...conditionFiles,
                         sharedBundlePath,
                         ...[...scriptletFunctionFiles].sort(),
                         ...ruleFiles,
@@ -829,6 +645,7 @@ export class PreregisteredScriptsService {
                         id: hostname,
                         js,
                         matches: domainToMatchPatterns(hostname),
+                        excludeMatches: hostExclusions,
                         runAt: 'document_start',
                         world: 'MAIN',
                         allFrames: false,

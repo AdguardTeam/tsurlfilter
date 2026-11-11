@@ -336,9 +336,8 @@ is derived automatically at runtime.
 type: `string`
 
 Path to the preregistered script artifacts directory (contains
-`manifest.json`, the shared bundle, one `cond-{filterId}.js` per filter whose
-network exceptions are baked, one function file per scriptlet, one file per
-rule, and the cleanup file — see
+`manifest.json`, the shared bundle, one function file per scriptlet, one file
+per rule, and the cleanup file — see
 `@adguard/tswebextension/mv3/preregistered-scripts/build-contract`).
 Coverage is reported from the registrations actually active after a sync:
 on sync failure the last published coverage is kept (the boot snapshot
@@ -362,8 +361,14 @@ dynamic path.
 At runtime, each configured hostname (plus its `www.` alias) is matched
 against the engine with `$path` ignored, the matching rules are hashed, and
 a persistent content script is registered with
-`js: [...conditions files of the enabled filters, shared bundle, ...scriptlet
-function files, ...per-rule files, cleanup]`.
+`js: [shared bundle, ...scriptlet function files, ...per-rule files, cleanup]`
+and `excludeMatches: [...URLs the engine disables JS injection on]`. The
+browser then skips the script on those pages, so no page gate is needed and
+the exceptions apply before injection. The exclusions are resolved on each
+sync from the allowlist lines of the filters the engine was created with
+(`EngineApi.getExceptionSources()`), so a `$badfilter` of another filter, a
+user rule and a filter update all resolve against the rules the engine
+actually matches with.
 A scriptlet function file carries only the implementations the host's rules
 use; the per-rule file enforces any `$path` condition via `location`; the
 cleanup file runs last, deleting the coordination `window` property before
@@ -383,10 +388,13 @@ Known limitations:
 
 - Scriptlet executions are deduped by rule hash, unlike the dynamic path;
   both paths rely on scriptlets being idempotent.
-- User rules and custom filters are not baked into the page gate: a host
-  their `$document`/`$jsinject` exception can reach keeps the dynamic path,
-  and a subframe is never preregistered for the same reason — see the
-  coverage notes above.
+- An exception that cannot be written as a match pattern (a wildcard inside
+  the path, a query, a host-wide exception, a higher-ranked exception that
+  keeps JS injection on) keeps its host on the dynamic path: the
+  registration cannot exclude the page, and running the script there would
+  contradict the engine. Only the affected host falls back.
+- A subframe is never preregistered: its verdict depends on the main frame's
+  rule and URL — see the coverage notes above.
 - Subframes never take the fast path: they are injected dynamically, on
   `webRequest.onResponseStarted` or `webNavigation.onCommitted`, after the
   frame's document starts. A frame whose own inline script reads a property
