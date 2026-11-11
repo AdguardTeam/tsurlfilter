@@ -4,6 +4,7 @@ import { defaultParserOptions, NetworkRuleParser, type ParserOptions } from '@ad
 
 import { EMPTY_STRING } from '../common/constants';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
+import { getRuleTable, RuleTable } from '../engine/lookup-tables/rule-table';
 import { type IAdvancedModifier } from '../modifiers/advanced-modifier';
 import { AppModifier, type IAppModifier } from '../modifiers/app-modifier';
 import { CookieModifier } from '../modifiers/cookie-modifier';
@@ -850,6 +851,18 @@ export class NetworkRule implements IRule {
         return this.isOptionEnabled(NetworkRuleOption.Urlblock)
             || this.isOptionEnabled(NetworkRuleOption.Genericblock)
             || this.isOptionEnabled(NetworkRuleOption.Content);
+    }
+
+    /**
+     * Checks whether the engine files the rule in the domains lookup table.
+     * That table indexes rules by their `$domain` values and returns nothing
+     * for a request without a source, so such a rule never decides the
+     * document slot of a main frame.
+     *
+     * @returns True if the rule is stored in the domains table.
+     */
+    public isInDomainsTable(): boolean {
+        return getRuleTable(this) === RuleTable.Domains;
     }
 
     /**

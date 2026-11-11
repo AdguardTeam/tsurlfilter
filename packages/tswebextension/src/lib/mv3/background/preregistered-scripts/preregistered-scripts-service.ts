@@ -486,14 +486,6 @@ export class PreregisteredScriptsService {
             );
         }
 
-        if (exclusions.caseVariantExceptions.length > 0) {
-            logger.debug(
-                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: Case-ambiguous paths are'
-                + ' excluded as written and lowercased; the engine compares them case-insensitively',
-                exclusions.caseVariantExceptions,
-            );
-        }
-
         const staticHostnames = hostnames
             .filter((hostname) => !exclusions.dynamicHosts.has(hostname));
 

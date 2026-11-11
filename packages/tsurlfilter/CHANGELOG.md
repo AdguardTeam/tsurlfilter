@@ -20,13 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CosmeticRule.match()` — a new `ignorePath` parameter, both skipping the
   `$path` modifier check.
 - `NetworkRule.matchModifiers()` — checks a rule's modifier conditions
-  without testing the pattern, for tools that replicate the engine's decision
-  outside its process.
-- `RuleTable` and `getRuleTable()` — the lookup table the engine stores a rule
-  in, so build tools can reproduce the engine's tie-break order instead of
-  copying the routing. The table predicates are shared with `addRule()`.
-- `MASK_ALLOWLIST` is exported for build tools that need to re-apply the
-  engine's option parsing.
+  without testing the pattern, for callers that replicate the engine's
+  decision outside its process.
+- `NetworkRule.isInDomainsTable()` — whether the engine files the rule in the
+  domains lookup table, which cannot match a request without a source.
+- `MASK_ALLOWLIST` is exported for callers that prefilter a list without
+  parsing every line.
 
 ### Changed
 

@@ -1,11 +1,9 @@
 import {
-    getRuleTable,
     MatchingResult,
     NetworkRule,
     NetworkRuleOption,
     Request,
     RequestType,
-    RuleTable,
     SimpleRegex,
 } from '@adguard/tsurlfilter';
 
@@ -54,14 +52,23 @@ export interface JsExclusions {
      * are reported and stay unapplied on preregistered pages, never fatal.
      */
     unanchoredExceptions: string[];
+}
+
+/**
+ * A parsed candidate rule with the line it was written as: `$badfilter`
+ * cancels a rule by comparing the written text, so the scan keeps the
+ * original line next to the rule it parsed it into.
+ */
+interface Candidate {
+    /**
+     * Parsed allowlist rule.
+     */
+    rule: NetworkRule;
 
     /**
-     * Rule texts of the exceptions whose path is written in mixed case. The
-     * engine compares it case-insensitively while `excludeMatches` does not,
-     * so only the written and the lowercased form are excluded; other case
-     * variants of the same URL still get the script.
+     * Filter line the rule was parsed from.
      */
-    caseVariantExceptions: string[];
+    writtenText: string;
 }
 
 /**
@@ -266,22 +273,31 @@ const resolveScope = (
 };
 
 /**
- * Builds the `excludeMatches` patterns for one exception of the host.
+ * Builds the `excludeMatches` pattern for one exception of the host.
  *
  * @param patternHost Host part of the pattern.
  * @param hostname Hostname the registration is for.
  * @param caseSensitive Whether the rule carries `$match-case`.
  *
- * @returns Match patterns, or `undefined` when the pattern cannot be expressed
+ * @returns Match pattern, or `undefined` when the pattern cannot be expressed
  * (a host-wide exception, a wildcard path, a query, a regexp).
  */
-const toExcludePatterns = (
+const toExcludePattern = (
     patternHost: PatternHost,
     hostname: string,
     caseSensitive: boolean,
-): string[] | undefined => {
+): string | undefined => {
     const path = patternHost.rest;
     if (!MATCH_PATTERN_PATH.test(path)) {
+        return undefined;
+    }
+
+    // The browser compares the path of a match pattern case-sensitively and
+    // the engine does not unless the rule has `$match-case` (probed in a
+    // browser: `/Ads` does not exclude `/ads`). One spelling covers at most
+    // one case, so an uppercase path makes the host dynamic instead of
+    // leaving the other spellings uncovered.
+    if (!caseSensitive && /[A-Z]/.test(path)) {
         return undefined;
     }
 
@@ -289,20 +305,7 @@ const toExcludePatterns = (
     // registration covers the host only: the exclusion is anchored to it. A
     // scheme-anchored exception keeps its scheme, so the other scheme — where
     // the engine does not disable JS — is not excluded.
-    const prefix = `${patternHost.scheme}://${hostname}`;
-    const written = `${prefix}${path}*`;
-
-    if (caseSensitive) {
-        return [written];
-    }
-
-    // Without `$match-case` the engine compares the URL case-insensitively,
-    // while `excludeMatches` does not (probed in a browser: `/Ads` does not
-    // exclude `/ads`). The lowercased form covers the usual spelling and the
-    // engine agrees it is excluded; other case variants stay uncovered.
-    const lowercasePath = path.toLowerCase();
-
-    return lowercasePath === path ? [written] : [written, `${prefix}${lowercasePath}*`];
+    return `${patternHost.scheme}://${hostname}${path}*`;
 };
 
 /**
@@ -313,8 +316,8 @@ const toExcludePatterns = (
  *
  * @returns Parsed candidate rules.
  */
-const collectCandidates = (sources: readonly ExceptionSource[]): NetworkRule[] => {
-    const candidates: NetworkRule[] = [];
+const collectCandidates = (sources: readonly ExceptionSource[]): Candidate[] => {
+    const candidates: Candidate[] = [];
 
     for (const source of sources) {
         for (const line of source.lines) {
@@ -335,7 +338,7 @@ const collectCandidates = (sources: readonly ExceptionSource[]): NetworkRule[] =
                     continue;
                 }
 
-                candidates.push(rule);
+                candidates.push({ rule, writtenText: line });
             }
         }
     }
@@ -359,81 +362,69 @@ const collectCandidates = (sources: readonly ExceptionSource[]): NetworkRule[] =
  * source, while the document slot (`Engine.matchFrame`) has no source, so
  * `$domain` matching differs between the slots.
  *
+ * One predicate decides both questions — "does the rule reach the host" and
+ * "can the reach be expressed as an exclusion" — for disabling and keeping
+ * rules alike: a rule that reaches a page of the host and cannot be pinned to
+ * its name makes the host dynamic instead of being dropped.
+ *
  * @param candidates Candidate rules of all enabled filters.
  * @param hostname Hostname to build exclusions for.
  *
  * @returns Exclusion patterns of the host, or the reason it stays dynamic.
  */
 const buildHostExclusions = (
-    candidates: readonly NetworkRule[],
+    candidates: readonly Candidate[],
     hostname: string,
 ): {
     patterns: string[];
     dynamic?: string;
     unanchored?: string[];
-    caseVariants?: string[];
 } => {
+    const writtenTextByRule = new Map<NetworkRule, string>();
+    for (const { rule, writtenText } of candidates) {
+        writtenTextByRule.set(rule, writtenText);
+    }
+
+    const rules = candidates.map((candidate) => candidate.rule);
+
     const rootUrl = getPreregisteredRootUrl(hostname);
 
     const cosmeticRequest = createPreregisteredPageRequest(hostname);
     const documentRequest = new Request(rootUrl, '', RequestType.Document);
 
-    const cosmeticRules = candidates.filter((rule) => rule.hasCosmeticOption()
+    const cosmeticRules = rules.filter((rule) => rule.hasCosmeticOption()
         && rule.matchModifiers(cosmeticRequest));
     // The domains table returns nothing for a request without a source, so
     // its rules can never win the document slot of a main frame.
-    const documentRules = candidates.filter((rule) => rule.isDocumentLevelAllowlistRule()
-        && getRuleTable(rule) !== RuleTable.Domains
+    const documentRules = rules.filter((rule) => rule.isDocumentLevelAllowlistRule()
+        && !rule.isInDomainsTable()
         && rule.matchModifiers(documentRequest));
 
     // `$badfilter` cancels its counterpart within the rule set that matched
-    // the request, exactly like the engine resolves it. The call does not
-    // mutate its argument.
-    const activeCosmeticRules = MatchingResult.removeBadfilterRules(cosmeticRules);
-    const activeDocumentRules = MatchingResult.removeBadfilterRules(documentRules);
+    // the request, and compares the written text: the scan parses the list
+    // itself, so it has to pass the original line, not the converted one.
+    // The call does not mutate its argument.
+    const resolveWrittenText = (rule: NetworkRule): string | null => writtenTextByRule.get(rule) ?? null;
+    const activeCosmeticRules = MatchingResult.removeBadfilterRules(cosmeticRules, resolveWrittenText);
+    const activeDocumentRules = MatchingResult.removeBadfilterRules(documentRules, resolveWrittenText);
 
-    const reaching = candidates
+    const reaching = rules
         .filter((rule) => activeCosmeticRules.includes(rule) || activeDocumentRules.includes(rule))
         .filter((rule) => matchesHostScope(rule.getPattern(), hostname));
 
     const disabling: NetworkRule[] = [];
     const keeping: NetworkRule[] = [];
+    const unanchored: string[] = [];
+
+    const writtenTextOf = (rule: NetworkRule): string => writtenTextByRule.get(rule) ?? rule.getPattern();
 
     for (const rule of reaching) {
-        if (rule.isOptionEnabled(NetworkRuleOption.Jsinject)) {
-            disabling.push(rule);
-        } else {
-            keeping.push(rule);
-        }
-    }
-
-    if (disabling.length === 0) {
-        return { patterns: [] };
-    }
-
-    // An exception that keeps JS injection on and outranks a disabling one
-    // would win on the same page: the registration cannot tell which page a
-    // priority decides, so the host stays dynamic.
-    const lowestDisablingPriority = Math.min(...disabling.map((rule) => rule.getPriorityWeight()));
-    const shield = keeping.find((rule) => rule.getPriorityWeight() >= lowestDisablingPriority);
-    if (shield) {
-        return {
-            patterns: [],
-            dynamic: `${shield.getText() ?? shield.getPattern()}: a higher-ranked exception keeps JS injection on`,
-        };
-    }
-
-    const patterns = new Set<string>();
-    const unanchored: string[] = [];
-    const caseVariants: string[] = [];
-
-    for (const rule of disabling) {
-        const text = rule.getText() ?? rule.getPattern();
+        const text = writtenTextOf(rule);
         const patternHost = parsePatternHost(rule.getPattern());
 
         // A pattern that names no host can still match every URL: `@@$document`
-        // and `@@*$document` disable JS everywhere, so no registration of any
-        // host is safe there.
+        // and `@@$jsinject` decide every page of every host, so no
+        // registration of any host is safe there.
         if (!patternHost) {
             if (rule.getPattern() === '' || rule.getPattern() === '*') {
                 return {
@@ -442,12 +433,18 @@ const buildHostExclusions = (
                 };
             }
 
+            // A host-less pattern is a substring search: it may match a page
+            // of the host, but no exclusion can express it. Reported for the
+            // debug log; the owner accepted the pages it covers.
             unanchored.push(text);
             continue;
         }
 
         const scope = resolveScope(patternHost, hostname);
 
+        // A pattern that reaches the host but cannot be anchored to its name
+        // (a wildcard or a truncated host part) may decide a page of the
+        // host, and no exclusion can express it.
         if (scope === 'unknown') {
             return {
                 patterns: [],
@@ -459,6 +456,11 @@ const buildHostExclusions = (
             continue;
         }
 
+        if (!rule.isOptionEnabled(NetworkRuleOption.Jsinject)) {
+            keeping.push(rule);
+            continue;
+        }
+
         // A rule that covers every URL of the host would exclude the whole
         // registration: the host then stays on the dynamic path, which is the
         // same thing without a registration to maintain.
@@ -466,26 +468,49 @@ const buildHostExclusions = (
             return { patterns: [], dynamic: text };
         }
 
-        const rulePatterns = toExcludePatterns(
-            patternHost,
-            hostname,
-            rule.isOptionEnabled(NetworkRuleOption.MatchCase),
-        );
-        if (!rulePatterns) {
+        disabling.push(rule);
+    }
+
+    if (disabling.length === 0) {
+        return { patterns: [], unanchored };
+    }
+
+    // An exception that keeps JS injection on and outranks a disabling one
+    // would win on the same page: the registration cannot tell which page a
+    // priority decides, so the host stays dynamic.
+    const lowestDisablingPriority = Math.min(...disabling.map((rule) => rule.getPriorityWeight()));
+    const shield = keeping.find((rule) => rule.getPriorityWeight() >= lowestDisablingPriority);
+    if (shield) {
+        return {
+            patterns: [],
+            dynamic: `${writtenTextOf(shield)}: a higher-ranked exception keeps JS injection on`,
+            unanchored,
+        };
+    }
+
+    const patterns = new Set<string>();
+
+    for (const rule of disabling) {
+        const text = writtenTextOf(rule);
+        const patternHost = parsePatternHost(rule.getPattern());
+
+        // `parsePatternHost` above saw the same pattern: it is not undefined.
+        const pattern = patternHost
+            ? toExcludePattern(patternHost, hostname, rule.isOptionEnabled(NetworkRuleOption.MatchCase))
+            : undefined;
+
+        if (!pattern) {
             return {
                 patterns: [],
                 dynamic: `${text}: the exception cannot be expressed as an excludeMatches pattern`,
+                unanchored,
             };
         }
 
-        rulePatterns.forEach((pattern) => patterns.add(pattern));
-
-        if (rulePatterns.length > 1) {
-            caseVariants.push(text);
-        }
+        patterns.add(pattern);
     }
 
-    return { patterns: [...patterns].sort(), unanchored, caseVariants };
+    return { patterns: [...patterns].sort(), unanchored };
 };
 
 /**
@@ -503,29 +528,21 @@ export const resolveHostExclusions = (
     const exclusions = new Map<string, string[]>();
     const dynamicHosts = new Map<string, string>();
     const unanchoredExceptions = new Set<string>();
-    const caseVariantExceptions = new Set<string>();
 
     if (hostnames.length === 0) {
         return {
             exclusions,
             dynamicHosts,
             unanchoredExceptions: [],
-            caseVariantExceptions: [],
         };
     }
 
     const candidates = collectCandidates(sources);
 
     for (const hostname of hostnames) {
-        const {
-            patterns,
-            dynamic,
-            unanchored,
-            caseVariants,
-        } = buildHostExclusions(candidates, hostname);
+        const { patterns, dynamic, unanchored } = buildHostExclusions(candidates, hostname);
 
         unanchored?.forEach((text) => unanchoredExceptions.add(text));
-        caseVariants?.forEach((text) => caseVariantExceptions.add(text));
 
         if (dynamic) {
             dynamicHosts.set(hostname, dynamic);
@@ -541,7 +558,6 @@ export const resolveHostExclusions = (
         exclusions,
         dynamicHosts,
         unanchoredExceptions: [...unanchoredExceptions].sort(),
-        caseVariantExceptions: [...caseVariantExceptions].sort(),
     };
 };
 
