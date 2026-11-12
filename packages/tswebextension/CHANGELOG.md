@@ -79,6 +79,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Inverted allowlist entries with uppercase letters not matching their sites.
 - `$stealth` exception rules shown as `<dynamic rule text is not specified>`
   instead of their text in the MV3 filtering log.
+- History API `$removeparam` rules now parse regexp values the same way as
+  network `$removeparam`. A value with an escaped slash, e.g. `/utm_\/(a|b)`,
+  no longer disables all History API `$removeparam` rules on the page.
+- HTML filtering `[tag-content]` values that CoreLibs reads as a regular
+  expression, e.g. `/ads/`, now match the literal text (via
+  [@adguard/tsurlfilter]): `$$div[tag-content="/ads/"]` no longer matches a
+  plain `ads` substring.
+- HTML filtering `:contains()` regexp arguments that end with an escaped
+  backslash (`/foo\\/`) or have one in a character class (`/[\\]/`) are now
+  compiled as regexps instead of being matched as text (via
+  [@adguard/tsurlfilter]).
 - HTML filtering rules whose selector starts with `html` or `:root` now
   match the document root and continue matching from it, e.g.
   `$$html > body > script` and `$$:root div`.
