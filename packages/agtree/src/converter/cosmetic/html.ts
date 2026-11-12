@@ -32,6 +32,7 @@ import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering
 import { AdblockSyntax } from '../../utils/adblockers';
 import {
     BACKSLASH,
+    CARET,
     COLON,
     DOUBLE_QUOTE,
     EMPTY,
@@ -83,6 +84,18 @@ const ADG_LENGTH_ATTRIBUTE_VALUE_PATTERN = /^\s*\+?\d+$/;
  * are rejected.
  */
 const UBO_MIN_TEXT_LENGTH_ARGUMENT_PATTERN = /^\d+$/;
+
+/**
+ * Pattern for a uBlock `:has-text()` regular expression argument.
+ *
+ * The uBlock `regexFromString()` treats an argument as a regular expression
+ * only when it matches this pattern; every other argument is plain text. The
+ * `i` flag is optional and is the only accepted flag, e.g. `/ads/g` is plain
+ * text in uBlock.
+ *
+ * @see {@link https://github.com/gorhill/uBlock/blob/master/src/js/html-filtering.js}
+ */
+const UBO_HAS_TEXT_REGEXP_PATTERN = /^\/(.+)\/(i?)$/;
 
 /**
  * Supported special pseudo-classes from uBlock.
@@ -689,8 +702,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
     /**
      * Handles special pseudo-class selectors during uBlock to AdGuard conversion:
-     * - `:has-text(text)` -> `:contains(text)`
-     *   direct conversion, no changes to argument
+     * - `:has-text(text)` -> `:contains(/text/i)`
+     *   uBlock treats a non-regexp argument as plain text: it unquotes the
+     *   argument once and matches it case-insensitively. AdGuard matches a
+     *   literal `:contains()` argument case-sensitively, so the text is
+     *   emitted as an escaped regular expression with the `i` flag. A uBlock
+     *   regexp argument, e.g. `/text/i`, is converted as-is.
      * - `:min-text-length(min)` -> `:contains(/^(?=.{min,MAX_CONVERSION_DEFAULT}$).*\/s)`
      *   converts to a length-matching regular expression.
      *
@@ -713,12 +730,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
      */
     private static convertSpecialPseudoClassSelectorUboToAdg(name: string, argument: string): SimpleSelector {
         switch (name) {
-            // `:has-text(text)` -> `:contains(text)`
-            // direct conversion, no changes to argument
+            // `:has-text(text)` -> `:contains(/text/i)`
+            // uBlock matches plain text case-insensitively and unquotes it
             case UboPseudoClasses.HasText: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
-                    argument,
+                    HtmlRuleConverter.convertUboTextArgumentToAdg(name, argument),
                 );
             }
 
@@ -1890,18 +1907,43 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * @returns `true` if uBlock Origin accepts the argument, `false` otherwise.
      */
     private static isUboTextArgumentSupported(argument: string): boolean {
+        return HtmlRuleConverter.unquoteUboTextArgument(argument) !== null;
+    }
+
+    /**
+     * Unquotes a uBlock HTML filtering `:has-text()` argument the same way
+     * uBlock's `unquoteString()` does.
+     *
+     * The uBlock `unquoteString()` removes the outer quotes only when the
+     * argument starts with a quote character. The argument is not trimmed, so
+     * leading and trailing spaces stay part of the text, e.g. ` "foo" `
+     * keeps its spaces and quotes. Backslash handling matches uBlock: `\\`
+     * and `\<quote>` lose the backslash, while any other backslash stays in
+     * the text.
+     *
+     * The uBlock `compileText()` rejects the rule when characters follow the
+     * closing quote, e.g. `"foo"bar`. This method returns `null` for such an
+     * argument, so the caller does not emit a rule with different matching
+     * semantics.
+     *
+     * @param argument Raw argument of the `:has-text()` pseudo-class.
+     *
+     * @returns Unquoted text, or `null` if uBlock rejects the argument.
+     */
+    private static unquoteUboTextArgument(argument: string): string | null {
         if (argument === EMPTY) {
-            return false;
+            return null;
         }
 
         const quote = argument.charAt(0);
         if (quote !== DOUBLE_QUOTE && quote !== SINGLE_QUOTE) {
-            return true;
+            return argument;
         }
 
+        let result = EMPTY;
         let index = 1;
 
-        while (index < argument.length) {
+        for (; index < argument.length; index += 1) {
             const char = argument.charAt(index);
 
             if (char === quote) {
@@ -1915,12 +1957,75 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 if (index === argument.length) {
                     break;
                 }
+
+                const nextChar = argument.charAt(index);
+
+                // uBlock keeps a backslash that escapes neither a backslash
+                // nor the argument quote
+                if (nextChar !== BACKSLASH && nextChar !== quote) {
+                    result += BACKSLASH;
+                }
+
+                result += nextChar;
+
+                continue;
             }
 
-            index += 1;
+            result += char;
         }
 
-        return index === argument.length;
+        // Characters after the closing quote make uBlock reject the rule
+        return index === argument.length ? result : null;
+    }
+
+    /**
+     * Converts a uBlock HTML filtering `:has-text()` argument to an AdGuard
+     * `:contains()` argument with the same matching semantics.
+     *
+     * The uBlock parser reads the argument with `compileText()`, which unquotes
+     * it, and then passes the text to `regexFromString()`. That function reads
+     * the text as a regular expression only when it matches
+     * {@link UBO_HAS_TEXT_REGEXP_PATTERN}; such an argument maps to an AdGuard
+     * regular expression argument as-is. Every other text is plain: uBlock
+     * matches it case-insensitively. AdGuard matches a literal `:contains()`
+     * argument case-sensitively, so the plain text is emitted as an escaped
+     * regular expression with the `i` flag, e.g. `admc` -> `/admc/i`. An empty
+     * text becomes `/^/i`, which matches any text, like uBlock's `/^/`.
+     *
+     * @param name Name of the special pseudo-class selector.
+     * @param argument Raw argument of the `:has-text()` pseudo-class.
+     *
+     * @returns Argument for the AdGuard `:contains()` pseudo-class.
+     *
+     * @throws If uBlock rejects the argument, i.e. characters follow the
+     * closing quote of a quoted argument.
+     */
+    private static convertUboTextArgumentToAdg(name: string, argument: string): string {
+        const text = HtmlRuleConverter.unquoteUboTextArgument(argument);
+
+        if (text === null) {
+            throw new RuleConversionError(sprintf(
+                ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INVALID_IN_UBO,
+                name,
+                argument,
+            ));
+        }
+
+        // uBlock reads the regexp form after it unquotes the argument, so a
+        // quoted regexp argument, e.g. `"/ads/i"`, is still a regexp there
+        if (UBO_HAS_TEXT_REGEXP_PATTERN.test(text)) {
+            return text;
+        }
+
+        // Quotes stay as-is: CoreLibs matches the regexp argument as a
+        // regular expression, so a quote is a literal character there and
+        // does not delimit the argument. This keeps the converted argument
+        // as close to the uBlock text as possible.
+        const escapedText = text === EMPTY
+            ? CARET
+            : RegExpUtils.escapeRegexSpecials(text);
+
+        return `${SLASH}${escapedText}${SLASH}i`;
     }
 
     /**

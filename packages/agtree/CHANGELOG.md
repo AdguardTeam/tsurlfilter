@@ -89,6 +89,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   The check mirrors CoreLibs' `:contains()` argument scanner, so values
   such as `/a++/`, `/a\/`, `///`, and `/ads` are escaped instead of becoming
   dead or over-broad rules.
+- uBO→ADG conversion of HTML filtering `:has-text()` now mirrors uBlock
+  for plain text: one pair of outer quotes is removed and the text is
+  matched case-insensitively through an escaped `:contains()` regexp with
+  the `i` flag, e.g. `##^script:has-text("admc")` becomes
+  `$$script:contains(/admc/i)`. The argument is not trimmed, so
+  `##^div:has-text( "foo" )` keeps its spaces and quotes. A rule with
+  characters after the closing quote, e.g. `##^div:has-text("foo"bar)`,
+  is rejected, as in uBlock.
 
 ### Security
 

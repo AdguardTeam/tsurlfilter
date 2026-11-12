@@ -25,7 +25,7 @@ describe('Raw rule converter wrapper should work correctly', () => {
             {
                 actual: 'example.com##^script:has-text(foo)',
                 expected: [
-                    'example.com$$script:contains(foo)',
+                    'example.com$$script:contains(/foo/i)',
                 ],
             },
             {

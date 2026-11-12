@@ -1015,33 +1015,66 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/^(?=.{65535,65535}$).*/s)'],
                     },
 
-                    // `:has-text()` special pseudo-class selector
+                    // `:has-text()` special pseudo-class selector - the
+                    // argument is unquoted and matched case-insensitively,
+                    // like uBlock does with plain text
                     {
                         actual: '##^div:has-text(example)',
-                        expected: ['$$div:contains(example)'],
+                        expected: ['$$div:contains(/example/i)'],
                     },
 
                     // `:has-text()` special pseudo-class selector - multiple usages
                     {
                         actual: '##^div:has-text(a):has-text(b)',
-                        expected: ['$$div:contains(a):contains(b)'],
+                        expected: ['$$div:contains(/a/i):contains(/b/i)'],
                     },
 
-                    // `:has-text()` special pseudo-class selector - double quotes are handled
+                    // `:has-text()` special pseudo-class selector - double quotes are removed
                     {
                         actual: '##^div:has-text("example")',
-                        expected: ['$$div:contains("example")'],
+                        expected: ['$$div:contains(/example/i)'],
                     },
 
-                    // `:has-text()` special pseudo-class selector - single quotes are handled
+                    // `:has-text()` special pseudo-class selector - single quotes are removed
                     {
                         actual: "##^div:has-text('example')",
-                        expected: ["$$div:contains('example')"],
+                        expected: ['$$div:contains(/example/i)'],
                     },
 
-                    // `:has-text()` special pseudo-class selector - regexp are handled
+                    // `:has-text()` special pseudo-class selector - the plain text
+                    // is escaped, so it still matches literally
+                    {
+                        actual: '##^script:has-text("a.b*c")',
+                        expected: ['$$script:contains(/a\\.b\\*c/i)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - the quoted text
+                    // keeps its case, the `i` flag makes the match case-insensitive
+                    {
+                        actual: '##^script:has-text("aDmC")',
+                        expected: ['$$script:contains(/aDmC/i)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - spaces around a
+                    // quoted argument are part of the text, and uBlock does not
+                    // trim them, so they stay in the escaped regexp argument
+                    {
+                        actual: '##^div:has-text( "foo" )',
+                        expected: ['$$div:contains(/ "foo" /i)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - a regexp argument
+                    // is converted as-is, because uBlock treats it as a regexp too
                     {
                         actual: '##^div:has-text(/ex.*ple/i)',
+                        expected: ['$$div:contains(/ex.*ple/i)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - uBlock unquotes
+                    // the argument before it reads a regexp, so a quoted regexp is
+                    // still a regexp
+                    {
+                        actual: '##^div:has-text("/ex.*ple/i")',
                         expected: ['$$div:contains(/ex.*ple/i)'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
@@ -1265,7 +1298,7 @@ describe('HtmlRuleConverter', () => {
                     },
                     {
                         actual: '##^div:has-text(example)',
-                        expected: ['$$div:contains(example)'],
+                        expected: ['$$div:contains(/example/i)'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
@@ -1299,6 +1332,14 @@ describe('HtmlRuleConverter', () => {
                         error: "Argument of special pseudo-class selector 'min-text-length' must not exceed 65535, got '65536'",
                     },
 
+                    // invalid special pseudo-class selector - uBlock rejects a
+                    // quoted argument with characters after the closing quote
+                    {
+                        input: '##^div:has-text("foo"bar)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'has-text' is not valid in uBlock Origin: '\"foo\"bar'",
+                    },
+
                     // Parsing errors
                     {
                         input: '##^[attr="value"]div',
@@ -1314,6 +1355,85 @@ describe('HtmlRuleConverter', () => {
                             HtmlRuleConverter.convertToAdg(RuleParser.parse(input) as HtmlFilteringRule);
                         }).toThrowError(error);
                     }
+                });
+            });
+
+            /**
+             * The uBlock `:has-text()` semantics for plain text, see
+             * https://github.com/gorhill/uBlock/blob/master/src/js/html-filtering.js:
+             * - `compileText()` unquotes the argument once;
+             * - `regexFromString()` escapes a non-regexp argument and matches
+             *   it case-insensitively with the `i` flag.
+             */
+            describe('uBlock :has-text() semantics', () => {
+                /**
+                 * Converts a uBlock HTML filtering rule to AdGuard syntax and
+                 * returns the generated rule text.
+                 *
+                 * @param rule Rule to convert.
+                 *
+                 * @returns Generated converted rule text.
+                 */
+                const convertToAdgText = (rule: string): string => {
+                    const conversionResult = HtmlRuleConverter.convertToAdg(
+                        RuleParser.parse(rule, parsingEnabledDefaultParserOptions) as HtmlFilteringRule,
+                    );
+
+                    expect(conversionResult.isConverted).toBe(true);
+                    expect(conversionResult.result).toHaveLength(1);
+
+                    return RuleGenerator.generate(conversionResult.result[0]);
+                };
+
+                /**
+                 * Extracts the `:contains()` regexp argument from a converted
+                 * rule.
+                 *
+                 * @param ruleText Converted rule text.
+                 *
+                 * @returns Resulting RegExp object.
+                 */
+                const extractContainsRegexp = (ruleText: string): RegExp => {
+                    const match = /:contains\(\/(.+)\/([a-z]*)\)/.exec(ruleText);
+
+                    if (match === null) {
+                        throw new Error(`No :contains() regexp found in '${ruleText}'`);
+                    }
+
+                    const [, source, flags] = match;
+
+                    return new RegExp(source, flags);
+                };
+
+                test.each([
+                    { rule: '##^script:has-text("admc")', text: 'admc' },
+                    { rule: '##^script:has-text(admc)', text: 'admc' },
+                    { rule: "##^script:has-text('aDmC')", text: 'aDmC' },
+                ])("should match '$text' case-insensitively in '$rule'", ({ rule, text }) => {
+                    const regexp = extractContainsRegexp(convertToAdgText(rule));
+
+                    expect(regexp.flags).toBe('i');
+                    expect(regexp.test(text.toLowerCase())).toBe(true);
+                    expect(regexp.test(text.toUpperCase())).toBe(true);
+                });
+
+                test('should escape the plain text, so it still matches literally', () => {
+                    const regexp = extractContainsRegexp(convertToAdgText('##^script:has-text("a.b*c")'));
+
+                    expect(regexp.test('prefix a.b*c suffix')).toBe(true);
+                    expect(regexp.test('prefix axbYc suffix')).toBe(false);
+                });
+
+                test('should keep spaces and quotes in a spaced argument', () => {
+                    const converted = convertToAdgText('##^div:has-text( "foo" )');
+
+                    expect(converted).toBe('$$div:contains(/ "foo" /i)');
+
+                    const regexp = extractContainsRegexp(converted);
+
+                    expect(regexp.test('text "foo" text')).toBe(true);
+                    expect(regexp.test('text "FOO" text')).toBe(true);
+                    expect(regexp.test('text foo text')).toBe(false);
                 });
             });
         });
