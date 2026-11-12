@@ -21,6 +21,9 @@ describe('Allowlist Api', () => {
     describe('configure method', () => {
         const cases = [
             { input: ['example.com'], expected: ['example.com'] },
+            { input: ['EXAMPLE.COM'], expected: ['example.com'] },
+            { input: ['  Example.COM \t'], expected: ['example.com'] },
+            { input: [' \tWWW.Example.COM\n'], expected: ['example.com'] },
             { input: ['www.example.com'], expected: ['example.com'] },
             { input: ['sub.example.com'], expected: ['sub.example.com'] },
             { input: ['www.sub.example.com'], expected: ['sub.example.com'] },

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 echo "Testing bundling with rollup-ts"
 
 # install other deps
@@ -29,27 +31,30 @@ tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
     exit 1
 }
 
-# check css hits counter size
-# The css-hits-counter smoke bundle is currently ~35 KB unminified; the guard
-# previously used BSD-only `stat -f "%z"`, which silently no-oped on GNU/Linux
-# (treating -f as --file-system), so this check passed green on every Linux CI
-# (both the old ubuntu test.yml and Docker) even as the bundle grew past the old
-# 27000-byte limit. Updated to the current size now that the guard is portable
-# and actually enforces on Linux; raise this only when a genuine size increase
+# check shipped css hits counter payload size
+# The guard measures the entry and every relative module it imports, so a
+# shared chunk added or renamed by the bundler is included instead of silently
+# dropping out of the sum. The smoke builder's CJS bundle tree-shakes the
+# collector, so its size is not the shipped size either.
+# Current payload: 69,704 bytes. Raise this only when a genuine size increase
 # lands, never to silence a regression.
-max_size=40000
-filename="dist/css-hits-counter.js"
-# Portable file-size query: GNU stat (Linux/Docker) needs `-c %s`, BSD stat
-# (macOS) needs `-f %z`.
-filesize=$(stat -c %s "$filename" 2>/dev/null || stat -f%z "$filename")
+max_size=70000
+package_dist="node_modules/@adguard/tswebextension/dist"
+if ! filesize=$(node measure-payload.mjs "$package_dist/css-hits-counter.js"); then
+    echo "Failed to measure the shipped css-hits-counter payload"
+    echo "Testing bundling with rollup-ts ended with error"
+    # clean up
+    rm $tswebextension
+    exit 1
+fi
 if [ "$filesize" -gt $max_size ]; then
-    echo "\"$filename\" is more than $max_size bytes with size $filesize"
+    echo "Shipped css-hits-counter payload is more than $max_size bytes with size $filesize"
     echo "Testing bundling with rollup-ts ended with error"
     # clean up
     rm $tswebextension
     exit 1
 else
-   echo "$filename is less than or equal to $max_size bytes with size $filesize"
+   echo "Shipped css-hits-counter payload is less than or equal to $max_size bytes with size $filesize"
 fi
 
 rm $tswebextension

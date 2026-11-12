@@ -37,8 +37,8 @@ export const ERROR_MESSAGES = {
     NEGATED_UBO_MODIFIER_CANNOT_BE_FOLLOWED_BY: "Negated uBO modifier '%s' cannot be followed by anything else than a closing parenthesis or a whitespace",
     NEGATED_UBO_MODIFIER_CANNOT_BE_PRECEDED_BY: "Negated uBO modifier '%s' cannot be preceded by '%s'",
     PSEUDO_CANNOT_BE_NESTED: "uBO modifier '%s' cannot be nested inside '%s', only '%s' is allowed as a wrapper",
+    UBO_ACTION_CANNOT_BE_FOLLOWED: 'uBO action cannot be followed by anything else than a whitespace',
     UBO_MODIFIER_CANNOT_BE_NESTED: "uBO modifier '%s' cannot be nested",
-    UBO_STYLE_CANNOT_BE_FOLLOWED: 'uBO style injection cannot be followed by anything else than a whitespace',
 };
 
 /**
@@ -56,7 +56,20 @@ const KNOWN_UBO_MODIFIERS = new Set<string>([
     UboPseudoName.MatchesMedia,
     UboPseudoName.MatchesPath,
     UboPseudoName.Remove,
+    UboPseudoName.RemoveAttr,
+    UboPseudoName.RemoveClass,
     UboPseudoName.Style,
+]);
+
+/**
+ * Set of uBO action pseudo-classes which are applied by Extended CSS to the matched element,
+ * so they must stay in the selector instead of being extracted as modifiers.
+ *
+ * They are still validated as actions: nothing else than a whitespace may follow them.
+ */
+const IN_SELECTOR_ACTION_PSEUDO_CLASSES = new Set<string>([
+    UboPseudoName.RemoveAttr,
+    UboPseudoName.RemoveClass,
 ]);
 
 /**
@@ -196,6 +209,16 @@ type StackedUboModifier = {
      * - `div:not(:matches-path(/path))` is an exception because it's negated with `:not()`
      */
     isException: boolean;
+
+    /**
+     * Whether the pseudo-class must stay in the selector instead of being extracted as a modifier.
+     *
+     * `:remove-attr()` and `:remove-class()` are actions applied by Extended CSS to the matched element,
+     * so their text is kept in the selector. They are still validated as actions.
+     *
+     * @default false
+     */
+    keepInSelector?: boolean;
 };
 
 /**
@@ -320,6 +343,10 @@ export class UboSelectorParser extends BaseParser {
         // Simple way to check if a modifier is already processed to avoid duplicate modifiers
         const processedModifiers = new Set<string>();
 
+        // Whether the parser has reached the declaration block of a CSS injection rule. Tokens after the
+        // declaration block opening are not validated, since they belong to the declaration block, not the selector
+        let isCssBlockStarted = false;
+
         // We need to keep track of the tokens for handling negations properly
         const tokens: TokenData[] = [];
 
@@ -343,36 +370,54 @@ export class UboSelectorParser extends BaseParser {
 
         // Tokenize the selector, calculate the balance
         tokenizeFnBalanced(raw, (type, start, end, _, balance) => {
-            // Special case: style injection (`:style(...)` and `:remove()`) can only be used at the end of the
-            // selector, like
+            // Special case: uBO actions (`:style(...)`, `:remove()`, `:remove-attr(...)` and `:remove-class(...)`)
+            // can only be used at the end of the selector, like
             //  - `div:style(...)`,
             //  - `div:matches-media(...):style(...)`,
             //  - `div:remove()`,
+            //  - `div:remove-attr(href)`,
             // etc.
             //
             // But not like
             //  - `:style(...) div`,
             //  - `:matches-media(...):style(...) div`,
             //  - `:remove() div`,
+            //  - `div:remove-attr(href) div`,
             // etc.
             //
-            // The one exception is whitespace, which is allowed after style injection, like
+            // The one exception is whitespace, which is allowed after an action, like
             //  - `div:style(...) `,
             //  - `div:matches-media(...):style(...) `,
             //  - `div:remove() `,
+            //  - `div:remove-attr(href) `,
             // etc.
-            if (
-                (
-                    processedModifiers.has(UboPseudoName.Style)
-                    || processedModifiers.has(UboPseudoName.Remove)
-                )
-                && type !== TokenType.Whitespace
-            ) {
-                throw new AdblockSyntaxError(
-                    ERROR_MESSAGES.UBO_STYLE_CANNOT_BE_FOLLOWED,
-                    baseOffset + start,
-                    baseOffset + raw.length,
-                );
+            //
+            // Moreover, since `:remove-attr()` and `:remove-class()` stay in the selector, the declaration block
+            // of a CSS injection rule may follow them, like
+            //  - `#$#div:remove-attr(href) { color: red }`,
+            // etc.
+            if (type !== TokenType.Whitespace && !isCssBlockStarted) {
+                // Extracted actions (`:style()` and `:remove()`) must be the very last part of the rule body
+                const hasExtractedAction = processedModifiers.has(UboPseudoName.Style)
+                    || processedModifiers.has(UboPseudoName.Remove);
+
+                // In-selector actions (`:remove-attr()` and `:remove-class()`) may be followed by the declaration
+                // block of a CSS injection rule
+                const hasInSelectorAction = processedModifiers.has(UboPseudoName.RemoveAttr)
+                    || processedModifiers.has(UboPseudoName.RemoveClass);
+
+                if (hasExtractedAction || (hasInSelectorAction && type !== TokenType.OpenCurlyBracket)) {
+                    throw new AdblockSyntaxError(
+                        ERROR_MESSAGES.UBO_ACTION_CANNOT_BE_FOLLOWED,
+                        baseOffset + start,
+                        baseOffset + raw.length,
+                    );
+                }
+
+                if (hasInSelectorAction) {
+                    // The declaration block has started, so stop validating the rest of the rule body
+                    isCssBlockStarted = true;
+                }
             }
 
             // Check for pseudo classes (colon followed by a function)
@@ -507,6 +552,7 @@ export class UboSelectorParser extends BaseParser {
                             valueStart: end,
                             valueBalance: balance,
                             isException: false,
+                            keepInSelector: IN_SELECTOR_ACTION_PSEUDO_CLASSES.has(fn),
                         });
                     }
                 }
@@ -540,48 +586,56 @@ export class UboSelectorParser extends BaseParser {
                     }
 
                     if (balance === Math.max(0, lastStackedModifier.modifierBalance - 1)) {
-                        const modifierName: Value = {
-                            type: 'Value',
-                            value: lastStackedModifier.name,
-                        };
-
-                        if (options.isLocIncluded) {
-                            // TODO: Refactor
-                            modifierName.start = baseOffset + lastStackedModifier.nameStart;
-                            modifierName.end = baseOffset + lastStackedModifier.nameEnd;
-                        }
-
-                        const value: Value = {
-                            type: 'Value',
-                            value: raw.slice(lastStackedModifier.valueStart, lastStackedModifier.valueEnd),
-                        };
-
-                        if (options.isLocIncluded) {
-                            value.start = baseOffset + lastStackedModifier.valueStart;
-                            // It's safe to use `!` here, because we determined the value end index in the
-                            // previous `if` statement
-                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                            value.end = baseOffset + lastStackedModifier.valueEnd!;
-                        }
-
-                        const modifier: Modifier = {
-                            type: 'Modifier',
-                            name: modifierName,
-                            value,
-                            exception: lastStackedModifier.isException,
-                        };
-
-                        if (options.isLocIncluded) {
-                            modifier.start = baseOffset + lastStackedModifier.modifierStart;
-                            modifier.end = baseOffset + end;
-                        }
-
-                        modifiers.children.push(modifier);
+                        // Mark the pseudo-class as processed before popping it, so that the guard above
+                        // rejects any non-whitespace token after an action
                         processedModifiers.add(lastStackedModifier.name);
                         uboModifierStack.pop();
 
-                        // Mark the character slots in the selector string that are occupied by uBO modifiers
-                        uboIndexes.fill(true, lastStackedModifier.modifierStart, end);
+                        // `:remove-attr()` and `:remove-class()` are applied by Extended CSS to the matched
+                        // element, so they stay in the selector: do not create a modifier node and do not mark
+                        // the character slots as occupied, so the selector keeps their text as is
+                        if (!lastStackedModifier.keepInSelector) {
+                            const modifierName: Value = {
+                                type: 'Value',
+                                value: lastStackedModifier.name,
+                            };
+
+                            if (options.isLocIncluded) {
+                                // TODO: Refactor
+                                modifierName.start = baseOffset + lastStackedModifier.nameStart;
+                                modifierName.end = baseOffset + lastStackedModifier.nameEnd;
+                            }
+
+                            const value: Value = {
+                                type: 'Value',
+                                value: raw.slice(lastStackedModifier.valueStart, lastStackedModifier.valueEnd),
+                            };
+
+                            if (options.isLocIncluded) {
+                                value.start = baseOffset + lastStackedModifier.valueStart;
+                                // It's safe to use `!` here, because we determined the value end index in the
+                                // previous `if` statement
+                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                value.end = baseOffset + lastStackedModifier.valueEnd!;
+                            }
+
+                            const modifier: Modifier = {
+                                type: 'Modifier',
+                                name: modifierName,
+                                value,
+                                exception: lastStackedModifier.isException,
+                            };
+
+                            if (options.isLocIncluded) {
+                                modifier.start = baseOffset + lastStackedModifier.modifierStart;
+                                modifier.end = baseOffset + end;
+                            }
+
+                            modifiers.children.push(modifier);
+
+                            // Mark the character slots in the selector string that are occupied by uBO modifiers
+                            uboIndexes.fill(true, lastStackedModifier.modifierStart, end);
+                        }
                     }
                 }
             }

@@ -3,7 +3,12 @@ import { type HttpHeadersItem } from '../modifiers/header-modifier';
 import { type RedirectModifier } from '../modifiers/redirect-modifier';
 import { STEALTH_MODE_FILTER_ID, StealthOptionName } from '../modifiers/stealth-modifier';
 import { RequestType } from '../request-type';
-import { type NetworkRule, NetworkRuleOption } from '../rules/network-rule';
+import {
+    type NetworkRule,
+    NetworkRuleOption,
+    resolveOwnWrittenText,
+    type WrittenRuleTextResolver,
+} from '../rules/network-rule';
 import { logger } from '../utils/logger';
 
 import { CosmeticOption } from './cosmetic-option';
@@ -121,8 +126,14 @@ export class MatchingResult {
      * @param rules A list of network rules that match the request.
      * @param sourceRule A rule that matches the document that is a source
      * of the request, i.e. document-level exclusions.
+     * @param resolveText Resolves the text of a rule as written in the filter list,
+     * since indexed rules do not keep it.
      */
-    constructor(rules: NetworkRule[], sourceRule: NetworkRule | null) {
+    constructor(
+        rules: NetworkRule[],
+        sourceRule: NetworkRule | null,
+        resolveText: WrittenRuleTextResolver = resolveOwnWrittenText,
+    ) {
         this.basicRule = null;
         this.documentRule = null;
         this.cspRules = null;
@@ -139,7 +150,7 @@ export class MatchingResult {
         this.cosmeticExceptionRule = null;
 
         // eslint-disable-next-line no-param-reassign
-        rules = MatchingResult.removeBadfilterRules(rules);
+        rules = MatchingResult.removeBadfilterRules(rules, resolveText);
 
         if (sourceRule) {
             this.documentRule = sourceRule;
@@ -860,10 +871,15 @@ export class MatchingResult {
      * matching bad filters from the array (see the $badfilter description for more info).
      *
      * @param rules Rules to filter.
+     * @param resolveText Resolves the text of a rule as written in the filter list,
+     *   since indexed rules do not keep it.
      *
      * @returns Filtered rules.
      */
-    public static removeBadfilterRules(rules: NetworkRule[]): NetworkRule[] {
+    public static removeBadfilterRules(
+        rules: NetworkRule[],
+        resolveText: WrittenRuleTextResolver = resolveOwnWrittenText,
+    ): NetworkRule[] {
         const badfilterRules: NetworkRule[] = [];
         for (const rule of rules) {
             if (rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
@@ -877,7 +893,7 @@ export class MatchingResult {
                     return false;
                 }
 
-                const isRuleNegated = badfilterRules.some((badfilter) => badfilter.negatesBadfilter(rule));
+                const isRuleNegated = badfilterRules.some((badfilter) => badfilter.negatesBadfilter(rule, resolveText));
 
                 return !isRuleNegated;
             });

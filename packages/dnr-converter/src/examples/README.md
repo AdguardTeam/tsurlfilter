@@ -115,14 +115,17 @@ display this in the declarative filtering log, as declarative rules are canceled
 
 <a name="mv3_specific_limitations__$badfilter__problem_1"></a>
 ### Problem 1
-But the current algorithm does not cover rules with `$domain` intersections, for example,
+A `$domain` intersection is handled only partially: a rule with `$badfilter`
+cancels the matching rule when the domain lists intersect, but the whole
+declarative rule is disabled, not only the intersecting domains. For example,
 for these two rules:
 ```adblock
 /some$domain=example.com|example.org
 /some$domain=example.com,badfilter
 ```
-A rule with `$badfilter` will fully negate the first rule and the output array of
-declarative rules will be empty.
+The rule with `$badfilter` fully negates the first rule and the output array of
+declarative rules will be empty, including `example.org`. Rules with negated
+domains are compared by the whole text.
 
 <a name="mv3_specific_limitations__$badfilter__problem_2"></a>
 ### Problem 2
@@ -144,7 +147,6 @@ Allowlist rules are currently not supported for these modifiers:
 1. `$redirect`
 1. `$removeparam`
 1. `$removeheader`
-1. `$csp`
 
 <a name="mv3_specific_limitations__$document"></a>
 ## $document
@@ -357,6 +359,14 @@ example.org##.banner
 <br/>
 Doesn't support regexps and wildcard domains except exact wildcard TLD
 domains such as example.*, which are expanded to popular TLDs.
+For a document request started by the browser (new tab page, address bar,
+bookmark, reload), an additional rule matches `$domain` against the target
+hostname. It is not created when the rule has `$third-party` or
+`$~third-party`, when a permitted `$to` meets a permitted `$domain`, when a
+`$domain`, `$to`, or `$denyallow` value is not representable in DNR, or for
+a `$domain` with permitted domains and a domain-specific or regexp pattern.
+An excluded-only `$domain` still matches a browser-started request to an
+excluded domain.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -729,6 +739,35 @@ example 7
       ]
     },
     "priority": 151
+  },
+  {
+    "id": 1097103048,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "remove",
+          "header": "Set-Cookie"
+        }
+      ],
+      "requestHeaders": [
+        {
+          "operation": "remove",
+          "header": "Cookie"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "*",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "requestDomains": [
+        "example.org",
+        "example.com"
+      ]
+    },
+    "priority": 151
   }
 ]
 ```
@@ -755,6 +794,23 @@ example 8
       ],
       "resourceTypes": [
         "main_frame"
+      ]
+    },
+    "priority": 251
+  },
+  {
+    "id": 360225795,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "requestDomains": [
+        "example.org",
+        "example.com"
       ]
     },
     "priority": 251
@@ -2865,11 +2921,23 @@ example 10
 <br/>
 <b>MV3 limitations:</b>
 <br/>
-Allowlist rules are not supported
+Exceptions are resolved only by the standalone CSP conversion
+(`convertCspRules()`): the regular `convert()` still rejects an allowlist
+`$csp` rule. An exception is applied when it has the exact conditions of the
+blocker, when it is wider than the blocker's domain (`@@||example.org^$csp`
+also cancels `||example.org/path$csp=...` and `||sub.example.org^$csp=...`),
+or when it has no pattern and covers the whole blocker (`@@$csp=...`).
+Path-level subtraction is not expressible in DNR. Any exception applies only when it
+outranks the blocking rule, so an `$important` blocking rule keeps its policy
+against a value-less and against a valued exception, while MV2 cancels it.
+Examples with exceptions below are converted by that pass, the rest by
+`convert()`.
 <br/>
-Rules with the same matching condition are combined into one, but only within
-the scope of one static filter or within the scope of all dynamic rules
-(custom filters and user rules).
+Rules with the same matching condition and the same policy are combined into
+one, but only within the scope of one static filter or within the scope of all
+dynamic rules (custom filters and user rules). Different policies stay in
+separate headers, where a browser enforces both: merged, they would change
+what the `default-src` fallback blocks.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -2922,20 +2990,57 @@ example 1
 example 2
 
 ```adblock
-@@||example.org/page/*$csp=frame-src 'none'
+$csp=frame-src 'none'
+@@||cdn.example.org^$csp
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 499316868,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Content-Security-Policy",
+          "value": "frame-src 'none'"
+        }
+      ]
+    },
+    "condition": {
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "csp_report",
+        "media",
+        "websocket",
+        "webtransport",
+        "webbundle",
+        "other"
+      ],
+      "excludedRequestDomains": [
+        "cdn.example.org"
+      ]
+    },
+    "priority": 1
+  }
+]
 ```
-
-> ⚠️ Conversion errors: Network allowlist rule with $csp modifier is not supported
 example 3
 
 ```adblock
-@@||example.org/page/*$csp
+||example.org^$csp=frame-src 'none'
+@@||example.org^$csp
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
@@ -2943,8 +3048,6 @@ example 3
 ```json
 []
 ```
-
-> ⚠️ Conversion errors: Network allowlist rule with $csp modifier is not supported
 example 4
 
 ```adblock
@@ -3176,6 +3279,29 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
       "resourceTypes": [
         "main_frame",
         "sub_frame"
+      ]
+    },
+    "priority": 151
+  },
+  {
+    "id": 553919359,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Permissions-Policy",
+          "value": "oversized-images=()\\, sync-script=()\\, unsized-media=()"
+        }
+      ]
+    },
+    "condition": {
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "requestDomains": [
+        "example.org",
+        "example.com"
       ]
     },
     "priority": 151
@@ -3761,7 +3887,7 @@ example 3
 []
 ```
 
-> ⚠️ Conversion errors: Network allowlist rule with $removeheader modifier is not supported
+> ⚠️ Conversion errors: "Invalid $removeheader rule: removeheader value must not be empty" in the rule: "@@||example.org^$removeheader"
 example 4 (with limitations)
 
 ```adblock
@@ -3909,6 +4035,27 @@ $removeheader=location,domain=example.com
       ]
     },
     "priority": 201
+  },
+  {
+    "id": 1434543935,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "header": "location",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "requestDomains": [
+        "example.com"
+      ]
+    },
+    "priority": 201
   }
 ]
 ```
@@ -3922,11 +4069,21 @@ Allowlist rules are not supported
 <br/>
 Regexps, negation and allow-rules are not supported
 <br/>
-Each rule generates a param-aware urlFilter condition (e.g., ^utm_source=)
+Named parameter rules generate a param-aware URL condition (e.g., ^utm_source=)
 so that Chrome DNR can chain multiple redirect hops, stripping one parameter
 per hop until all matching parameters are removed. Rules with different
 parameter names are no longer merged into a single DNR rule — this is by
 design, as merging would prevent multi-hop chaining across priority levels.
+<br/>
+An anchored literal URL pattern starting with `|` or `||` and ending in `^`
+uses a regexFilter so that the final separator can also delimit the first
+query parameter. These rules count toward Chrome's regex rule quota and are
+subject to its regex size limit. If the generated regexp fails validation,
+the rule retains its previous urlFilter matching, including its limitation
+for the first query parameter.
+Unanchored patterns and patterns containing wildcards, query or fragment
+markers, or additional separators retain the existing urlFilter conversion.
+Domain anchors with an empty host pattern also retain urlFilter matching.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -4194,6 +4351,42 @@ $xmlhttprequest,removeparam=p1case2
   }
 ]
 ```
+example 11
+A trailing separator matches a named parameter in any query position.
+
+```adblock
+||bing.com/search^$removeparam=cvid
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+  {
+    "id": 558428575,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "transform": {
+          "queryTransform": {
+            "removeParams": [
+              "cvid"
+            ]
+          }
+        }
+      }
+    },
+    "condition": {
+      "regexFilter": "^[a-z][a-z0-9+.-]*://(?:[^[:^ascii:]/?#@]*@)?(?:[^[:^ascii:]/?#@]*\\.)?bing\\.com\\/search(?:[^[:^ascii:] a-zA-Z0-9.%_?#-][^[:^ascii:]?#]*)?\\?(?:[^[:^ascii:]#]*&)?cvid=",
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame"
+      ]
+    },
+    "priority": 1
+  }
+]
+```
 <a name="advanced_capabilities__$replace"></a>
 ## $replace
 <b>Status</b>: not supported
@@ -4261,7 +4454,10 @@ example 4
 Converted to DNR redirect rules with regexSubstitution. Full-URL replacements
 are passed through directly. Path-only replacements are wrapped so the origin
 is preserved. Multi-stage pipelines (multiple substitutions separated by `|`)
-produce one DNR rule per stage.
+produce one DNR rule per stage. `$urltransform` rules do not get the
+additional target-hostname `main_frame` rule, so a `$domain` with permitted
+domains does not match document navigations started by the browser. An
+excluded-only `$domain` still matches them through the base rule.
 <br/>
 <b>Examples:</b>
 <br/>

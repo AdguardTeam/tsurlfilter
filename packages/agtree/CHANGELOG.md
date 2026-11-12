@@ -17,6 +17,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   expressions; the second also covers the underflow class, e.g. `/ads`.
 - `SPECIAL_PSEUDO_CLASS_NAMES` is now exported, so consumers can use the
   same list of special pseudo-class names as the parser and the converter.
+- Added the `fingerprinting` value for the `$stealth` modifier.
+- Support for uBlock Origin `:remove-attr()` and `:remove-class()` pseudo-classes
+  in element hiding and CSS injection rule conversion. Like `:remove()`, they
+  are validated as actions during parsing: anything other than whitespace or
+  the CSS injection declaration block after them makes the rule invalid
+  [AdguardBrowserExtension#3538].
 - `RegExpUtils.globToUboRegExp()` is now exported. It converts a glob to a
   uBlock-compatible regexp, which uses `[\s\S]` instead of the unsupported
   dot-all `s` flag.
@@ -25,6 +31,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `\x27` and `\x22`, which is required for a uBlock `:has-text()` argument,
   because CSS-tree parses it before uBlock reads the regexp. The default is
   `false`, so the existing behavior is unchanged.
+- `getModifierAliases()` helper which returns raw modifier names converted to
+  a given ADG modifier name.
 
 ### Changed
 
@@ -42,6 +50,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Hostnames with labels ending in an underscore are now accepted by domain validation,
+  while domains with a leading dot remain invalid.
 - ADG→uBO conversion of HTML filtering `[tag-content]` and `[wildcard]`
   attribute selectors now produces rules closer to the AdGuard behavior:
   `[tag-content]` becomes a case-sensitive escaped `:has-text()` regexp,
@@ -100,6 +110,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Security
 
+[AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
+
 ## [4.3.0] - 2026-10-14
 
 ### Added
@@ -153,7 +165,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   chain, so e.g.
   `aces.gg$$script[tag-content="$('#alert').on('click'"][max-length="250"]`
   now converts to
-  `aces.gg$$script:contains(/^(?=.{0,250}$)(?=.*\$\('#alert'\)\.on\('click').*/s)`
+  `aces.gg$$script:contains(/^(?=.{0,250}$)(?=.*\$\(#alert\'\)\.on\('click).*/s)`
   instead of the CoreLibs-rejected
   `aces.gg$$script:contains($('#alert').on('click'):contains(/^(?=.{0,250}$).*/s)`.
   Multiple `[tag-content]` values and multiple `[wildcard]` globs are

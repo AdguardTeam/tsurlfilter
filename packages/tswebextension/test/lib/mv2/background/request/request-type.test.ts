@@ -65,7 +65,7 @@ describe('Request Type', () => {
                 contentType: ContentType.XmlHttpRequest,
                 requestType: RequestType.XmlHttpRequest,
             },
-            object_subrequest: {
+            json: {
                 contentType: ContentType.Other,
                 requestType: RequestType.Other,
             },

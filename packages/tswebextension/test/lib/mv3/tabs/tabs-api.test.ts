@@ -142,6 +142,32 @@ describe('TabsApi', () => {
         });
     });
 
+    describe('getTabIncognitoState method', () => {
+        it('should return the tab incognito state', () => {
+            const tabId = 1;
+
+            const tabContext = { info: { incognito: true }, isSyntheticTab: false } as TabContext;
+
+            tabsApi.context.set(tabId, tabContext);
+
+            expect(tabsApi.getTabIncognitoState(tabId)).toBe(true);
+        });
+
+        it('should return undefined if tab context is not found', () => {
+            expect(tabsApi.getTabIncognitoState(1)).toBeUndefined();
+        });
+
+        it('should return undefined for a synthetic tab context', () => {
+            const tabId = 1;
+
+            const tabContext = { info: { incognito: true }, isSyntheticTab: true } as TabContext;
+
+            tabsApi.context.set(tabId, tabContext);
+
+            expect(tabsApi.getTabIncognitoState(tabId)).toBeUndefined();
+        });
+    });
+
     describe('incrementTabBlockedRequestCount method', () => {
         it('should increment count for same-domain request', () => {
             const tabId = 1;

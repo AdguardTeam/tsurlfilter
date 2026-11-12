@@ -27,6 +27,7 @@ extensions.
     - [`ConverterOptions`](#converteroptions)
     - [Simple flow: `FilterConverter` + `Ruleset`](#simple-flow-filterconverter--ruleset)
     - [Advanced flow: `FilterConverter` with `withSourceMap: true` + `RulesetWithSourceMap`](#advanced-flow-filterconverter-with-withsourcemap-true--rulesetwithsourcemap)
+    - [Standalone CSP conversion: `convertCspRules()`](#standalone-csp-conversion-convertcsprules)
     - [Compact ruleset file format](#compact-ruleset-file-format)
     - [`MetadataRuleset`](#metadataruleset)
     - [`isSafeRule(rule)`](#issaferulerule)
@@ -70,13 +71,35 @@ MV3 limitations (inherent to the Declarative Net Request API) are:
 - `$important`, `$match-case`, `$method`, `$to`, `$denyallow`, `$header`
   (no regex values), `$all`
 - `$redirect` — allowlist rules not supported
-- `$csp`, `$removeparam`, `$removeheader`, `$permissions` — allowlist rules
+- `$csp` — exceptions are supported only through `convertCspRules()`, which
+  sees all filters at once; the regular `convert()` still rejects an allowlist
+  `$csp` rule. An exception is applied when it has the exact conditions of the
+  blocker, when it is wider than the blocker's domain (`@@||example.com^$csp=x`
+  also cancels `||example.com/path$csp=x` and `||sub.example.com^$csp=x`), or
+  when it has no pattern and covers the whole blocker (`@@$csp=x` and
+  `@@*$csp=x` cancel `*$csp=x,domain=a.com` and `||a.com^$csp=x,third-party`).
+  Path-level subtraction is not expressible in DNR. An exception with `$domain` against a
+  blocker that also gets the `main_frame` rule is reported instead of applied
+  when the excluded domain overlaps the blocker's `$domain`, e.g.
+  `@@||a.com^$csp,domain=a.com` with `$csp=...,domain=a.com`, while
+  `@@||cdn.example.net^$csp,domain=a.com` against `$csp=...,domain=a.com` is
+  applied. Any exception applies only when it outranks the blocking rule, so
+  `@@||example.com^$csp` does not cancel `||example.com^$csp=...,important`,
+  and `@@||example.com^$csp=script-src 'none'` does not cancel
+  `||example.com^$csp=script-src 'none',important` either; this differs from
+  MV2, where the value-less exception wins, and from what the filtering log
+  shows in MV3
+- `$removeparam`, `$removeheader`, `$permissions` — allowlist rules
   not supported; rules with identical conditions are combined only within the
   same filter, not across filters
 - `$urltransform` — limited; complex transforms produce multiple declarative
-  rules via pipeline stages
+  rules via pipeline stages. `$urltransform` rules do not get the additional
+  target-hostname rule, so a `$domain` with permitted domains does not match
+  document navigations started by the browser. An excluded-only `$domain`
+  still matches them through the base rule.
 - `$cookie` — limited; only supported without parameters (bare `$cookie`)
-- `$badfilter` — partial: does not handle `$domain` intersections correctly
+- `$badfilter` — partial: a `$domain` intersection disables the whole
+  declarative rule, not only the intersecting domains
 
 **Not yet supported / not convertible to DNR**:
 
@@ -177,6 +200,7 @@ Configuration for the conversion process:
 | `combine` | `boolean?` | Merge all input filters into a single combined rule set. |
 | `withSourceMap` | `boolean?` | When `true`, returns `RulesetWithSourceMap` instead of `Ruleset`. Enables source maps, `$badfilter` cross-filter support, and lazy loading. |
 | `badFilterRules` | `Rule[]?` | Static `$badfilter` rules to apply at scan time (`withSourceMap: true` only). |
+| `excludeCspRules` | `boolean?` | Skip CSP rules during regular conversion when they are rebuilt by [`convertCspRules()`](#standalone-csp-conversion-convertcsprules) (`withSourceMap: true` only). |
 
 ### Simple flow: `FilterConverter` + `Ruleset`
 
@@ -273,6 +297,7 @@ const rulesToDisable = await converter.computeRulesToDisable(
 | `getDeclarativeRules()` | `Promise<DeclarativeRule[]>` | All converted DNR rules (lazy) |
 | `getUnsafeRules()` | `Promise<DeclarativeRule[]>` | Unsafe rules subset (lazy) |
 | `getRulesById(id)` | `Promise<SourceRuleAndFilterId[]>` | Source rules for a DNR rule |
+| `getSourceRuleIndexes(declarativeRuleId)` | `Promise<SourceRuleIdxAndFilterId[]>` | Filter id and source rule index of each source of a DNR rule |
 | `getBadFilterRules()` | `NetworkRule[]` | `$badfilter` rules in this set |
 | `getRulesHashMap()` | `IRulesHashMap` | Hash map for fast `$badfilter` matching |
 | `getMetadataRulesCount()` | `number` | Metadata rules in the ruleset file the rule set was read from (0 if not read from a file) |
@@ -293,6 +318,40 @@ Result returned by converter methods:
 | `errors` | `(ConversionError \| Error)[]` | Rules that could not be converted |
 | `limitations` | `LimitationError[]` | Warnings about exceeded limits |
 | `declarativeRulesToCancel` | `UpdateStaticRulesOptions[]?` | Static rule IDs to disable (from `computeRulesToDisable`) |
+
+### Standalone CSP conversion: `convertCspRules()`
+
+`$csp` exceptions need a pass over all filters at once: an exception from a user
+rule must be able to cancel a blocking rule from a built-in filter, which
+streaming conversion cannot do. `convertCspRules(filters, resourcesPath?)`
+resolves the exceptions and returns a single combined ruleset of the remaining
+CSP rules (source-map mode).
+
+To avoid converting CSP rules twice, pass `excludeCspRules: true` to the regular
+conversion. `$badfilter` rules stay in the stream — they can still disable other
+rules.
+
+```ts
+const converter = new FilterConverter();
+
+const [regular] = await converter.convert(filters, {
+    withSourceMap: true,
+    combine: true,
+    excludeCspRules: true,
+});
+const csp = await converter.convertCspRules(filters, '/web-accessible-resources');
+```
+
+Without `combine: true` the regular conversion returns one result per filter, so
+the destructuring above would keep only the first filter.
+
+Only candidate lines are parsed: a line must contain `csp` or a `csp` alias as a
+modifier, so `csp` does not have to be the first modifier. `$badfilter` lines are
+not candidates any more: the regular pass owns them. The whole text is still
+split into lines, so the cost grows with the list size, while parsing stays
+proportional to the number of candidates. Exceptions that cannot be applied — for
+example path-level subtraction — are reported as conversion errors and leave the
+blocking rule active.
 
 ### Compact ruleset file format
 

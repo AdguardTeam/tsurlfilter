@@ -352,8 +352,37 @@ export class Rule {
      * `$removeparam`: a value-less `$removeparam` is stored as `''`, because
      * it carries a meaning of its own ("remove all query parameters") that
      * must be distinguishable from "no value".
+     *
+     * This is the parsed value used by the converters. For `$badfilter`
+     * identity see {@link originalText}.
      */
     readonly advancedModifierValue: string | null = null;
+
+    /**
+     * CSP directive of a `$csp` rule, `null` when the directive is omitted.
+     *
+     * A dedicated field is required because {@link advancedModifierValue} is
+     * shared by every value-bearing advanced modifier and keeps only the last
+     * one: `$csp=script-src 'none',urltransform=/a/b/` would otherwise carry
+     * the url-transform value as the directive.
+     */
+    readonly cspDirective: string | null = null;
+
+    /**
+     * Rule text exactly as written in the filter list, before conversion to AG
+     * syntax.
+     *
+     * A `$badfilter` rule disables a rule only when the rule text matches, so
+     * the text as written is compared instead of the parsed (normalized) state —
+     * see {@link RuleBadfilter.negates}. Conversion rewrites names and values
+     * (for example `$redirect=noop.js` becomes `$redirect=noopjs`), so the text
+     * has to be captured before it.
+     *
+     * Serialization must keep it: rebuilding a rule from its converted text
+     * would silently change the written spelling of modifiers, and with it the
+     * `$badfilter` identity.
+     */
+    readonly originalText: string;
 
     /**
      * Parsed data for the `$header` modifier.
@@ -384,17 +413,25 @@ export class Rule {
     readonly priority: number;
 
     /**
-     * Creates a new {@link Rule} from filter list metadata and an already-converted
-     * network rule AST node.
+     * Creates a new {@link Rule} from filter list metadata, an already-converted
+     * network rule AST node and the rule text as written in the filter list.
      *
      * @param filterListId Filter list ID.
      * @param index Rule index within the filter list.
      * @param node Network rule AST node (must already be in AG syntax).
+     * @param originalText Rule text as written in the filter list, captured
+     *   before conversion to AG syntax.
      *
      * @throws `SyntaxError` when the pattern contains spaces, the rule is too
      *   general, or any modifier is invalid.
      */
-    private constructor(filterListId: number, index: number, node: NetworkRuleNode) {
+    private constructor(
+        filterListId: number,
+        index: number,
+        node: NetworkRuleNode,
+        originalText: string,
+    ) {
+        this.originalText = originalText;
         const pattern = node.pattern.value;
         if (pattern && hasSpaces(pattern)) {
             throw new SyntaxError('Rule has spaces, seems to be a host rule');
@@ -657,13 +694,48 @@ export class Rule {
                     break;
 
                 case OPTION_NAMES.CSP:
+                    this.enabledModifiers.add(name);
+                    this.cspDirective = value || null;
+                    // Only an allowlist `$csp` may omit the directive: it means
+                    // "cancel the CSP rules of the matching scope". A blocking
+                    // rule without a directive would silently degrade into a
+                    // plain blocking rule, so it is rejected, like in tsurlfilter.
+                    if (!isAllowlist && !value) {
+                        throw new SyntaxError(
+                            'Invalid $csp rule: CSP directive must not be empty',
+                        );
+                    }
+                    // `report-uri` and `report-to` make the browser send
+                    // violation reports to a third-party host. tsurlfilter
+                    // rejects any directive containing `report-`, so an unsupported
+                    // report target cannot leak the browsing context.
+                    if (value && value.toLowerCase().includes('report-')) {
+                        throw new SyntaxError(
+                            `Invalid $csp rule: forbidden CSP directive: ${value}`,
+                        );
+                    }
+                    break;
+
+                case OPTION_NAMES.PERMISSIONS:
+                    this.enabledModifiers.add(name);
+                    this.advancedModifierName = rawName;
+                    this.advancedModifierValue = value || null;
+                    // Same as `$csp`: only an allowlist rule may omit the
+                    // directive. A blocking rule without it would silently
+                    // degrade into a plain blocking rule.
+                    if (!isAllowlist && !value) {
+                        throw new SyntaxError(
+                            'Invalid $permissions rule: permissions directive must not be empty',
+                        );
+                    }
+                    break;
+
                 case OPTION_NAMES.COOKIE:
                 case OPTION_NAMES.REPLACE:
                 case OPTION_NAMES.JSONPRUNE:
                 case OPTION_NAMES.XMLPRUNE:
                 case OPTION_NAMES.HLS:
                 case OPTION_NAMES.REFERRERPOLICY:
-                case OPTION_NAMES.PERMISSIONS:
                 case OPTION_NAMES.URLTRANSFORM:
                     this.enabledModifiers.add(name);
                     this.advancedModifierName = rawName;
@@ -680,9 +752,16 @@ export class Rule {
                     break;
 
                 case OPTION_NAMES.REMOVEHEADER: {
+                    // A rule without a header name cannot remove anything and
+                    // would degrade into a plain blocking rule.
+                    if (!value) {
+                        throw new SyntaxError(
+                            'Invalid $removeheader rule: removeheader value must not be empty',
+                        );
+                    }
                     this.enabledModifiers.add(name);
                     this.advancedModifierName = rawName;
-                    this.advancedModifierValue = value || null;
+                    this.advancedModifierValue = value;
                     const info = Rule.computeRemoveHeaderInfo(value);
                     this.removeHeaderName = info.name;
                     this.removeHeaderIsRequestType = info.isRequest;
@@ -733,6 +812,17 @@ export class Rule {
         if (this.denyAllowDomains !== null && this.permittedToDomains !== null) {
             throw new SyntaxError(
                 'Modifiers $denyallow and $to cannot be used together',
+            );
+        }
+
+        // One declarative rule produces one action, and the CSP action would
+        // win the conversion and then be dropped by the CSP scope checks, so
+        // such a rule would do nothing at all. Reject the combination instead
+        // of silently removing cookies only.
+        if (this.enabledModifiers.has(OPTION_NAMES.CSP)
+            && this.enabledModifiers.has(OPTION_NAMES.COOKIE)) {
+            throw new SyntaxError(
+                '$csp is not compatible with $cookie',
             );
         }
 
@@ -1041,15 +1131,12 @@ export class Rule {
         for (let i = 0; i < rulesConvertedToAGSyntax.length; i += 1) {
             const ruleNode = rulesConvertedToAGSyntax[i];
 
-            if (
-                ruleNode.category !== RuleCategory.Network
-                || ruleNode.type !== NetworkRuleType.NetworkRule
-            ) {
+            if (!Rule.isNetworkRuleNode(ruleNode)) {
                 continue;
             }
 
             try {
-                rules.push(new Rule(filterId, ruleIndex, ruleNode));
+                rules.push(new Rule(filterId, ruleIndex, ruleNode, text));
             } catch (e: unknown) {
                 throw new Error(
                     // eslint-disable-next-line max-len
@@ -1081,6 +1168,7 @@ export class Rule {
         node: AnyRule,
     ): Rule[] {
         let rulesConvertedToAG: AnyRule[];
+        const originalText = Rule.getWrittenText(node);
         try {
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
@@ -1099,15 +1187,12 @@ export class Rule {
         for (let i = 0; i < rulesConvertedToAG.length; i += 1) {
             const ruleNode = rulesConvertedToAG[i];
 
-            if (
-                ruleNode.category !== RuleCategory.Network
-                || ruleNode.type !== NetworkRuleType.NetworkRule
-            ) {
+            if (!Rule.isNetworkRuleNode(ruleNode)) {
                 continue;
             }
 
             try {
-                rules.push(new Rule(filterListId, index, ruleNode));
+                rules.push(new Rule(filterListId, index, ruleNode, originalText));
             } catch (e: unknown) {
                 let msg = `"${getErrorMessage(e)}" in the rule: `;
 
@@ -1123,6 +1208,44 @@ export class Rule {
         }
 
         return rules;
+    }
+
+    /**
+     * Checks whether the given node is a network rule node.
+     *
+     * @param node Rule AST node.
+     *
+     * @returns `true` if the node is a network rule node.
+     */
+    private static isNetworkRuleNode(node: AnyRule): node is NetworkRuleNode {
+        return node.category === RuleCategory.Network
+            && node.type === NetworkRuleType.NetworkRule;
+    }
+
+    /**
+     * Returns the text of a rule node as written in the filter list.
+     *
+     * The parser records the raw text in `node.raws.text` when the `includeRaws`
+     * option is enabled, which the scanner always does. Nodes built by hand may
+     * lack it, so the text is regenerated as a fallback.
+     *
+     * @param node Rule AST node, must not be converted to AG syntax yet.
+     *
+     * @returns Rule text as written, or an empty string when it cannot be
+     *   reconstructed.
+     */
+    private static getWrittenText(node: AnyRule): string {
+        if (typeof node.raws?.text === 'string') {
+            return node.raws.text;
+        }
+
+        try {
+            return RuleGenerator.generate(node);
+        } catch {
+            // A node that cannot be generated has no written form: the rule
+            // still works, it just cannot be serialized back to text.
+            return '';
+        }
     }
 }
 
