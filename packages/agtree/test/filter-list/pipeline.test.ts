@@ -446,7 +446,8 @@ describe('FilterListPipeline', () => {
         const fullElapsed = parseTimed(modifierRules);
 
         // Linear parsing doubles with the rule count; a per-rule scan of the
-        // whole list quadruples. Allow a wide margin for noise.
-        expect(fullElapsed).toBeLessThan(halfElapsed * 3 + 250);
+        // whole list quadruples. Allow a wide margin for noise. The bound is
+        // scale-invariant, so a slow machine does not weaken it.
+        expect(fullElapsed).toBeLessThan(halfElapsed * 3);
     }, 30_000);
 });
