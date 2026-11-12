@@ -116,6 +116,8 @@ const AdgAttributeSelectors = {
  */
 const AdgPseudoClasses = {
     Contains: 'contains',
+    // AdGuard alias of `:contains()`
+    AbpContains: '-abp-contains',
 } as const;
 
 /**
@@ -137,15 +139,9 @@ const SUPPORTED_ADG_ATTRIBUTE_SELECTORS = new Set<string>([
 ]);
 
 /**
- * Set of {@link AdgPseudoClasses}.
- */
-const SUPPORTED_ADG_PSEUDO_CLASSES = new Set<string>([
-    AdgPseudoClasses.Contains,
-]);
-
-/**
  * Set of {@link SPECIAL_PSEUDO_CLASS_NAMES}: all special pseudo-classes
- * shared with the parser, including the AdGuard `:-abp-contains()` alias.
+ * shared with the parser, including the AdGuard `:contains()` and
+ * `:-abp-contains()` spellings.
  */
 const SPECIAL_PSEUDO_CLASS_NAME_SET = new Set<string>(SPECIAL_PSEUDO_CLASS_NAMES);
 
@@ -636,11 +632,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Handles special pseudo-class selectors during AdGuard to AdGuard conversion:
      * - `:contains(text)` -> kept as-is
+     * - `:-abp-contains(text)` -> kept as-is
+     *   `:-abp-contains()` is a native AdGuard spelling, so ADG→ADG
+     *   conversion preserves the author's spelling instead of normalizing it.
      * - `:has-text(text)` -> `:contains(text)`
      *   `:has-text()` is a documented synonym for `:contains()` in AdGuard products.
-     *
-     * Note: `:-abp-contains()` does not reach this method. The converter
-     * validates its argument and keeps it as-is in `convertBody` (see AG-61400).
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
@@ -670,7 +666,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 ));
             }
 
-            // `:contains()` is kept as-is in AdGuard rules
+            // `:contains()` and its `:-abp-contains()` alias are native
+            // AdGuard spellings, so they are kept as-is
             default: {
                 return true;
             }
@@ -697,12 +694,22 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - `:min-text-length(min)` -> `:contains(/^(?=.{min,MAX_CONVERSION_DEFAULT}$).*\/s)`
      *   converts to a length-matching regular expression.
      *
+     * The converter rejects `:contains()` and its `:-abp-contains()` alias in
+     * uBlock rules as mixed syntax, because both names are AdGuard spellings.
+     * Note that uBlock Origin itself accepts `:contains()` in `##^` rules and
+     * normalizes it to `:has-text()`. Only the `-abp-*` names need the `#?#`
+     * syntax there, so uBlock rejects `##^div:-abp-contains(foo)`. The
+     * `:contains()` rejection is the converter's own rule, not a uBlock
+     * limitation. Converting a valid uBlock `:contains()` rule to AdGuard is
+     * a separate task.
+     *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
      *
      * @returns A {@link SimpleSelector} to add to the current complex selector.
      *
-     * @throws If `:contains()` is found in a uBlock rule (mixed syntax).
+     * @throws If `:contains()` or `:-abp-contains()` is found in a uBlock
+     * rule (mixed syntax).
      */
     private static convertSpecialPseudoClassSelectorUboToAdg(name: string, argument: string): SimpleSelector {
         switch (name) {
@@ -748,7 +755,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
             }
 
             // Throw an error if the AdGuard-specific pseudo-class selector found in uBlock rule
-            case AdgPseudoClasses.Contains: {
+            case AdgPseudoClasses.Contains:
+            case AdgPseudoClasses.AbpContains: {
                 throw new RuleConversionError(sprintf(
                     ERROR_MESSAGES.INVALID_RULE,
                     ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
@@ -928,10 +936,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - `:contains(text)` -> `:has-text(text)`
      *   direct conversion, no changes to argument. A text argument that
      *   uBlock would reject (e.g. `:contains("foo" )`) is not converted.
-     *
-     * Note: `:-abp-contains()` does not reach this method. It is an AdGuard
-     * alias of `:contains()`, but its uBlock mapping is not implemented yet
-     * (see AG-61400), so `convertBody` keeps it as-is.
+     * - `:-abp-contains(text)` -> `:has-text(text)`
+     *   `:-abp-contains()` is an AdGuard alias of `:contains()`, so it
+     *   converts exactly the same way, including the argument validation.
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
@@ -944,8 +951,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
     private static convertSpecialPseudoClassSelectorAdgToUbo(name: string, argument: string): SimpleSelector {
         switch (name) {
             // `:contains(text)` -> `:has-text(text)`
+            // `:-abp-contains(text)` -> `:has-text(text)`
             // direct conversion, no changes to argument
-            case AdgPseudoClasses.Contains: {
+            case AdgPseudoClasses.Contains:
+            case AdgPseudoClasses.AbpContains: {
                 if (!HtmlRuleConverter.isUboTextArgumentSupported(argument)) {
                     throw new RuleConversionError(sprintf(
                         ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INVALID_IN_UBO,
@@ -1352,13 +1361,20 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                     case 'PseudoClassSelector': {
                         const name = selector.name.value;
-                        const isSupported = SUPPORTED_ADG_PSEUDO_CLASSES.has(name)
-                            || SUPPORTED_UBO_PSEUDO_CLASSES.has(name);
 
                         // Not a special pseudo-class selector - clone as-is after
                         // the switch. The shared list is checked as well, so every
                         // name added there gets its argument validated automatically.
-                        if (!isSupported && !SPECIAL_PSEUDO_CLASS_NAME_SET.has(name)) {
+                        //
+                        // Note: a name added only to SPECIAL_PSEUDO_CLASS_NAMES
+                        // reaches the conversion callbacks and throws
+                        // `not supported in conversion` in ADG→uBO and uBO→ADG.
+                        // Add every new shared name to the matching converter
+                        // switch as well.
+                        if (
+                            !SPECIAL_PSEUDO_CLASS_NAME_SET.has(name)
+                            && !SUPPORTED_UBO_PSEUDO_CLASSES.has(name)
+                        ) {
                             break;
                         }
 
@@ -1368,13 +1384,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
                                 ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED,
                                 name,
                             ));
-                        }
-
-                        // Only the special pseudo-classes supported for conversion
-                        // reach the callbacks. The `:-abp-contains()` alias is kept
-                        // as-is for now (see AG-61400).
-                        if (!isSupported) {
-                            break;
                         }
 
                         const argument = selector.argument.value;

@@ -76,6 +76,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `$$[max-length="100"]`, `$$*[max-length="100"]` and
   `$$[max-length="1"] > [max-length="2"]`, because the resulting all-`*`
   selector matches almost every element.
+- ADG→uBO conversion now maps the `:-abp-contains()` alias to
+  `:has-text()`, the same as `:contains()`, e.g. `$$div:-abp-contains(foo)`
+  becomes `##^div:has-text(foo)`. Previously the alias was kept as-is, and
+  uBlock Origin rejected the converted rule.
+- uBO→ADG conversion now rejects `:-abp-contains()` in uBlock HTML filtering
+  rules as mixed AdGuard and uBlock syntax, the same as `:contains()`.
+  Previously the alias was carried over into the converted AdGuard rule.
 - `[tag-content]` values that CoreLibs reads as regular expressions, e.g.
   `/ads/`, are now escaped when converted to a standalone `:contains()`
   argument during ADG→ADG conversion, so they still match the literal text.
