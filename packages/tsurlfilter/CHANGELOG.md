@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.1.0...HEAD
+
+## [6.1.0] - 2026-11-12
+
+### Added
+
 - Added the `fingerprinting` value for `$stealth`
   (`StealthOptionName.Fingerprinting`).
 - Added `Engine.getDocumentOrStealthExceptionRules()` to retrieve `$stealth`
@@ -24,10 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   their regexp escapes [#190].
 - Regexp domains now match case-insensitively without changing escape tokens
   such as `\D` into `\d`.
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 
@@ -74,12 +86,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pseudo-class parentheses, so `$$div:contains( "foo" )` now matches the text
   `"foo"` with a space on each side.
 
-### Security
-
-[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.4...HEAD
 [#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
 [AdguardBrowserExtension#3605]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3605
+[6.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v6.1.0
 
 ## [6.0.4] - 2026-10-15
 
