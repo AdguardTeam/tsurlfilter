@@ -442,8 +442,11 @@ describe('FilterListPipeline', () => {
         // Warm up the pipeline so buffer growth does not skew the comparison.
         parseTimed(halfRules.slice(0, 1_000));
 
-        const halfElapsed = parseTimed(halfRules);
-        const fullElapsed = parseTimed(modifierRules);
+        // Take the fastest run at each size. A single run can be delayed by the
+        // scheduler or by parallel test workers, while the fastest run reflects
+        // the parser work itself.
+        const halfElapsed = Math.min(parseTimed(halfRules), parseTimed(halfRules));
+        const fullElapsed = Math.min(parseTimed(modifierRules), parseTimed(modifierRules));
 
         // Linear parsing doubles with the rule count; a per-rule scan of the
         // whole list quadruples. Allow a wide margin for noise. The bound is
