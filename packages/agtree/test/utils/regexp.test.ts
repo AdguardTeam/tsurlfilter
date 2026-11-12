@@ -219,6 +219,12 @@ describe('RegExpUtils', () => {
                 expected: '(example)+\\.org',
             },
             {
+                // The closing slash is escaped, so this is a plain pattern,
+                // not a RegExp literal
+                actual: String.raw`/a\/`,
+                expected: String.raw`\/a\\\/`,
+            },
+            {
                 actual: '||',
                 expected: REGEX_ANY_CHARACTERS,
             },
