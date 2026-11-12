@@ -498,6 +498,20 @@ List of hostnames or domains of sites, which should be excluded
 from blocking or which should be included in blocking depending
 on the value of [allowlistInverted](#allowlistinverted) setting value.
 
+A plain entry such as `example.com` covers that host and its `www.` subdomain,
+while a `*.example.com` entry covers the domain and all its subdomains. An entry
+never covers a host that only starts with it: `example.com` does not cover
+`example.community`. A scheme, credentials, a port, a path, a query, a
+fragment or a trailing root label dot are not a part of an entry and are
+ignored: `example.com/path` and `https://example.com./` cover the whole host.
+An entry that describes no host, such as `*`, `**` or `*.`, is ignored; the
+full wildcard is `*.*`.
+
+In MV3, every entry also covers subdomains in the regular allowlist mode. In the
+inverted mode the network filtering excludes the listed domain together with all
+its subdomains, while frame matching and canvas protection look at the host and
+one level below it.
+
 #### trustedDomains
 
 type: `string[]`
@@ -819,9 +833,23 @@ that **must be checked**:
   ruleset is not found.
 - **`dynamicRules.errors`**: Array of conversion errors that occurred
   during dynamic rules conversion (custom filters, user rules,
-  allowlist).
-- **`dynamicRules.limitations`**: Array of limitation errors if dynamic
-  rules were truncated due to browser limits.
+  allowlist) and of rebuilt CSP rules from those filters.
+- **`cspRules.errors`**: Array of conversion errors of rebuilt CSP rules
+  from built-in filters. Errors of user rules are reported in
+  `dynamicRules.errors`, so the two channels are disjoint.
+- **`dynamicRules.limitations`**: Array of limitation errors for dynamic rules
+  omitted due to the browser quotas: regular conversion and rebuilt CSP rules.
+- **`sessionRules.limitations`**: Array of limitation errors for session
+  rules omitted due to the browser quotas. Session rules have their own quota,
+  so their limitations are never mixed into the dynamic counters.
+
+Rebuilt CSP rules replace only the CSP rules stored in the rule set metadata,
+so rule sets must be built with `exclude-unsafe-rules` (see
+`@adguard/dnr-rulesets`). Otherwise the static copy of a CSP rule stays in the
+rule set and a `$csp` exception has no effect.
+
+Dynamic rules counters (`dynamicRules.counts`) are final: rebuilt CSP
+rules are already included.
 
 **These errors are not thrown** but returned in the result.
 **You must check these fields for critical errors and handle them
@@ -835,14 +863,24 @@ if (result.staticFiltersStatus.errors.length > 0) {
     console.error('Failed to enable rulesets:', result.staticFiltersStatus.errors);
 }
 
-// Check dynamic rules errors and limitations
+// Check dynamic rules errors
 if (result.dynamicRules) {
     if (result.dynamicRules.errors.length > 0) {
         console.error('Dynamic rules conversion errors:', result.dynamicRules.errors);
     }
-    if (result.dynamicRules.limitations.length > 0) {
-        console.warn('Dynamic rules were truncated:', result.dynamicRules.limitations);
-    }
+}
+
+// Check CSP rules errors of built-in filters
+if (result.cspRules && result.cspRules.errors.length > 0) {
+    console.error('CSP rules conversion errors:', result.cspRules.errors);
+}
+
+// Check limitations
+if (result.dynamicRules && result.dynamicRules.limitations.length > 0) {
+    console.warn('Rules were omitted due to browser quotas:', result.dynamicRules.limitations);
+}
+if (result.sessionRules && result.sessionRules.limitations.length > 0) {
+    console.warn('Session rules were omitted due to browser quotas:', result.sessionRules.limitations);
 }
 ```
 

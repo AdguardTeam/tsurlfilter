@@ -281,6 +281,13 @@ describe('pattern / allowlist / priority / advanced-value parity', () => {
         const [dnrRule] = Rule.createFromText(1, 0, ruleText);
         const tsRule = new NetworkRule(ruleText, 1);
 
+        if (dnrRule.isModifierEnabled(OPTION_NAMES.CSP)) {
+            // `$csp` keeps its directive in a dedicated field, because the
+            // shared advanced value is overwritten by any following modifier.
+            expect(dnrRule.cspDirective).toBe(tsRule.getAdvancedModifierValue() || null);
+            return;
+        }
+
         if (dnrRule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
             // For `$removeparam` an empty value is meaningful ("remove all
             // query parameters"), so both sides must agree exactly — `''`

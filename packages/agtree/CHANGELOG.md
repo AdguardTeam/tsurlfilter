@@ -31,6 +31,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `\x27` and `\x22`, which is required for a uBlock `:has-text()` argument,
   because CSS-tree parses it before uBlock reads the regexp. The default is
   `false`, so the existing behavior is unchanged.
+- `getModifierAliases()` helper which returns raw modifier names converted to
+  a given ADG modifier name.
 
 ### Changed
 

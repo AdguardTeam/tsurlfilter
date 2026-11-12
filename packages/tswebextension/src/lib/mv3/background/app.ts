@@ -6,6 +6,7 @@ import {
     getRulesetId,
     type IFilter,
     type IRulesetWithSourceMap,
+    type LimitationError,
     METADATA_RULESET_ID,
     RULESET_NAME_PREFIX,
 } from '@adguard/dnr-converter';
@@ -28,11 +29,14 @@ import { appContext } from './app-context';
 import { assistant, Assistant } from './assistant';
 import { ChromiumCanvasRegistration } from './canvas-registration';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
+import { CspRulesManager, type CspRulesResult } from './csp-rules-manager';
 import { declarativeFilteringLog } from './declarative-filtering-log';
-import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
+import DynamicRulesApi, { type ConversionResult, type DynamicRulesCounts } from './dynamic-rules-api';
+import { withDynamicRulesRollback } from './dynamic-rules-rollback';
 import { engineApi } from './engine-api';
 import { extSessionStorage } from './ext-session-storage';
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
+import { mergeLimitations } from './limitations';
 import { MessagesApi } from './messages-api';
 import { RequestEvents } from './request/events/request-events';
 import { RulesetsLoaderApi } from './rulesets-loader-api';
@@ -82,7 +86,36 @@ type ConfigurationResult = {
      */
     loadDisabledStaticFilters: () => Promise<IRulesetWithSourceMap[]>;
 
-    dynamicRules?: ConversionResult;
+    /**
+     * Session rules result.
+     */
+    sessionRules?: {
+        /**
+         * Limitations of session rules omitted due to the browser quotas.
+         */
+        limitations: LimitationError[];
+    };
+
+    /**
+     * Rebuilt CSP rules result.
+     *
+     * `errors` collects conversion errors of CSP rules from built-in filters.
+     * Errors of user rules are reported in `dynamicRules.errors`, so the two
+     * channels stay disjoint.
+     */
+    cspRules?: Pick<CspRulesResult, 'errors'>;
+
+    /**
+     * Dynamic rules conversion result.
+     *
+     * `counts` are the final counts of dynamic rules that fit the quotas:
+     * rebuilt CSP rules are already included. `limitations` are the
+     * limitations of the dynamic scope only, session rules report theirs in
+     * `sessionRules.limitations`.
+     */
+    dynamicRules?: ConversionResult & {
+        counts: DynamicRulesCounts;
+    };
     stealthResult?: StealthConfigurationResult;
     canvasProtection?: RegistrationResult;
 };
@@ -378,8 +411,9 @@ export class TsWebExtension implements AppInterface<
             logger.warn(`[tsweb.TsWebExtension.removeAllFilteringRules]: Found ${removedRules.length} session rule(s) not cleared by services. Rule IDs: [${removedRules.map((rule) => rule.id).join(', ')}]`);
         }
 
-        declarativeFilteringLog.startUpdate();
-        declarativeFilteringLog.finishUpdate([], false);
+        await declarativeFilteringLog.withUpdateLock(async () => {
+            declarativeFilteringLog.finishUpdate([], false);
+        });
 
         engineApi.stopEngine();
     }
@@ -421,8 +455,11 @@ export class TsWebExtension implements AppInterface<
      *
      * @returns ConfigurationResult {@link ConfigurationResult} which contains:
      * - list of errors for static filters, if any of them has been thrown
-     * - converted dynamic rule set with rule set, errors and limitations.
+     * - converted dynamic rule set with rule set, errors, limitations and the
+     * final counts of dynamic rules, rebuilt CSP rules included.
      * Details: {@link ConversionResult}.
+     * - limitations of dynamic rules omitted due to the browser quotas and
+     * limitations of session rules in a separate field.
      * - canvas protection registration state.
      *
      * @throws Error if the filter content is not provided and not already set in the class instance.
@@ -458,11 +495,44 @@ export class TsWebExtension implements AppInterface<
         // Stop handle onRuleMatchedDebug event.
         // It should be stopped before declarative log update or removing filtering rules,
         // otherwise, it may try to log applying of removed rules. AG-44355.
-        declarativeFilteringLog.stop();
+        // Any failure of a step below restarts the listener, so the log does
+        // not stay silent until the next successful configuration.
+        await declarativeFilteringLog.withStoppedListener(async () => {
+            if (configuration.settings.filteringEnabled) {
+                await this.applyFilteringConfiguration(configuration, res);
+            } else {
+                await TsWebExtension.removeAllFilteringRules();
+            }
 
-        if (configuration.settings.filteringEnabled) {
-            declarativeFilteringLog.startUpdate();
+            this.configuration = TsWebExtension.createConfigurationContext(configuration);
+            res.canvasProtection = await this.canvasProtection.apply();
 
+            // Update previously opened tabs with new rules - find for each tab
+            // new main frame rule.
+            await tabsApi.updateCurrentTabsMainFrameRules();
+
+            // Reload request events listeners.
+            await WebRequestApi.flushMemoryCache();
+
+            documentBlockingService.configure(config);
+        });
+
+        logger.trace('[tsweb.TsWebExtension.configure]: end');
+
+        return res;
+    }
+
+    /**
+     * Applies a filtering configuration under the filtering-log update lock.
+     *
+     * @param configuration Configuration to apply.
+     * @param res Result object to fill with conversion details.
+     */
+    private async applyFilteringConfiguration(
+        configuration: ConfigurationMV3,
+        res: ConfigurationResult,
+    ): Promise<void> {
+        await declarativeFilteringLog.withUpdateLock(async () => {
             res.stealthResult = await StealthService.applySettings(configuration.settings);
 
             // Extract filters info from configuration and wrap them into IFilters.
@@ -529,8 +599,8 @@ export class TsWebExtension implements AppInterface<
             );
 
             // Convert quick fixes rules, allowlist, custom filters and user
-            // rules into one rule set and apply it.
-            res.dynamicRules = await DynamicRulesApi.updateDynamicFiltering(
+            // rules without applying them. CSP rules are rebuilt globally below.
+            const dynamicRules = await DynamicRulesApi.prepareDynamicFiltering(
                 allowlistFilter,
                 blockingPageTrustedFilter,
                 userRulesFilter,
@@ -539,10 +609,76 @@ export class TsWebExtension implements AppInterface<
                 this.webAccessibleResourcesPath,
             );
 
-            await SessionRulesApi.updateSessionRules(
-                enabledStaticRulesets,
-                res.dynamicRules.declarativeRulesToCancel,
+            const enabledStaticRulesetIds = new Set(enabledStaticRulesets.map((ruleset) => ruleset.getId()));
+            const enabledStaticFilters = staticFilters.filter((filter) => (
+                enabledStaticRulesetIds.has(getRulesetId(filter.getId()))
+            ));
+            const cspRules = await CspRulesManager.build(
+                enabledStaticFilters,
+                [
+                    allowlistFilter,
+                    blockingPageTrustedFilter,
+                    userRulesFilter,
+                    ...customFilters,
+                ],
+                this.webAccessibleResourcesPath,
             );
+            res.cspRules = { errors: cspRules.staticErrors };
+
+            if (res.cspRules.errors.length > 0) {
+                // Built-in filters always hold a few `$csp` exceptions which
+                // DNR cannot express, so this would warn on every configure()
+                // for every user: keep the payload for diagnostics only.
+                logger.debug('[tsweb.TsWebExtension.applyFilteringConfiguration]: cannot convert some CSP rules of built-in filters:', res.cspRules.errors);
+            }
+
+            const limitedDynamicCspRules = await DynamicRulesApi.limitRebuiltCspRules(
+                dynamicRules,
+                cspRules.dynamicRules,
+                cspRules.ruleset,
+            );
+
+            res.dynamicRules = {
+                ...dynamicRules,
+                counts: limitedDynamicCspRules.counts,
+                limitations: mergeLimitations([
+                    ...dynamicRules.limitations,
+                    ...limitedDynamicCspRules.limitations,
+                ]),
+                errors: dynamicRules.errors.concat(cspRules.dynamicErrors),
+            };
+
+            const dynamicRulesSnapshot = await DynamicRulesApi.applyDynamicFiltering(
+                res.dynamicRules,
+                enabledStaticRulesets,
+                limitedDynamicCspRules.rules,
+                cspRules.ruleset,
+            );
+
+            const { declarativeRulesToCancel } = res.dynamicRules;
+            const sessionLimitations = await withDynamicRulesRollback(
+                dynamicRulesSnapshot,
+                () => SessionRulesApi.updateSessionRules(
+                    enabledStaticRulesets,
+                    declarativeRulesToCancel,
+                    cspRules.staticRules,
+                    cspRules.ruleset,
+                    cspRules.unreadableStaticFilterIds,
+                ),
+                (snapshot) => DynamicRulesApi.rollbackDynamicFiltering(snapshot),
+                (rollbackError) => logger.error(
+                    '[tsweb.TsWebExtension.applyFilteringConfiguration]: Cannot roll back dynamic rules:',
+                    rollbackError,
+                ),
+            );
+            res.sessionRules = { limitations: sessionLimitations };
+
+            if (sessionLimitations.length > 0) {
+                logger.warn(
+                    '[tsweb.TsWebExtension.applyFilteringConfiguration]: session rules were truncated:',
+                    sessionLimitations,
+                );
+            }
 
             await CspService.addCspReportBlockingRule();
 
@@ -565,6 +701,7 @@ export class TsWebExtension implements AppInterface<
             const rulesets = [
                 ...enabledStaticRulesets,
                 res.dynamicRules.ruleset,
+                cspRules.ruleset,
             ];
 
             // Update rulesets in declarative filtering log.
@@ -591,25 +728,7 @@ export class TsWebExtension implements AppInterface<
             res.staticFilters = enabledStaticRulesets;
             res.loadDisabledStaticFilter = loadDisabledStaticFilter;
             res.loadDisabledStaticFilters = loadDisabledStaticRulesets;
-        } else {
-            await TsWebExtension.removeAllFilteringRules();
-        }
-
-        this.configuration = TsWebExtension.createConfigurationContext(configuration);
-        res.canvasProtection = await this.canvasProtection.apply();
-
-        // Update previously opened tabs with new rules - find for each tab
-        // new main frame rule.
-        await tabsApi.updateCurrentTabsMainFrameRules();
-
-        // Reload request events listeners.
-        await WebRequestApi.flushMemoryCache();
-
-        documentBlockingService.configure(config);
-
-        logger.trace('[tsweb.TsWebExtension.configure]: end');
-
-        return res;
+        });
     }
 
     /**

@@ -115,7 +115,20 @@ const parseRowAndLinkFromText = (
 };
 
 /**
+ * Matches an allowlist rule with the `$csp` modifier.
+ *
+ * Such a rule is resolved only by the standalone CSP conversion, which sees
+ * all rules of the example at once; the regular conversion rejects an
+ * allowlist `$csp` rule.
+ */
+const CSP_EXCEPTION_RULE = /^@@.*(?:[$,])csp(?:[=,;]|$)/;
+
+/**
  * Converts provided text rules to Declarative rules using FilterConverter.
+ *
+ * An example which contains a `$csp` exception is converted by the standalone
+ * CSP conversion, so the documented output shows the resolved rules instead of
+ * a rejection of the allowlist rule.
  *
  * @param rules Text rules to convert.
  *
@@ -128,6 +141,18 @@ const convertTxtToRules = async (
     const converter = new FilterConverter();
 
     try {
+        if (rules.some((rule) => CSP_EXCEPTION_RULE.test(rule))) {
+            const { ruleset, errors } = await converter.convertCspRules(
+                [filter],
+                '/path/to/resources',
+            );
+
+            return {
+                declarativeRules: await ruleset.getDeclarativeRules(),
+                errors: errors.map((e) => e.message),
+            };
+        }
+
         const [{ ruleset, errors }] = await converter.convert(
             [filter],
             { resourcesPath: '/path/to/resources' },
