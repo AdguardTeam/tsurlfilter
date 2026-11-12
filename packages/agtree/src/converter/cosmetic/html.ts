@@ -341,15 +341,16 @@ export class HtmlRuleConverter extends RuleConverterBase {
         let isConverted = false;
         if (rule.syntax === AdblockSyntax.Adg) {
             parser = AdgHtmlFilteringBodyParser;
-            onSpecialAttributeSelector = (name, value) => {
+            onSpecialAttributeSelector = () => {
                 /**
-                 * Mark rule as converted in ADG -> ADG conversion only if
-                 * special attribute selectors are present in the rule body,
-                 * because they are deprecated and will be removed soon,
-                 * so we convert them to pseudo-class selectors.
+                 * Mark the rule as converted in ADG -> ADG conversion when
+                 * special attribute selectors are present. They are deprecated
+                 * and always deferred or merged by `convertBody()` and emitted
+                 * by `appendSpecialAttributePseudoClasses()`, so the callback
+                 * only marks the rule as converted and returns `false`.
                  */
                 isConverted = true;
-                return HtmlRuleConverter.convertSpecialAttributeSelectorAdgToAdg(name, value);
+                return false;
             };
             onSpecialPseudoClassSelector = (name, argument) => {
                 const result = HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToAdg(name, argument);
@@ -539,94 +540,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
             }],
             true,
         );
-    }
-
-    /**
-     * Handles special attribute selectors during AdGuard to AdGuard conversion:
-     * - `[tag-content="content"]` -> `:contains(content)`
-     *   direct conversion, no changes to value. Any quotes in the value are
-     *   literal characters of the text to match, not a transport encoding to
-     *   strip later. This mirrors CoreLibs, which never unquotes `:contains()`
-     *   arguments. For AdGuard to AdGuard conversion the value is emitted by
-     *   {@link HtmlRuleConverter.appendSpecialAttributePseudoClasses}, which
-     *   turns a value that CoreLibs reads as a regular expression into an
-     *   escaped regular expression, so that it still matches literally.
-     * - `[wildcard="*content*"]` -> `:contains(/^.*content.*$/s)`
-     *   convert search pattern to regular expression
-     * - `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/s)`
-     *   converts to a length-matching regular expression.
-     * - `[max-length="max"]` -> `:contains(/^(?=.{0,max}$).*\/s)`
-     *   converts to a length-matching regular expression.
-     *
-     * Note: This attribute selector to pseudo-class selector conversion
-     * is needed because AdGuard special attribute selectors are going
-     * to be deprecated and removed soon.
-     *
-     * @param name Name of the special attribute selector.
-     * @param value Value of the special attribute selector.
-     *
-     * @returns A {@link SimpleSelector} to add to the current complex selector.
-     */
-    private static convertSpecialAttributeSelectorAdgToAdg(name: string, value: string): SimpleSelector {
-        switch (name) {
-            // `[tag-content="content"]` -> `:contains(content)`
-            // direct conversion, no changes to value
-            case AdgAttributeSelectors.TagContent: {
-                // The node returned here is discarded in ADG→ADG conversion:
-                // convertBody defers `[tag-content]` and emits the value in
-                // appendSpecialAttributePseudoClasses, which escapes a value
-                // that CoreLibs reads as a regular expression. Quotes within
-                // the value are literal characters to match, not a transport
-                // encoding — same as CoreLibs, which never unquotes
-                // `:contains()` arguments.
-                return HtmlRuleConverter.getPseudoClassSelectorNode(
-                    AdgPseudoClasses.Contains,
-                    value,
-                );
-            }
-
-            // `[wildcard="*content*"]` -> `:contains(/^.*content.*$/s)`
-            // convert search pattern to regular expression
-            case AdgAttributeSelectors.Wildcard: {
-                return HtmlRuleConverter.getPseudoClassSelectorNode(
-                    AdgPseudoClasses.Contains,
-                    RegExpUtils.globToRegExp(value),
-                );
-            }
-
-            // `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/s)`
-            // `[max-length="max"]` -> `:contains(/^(?=.{0,max}$).*\/s)`
-            // converts to a length-matching regular expression
-            case AdgAttributeSelectors.MinLength:
-            case AdgAttributeSelectors.MaxLength: {
-                const length = HtmlRuleConverter.resolveAdgLengthAttributeValue(name, value);
-
-                let min: string | null = null;
-                let max: string | null = null;
-
-                if (name === AdgAttributeSelectors.MinLength) {
-                    min = length;
-                } else {
-                    max = length;
-                }
-
-                return HtmlRuleConverter.getPseudoClassSelectorNode(
-                    AdgPseudoClasses.Contains,
-                    RegExpUtils.getLengthRegexp(
-                        min,
-                        max,
-                    ),
-                );
-            }
-
-            // This line is unreachable due to exhausted cases, but we keep it to satisfy TS
-            default: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED,
-                    name,
-                ));
-            }
-        }
     }
 
     /**
@@ -1311,11 +1224,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
                                 || name === AdgAttributeSelectors.Wildcard
                             )
                         ) {
-                            // Invoke the callback to trigger its side effects
-                            // (e.g. the isConverted flag in convertToAdg), but
-                            // discard the single-attribute pseudo-class it
-                            // returns — the actual nodes are emitted after the
-                            // selector loop.
+                            // Invoke the side-effect-only callback (it marks
+                            // the rule as converted in convertToAdg) — the
+                            // actual nodes are emitted after the selector
+                            // loop.
                             onSpecialAttributeSelector(name, value, typeSelector);
                             if (name === AdgAttributeSelectors.TagContent) {
                                 deferredTagContentValues.push(value);
@@ -1333,11 +1245,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
                                 || name === AdgAttributeSelectors.MaxLength
                             )
                         ) {
-                            // Invoke the callback to trigger its side effects
-                            // (e.g. the isConverted flag in convertToAdg), but
-                            // discard the individual :contains() it returns —
-                            // the merged one is emitted after the selector loop,
-                            // possibly combined with the other deferred
+                            // Invoke the side-effect-only callback (it marks
+                            // the rule as converted in convertToAdg) — the
+                            // merged :contains() is emitted after the selector
+                            // loop, possibly combined with the other deferred
                             // constraints.
                             onSpecialAttributeSelector(name, value, typeSelector);
                             continue;
