@@ -437,9 +437,8 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
         it('keeps the script when the service worker restarts', async () => {
             const applyRegistration = vi.spyOn(CanvasProtectionRegistration.prototype, 'apply');
             const warn = vi.spyOn(logger, 'warn');
-            appContext.configuration = {
-                settings: { filteringEnabled: true, stealthModeEnabled: true, stealth: { protectCanvas: true } },
-            } as never;
+            // The application has no configuration until start(), which is the state a
+            // restarted service worker reaches initStorage() in.
             await instance.initStorage();
             expect(applyRegistration).not.toHaveBeenCalled();
             expect(warn).not.toHaveBeenCalled();

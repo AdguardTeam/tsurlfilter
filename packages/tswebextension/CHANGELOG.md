@@ -64,6 +64,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Canvas protection keeps the script that the browser acknowledged across
+  service worker restarts, instead of removing it and registering it again on
+  every start.
 - MV3: the engine no longer prepares the enabled static filter lists again on
   every start; it gets them from IndexedDB with their conversion data. Cached
   filter lists are prepared again when the versions of the libraries that

@@ -1136,8 +1136,9 @@ export class TsWebExtension implements AppInterface<
         appContext.isStorageInitialized = true;
         // Chromium keeps the registered script across browser restarts, with the previous session's seed.
         // The session storage is empty then, so this removes it until start() registers a new one.
-        // After a service worker restart the script is as the last apply() left it, and start() reconciles it.
-        if (!this.configuration) {
+        // After a service worker restart the stored registration survives, so nothing is removed
+        // here and start() reconciles it.
+        if (!appContext.canvasProtectionRegistration) {
             await this.canvasProtection.apply();
         }
     }
