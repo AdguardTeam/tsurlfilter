@@ -611,6 +611,52 @@ describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
         expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
     });
 
+    test(':matches-path() keeps an open parenthesis inside a regexp character class', () => {
+        const ast = parser.parse('##div:matches-path(/[(]/):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].name.value).toBe('matches-path');
+        expect(ast.modifiers?.children[0].value?.value).toBe('/[(]/');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test(':matches-path() keeps a close parenthesis inside a regexp character class', () => {
+        const ast = parser.parse('##div:matches-path(/[)]/):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].name.value).toBe('matches-path');
+        expect(ast.modifiers?.children[0].value?.value).toBe('/[)]/');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test(':matches-path() keeps a parenthesis range inside a regexp character class', () => {
+        const ast = parser.parse('##div:matches-path(/[a-z)]/):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children[0].value?.value).toBe('/[a-z)]/');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test(':matches-path() keeps an escaped class bracket inside a regexp character class', () => {
+        const ast = parser.parse(String.raw`##div:matches-path(/[\\)]/):style(color:red)`) as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children[0].value?.value).toBe(String.raw`/[\\)]/`);
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test(':style() nested inside another pseudo-class still throws', () => {
+        expect(() => {
+            parser.parse('##div:not(:style(color:red))');
+        }).toThrow(':style() cannot be nested inside a pseudo-class');
+    });
+
     test('a lone apostrophe in a :has-text() argument does not disable modifier detection', () => {
         const ast = parser.parse("##div:has-text(It's):style(color:red)") as CssInjectionRule;
 

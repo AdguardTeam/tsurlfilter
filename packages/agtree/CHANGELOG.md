@@ -63,6 +63,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- A complete `/…/` regexp value of a uBO `:matches-path()` modifier is now
+  taken as raw text, so a parenthesis inside a character class no longer
+  changes the modifier nesting. For example,
+  `##div:matches-path(/[(]/):style(color:red)` now parses as a CSS injection
+  rule with the value `/[(]/` and the selector `div`. Previously such a rule
+  threw `:style() cannot be nested inside a pseudo-class`, and
+  `##div:matches-path(/[)]/):style(color:red)` silently lost part of the
+  regexp and the selector.
 - uBO CSS injection rules no longer treat modifier-like text inside a quoted
   CSS string as a rule modifier. Previously
   `##div[title=":matches-path(/x)"]:style(color:red)` parsed the attribute

@@ -203,6 +203,75 @@ function getRawQuoteMode(
 }
 
 /**
+ * Find the closing `)` token of a `:matches-path()` argument whose value is a
+ * complete regexp literal (`/.../`).
+ *
+ * A regexp literal is raw text: a parenthesis inside it does not close the
+ * argument. Escapes and character classes are skipped, so a class parenthesis
+ * is plain text. A value that is not a complete `/.../` literal (for example
+ * `/[/`, which some lists use as plain text) is not a regexp literal, and the
+ * caller keeps the balanced-parenthesis scan.
+ *
+ * @param types Token type array.
+ * @param openParenTi Index of the opening `(` of the argument.
+ * @param endTi Exclusive upper bound.
+ *
+ * @returns Index of the closing `)` token, or `-1` if the value is not a
+ * complete regexp literal.
+ */
+function findMatchesPathRegexpEnd(
+    types: Uint8Array,
+    openParenTi: number,
+    endTi: number,
+): number {
+    let ti = openParenTi + 1;
+    while (ti < endTi && types[ti] === TokenType.Whitespace) {
+        ti += 1;
+    }
+
+    // A regexp literal starts with `/` as the first value character.
+    if (ti >= endTi || types[ti] !== TokenType.Slash) {
+        return -1;
+    }
+    ti += 1;
+
+    let inClass = false;
+    while (ti < endTi) {
+        const t = types[ti];
+
+        // An escaped character is plain text, including an escaped class
+        // bracket.
+        if (t === TokenType.Escaped) {
+            ti += 1;
+            continue;
+        }
+
+        if (inClass) {
+            if (t === TokenType.CloseSquare) {
+                inClass = false;
+            }
+            ti += 1;
+            continue;
+        }
+
+        if (t === TokenType.OpenSquare) {
+            inClass = true;
+        } else if (t === TokenType.Slash) {
+            // The closing `/` must be followed by the argument's `)`.
+            let next = ti + 1;
+            while (next < endTi && types[next] === TokenType.Whitespace) {
+                next += 1;
+            }
+            return next < endTi && types[next] === TokenType.CloseParen ? next : -1;
+        }
+
+        ti += 1;
+    }
+
+    return -1;
+}
+
+/**
  * Options accepted by {@link ElementHidingParser.parse}.
  */
 export interface ElementHidingParserOptions {
@@ -446,6 +515,9 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
         let rawOpenIsXpath = false;
         let rawQuoteMode = RawQuoteMode.None;
         let rawQuoteChar = 0;
+        // Closing `)` of a complete `/.../` :matches-path() regexp value
+        // (-1 = the value is not a regexp literal).
+        let rawRegexpEndTi = -1;
 
         // Current open modifier state (-1 = no modifier open)
         let curModBit = 0;
@@ -477,6 +549,13 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
             const insideRawArgument = rawDepth > 0;
 
             if (insideRawArgument) {
+                // A complete `/.../` regexp value is raw text: its parentheses
+                // and character classes do not change the depth. Skip to the
+                // pre-scanned closing `)`.
+                if (rawRegexpEndTi >= 0 && ti < rawRegexpEndTi) {
+                    continue;
+                }
+
                 if (rawQuoteMode === RawQuoteMode.Quoted
                     && (t === TokenType.Quote || t === TokenType.Apostrophe)) {
                     // The whole argument is a quoted string, so its content
@@ -625,6 +704,7 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                     rawDepth = 0;
                     rawQuoteMode = RawQuoteMode.None;
                     rawQuoteChar = 0;
+                    rawRegexpEndTi = -1;
                 }
 
                 continue;
@@ -756,6 +836,9 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                             if (modBit === UBO_MOD_BIT_MATCHES_PATH || modBit === UBO_MOD_BIT_MATCHES_MEDIA) {
                                 rawDepth = depth;
                                 rawQuoteMode = getRawQuoteMode(types, identEndTi, endTi, false);
+                                rawRegexpEndTi = modBit === UBO_MOD_BIT_MATCHES_PATH
+                                    ? findMatchesPathRegexpEnd(types, identEndTi, endTi)
+                                    : -1;
                             }
                         } else {
                             // FR-006: other modifiers cannot be nested
@@ -785,6 +868,9 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                         if (modBit === UBO_MOD_BIT_MATCHES_PATH || modBit === UBO_MOD_BIT_MATCHES_MEDIA) {
                             rawDepth = depth;
                             rawQuoteMode = getRawQuoteMode(types, identEndTi, endTi, false);
+                            rawRegexpEndTi = modBit === UBO_MOD_BIT_MATCHES_PATH
+                                ? findMatchesPathRegexpEnd(types, identEndTi, endTi)
+                                : -1;
                         }
                     }
                 } else if (isExtendedCssPseudoClass(source, identStart, identEnd)) {
