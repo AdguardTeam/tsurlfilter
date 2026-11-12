@@ -10,8 +10,8 @@
  * The argument of such a pseudo-class is not a CSS selector or a CSS-typed
  * value: `[` and `]` inside it are plain characters rather than attribute
  * brackets, quotes are plain characters rather than CSS string delimiters,
- * and modifier-like text inside it is plain text. The argument may also
- * contain unbalanced parentheses, so callers must not interpret it as CSS.
+ * and modifier-like text inside it is plain text. Callers balance the
+ * parentheses themselves and must not interpret the argument as CSS.
  *
  * The name is matched by length first, then compared in place, without
  * allocating a substring.
