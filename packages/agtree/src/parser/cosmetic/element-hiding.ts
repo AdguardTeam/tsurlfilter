@@ -8,7 +8,9 @@
  */
 
 import { UboPseudoName } from '../../common/ubo-selector-common';
+import { cssStringLength, isCssStringUnterminated } from '../../css/tokenizer/css-token-mapping';
 import { TokenType } from '../../tokenizer/token-types';
+import { isExtendedCssPseudoClass } from '../../utils/extended-css-pseudo-classes';
 import type { ParserContext } from '../context';
 import { regionEquals, tokenStart } from '../context';
 import { MODIFIER_FLAG_NEGATED, NO_VALUE } from '../network/constants';
@@ -55,6 +57,149 @@ function skipPseudoName(types: Uint8Array, startTi: number, limit: number): numb
         ti += 1;
     }
     return ti;
+}
+
+/**
+ * Whether a closing quote is followed by the end of the current attribute
+ * selector: optional whitespace, an optional attribute flag, optional
+ * whitespace, then `]`.
+ *
+ * A quote pair that does not end at the attribute boundary is not an attribute
+ * value string. For example, in `[title='Don't']` the first quote pairs with
+ * the apostrophe inside `Don't`, and the token after the pair is not `]`, so
+ * the quote must stay a plain token. `[data-v="]"]` stays a string because its
+ * closing quote is followed by `]`.
+ *
+ * @param types Token type array.
+ * @param afterQuoteTi Token index right after the closing quote.
+ * @param endTi Exclusive upper bound.
+ *
+ * @returns `true` if the attribute selector ends after the quote.
+ */
+function isAttributeSelectorEnd(
+    types: Uint8Array,
+    afterQuoteTi: number,
+    endTi: number,
+): boolean {
+    let ti = afterQuoteTi;
+    while (ti < endTi && types[ti] === TokenType.Whitespace) {
+        ti += 1;
+    }
+    // Optional case-sensitivity flag (`i` or `s`).
+    if (ti < endTi && types[ti] === TokenType.Letter) {
+        ti += 1;
+    }
+    while (ti < endTi && types[ti] === TokenType.Whitespace) {
+        ti += 1;
+    }
+    return ti < endTi && types[ti] === TokenType.CloseSquare;
+}
+
+/**
+ * Length of a CSS string that starts at `ti`, or `0` when `ti` is not an
+ * opening quote, `allowString` is `false`, the string is unterminated, or an
+ * attribute string does not end at the attribute selector boundary.
+ *
+ * A quote is a CSS string delimiter only inside `[...]` or in a `:style()`
+ * value. In an extended-CSS argument such as `:has-text(It's)` or
+ * `:matches-path(/can't/)` it is plain text, so the caller decides whether a
+ * string may start at `ti`. An unterminated quote is a plain token, matching
+ * the behavior before string skipping.
+ *
+ * @param types Token type array.
+ * @param ti Token index to check.
+ * @param endTi Exclusive upper bound.
+ * @param allowString Whether a CSS string may start at `ti`.
+ * @param insideAttribute Whether `ti` is inside an attribute selector. When
+ * `true`, the string must end at the attribute selector boundary.
+ *
+ * @returns Span length in tokens, or `0` if no terminated string starts here.
+ */
+function cssStringSpanLength(
+    types: Uint8Array,
+    ti: number,
+    endTi: number,
+    allowString: boolean,
+    insideAttribute: boolean,
+): number {
+    if (!allowString) {
+        return 0;
+    }
+
+    const t = types[ti];
+    if (t !== TokenType.Quote && t !== TokenType.Apostrophe) {
+        return 0;
+    }
+
+    const spanLength = cssStringLength(types, ti, endTi);
+    if (isCssStringUnterminated(types, ti, spanLength)) {
+        return 0;
+    }
+
+    if (insideAttribute && !isAttributeSelectorEnd(types, ti + spanLength, endTi)) {
+        return 0;
+    }
+
+    return spanLength;
+}
+
+/**
+ * Quote handling inside a raw extended-CSS argument.
+ */
+const enum RawQuoteMode {
+    /**
+     * Quotes are plain characters.
+     */
+    None = 0,
+
+    /**
+     * The argument starts with a quoted string; skip that string.
+     */
+    Quoted = 1,
+
+    /**
+     * XPath: quotes delimit string literals anywhere in the argument.
+     */
+    XPath = 2,
+}
+
+/**
+ * Select the quote mode for a raw extended-CSS argument.
+ *
+ * Mirrors `pseudo-class-selector.ts`: a quoted argument uses CSS string
+ * skipping, an XPath argument tracks quotes anywhere, and any other raw
+ * argument treats quotes as plain text. The last rule keeps a lone apostrophe
+ * in `:has-text(It's)` from swallowing the rest of the body.
+ *
+ * A quote that starts a string but never terminates does not enable string
+ * skipping, so it stays a plain token.
+ *
+ * @param types Token type array.
+ * @param openParenTi Index of the opening `(`.
+ * @param endTi Exclusive upper bound.
+ * @param isXpath Whether the argument belongs to `:xpath()`.
+ *
+ * @returns Quote mode for the argument scan.
+ */
+function getRawQuoteMode(
+    types: Uint8Array,
+    openParenTi: number,
+    endTi: number,
+    isXpath: boolean,
+): RawQuoteMode {
+    let peek = openParenTi + 1;
+    while (peek < endTi && types[peek] === TokenType.Whitespace) {
+        peek += 1;
+    }
+
+    if (peek < endTi && (types[peek] === TokenType.Quote || types[peek] === TokenType.Apostrophe)) {
+        const spanLength = cssStringLength(types, peek, endTi);
+        if (!isCssStringUnterminated(types, peek, spanLength)) {
+            return RawQuoteMode.Quoted;
+        }
+    }
+
+    return isXpath ? RawQuoteMode.XPath : RawQuoteMode.None;
 }
 
 /**
@@ -191,7 +336,17 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
 
     /**
      * Cheap candidate check: linear scan of body tokens for any
-     * Colon + Ident pattern where the ident matches a known uBO modifier name.
+     * Colon + Ident + OpenParen pattern whose ident matches a known uBO
+     * modifier name.
+     *
+     * This gate is intentionally context-free: it may return `true` for
+     * modifier-like text inside a quoted CSS string or inside an extended-CSS
+     * argument, where {@link scanUboModifiers} then correctly finds no
+     * modifier. A false positive only costs one extra scan, while keeping the
+     * gate free of string and bracket tracking means an ambiguous bracket (for
+     * example a literal `[` in a `:has-text()` argument) cannot produce a
+     * false negative and hide a real modifier.
+     *
      * Zero string allocations — uses regionEquals for comparison.
      *
      * @param ctx Parser context.
@@ -232,7 +387,9 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
 
             // Also check for :not( wrapping :matches-path() or :matches-media()
             if (regionEquals(source, identStart, identEnd, 'not')) {
-                // Look ahead inside :not() for a uBO modifier candidate
+                // Look ahead inside :not() for a uBO modifier candidate.
+                // Kept as a cheap early exit; the outer loop would reach the
+                // same inner colon anyway (see AG-61882).
                 for (let j = identEndTi + 1; j < endTi; j += 1) {
                     if (types[j] === TokenType.Colon) {
                         const innerEndTi = skipPseudoName(types, j + 1, endTi);
@@ -275,8 +432,20 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
 
         // Local scalar state — no allocations
         let depth = 0;
+        let bracketDepth = 0;
         let seenMask = 0;
         let uboModCount = 0;
+
+        // Raw extended-CSS argument tracking: `:has-text()`, `:matches-path()`,
+        // `:xpath()` and similar take plain text, so `[` / `]` and quotes
+        // inside them are not CSS syntax. `rawDepth` is the parenthesis depth
+        // of the innermost open raw argument (0 = none), and `rawOpenAtTi` is
+        // the `(` token that starts the argument being tracked.
+        let rawDepth = 0;
+        let rawOpenAtTi = -1;
+        let rawOpenIsXpath = false;
+        let rawQuoteMode = RawQuoteMode.None;
+        let rawQuoteChar = 0;
 
         // Current open modifier state (-1 = no modifier open)
         let curModBit = 0;
@@ -300,8 +469,83 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                 throw new Error(':style() and :remove() can only be used at the end of the selector');
             }
 
+            // Inside a raw extended-CSS argument every character is plain
+            // text: do not start a CSS string, count attribute brackets, or
+            // detect modifiers there. Parentheses are still balanced to find
+            // the end of the argument, except inside a quoted argument or an
+            // XPath string literal.
+            const insideRawArgument = rawDepth > 0;
+
+            if (insideRawArgument) {
+                if (rawQuoteMode === RawQuoteMode.Quoted
+                    && (t === TokenType.Quote || t === TokenType.Apostrophe)) {
+                    // The whole argument is a quoted string, so its content
+                    // cannot close the argument. `getRawQuoteMode()` verified
+                    // that the string terminates.
+                    ti += cssStringLength(types, ti, endTi) - 1;
+                    rawQuoteMode = RawQuoteMode.None;
+                    continue;
+                }
+
+                if (rawQuoteMode === RawQuoteMode.XPath
+                    && (t === TokenType.Quote || t === TokenType.Apostrophe)) {
+                    if (rawQuoteChar === 0) {
+                        rawQuoteChar = t;
+                    } else if (rawQuoteChar === t) {
+                        rawQuoteChar = 0;
+                    }
+                    continue;
+                }
+
+                if (rawQuoteChar !== 0) {
+                    // Inside an XPath string literal: parentheses are plain.
+                    continue;
+                }
+            } else {
+                // Skip a terminated CSS string span so that modifier-like text
+                // and parentheses inside it do not affect the scan or the
+                // depth. A quote is a CSS string delimiter only inside an
+                // attribute selector whose value ends at `]`, or in a
+                // `:style()` value.
+                const insideStyleValue = curModOpen && curModBit === UBO_MOD_BIT_STYLE;
+                const insideAttribute = bracketDepth > 0 && !insideStyleValue;
+                const stringLength = cssStringSpanLength(
+                    types,
+                    ti,
+                    endTi,
+                    bracketDepth > 0 || insideStyleValue,
+                    insideAttribute,
+                );
+                if (stringLength > 0) {
+                    ti += stringLength - 1;
+                    continue;
+                }
+
+                // Square-bracket depth is read only for string spans in
+                // selector context. A `:style()` value is terminal and allows
+                // strings itself, so a bracket there cannot change the scan
+                // result.
+                if (t === TokenType.OpenSquare) {
+                    bracketDepth += 1;
+                    continue;
+                }
+
+                if (t === TokenType.CloseSquare) {
+                    if (bracketDepth > 0) {
+                        bracketDepth -= 1;
+                    }
+                    continue;
+                }
+            }
+
             if (t === TokenType.OpenParen) {
                 depth += 1;
+                if (ti === rawOpenAtTi) {
+                    rawDepth = depth;
+                    rawOpenAtTi = -1;
+                    rawQuoteMode = getRawQuoteMode(types, ti, endTi, rawOpenIsXpath);
+                    rawOpenIsXpath = false;
+                }
             } else if (t === TokenType.CloseParen) {
                 depth -= 1;
 
@@ -375,6 +619,20 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                     }
                 }
 
+                // The closing parenthesis of a raw extended-CSS argument
+                // returns the scan to normal selector context.
+                if (rawDepth > 0 && depth < rawDepth) {
+                    rawDepth = 0;
+                    rawQuoteMode = RawQuoteMode.None;
+                    rawQuoteChar = 0;
+                }
+
+                continue;
+            }
+
+            // Modifier-like text inside a raw extended-CSS argument is plain
+            // text, so do not detect modifiers there.
+            if (insideRawArgument) {
                 continue;
             }
 
@@ -492,6 +750,13 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                             // Skip ident span and OpenParen token
                             ti = identEndTi;
                             depth += 1;
+
+                            // :matches-path() / :matches-media() values are
+                            // raw text, not CSS selector syntax.
+                            if (modBit === UBO_MOD_BIT_MATCHES_PATH || modBit === UBO_MOD_BIT_MATCHES_MEDIA) {
+                                rawDepth = depth;
+                                rawQuoteMode = getRawQuoteMode(types, identEndTi, endTi, false);
+                            }
                         } else {
                             // FR-006: other modifiers cannot be nested
                             throw new Error(
@@ -514,7 +779,21 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                         // Skip ident span and OpenParen token
                         ti = identEndTi;
                         depth += 1;
+
+                        // :matches-path() / :matches-media() values are raw
+                        // text, not CSS selector syntax.
+                        if (modBit === UBO_MOD_BIT_MATCHES_PATH || modBit === UBO_MOD_BIT_MATCHES_MEDIA) {
+                            rawDepth = depth;
+                            rawQuoteMode = getRawQuoteMode(types, identEndTi, endTi, false);
+                        }
                     }
+                } else if (isExtendedCssPseudoClass(source, identStart, identEnd)) {
+                    // The argument of an Extended CSS pseudo-class is raw
+                    // text: `[` / `]` and quotes inside it are plain
+                    // characters, so the opening parenthesis starts a raw
+                    // region instead of selector context.
+                    rawOpenAtTi = identEndTi;
+                    rawOpenIsXpath = regionEquals(source, identStart, identEnd, 'xpath');
                 }
             }
         }

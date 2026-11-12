@@ -14,6 +14,7 @@ import { cssIdentSequenceLength, cssStringLength } from '../../../css/tokenizer/
 import { isCssWhitespace } from '../../../css/tokenizer/css-token-utils';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { TokenType } from '../../../tokenizer/token-types';
+import { isExtendedCssPseudoClass } from '../../../utils/extended-css-pseudo-classes';
 import { SPECIAL_PSEUDO_CLASS_NAMES } from '../../../utils/special-pseudo-classes';
 import type { ParserContext } from '../../context';
 import { regionEquals, tokenStart } from '../../context';
@@ -71,43 +72,13 @@ const enum ExtCssMode {
  * @returns The scanning mode for this pseudo-class.
  */
 function detectExtCssMode(source: string, nameStart: number, nameEnd: number): ExtCssMode {
-    switch (nameEnd - nameStart) {
-        case 5:
-            return regionEquals(source, nameStart, nameEnd, 'xpath')
-                ? ExtCssMode.Xpath
-                : ExtCssMode.None;
-        case 8:
-            return regionEquals(source, nameStart, nameEnd, 'contains')
-                || regionEquals(source, nameStart, nameEnd, 'has-text')
-                ? ExtCssMode.Generic
-                : ExtCssMode.None;
-        case 11:
-            return regionEquals(source, nameStart, nameEnd, 'matches-css')
-                ? ExtCssMode.Generic
-                : ExtCssMode.None;
-        case 12:
-            return regionEquals(source, nameStart, nameEnd, 'matches-attr')
-                ? ExtCssMode.Generic
-                : ExtCssMode.None;
-        case 13:
-            return regionEquals(source, nameStart, nameEnd, '-abp-contains')
-                ? ExtCssMode.Generic
-                : ExtCssMode.None;
-        case 16:
-            return regionEquals(source, nameStart, nameEnd, 'matches-property')
-                ? ExtCssMode.Generic
-                : ExtCssMode.None;
-        case 17:
-            return regionEquals(source, nameStart, nameEnd, 'matches-css-after')
-                ? ExtCssMode.Generic
-                : ExtCssMode.None;
-        case 18:
-            return regionEquals(source, nameStart, nameEnd, 'matches-css-before')
-                ? ExtCssMode.Generic
-                : ExtCssMode.None;
-        default:
-            return ExtCssMode.None;
+    if (nameEnd - nameStart === 5 && source.startsWith('xpath', nameStart)) {
+        return ExtCssMode.Xpath;
     }
+
+    return isExtendedCssPseudoClass(source, nameStart, nameEnd)
+        ? ExtCssMode.Generic
+        : ExtCssMode.None;
 }
 
 /**
