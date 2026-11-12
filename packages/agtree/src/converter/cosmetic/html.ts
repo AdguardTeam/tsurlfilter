@@ -822,8 +822,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * Handles special pseudo-class selectors during AdGuard to uBlock conversion:
      * - `:contains(text)` -> `:has-text(text)`
      *   Direct conversion, no changes to argument. A text argument that the
-     *   uBlock parser would reject (e.g. `:contains("foo" )`) is not
-     *   converted.
+     *   uBlock parser would reject (e.g. `:contains(it's)`) is not converted.
+     *   A quoted argument (e.g. `:contains("foo")`) is not converted either:
+     *   uBlock unquotes it and matches `foo`, while AdGuard matches the quotes
+     *   as literal characters.
      * - `:has-text(text)` -> kept as-is
      *   `:has-text()` is native uBlock syntax and a documented synonym of
      *   `:contains()` in AdGuard products, so no conversion is needed.
@@ -1668,7 +1670,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
     /**
      * Checks whether uBlock Origin accepts a plain-text argument in an HTML
-     * filtering `:has-text()` pseudo-class.
+     * filtering `:has-text()` pseudo-class and keeps it unchanged.
      *
      * The uBlock parser first parses the whole cosmetic filter with CSS-tree
      * and discards the rule if that parse fails. The argument must therefore
@@ -1682,15 +1684,16 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * the whole argument is read, so such an argument is not supported.
      *
      * After that, uBlock reads the text argument with `compileText()`, which
-     * calls `unquoteString()`. When the argument starts with a quote, the
-     * matching closing quote must be the last character, because the unquoting
-     * must consume the whole argument. For example, uBlock accepts `"foo"` and
-     * unquotes it to `foo`, but rejects `"foo" ` and `"foo"bar` because
-     * characters follow the closing quote.
+     * calls `unquoteString()`. This unquoting removes the outer quotes from an
+     * argument that starts and ends with the same quote. AdGuard matches the
+     * argument as-is, including those quotes, so such an argument cannot be
+     * converted without changing the matching semantics. Any argument that
+     * starts with a quote is therefore not supported.
      *
      * @param argument Argument to check.
      *
-     * @returns `true` if uBlock Origin accepts the argument, `false` otherwise.
+     * @returns `true` if uBlock Origin accepts the argument without changing
+     * it, `false` otherwise.
      */
     private static isUboTextArgumentSupported(argument: string): boolean {
         if (argument === EMPTY) {
@@ -1783,30 +1786,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
             return false;
         }
 
-        // uBlock unquotes only when the argument starts with a quote, and the
-        // closing quote must then be the last character of the argument.
+        // uBlock reads the text argument with `compileText()`, which calls
+        // `unquoteString()`. An argument that starts with a quote loses the
+        // outer quotes in uBlock, while AdGuard matches them as literal
+        // characters, so such an argument cannot be converted unchanged.
         const firstChar = argument.charAt(0);
 
-        if (firstChar !== SINGLE_QUOTE && firstChar !== DOUBLE_QUOTE) {
-            return true;
-        }
-
-        let index = 1;
-
-        while (index < argument.length) {
-            const char = argument.charAt(index);
-
-            if (char === BACKSLASH) {
-                // The first loop rejects a trailing backslash.
-                index += 1;
-            } else if (char === firstChar) {
-                return index === argument.length - 1;
-            }
-
-            index += 1;
-        }
-
-        return false;
+        return firstChar !== SINGLE_QUOTE && firstChar !== DOUBLE_QUOTE;
     }
 
     /**

@@ -1384,18 +1384,6 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div:has-text(a):has-text(b)'],
                     },
 
-                    // `:contains()` special pseudo-class selector - double quotes are handled
-                    {
-                        actual: '$$div:contains("example")',
-                        expected: ['##^div:has-text("example")'],
-                    },
-
-                    // `:contains()` special pseudo-class selector - single quotes are handled
-                    {
-                        actual: "$$div:contains('example')",
-                        expected: ["##^div:has-text('example')"],
-                    },
-
                     // `:contains()` special pseudo-class selector - regexp are handled
                     {
                         actual: '$$div:contains(/ex.*ple/i)',
@@ -1736,6 +1724,26 @@ describe('HtmlRuleConverter', () => {
                         input: '$$div:contains("foo"bar)',
                         // eslint-disable-next-line max-len
                         error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: '\"foo\"bar'",
+                    },
+
+                    // invalid special pseudo-class selector - uBlock unquotes an
+                    // argument that starts and ends with the same quote, so the
+                    // converted rule would search for different text
+                    {
+                        input: '$$div:contains("example")',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: '\"example\"'",
+                    },
+                    {
+                        input: "$$div:contains('example')",
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: ''example''",
+                    },
+                    {
+                        // AG-61824 acceptance criterion 5
+                        input: '$$div:contains(\'"foo" bar\')',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: ''\"foo\" bar''",
                     },
 
                     // invalid special pseudo-class selector - CSS-tree cannot

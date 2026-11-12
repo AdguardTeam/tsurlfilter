@@ -86,11 +86,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `textContent` equals it while its `innerHTML` differs, e.g. text split
   across child tags.
 - ADG→uBO conversion now raises a conversion error for a `:contains()`
-  argument that uBlock would drop, e.g. an argument with an unterminated
-  quote, an unbalanced block, an unterminated comment, a `)` that ends the
-  function before the argument is read, or text after a closing quote.
-  A closer that does not match the innermost open block, e.g. `)` in
-  `[^)]` or a stray `]`, is a plain CSS token and stays supported.
+  argument that uBlock would drop or change, e.g. an argument with an
+  unterminated quote, an unbalanced block, an unterminated comment, a `)`
+  that ends the function before the argument is read, text after a closing
+  quote, or a quoted argument that uBlock would unquote. A closer that does
+  not match the innermost open block, e.g. `)` in `[^)]` or a stray `]`, is
+  a plain CSS token and stays supported.
 - `RuleParserPipeline.parseRange` now rejects a non-zero `dataOffset` for
   cosmetic rules. Their structural parsers write at fixed offsets, so a
   non-zero offset previously produced a rule with an empty selector and no
