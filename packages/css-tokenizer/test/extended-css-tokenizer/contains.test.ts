@@ -55,6 +55,7 @@ const PSEUDO_VALUES: PseudoValues = {
         String.raw`/a[\\)]b/`, // escaped reverse solidus before the right parenthesis in a class
         String.raw`/a[\\)]b/i`, // same with a flag
         String.raw`/a[)]b/i`, // right parenthesis in a class and a flag
+        String.raw`/foo[bar`, // plain text with a solidus but no closing solidus, so no regexp literal
     ]),
 
     // 1-length string

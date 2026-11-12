@@ -40,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Spaces around a quoted HTML filtering `:contains()` argument are no longer
   trimmed (via [@adguard/tsurlfilter]): `$$div:contains( "foo" )` now matches
   the text `"foo"` with a space on each side.
+- HTML filtering rules with a right parenthesis inside a regexp character
+  class now load, e.g. `$$div:contains(/a[)]b/)` and
+  `##^div:has-text(/a[)]b/)` (via [@adguard/tsurlfilter]). uBO `:contains()`
+  rules such as `##^div:contains(foo)` are no longer a conversion error.
 - `$removeparam` regexp values with the `g` or `y` flag are now matched
   statelessly: matching no longer depends on the previously tested URL
   parameter, so all matching parameters are removed.

@@ -35,6 +35,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   only digits are accepted, preceded by optional whitespace and an optional
   `+`, matching CoreLibs' `strtoimax` parsing, so `"1e2"`, `"1.5"` and
   `"5 "` are no longer converted.
+- uBO→ADG conversion now accepts `:contains()` in uBlock HTML filtering
+  rules and keeps it as-is, e.g. `##^div:contains(foo)` becomes
+  `$$div:contains(foo)`. uBlock Origin accepts this pseudo-class in `##^`
+  rules and normalizes it to `:has-text()`. Previously the converter threw
+  a mixed-syntax error.
 
 ### Deprecated
 
@@ -83,10 +88,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - uBO→ADG conversion now rejects `:-abp-contains()` in uBlock HTML filtering
   rules as mixed AdGuard and uBlock syntax. Previously the alias was carried
   over into the converted AdGuard rule.
-- uBO→ADG conversion now accepts `:contains()` in uBlock HTML filtering
-  rules and keeps it as-is, e.g. `##^div:contains(foo)` becomes
-  `$$div:contains(foo)`. uBlock Origin accepts this pseudo-class in `##^`
-  rules and normalizes it to `:has-text()`.
 - `[tag-content]` values that CoreLibs reads as regular expressions, e.g.
   `/ads/`, are now escaped when converted to a standalone `:contains()`
   argument during ADG→ADG conversion, so they still match the literal text.

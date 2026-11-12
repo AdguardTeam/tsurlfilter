@@ -19,10 +19,13 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 ### Fixed
 
-- A right parenthesis inside a regexp character class in a raw function
-  argument no longer closes the function. For example, the whole argument
-  of `:has-text(/a[)]b/)` is now tokenized as one value up to the final
-  parenthesis, so the `)` inside `[)]` does not end the pseudo-class.
+- A right parenthesis inside a regexp character class no longer closes an
+  extended CSS pseudo-class early. Regexp literals are recognized both as
+  the whole raw argument, e.g. `:has-text(/a[)]b/)`, and as the
+  `property: value` part, e.g.
+  `:matches-css(background-image: /^url\([)]/)`. A solidus without an
+  unescaped closing one is still treated as plain text, so arguments such
+  as `:has-text(/foo[bar)` keep the previous behavior.
 
 ### Security
 

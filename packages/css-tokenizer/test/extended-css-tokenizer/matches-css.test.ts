@@ -18,6 +18,8 @@ const PSEUDO_VALUES: PseudoValues = {
         String.raw`:matches-css(background-image: /^url\("data:image\/gif;base64.+/)`,
         String.raw`:matches-css(    background-image: /^url\("data:image\/gif;base64.+/    ) + a[href="https://www.example.com/"]`,
         String.raw`:matches-css(background-image:url(data:*))`,
+        String.raw`background-image: /^url\([)]/`, // regexp value with a right parenthesis in a character class
+        String.raw`background-image: /^url\([)]/i`, // same with a flag
     ]),
 };
 

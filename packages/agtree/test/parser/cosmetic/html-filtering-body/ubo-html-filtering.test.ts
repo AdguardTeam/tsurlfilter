@@ -13,7 +13,6 @@ import { type HtmlFilteringRuleBody, type Value } from '../../../../src/nodes';
 import {
     UboHtmlFilteringBodyParser,
 } from '../../../../src/parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
-import { SelectorListParser } from '../../../../src/parser/cosmetic/selector/selector-list-parser';
 import { defaultParserOptions, type ParserOptions } from '../../../../src/parser/options';
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 
@@ -101,7 +100,35 @@ describe('UboHtmlFilteringBodyParser', () => {
                 actual: 'div:has-text(/a[)]b/)',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    selectorList: SelectorListParser.parse('div:has-text(/a[)]b/)', parsingEnabledDefaultParserOptions),
+                    selectorList: {
+                        type: 'SelectorList',
+                        children: [{
+                            type: 'ComplexSelector',
+                            children: [
+                                {
+                                    type: 'TypeSelector',
+                                    value: 'div',
+                                    ...context.getRangeFor('div'),
+                                },
+                                {
+                                    type: 'PseudoClassSelector',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'has-text',
+                                        ...context.getRangeFor('has-text'),
+                                    },
+                                    argument: {
+                                        type: 'Value',
+                                        value: '/a[)]b/',
+                                        ...context.getRangeFor('/a[)]b/'),
+                                    },
+                                    ...context.getRangeFor(':has-text(/a[)]b/)'),
+                                },
+                            ],
+                            ...context.getFullRange(),
+                        }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },
@@ -112,7 +139,35 @@ describe('UboHtmlFilteringBodyParser', () => {
                 actual: 'div:contains(/a[)]b/)',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    selectorList: SelectorListParser.parse('div:contains(/a[)]b/)', parsingEnabledDefaultParserOptions),
+                    selectorList: {
+                        type: 'SelectorList',
+                        children: [{
+                            type: 'ComplexSelector',
+                            children: [
+                                {
+                                    type: 'TypeSelector',
+                                    value: 'div',
+                                    ...context.getRangeFor('div'),
+                                },
+                                {
+                                    type: 'PseudoClassSelector',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'contains',
+                                        ...context.getRangeFor('contains'),
+                                    },
+                                    argument: {
+                                        type: 'Value',
+                                        value: '/a[)]b/',
+                                        ...context.getRangeFor('/a[)]b/'),
+                                    },
+                                    ...context.getRangeFor(':contains(/a[)]b/)'),
+                                },
+                            ],
+                            ...context.getFullRange(),
+                        }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },
