@@ -137,7 +137,8 @@ export class RegExpUtils {
      *
      * CoreLibs does not use a JavaScript regular expression literal scanner
      * for this argument. Its `extract_regex()` function in
-     * `filtering/htmlfilter/src/htmlfilter.cpp` works like this:
+     * `filtering/htmlfilter/src/htmlfilter.cpp` (CoreLibs v1.23.2, lines
+     * 154-177) works like this:
      *
      * - the argument must be longer than two characters and start with `/`;
      * - every trailing ASCII lowercase letter is removed as a flag, whether
@@ -161,13 +162,16 @@ export class RegExpUtils {
      * `/a[b/` are regular expressions with the invalid PCRE2 patterns `a\`
      * and `a[b`, so CoreLibs rejects those rules.
      *
-     * This is the only regular expression literal grammar used in this
-     * package. The HTML filtering engine and the converter both split
-     * arguments with this method, so they cannot drift apart. The engine still
-     * compiles the returned pattern with the JavaScript `RegExp` constructor.
+     * This is the `:contains()` argument grammar used by the HTML rule
+     * converter, mirroring CoreLibs' `extract_regex()`. The converter is
+     * currently the only caller: `HtmlRuleConverter` uses
+     * {@link RegExpUtils.isCoreLibsRegexArgument} to detect regexp-like
+     * `[tag-content]` values; no HTML filtering engine uses this grammar yet.
      *
      * This method only reports how CoreLibs splits the argument; it does not
      * compile the pattern.
+     *
+     * @see {@link https://github.com/AdGuardSoftwareLimited/core-libs/blob/v1.23.2/filtering/htmlfilter/src/htmlfilter.cpp#L154-L177}
      *
      * @param argument Argument of the `:contains()` pseudo-class.
      *

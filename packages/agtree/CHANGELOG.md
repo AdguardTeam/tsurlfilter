@@ -12,9 +12,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Added
 
 - `RegExpUtils.parseCoreLibsRegexArgument()` and
-  `RegExpUtils.isCoreLibsRegexArgument()` are now exported. The first splits
-  the `:contains()` arguments that CoreLibs reads as normal regular
-  expressions; the second also covers the underflow class, e.g. `/ads`.
+  `RegExpUtils.isCoreLibsRegexArgument()` are added, together with the
+  `RegexLiteralParts` type. The first splits the `:contains()` arguments that
+  CoreLibs reads as normal regular expressions; the second also covers the
+  underflow class, e.g. `/ads`.
 - `collectRegexValueRegions()` and the `RegexValueRegion` type are exported
   from `@adguard/agtree/utils`. They locate the `=/…/` regex value regions of
   a network rule, including the replacement part of `$replace`, without
