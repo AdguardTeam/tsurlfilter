@@ -266,7 +266,7 @@ export function createNativeMasking(): NativeMasking {
         const wrapper: T = new intrinsics.Proxy(native, withoutPrototype({
             apply: applyTrap, get: getTrap, setPrototypeOf: setPrototypeOfTrap,
         }));
-        intrinsics.apply(intrinsics.weakSet, methods, [wrapper, native]);
+        intrinsics.apply(intrinsics.weakMapSet, methods, [wrapper, native]);
         return wrapper;
     };
 
@@ -276,7 +276,7 @@ export function createNativeMasking(): NativeMasking {
             const found = intrinsics.getOwnPropertyDescriptor(new Constructor(), 'stack');
             const descriptor = found === undefined ? undefined : withoutPrototype(found);
             if (descriptor?.get !== undefined && descriptor.set !== undefined) {
-                intrinsics.apply(intrinsics.weakSet, stackSetters, [descriptor.get, descriptor.set]);
+                intrinsics.apply(intrinsics.weakMapSet, stackSetters, [descriptor.get, descriptor.set]);
             }
         },
         serializer: (nativeToString) => wrap(

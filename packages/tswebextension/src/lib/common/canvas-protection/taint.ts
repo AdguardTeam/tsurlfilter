@@ -126,7 +126,7 @@ export function createDrawTracking(native: DrawTrackingNatives): DrawTracking {
         },
         transferControlToOffscreen: (target, receiver, args): unknown => {
             const offscreen = native.apply(target, receiver, args);
-            intrinsics.apply(intrinsics.weakSet, placeholders, [offscreen, receiver]);
+            intrinsics.apply(intrinsics.weakMapSet, placeholders, [offscreen, receiver]);
             return offscreen;
         },
     };
