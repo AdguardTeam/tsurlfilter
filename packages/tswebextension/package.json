@@ -107,6 +107,7 @@
     },
     "dependencies": {
         "@adguard/agtree": "workspace:^",
+        "@adguard/css-tokenizer": "workspace:^",
         "@adguard/dnr-converter": "workspace:^",
         "@adguard/assistant": "catalog:",
         "@adguard/extended-css": "2.3.0",
