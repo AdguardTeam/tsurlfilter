@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and inverted wildcard entries covering one level below the domain, as frame
   matching does. The filtering log shows the `$stealth` exception that keeps
   a document native [AdguardBrowserExtension#3475].
+- MV3: `ConfigurationResult.loadDisabledStaticFilter()` and
+  `loadDisabledStaticFilters()` create the static rulesets of the filters not
+  enabled in the browser on demand, so the caller can read their rule counters
+  off the startup path. The per-filter loader lets callers wait only for the
+  counter they need; the batch loader creates the rest one at a time.
 - Exported `CSS_HITS_MARKER_PREFIX` and `CSS_HITS_MARKER_PROPERTY`, the prefix
   and the `--adguard-hit` custom property that encode CSS hits.
 
@@ -29,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `@types/webextension-polyfill` >= 0.12.6, since the previous alias is gone.
 - Updated [@adguard/extended-css] to `v2.3.0`, which adds support for uBlock Origin
   `:remove-attr()` and `:remove-class()` pseudo-classes [AdguardBrowserExtension#3538].
+- **BREAKING:** MV3: `start()` and `configure()` create only the static
+  rulesets enabled in the browser, so `ConfigurationResult.staticFilters` no
+  longer contains the rulesets of disabled filters. Creating a ruleset for the
+  first time prepares its filter list at runtime, which took over a second for
+  all bundled rulesets on a clean install. Call
+  `ConfigurationResult.loadDisabledStaticFilters()` to get the rest.
 - ExtendedCSS rules in MV2 and MV3 are now applied solely by the background
   injection path — removed from the content scripts (`GetCosmeticData`
   returns `extCssRules: null`, `@adguard/extended-css` is no longer
@@ -45,6 +56,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- MV3: the engine no longer prepares the enabled static filter lists again on
+  every start; it gets them from IndexedDB with their conversion data. Cached
+  filter lists are prepared again when the versions of the libraries that
+  perform the conversion change, so conversion fixes apply without a filter
+  update.
 - Filtering log now records CSS hits for elements that pages add and remove
   while the page is loading, e.g. anti-adblock bait elements created by a
   script in `<head>`.
@@ -74,6 +90,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Inverted allowlist entries with uppercase letters not matching their sites.
 - `$stealth` exception rules shown as `<dynamic rule text is not specified>`
   instead of their text in the MV3 filtering log.
+- History API `$removeparam` rules now parse regexp values the same way as
+  network `$removeparam`. A value with an escaped slash, e.g. `/utm_\/(a|b)`,
+  no longer disables all History API `$removeparam` rules on the page.
+- HTML filtering `[tag-content]` values that CoreLibs reads as a regular
+  expression, e.g. `/ads/`, now match the literal text (via
+  [@adguard/tsurlfilter]): `$$div[tag-content="/ads/"]` no longer matches a
+  plain `ads` substring.
+- HTML filtering `:contains()` regexp arguments that end with an escaped
+  backslash (`/foo\\/`) or have one in a character class (`/[\\]/`) are now
+  compiled as regexps instead of being matched as text (via
+  [@adguard/tsurlfilter]).
 - HTML filtering rules whose selector starts with `html` or `:root` now
   match the document root and continue matching from it, e.g.
   `$$html > body > script` and `$$:root div`.

@@ -49,6 +49,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [AdguardBrowserExtension#3605].
 - Domain-scoped cosmetic and JavaScript rules not matching hosts with labels
   ending in an underscore.
+- `:contains()` regexp arguments in HTML filtering rules that end with an
+  escaped backslash (`/foo\\/`) or have one in a character class (`/[\\]/`)
+  are now compiled as regexps instead of being matched as text.
+- `[tag-content]` values that CoreLibs reads as a regular expression, e.g.
+  `/ads/`, now match the literal text in HTML filtering rules (via
+  [@adguard/agtree]): `FilterList` converts raw rules with
+  `RawRuleConverter.convertToAdg()` on load, so
+  `$$div[tag-content="/ads/"]` no longer matches a plain `ads` substring.
 - `:contains()` regexp arguments in HTML filtering rules now ignore all
   flags except `i`, `s`, and the Unicode flags `u` and `v`. Matching is
   stateless and does not depend on the previously matched element.

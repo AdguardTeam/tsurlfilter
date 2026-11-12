@@ -168,10 +168,10 @@ export default class FiltersApi {
      *
      * @param filterId Filter identifier to load content for.
      *
-     * @returns Promise that resolves to the filter content (see {@link FilterList})
-     * or null if the filter is not found.
+     * @returns Promise that resolves to the filter content (see {@link FilterList}).
      *
-     * @throws Error if the filter content cannot be loaded.
+     * @throws Error if the filter content cannot be loaded or the filter is
+     * not found.
      */
     public static loadFilterContent = async (filterId: number): Promise<FilterList> => {
         try {
