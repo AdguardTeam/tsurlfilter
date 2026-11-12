@@ -71,8 +71,11 @@ AdGuard API is a filtering library that provides the following features:
   ```
 
   The produced file installs the ExtendedCss engine, and the background
-  injects it into a frame before the matching rules. Ship it under the name
-  `adguard-extcss.js`, which the library passes as `settings.extCssScriptUrl`.
+  injects it into a frame before the matching rules. Ship it at the extension
+  root under the name `adguard-extcss.js`; the library passes
+  `/adguard-extcss.js` as `settings.extCssScriptUrl`, and the leading slash is
+  required because Firefox resolves a relative `file` path against the
+  calling page.
 
 ## Required web accessible resources
 

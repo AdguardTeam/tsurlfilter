@@ -492,8 +492,8 @@ export class CosmeticApi extends CosmeticApiCommon {
                 scriptUrl: extCssScriptUrl,
             });
         } catch (e) {
-            // An engine guard failure is terminal: the asset is missing or
-            // stale, so it reaches the default log level as an error.
+            // An engine guard failure is terminal: the document has no engine
+            // or a stale one, so it reaches the default log level as an error.
             if (e instanceof ExtCssGuardError) {
                 logger.error(`[tsweb.CosmeticApi.applyExtCssRules]: ${e.message} (guard ${e.code}, tabId ${tabId}, frameId ${frameId})`);
 

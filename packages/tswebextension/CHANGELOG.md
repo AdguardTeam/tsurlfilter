@@ -39,8 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   background injects this file into a frame before it passes the matching
   rule strings. Copy the file into the extension and point the new required
   `settings.extCssScriptUrl` option to it, otherwise ExtendedCSS rules do not
-  apply. The asset must come from the same package version: a missing or
-  stale asset is logged as an error instead of running an older engine.
+  apply. The asset must come from the same package version: a stale asset is
+  logged as an error instead of running an older engine.
   Because the option is required, a configuration persisted by a previous
   version no longer parses, so merge the stored settings with the new
   defaults on upgrade.

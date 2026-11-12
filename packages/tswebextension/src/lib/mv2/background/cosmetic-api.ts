@@ -305,9 +305,10 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Runs an injection, retrying it after the retry timeout while attempts
      * remain.
      *
-     * An engine guard failure is terminal: the asset is missing or stale, so
-     * another attempt would repeat the same deterministic failure. It reaches
-     * {@link onFailure} right away, without spending the remaining attempts.
+     * An engine guard failure is terminal: the document has no engine or a
+     * stale one, so another attempt would repeat the same deterministic
+     * failure. It reaches {@link onFailure} right away, without spending the
+     * remaining attempts.
      *
      * @param inject Injection to run.
      * @param retry Schedules the next attempt.
@@ -467,8 +468,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * displayed one. The same check runs after the engine asset is injected,
      * because the frame may navigate while that call is in flight.
      *
-     * An engine guard failure is terminal: the asset is missing or stale, so
-     * the call is not retried and the failure is logged as an error.
+     * An engine guard failure is terminal: the document has no engine or a
+     * stale one, so the call is not retried and the failure is logged as an
+     * error.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
@@ -736,6 +738,16 @@ export class CosmeticApi extends CosmeticApiCommon {
         await CosmeticApi.injectWithRetry(
             async () => {
                 await TabsApi.injectScriptFile(tabId, frameId, extCssScriptUrl);
+
+                // The frame committed a document of its own while the asset
+                // call was in flight, and that document's commit handler
+                // applies its own rules. A context that shows up here means
+                // such a commit happened, so this rule set belongs to the
+                // previous document and must not replace the new one.
+                if (tabsApi.getFrameContext(tabId, frameId)) {
+                    return;
+                }
+
                 await CosmeticApi.injectExtCssCode(tabId, frameId, code);
             },
             () => {

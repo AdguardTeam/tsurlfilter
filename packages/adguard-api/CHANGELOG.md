@@ -17,7 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   point, which the background injects before the rules. The entry imports
   `@adguard/tswebextension/extcss-inject`, so it is an entry point for your
   bundler, not a file to copy: build it with your extension and ship the
-  result as `adguard-extcss.js`. Without that file ExtendedCSS rules do not
+  result as `adguard-extcss.js` at the extension root, which the library
+  passes as `/adguard-extcss.js`. Without that file ExtendedCSS rules do not
   apply.
 
 ### Deprecated

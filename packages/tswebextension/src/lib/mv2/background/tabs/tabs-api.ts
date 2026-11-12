@@ -148,7 +148,9 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
      *
      * @param tabId Tab ID.
      * @param frameId Frame ID.
-     * @param file Path to the script file, relative to the extension root.
+     * @param file Path to the script file from the extension root, starting
+     * with a slash. Firefox resolves a relative path against the calling
+     * page, not the extension root.
      *
      * @throws Error if the script injection fails.
      */
