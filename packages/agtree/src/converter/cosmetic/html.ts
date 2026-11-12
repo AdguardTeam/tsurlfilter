@@ -1674,7 +1674,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
     /**
      * Checks whether uBlock Origin accepts a plain-text argument in an HTML
-     * filtering `:has-text()` pseudo-class and keeps it unchanged.
+     * filtering `:has-text()` pseudo-class without unquoting it.
      *
      * The uBlock parser first parses the whole cosmetic filter with CSS-tree
      * and discards the rule if that parse fails. The argument must therefore
@@ -1696,8 +1696,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @param argument Argument to check.
      *
-     * @returns `true` if uBlock Origin accepts the argument without changing
-     * it, `false` otherwise.
+     * @returns `true` if uBlock Origin accepts the argument and does not
+     * unquote it, `false` otherwise.
      */
     private static isUboTextArgumentSupported(argument: string): boolean {
         if (argument === EMPTY) {
