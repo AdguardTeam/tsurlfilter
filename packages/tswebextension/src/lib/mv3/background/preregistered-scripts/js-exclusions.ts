@@ -311,9 +311,10 @@ const toExcludePattern = (
 
     // The browser compares the path of a match pattern case-sensitively and
     // the engine does not unless the rule has `$match-case` (probed in a
-    // browser: `/Ads` does not exclude `/ads`). One spelling covers at most
-    // one case, so an uppercase path makes the host dynamic instead of
-    // leaving the other spellings uncovered.
+    // browser: `/Ads` does not exclude `/ads`). An uppercase path would match
+    // no realistic page, so it keeps the host dynamic; a lowercase path still
+    // misses an uppercase spelling of the same page, which is the accepted gap
+    // listed in the README.
     if (!caseSensitive && /[A-Z]/.test(path)) {
         return undefined;
     }

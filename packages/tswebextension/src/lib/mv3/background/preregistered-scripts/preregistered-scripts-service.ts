@@ -451,7 +451,9 @@ export class PreregisteredScriptsService {
      * the browser does not inject the content script there at all.
      *
      * A host whose exceptions the browser cannot express keeps the dynamic
-     * path, where the engine decides.
+     * path, where the engine decides. The one accepted divergence is a page
+     * whose path differs from the excluded one in case only: `excludeMatches`
+     * is matched case-sensitively by the browser.
      *
      * @param hostnames Configured hostnames, expanded.
      * @param scriptsPath Extension-relative path to preregistered scripts.
