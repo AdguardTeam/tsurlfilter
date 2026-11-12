@@ -727,6 +727,8 @@ describe('ModifierValidator', () => {
                     test.each([
                         'stealth',
                         'stealth=searchqueries',
+                        'stealth=fingerprinting',
+                        'stealth=referrer|fingerprinting',
                         'stealth=donottrack|3p-cookie|1p-cookie|3p-cache|3p-auth',
                         'stealth=webrtc|push|location|flash|java|referrer',
                         'stealth=useragent|ip|xclientdata|dpi',

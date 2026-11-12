@@ -1,7 +1,7 @@
 import { type NetworkRuleParts } from '../filterlist/rule-parts';
 import { type RuleStorage } from '../filterlist/rule-storage';
 import { type Request } from '../request';
-import { type NetworkRule } from '../rules/network-rule';
+import { type NetworkRule, type WrittenRuleTextResolver } from '../rules/network-rule';
 import { type IndexedStorageNetworkRuleParts } from '../rules/rule';
 
 import { CHUNK_SIZE } from './constants';
@@ -20,6 +20,11 @@ export class NetworkEngine {
      * Storage for the network filtering rules.
      */
     private ruleStorage: RuleStorage;
+
+    /**
+     * Resolves the text of a rule as written in the filter list.
+     */
+    private readonly resolveWrittenText: WrittenRuleTextResolver;
 
     /**
      * Domain lookup table.
@@ -103,6 +108,7 @@ export class NetworkEngine {
      */
     private constructor(storage: RuleStorage) {
         this.ruleStorage = storage;
+        this.resolveWrittenText = storage.createWrittenTextResolver();
 
         this.domainsLookupTable = new DomainsLookupTable(storage);
         this.hostnameLookupTable = new HostnameLookupTable(storage);
@@ -125,7 +131,7 @@ export class NetworkEngine {
             return null;
         }
 
-        const result = new MatchingResult(networkRules, null);
+        const result = new MatchingResult(networkRules, null, this.resolveWrittenText);
         return result.getBasicResult();
     }
 

@@ -12,7 +12,10 @@ import { type HTTPMethod } from '@adguard/tsurlfilter';
 import { defaultFilteringLog, FilteringEventType } from '../../../../src/lib/common/filtering-log';
 import { type ContentType } from '../../../../src/lib/common/request-type';
 import { declarativeFilteringLog } from '../../../../src/lib/mv3/background/declarative-filtering-log';
+import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import { requestContextStorage } from '../../../../src/lib/mv3/background/request/request-context-storage';
+import { SessionRulesApi } from '../../../../src/lib/mv3/background/session-rules-api';
+import { TimeoutError } from '../../../../src/lib/mv3/errors/timeout-error';
 
 // Counter for generating unique nanoid values in tests.
 let nanoidCounter = 0;
@@ -132,6 +135,7 @@ describe('DeclarativeFilteringLog.logMatchedRule', () => {
             ...global.chrome,
             declarativeNetRequest: {
                 ...((global.chrome as any)?.declarativeNetRequest ?? {}),
+                DYNAMIC_RULESET_ID: '_dynamic',
                 SESSION_RULESET_ID: '_session',
             },
         } as any;
@@ -140,6 +144,7 @@ describe('DeclarativeFilteringLog.logMatchedRule', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         nanoidCounter = 0;
+        DynamicRulesApi.sourceMapForCspRules.clear();
 
         // Default: getRuleInfo resolves to a simple declarative rule info.
         (declarativeFilteringLog as any).sourceRulesets = [{
@@ -339,5 +344,183 @@ describe('DeclarativeFilteringLog.logMatchedRule', () => {
         await callLogMatchedRule(record);
 
         expect(defaultFilteringLog.publishEvent).not.toHaveBeenCalled();
+    });
+
+    it('does not apply a dynamic CSP mapping to a static rule with the same id', async () => {
+        DynamicRulesApi.sourceMapForCspRules.set(100, ['_csp', 200]);
+        (declarativeFilteringLog as any).sourceRulesets = [{
+            getId: (): string => 'ruleset_1',
+            getRulesById: vi.fn(async () => [{ sourceRule: '||static.example^', filterId: 1 }]),
+            getDeclarativeRules: vi.fn(async () => [{ id: 100, action: { type: 'block' } }]),
+        }, {
+            getId: (): string => '_csp',
+            getRulesById: vi.fn(async () => [{ sourceRule: '||csp.example^$csp=x', filterId: 2 }]),
+            getDeclarativeRules: vi.fn(async () => [{ id: 200, action: { type: 'modifyHeaders' } }]),
+        }];
+
+        const result = await (declarativeFilteringLog as any).getRuleInfo('ruleset_1', 100);
+
+        expect(result.sourceRules).toEqual([{ sourceRule: '||static.example^', filterId: 1 }]);
+    });
+
+    it('resolves a rebuilt dynamic CSP rule through its runtime mapping', async () => {
+        DynamicRulesApi.sourceMapForCspRules.set(100, ['_csp', 200]);
+        (declarativeFilteringLog as any).sourceRulesets = [{
+            getId: (): string => '_dynamic',
+            getRulesById: vi.fn(async () => [{ sourceRule: '||dynamic.example^', filterId: 1 }]),
+            getDeclarativeRules: vi.fn(async () => [{ id: 100, action: { type: 'block' } }]),
+        }, {
+            getId: (): string => '_csp',
+            getRulesById: vi.fn(async () => [{ sourceRule: '||csp.example^$csp=x', filterId: 2 }]),
+            getDeclarativeRules: vi.fn(async () => [{ id: 200, action: { type: 'modifyHeaders' } }]),
+        }];
+
+        const result = await (declarativeFilteringLog as any).getRuleInfo('_dynamic', 100);
+
+        expect(result.sourceRules).toEqual([{ sourceRule: '||csp.example^$csp=x', filterId: 2 }]);
+    });
+
+    it('falls back to the declarative list for a rebuilt CSP session source', async () => {
+        SessionRulesApi.sourceMapForUnsafeRules.set(50, ['_csp', 200]);
+        const cspRuleset = {
+            getId: (): string => '_csp',
+            getRulesById: vi.fn(async () => [{ sourceRule: '||csp.example^$csp=x', filterId: 2 }]),
+            // The rebuilt CSP ruleset keeps its rules in the declarative list,
+            // so the unsafe list is empty for it.
+            getUnsafeRules: vi.fn(async () => []),
+            getDeclarativeRules: vi.fn(async () => [{ id: 200, action: { type: 'modifyHeaders' } }]),
+        };
+        (declarativeFilteringLog as any).sourceRulesets = [cspRuleset];
+
+        const result = await (declarativeFilteringLog as any).getRuleInfoForSessionRule('_session', 50);
+
+        expect(cspRuleset.getDeclarativeRules).toHaveBeenCalledTimes(1);
+        expect(result.sourceRules).toEqual([{ sourceRule: '||csp.example^$csp=x', filterId: 2 }]);
+    });
+});
+
+describe('DeclarativeFilteringLog.withUpdateLock', () => {
+    /**
+     * Returns the internal mutex of the log, which guards rule set updates.
+     *
+     * @returns The mutex instance.
+     */
+    const getMutex = (): {
+        lock: (timeoutMs?: number) => Promise<void>;
+        unlock: () => void;
+    } => (declarativeFilteringLog as any).mutex;
+
+    /**
+     * Acquires the update lock directly to check the mutex state.
+     *
+     * @param timeoutMs Maximum wait time.
+     *
+     * @returns Resolved promise when the lock is acquired.
+     */
+    const startUpdate = (timeoutMs = 0): Promise<void> => getMutex().lock(timeoutMs);
+
+    const releaseUpdateLock = (): void => {
+        getMutex().unlock();
+    };
+
+    it('restarts the listener after a failed update', async () => {
+        const startSpy = vi.spyOn(declarativeFilteringLog, 'start');
+        const stopSpy = vi.spyOn(declarativeFilteringLog, 'stop');
+
+        declarativeFilteringLog.finishUpdate([], true);
+
+        await expect(declarativeFilteringLog.withStoppedListener(async () => {
+            throw new Error('configuration failed');
+        })).rejects.toThrow('configuration failed');
+
+        expect(startSpy).toHaveBeenCalledTimes(2);
+        expect(stopSpy).toHaveBeenCalledTimes(1);
+
+        startSpy.mockRestore();
+        stopSpy.mockRestore();
+    });
+
+    it('keeps the listener stopped when logging is disabled', async () => {
+        const startSpy = vi.spyOn(declarativeFilteringLog, 'start');
+        const stopSpy = vi.spyOn(declarativeFilteringLog, 'stop');
+
+        declarativeFilteringLog.finishUpdate([], false);
+
+        await expect(declarativeFilteringLog.withStoppedListener(async () => {
+            throw new Error('configuration failed');
+        })).rejects.toThrow('configuration failed');
+
+        expect(startSpy).not.toHaveBeenCalled();
+
+        startSpy.mockRestore();
+        stopSpy.mockRestore();
+    });
+
+    it('keeps the listener state of a successful update', async () => {
+        const startSpy = vi.spyOn(declarativeFilteringLog, 'start');
+        const stopSpy = vi.spyOn(declarativeFilteringLog, 'stop');
+
+        await declarativeFilteringLog.withStoppedListener(async () => {
+            declarativeFilteringLog.finishUpdate([], true);
+        });
+
+        // The stop of `withStoppedListener` and the start of `finishUpdate`:
+        // a successful update needs no restore.
+        expect(stopSpy).toHaveBeenCalledTimes(1);
+        expect(startSpy).toHaveBeenCalledTimes(1);
+
+        startSpy.mockRestore();
+        stopSpy.mockRestore();
+    });
+
+    it('releases the lock when the operation throws', async () => {
+        await expect(declarativeFilteringLog.withUpdateLock(async () => {
+            throw new Error('configuration failed');
+        })).rejects.toThrow('configuration failed');
+
+        await expect(startUpdate(0)).resolves.toBeUndefined();
+        releaseUpdateLock();
+    });
+
+    it('keeps the lock until the operation finishes', async () => {
+        await declarativeFilteringLog.withUpdateLock(async () => {
+            declarativeFilteringLog.finishUpdate([], false);
+
+            await expect(startUpdate(0)).rejects.toThrow(TimeoutError);
+        });
+
+        await expect(startUpdate(0)).resolves.toBeUndefined();
+        releaseUpdateLock();
+    });
+
+    it('keeps the lock handed over to a waiting update', async () => {
+        let secondUpdate: Promise<void> = Promise.resolve();
+
+        await declarativeFilteringLog.withUpdateLock(async () => {
+            secondUpdate = declarativeFilteringLog.withUpdateLock(async () => {
+                declarativeFilteringLog.finishUpdate([], false);
+            });
+
+            declarativeFilteringLog.finishUpdate([], false);
+        });
+
+        await expect(secondUpdate).resolves.toBeUndefined();
+    });
+
+    it('does not release the lock held by another update', async () => {
+        await startUpdate();
+
+        const startUpdateSpy = vi
+            .spyOn(getMutex(), 'lock')
+            .mockRejectedValueOnce(new TimeoutError());
+
+        await expect(declarativeFilteringLog.withUpdateLock(async () => {
+            throw new Error('operation must not run');
+        })).rejects.toThrow(TimeoutError);
+
+        startUpdateSpy.mockRestore();
+        await expect(startUpdate(0)).rejects.toThrow(TimeoutError);
+
+        releaseUpdateLock();
     });
 });

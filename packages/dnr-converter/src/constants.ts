@@ -32,6 +32,11 @@ export const MASK_ANY_CHARACTER = '*';
 export const DOT = '.';
 
 /**
+ * Delimiter that separates the pattern from the modifier list in a rule.
+ */
+export const OPTIONS_DELIMITER = '$';
+
+/**
  * Space character.
  */
 export const SPACE_CHARACTER = ' ';

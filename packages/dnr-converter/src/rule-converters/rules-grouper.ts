@@ -54,16 +54,18 @@ export class RulesGrouper {
      * @returns Rule group ({@link RulesGroup}).
      */
     private static getRuleGroup(rule: Rule): RulesGroup {
+        // Must be checked before the convertible groups: a `$badfilter` rule may
+        // also carry a convertible modifier and would otherwise be converted.
+        if (rule.isModifierEnabled(OPTION_NAMES.BADFILTER)) {
+            return RulesGroup.BadFilter;
+        }
+
         if (rule.isModifierEnabled(OPTION_NAMES.REMOVEHEADER)) {
             return RulesGroup.RemoveHeader;
         }
 
         if (rule.isModifierEnabled(OPTION_NAMES.CSP)) {
             return RulesGroup.Csp;
-        }
-
-        if (rule.isModifierEnabled(OPTION_NAMES.BADFILTER)) {
-            return RulesGroup.BadFilter;
         }
 
         if (rule.isModifierEnabled(OPTION_NAMES.URLTRANSFORM)) {

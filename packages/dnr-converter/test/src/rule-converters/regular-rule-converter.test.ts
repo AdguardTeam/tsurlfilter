@@ -21,13 +21,14 @@ import {
 import {
     EmptyDomainsError,
     EmptyResourcesError,
+    UnexpectedConversionError,
     UnsupportedModifierError,
     UnsupportedRegexpError,
 } from '../../../src/errors/conversion-errors';
 import { ResourcesPathError } from '../../../src/errors/converter-options-errors';
 import { re2Validator } from '../../../src/re2-regexp/re2-validator';
 import { OPTION_NAMES } from '../../../src/rule/option-names';
-import { type Rule } from '../../../src/rule/rule';
+import { Rule } from '../../../src/rule/rule';
 import { type ConvertedRules } from '../../../src/rule-converters';
 import { RegularRuleConverter } from '../../../src/rule-converters/regular-rule-converter';
 import { createRuleMock } from '../../mocks/rule';
@@ -84,32 +85,35 @@ describe('RuleConverter', () => {
     describe('catchConversionError', () => {
         const index = 1;
         const id = 1;
+        const rule = createRuleMock({ index });
         const expectedMessage = `Non-categorized error during a conversion rule (index - ${index}, id - ${id})`;
 
         it('should return conversion error as-is', () => {
             const conversionError = new UnsupportedModifierError('Test unsupported modifier error', {} as Rule);
             // @ts-expect-error Accessing private member for test purposes
-            const error = RegularRuleConverter.catchConversionError(index, id, conversionError);
+            const error = RegularRuleConverter.catchConversionError(rule, id, conversionError);
 
             expect(error).toEqual(conversionError);
         });
 
-        it('should wrap other error types into plain Error', () => {
+        it('should wrap other error types into unexpected conversion error', () => {
             // @ts-expect-error Accessing private member for test purposes
-            const error = RegularRuleConverter.catchConversionError(index, id, 'Test error');
+            const error = RegularRuleConverter.catchConversionError(rule, id, 'Test error');
 
-            expect(error).toBeInstanceOf(Error);
+            expect(error).toBeInstanceOf(UnexpectedConversionError);
             expect(error.message).toBe(expectedMessage);
+            expect(error.rule).toBe(rule);
         });
 
         it('should include error as cause if provided error is instance of Error', () => {
             const originalError = new Error('Original error');
             // @ts-expect-error Accessing private member for test purposes
-            const error = RegularRuleConverter.catchConversionError(index, id, originalError);
+            const error = RegularRuleConverter.catchConversionError(rule, id, originalError);
 
-            expect(error).toBeInstanceOf(Error);
+            expect(error).toBeInstanceOf(UnexpectedConversionError);
             expect(error.message).toBe(expectedMessage);
             expect(error.cause).toEqual(originalError);
+            expect(error.rule).toBe(rule);
         });
     });
 
@@ -903,7 +907,7 @@ describe('RuleConverter', () => {
             const testCspValue = "default-src 'self'";
             const rule = createRuleMock({
                 enabledOptions: [OPTION_NAMES.CSP],
-                advancedModifierValue: testCspValue,
+                cspDirective: testCspValue,
             });
             // @ts-expect-error Accessing private member for test purposes
             const action = RegularRuleConverter.getAddingCspHeadersAction(rule);
@@ -957,15 +961,173 @@ describe('RuleConverter', () => {
         });
     });
 
+    describe('areDomainConditionsRepresentable', () => {
+        it('returns true for plain domains and wildcard TLD domains', () => {
+            const rule = createRuleMock({
+                permittedDomains: ['example.com', 'example.*'],
+                restrictedDomains: ['excluded.example'],
+                permittedToDomains: ['target.example'],
+                restrictedToDomains: ['excluded-target.example'],
+                denyAllowDomains: ['denyallow.example'],
+            });
+
+            expect(RegularRuleConverter.areDomainConditionsRepresentable(rule)).toBe(true);
+        });
+
+        it.each([
+            ['permittedDomains', createRuleMock({ permittedDomains: ['/example\\.com/'] })],
+            ['restrictedDomains', createRuleMock({ restrictedDomains: ['foo.*.example'] })],
+            ['permittedToDomains', createRuleMock({ permittedToDomains: ['/example\\.com/'] })],
+            ['restrictedToDomains', createRuleMock({ restrictedToDomains: ['foo.*.example'] })],
+            ['denyAllowDomains', createRuleMock({ denyAllowDomains: ['/example\\.com/'] })],
+        ])('returns false for an unrepresentable %s value', (field, rule) => {
+            expect(RegularRuleConverter.areDomainConditionsRepresentable(rule)).toBe(false);
+        });
+
+        it.each([
+            ['permittedDomains', createRuleMock({ permittedDomains: ['example.com:8080'] })],
+            ['restrictedDomains', createRuleMock({ restrictedDomains: ['example.com:8080'] })],
+            ['permittedToDomains', createRuleMock({ permittedToDomains: ['example.com:8080'] })],
+            ['restrictedToDomains', createRuleMock({ restrictedToDomains: ['example.com:8080'] })],
+            ['denyAllowDomains', createRuleMock({ denyAllowDomains: ['example.com:8080'] })],
+        ])('returns false for a port in %s', (field, rule) => {
+            expect(RegularRuleConverter.areDomainConditionsRepresentable(rule)).toBe(false);
+        });
+    });
+
     describe('getCondition', () => {
         it('correctly specifies urlFilter', () => {
             const rule = createRuleMock({
                 pattern: 'example.com/path',
                 isRegexRule: false,
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
-            expect(condition.urlFilter).toBe('asciiPrepared(example.com/path)');
+            expect(condition.urlFilter).toBe('asciiPrepared(example.com)/path');
+        });
+
+        it('percent-encodes a non-ASCII suffix in urlFilter', () => {
+            const rule = createRuleMock({
+                pattern: '||example.com/путь',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('||asciiPrepared(example.com)/%D0%BF%D1%83%D1%82%D1%8C');
+        });
+
+        it('percent-encodes a non-ASCII path in an unanchored pattern', () => {
+            const rule = createRuleMock({
+                pattern: 'example.com/путь',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('asciiPrepared(example.com)/%D0%BF%D1%83%D1%82%D1%8C');
+        });
+
+        it('converts a non-ASCII hostname in an unanchored pattern to punycode', () => {
+            const rule = createRuleMock({
+                pattern: 'пример.рф^',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('asciiPrepared(пример.рф)^');
+        });
+
+        it('converts a non-ASCII hostname after a wildcard subdomain to punycode', () => {
+            const rule = createRuleMock({
+                pattern: '||*.пример.рф^',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('*.asciiPrepared(пример.рф)^');
+        });
+
+        it('converts a non-ASCII hostname after a scheme to punycode', () => {
+            const rule = createRuleMock({
+                pattern: '|https://пример.рф/путь|',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('|https://asciiPrepared(пример.рф)/%D0%BF%D1%83%D1%82%D1%8C|');
+        });
+
+        it('converts an anchored hostname with an internal wildcard part by part', () => {
+            const rule = createRuleMock({
+                pattern: '||foo*.пример.рф^',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('||asciiPrepared(foo)*asciiPrepared(.пример.рф)^');
+        });
+
+        it('keeps a wildcard after a non-ASCII hostname a separator', () => {
+            const rule = createRuleMock({
+                pattern: '||пример.рф*/путь',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('||asciiPrepared(пример.рф)*/%D0%BF%D1%83%D1%82%D1%8C');
+        });
+
+        it('percent-encodes a wildcard suffix of an unanchored pattern', () => {
+            const rule = createRuleMock({
+                pattern: 'page*новости.html',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('page*%D0%BD%D0%BE%D0%B2%D0%BE%D1%81%D1%82%D0%B8.html');
+        });
+
+        it('lowercases the hostname before the punycode conversion', () => {
+            const rule = createRuleMock({
+                pattern: '||ПРИМЕР.рф^',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('||asciiPrepared(пример.рф)^');
+        });
+
+        it('keeps the hostname case for a $match-case rule', () => {
+            const rule = createRuleMock({
+                pattern: '||ПРИМЕР.рф^',
+                isRegexRule: false,
+                enabledOptions: [OPTION_NAMES.MATCH_CASE],
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('||asciiPrepared(ПРИМЕР.рф)^');
+        });
+
+        it('percent-encodes a non-ASCII leading segment without a dot', () => {
+            const rule = createRuleMock({
+                pattern: 'путь^',
+                isRegexRule: false,
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.urlFilter).toBe('%D0%BF%D1%83%D1%82%D1%8C^');
+        });
+
+        it('percent-encodes a non-ASCII param name in the $removeparam regexp', () => {
+            const rule = createRuleMock({
+                pattern: '||example.com^',
+                isRegexRule: false,
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
+                advancedModifierValue: 'ф',
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+
+            expect(condition.urlFilter).toBeUndefined();
+            expect(condition.regexFilter).toContain('%D1%84=');
+        });
+
+        it('percent-encodes a non-ASCII param name in the native $removeparam condition', () => {
+            const rule = createRuleMock({
+                pattern: '||example.com^',
+                isRegexRule: false,
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
+                advancedModifierValue: 'ф',
+            });
+            const condition = RegularRuleConverter.getCondition(rule, false);
+
+            expect(condition.urlFilter).toBe('||asciiPrepared(example.com)^*^%D1%84=');
         });
 
         it('removes || from ||* prefix from urlFilter', () => {
@@ -973,9 +1135,8 @@ describe('RuleConverter', () => {
                 pattern: '||*example.com/path',
                 isRegexRule: false,
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
-            expect(condition.urlFilter).toBe('asciiPrepared(*example.com/path)');
+            expect(condition.urlFilter).toBe('*asciiPrepared(example.com)/path');
         });
 
         it('correctly specifies regexFilter', () => {
@@ -983,7 +1144,6 @@ describe('RuleConverter', () => {
                 pattern: '/some-regex-pattern/',
                 isRegexRule: true,
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.regexFilter).toBe('asciiPrepared(removedSlashes(/some-regex-pattern/))');
         });
@@ -992,7 +1152,6 @@ describe('RuleConverter', () => {
             const rule = createRuleMock({
                 enabledOptions: [OPTION_NAMES.THIRD_PARTY],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.domainType).toBe(DomainType.ThirdParty);
         });
@@ -1001,21 +1160,18 @@ describe('RuleConverter', () => {
             const rule = createRuleMock({
                 disabledOptions: [OPTION_NAMES.THIRD_PARTY],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.domainType).toBe(DomainType.FirstParty);
         });
 
         it('should skip initiatorDomains if permitted domains are not specified or empty', () => {
             const networkRule1 = createRuleMock();
-            // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.initiatorDomains).toBeUndefined();
 
             const networkRule2 = createRuleMock({
                 permittedDomains: [],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.initiatorDomains).toBeUndefined();
         });
@@ -1024,21 +1180,18 @@ describe('RuleConverter', () => {
             const rule = createRuleMock({
                 permittedDomains: ['example.com', '/.*\\.example\\.org/'],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.initiatorDomains).toEqual(['example.com']);
         });
 
         it('should skip excludedInitiatorDomains if restricted domains are not specified or empty', () => {
             const networkRule1 = createRuleMock();
-            // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.excludedInitiatorDomains).toBeUndefined();
 
             const networkRule2 = createRuleMock({
                 restrictedDomains: [],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.excludedInitiatorDomains).toBeUndefined();
         });
@@ -1047,7 +1200,6 @@ describe('RuleConverter', () => {
             const rule = createRuleMock({
                 restrictedDomains: ['example.com'],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.excludedInitiatorDomains).toEqual(['example.com']);
         });
@@ -1056,7 +1208,6 @@ describe('RuleConverter', () => {
             const rule = createRuleMock({
                 permittedDomains: ['example.*'],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.initiatorDomains).toContain('example.com');
             expect(condition.initiatorDomains).toContain('example.org');
@@ -1067,7 +1218,6 @@ describe('RuleConverter', () => {
             const rule = createRuleMock({
                 restrictedDomains: ['a.com', 'b.*', '/(^|\\.)c\\.(com|org)$/'],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.excludedInitiatorDomains).toContain('a.com');
             expect(condition.excludedInitiatorDomains).toContain('b.com');
@@ -1079,21 +1229,18 @@ describe('RuleConverter', () => {
             const rule = createRuleMock({
                 permittedDomains: ['example.com', 'foo.*.bar'],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.initiatorDomains).toEqual(['example.com']);
         });
 
         it('should skip requestDomains if permitted to domains are not specified or empty', () => {
             const networkRule1 = createRuleMock();
-            // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.requestDomains).toBeUndefined();
 
             const networkRule2 = createRuleMock({
                 permittedToDomains: [],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.requestDomains).toBeUndefined();
         });
@@ -1102,7 +1249,6 @@ describe('RuleConverter', () => {
             const rule = createRuleMock({
                 permittedToDomains: ['example.com'],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.requestDomains).toEqual(['example.com']);
         });
@@ -1112,14 +1258,12 @@ describe('RuleConverter', () => {
                 denyAllowDomains: ['example1.com'],
                 restrictedToDomains: ['example2.com'],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.excludedRequestDomains).toEqual(['example1.com']);
 
             const networkRule2 = createRuleMock({
                 denyAllowDomains: ['example1.com'],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.excludedRequestDomains).toEqual(['example1.com']);
         });
@@ -1128,14 +1272,26 @@ describe('RuleConverter', () => {
             const rule = createRuleMock({
                 restrictedToDomains: ['example.com'],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.excludedRequestDomains).toEqual(['example.com']);
         });
 
+        it('lowercases every domain condition', () => {
+            const rule = createRuleMock({
+                permittedDomains: ['Example.COM', 'Sub.Example.COM'],
+                restrictedDomains: ['Excluded.Example'],
+                permittedToDomains: ['Target.Example'],
+                denyAllowDomains: ['DenyAllow.Example'],
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.initiatorDomains).toEqual(['example.com', 'sub.example.com']);
+            expect(condition.excludedInitiatorDomains).toEqual(['excluded.example']);
+            expect(condition.requestDomains).toEqual(['target.example']);
+            expect(condition.excludedRequestDomains).toEqual(['denyallow.example']);
+        });
+
         it('should skip excludedResourceTypes if restricted resource types are empty', () => {
             const rule = createRuleMock();
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.excludedResourceTypes).toBeUndefined();
         });
@@ -1144,7 +1300,6 @@ describe('RuleConverter', () => {
             const networkRule1 = createRuleMock({
                 restrictedResourceTypes: [ResourceType.Font, ResourceType.Image],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.excludedResourceTypes).toEqual([
                 ResourceType.Font,
@@ -1155,7 +1310,6 @@ describe('RuleConverter', () => {
             const networkRule2 = createRuleMock({
                 restrictedResourceTypes: [ResourceType.MainFrame, ResourceType.Image],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.excludedResourceTypes).toEqual([
                 ResourceType.MainFrame,
@@ -1165,7 +1319,6 @@ describe('RuleConverter', () => {
 
         it('should skip resourceTypes if permitted resource types are empty', () => {
             const rule = createRuleMock();
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.resourceTypes).toBeUndefined();
         });
@@ -1175,7 +1328,6 @@ describe('RuleConverter', () => {
                 restrictedResourceTypes: [ResourceType.Media],
                 permittedResourceTypes: [ResourceType.Font],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.resourceTypes).toBeUndefined();
         });
@@ -1184,14 +1336,12 @@ describe('RuleConverter', () => {
             const rule = createRuleMock({
                 permittedResourceTypes: [ResourceType.Font, ResourceType.Image],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.resourceTypes).toEqual([ResourceType.Font, ResourceType.Image]);
         });
 
         it('should skip requestMethods if permitted methods are empty', () => {
             const rule = createRuleMock();
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.requestMethods).toBeUndefined();
         });
@@ -1200,14 +1350,12 @@ describe('RuleConverter', () => {
             const rule = createRuleMock({
                 permittedMethods: [RequestMethod.Get, RequestMethod.Connect],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.requestMethods).toEqual([RequestMethod.Get, RequestMethod.Connect]);
         });
 
         it('should skip excludedRequestMethods if restricted methods are empty', () => {
             const rule = createRuleMock();
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.excludedRequestMethods).toBeUndefined();
         });
@@ -1216,14 +1364,12 @@ describe('RuleConverter', () => {
             const rule = createRuleMock({
                 restrictedMethods: [RequestMethod.Get, RequestMethod.Connect],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.excludedRequestMethods).toEqual([RequestMethod.Get, RequestMethod.Connect]);
         });
 
         it('should skip isUrlFilterCaseSensitive if match case option is not enabled', () => {
             const rule = createRuleMock();
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.isUrlFilterCaseSensitive).toBeUndefined();
         });
@@ -1232,14 +1378,12 @@ describe('RuleConverter', () => {
             const rule = createRuleMock({
                 enabledOptions: [OPTION_NAMES.MATCH_CASE],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.isUrlFilterCaseSensitive).toBe(true);
         });
 
         it('skips ResourceType.MainFrame in resourceTypes if popup option is not enabled', () => {
             const rule = createRuleMock();
-            // @ts-expect-error Accessing private member for test purposes
             const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.resourceTypes).toBeUndefined();
         });
@@ -1248,7 +1392,6 @@ describe('RuleConverter', () => {
             const networkRule1 = createRuleMock({
                 enabledOptions: [OPTION_NAMES.POPUP],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.resourceTypes).toEqual([ResourceType.MainFrame]);
 
@@ -1256,7 +1399,6 @@ describe('RuleConverter', () => {
                 enabledOptions: [OPTION_NAMES.POPUP],
                 permittedResourceTypes: [ResourceType.Font],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.resourceTypes).toEqual([ResourceType.Font, ResourceType.MainFrame]);
 
@@ -1264,7 +1406,6 @@ describe('RuleConverter', () => {
                 enabledOptions: [OPTION_NAMES.POPUP],
                 permittedResourceTypes: [ResourceType.MainFrame, ResourceType.Font],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition3 = RegularRuleConverter.getCondition(networkRule3);
             expect(condition3.resourceTypes).toEqual([ResourceType.MainFrame, ResourceType.Font]);
         });
@@ -1275,49 +1416,42 @@ describe('RuleConverter', () => {
             const networkRule1 = createRuleMock({
                 enabledOptions: [OPTION_NAMES.REMOVEHEADER],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.resourceTypes).toEqual(allResourceTypes);
 
             const networkRule2 = createRuleMock({
                 enabledOptions: [OPTION_NAMES.CSP],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.resourceTypes).toEqual(allResourceTypes);
 
             const networkRule3 = createRuleMock({
                 enabledOptions: [OPTION_NAMES.COOKIE],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition3 = RegularRuleConverter.getCondition(networkRule3);
             expect(condition3.resourceTypes).toEqual(allResourceTypes);
 
             const networkRule4 = createRuleMock({
                 enabledOptions: [OPTION_NAMES.TO],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition4 = RegularRuleConverter.getCondition(networkRule4);
             expect(condition4.resourceTypes).toEqual(allResourceTypes);
 
             const networkRule5 = createRuleMock({
                 enabledOptions: [OPTION_NAMES.METHOD],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition5 = RegularRuleConverter.getCondition(networkRule5);
             expect(condition5.resourceTypes).toEqual(allResourceTypes);
 
             const networkRule6 = createRuleMock({
                 enabledOptions: [OPTION_NAMES.URLTRANSFORM],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition6 = RegularRuleConverter.getCondition(networkRule6);
             expect(condition6.resourceTypes).toEqual(allResourceTypes);
 
             const networkRule7 = createRuleMock({
                 enabledOptions: [OPTION_NAMES.HEADER],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition7 = RegularRuleConverter.getCondition(networkRule7);
             expect(condition7.resourceTypes).toBeUndefined();
         });
@@ -1328,21 +1462,18 @@ describe('RuleConverter', () => {
             const networkRule1 = createRuleMock({
                 enabledOptions: [OPTION_NAMES.REMOVEPARAM],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.resourceTypes).toEqual(documentResourceTypes);
 
             const networkRule2 = createRuleMock({
                 enabledOptions: [OPTION_NAMES.PERMISSIONS],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.resourceTypes).toEqual(documentResourceTypes);
 
             const networkRule3 = createRuleMock({
                 enabledOptions: [OPTION_NAMES.HEADER],
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition3 = RegularRuleConverter.getCondition(networkRule3);
             expect(condition3.resourceTypes).toBeUndefined();
         });
@@ -1356,7 +1487,6 @@ describe('RuleConverter', () => {
                     isRegExp: false,
                 },
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.responseHeaders).toEqual([{
                 header: 'Test-Header',
@@ -1370,7 +1500,6 @@ describe('RuleConverter', () => {
                     isRegExp: false,
                 },
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.responseHeaders).toEqual([{
                 header: 'Test-Header',
@@ -1384,7 +1513,6 @@ describe('RuleConverter', () => {
                     isRegExp: false,
                 },
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition3 = RegularRuleConverter.getCondition(networkRule3);
             expect(condition3.responseHeaders).toEqual([{
                 header: 'Test-Header',
@@ -1395,7 +1523,6 @@ describe('RuleConverter', () => {
                 enabledOptions: [OPTION_NAMES.HEADER],
                 headerModifierMatcher: null,
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition4 = RegularRuleConverter.getCondition(networkRule4);
             expect(condition4.responseHeaders).toBeUndefined();
 
@@ -1407,7 +1534,6 @@ describe('RuleConverter', () => {
                     isRegExp: true,
                 },
             });
-            // @ts-expect-error Accessing private member for test purposes
             const condition5 = RegularRuleConverter.getCondition(networkRule5);
             expect(condition5.responseHeaders).toEqual([{
                 header: 'Test-Header',
@@ -1444,6 +1570,239 @@ describe('RuleConverter', () => {
                 action: { type: RuleActionType.Block },
                 condition: {},
             });
+        });
+    });
+
+    describe('additional main_frame rule', () => {
+        const filterListId = 1;
+
+        /**
+         * Converts a single rule text into declarative rules.
+         *
+         * @param text Rule text.
+         * @param index Rule index.
+         *
+         * @returns Converted declarative rules.
+         */
+        const convert = async (text: string, index = 0): Promise<DeclarativeRule[]> => {
+            const [rule] = Rule.createFromText(filterListId, index, text);
+            // @ts-expect-error Accessing protected member for test purposes
+            const result = await converter.convertRules(filterListId, [rule], new Set<number>());
+            expect(result.errors).toHaveLength(0);
+            return result.declarativeRules;
+        };
+
+        it('adds a main_frame rule with requestDomains for a document CSP rule', async () => {
+            const rules = await convert("*$document,csp=script-src-attr 'none',domain=example.com");
+
+            expect(rules).toHaveLength(2);
+            expect(rules[0].condition).toMatchObject({
+                initiatorDomains: ['example.com'],
+                resourceTypes: [ResourceType.MainFrame],
+            });
+            expect(rules[1].condition).toMatchObject({
+                resourceTypes: [ResourceType.MainFrame],
+                requestDomains: ['example.com'],
+            });
+            expect(rules[1].condition.initiatorDomains).toBeUndefined();
+            expect(rules[1].action).toEqual(rules[0].action);
+            expect(rules[1].priority).toBe(rules[0].priority);
+            expect(rules[1].id).not.toBe(rules[0].id);
+        });
+
+        it('moves excluded domains to excludedRequestDomains', async () => {
+            const rules = await convert('*$document,domain=~example.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[0].condition.excludedInitiatorDomains).toEqual(['example.com']);
+            expect(rules[1].condition).toMatchObject({
+                resourceTypes: [ResourceType.MainFrame],
+                excludedRequestDomains: ['example.com'],
+            });
+            expect(rules[1].condition.initiatorDomains).toBeUndefined();
+            expect(rules[1].condition.excludedInitiatorDomains).toBeUndefined();
+        });
+
+        it('keeps permitted and excluded domains in the additional rule', async () => {
+            const rules = await convert('*$document,domain=example.com|~sub.example.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].condition.requestDomains).toEqual(['example.com']);
+            expect(rules[1].condition.excludedRequestDomains).toEqual(['sub.example.com']);
+        });
+
+        it('adds a rule for an excluded-only list with a domain-specific pattern', async () => {
+            const rules = await convert('||example.com^$document,domain=~foo.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].condition).toMatchObject({
+                resourceTypes: [ResourceType.MainFrame],
+                excludedRequestDomains: ['foo.com'],
+            });
+            expect(rules[1].condition.initiatorDomains).toBeUndefined();
+        });
+
+        it('merges $denyallow exclusions into the additional rule', async () => {
+            const rules = await convert('*$document,denyallow=foo.com,domain=example.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].condition).toMatchObject({
+                requestDomains: ['example.com'],
+                excludedRequestDomains: ['foo.com'],
+                resourceTypes: [ResourceType.MainFrame],
+            });
+        });
+
+        it('merges a negated $to into the additional rule', async () => {
+            const rules = await convert('*$document,to=~foo.com,domain=example.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].condition).toMatchObject({
+                requestDomains: ['example.com'],
+                excludedRequestDomains: ['foo.com'],
+            });
+        });
+
+        it('keeps a permitted $to when $domain has only excluded domains', async () => {
+            const rules = await convert('*$document,to=foo.com,domain=~bar.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].condition).toMatchObject({
+                requestDomains: ['foo.com'],
+                excludedRequestDomains: ['bar.com'],
+            });
+        });
+
+        it('does not add a rule when an unrepresentable $to is set', async () => {
+            const rules = await convert('*$document,to=/foo/,domain=example.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule for an excluded-only list with an unrepresentable $to', async () => {
+            const rules = await convert('*$document,to=/foo/,domain=~bar.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule when an unrepresentable $denyallow is set', async () => {
+            const rules = await convert('*$document,denyallow=*.example.com,domain=example.com');
+
+            expect(rules).toHaveLength(1);
+        });
+
+        it('does not add a rule when $domain contains a regex', async () => {
+            const rules = await convert('*$document,domain=example.com|~/^ads\\./');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('adds a rule for an allowlist document rule', async () => {
+            const rules = await convert('@@$document,domain=example.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].action).toEqual({ type: RuleActionType.AllowAllRequests });
+            expect(rules[1].condition).toEqual({
+                resourceTypes: [ResourceType.MainFrame],
+                requestDomains: ['example.com'],
+            });
+        });
+
+        it('does not add a rule for a domain-specific pattern', async () => {
+            const rules = await convert("||example.com^$csp=frame-src 'none',domain=foo.com");
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.initiatorDomains).toEqual(['foo.com']);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule when a domain-specific pattern has permitted domains', async () => {
+            const rules = await convert('||example.com^$document,domain=example.com|~sub.example.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.initiatorDomains).toEqual(['example.com']);
+            expect(rules[0].condition.excludedInitiatorDomains).toEqual(['sub.example.com']);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule when $third-party is set', async () => {
+            const rules = await convert('*$document,third-party,domain=example.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition).toMatchObject({
+                domainType: DomainType.ThirdParty,
+                initiatorDomains: ['example.com'],
+                resourceTypes: [ResourceType.MainFrame],
+            });
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule when $~third-party is set', async () => {
+            const rules = await convert('*$document,~third-party,domain=example.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition).toMatchObject({
+                domainType: DomainType.FirstParty,
+                initiatorDomains: ['example.com'],
+                resourceTypes: [ResourceType.MainFrame],
+            });
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule when permitted $to and $domain are both set', async () => {
+            const rules = await convert('*$document,to=foo.com,domain=example.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.requestDomains).toEqual(['foo.com']);
+        });
+
+        it('does not add a rule when the rule does not target main_frame', async () => {
+            const rules = await convert('*$script,domain=foo.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('does not add a rule for a regex pattern', async () => {
+            vi.spyOn(re2Validator, 'isRegexSupported').mockResolvedValue(true);
+
+            const rules = await convert('/banner\\d+/$document,domain=foo.com');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].condition.requestDomains).toBeUndefined();
+        });
+
+        it('adds a rule for an excluded-only list with a regex pattern', async () => {
+            vi.spyOn(re2Validator, 'isRegexSupported').mockResolvedValue(true);
+
+            const rules = await convert('/banner\\d+/$document,domain=~foo.com');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[1].condition).toMatchObject({
+                resourceTypes: [ResourceType.MainFrame],
+                excludedRequestDomains: ['foo.com'],
+            });
+        });
+
+        it('maps both rules to the source rule', async () => {
+            const index = 7;
+            const [rule] = Rule.createFromText(
+                filterListId,
+                index,
+                "*$document,csp=script-src-attr 'none',domain=example.com",
+            );
+
+            // @ts-expect-error Accessing protected member for test purposes
+            const result = await converter.convertRules(filterListId, [rule], new Set<number>());
+
+            expect(result.sourceMapValues).toEqual(result.declarativeRules.map(({ id }) => ({
+                declarativeRuleId: id,
+                sourceRuleIndex: index,
+                filterId: filterListId,
+            })));
         });
     });
 
@@ -1604,7 +1963,7 @@ describe('RuleConverter', () => {
             expect(result.errors).toHaveLength(1);
 
             const wrappedError = result.errors[0];
-            expect(wrappedError).toBeInstanceOf(Error);
+            expect(wrappedError).toBeInstanceOf(UnexpectedConversionError);
             expect(wrappedError.message).toBe('Non-categorized error during a conversion rule (index - 0, id - 100)');
             expect(wrappedError.cause).toBe(genericError);
         });
@@ -1807,8 +2166,8 @@ describe('RuleConverter', () => {
             // Should have 2 rules: one combined (rule1 + rule2) and one standalone (rule3)
             expect(result.declarativeRules).toHaveLength(2);
 
-            // Should have called createRuleTemplate for each rule
-            expect(createRuleTemplate).toHaveBeenCalledTimes(6); // 3 initial + 3 for saving templates
+            // Should have called createRuleTemplate once per rule
+            expect(createRuleTemplate).toHaveBeenCalledTimes(3);
 
             // Should have called combineRulePair once (rule1 + rule2)
             expect(combineRulePair).toHaveBeenCalledTimes(1);

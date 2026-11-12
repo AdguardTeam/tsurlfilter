@@ -92,6 +92,24 @@ describe('Creating request', () => {
         expect(request.sourceSubdomains.sort()).toEqual(['localhost.test', 'test'].sort());
     });
 
+    it.each([
+        'lorenne_.wehype.app',
+        'a.lorenne_.wehype.app',
+    ])('parses trailing underscore labels in %s', (hostname) => {
+        const request = new Request(
+            `https://${hostname}/`,
+            `https://${hostname}/page`,
+            RequestType.Other,
+        );
+        expect(request.hostname).toBe(hostname);
+        expect(request.domain).toBe('wehype.app');
+        expect(request.subdomains).toEqual(expect.arrayContaining([hostname, 'wehype.app', 'app']));
+        expect(request.sourceHostname).toBe(hostname);
+        expect(request.sourceDomain).toBe('wehype.app');
+        expect(request.sourceSubdomains).toEqual(request.subdomains);
+        expect(request.thirdParty).toBe(false);
+    });
+
     it('handles urls', () => {
         let f = () => new Request('', 'example.com', RequestType.Other);
         expect(f).toThrow(TypeError);

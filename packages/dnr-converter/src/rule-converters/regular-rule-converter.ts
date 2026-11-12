@@ -93,6 +93,13 @@
 /* eslint-enable jsdoc/no-multi-asterisks */
 /* eslint-enable max-len */
 import { RuleGenerator } from '@adguard/agtree/generator';
+import {
+    ADBLOCK_URL_SEPARATOR,
+    ADBLOCK_URL_SEPARATOR_REGEX,
+    ADBLOCK_URL_START,
+    ADBLOCK_URL_START_REGEX,
+    RegExpUtils,
+} from '@adguard/agtree/utils';
 import { getRedirectFilename } from '@adguard/scriptlets/redirects';
 
 import {
@@ -122,6 +129,7 @@ import {
     EmptyDomainsError,
     EmptyResourcesError,
     isConversionError,
+    UnexpectedConversionError,
     UnsupportedModifierError,
     UnsupportedRegexpError,
 } from '../errors/conversion-errors';
@@ -132,12 +140,14 @@ import { type Rule } from '../rule/rule';
 import { RuleDeclarativeValidator } from '../rule/rule-validator';
 import { getErrorMessage } from '../utils/error';
 import {
+    encodeNonAscii,
     isRegexPattern,
     prepareASCII,
     removeSlashes,
     toASCII,
 } from '../utils/string';
 
+import { ActionKind, selectActionKinds } from './action-kind';
 import { type ConvertedRules } from './converted-rules';
 
 /**
@@ -182,6 +192,25 @@ export class RegularRuleConverter {
     private static readonly WILDCARD_TLD = `${DOT}${MASK_ANY_CHARACTER}`;
 
     /**
+     * Separator between a host and a port in a URL.
+     */
+    private static readonly PORT_SEPARATOR = ':';
+
+    /**
+     * Pattern prefixes that target a specific domain.
+     *
+     * AdGuard matches the `$domain` modifier against the target hostname of
+     * a document request when the pattern is not domain-specific, or when the
+     * `$domain` list contains only excluded domains. This mirrors
+     * `NetworkRule.matchDomainModifier()` and
+     * `Pattern.isPatternDomainSpecific()` in `@adguard/tsurlfilter`.
+     *
+     * @see {@link https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tsurlfilter/src/rules/network-rule.ts | NetworkRule.matchDomainModifier()}
+     * @see {@link https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tsurlfilter/src/rules/pattern.ts | Pattern.isPatternDomainSpecific()}
+     */
+    private static readonly DOMAIN_SPECIFIC_PATTERN_PREFIXES = [ADBLOCK_URL_START, 'http://', 'https:/', '://'];
+
+    /**
      * String path to web accessible resources, relative to the extension root dir.
      * Should start with leading slash and end without trailing slash (`'/'`).
      */
@@ -209,6 +238,79 @@ export class RegularRuleConverter {
     }
 
     /**
+     * Converts a URL filter to an ASCII-only string.
+     *
+     * The hostname is converted to punycode, while the rest of the pattern is
+     * percent-encoded: this is how DNR matches it against a request URL. An
+     * explicit port belongs to the rest of the pattern, not to the hostname.
+     *
+     * The hostname is the leading part of the pattern after an optional domain
+     * anchor, scheme and `*`/`*.` wildcard. A leading part without a dot is
+     * percent-encoded as a path fragment, unless the pattern is anchored to a
+     * domain or a scheme, where the hostname is guaranteed.
+     *
+     * @param pattern URL filter pattern.
+     * @param isCaseSensitive Whether the pattern is matched case-sensitively.
+     *
+     * @returns URL filter pattern with non-ASCII characters converted.
+     */
+    private static prepareUrlFilter(pattern: string, isCaseSensitive: boolean): string {
+        const domainAnchor = pattern.startsWith('||') ? '||' : '';
+        let rest = pattern.substring(domainAnchor.length);
+
+        const schemeMatch = /^\|?[a-z][a-z0-9+.-]*:\/\//i.exec(rest);
+        const scheme = schemeMatch ? schemeMatch[0] : '';
+        rest = rest.substring(scheme.length);
+
+        const wildcardMatch = /^\*\.?/.exec(rest);
+        const wildcard = wildcardMatch ? wildcardMatch[0] : '';
+        rest = rest.substring(wildcard.length);
+
+        // A `*` inside an anchored hostname is a wildcard, not a separator, so
+        // a pattern like `||foo*.пример.рф^` keeps the whole hostname. An
+        // unanchored pattern has no hostname before the `*`: the leading part
+        // is a path fragment there.
+        const hasAnchor = domainAnchor !== '' || scheme !== '';
+        const hostnameEndIndex = rest.search(hasAnchor ? /[\^/|?:]/ : /[*^/|?:]/);
+        const hostname = hostnameEndIndex === -1 ? rest : rest.substring(0, hostnameEndIndex);
+        const suffix = hostnameEndIndex === -1 ? '' : rest.substring(hostnameEndIndex);
+
+        const isHostname = hasAnchor || hostname.includes('.');
+        const preparedHostname = isHostname
+            ? RegularRuleConverter.prepareHostname(hostname, isCaseSensitive)
+            : encodeNonAscii(hostname);
+
+        return `${domainAnchor}${scheme}${wildcard}${preparedHostname}${encodeNonAscii(suffix)}`;
+    }
+
+    /**
+     * Converts a hostname, possibly containing `*` wildcards, to ASCII.
+     *
+     * The parts between the wildcards are converted separately: punycode
+     * cannot encode a `*`, so converting the whole string would fold it into a
+     * label and the rule would never match.
+     *
+     * The hostname is lowercased, because a host in a URL is always
+     * lowercased and punycode keeps the case of non-ASCII letters, so
+     * `ПРИМЕР.рф` would otherwise be converted to a label which never matches.
+     * The case is kept for a `$match-case` rule, which asks for a
+     * case-sensitive comparison.
+     *
+     * @param hostname Hostname with optional `*` wildcards.
+     * @param isCaseSensitive Whether the pattern is matched case-sensitively.
+     *
+     * @returns ASCII hostname.
+     */
+    private static prepareHostname(hostname: string, isCaseSensitive: boolean): string {
+        const prepared = isCaseSensitive ? hostname : hostname.toLowerCase();
+
+        return prepared
+            .split('*')
+            .map((part) => (part === '' ? part : prepareASCII(part)))
+            .join('*');
+    }
+
+    /**
      * Expands wildcard TLD domain into concrete popular TLD domains.
      *
      * @param domain Wildcard TLD domain.
@@ -222,19 +324,41 @@ export class RegularRuleConverter {
     }
 
     /**
+     * Checks whether a domain from a network rule modifier can be represented
+     * in a DNR condition.
+     *
+     * @param domain Domain to check.
+     *
+     * @returns `true` if DNR supports the domain.
+     */
+    private static isRepresentableDomain(domain: string): boolean {
+        return !isRegexPattern(domain)
+            && (
+                !domain.includes(MASK_ANY_CHARACTER)
+                || RegularRuleConverter.isWildcardTldDomain(domain)
+            );
+    }
+
+    /**
      * Prepares domains for DNR condition arrays.
      *
      * Regex and non-TLD wildcard domains are not representable in DNR and are
      * dropped; wildcard TLD domains (e.g. `example.*`) are expanded to the
      * popular TLD list.
      *
+     * Domains are lowercased before the punycode conversion: punycode keeps the
+     * case of non-ASCII letters, so `ПРИМЕР.рф` and `пример.рф` would otherwise
+     * produce different `xn--` labels. A host in a URL is always lowercased, so
+     * the case written in a modifier carries no meaning, while the condition
+     * arrays are also compared with each other by the CSP resolver.
+     *
      * @param domains Domains from network rule modifier.
      *
-     * @returns ASCII-only unique domains supported by DNR.
+     * @returns Lowercased ASCII-only unique domains supported by DNR.
      */
     private static prepareDeclarativeDomains(domains: string[] | null | undefined): string[] {
         const expandedDomains = domains?.flatMap((domain) => {
-            if (isRegexPattern(domain)) {
+            if (!RegularRuleConverter.isRepresentableDomain(domain)) {
                 return [];
             }
 
@@ -242,14 +366,72 @@ export class RegularRuleConverter {
                 return RegularRuleConverter.expandWildcardTldDomain(domain);
             }
 
-            if (domain.includes(MASK_ANY_CHARACTER)) {
-                return [];
-            }
-
             return [domain];
         }) ?? [];
 
-        return [...new Set(toASCII(expandedDomains))];
+        return [...new Set(toASCII(expandedDomains.map((domain) => domain.toLowerCase())))];
+    }
+
+    /**
+     * Checks whether all domain conditions can be represented in DNR.
+     *
+     * A port cannot appear in a DNR domain list, so a `$domain` entry written
+     * as `example.com:8080` is not a domain which drops a part of the
+     * condition: it has no valid declarative form at all.
+     *
+     * @param rule Source rule.
+     *
+     * @returns `true` if conversion does not drop any domain condition.
+     */
+    public static areDomainConditionsRepresentable(rule: Rule): boolean {
+        const domainLists = [
+            rule.permittedDomains,
+            rule.restrictedDomains,
+            rule.permittedToDomains,
+            rule.restrictedToDomains,
+            rule.denyAllowDomains,
+        ];
+
+        return domainLists.every((domains) => domains?.every((domain) => (
+            !isRegexPattern(domain)
+            && !domain.includes(RegularRuleConverter.PORT_SEPARATOR)
+            && (!domain.includes(MASK_ANY_CHARACTER) || RegularRuleConverter.isWildcardTldDomain(domain))
+        )) ?? true);
+    }
+
+    /**
+     * Checks whether a condition keeps every restriction of the rule.
+     *
+     * {@link RegularRuleConverter.getCondition} stores one inclusion list per
+     * field, so a rule which combines an inclusion with an exclusion in the
+     * same field loses the inclusion: `$csp,script,~image` keeps only `~image`,
+     * and `$to=~a.com,denyallow=b.com` keeps only `$denyallow`. A CSP exception
+     * would then cancel more than written, so it must not be applied.
+     *
+     * @param rule Source rule.
+     *
+     * @returns `true` if the condition keeps all restrictions of the rule.
+     */
+    public static areConditionRestrictionsRepresentable(rule: Rule): boolean {
+        const hasPermittedResourceTypes = rule.permittedResourceTypes.length !== 0;
+        const hasRestrictedResourceTypes = rule.restrictedResourceTypes.length !== 0;
+        const hasRestrictedToDomains = (rule.restrictedToDomains?.length ?? 0) !== 0;
+        const hasDenyAllowDomains = (rule.denyAllowDomains?.length ?? 0) !== 0;
+
+        return !(hasPermittedResourceTypes && hasRestrictedResourceTypes)
+            && !(hasRestrictedToDomains && hasDenyAllowDomains);
+    }
+
+    /**
+     * Checks whether every domain from a network rule modifier can be
+     * represented in a DNR condition.
+     *
+     * @param domains Domains from network rule modifier.
+     *
+     * @returns `true` if every domain is supported by DNR.
+     */
+    private static areDomainsRepresentable(domains: string[] | null | undefined): boolean {
+        return domains?.every((domain) => RegularRuleConverter.isRepresentableDomain(domain)) ?? true;
     }
 
     /**
@@ -374,6 +556,9 @@ export class RegularRuleConverter {
      * - value cannot be URI-decoded.
      * - param name contains urlFilter special characters (`|`, `*`, `^`).
      *
+     * Non-ASCII characters in the param name are percent-encoded, because
+     * the token is matched against a url where they are encoded as well.
+     *
      * @param rule Rule with $removeparam modifier enabled.
      *
      * @returns A urlFilter token string, or null if augmentation should be skipped.
@@ -409,7 +594,8 @@ export class RegularRuleConverter {
             return null;
         }
 
-        return `^${decoded}=`;
+        // The token is matched against the url, where non-ASCII characters are percent-encoded.
+        return `^${encodeNonAscii(decoded)}=`;
     }
 
     /**
@@ -484,7 +670,7 @@ export class RegularRuleConverter {
             return null;
         }
 
-        const cspHeaderValue = rule.advancedModifierValue;
+        const cspHeaderValue = rule.cspDirective;
         if (!cspHeaderValue) {
             return null;
         }
@@ -531,75 +717,89 @@ export class RegularRuleConverter {
      * @throws Error {@link UnsupportedModifierError} when a `$removeparam` value cannot be URI-decoded.
      */
     private getAction(rule: Rule): RuleAction {
-        if (rule.allowlist) {
-            if (rule.isFilteringDisabled() && RegularRuleConverter.isCompatibleWithAllowAllRequests(rule)) {
-                return { type: RuleActionType.AllowAllRequests };
-            }
+        const kinds = selectActionKinds(rule);
 
-            return { type: RuleActionType.Allow };
-        }
-
-        if (rule.isModifierEnabled(OPTION_NAMES.REDIRECT)) {
-            const redirectAction = this.getRedirectAction(rule);
-            if (redirectAction) {
-                return {
-                    type: RuleActionType.Redirect,
-                    redirect: redirectAction,
-                };
+        for (let i = 0; i < kinds.length; i += 1) {
+            const action = this.buildAction(rule, kinds[i]);
+            if (action) {
+                return action;
             }
         }
 
-        if (rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
-            const removeParamRedirectAction = RegularRuleConverter.getRemoveParamRedirectAction(rule);
-            if (removeParamRedirectAction) {
-                return {
-                    type: RuleActionType.Redirect,
-                    redirect: removeParamRedirectAction,
-                };
+        return { type: RuleActionType.Block };
+    }
+
+    /**
+     * Builds the action of the given kind for a rule.
+     *
+     * @param rule {@link Rule} to build an action for.
+     * @param kind Action kind to build.
+     *
+     * @returns Action or `null` when the modifier cannot produce it, so the
+     * next kind in {@link selectActionKinds} is used.
+     */
+    private buildAction(rule: Rule, kind: ActionKind): RuleAction | null {
+        switch (kind) {
+            case ActionKind.Allow: {
+                if (rule.isFilteringDisabled() && RegularRuleConverter.isCompatibleWithAllowAllRequests(rule)) {
+                    return { type: RuleActionType.AllowAllRequests };
+                }
+
+                return { type: RuleActionType.Allow };
             }
-        }
+            case ActionKind.Redirect: {
+                const redirectAction = this.getRedirectAction(rule);
 
-        if (rule.isModifierEnabled(OPTION_NAMES.REMOVEHEADER)) {
-            const modifyHeadersAction = RegularRuleConverter.getModifyHeadersAction(rule);
-
-            if (modifyHeadersAction?.requestHeaders) {
-                return {
-                    type: RuleActionType.ModifyHeaders,
-                    requestHeaders: modifyHeadersAction.requestHeaders,
-                };
+                return redirectAction
+                    ? { type: RuleActionType.Redirect, redirect: redirectAction }
+                    : null;
             }
+            case ActionKind.RemoveParamRedirect: {
+                const removeParamRedirectAction = RegularRuleConverter.getRemoveParamRedirectAction(rule);
 
-            if (modifyHeadersAction?.responseHeaders) {
-                return {
-                    type: RuleActionType.ModifyHeaders,
-                    responseHeaders: modifyHeadersAction.responseHeaders,
-                };
+                return removeParamRedirectAction
+                    ? { type: RuleActionType.Redirect, redirect: removeParamRedirectAction }
+                    : null;
             }
-        }
+            case ActionKind.RemoveHeader: {
+                const modifyHeadersAction = RegularRuleConverter.getModifyHeadersAction(rule);
 
-        if (rule.isModifierEnabled(OPTION_NAMES.CSP)) {
-            const headersAction = RegularRuleConverter.getAddingCspHeadersAction(rule);
-            if (headersAction) {
-                return {
-                    type: RuleActionType.ModifyHeaders,
-                    responseHeaders: [headersAction],
-                };
+                if (modifyHeadersAction?.requestHeaders) {
+                    return {
+                        type: RuleActionType.ModifyHeaders,
+                        requestHeaders: modifyHeadersAction.requestHeaders,
+                    };
+                }
+
+                if (modifyHeadersAction?.responseHeaders) {
+                    return {
+                        type: RuleActionType.ModifyHeaders,
+                        responseHeaders: modifyHeadersAction.responseHeaders,
+                    };
+                }
+
+                return null;
             }
-        }
+            case ActionKind.Csp: {
+                const headersAction = RegularRuleConverter.getAddingCspHeadersAction(rule);
 
-        if (rule.isModifierEnabled(OPTION_NAMES.PERMISSIONS)) {
-            const headersAction = RegularRuleConverter.getAddingPermissionsHeadersAction(rule);
-            if (headersAction) {
-                return {
-                    type: RuleActionType.ModifyHeaders,
-                    responseHeaders: [headersAction],
-                };
+                return headersAction
+                    ? { type: RuleActionType.ModifyHeaders, responseHeaders: [headersAction] }
+                    : null;
             }
-        }
+            case ActionKind.Permissions: {
+                const headersAction = RegularRuleConverter.getAddingPermissionsHeadersAction(rule);
 
-        if (rule.isModifierEnabled(OPTION_NAMES.COOKIE)) {
-            const removeCookieHeaders = RegularRuleConverter.getRemovingCookieHeadersAction(rule);
-            if (removeCookieHeaders) {
+                return headersAction
+                    ? { type: RuleActionType.ModifyHeaders, responseHeaders: [headersAction] }
+                    : null;
+            }
+            case ActionKind.Cookie: {
+                const removeCookieHeaders = RegularRuleConverter.getRemovingCookieHeadersAction(rule);
+                if (!removeCookieHeaders) {
+                    return null;
+                }
+
                 const { responseHeaders, requestHeaders } = removeCookieHeaders;
 
                 return {
@@ -608,19 +808,28 @@ export class RegularRuleConverter {
                     requestHeaders,
                 };
             }
-        }
+            case ActionKind.Block: {
+                return { type: RuleActionType.Block };
+            }
+            default: {
+                // A new action kind must be handled explicitly instead of
+                // silently becoming a blocking rule.
+                const unknownKind: never = kind;
 
-        return { type: RuleActionType.Block };
+                throw new Error(`Unhandled action kind: ${unknownKind as string}`);
+            }
+        }
     }
 
     /**
      * Retrieves the condition for the provided {@link Rule}.
      *
      * @param rule {@link Rule} to get condition for.
+     * @param useRemoveParamRegex Whether to use a regexp for eligible named parameter removal.
      *
      * @returns A rule condition that describes to which request the declarative rule should be applied.
      */
-    private static getCondition(rule: Rule): RuleCondition {
+    public static getCondition(rule: Rule, useRemoveParamRegex = true): RuleCondition {
         const condition: RuleCondition = {};
 
         // set `urlFilter` or `regexFilter` depending on the pattern type
@@ -633,20 +842,57 @@ export class RegularRuleConverter {
                 const patternWithoutVerticals = pattern.startsWith('||*')
                     ? pattern.substring(2)
                     : pattern;
-                condition.urlFilter = prepareASCII(patternWithoutVerticals);
+                condition.urlFilter = RegularRuleConverter.prepareUrlFilter(
+                    patternWithoutVerticals,
+                    rule.isModifierEnabled(OPTION_NAMES.MATCH_CASE),
+                );
             }
         }
 
-        // For $removeparam rules with a specific named parameter, append
-        // a param-aware token to urlFilter so that the rule only matches
-        // when the target parameter is present in the URL query string.
+        // For $removeparam rules with a specific named parameter, add
+        // a parameter-aware URL condition that stops matching after removal.
         // This enables Chrome DNR to chain multiple redirect hops,
         // stripping one parameter per hop until all are removed.
         if (rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
             const paramToken = RegularRuleConverter.getRemoveParamToken(rule);
             if (paramToken !== null) {
                 if (condition.urlFilter) {
-                    condition.urlFilter += `*${paramToken}`;
+                    const prefix = condition.urlFilter.slice(0, -ADBLOCK_URL_SEPARATOR.length);
+                    const hasDomainAnchor = prefix.startsWith(ADBLOCK_URL_START);
+                    const authority = hasDomainAnchor ? prefix.slice(ADBLOCK_URL_START.length).split('/')[0] : '';
+                    if (
+                        useRemoveParamRegex
+                        && condition.urlFilter.endsWith(ADBLOCK_URL_SEPARATOR)
+                        && prefix.startsWith('|')
+                        && !/[*?#^]/.test(prefix)
+                        && (!hasDomainAnchor || (authority.length > 0 && !authority.includes('@')))
+                    ) {
+                        // Share the trailing separator with the query delimiter when the parameter is first.
+                        // Anchoring keeps this delimiter at the actual query boundary.
+                        // Unanchored patterns can match inside the query and retain native URL-filter matching.
+                        const patternRegexp = RegExpUtils.patternToRegexp(condition.urlFilter);
+                        let prefixRegexp = patternRegexp.slice(0, -ADBLOCK_URL_SEPARATOR_REGEX.length);
+                        if (hasDomainAnchor) {
+                            // Domain anchors start at the parsed host, after any credentials, on any URL scheme.
+                            prefixRegexp = prefixRegexp.replace(
+                                ADBLOCK_URL_START_REGEX,
+                                '^[a-z][a-z0-9+.-]*://(?:[^[:^ascii:]/?#@]*@)?(?:[^[:^ascii:]/?#@]*\\.)?',
+                            );
+                        }
+                        const paramRegexp = RegExpUtils.patternToRegexp(paramToken);
+                        const paramNameRegexp = paramRegexp.slice(ADBLOCK_URL_SEPARATOR_REGEX.length);
+                        // DNR matches ASCII-serialized URLs. Bound classes to ASCII to keep RE2 compilation small.
+                        const pathSeparator = '[^[:^ascii:] a-zA-Z0-9.%_?#-]';
+                        const pathTail = hasDomainAnchor && !prefix.includes('/')
+                            // A separator in the authority must not turn a username into a host match.
+                            ? '(?:[^[:^ascii:] a-zA-Z0-9.%_/?#@-][^[:^ascii:]/?#@]*)?(?:/[^[:^ascii:]?#]*)?'
+                            : `(?:${pathSeparator}[^[:^ascii:]?#]*)?`;
+                        condition.regexFilter = `${prefixRegexp}${pathTail}`
+                            + `\\?(?:[^[:^ascii:]#]*&)?${paramNameRegexp}`;
+                        delete condition.urlFilter;
+                    } else {
+                        condition.urlFilter += `*${paramToken}`;
+                    }
                 } else if (!condition.regexFilter) {
                     condition.urlFilter = paramToken;
                 }
@@ -842,12 +1088,179 @@ export class RegularRuleConverter {
         declarativeRule.priority = rule.priority;
 
         // Validate created declarative rule and throw error if not valid
-        const conversionErr = await RegularRuleConverter.checkRuleApplication(rule, declarativeRule);
+        let conversionErr = await RegularRuleConverter.checkRuleApplication(rule, declarativeRule);
+        if (
+            conversionErr instanceof UnsupportedRegexpError
+            && !rule.isRegexRule()
+            && rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)
+        ) {
+            // Preserve native URL-filter matching when the generated parameter-aware regexp is unsupported.
+            declarativeRule.condition = RegularRuleConverter.getCondition(rule, false);
+            conversionErr = await RegularRuleConverter.checkRuleApplication(rule, declarativeRule);
+        }
         if (conversionErr) {
             throw conversionErr;
         }
 
         return declarativeRule;
+    }
+
+    /**
+     * Checks whether {@link convertRules} builds the additional `main_frame`
+     * rule for a rule, see {@link buildTargetDomainRule}.
+     *
+     * @param rule Source {@link Rule}.
+     *
+     * @returns `true` if the additional rule is built.
+     */
+    public static hasTargetDomainRule(rule: Rule): boolean {
+        return RegularRuleConverter.getTargetDomainCondition(rule, {
+            id: 0,
+            action: { type: RuleActionType.Block },
+            condition: RegularRuleConverter.getCondition(rule),
+        }) !== null;
+    }
+
+    /**
+     * Builds the additional `main_frame` rule when the `$domain` modifier
+     * must also match the target hostname of a document request.
+     *
+     * Chrome matches `initiatorDomains` against the request initiator only,
+     * and a document request started by the browser (new tab page, address
+     * bar, bookmark, reload) has no initiator. AdGuard matches `$domain`
+     * against the target hostname for document requests when the pattern is
+     * not domain-specific, or when the `$domain` list contains only excluded
+     * domains, so the additional rule keeps the same behavior.
+     *
+     * @param rule Source {@link Rule}.
+     * @param declarativeRule Converted {@link DeclarativeRule}.
+     * @param usedIds Set with already used IDs to exclude duplications in IDs.
+     *
+     * @returns Additional {@link DeclarativeRule}, or `null` when the
+     * additional rule is not needed.
+     */
+    private static buildTargetDomainRule(
+        rule: Rule,
+        declarativeRule: DeclarativeRule,
+        usedIds: Set<number>,
+    ): DeclarativeRule | null {
+        const targetDomainCondition = RegularRuleConverter.getTargetDomainCondition(rule, declarativeRule);
+
+        if (!targetDomainCondition) {
+            return null;
+        }
+
+        return {
+            id: RegularRuleConverter.generateId(rule, usedIds),
+            action: JSON.parse(JSON.stringify(declarativeRule.action)) as RuleAction,
+            condition: targetDomainCondition,
+            priority: declarativeRule.priority,
+        };
+    }
+
+    /**
+     * Builds the condition of the additional `main_frame` rule that matches
+     * the `$domain` modifier against the request URL hostname.
+     *
+     * Note: for a `$domain` list with only excluded domains, the original
+     * rule still matches a browser-initiated document request to an excluded
+     * domain, because DNR has no condition for a missing initiator. AdGuard
+     * does not match that request.
+     *
+     * @param rule Source {@link Rule}.
+     * @param declarativeRule Converted {@link DeclarativeRule}.
+     *
+     * @returns Condition for the additional rule, or `null` when the
+     * additional rule is not needed.
+     */
+    private static getTargetDomainCondition(
+        rule: Rule,
+        declarativeRule: DeclarativeRule,
+    ): RuleCondition | null {
+        /**
+         * DNR cannot express "first party or no initiator". Chrome treats a
+         * request without an initiator as third-party, while MV2 treats it as
+         * first-party, so the additional rule would widen a `$third-party`
+         * or a `$~third-party` rule. Skip it in this case.
+         */
+        if (declarativeRule.condition.domainType) {
+            return null;
+        }
+
+        const permittedDomains = declarativeRule.condition.initiatorDomains ?? [];
+        const excludedDomains = declarativeRule.condition.excludedInitiatorDomains ?? [];
+
+        if (permittedDomains.length === 0 && excludedDomains.length === 0) {
+            return null;
+        }
+
+        /**
+         * Every domain condition must be fully representable in the
+         * additional rule. Otherwise it would drop a constraint that the
+         * source rule has and match requests the source rule does not.
+         */
+        if (
+            !RegularRuleConverter.areDomainsRepresentable(rule.permittedDomains)
+            || !RegularRuleConverter.areDomainsRepresentable(rule.restrictedDomains)
+            || !RegularRuleConverter.areDomainsRepresentable(rule.permittedToDomains)
+            || !RegularRuleConverter.areDomainsRepresentable(rule.restrictedToDomains)
+            || !RegularRuleConverter.areDomainsRepresentable(rule.denyAllowDomains)
+        ) {
+            return null;
+        }
+
+        /**
+         * A permitted `$to` also sets `requestDomains`, and the additional
+         * rule would replace them with the `$domain` domains. `$denyallow`
+         * and a negated `$to` only add `excludedRequestDomains`, which the
+         * additional rule merges.
+         */
+        if ((rule.permittedToDomains?.length ?? 0) > 0 && permittedDomains.length > 0) {
+            return null;
+        }
+
+        if (!declarativeRule.condition.resourceTypes?.includes(ResourceType.MainFrame)) {
+            return null;
+        }
+
+        /**
+         * AdGuard matches the target hostname for a document request when
+         * the pattern is not domain-specific or when the `$domain` list
+         * contains only excluded domains.
+         */
+        const hasOnlyExcludedDomains = permittedDomains.length === 0 && excludedDomains.length > 0;
+        if (
+            !hasOnlyExcludedDomains
+            && (
+                rule.isRegexRule()
+                || RegularRuleConverter.DOMAIN_SPECIFIC_PATTERN_PREFIXES.some(
+                    (prefix) => rule.pattern.startsWith(prefix),
+                )
+            )
+        ) {
+            return null;
+        }
+
+        const condition: RuleCondition = {
+            ...declarativeRule.condition,
+            resourceTypes: [ResourceType.MainFrame],
+        };
+
+        delete condition.initiatorDomains;
+        delete condition.excludedInitiatorDomains;
+
+        if (permittedDomains.length > 0) {
+            condition.requestDomains = [...permittedDomains];
+        }
+
+        if (excludedDomains.length > 0) {
+            condition.excludedRequestDomains = Array.from(new Set([
+                ...(condition.excludedRequestDomains ?? []),
+                ...excludedDomains,
+            ]));
+        }
+
+        return condition;
     }
 
     /**
@@ -914,28 +1327,27 @@ export class RegularRuleConverter {
 
     /**
      * Checks the captured conversion error, if it is one of the expected
-     * conversion errors - returns it, otherwise adds information about
-     * the original rule, packages it into a new error and returns it.
+     * conversion errors - returns it, otherwise packages it into a new error
+     * which keeps the original rule and the captured error as a cause.
      *
-     * @param index Index of {@link Rule}.
+     * @param rule {@link Rule} which could not be converted.
      * @param id Identifier of the desired declarative rule.
      * @param error Captured error.
      *
      * @returns Initial error or new packaged error.
      */
     private static catchConversionError(
-        index: number,
+        rule: Rule,
         id: number,
         error: unknown,
-    ): Error {
+    ): ConversionError {
         if (isConversionError(error)) {
             return error;
         }
 
-        const message = `Non-categorized error during a conversion rule (index - ${index}, id - ${id})`;
-        return error instanceof Error
-            ? new Error(message, { cause: error })
-            : new Error(message);
+        const message = `Non-categorized error during a conversion rule (index - ${rule.index}, id - ${id})`;
+
+        return new UnexpectedConversionError(message, rule, error);
     }
 
     /**
@@ -975,16 +1387,28 @@ export class RegularRuleConverter {
                     return;
                 }
 
-                // Convert rule and collect source map value
-                const converted = await this.convertRule(id, rule);
-                res.sourceMapValues.push({
-                    declarativeRuleId: converted.id,
-                    sourceRuleIndex: index,
-                    filterId: filterListId,
+                // Convert rule and collect source map values
+                const declarativeRule = await this.convertRule(id, rule);
+                const convertedRules = [declarativeRule];
+                const targetDomainRule = RegularRuleConverter.buildTargetDomainRule(
+                    rule,
+                    declarativeRule,
+                    usedIds,
+                );
+                if (targetDomainRule) {
+                    convertedRules.push(targetDomainRule);
+                }
+
+                convertedRules.forEach((converted) => {
+                    res.sourceMapValues.push({
+                        declarativeRuleId: converted.id,
+                        sourceRuleIndex: index,
+                        filterId: filterListId,
+                    });
+                    res.declarativeRules.push(converted);
                 });
-                res.declarativeRules.push(converted);
             } catch (e) {
-                const err = RegularRuleConverter.catchConversionError(index, id, e);
+                const err = RegularRuleConverter.catchConversionError(rule, id, e);
                 res.errors.push(err);
             }
         }));
@@ -1004,21 +1428,26 @@ export class RegularRuleConverter {
      * a declarative rule. This template is used to compare different
      * declarative rules.
      * @param combineRulePair A function that combines two similar
-     * declarative rules into one by merging their specific properties.
+     * declarative rules into one by merging their specific properties, or
+     * returns `null` when the two rules cannot be combined and must stay
+     * separate.
      *
      * @returns Object with grouped similar declarative rules.
      */
     protected static groupConvertedRules(
         converted: ConvertedRules,
         createRuleTemplate: (rule: DeclarativeRule) => string,
-        combineRulePair: (sourceRule: DeclarativeRule, ruleToMerge: DeclarativeRule) => DeclarativeRule,
+        combineRulePair: (
+            sourceRule: DeclarativeRule,
+            ruleToMerge: DeclarativeRule,
+        ) => DeclarativeRule | null,
     ): ConvertedRules {
-        const rulesTemplates = new Map<string, DeclarativeRule>();
-
-        const saveRuleTemplate = (rule: DeclarativeRule): void => {
-            const template = createRuleTemplate(rule);
-            rulesTemplates.set(template, rule);
-        };
+        /**
+         * Rules of one template, in order. A template describes the matching
+         * condition, so the rules of one bucket may still be incompatible with
+         * each other, e.g. two `$csp` rules with conflicting directives.
+         */
+        const rulesTemplates = new Map<string, DeclarativeRule[]>();
 
         const result: ConvertedRules = {
             declarativeRules: [],
@@ -1030,7 +1459,7 @@ export class RegularRuleConverter {
         declarativeRules.forEach((declarativeRule) => {
             // Try to find a sibling declarative rule
             const template = createRuleTemplate(declarativeRule);
-            const siblingDeclarativeRule = rulesTemplates.get(template);
+            const siblings = rulesTemplates.get(template) ?? [];
 
             // Try to find the source mapping for the current declarative rule
             const source = sourceMapValues.find((s) => s.declarativeRuleId === declarativeRule.id);
@@ -1040,27 +1469,44 @@ export class RegularRuleConverter {
             }
 
             /**
-             * If a similar rule is found, combine the two declarative rules into one
-             * and save the combined rule's template for future comparisons.
-             * Also, update the source mapping to reflect the new combined rule ID.
+             * If a sibling can be combined with the current rule, replace it
+             * with the combined rule and update the source mapping to reflect
+             * the combined rule ID.
              *
-             * If no similar rule is found, simply save the current
-             * rule's template and add the source mapping as is.
+             * If no sibling accepts the rule, it is added to the bucket as is:
+             * a rule which cannot be merged must not be merged with a rule it
+             * contradicts.
              */
-            if (siblingDeclarativeRule) {
-                const combinedRule = combineRulePair(siblingDeclarativeRule, declarativeRule);
-                saveRuleTemplate(combinedRule);
-                result.sourceMapValues.push({
-                    ...source,
-                    declarativeRuleId: combinedRule.id,
-                });
-            } else {
-                saveRuleTemplate(declarativeRule);
-                result.sourceMapValues.push(source);
+            let siblingIndex = -1;
+            let combinedRule: DeclarativeRule | null = null;
+
+            for (let index = 0; index < siblings.length; index += 1) {
+                const candidate = combineRulePair(siblings[index], declarativeRule);
+
+                if (candidate !== null) {
+                    siblingIndex = index;
+                    combinedRule = candidate;
+                    break;
+                }
             }
+
+            if (siblingIndex === -1 || combinedRule === null) {
+                rulesTemplates.set(template, [...siblings, declarativeRule]);
+                result.sourceMapValues.push(source);
+                return;
+            }
+
+            const mergedRule = combinedRule;
+            rulesTemplates.set(template, siblings.map((rule, index) => (
+                index === siblingIndex ? mergedRule : rule
+            )));
+            result.sourceMapValues.push({
+                ...source,
+                declarativeRuleId: mergedRule.id,
+            });
         });
 
-        result.declarativeRules = Array.from(rulesTemplates.values());
+        result.declarativeRules = Array.from(rulesTemplates.values()).flat();
 
         return result;
     }

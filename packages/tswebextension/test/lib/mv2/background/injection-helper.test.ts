@@ -7,7 +7,7 @@ import {
 
 import { extSessionStorage } from '../../../../src/lib';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
-import { buildScriptText } from '../../../../src/lib/mv2/background/injection-helper';
+import { buildScriptText, InjectionGuard } from '../../../../src/lib/mv2/background/injection-helper';
 
 const timestamp = Date.now();
 
@@ -17,15 +17,18 @@ const expectedScriptTemplate = (text: string): string => `(function() {\
     if (window.scriptExecuted${timestamp} || document instanceof XMLDocument) {\
         return;\
     }\
+    var text = "${text}";\
+    if (text === undefined) {\
+        window.scriptExecuted${timestamp} = true;\
+        return;\
+    }\
     var script = document.createElement("script");\
-    var blob;\
-    var url;\
     try {\
-        var textNode = document.createTextNode("${text}");\
+        var textNode = document.createTextNode(text);\
         script.appendChild(textNode);\
     } catch (e) {\
         script.setAttribute("type", "text/javascript");\
-        script.textContent = "${text}";\
+        script.textContent = text;\
     }\
     var FRAME_REQUESTS_LIMIT = 500;\
     var frameRequests = 0;\
@@ -37,9 +40,6 @@ const expectedScriptTemplate = (text: string): string => `(function() {\
         }\
         try {\
             parent.appendChild(script);\
-            if (url) {\
-                URL.revokeObjectURL(url);\
-            }\
             script.remove();\
         } catch (e) {\
         } finally {\
@@ -66,7 +66,8 @@ describe('Injection Helper', () => {
 
         const expected = expectedScriptTemplate('alert(1);');
 
-        expect(trim(buildScriptText(scriptText, appContext.startTimeMs))).toBe(trim(expected));
+        const script = buildScriptText(scriptText, appContext.startTimeMs, InjectionGuard.Scriptlets);
+        expect(trim(script)).toBe(trim(expected));
     });
 
     it('builds script text with escaped symbols', () => {
@@ -74,6 +75,7 @@ describe('Injection Helper', () => {
 
         const expected = expectedScriptTemplate('alert(\\"hello\\");\\n\\\\u2028\\u2029');
 
-        expect(trim(buildScriptText(scriptText, appContext.startTimeMs))).toBe(trim(expected));
+        const script = buildScriptText(scriptText, appContext.startTimeMs, InjectionGuard.Scriptlets);
+        expect(trim(script)).toBe(trim(expected));
     });
 });

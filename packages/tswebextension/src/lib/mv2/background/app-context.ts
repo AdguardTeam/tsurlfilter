@@ -1,3 +1,9 @@
+import {
+    type CanvasProtectionStore,
+    type CanvasRegistrationRecord,
+    type ProtectionSession,
+} from '../../common/canvas-protection/contracts';
+
 import { type ConfigurationMV2Context } from './configuration';
 import { sessionDecorator, SessionStorageKey } from './ext-session-storage';
 
@@ -8,7 +14,7 @@ import { sessionDecorator, SessionStorageKey } from './ext-session-storage';
  *
  * TODO (v.zhelvis) delete this context after DI is implemented.
  */
-export class AppContext {
+export class AppContext implements CanvasProtectionStore {
     /**
      * Is storage initialized.
      * This flag is used to prevent access to persistent storage data on
@@ -39,6 +45,18 @@ export class AppContext {
      */
     @sessionDecorator(SessionStorageKey.CosmeticsInjectedOnStartup)
     accessor cosmeticsInjectedOnStartup!: boolean;
+
+    /**
+     * Root seed of canvas noise for the current browser session.
+     */
+    @sessionDecorator(SessionStorageKey.CanvasProtectionSession)
+    accessor canvasProtectionSession: ProtectionSession | undefined;
+
+    /**
+     * Canvas protection script the browser last acknowledged.
+     */
+    @sessionDecorator(SessionStorageKey.CanvasProtectionRegistration)
+    accessor canvasProtectionRegistration: CanvasRegistrationRecord | undefined;
 }
 
 export const appContext = new AppContext();
