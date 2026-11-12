@@ -50,6 +50,17 @@ describe('RegExpUtils', () => {
                 expected: true,
             },
             {
+                // The closing slash is escaped, so this is not a RegExp
+                // literal: the backslash escapes the slash
+                actual: '/a\\/',
+                expected: false,
+            },
+            {
+                // The slash before the closing slash is not escaped
+                actual: '/a/b/',
+                expected: true,
+            },
+            {
                 actual: '/ex[[ampl[[e.com///.*/banner/',
                 expected: true,
             },

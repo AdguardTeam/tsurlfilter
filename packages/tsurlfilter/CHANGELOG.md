@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `SimpleRegex.isRegexPattern()` now rejects a pattern whose closing slash
+  is escaped, e.g. `/a\/`, the same as `RegExpUtils.isRegexPattern()` in
+  [@adguard/agtree]. Such a value is not a regexp literal, so `$path`,
+  `$url`, and regexp domain values of this form are used as plain values
+  instead of being compiled as regexps.
 - `:contains()` regexp arguments in HTML filtering rules that end with an
   escaped backslash (`/foo\\/`) or have one in a character class (`/[\\]/`)
   are now compiled as regexps instead of being matched as text.

@@ -42,6 +42,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- A value whose closing slash is escaped, e.g. `/a\/`, is no longer
+  treated as a RegExp literal. `RegExpUtils.isRegexPattern()` now checks
+  the character before the closing slash. Previously the check always
+  passed. As a result, the uBO→ADG conversion of `:matches-path(/a\/)`
+  keeps the backslash, and its negated form produces a valid regexp
+  instead of `/^((?!a\).)*$/`.
 - ADG→uBO conversion of HTML filtering `[tag-content]` and `[wildcard]`
   attribute selectors now produces rules closer to the AdGuard behavior:
   `[tag-content]` becomes a case-sensitive escaped `:has-text()` regexp,

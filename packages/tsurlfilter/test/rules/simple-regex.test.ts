@@ -306,5 +306,7 @@ describe('SimpleRegex.isRegexPattern', () => {
         expect(SimpleRegex.isRegexPattern('/path.html/')).toBe(true);
         expect(SimpleRegex.isRegexPattern('/path.html')).toBe(false);
         expect(SimpleRegex.isRegexPattern('path.html')).toBe(false);
+        // The closing slash is escaped, so this is not a regexp literal
+        expect(SimpleRegex.isRegexPattern('/a\\/')).toBe(false);
     });
 });

@@ -614,12 +614,22 @@ export class SimpleRegex {
     /**
      * Check if pattern is Regex.
      *
+     * A pattern whose closing slash is escaped is not a regexp literal: in
+     * `/a\/` the backslash escapes the slash, so the literal is not
+     * terminated. This escape check matches
+     * `RegExpUtils.isRegexPattern()` in `@adguard/agtree`, so both packages
+     * agree about the same value. The other checks stay simpler here: this
+     * method does not trim and does not reject `//`.
+     *
      * @param str The string to check.
      *
      * @returns True if the string is a regex pattern, false otherwise.
      */
     public static isRegexPattern(str: string): boolean {
-        return str.startsWith('/') && str.endsWith('/');
+        return str.startsWith('/')
+            && str.endsWith('/')
+            // An escaped closing slash does not terminate a RegExp literal
+            && str[str.length - 2] !== '\\';
     }
 
     /**

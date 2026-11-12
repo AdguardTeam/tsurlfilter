@@ -111,6 +111,10 @@ export class RegExpUtils {
      * Note: it does not perform a full validation of the pattern,
      * it just checks if the string starts and ends with a slash.
      *
+     * A pattern whose closing slash is escaped is not a RegExp literal,
+     * e.g. `/a\/`: the backslash escapes the slash, so the literal is not
+     * terminated. Such a pattern is rejected.
+     *
      * @param pattern Pattern to check.
      *
      * @returns `true` if the string is a RegExp pattern, `false` otherwise.
@@ -122,7 +126,8 @@ export class RegExpUtils {
         return trimmedPattern.length > REGEX_MARKER.length * 2
             && trimmedPattern.startsWith(REGEX_MARKER)
             && trimmedPattern.endsWith(REGEX_MARKER)
-            && trimmedPattern[REGEX_MARKER.length - 2] !== ESCAPE_CHARACTER;
+            // An escaped closing slash does not terminate a RegExp literal
+            && trimmedPattern[trimmedPattern.length - 2] !== ESCAPE_CHARACTER;
     }
 
     /**
