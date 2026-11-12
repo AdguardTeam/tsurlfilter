@@ -1274,6 +1274,43 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^SCRIPT:has-text(/<div>/)'],
                     },
 
+                    // HTML serialization writes the content of `iframe`, `xmp`,
+                    // `noembed`, `noframes`, `plaintext` and `noscript` literally
+                    // as well, so `innerHTML` equals `textContent` for them too
+                    {
+                        actual: '$$iframe[tag-content="<div>"]',
+                        expected: ['##^iframe:has-text(/<div>/)'],
+                    },
+                    {
+                        actual: '$$xmp[tag-content="<div>"]',
+                        expected: ['##^xmp:has-text(/<div>/)'],
+                    },
+                    {
+                        actual: '$$noembed[tag-content="<div>"]',
+                        expected: ['##^noembed:has-text(/<div>/)'],
+                    },
+                    {
+                        actual: '$$noframes[tag-content="<div>"]',
+                        expected: ['##^noframes:has-text(/<div>/)'],
+                    },
+                    {
+                        actual: '$$plaintext[tag-content="<div>"]',
+                        expected: ['##^plaintext:has-text(/<div>/)'],
+                    },
+                    {
+                        actual: '$$noscript[tag-content="<div>"]',
+                        expected: ['##^noscript:has-text(/<div>/)'],
+                    },
+
+                    // `title` and `textarea` content is escaped during
+                    // serialization, so these elements are not in the literal
+                    // text group
+                    {
+                        actual: '$$textarea[tag-content="<div>"]',
+                        expected: ['$$textarea[tag-content="<div>"]'],
+                        shouldConvert: false,
+                    },
+
                     // a compound selector without a type selector has an unknown
                     // element type, so the markup fallback still applies
                     {

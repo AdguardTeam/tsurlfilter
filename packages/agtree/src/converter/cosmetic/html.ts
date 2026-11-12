@@ -134,17 +134,29 @@ const SPECIAL_ATTRIBUTE_SELECTOR_PATTERN = new RegExp(
 );
 
 /**
- * HTML raw text elements, whose `innerHTML` equals `textContent`.
+ * HTML elements whose content is text and whose HTML serialization writes that
+ * text literally, without escaping, so their `innerHTML` equals their
+ * `textContent`.
  *
- * The content of these elements is text rather than a tree of child nodes,
- * and HTML serialization writes it literally. Thus `<` and `>` in a
- * `[tag-content]` or `[wildcard]` value stay literal characters in both
- * `innerHTML` and `textContent`, so the value can still match in uBlock
- * `:has-text()`, which tests `textContent`.
+ * The HTML fragment serialization algorithm writes the text content of the
+ * `style`, `script`, `xmp`, `iframe`, `noembed`, `noframes` and `plaintext`
+ * elements literally, and of `noscript` when scripting is enabled. Browser
+ * extensions always run with scripting enabled, so `noscript` is included.
+ * `title` and `textarea` are not included: their content is escaped during
+ * serialization, so `innerHTML` differs from `textContent` there.
  *
- * @see {@link https://html.spec.whatwg.org/multipage/syntax.html#raw-text-elements}
+ * @see {@link https://html.spec.whatwg.org/multipage/parsing.html#serialising-html-fragments}
  */
-const RAW_TEXT_ELEMENTS = new Set<string>(['script', 'style']);
+const LITERAL_TEXT_ELEMENTS = new Set<string>([
+    'iframe',
+    'noembed',
+    'noframes',
+    'noscript',
+    'plaintext',
+    'script',
+    'style',
+    'xmp',
+]);
 
 /**
  * Pattern matching [tag-content] values that are NOT chain-safe, i.e. cannot
@@ -367,10 +379,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * Note: a valid ADG rule may be kept as-is with `isConverted: false` when
      * a special attribute selector cannot be represented in uBlock without
      * changing its matching semantics, e.g. HTML markup or an ampersand in
-     * `[tag-content]`/`[wildcard]` for an element other than `script`/`style`,
-     * see {@link HtmlRuleConverter.containsHtmlMarkup},
+     * `[tag-content]`/`[wildcard]` for an element whose content is not
+     * serialized literally, see {@link HtmlRuleConverter.containsHtmlMarkup},
      * {@link HtmlRuleConverter.containsHtmlAmpersand} and
-     * {@link HtmlRuleConverter.isRawTextElement}. Callers must not treat
+     * {@link HtmlRuleConverter.isLiteralTextElement}. Callers must not treat
      * `isConverted: false` as proof of rule invalidity.
      *
      * @param rule Rule node to convert.
@@ -399,9 +411,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
         let isUnconvertible = false;
 
         const onSpecialAttributeSelector: OnSpecialAttributeSelectorCallback = (name, value, typeSelector) => {
-            // The markup and ampersand checks do not apply to raw text
-            // elements: their `innerHTML` equals `textContent`, so the value is
-            // still present in the text that uBlock matches.
+            // The markup and ampersand checks do not apply to elements whose
+            // content is serialized literally: their `innerHTML` equals
+            // `textContent`, so the value is still present in the text that
+            // uBlock matches.
             if (
                 (name === AdgAttributeSelectors.TagContent
                     || name === AdgAttributeSelectors.Wildcard)
@@ -409,7 +422,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     HtmlRuleConverter.containsHtmlMarkup(value)
                     || HtmlRuleConverter.containsHtmlAmpersand(value)
                 )
-                && !HtmlRuleConverter.isRawTextElement(typeSelector)
+                && !HtmlRuleConverter.isLiteralTextElement(typeSelector)
             ) {
                 isUnconvertible = true;
                 // Keep the selector: `convertBody()` converts the body
@@ -668,8 +681,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * matches it, but the AdGuard rule does not. Such rules are kept as-is
      * instead.
      *
-     * Exception: for raw text elements the two strings are equal, see
-     * {@link HtmlRuleConverter.isRawTextElement}.
+     * Exception: for elements whose content is serialized literally, the two
+     * strings are equal, see {@link HtmlRuleConverter.isLiteralTextElement}.
      *
      * @param value Value of the special attribute selector.
      *
@@ -692,9 +705,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * This check also covers every character reference, e.g. `&lt;`, `&amp;`,
      * `&#39;` or `&copy 2024`.
      *
-     * Exception: a literal `&` survives in raw text elements, where
-     * `innerHTML` and `textContent` are equal, see
-     * {@link HtmlRuleConverter.isRawTextElement}.
+     * Exception: a literal `&` survives in elements whose content is
+     * serialized literally, where `innerHTML` and `textContent` are equal, see
+     * {@link HtmlRuleConverter.isLiteralTextElement}.
      *
      * @param value Value of the special attribute selector.
      *
@@ -705,22 +718,23 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Checks whether the type selector refers to an HTML raw text element.
+     * Checks whether the type selector refers to an element whose content is
+     * serialized literally.
      *
-     * For raw text elements (`script`, `style`) the element content is text,
-     * not a tree of child nodes, so `innerHTML` and `textContent` are equal.
-     * A `[tag-content]` or `[wildcard]` value with markup characters can
-     * therefore still match in uBlock `:has-text()`, which tests
-     * `textContent`.
+     * For these elements the content is text, not a tree of child nodes, so
+     * `innerHTML` and `textContent` are equal, see
+     * {@link LITERAL_TEXT_ELEMENTS}. A `[tag-content]` or `[wildcard]` value
+     * with markup characters or an ampersand can therefore still match in
+     * uBlock `:has-text()`, which tests `textContent`.
      *
      * @param typeSelector Type selector of the compound selector, or `null`
      * if the compound selector has no type selector.
      *
-     * @returns `true` if the type selector refers to a raw text element,
-     * otherwise `false`.
+     * @returns `true` if the type selector refers to an element whose content
+     * is serialized literally, otherwise `false`.
      */
-    private static isRawTextElement(typeSelector: string | null): boolean {
-        return typeSelector !== null && RAW_TEXT_ELEMENTS.has(typeSelector);
+    private static isLiteralTextElement(typeSelector: string | null): boolean {
+        return typeSelector !== null && LITERAL_TEXT_ELEMENTS.has(typeSelector);
     }
 
     /**
@@ -739,11 +753,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - `[max-length]` is skipped.
      *
      * Note: values that contain HTML markup or an ampersand are passed to this
-     * method only for raw text elements, where `innerHTML` equals
-     * `textContent`; for other elements such rules are kept as-is, see
-     * {@link HtmlRuleConverter.containsHtmlMarkup},
+     * method only for elements whose content is serialized literally, where
+     * `innerHTML` equals `textContent`; for other elements such rules are kept
+     * as-is, see {@link HtmlRuleConverter.containsHtmlMarkup},
      * {@link HtmlRuleConverter.containsHtmlAmpersand} and
-     * {@link HtmlRuleConverter.isRawTextElement}.
+     * {@link HtmlRuleConverter.isLiteralTextElement}.
      *
      * @param name Name of the special attribute selector.
      * @param value Value of the special attribute selector.

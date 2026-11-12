@@ -77,11 +77,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   dot-all match.
 - ADG→uBO conversion now keeps a rule as-is when a `[tag-content]` or
   `[wildcard]` value contains HTML markup or an ampersand and the element
-  is not `script` or `style`. uBlock matches `textContent`, so the
-  converted rule would match different text. Limitation: a value without
-  markup or an ampersand can still match an element whose `textContent`
-  equals it while its `innerHTML` differs, e.g. text split across child
-  tags.
+  content is not serialized literally. The content of `script`, `style`,
+  `xmp`, `iframe`, `noembed`, `noframes`, `plaintext` and `noscript` is
+  serialized literally, so `innerHTML` equals `textContent` there and the
+  rule still converts. For other elements uBlock matches `textContent`, so
+  the converted rule would match different text. Limitation: a value
+  without markup or an ampersand can still match an element whose
+  `textContent` equals it while its `innerHTML` differs, e.g. text split
+  across child tags.
 - ADG→uBO conversion now raises a conversion error for a `:contains()`
   argument that uBlock would drop, e.g. an argument with an unterminated
   quote, an unbalanced block, an unterminated comment, a `)` that ends the
