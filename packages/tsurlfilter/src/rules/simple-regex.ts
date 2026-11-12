@@ -633,12 +633,32 @@ export class SimpleRegex {
     /**
      * Check if pattern is Regex.
      *
+     * A pattern whose closing slash is escaped is not a regexp literal: in
+     * `/a\/` the backslash escapes the slash, so the literal is not
+     * terminated. The check counts the consecutive backslashes before the
+     * closing slash. An odd count escapes the slash and rejects the pattern.
+     * An even count leaves the slash as the delimiter, so `/a\\/` stays a
+     * regexp literal. This escape check matches
+     * `RegExpUtils.isRegexPattern()` in `@adguard/agtree`, so both packages
+     * agree about the same value. The other checks stay simpler here: this
+     * method does not trim and does not reject `//`.
+     *
      * @param str The string to check.
      *
      * @returns True if the string is a regex pattern, false otherwise.
      */
     public static isRegexPattern(str: string): boolean {
-        return str.startsWith('/') && str.endsWith('/');
+        if (!str.startsWith('/') || !str.endsWith('/')) {
+            return false;
+        }
+
+        // Count the consecutive backslashes before the closing slash
+        let backslashes = 0;
+        for (let i = str.length - 2; i >= 0 && str[i] === '\\'; i -= 1) {
+            backslashes += 1;
+        }
+
+        return backslashes % 2 === 0;
     }
 
     /**

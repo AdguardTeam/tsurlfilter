@@ -46,6 +46,24 @@ describe('Cosmetic rule modifiers conversion', () => {
                 ],
                 shouldConvert: true,
             },
+            // A value whose closing slash is escaped is not a regexp
+            // literal: the backslash is not escaped again
+            {
+                actual: String.raw`example.com##:matches-path(/a\/) .foo`,
+                expected: [
+                    String.raw`[$path=/a\/]example.com##.foo`,
+                ],
+                shouldConvert: true,
+            },
+            // The negated form uses the value as a plain pattern, so the
+            // result is a valid regexp
+            {
+                actual: String.raw`example.com##:not(:matches-path(/a\/)) .foo`,
+                expected: [
+                    String.raw`[$path=/^((?!\/a\\\/).)*$/]example.com##.foo`,
+                ],
+                shouldConvert: true,
+            },
             {
                 actual: 'example.com##.foo:not(:matches-path(/page))',
                 expected: [
@@ -348,6 +366,15 @@ describe('Cosmetic rule modifiers conversion', () => {
                 actual: '[$domain=/example.(com\\|org)/|foo.com]#@#.banner',
                 expected: [
                     '/example.(com\\|org)/,foo.com#@#.banner',
+                ],
+                shouldConvert: true,
+            },
+            // A `$domain` value whose closing slash is escaped is kept
+            // as-is: it is not a regexp literal
+            {
+                actual: String.raw`[$domain=/a\/]example.com##.banner`,
+                expected: [
+                    String.raw`/a\/##.banner`,
                 ],
                 shouldConvert: true,
             },

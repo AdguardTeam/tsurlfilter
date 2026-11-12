@@ -52,6 +52,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Hostnames with labels ending in an underscore are now accepted by domain validation,
   while domains with a leading dot remain invalid.
+- A value whose closing slash is escaped, e.g. `/a\/`, is no longer
+  treated as a RegExp literal. `RegExpUtils.isRegexPattern()` now checks
+  the consecutive backslashes before the closing slash: an odd count
+  escapes the slash, an even count does not. Previously the check always
+  passed. As a result, the uBO→ADG conversion of `:matches-path(/a\/)`
+  keeps the backslash, and its negated form produces a valid regexp
+  instead of `/^((?!a\).)*$/`. A value that ends with an escaped
+  backslash, e.g. `/a\\/`, stays a RegExp literal.
 - ADG→uBO conversion of HTML filtering `[tag-content]` and `[wildcard]`
   attribute selectors now produces rules closer to the AdGuard behavior:
   `[tag-content]` becomes a case-sensitive escaped `:has-text()` regexp,

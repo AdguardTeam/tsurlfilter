@@ -111,6 +111,13 @@ export class RegExpUtils {
      * Note: it does not perform a full validation of the pattern,
      * it just checks if the string starts and ends with a slash.
      *
+     * A pattern whose closing slash is escaped is not a RegExp literal,
+     * e.g. `/a\/`: the backslash escapes the slash, so the literal is not
+     * terminated. The check counts the consecutive backslashes before the
+     * closing slash. An odd count escapes the slash and rejects the pattern.
+     * An even count leaves the slash as the delimiter, so a pattern that
+     * ends with an escaped backslash, e.g. `/a\\/`, stays a RegExp literal.
+     *
      * @param pattern Pattern to check.
      *
      * @returns `true` if the string is a RegExp pattern, `false` otherwise.
@@ -119,10 +126,19 @@ export class RegExpUtils {
         const trimmedPattern = pattern.trim();
 
         // Avoid false positives
-        return trimmedPattern.length > REGEX_MARKER.length * 2
-            && trimmedPattern.startsWith(REGEX_MARKER)
-            && trimmedPattern.endsWith(REGEX_MARKER)
-            && trimmedPattern[REGEX_MARKER.length - 2] !== ESCAPE_CHARACTER;
+        if (trimmedPattern.length <= REGEX_MARKER.length * 2
+            || !trimmedPattern.startsWith(REGEX_MARKER)
+            || !trimmedPattern.endsWith(REGEX_MARKER)) {
+            return false;
+        }
+
+        // Count the consecutive backslashes before the closing slash
+        let backslashes = 0;
+        for (let i = trimmedPattern.length - 2; i >= 0 && trimmedPattern[i] === ESCAPE_CHARACTER; i -= 1) {
+            backslashes += 1;
+        }
+
+        return backslashes % 2 === 0;
     }
 
     /**
