@@ -403,8 +403,28 @@ export const resolveOwnWrittenText: WrittenRuleTextResolver = (
  * Separates the entries of a written modifier list.
  *
  * A separator escaped with a backslash belongs to the value, not to the list.
+ * The list is scanned character by character, because a lookbehind regexp
+ * literal does not parse in older Safari versions.
+ *
+ * @param writtenModifiers Written modifier list, without the `$` separator.
+ *
+ * @returns Modifier entries as written, empty entries included.
  */
-const WRITTEN_MODIFIER_SEPARATOR_REGEXP = /(?<!\\),/;
+const splitWrittenModifiers = (writtenModifiers: string): string[] => {
+    const entries: string[] = [];
+    let start = 0;
+
+    for (let i = 0; i < writtenModifiers.length; i += 1) {
+        if (writtenModifiers.charAt(i) === ',' && writtenModifiers.charAt(i - 1) !== '\\') {
+            entries.push(writtenModifiers.slice(start, i));
+            start = i + 1;
+        }
+    }
+
+    entries.push(writtenModifiers.slice(start));
+
+    return entries;
+};
 
 /**
  * Returns the name of a written modifier entry, without the negation mark.
@@ -439,9 +459,7 @@ const stripWrittenModifiers = (text: string, shouldStrip: (name: string) => bool
     }
 
     const pattern = text.slice(0, delimiterIndex);
-    const kept = text
-        .slice(delimiterIndex + 1)
-        .split(WRITTEN_MODIFIER_SEPARATOR_REGEXP)
+    const kept = splitWrittenModifiers(text.slice(delimiterIndex + 1))
         .filter((entry) => !shouldStrip(getWrittenModifierName(entry)));
 
     return kept.length === 0 ? pattern : `${pattern}${OPTIONS_DELIMITER}${kept.join(',')}`;

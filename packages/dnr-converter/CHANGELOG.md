@@ -47,6 +47,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `$badfilter` comparison no longer uses a regexp lookbehind literal, so the
+  package loads in browsers without lookbehind support, e.g. Safari before
+  16.4.
 - Non-ASCII values no longer break the conversion: a hostname in a URL filter is
   converted to punycode, also after a `*` or `*.` wildcard and in unanchored or
   scheme-prefixed patterns, the rest of the pattern is percent-encoded, and
