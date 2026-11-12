@@ -91,13 +91,24 @@ export class RemoveParamModifier implements IAdvancedModifier {
      * @returns The URL with the query parameters removed.
      */
     public removeParameters(url: string): string {
+        if (!this.value) {
+            // Bare removeparam: remove all query parameters. A `?` inside the
+            // hash fragment is not a query delimiter, so search for it only
+            // in the part before the fragment.
+            const hashIndex = url.indexOf('#');
+            const urlWithoutHash = hashIndex >= 0 ? url.substring(0, hashIndex) : url;
+            const queryIndex = urlWithoutHash.indexOf('?');
+
+            if (queryIndex < 0) {
+                return url;
+            }
+
+            return url.substring(0, queryIndex);
+        }
+
         const sepIndex = url.indexOf('?');
         if (sepIndex < 0) {
             return url;
-        }
-
-        if (!this.value) {
-            return url.substring(0, sepIndex);
         }
 
         if (sepIndex === url.length - 1) {

@@ -64,6 +64,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Bare `$removeparam` rules no longer duplicate the hash fragment when a
+  History API URL has no query string but its fragment contains `?`, e.g.
+  `/page#route?x=1` now stays unchanged instead of becoming
+  `/page#route#route?x=1` (AG-61691).
 - Canvas protection keeps the script that the browser acknowledged across
   service worker restarts, instead of removing it and registering it again on
   every start.

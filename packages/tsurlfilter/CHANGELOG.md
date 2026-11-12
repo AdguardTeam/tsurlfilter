@@ -31,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Bare `$removeparam` rules no longer treat a `?` inside a hash fragment as a
+  query delimiter, so `https://example.com/page#route?param=1` stays unchanged
+  (AG-61691).
 - The library no longer uses a regexp lookbehind literal when it compares the
   written text of `$badfilter` rules, so it parses in browsers without
   lookbehind support, e.g. Safari before 16.4.
