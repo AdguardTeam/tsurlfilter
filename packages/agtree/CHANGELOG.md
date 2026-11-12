@@ -70,16 +70,17 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   the selector keeps the full attribute value, and only real top-level
   modifiers apply. The same fix covers `:style()`, `:remove()` and
   `:matches-media()` text in double- or single-quoted attribute values.
-  The argument of an extended-CSS pseudo-class (`:has-text()`, `:contains()`,
-  `:matches-path()`, …) is treated as plain text, so a literal `[` or quote
-  inside it is not mistaken for attribute syntax and does not hide a later
-  `:style()`, e.g. `##div:has-text([It's])[title='x']:style(content:'y')`.
-  A quoted string in a `:style()` declaration value also no longer creates a
-  modifier: such rules used to fail with
-  `:remove() cannot be nested inside a pseudo-class`
-  (or the equivalent `:matches-path()` / `:matches-media()` error) and now
-  parse as CSS injection rules, e.g.
-  `##div:style(content: ":remove()")`.
+  A quoted string in a `:style()` declaration value also no longer fails:
+  rules such as `##div:style(content: ":remove()")` used to throw
+  `:remove() cannot be nested inside a pseudo-class` (or the equivalent
+  `:matches-path()` / `:matches-media()` error) and now parse as CSS
+  injection rules.
+  Extended-CSS arguments (`:has-text()`, `:contains()`, `:matches-path()`, …)
+  are plain text now. Modifier-like text inside them no longer creates a
+  modifier: `##div:has-text(:remove()):style(color:red)` used to throw the
+  same nested-modifier error and now parses as a CSS injection rule. A
+  parenthesis inside a quoted argument no longer hides a later `:style()`,
+  for example `##div:has-text("Great :("):style(color:red)`.
 - `RuleParserPipeline.parseRange` now rejects a non-zero `dataOffset` for
   cosmetic rules. Their structural parsers write at fixed offsets, so a
   non-zero offset previously produced a rule with an empty selector and no
