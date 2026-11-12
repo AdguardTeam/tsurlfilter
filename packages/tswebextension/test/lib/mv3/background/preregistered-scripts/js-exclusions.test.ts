@@ -405,6 +405,33 @@ describe('resolveHostExclusions', () => {
             .toContain('cannot be expressed as an excludeMatches pattern');
     });
 
+    it('keeps a host dynamic when a bare wildcard token matches it', () => {
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@*.youtube.com/ads$document\n',
+        }]);
+
+        // The engine compares the whole URL with the pattern's regexp, so the
+        // wildcard token reaches `www.youtube.com` while no exclusion can be
+        // anchored to it.
+        expect(exclusions.size).toBe(0);
+        expect(dynamicHosts.get('www.youtube.com'))
+            .toContain('reaches the host but is not anchored to its name');
+    });
+
+    it('keeps a host dynamic when the bare token occurs inside the hostname', () => {
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@tube.com/ads$document\n',
+        }]);
+
+        // `tube.com/ads` is a substring of `https://youtube.com/ads`, so the
+        // engine disables JS there.
+        expect(exclusions.size).toBe(0);
+        expect(dynamicHosts.has('youtube.com')).toBe(true);
+        expect(dynamicHosts.has('www.youtube.com')).toBe(true);
+    });
+
     it('keeps a host dynamic when the exception covers every URL with a wildcard path', () => {
         const { exclusions, dynamicHosts } = scan([{
             filterId: 2,

@@ -78,6 +78,30 @@ describe('EngineApi.startEngine — exception sources', () => {
         }]);
     });
 
+    it('skips a list it cannot read instead of failing the start', async () => {
+        // An unreadable list is absent from the engine as well, so the scan
+        // must miss its lines too — and the engine start must survive.
+        vi.spyOn(Engine, 'createAsync').mockResolvedValue(undefined as never);
+
+        const broken = makeFilter(3, '');
+        broken.getContent = async (): Promise<string> => {
+            throw new Error('cannot read');
+        };
+
+        const api = new EngineApi();
+        await api.startEngine({
+            verbose: false,
+            localFilters: [broken, makeFilter(2, '@@||youtube.com/ads$document')],
+            remoteFilters: [],
+            userRulesFilter: makeFilter(0, ''),
+            allowlistRulesList: null,
+        });
+
+        expect(api.getExceptionSources()).toEqual([
+            { filterId: 2, lines: ['@@||youtube.com/ads$document'] },
+        ]);
+    });
+
     it('starts empty, so a sync before the engine start registers no exclusions', () => {
         const api = new EngineApi();
 

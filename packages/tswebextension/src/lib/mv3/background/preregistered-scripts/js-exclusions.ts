@@ -250,13 +250,15 @@ const resolveScope = (
     if (!patternHost.anchored) {
         // A substring search cannot be pinned: `youtube.com/ads` also matches
         // `https://youtube.com/watch?u=youtube.com/ads`, so the reach of the
-        // rule is wider than the URL prefix an exclusion could name. Only a
-        // token that names this host at a label boundary is about it at all.
+        // rule is wider than the URL prefix an exclusion could name. The
+        // token counts as reaching the host when it occurs anywhere inside the
+        // hostname — `tube.com` and the wildcard `you*.com` both match
+        // `https://youtube.com/ads` in the engine.
         if (host.includes('*')) {
-            return 'other';
+            return matchesWildcardHost(host, hostname) ? 'unknown' : 'other';
         }
 
-        return host === hostname || hostname.endsWith(`.${host}`) ? 'unknown' : 'other';
+        return hostname.includes(host) ? 'unknown' : 'other';
     }
 
     if (hostname === host || (patternHost.allowSubdomains && hostname.endsWith(`.${host}`))) {

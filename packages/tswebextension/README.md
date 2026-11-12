@@ -394,6 +394,11 @@ Known limitations:
   its host on the dynamic path: the registration cannot exclude the page, and
   running the script there would contradict the engine. Only the affected
   host falls back.
+- The path of a match pattern is compared case-sensitively by the browser and
+  case-insensitively by the engine, so an uppercase spelling of an excluded
+  path (`/ADS` for `/ads`) still receives the scriptlets. A rule whose path is
+  written in uppercase without `$match-case` keeps its host on the dynamic path
+  instead.
 - An exception that names no host (`@@/ads/$document`, a regexp) cannot be
   excluded from a registration. One that matches the host's own page keeps
   the host on the dynamic path; any other is only logged at debug level, so
