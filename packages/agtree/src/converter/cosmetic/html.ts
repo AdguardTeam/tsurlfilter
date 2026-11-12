@@ -140,18 +140,22 @@ const SPECIAL_ATTRIBUTE_SELECTOR_PATTERN = new RegExp(
  *
  * The HTML fragment serialization algorithm writes the text content of the
  * `style`, `script`, `xmp`, `iframe`, `noembed`, `noframes` and `plaintext`
- * elements literally, and of `noscript` when scripting is enabled. Browser
- * extensions always run with scripting enabled, so `noscript` is included.
- * `title` and `textarea` are not included: their content is escaped during
- * serialization, so `innerHTML` differs from `textContent` there.
+ * elements literally. `title` and `textarea` are not included: their content
+ * is escaped during serialization, so `innerHTML` differs from `textContent`
+ * there.
+ *
+ * `noscript` is not included either. A browser extension serializes it
+ * literally, but uBlock Origin parses the response with `DOMParser`, whose
+ * document has scripting disabled. There the content of `noscript` is parsed
+ * as ordinary markup, so its `textContent` is not the literal source text.
  *
  * @see {@link https://html.spec.whatwg.org/multipage/parsing.html#serialising-html-fragments}
+ * @see {@link https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#dom-domparser-parsefromstring}
  */
 const LITERAL_TEXT_ELEMENTS = new Set<string>([
     'iframe',
     'noembed',
     'noframes',
-    'noscript',
     'plaintext',
     'script',
     'style',

@@ -1275,8 +1275,8 @@ describe('HtmlRuleConverter', () => {
                     },
 
                     // HTML serialization writes the content of `iframe`, `xmp`,
-                    // `noembed`, `noframes`, `plaintext` and `noscript` literally
-                    // as well, so `innerHTML` equals `textContent` for them too
+                    // `noembed`, `noframes` and `plaintext` literally as well,
+                    // so `innerHTML` equals `textContent` for them too
                     {
                         actual: '$$iframe[tag-content="<div>"]',
                         expected: ['##^iframe:has-text(/<div>/)'],
@@ -1297,9 +1297,22 @@ describe('HtmlRuleConverter', () => {
                         actual: '$$plaintext[tag-content="<div>"]',
                         expected: ['##^plaintext:has-text(/<div>/)'],
                     },
+
+                    // `noscript` is not in the literal text group: uBlock parses
+                    // the response with `DOMParser`, where scripting is disabled,
+                    // so `noscript` content is ordinary markup and its
+                    // `textContent` is not the literal source text
                     {
                         actual: '$$noscript[tag-content="<div>"]',
-                        expected: ['##^noscript:has-text(/<div>/)'],
+                        expected: ['$$noscript[tag-content="<div>"]'],
+                        shouldConvert: false,
+                    },
+
+                    // the same holds for a character reference inside `noscript`
+                    {
+                        actual: '$$noscript[tag-content="&lt;div&gt;"]',
+                        expected: ['$$noscript[tag-content="&lt;div&gt;"]'],
+                        shouldConvert: false,
                     },
 
                     // `title` and `textarea` content is escaped during
