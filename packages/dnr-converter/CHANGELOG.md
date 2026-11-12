@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [2.1.0] - 2026-11-12
+
+### Added
+
 - Partial `$csp` exception support for exact conditions, exceptions which are
   wider than the blocker, and clean domain exclusions, including a standalone
   CSP conversion API which resolves exceptions across all filters at once. It
@@ -40,10 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   everything else stays in its own header, where a browser enforces both.
 - `Rule.writtenKeys` is gone: `$badfilter` compares the rule text as written
   (`Rule.originalText`), so a rule no longer keeps a comparison key.
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 
@@ -128,8 +138,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [AdguardBrowserExtension#3615].
 
 [AdguardBrowserExtension#3615]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3615
-
-### Security
+[2.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-converter-v2.1.0
 
 ## [2.0.0] - 2026-09-29
 
