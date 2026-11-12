@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Partial support for `$csp` exceptions in Manifest V3 across built-in, custom,
+  and user filters [AdguardBrowserExtension#2965]: rebuilt CSP rules replace the
+  previous ones atomically within each DNR scope, are fitted into the quotas left
+  after the regular conversion, and the dynamic scope is rolled back when the
+  session update fails. Rule sets must be built with `exclude-unsafe-rules`,
+  otherwise the static copy of a CSP rule stays in the rule set and a `$csp`
+  exception has no effect.
+- `ConfigurationResult` reports what was dropped or failed: `cspRules.errors`
+  for built-in filters (user rules stay in `dynamicRules.errors`),
+  `dynamicRules.limitations` and `sessionRules.limitations` for the two separate
+  quotas, so the session overflow never reaches the dynamic counters, and
+  `dynamicRules.counts` with the final counts, rebuilt CSP rules included.
+  `configure()` logs the errors of built-in CSP rules at the debug level, since
+  built-in filters always hold a few `$csp` exceptions which DNR cannot
+  express, and the session limitations; `dynamicRules.errors` and
+  `dynamicRules.limitations` are left to the consumer.
+- `UnexpectedConversionError`, `RuleScanError`, `isRuleScanError` and
+  `DynamicRulesCounts` are now re-exported, so consumers can check errors with
+  `instanceof` and use the counters type.
 - Added opt-in canvas protection for Chromium MV3, Chromium MV2 and Firefox
   MV2 with `stealth.protectCanvas` and methods to update protection.
   Exceptions are compiled from filter rules and the allowlist, including
@@ -50,6 +69,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   filter lists are prepared again when the versions of the libraries that
   perform the conversion change, so conversion fixes apply without a filter
   update.
+- An overflow of the unsafe session rules reports how many of them can be
+  applied (the quota minus the ids reserved for stealth rules) instead of the
+  raw quota, so the counters of the limits warning are exact.
+- A CSP rule of an unreadable filter is reported in the channel of that filter
+  instead of being dropped from both: the error is classified by its filter id,
+  not by its kind only, and the session update re-adds the CSP rules of such a
+  filter from its own ruleset instead of dropping them with the rebuilt list.
+- The declarative filtering log listener is restarted when any step of
+  `configure()` fails after it was stopped, so the log does not stay silent
+  until the next successful `configure()`.
 - Filtering log now records CSS hits for elements that pages add and remove
   while the page is loading, e.g. anti-adblock bait elements created by a
   script in `<head>`.
@@ -106,6 +135,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   statelessly: matching no longer depends on the previously tested URL
   parameter, so all matching parameters are removed.
 
+[AdguardBrowserExtension#2965]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2965
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
 [AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538

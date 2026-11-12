@@ -2,6 +2,7 @@
 export {
     type ConversionError,
     EmptyResourcesError,
+    UnexpectedConversionError,
     UnsupportedModifierError,
     UnsupportedRegexpError,
     InvalidDeclarativeRuleError,
@@ -11,6 +12,8 @@ export {
     ResourcesPathError,
     type LimitationError,
     MaxScannedRulesError,
+    RuleScanError,
+    isRuleScanError,
     TooManyRegexpRulesError,
     TooManyUnsafeRulesError,
     TooManyRulesError,
@@ -32,6 +35,8 @@ export {
 } from '@adguard/tsurlfilter';
 
 export * from './app';
+
+export { type DynamicRulesCounts } from './dynamic-rules-api';
 
 export { tabsApi } from '../tabs/tabs-api';
 export { TabContext } from '../tabs/tab-context';

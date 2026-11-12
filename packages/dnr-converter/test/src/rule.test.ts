@@ -379,4 +379,52 @@ describe('Rule', () => {
             }).not.toThrow();
         });
     });
+
+    describe('value requirements', () => {
+        it('throws for a blocking $permissions rule without a directive', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, '||example.com^$permissions');
+            }).toThrow('permissions directive must not be empty');
+        });
+
+        it('allows an allowlist $permissions rule without a directive', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, '@@||example.com^$permissions');
+            }).not.toThrow();
+        });
+
+        it('throws for a $removeheader rule without a header name', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, '||example.com^$removeheader');
+            }).toThrow('removeheader value must not be empty');
+        });
+
+        it('throws for a $csp rule with a report-uri directive', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, "||example.com^$csp=script-src 'none'; report-uri https://evil.tld/r");
+            }).toThrow('forbidden CSP directive');
+        });
+
+        it('throws for a $csp rule with a report-to directive in another case', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, "||example.com^$csp=script-src 'none'; REPORT-TO evil");
+            }).toThrow('forbidden CSP directive');
+        });
+
+        it('allows a $csp rule with a regular directive', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, "||example.com^$csp=script-src 'none'; img-src 'self'");
+            }).not.toThrow();
+        });
+
+        it('throws for a $csp rule combined with $cookie in any order', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, "||example.com^$csp=script-src 'none',cookie");
+            }).toThrow('$csp is not compatible with $cookie');
+
+            expect(() => {
+                Rule.createFromText(1, 0, "||example.com^$cookie,csp=script-src 'none'");
+            }).toThrow('$csp is not compatible with $cookie');
+        });
+    });
 });

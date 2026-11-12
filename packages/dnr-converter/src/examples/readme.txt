@@ -45,14 +45,17 @@
 ! display this in the declarative filtering log, as declarative rules are canceled.
 !
 ! ### Problem 1
-! But the current algorithm does not cover rules with `$domain` intersections, for example,
+! A `$domain` intersection is handled only partially: a rule with `$badfilter`
+! cancels the matching rule when the domain lists intersect, but the whole
+! declarative rule is disabled, not only the intersecting domains. For example,
 ! for these two rules:
 ! ```adblock
 ! /some$domain=example.com|example.org
 ! /some$domain=example.com,badfilter
 ! ```
-! A rule with `$badfilter` will fully negate the first rule and the output array of
-! declarative rules will be empty.
+! The rule with `$badfilter` fully negates the first rule and the output array of
+! declarative rules will be empty, including `example.org`. Rules with negated
+! domains are compared by the whole text.
 !
 ! ### Problem 2
 ! ~~Previously, `$removeparam` rules with identical conditions were merged into a
@@ -72,7 +75,6 @@
 ! 1. `$redirect`
 ! 1. `$removeparam`
 ! 1. `$removeheader`
-! 1. `$csp`
 !
 ! ## $document
 ! During the conversion process, the exception with the `$document` modifier is expanded
@@ -517,20 +519,34 @@ $cookie=/__utm[a-z]/
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
-! Allowlist rules are not supported
+! Exceptions are resolved only by the standalone CSP conversion
+! (`convertCspRules()`): the regular `convert()` still rejects an allowlist
+! `$csp` rule. An exception is applied when it has the exact conditions of the
+! blocker, when it is wider than the blocker's domain (`@@||example.org^$csp`
+! also cancels `||example.org/path$csp=...` and `||sub.example.org^$csp=...`),
+! or when it has no pattern and covers the whole blocker (`@@$csp=...`).
+! Path-level subtraction is not expressible in DNR. Any exception applies only when it
+! outranks the blocking rule, so an `$important` blocking rule keeps its policy
+! against a value-less and against a valued exception, while MV2 cancels it.
+! Examples with exceptions below are converted by that pass, the rest by
+! `convert()`.
 ! <br/>
-! Rules with the same matching condition are combined into one, but only within
-! the scope of one static filter or within the scope of all dynamic rules
-! (custom filters and user rules).
+! Rules with the same matching condition and the same policy are combined into
+! one, but only within the scope of one static filter or within the scope of all
+! dynamic rules (custom filters and user rules). Different policies stay in
+! separate headers, where a browser enforces both: merged, they would change
+! what the `default-src` fallback blocks.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
 ! example 1
 ||example.org^$csp=frame-src 'none'
 ! example 2
-@@||example.org/page/*$csp=frame-src 'none'
+$csp=frame-src 'none'
+@@||cdn.example.org^$csp
 ! example 3
-@@||example.org/page/*$csp
+||example.org^$csp=frame-src 'none'
+@@||example.org^$csp
 ! example 4
 ||example.org^$csp=script-src 'self' 'unsafe-eval' http: https:
 ! example 5

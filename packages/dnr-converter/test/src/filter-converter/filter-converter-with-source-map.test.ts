@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { ResourceType, RuleActionType } from '../../../src/declarative-rule';
+import { UnsupportedRegexpError } from '../../../src/errors/conversion-errors';
 import {
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRulesError,
@@ -42,7 +44,443 @@ describe('FilterConverter (withSourceMap: true)', () => {
     const converter = new FilterConverter();
     const withSourceMapOptions = { withSourceMap: true } as const;
 
+    describe('convertCspRules', () => {
+        it('reports a failed blocker once and keeps it out of resolution', async () => {
+            // The rule parses as a CSP rule, but its regexp cannot be
+            // expressed in DNR, so the preflight rejects it and it cannot
+            // cancel anything.
+            const filter = createFilter([
+                "/a(b)\\1/$csp=script-src 'none'",
+                '@@||example.com^$csp',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toBeInstanceOf(UnsupportedRegexpError);
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('skips an unreadable filter and reports it instead of failing', async () => {
+            const unreadableFilter: IFilter = {
+                getId: () => 1,
+                getRuleByIndex: async () => '',
+                getContent: async () => {
+                    throw new Error('offline');
+                },
+                unloadContent: () => {},
+            };
+            const blockingFilter = createFilter([
+                "||example.com^$csp=script-src 'none'",
+            ], 2);
+
+            const { ruleset, errors } = await converter.convertCspRules([
+                unreadableFilter,
+                blockingFilter,
+            ]);
+
+            expect(errors).toHaveLength(1);
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(1);
+        });
+
+        it('converts a cross-filter CSP exception to excludedRequestDomains', async () => {
+            const blockingFilter = createFilter([
+                "$csp=script-src 'none'",
+            ], 1);
+            const exceptionFilter = createFilter([
+                "@@||cdn.example.com^$csp=script-src 'none'",
+            ], 2);
+
+            const { ruleset, errors } = await converter.convertCspRules([
+                blockingFilter,
+                exceptionFilter,
+            ]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.excludedRequestDomains).toEqual(['cdn.example.com']);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('converts a CSP rule where csp is not the first modifier', async () => {
+            const filter = createFilter([
+                "*$document,csp=script-src-attr 'none'",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('converts a CSP alias rule where the alias is not the first modifier', async () => {
+            const filter = createFilter([
+                '*$document,inline-script',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('removes a CSP rule negated by a $badfilter rule', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none'",
+                "||example.com^$csp=script-src 'none',badfilter",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('removes a CSP rule negated by an exception with the same condition', async () => {
+            const filter = createFilter([
+                '||playzone.cz^$csp=child-src *',
+                '@@||playzone.cz^$csp=child-src *',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('removes a valued CSP rule negated by a value-less exception', async () => {
+            const filter = createFilter([
+                '||playzone.cz^$csp=child-src *',
+                '@@||playzone.cz^$csp',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('removes a CSP rule negated by an identical exact URL exception', async () => {
+            const filter = createFilter([
+                "|https://example.com/path|$csp=script-src 'none'",
+                "@@|https://example.com/path|$csp=script-src 'none'",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('keeps a case-sensitive CSP rule when the $match-case exception cannot match', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',match-case",
+                '@@||EXAMPLE.COM^$csp,match-case',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('converts a Unicode domain anchor to a valid punycode URL filter', async () => {
+            const filter = createFilter([
+                "||b\u00fccher.localtest.me^$csp=script-src 'none'",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.urlFilter).toBe('||xn--bcher-kva.localtest.me^');
+            expect(errors).toHaveLength(0);
+        });
+
+        it('keeps an explicit port out of the punycoded hostname', async () => {
+            const filter = createFilter([
+                "||b\u00fccher.localtest.me:8080^$csp=script-src 'none'",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.urlFilter).toBe('||xn--bcher-kva.localtest.me:8080^');
+            expect(errors).toHaveLength(0);
+        });
+
+        it('keeps an explicit port for an ASCII hostname', async () => {
+            const filter = createFilter([
+                "||example.com:8080^$csp=script-src 'none'",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.urlFilter).toBe('||example.com:8080^');
+            expect(errors).toHaveLength(0);
+        });
+
+        it('cancels a blocking rule with an excluded $domain condition', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',domain=~foo.com",
+                '@@||example.com^$csp',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('keeps a blocking rule when the exception excludes another domain', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',domain=~foo.com",
+                '@@||example.com^$csp,domain=~bar.com',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            // A rule with an excluded-only `$domain` also gets the additional
+            // document rule, so the header is appended on browser-started
+            // navigations, which have no initiator.
+            expect(declarativeRules).toHaveLength(2);
+            expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['foo.com']);
+            expect(declarativeRules[1].condition.resourceTypes).toEqual([ResourceType.MainFrame]);
+            expect(declarativeRules[1].condition.excludedRequestDomains).toEqual(['foo.com']);
+            expect(errors).toHaveLength(1);
+        });
+
+        it('does not exclude a domain from a blocker with an additional main_frame rule', async () => {
+            const filter = createFilter([
+                "$csp=script-src 'none',domain=a.com",
+                '@@||a.com^$csp,domain=a.com',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            // The exception matches `$domain` by the initiator only, so
+            // excluding `a.com` would also drop the policy from a navigation
+            // to `a.com` without an initiator.
+            expect(declarativeRules).toHaveLength(2);
+            declarativeRules.forEach(({ condition }) => {
+                expect(condition.excludedRequestDomains).toBeUndefined();
+            });
+            expect(errors).toHaveLength(1);
+        });
+
+        it('excludes a domain by an exception with $domain from a blocker without a main_frame rule', async () => {
+            const filter = createFilter([
+                "$csp=script-src 'none',subdocument,domain=a.com",
+                '@@||b.com^$csp,domain=a.com',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.excludedRequestDomains).toEqual(['b.com']);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('excludes a domain from a main_frame blocker when the target domains do not overlap', async () => {
+            const filter = createFilter([
+                "$csp=script-src 'none',domain=a.com|b.com",
+                '@@||cdn.example.com^$csp,domain=a.com|b.com',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            // `cdn.example.com` cannot intersect `requestDomains [a.com,b.com]`
+            // of the additional rule, and the base rule is covered by the
+            // initiator coverage, so the exclusion is resolvable.
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(2);
+            expect(declarativeRules[0].condition.excludedRequestDomains).toEqual(['cdn.example.com']);
+            expect(declarativeRules[1].condition.requestDomains).toEqual(['a.com', 'b.com']);
+            expect(declarativeRules[1].condition.excludedRequestDomains).toEqual(['cdn.example.com']);
+        });
+
+        it('resolves the source rule of a selected line by its original offset', async () => {
+            const filter = createFilter([
+                '||ads.example^',
+                '||tracker.example^',
+                "||example.com^$csp=script-src 'none'",
+                '||another.example^',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(await ruleset.getRulesById(declarativeRules[0].id)).toEqual([
+                { filterId: 1, sourceRule: "||example.com^$csp=script-src 'none'" },
+            ]);
+        });
+
+        it('converts rules with CSP aliases', async () => {
+            const filter = createFilter([
+                '||example.com^$inline-script',
+                '||example.org^$inline-font',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(2);
+        });
+
+        it('does not parse filters without CSP-related rules', async () => {
+            const filter = createFilter([
+                '||csp.example.com^',
+                'invalid rule',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+
+            expect(errors).toHaveLength(0);
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('leaves a rule with a higher-priority action to the regular pass', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',redirect=noopjs",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter], '/resources');
+
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('reports a rule combining $csp with $cookie', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',cookie",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+            expect(errors).toHaveLength(1);
+        });
+
+        it('reports a blocking rule with an empty $csp directive', async () => {
+            const filter = createFilter(['||example.com^$csp'], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+            expect(errors).toHaveLength(1);
+        });
+
+        it('accepts an allowlist rule with an empty $csp directive', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none'",
+                '@@||example.com^$csp',
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+            expect(errors).toHaveLength(0);
+        });
+    });
+
     describe('convert (per-filter mode)', () => {
+        it('can exclude CSP rules from regular source-map conversion', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none'",
+                '||ads.example^',
+            ], 1);
+
+            const [{ ruleset, errors }] = await converter.convert([filter], {
+                excludeCspRules: true,
+                withSourceMap: true,
+            });
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.urlFilter).toBe('||ads.example^');
+            expect(errors).toHaveLength(0);
+        });
+
+        it('reports a broken CSP rule once when CSP rules are excluded', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',removeparam=x",
+            ], 1);
+
+            const [{ errors }] = await converter.convert([filter], {
+                excludeCspRules: true,
+                withSourceMap: true,
+            });
+
+            expect(errors).toHaveLength(0);
+        });
+
+        it('keeps a rule combining $csp with $redirect in the regular conversion', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',redirect=noopjs",
+            ], 1);
+
+            const [{ ruleset, errors }] = await converter.convert([filter], {
+                excludeCspRules: true,
+                withSourceMap: true,
+                resourcesPath: '/resources',
+            });
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action).toEqual({
+                type: RuleActionType.Redirect,
+                redirect: { extensionPath: '/resources/noopjs.js' },
+            });
+        });
+
+        it('leaves a rule combining $csp with $cookie to the CSP pass', async () => {
+            // The regular pass skips scanning errors of CSP-related lines: the
+            // CSP pass scans the same line and reports it once.
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',cookie",
+            ], 1);
+
+            const [{ ruleset, errors }] = await converter.convert([filter], {
+                excludeCspRules: true,
+                withSourceMap: true,
+            });
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(0);
+        });
+
+        it('reports a broken CSP rule when CSP rules are not excluded', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',removeparam=x",
+            ], 1);
+
+            const [{ errors }] = await converter.convert([filter], {
+                withSourceMap: true,
+            });
+
+            expect(errors).toHaveLength(1);
+        });
+
         it('converts network rules to declarative rules', async () => {
             const filter = createFilter(['||example.org^']);
             const [{ ruleset, errors, limitations }] = await converter.convert([filter], withSourceMapOptions);
@@ -178,6 +616,20 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(declarativeRules).toHaveLength(2);
             expect(ruleset.getId()).toBe(FilterConverter.COMBINED_RULESET_ID);
         });
+
+        it('reports a broken CSP rule once when CSP rules are excluded', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none',removeparam=x",
+            ], 1);
+
+            const [{ errors }] = await converter.convert([filter], {
+                combine: true,
+                excludeCspRules: true,
+                withSourceMap: true,
+            });
+
+            expect(errors).toHaveLength(0);
+        });
     });
 
     describe('convert (with explicit $badfilter rules)', () => {
@@ -308,6 +760,30 @@ describe('FilterConverter (withSourceMap: true)', () => {
             const resourcesPath = '/path/';
             const convert = async (): Promise<void> => {
                 await converter.convert([filter], { resourcesPath });
+            };
+
+            const msg = 'Path to web accessible resources should '
+                + `not end with a slash: ${resourcesPath}`;
+            await expect(convert).rejects.toThrow(new ResourcesPathError(msg));
+        });
+
+        it('throws error if the CSP resources path does not start with a slash', async () => {
+            const filter = createFilter(["||example.org^$csp=script-src 'none'"]);
+            const resourcesPath = 'path';
+            const convert = async (): Promise<void> => {
+                await converter.convertCspRules([filter], resourcesPath);
+            };
+
+            const msg = 'Path to web accessible resources should '
+                + `start with a leading slash: ${resourcesPath}`;
+            await expect(convert).rejects.toThrow(new ResourcesPathError(msg));
+        });
+
+        it('throws error if the CSP resources path ended with a slash', async () => {
+            const filter = createFilter(["||example.org^$csp=script-src 'none'"]);
+            const resourcesPath = '/path/';
+            const convert = async (): Promise<void> => {
+                await converter.convertCspRules([filter], resourcesPath);
             };
 
             const msg = 'Path to web accessible resources should '
