@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and inverted wildcard entries covering one level below the domain, as frame
   matching does. The filtering log shows the `$stealth` exception that keeps
   a document native [AdguardBrowserExtension#3475].
+- MV3: `ConfigurationResult.loadDisabledStaticFilter()` and
+  `loadDisabledStaticFilters()` create the static rulesets of the filters not
+  enabled in the browser on demand, so the caller can read their rule counters
+  off the startup path. The per-filter loader lets callers wait only for the
+  counter they need; the batch loader creates the rest one at a time.
 
 ### Changed
 
@@ -27,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `@types/webextension-polyfill` >= 0.12.6, since the previous alias is gone.
 - Updated [@adguard/extended-css] to `v2.3.0`, which adds support for uBlock Origin
   `:remove-attr()` and `:remove-class()` pseudo-classes [AdguardBrowserExtension#3538].
+- **BREAKING:** MV3: `start()` and `configure()` create only the static
+  rulesets enabled in the browser, so `ConfigurationResult.staticFilters` no
+  longer contains the rulesets of disabled filters. Creating a ruleset for the
+  first time prepares its filter list at runtime, which took over a second for
+  all bundled rulesets on a clean install. Call
+  `ConfigurationResult.loadDisabledStaticFilters()` to get the rest.
 
 ### Deprecated
 
@@ -34,6 +45,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- MV3: the engine no longer prepares the enabled static filter lists again on
+  every start; it gets them from IndexedDB with their conversion data. Cached
+  filter lists are prepared again when the versions of the libraries that
+  perform the conversion change, so conversion fixes apply without a filter
+  update.
 - Filtering log now records CSS hits for elements that pages add and remove
   while the page is loading, e.g. anti-adblock bait elements created by a
   script in `<head>`.
