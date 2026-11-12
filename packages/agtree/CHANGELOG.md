@@ -78,10 +78,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - ADG→uBO conversion now keeps a rule as-is when a `[tag-content]` or
   `[wildcard]` value contains HTML markup or an ampersand and the element
   is not `script` or `style`. uBlock matches `textContent`, so the
-  converted rule would match different text.
+  converted rule would match different text. Limitation: a value without
+  markup or an ampersand can still match an element whose `textContent`
+  equals it while its `innerHTML` differs, e.g. text split across child
+  tags.
 - ADG→uBO conversion now raises a conversion error for a `:contains()`
   argument that uBlock would drop, e.g. an argument with an unterminated
-  quote, an unbalanced bracket, or text after a closing quote.
+  quote, an unbalanced block, an unterminated comment, a `)` that ends the
+  function before the argument is read, or text after a closing quote.
+  A closer that matches no open block, e.g. `)` in `[^)]` or a stray `]`,
+  is a plain CSS token and stays supported.
 - `RuleParserPipeline.parseRange` now rejects a non-zero `dataOffset` for
   cosmetic rules. Their structural parsers write at fixed offsets, so a
   non-zero offset previously produced a rule with an empty selector and no
