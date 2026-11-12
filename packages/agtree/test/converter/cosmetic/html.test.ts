@@ -1385,6 +1385,17 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^style:has-text(/^[\\s\\S]*&lt;div&gt;[\\s\\S]*$/)'],
                     },
 
+                    // the symmetric pair: `[tag-content]` markup on `style` and
+                    // `[wildcard]` markup on `script`
+                    {
+                        actual: '$$style[tag-content="<div>"]',
+                        expected: ['##^style:has-text(/<div>/)'],
+                    },
+                    {
+                        actual: '$$script[wildcard="*<div>*"]',
+                        expected: ['##^script:has-text(/^[\\s\\S]*<div>[\\s\\S]*$/)'],
+                    },
+
                     // `:contains()` special pseudo-class selector
                     {
                         actual: '$$div:contains(example)',
