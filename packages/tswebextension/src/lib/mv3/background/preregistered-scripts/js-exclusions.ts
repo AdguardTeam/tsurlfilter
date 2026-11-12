@@ -159,8 +159,12 @@ const parsePatternHost = (pattern: string): PatternHost | undefined => {
             return undefined;
         }
         rest = pipeAnchored.slice(schemeIndex + SCHEME_SEPARATOR.length);
-    } else if (pattern.startsWith(SCHEME_SEPARATOR)) {
-        rest = pattern.slice(SCHEME_SEPARATOR.length);
+    } else if (pattern.startsWith(SCHEME_SEPARATOR) || /^[a-z][\w+.-]*:\/\//i.test(pattern)) {
+        // `://host…` and `scheme://host…` are substring searches as well: the
+        // engine tests the text against the whole URL, so it also matches the
+        // same text inside the query of another page of the host.
+        anchored = false;
+        rest = pattern.slice(pattern.indexOf(SCHEME_SEPARATOR) + SCHEME_SEPARATOR.length);
     } else {
         // A bare `host/path` or `.host/path` is a substring search, not a host
         // anchor: the same text can sit inside a longer host or a query. The
@@ -255,7 +259,11 @@ const resolveScope = (
         // hostname — `tube.com` and the wildcard `you*.com` both match
         // `https://youtube.com/ads` in the engine.
         if (host.includes('*')) {
-            return matchesWildcardHost(host, hostname) ? 'unknown' : 'other';
+            // The token is matched anywhere in the URL, so it is a substring
+            // glob, not a host-anchored one: `youtube.*` also occurs inside
+            // `www.youtube.com`.
+            const wildcard = new RegExp(host.split('*').map(escapeRegExp).join('.*'));
+            return wildcard.test(hostname) ? 'unknown' : 'other';
         }
 
         return hostname.includes(host) ? 'unknown' : 'other';

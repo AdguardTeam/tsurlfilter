@@ -432,6 +432,30 @@ describe('resolveHostExclusions', () => {
         expect(dynamicHosts.has('www.youtube.com')).toBe(true);
     });
 
+    it('reads a scheme prefix without the pipe anchor as a substring', () => {
+        const scoped = scan([{ filterId: 2, content: '@@https://youtube.com/ads$document\n' }]);
+        const relative = scan([{ filterId: 2, content: '@@://youtube.com/ads$document\n' }]);
+
+        // No `|`, so the engine matches the text anywhere in the URL — also
+        // inside the query of another page of the host.
+        expect(scoped.exclusions.size).toBe(0);
+        expect(scoped.dynamicHosts.has('youtube.com')).toBe(true);
+        expect(relative.exclusions.size).toBe(0);
+        expect(relative.dynamicHosts.has('youtube.com')).toBe(true);
+    });
+
+    it('matches a bare wildcard token anywhere inside the hostname', () => {
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@youtube.*/ads$document\n',
+        }]);
+
+        // `youtube.*` occurs inside `www.youtube.com`, and the engine tests the
+        // text against the whole URL.
+        expect(exclusions.size).toBe(0);
+        expect(dynamicHosts.has('www.youtube.com')).toBe(true);
+    });
+
     it('keeps a host dynamic when the exception covers every URL with a wildcard path', () => {
         const { exclusions, dynamicHosts } = scan([{
             filterId: 2,
