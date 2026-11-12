@@ -1,4 +1,6 @@
 /* eslint-disable prefer-regex-literals */
+import { RegExpUtils } from '@adguard/agtree';
+
 import { logger } from '../utils/logger';
 import {
     findNextUnescapedIndex,
@@ -522,49 +524,45 @@ export class SimpleRegex {
     /**
      * Converts a string representation of a regular expression into a RegExp object.
      *
+     * The argument is split the same way CoreLibs does in `extract_regex()`:
+     * the last `/` is the delimiter, every trailing ASCII lowercase letter is
+     * a flag, an empty pattern means literal text, and the `end === 1`
+     * underflow class (`/ads`) has no representable pattern. The split is
+     * implemented by {@link RegExpUtils.parseCoreLibsRegexArgument}, which is
+     * also used by the ADG→ADG converter, so the engine and the converter
+     * parse a `:contains()` argument the same way and cannot drift apart.
+     *
+     * The pattern is still compiled with the JavaScript `RegExp` constructor,
+     * because the HTML filtering engine evaluates it with JavaScript. A
+     * pattern that JavaScript rejects stays a string, e.g. the PCRE2-only
+     * `/a++/` (AG-61623), as do arguments that CoreLibs itself rejects, e.g.
+     * `/a\/` and `/a[b/` (AG-61628). This is the pre-existing engine
+     * behavior; only the split is shared with CoreLibs.
+     *
      * Only the flags `i`, `s`, `u`, and `v` are kept. The `g` and `y` flags
      * make `RegExp.test()` stateful because they advance `lastIndex`, so they
      * are dropped to keep matching stateless. The `u` and `v` flags are kept
      * because they change how the pattern is parsed (e.g. `\p{L}` is a Unicode
-     * property only with `u`), not just how it is matched. The remaining flags
-     * (`m`, `d`) are not supported by the HTML filtering engine.
+     * property only with `u` or `v`), not just how it is matched. The remaining
+     * flags (`m`, `d`) are not supported by the HTML filtering engine.
      *
      * @param literal String representation of the regular expression.
      *
      * @returns A RegExp object if the input is a valid regular expression literal, otherwise the original string.
      */
     public static fromLiteral(literal: string): string | RegExp {
-        // Early check for regexp marker
-        if (literal.length < 2 || !literal.startsWith('/')) {
-            return literal;
-        }
+        const parts = RegExpUtils.parseCoreLibsRegexArgument(literal);
 
-        let pattern = '';
-        let flags = '';
-        let inCharClass = false;
-
-        for (let i = 1; i < literal.length; i += 1) {
-            const char = literal.charAt(i);
-            if (char === '[' && literal[i - 1] !== '\\') {
-                inCharClass = true;
-            } else if (char === ']' && literal[i - 1] !== '\\') {
-                inCharClass = false;
-            } else if (literal[i] === '/' && literal[i - 1] !== '\\' && !inCharClass) {
-                pattern = literal.slice(1, i);
-                flags = literal.slice(i + 1);
-                break;
-            }
-        }
-
-        // Didn't find the ending slash
-        if (!pattern) {
+        // No representable pattern: plain text, an empty pattern, the
+        // `end === 1` underflow class, or an argument CoreLibs matches
+        // literally. These cases were already treated as strings before this
+        // change, so the behavior is unchanged.
+        if (parts === null) {
             return literal;
         }
 
         try {
-            // Compile the original literal first. This keeps the fallback for
-            // invalid literals, including invalid or duplicate flags.
-            const regexp = new RegExp(pattern, flags);
+            const regexp = new RegExp(parts.pattern, parts.flags);
 
             // Keep only the flags the HTML filtering engine supports. `g` and
             // `y` make `RegExp.test()` stateful because they advance
@@ -575,7 +573,10 @@ export class SimpleRegex {
 
             return new RegExp(regexp.source, supportedFlags);
         } catch (e) {
-            logger.warn(`[tsurl.SimpleRegex.fromLiteral]: Invalid regular expression literal: ${literal}:`, e);
+            logger.warn(
+                `[tsurl.SimpleRegex.fromLiteral]: Invalid regular expression literal: ${literal}:`,
+                e,
+            );
             return literal;
         }
     }

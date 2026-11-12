@@ -197,6 +197,47 @@ describe('SimpleRegex.fromLiteral', () => {
         { input: '/[a-z]+/i', output: /[a-z]+/i },
         { input: '/(unclosed/i', output: '/(unclosed/i' },
         { input: '/[/]/', output: /[/]/ },
+        { input: '/a\\/b/', output: /a\/b/ },
+        // A slash after an escaped backslash is not escaped, so the literal is
+        // parsed and compiled
+        { input: String.raw`/a\\/`, output: /a\\/ },
+        // The `]` after an escaped backslash closes the character class
+        { input: String.raw`/a[\\]b/`, output: /a[\\]b/ },
+        // An escaped backslash before the delimiter, with flags after it
+        { input: String.raw`/foo\\/i`, output: /foo\\/i },
+        // An empty pattern is not treated as a regular expression literal
+        { input: '//', output: '//' },
+        // Valid PCRE2 but invalid JavaScript: the engine cannot compile it
+        { input: '/a++/', output: '/a++/' },
+        // The last slash is the delimiter, so the slash after the escaped
+        // backslash stays in the pattern (AG-61628)
+        // eslint-disable-next-line prefer-regex-literals
+        { input: String.raw`/a\\/b/`, output: new RegExp(String.raw`a\\/b`) },
+        {
+            input: String.raw`/a\\/b/i`,
+            // eslint-disable-next-line prefer-regex-literals
+            output: new RegExp(String.raw`a\\/b`, 'i'),
+        },
+        // eslint-disable-next-line prefer-regex-literals
+        { input: String.raw`/\\//`, output: new RegExp(String.raw`\\/`) },
+        // An uppercase flag is not stripped, so the value stays a string
+        { input: '/ads/I', output: '/ads/I' },
+        // CoreLibs takes the last slash as the delimiter, so `///` is the
+        // regexp `/`.
+        { input: '///', output: /\// },
+        // Same last-slash rule: the pattern is `/a`, not an empty string.
+        { input: '//a/', output: /\/a/ },
+        { input: '//abc/', output: /\/abc/ },
+        // The split produces an invalid JavaScript pattern, so the value
+        // stays a string
+        { input: String.raw`/a\/`, output: String.raw`/a\/` },
+        { input: String.raw`/foo\\/`, output: /foo\\/ },
+        { input: String.raw`/[\\]/`, output: /[\\]/ },
+        { input: String.raw`/[\\]/i`, output: /[\\]/i },
+        { input: String.raw`/foo\/bar/`, output: /foo\/bar/ },
+        // The last-slash split keeps the escaped slashes in the pattern, so
+        // the expected RegExp spells them out.
+        { input: String.raw`/https:\\/\\/ads/`, output: /https:\\\/\\\/ads/ },
     ])("returns '$output' for '$input'", ({ input, output }) => {
         const result = SimpleRegex.fromLiteral(input);
         if (typeof result === 'string') {

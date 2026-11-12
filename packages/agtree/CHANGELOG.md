@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `RegExpUtils.parseCoreLibsRegexArgument()` and
+  `RegExpUtils.isCoreLibsRegexArgument()` are now exported. The first splits
+  the `:contains()` arguments that CoreLibs reads as normal regular
+  expressions; the second also covers the underflow class, e.g. `/ads`.
 - `SPECIAL_PSEUDO_CLASS_NAMES` is now exported, so consumers can use the
   same list of special pseudo-class names as the parser and the converter.
 - Added the `fingerprinting` value for the `$stealth` modifier.
@@ -19,6 +23,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   are validated as actions during parsing: anything other than whitespace or
   the CSS injection declaration block after them makes the rule invalid
   [AdguardBrowserExtension#3538].
+- `RegExpUtils.globToUboRegExp()` is now exported. It converts a glob to a
+  uBlock-compatible regexp, which uses `[\s\S]` instead of the unsupported
+  dot-all `s` flag.
+- `RegExpUtils.escapeRegexSpecials()` now accepts an optional `escapeQuotes`
+  argument. When it is `true`, single and double quotes are emitted as
+  `\x27` and `\x22`, which is required for a uBlock `:has-text()` argument,
+  because CSS-tree parses it before uBlock reads the regexp. The default is
+  `false`, so the existing behavior is unchanged.
 
 ### Changed
 
@@ -38,6 +50,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Hostnames with labels ending in an underscore are now accepted by domain validation,
   while domains with a leading dot remain invalid.
+- ADG→uBO conversion of HTML filtering `[tag-content]` and `[wildcard]`
+  attribute selectors now produces rules closer to the AdGuard behavior:
+  `[tag-content]` becomes a case-sensitive escaped `:has-text()` regexp,
+  and `[wildcard]` becomes a uBlock-compatible regexp that uses `[\s\S]`
+  instead of the unsupported dot-all `s` flag. Rules whose values contain
+  HTML markup or an HTML character reference (e.g. `&lt;`, or `&copy 2024`
+  without the trailing semicolon) are kept as-is for elements other than
+  `script` and `style`, because uBlock matches `textContent`. Limitation: a
+  value without markup or character references still matches an element
+  whose `textContent` equals it even when its `innerHTML` differs.
 - `[min-length]` and `[max-length]` values are now emitted as plain decimal
   digits during ADG→ADG conversion, so large values are neither rounded nor
   switched to exponent notation. For example,
@@ -52,6 +74,29 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `##^div:has-text("foo" )`.
 - The HTML filtering rule converter now rejects `:-abp-contains()` with a
   missing or empty argument, the same as `:contains()`.
+- ADG→uBO conversion now validates `[max-length]` values before dropping them:
+  e.g. `$$div[max-length="1e2"]` and `$$div[max-length="abc"]` now throw a
+  conversion error instead of silently becoming `##^div`. A dropped
+  `[max-length]` that is the whole compound selector is replaced with `*`, so
+  `$$div > [max-length="100"]` becomes `##^div > *` instead of an invalid
+  rule with a dangling combinator. A complex selector that a drop leaves
+  without any constraint throws `Complex selector cannot be empty`, e.g.
+  `$$[max-length="100"]`, `$$*[max-length="100"]` and
+  `$$[max-length="1"] > [max-length="2"]`, because the resulting all-`*`
+  selector matches almost every element.
+- ADG→uBO conversion now maps the `:-abp-contains()` alias to
+  `:has-text()`, the same as `:contains()`, e.g. `$$div:-abp-contains(foo)`
+  becomes `##^div:has-text(foo)`. Previously the alias was kept as-is, and
+  uBlock Origin rejected the converted rule.
+- uBO→ADG conversion now rejects `:-abp-contains()` in uBlock HTML filtering
+  rules as mixed AdGuard and uBlock syntax, the same as `:contains()`.
+  Previously the alias was carried over into the converted AdGuard rule.
+- `[tag-content]` values that CoreLibs reads as regular expressions, e.g.
+  `/ads/`, are now escaped when converted to a standalone `:contains()`
+  argument during ADG→ADG conversion, so they still match the literal text.
+  The check mirrors CoreLibs' `:contains()` argument scanner, so values
+  such as `/a++/`, `/a\/`, `///`, and `/ads` are escaped instead of becoming
+  dead or over-broad rules.
 
 ### Security
 

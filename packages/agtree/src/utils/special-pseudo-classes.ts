@@ -22,8 +22,7 @@
  */
 export const SPECIAL_PSEUDO_CLASS_NAMES = [
     'contains',
-    // AdGuard alias of `:contains()`. It has no dedicated conversion yet
-    // (see AG-61400), so the HTML filtering rule converter keeps it as-is.
+    // AdGuard alias of `:contains()`
     '-abp-contains',
     'has-text',
 ] as const;
