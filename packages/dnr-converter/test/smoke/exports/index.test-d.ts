@@ -10,6 +10,7 @@ import {
     getRulesetId,
     getRulesetPath,
     extractRulesetId,
+    isCspDeclarativeRule,
     parseCompactRuleset,
     type CompactRulesetContent,
     type ConversionResult,
@@ -47,6 +48,7 @@ expectType<0>(METADATA_RULESET_ID);
 expectType<typeof getRulesetId>(getRulesetId);
 expectType<typeof getRulesetPath>(getRulesetPath);
 expectType<typeof extractRulesetId>(extractRulesetId);
+expectType<typeof isCspDeclarativeRule>(isCspDeclarativeRule);
 expectType<typeof parseCompactRuleset>(parseCompactRuleset);
 expectType<typeof InvalidMetadataChunksError>(InvalidMetadataChunksError);
 

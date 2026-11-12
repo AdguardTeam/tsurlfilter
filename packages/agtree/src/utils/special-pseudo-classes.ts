@@ -22,6 +22,7 @@
  */
 export const SPECIAL_PSEUDO_CLASS_NAMES = [
     'contains',
+    // AdGuard alias of `:contains()`
     '-abp-contains',
     'has-text',
 ] as const;

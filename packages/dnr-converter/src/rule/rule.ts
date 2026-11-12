@@ -359,6 +359,16 @@ export class Rule {
     readonly advancedModifierValue: string | null = null;
 
     /**
+     * CSP directive of a `$csp` rule, `null` when the directive is omitted.
+     *
+     * A dedicated field is required because {@link advancedModifierValue} is
+     * shared by every value-bearing advanced modifier and keeps only the last
+     * one: `$csp=script-src 'none',urltransform=/a/b/` would otherwise carry
+     * the url-transform value as the directive.
+     */
+    readonly cspDirective: string | null = null;
+
+    /**
      * Rule text exactly as written in the filter list, before conversion to AG
      * syntax.
      *
@@ -684,13 +694,48 @@ export class Rule {
                     break;
 
                 case OPTION_NAMES.CSP:
+                    this.enabledModifiers.add(name);
+                    this.cspDirective = value || null;
+                    // Only an allowlist `$csp` may omit the directive: it means
+                    // "cancel the CSP rules of the matching scope". A blocking
+                    // rule without a directive would silently degrade into a
+                    // plain blocking rule, so it is rejected, like in tsurlfilter.
+                    if (!isAllowlist && !value) {
+                        throw new SyntaxError(
+                            'Invalid $csp rule: CSP directive must not be empty',
+                        );
+                    }
+                    // `report-uri` and `report-to` make the browser send
+                    // violation reports to a third-party host. tsurlfilter
+                    // rejects any directive containing `report-`, so an unsupported
+                    // report target cannot leak the browsing context.
+                    if (value && value.toLowerCase().includes('report-')) {
+                        throw new SyntaxError(
+                            `Invalid $csp rule: forbidden CSP directive: ${value}`,
+                        );
+                    }
+                    break;
+
+                case OPTION_NAMES.PERMISSIONS:
+                    this.enabledModifiers.add(name);
+                    this.advancedModifierName = rawName;
+                    this.advancedModifierValue = value || null;
+                    // Same as `$csp`: only an allowlist rule may omit the
+                    // directive. A blocking rule without it would silently
+                    // degrade into a plain blocking rule.
+                    if (!isAllowlist && !value) {
+                        throw new SyntaxError(
+                            'Invalid $permissions rule: permissions directive must not be empty',
+                        );
+                    }
+                    break;
+
                 case OPTION_NAMES.COOKIE:
                 case OPTION_NAMES.REPLACE:
                 case OPTION_NAMES.JSONPRUNE:
                 case OPTION_NAMES.XMLPRUNE:
                 case OPTION_NAMES.HLS:
                 case OPTION_NAMES.REFERRERPOLICY:
-                case OPTION_NAMES.PERMISSIONS:
                 case OPTION_NAMES.URLTRANSFORM:
                     this.enabledModifiers.add(name);
                     this.advancedModifierName = rawName;
@@ -707,9 +752,16 @@ export class Rule {
                     break;
 
                 case OPTION_NAMES.REMOVEHEADER: {
+                    // A rule without a header name cannot remove anything and
+                    // would degrade into a plain blocking rule.
+                    if (!value) {
+                        throw new SyntaxError(
+                            'Invalid $removeheader rule: removeheader value must not be empty',
+                        );
+                    }
                     this.enabledModifiers.add(name);
                     this.advancedModifierName = rawName;
-                    this.advancedModifierValue = value || null;
+                    this.advancedModifierValue = value;
                     const info = Rule.computeRemoveHeaderInfo(value);
                     this.removeHeaderName = info.name;
                     this.removeHeaderIsRequestType = info.isRequest;
@@ -760,6 +812,17 @@ export class Rule {
         if (this.denyAllowDomains !== null && this.permittedToDomains !== null) {
             throw new SyntaxError(
                 'Modifiers $denyallow and $to cannot be used together',
+            );
+        }
+
+        // One declarative rule produces one action, and the CSP action would
+        // win the conversion and then be dropped by the CSP scope checks, so
+        // such a rule would do nothing at all. Reject the combination instead
+        // of silently removing cookies only.
+        if (this.enabledModifiers.has(OPTION_NAMES.CSP)
+            && this.enabledModifiers.has(OPTION_NAMES.COOKIE)) {
+            throw new SyntaxError(
+                '$csp is not compatible with $cookie',
             );
         }
 
