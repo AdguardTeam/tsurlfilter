@@ -93,6 +93,24 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   quote, or a quoted argument that uBlock would unquote. A closer that does
   not match the innermost open block, e.g. `)` in `[^)]` or a stray `]`, is
   a plain CSS token and stays supported.
+- uBO CSS injection rules no longer treat modifier-like text inside a quoted
+  CSS string as a rule modifier. Previously
+  `##div[title=":matches-path(/x)"]:style(color:red)` parsed the attribute
+  value as a `:matches-path()` modifier and cut it out of the selector. Now
+  the selector keeps the full attribute value, and only real top-level
+  modifiers apply. The same fix covers `:style()`, `:remove()` and
+  `:matches-media()` text in double- or single-quoted attribute values.
+  A quoted string in a `:style()` declaration value also no longer fails:
+  rules such as `##div:style(content: ":remove()")` used to throw
+  `:remove() cannot be nested inside a pseudo-class` (or the equivalent
+  `:matches-path()` / `:matches-media()` error) and now parse as CSS
+  injection rules.
+  Extended-CSS arguments (`:has-text()`, `:contains()`, `:matches-path()`, …)
+  are plain text now. Modifier-like text inside them no longer creates a
+  modifier: `##div:has-text(:remove()):style(color:red)` used to throw the
+  same nested-modifier error and now parses as a CSS injection rule. A
+  parenthesis inside a quoted argument no longer hides a later `:style()`,
+  for example `##div:has-text("Great :("):style(color:red)`.
 - `RuleParserPipeline.parseRange` now rejects a non-zero `dataOffset` for
   cosmetic rules. Their structural parsers write at fixed offsets, so a
   non-zero offset previously produced a rule with an empty selector and no

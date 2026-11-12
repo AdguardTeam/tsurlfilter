@@ -404,18 +404,22 @@ describe('FilterListPipeline', () => {
     test('parses a long list of rules without regex values in linear time', () => {
         // Regression: the `=/` bail-out used `indexOf` without an `end`
         // bound, so every rule with a `$` scanned ahead to the next regex
-        // value anywhere in the list. Compare the `$` list with an equivalent
-        // list without `$`: a quadratic scan is orders of magnitude slower,
-        // while the per-rule scan adds only a small constant factor. This
-        // keeps the assertion independent of the machine's absolute speed.
+        // value anywhere in the list, making list parsing quadratic.
+        //
+        // Compare the same `$` rule list at two sizes: with a single scan per
+        // rule the elapsed time doubles with the rule count, while a per-rule
+        // scan of the whole list quadruples it. Comparing two sizes instead of
+        // `$` rules against plain rules keeps the assertion independent of the
+        // machine's absolute speed and of the constant cost of parsing
+        // modifiers.
         const ruleCount = 100_000;
-        const plainRules: string[] = [];
         const modifierRules: string[] = [];
 
         for (let i = 0; i < ruleCount; i += 1) {
-            plainRules.push(`||example${i}.com^`);
             modifierRules.push(`||example${i}.com^$script,third-party`);
         }
+
+        const halfRules = modifierRules.slice(0, ruleCount / 2);
 
         /**
          * Parses the given rules and returns the elapsed time.
@@ -436,14 +440,17 @@ describe('FilterListPipeline', () => {
         };
 
         // Warm up the pipeline so buffer growth does not skew the comparison.
-        parseTimed(plainRules.slice(0, 1_000));
+        parseTimed(halfRules.slice(0, 1_000));
 
-        const plainElapsed = parseTimed(plainRules);
-        const modifierElapsed = parseTimed(modifierRules);
+        // Take the fastest run at each size. A single run can be delayed by the
+        // scheduler or by parallel test workers, while the fastest run reflects
+        // the parser work itself.
+        const halfElapsed = Math.min(parseTimed(halfRules), parseTimed(halfRules));
+        const fullElapsed = Math.min(parseTimed(modifierRules), parseTimed(modifierRules));
 
-        // A quadratic scan at this size is ~30x slower than the plain list;
-        // the fixed per-rule scan stays close to 1x. Allow a wide margin for
-        // noise.
-        expect(modifierElapsed).toBeLessThan(plainElapsed * 5 + 250);
+        // Linear parsing doubles with the rule count; a per-rule scan of the
+        // whole list quadruples. Allow a wide margin for noise. The bound is
+        // scale-invariant, so a slow machine does not weaken it.
+        expect(fullElapsed).toBeLessThan(halfElapsed * 3);
     }, 30_000);
 });

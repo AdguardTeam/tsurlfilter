@@ -7,6 +7,7 @@ import type {
     CssDeclarationList,
     CssInjectionRule,
     CssInjectionRuleBody,
+    ElementHidingRule,
     Raw,
     SelectorList,
 } from '../../../src/nodes';
@@ -14,6 +15,21 @@ import { SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 import { walk } from '../../../src/walker';
 
 const parser = new RuleParserPipeline();
+
+/**
+ * Assert the location invariant for every located node.
+ *
+ * @param ast Parsed rule.
+ */
+function expectLocationsValid(ast: CssInjectionRule): void {
+    walk(ast, {
+        enter: (node) => {
+            if (node.start !== undefined && node.end !== undefined) {
+                expect(node.end).toBeGreaterThanOrEqual(node.start);
+            }
+        },
+    });
+}
 
 describe('UboCssInjectionAstBuilder — :style() rules', () => {
     test('basic :style() with no domains', () => {
@@ -475,25 +491,353 @@ describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
         expect(ast.body.declarationList).toBeUndefined();
     });
 
-    test('zero-width attribute value stays zero-width across an excised modifier', () => {
+    test('modifier-like text inside a quoted attribute value stays in the selector', () => {
         const src = '##div[title=":matches-path(/x)"]:style(color:red)';
         const ast = parser.parse(src, options) as CssInjectionRule;
 
         const selectorList = ast.body.selectorList as SelectorList;
         const attribute = selectorList.children[0].children[1] as AttributeSelectorWithValue;
+        const valueStart = src.indexOf('"') + 1;
+        const valueEnd = src.indexOf('"', valueStart);
 
-        expect(attribute.value.value).toBe('');
-        expect(attribute.value.start).toBe(30);
-        expect(attribute.value.end).toBe(attribute.value.start);
+        expect(selectorList.children).toHaveLength(1);
+        expect(attribute.value.value).toBe(':matches-path(/x)');
+        expect(attribute.value.start).toBe(valueStart);
+        expect(attribute.value.end).toBe(valueEnd);
+        expect(src.slice(attribute.value.start, attribute.value.end)).toBe(':matches-path(/x)');
 
-        // No located node may end before it starts.
-        walk(ast, {
-            enter: (node) => {
-                if (node.start !== undefined && node.end !== undefined) {
-                    expect(node.end).toBeGreaterThanOrEqual(node.start);
-                }
-            },
+        // The text inside the string is not a rule modifier.
+        expect(ast.modifiers).toBeUndefined();
+        expect(ast.body.mediaQueryList).toBeUndefined();
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+        expect(declarationList.children).toHaveLength(1);
+        expect(declarationList.children[0].property).toMatchObject({ value: 'color' });
+        expect(declarationList.children[0].value).toMatchObject({ value: 'red' });
+
+        expectLocationsValid(ast);
+    });
+
+    test.each([
+        ['double', ':matches-path(/x)', '"'],
+        ['double', ':matches-media((min-width: 100px))', '"'],
+        ['double', ':style(color:red)', '"'],
+        ['double', ':remove()', '"'],
+        ['single', ':matches-path(/x)', "'"],
+        ['single', ':matches-media((min-width: 100px))', "'"],
+        ['single', ':style(color:red)', "'"],
+        ['single', ':remove()', "'"],
+    ])('%s-quoted attribute value containing %s is not a rule modifier', (_label, inner, quote) => {
+        const src = `##div[title=${quote}${inner}${quote}]:style(color:blue)`;
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const attribute = selectorList.children[0].children[1] as AttributeSelectorWithValue;
+
+        expect(selectorList.children).toHaveLength(1);
+        expect(attribute.value.value).toBe(inner);
+        expect(src.slice(attribute.value.start, attribute.value.end)).toBe(inner);
+        expect(ast.modifiers).toBeUndefined();
+        expect(ast.body.mediaQueryList).toBeUndefined();
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+        expect(declarationList.children).toHaveLength(1);
+        expect(declarationList.children[0].property).toMatchObject({ value: 'color' });
+        expect(declarationList.children[0].value).toMatchObject({ value: 'blue' });
+
+        expectLocationsValid(ast);
+    });
+
+    test('a real modifier after a quoted string still parses normally', () => {
+        const src = '##div[title=":matches-path(/x)"]:matches-media((min-width: 100px)):style(color:red)';
+        const ast = parser.parse(src, options) as CssInjectionRule;
+
+        const selectorList = ast.body.selectorList as SelectorList;
+        const attribute = selectorList.children[0].children[1] as AttributeSelectorWithValue;
+
+        expect(attribute.value.value).toBe(':matches-path(/x)');
+        expect(ast.modifiers).toBeUndefined();
+        expect(ast.body.mediaQueryList?.value).toBe('(min-width: 100px)');
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+        expect(declarationList.children[0].property).toMatchObject({ value: 'color' });
+        expect(declarationList.children[0].value).toMatchObject({ value: 'red' });
+
+        expectLocationsValid(ast);
+    });
+
+    test('an escaped quote does not close the string', () => {
+        const src = '##div[title="a\\":matches-path(/x)\\"b"]:style(color:red)';
+        const ast = parser.parse(src) as CssInjectionRule;
+
+        expect(ast.body.selectorList).toMatchObject({
+            type: 'Raw',
+            value: 'div[title="a\\":matches-path(/x)\\"b"]',
         });
+        expect(ast.modifiers).toBeUndefined();
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test.each([
+        ['double', 'content: ":remove()"'],
+        ['single', "content: ':matches-path(/x)'"],
+    ])('%s-quoted :style() declaration value is not scanned for modifiers', (_label, declarations) => {
+        const src = `##div:style(${declarations})`;
+        const ast = parser.parse(src, {
+            isLocIncluded: true,
+            parseCssDeclarationList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.modifiers).toBeUndefined();
+
+        const declarationList = ast.body.declarationList as CssDeclarationList;
+        expect(declarationList.children).toHaveLength(1);
+        expect(declarationList.children[0].property).toMatchObject({ value: 'content' });
+        expect(src.slice(declarationList.children[0].start, declarationList.children[0].end))
+            .toBe(declarations);
+
+        expectLocationsValid(ast);
+    });
+
+    test('a lone quote in a :matches-path() regex does not disable modifier detection', () => {
+        const ast = parser.parse("##div:matches-path(/'/):style(color:red)") as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].name.value).toBe('matches-path');
+        expect(ast.modifiers?.children[0].value?.value).toBe("/'/");
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test('a lone apostrophe in a :has-text() argument does not disable modifier detection', () => {
+        const ast = parser.parse("##div:has-text(It's):style(color:red)") as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.body.selectorList).toMatchObject({
+            type: 'Raw',
+            value: "div:has-text(It's)",
+        });
+        expect(ast.modifiers).toBeUndefined();
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test('a real modifier after an unterminated string still parses', () => {
+        const ast = parser.parse(
+            "##div:has-text(It's):matches-media((min-width: 100px)):style(color:red)",
+        ) as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.body.selectorList).toMatchObject({
+            type: 'Raw',
+            value: "div:has-text(It's)",
+        });
+        expect(ast.body.mediaQueryList?.value).toBe('(min-width: 100px)');
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test('a lone apostrophe in an unknown pseudo-class argument is not a string', () => {
+        // The argument of an unknown pseudo-class is not a raw extended-CSS
+        // argument, but a lone quote must still stay a plain token. Otherwise
+        // it pairs with the quote in the :style() value and hides the modifier.
+        const ast = parser.parse("##div:unknown(It's):style(content:'x')") as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.body.selectorList).toMatchObject({
+            type: 'Raw',
+            value: "div:unknown(It's)",
+        });
+        expect(ast.modifiers).toBeUndefined();
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: "content:'x'" });
+    });
+
+    test.each<{
+        name: string;
+        rule: string;
+        selector: string;
+        declaration: string;
+        modifierValue?: string;
+        mediaQuery?: string;
+    }>([
+        {
+            name: 'a lone apostrophe in :has-text() before a quoted :style() value',
+            rule: "##div:has-text(It's):style(content:'x')",
+            selector: "div:has-text(It's)",
+            declaration: "content:'x'",
+        },
+        {
+            name: 'a lone apostrophe in :has-text() before a quoted url()',
+            rule: "##.banner:has-text(Don't):style(background-image: url('a.png'))",
+            selector: ".banner:has-text(Don't)",
+            declaration: "background-image: url('a.png')",
+        },
+        {
+            name: 'a lone apostrophe in :matches-path() before a quoted :style() value',
+            rule: "##div:matches-path(/can't/):style(content:'x')",
+            selector: 'div',
+            declaration: "content:'x'",
+            modifierValue: "/can't/",
+        },
+        {
+            name: 'a lone apostrophe in :matches-path() before a quoted url()',
+            rule: "##div:matches-path(/can't/):style(background:url('a.png'))",
+            selector: 'div',
+            declaration: "background:url('a.png')",
+            modifierValue: "/can't/",
+        },
+        {
+            name: 'a lone apostrophe and a quoted attribute value before :style()',
+            rule: "##div:has-text(Don't)[title='x']:style(color:red)",
+            selector: "div:has-text(Don't)[title='x']",
+            declaration: 'color:red',
+        },
+        {
+            name: 'a regex apostrophe and a quoted attribute value before :style()',
+            rule: "##.ad:has-text(/it's/)[title='x']:style(color:red)",
+            selector: ".ad:has-text(/it's/)[title='x']",
+            declaration: 'color:red',
+        },
+        {
+            name: 'a lone apostrophe and a quoted attribute value before :matches-media()',
+            rule: "##div:has-text(It's)[title='x']:matches-media((min-width: 1px)):style(color:red)",
+            selector: "div:has-text(It's)[title='x']",
+            declaration: 'color:red',
+            mediaQuery: '(min-width: 1px)',
+        },
+        {
+            name: 'two :has-text() arguments with lone apostrophes around :matches-media()',
+            rule: "##div:has-text(It's):matches-media((max-width: 600px)):has-text(Don't):style(color:red)",
+            selector: "div:has-text(It's):has-text(Don't)",
+            declaration: 'color:red',
+            mediaQuery: '(max-width: 600px)',
+        },
+        {
+            name: 'a literal [ and apostrophe in :has-text() before a quoted attribute and :style()',
+            rule: "##div:has-text([It's])[title='x']:style(content:'y')",
+            selector: "div:has-text([It's])[title='x']",
+            declaration: "content:'y'",
+        },
+        {
+            name: 'an unbalanced [ in :has-text() before a quoted attribute and another :has-text()',
+            rule: "##div:has-text([)[title='x']:has-text(It's):style(content:'y')",
+            selector: "div:has-text([)[title='x']:has-text(It's)",
+            declaration: "content:'y'",
+        },
+        {
+            name: 'a literal [ in :matches-path() before a quoted attribute and :style()',
+            rule: "##div:matches-path(/[/)[title='x']:style(content:'y')",
+            selector: "div[title='x']",
+            declaration: "content:'y'",
+            modifierValue: '/[/',
+        },
+        {
+            name: 'a literal [ and apostrophe in :has-text() before :matches-media()',
+            rule: "##div:has-text([It's]):matches-media((min-width: 1px)):style(color:red)",
+            selector: "div:has-text([It's])",
+            declaration: 'color:red',
+            mediaQuery: '(min-width: 1px)',
+        },
+        {
+            name: 'a modifier-like call inside :has-text() is plain text',
+            rule: '##div:has-text(:remove()):style(color:red)',
+            selector: 'div:has-text(:remove())',
+            declaration: 'color:red',
+        },
+        {
+            name: 'a quote inside a :matches-path() value before a quoted :style() value',
+            rule: "##div:matches-path(/[']/):style(content:'x')",
+            selector: 'div',
+            declaration: "content:'x'",
+            modifierValue: "/[']/",
+        },
+        {
+            name: 'a modifier-like call inside a :matches-path() value is plain text',
+            rule: '##div:matches-path(/:remove()/):style(color:red)',
+            selector: 'div',
+            declaration: 'color:red',
+            modifierValue: '/:remove()/',
+        },
+        {
+            name: 'an opening parenthesis inside a double-quoted :has-text() argument',
+            rule: '##div:has-text("Great :("):style(color:red)',
+            selector: 'div:has-text("Great :(")',
+            declaration: 'color:red',
+        },
+        {
+            name: 'a closing parenthesis inside a double-quoted :has-text() argument',
+            rule: '##div:has-text(") Great"):style(color:red)',
+            selector: 'div:has-text(") Great")',
+            declaration: 'color:red',
+        },
+        {
+            name: 'a parenthesis inside a single-quoted :has-text() argument',
+            rule: "##div:has-text('Great :('):style(color:red)",
+            selector: "div:has-text('Great :(')",
+            declaration: 'color:red',
+        },
+        {
+            name: 'an apostrophe and a parenthesis inside a double-quoted :has-text() argument',
+            rule: "##div:has-text(\"It's (fine)\"):style(color:red)",
+            selector: "div:has-text(\"It's (fine)\")",
+            declaration: 'color:red',
+        },
+        {
+            name: 'a parenthesis inside a quoted XPath string literal',
+            rule: '##div:xpath(//div[@title="("]):style(color:red)',
+            selector: 'div:xpath(//div[@title="("])',
+            declaration: 'color:red',
+        },
+        {
+            name: 'an apostrophe inside a single-quoted attribute value before a quoted url()',
+            rule: "##a[title='Don't']:style(background:url('x.png'))",
+            selector: "a[title='Don't']",
+            declaration: "background:url('x.png')",
+        },
+        {
+            name: 'an unterminated quote inside an attribute value before a quoted :style() value',
+            rule: "##a[title='x]:style(content:'y')",
+            selector: "a[title='x]",
+            declaration: "content:'y'",
+        },
+        {
+            name: 'a closing bracket inside an attribute string value before :style()',
+            rule: '##div[data-v="]"]:style(color:red)',
+            selector: 'div[data-v="]"]',
+            declaration: 'color:red',
+        },
+    ])('$name parses as a CSS injection rule', ({
+        rule,
+        selector,
+        declaration,
+        modifierValue,
+        mediaQuery,
+    }) => {
+        const ast = parser.parse(rule) as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: selector });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: declaration });
+        expect(ast.body.mediaQueryList?.value).toBe(mediaQuery);
+
+        if (modifierValue === undefined) {
+            expect(ast.modifiers).toBeUndefined();
+        } else {
+            expect(ast.modifiers?.children).toHaveLength(1);
+            expect(ast.modifiers?.children[0].value?.value).toBe(modifierValue);
+        }
+    });
+
+    test('modifier-like text inside a string in :not() is not a rule modifier', () => {
+        const ast = parser.parse('##div:not([title=":matches-path(/x)"])') as ElementHidingRule;
+
+        // No real modifier exists, so the rule stays an element hiding rule.
+        expect(ast.type).toBe('ElementHidingRule');
+        expect(ast.body.selectorList).toMatchObject({
+            type: 'Raw',
+            value: 'div:not([title=":matches-path(/x)"])',
+        });
+        expect(ast.modifiers).toBeUndefined();
     });
 
     test('whitespace combinator points at one original whitespace run', () => {
