@@ -637,6 +637,21 @@ describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
         expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
     });
 
+    test('a lone apostrophe in an unknown pseudo-class argument is not a string', () => {
+        // The argument of an unknown pseudo-class is not a raw extended-CSS
+        // argument, but a lone quote must still stay a plain token. Otherwise
+        // it pairs with the quote in the :style() value and hides the modifier.
+        const ast = parser.parse("##div:unknown(It's):style(content:'x')") as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.body.selectorList).toMatchObject({
+            type: 'Raw',
+            value: "div:unknown(It's)",
+        });
+        expect(ast.modifiers).toBeUndefined();
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: "content:'x'" });
+    });
+
     test.each<{
         name: string;
         rule: string;
@@ -722,6 +737,74 @@ describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
             selector: "div:has-text([It's])",
             declaration: 'color:red',
             mediaQuery: '(min-width: 1px)',
+        },
+        {
+            name: 'a modifier-like call inside :has-text() is plain text',
+            rule: '##div:has-text(:remove()):style(color:red)',
+            selector: 'div:has-text(:remove())',
+            declaration: 'color:red',
+        },
+        {
+            name: 'a quote inside a :matches-path() value before a quoted :style() value',
+            rule: "##div:matches-path(/[']/):style(content:'x')",
+            selector: 'div',
+            declaration: "content:'x'",
+            modifierValue: "/[']/",
+        },
+        {
+            name: 'a modifier-like call inside a :matches-path() value is plain text',
+            rule: '##div:matches-path(/:remove()/):style(color:red)',
+            selector: 'div',
+            declaration: 'color:red',
+            modifierValue: '/:remove()/',
+        },
+        {
+            name: 'an opening parenthesis inside a double-quoted :has-text() argument',
+            rule: '##div:has-text("Great :("):style(color:red)',
+            selector: 'div:has-text("Great :(")',
+            declaration: 'color:red',
+        },
+        {
+            name: 'a closing parenthesis inside a double-quoted :has-text() argument',
+            rule: '##div:has-text(") Great"):style(color:red)',
+            selector: 'div:has-text(") Great")',
+            declaration: 'color:red',
+        },
+        {
+            name: 'a parenthesis inside a single-quoted :has-text() argument',
+            rule: "##div:has-text('Great :('):style(color:red)",
+            selector: "div:has-text('Great :(')",
+            declaration: 'color:red',
+        },
+        {
+            name: 'an apostrophe and a parenthesis inside a double-quoted :has-text() argument',
+            rule: "##div:has-text(\"It's (fine)\"):style(color:red)",
+            selector: "div:has-text(\"It's (fine)\")",
+            declaration: 'color:red',
+        },
+        {
+            name: 'a parenthesis inside a quoted XPath string literal',
+            rule: '##div:xpath(//div[@title="("]):style(color:red)',
+            selector: 'div:xpath(//div[@title="("])',
+            declaration: 'color:red',
+        },
+        {
+            name: 'an apostrophe inside a single-quoted attribute value before a quoted url()',
+            rule: "##a[title='Don't']:style(background:url('x.png'))",
+            selector: "a[title='Don't']",
+            declaration: "background:url('x.png')",
+        },
+        {
+            name: 'an unterminated quote inside an attribute value before a quoted :style() value',
+            rule: "##a[title='x]:style(content:'y')",
+            selector: "a[title='x]",
+            declaration: "content:'y'",
+        },
+        {
+            name: 'a closing bracket inside an attribute string value before :style()',
+            rule: '##div[data-v="]"]:style(color:red)',
+            selector: 'div[data-v="]"]',
+            declaration: 'color:red',
         },
     ])('$name parses as a CSS injection rule', ({
         rule,
