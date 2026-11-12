@@ -327,7 +327,7 @@ export class ScriptingApi {
      *
      * @throws {ExtCssGuardError} If the injected apply function reports an
      * engine guard failure. The caller reports it as a terminal failure: a
-     * missing or stale asset cannot be fixed by another attempt.
+     * stale asset cannot be fixed by another attempt.
      */
     public static async executeExtCss(params: ExecuteExtCssParams): Promise<void> {
         const {

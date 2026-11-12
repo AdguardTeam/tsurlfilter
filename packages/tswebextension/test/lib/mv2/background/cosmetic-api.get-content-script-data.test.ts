@@ -143,6 +143,33 @@ describe('CosmeticApi.getContentScriptData', () => {
         expect(injectSpy).not.toHaveBeenCalled();
     });
 
+    it('sends the context-less rules when the frame only awaits its commit', async () => {
+        vi.useFakeTimers();
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
+        vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
+        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
+
+        // The navigation started but never committed, so the frame still shows
+        // the previous document and its rules must still be applied.
+        vi.spyOn(TabsApi, 'injectScriptFile').mockImplementation(async () => {
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue({
+                cosmeticResult: {},
+                extCssAwaitingCommit: true,
+            } as ReturnType<typeof tabsApi.getFrameContext>);
+        });
+
+        CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(injectSpy).toHaveBeenCalledWith(
+            tabId,
+            frameId,
+            serializeExtCssForCode(rules, false, EXTCSS_PROTOCOL),
+        );
+    });
+
     it('logs a guard failure of the context-less injection as an error', async () => {
         vi.useFakeTimers();
         const rules = ['.ad:has(.child) { display: none !important; }'];

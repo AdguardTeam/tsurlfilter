@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- MV2: the assistant is now injected from the extension root, so it opens in
+  Firefox, which resolves a relative path against the background page.
+
 ### Security
 
 ## [4.0.1]

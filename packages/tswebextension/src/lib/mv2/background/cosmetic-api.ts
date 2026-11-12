@@ -741,10 +741,15 @@ export class CosmeticApi extends CosmeticApiCommon {
 
                 // The frame committed a document of its own while the asset
                 // call was in flight, and that document's commit handler
-                // applies its own rules. A context that shows up here means
-                // such a commit happened, so this rule set belongs to the
-                // previous document and must not replace the new one.
-                if (tabsApi.getFrameContext(tabId, frameId)) {
+                // applies its own rules. A committed context that shows up
+                // here means such a commit happened, so this rule set belongs
+                // to the previous document and must not replace the new one.
+                // A context that still awaits its commit describes a
+                // navigation that may never commit: the previous document
+                // stays on screen and its rules still apply.
+                const frameContext = tabsApi.getFrameContext(tabId, frameId);
+
+                if (frameContext && !frameContext.extCssAwaitingCommit) {
                     return;
                 }
 

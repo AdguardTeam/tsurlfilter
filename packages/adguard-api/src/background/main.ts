@@ -258,7 +258,7 @@ export class AdguardApi {
             userrules,
             settings: {
                 documentBlockingPageUrl: this.configuration.documentBlockingPageUrl,
-                assistantUrl: 'adguard-assistant.js',
+                assistantUrl: '/adguard-assistant.js',
                 extCssScriptUrl: '/adguard-extcss.js',
                 filteringEnabled: this.configuration.filteringEnabled,
                 debugScriptlets: false,
