@@ -164,7 +164,7 @@ describe('RulesConverter', () => {
             const result = await RulesConverter.convert(scannedFilters);
 
             expect(applyBadFilterSpy).toHaveBeenCalledWith(scannedFilters);
-            expect(convertRulesSpy).toHaveBeenCalledWith(1, groupedRules, expect.any(Set), undefined);
+            expect(convertRulesSpy).toHaveBeenCalledWith(1, groupedRules, expect.any(Set), undefined, expect.any(Map));
             expect(checkLimitationsSpy).toHaveBeenCalledWith(convertedRules, undefined, undefined, undefined);
             expect(checkRulesHaveUniqueIdsSpy).toHaveBeenCalledWith(convertedRules.declarativeRules);
             expect(checkRulesHaveCorrectIdsSpy).toHaveBeenCalledWith(convertedRules.declarativeRules);
@@ -259,8 +259,22 @@ describe('RulesConverter', () => {
             const result = await RulesConverter.convert(scannedFilters);
 
             expect(convertRulesSpy).toHaveBeenCalledTimes(2);
-            expect(convertRulesSpy).toHaveBeenNthCalledWith(1, 1, groupedRules1, expect.any(Set), undefined);
-            expect(convertRulesSpy).toHaveBeenNthCalledWith(2, 2, groupedRules2, expect.any(Set), undefined);
+            expect(convertRulesSpy).toHaveBeenNthCalledWith(
+                1,
+                1,
+                groupedRules1,
+                expect.any(Set),
+                undefined,
+                expect.any(Map),
+            );
+            expect(convertRulesSpy).toHaveBeenNthCalledWith(
+                2,
+                2,
+                groupedRules2,
+                expect.any(Set),
+                undefined,
+                expect.any(Map),
+            );
 
             expect(result.declarativeRules).toHaveLength(3);
             expect(result.sourceMapValues).toHaveLength(3);
@@ -301,7 +315,7 @@ describe('RulesConverter', () => {
 
             await RulesConverter.convert(scannedFilters, options);
 
-            expect(convertRulesSpy).toHaveBeenCalledWith(1, groupedRules, expect.any(Set), options);
+            expect(convertRulesSpy).toHaveBeenCalledWith(1, groupedRules, expect.any(Set), options, expect.any(Map));
             expect(checkLimitationsSpy).toHaveBeenCalledWith(
                 convertedRules,
                 options.maxNumberOfRules,
