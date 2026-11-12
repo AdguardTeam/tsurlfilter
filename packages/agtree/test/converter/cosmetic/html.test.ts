@@ -1433,6 +1433,21 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div:has-text(a}b)'],
                     },
 
+                    // a closer pops the innermost block only when it matches
+                    // it: the `)` in `[^)]` is ignored, so `]` closes the
+                    // bracket and the following `)` closes the parenthesis
+                    {
+                        actual: '$$script:contains(/window\\.open\\(([^)]*)\\)/)',
+                        expected: ['##^script:has-text(/window\\.open\\(([^)]*)\\)/)'],
+                    },
+
+                    // a terminated comment is skipped and does not end the
+                    // argument
+                    {
+                        actual: '$$div:contains(a/*)*/b)',
+                        expected: ['##^div:has-text(a/*)*/b)'],
+                    },
+
                     // `:has-text()` special pseudo-class selector - native uBlock
                     // syntax, kept as-is instead of a mixed-syntax error
                     {
