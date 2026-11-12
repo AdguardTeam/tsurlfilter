@@ -29,6 +29,7 @@ import {
     type SimpleSelector,
 } from '../../nodes';
 import {
+    ASTERISK,
     BACKSLASH,
     CLOSE_CURLY_BRACKET,
     CLOSE_PARENTHESIS,
@@ -802,8 +803,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Handles special pseudo-class selectors during AdGuard to uBlock conversion:
      * - `:contains(text)` -> `:has-text(text)`
-     *   direct conversion, no changes to argument. A text argument that
-     *   uBlock would reject (e.g. `:contains("foo" )`) is not converted.
+     *   Direct conversion, no changes to argument. A text argument that the
+     *   uBlock parser would reject (e.g. `:contains("foo" )`) is not
+     *   converted.
      * - `:has-text(text)` -> kept as-is
      *   `:has-text()` is native uBlock syntax and a documented synonym of
      *   `:contains()` in AdGuard products, so no conversion is needed.
@@ -812,8 +814,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * case-insensitively against `textContent`, while AdGuard matches
      * `:contains()` case-sensitively against `innerHTML`. The argument is
      * kept as-is, so a `:contains()` value with markup or an ampersand, or a
-     * value whose case matters, can still diverge after conversion. This is
-     * outside the scope of the `[tag-content]` and `[wildcard]` fix.
+     * value whose case matters, can still diverge after conversion. The
+     * uBlock parser also accepts only the `i` flag in a regexp argument, so a
+     * regexp with another flag, e.g. `/ads/s`, becomes a plain text argument
+     * there. This is outside the scope of the `[tag-content]` and
+     * `[wildcard]` fix. See the AG-61883 ticket.
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
@@ -1648,9 +1653,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * filtering `:has-text()` pseudo-class.
      *
      * The uBlock parser first parses the whole cosmetic filter with CSS-tree
-     * and discards the rule if that parse fails. Thus quotes, parentheses,
-     * brackets and braces must be balanced over the whole argument, and a
-     * trailing backslash is not valid.
+     * and discards the rule if that parse fails. The argument must therefore
+     * be a valid CSS component value sequence: strings must be closed, blocks
+     * must be balanced, comments must be terminated, and a trailing backslash
+     * is not valid.
+     *
+     * A closer ends only the block that it matches. Any other closer is a
+     * plain token inside the current block, e.g. `)` in `[^)]` or a stray
+     * `]`. A `)` that closes no block ends the `:has-text()` function before
+     * the whole argument is read, so such an argument is not supported.
      *
      * After that, uBlock reads the text argument with `compileText()`, which
      * calls `unquoteString()`. When the argument starts with a quote, the
@@ -1680,21 +1691,37 @@ export class HtmlRuleConverter extends RuleConverterBase {
         for (let i = 0; i < argument.length; i += 1) {
             const char = argument.charAt(i);
 
-            // A backslash escapes the next character. CSS-tree rejects a
-            // trailing backslash.
-            if (char === BACKSLASH) {
-                i += 1;
-
-                if (i === argument.length) {
-                    return false;
+            if (quote !== null) {
+                // A backslash escapes the next character inside a string.
+                if (char === BACKSLASH) {
+                    i += 1;
+                } else if (char === quote) {
+                    quote = null;
                 }
 
                 continue;
             }
 
-            if (quote !== null) {
-                if (char === quote) {
-                    quote = null;
+            // A comment is skipped as a whole and cannot open a string or a
+            // block. CSS-tree rejects an unterminated comment.
+            if (char === SLASH && argument.charAt(i + 1) === ASTERISK) {
+                const commentEnd = argument.indexOf(`${ASTERISK}${SLASH}`, i + 2);
+
+                if (commentEnd === -1) {
+                    return false;
+                }
+
+                i = commentEnd + 1;
+                continue;
+            }
+
+            // Outside a string a backslash escapes the next character.
+            // CSS-tree rejects a trailing backslash.
+            if (char === BACKSLASH) {
+                i += 1;
+
+                if (i === argument.length) {
+                    return false;
                 }
 
                 continue;
@@ -1716,7 +1743,20 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             const openingDelimiter = closingDelimiters[char];
 
-            if (openingDelimiter !== undefined && delimiters.pop() !== openingDelimiter) {
+            if (openingDelimiter === undefined) {
+                continue;
+            }
+
+            // A closer ends only the block it matches. Any other closer is a
+            // plain token in the current block, e.g. `)` in `[^)]`.
+            if (delimiters.length !== 0 && delimiters[delimiters.length - 1] === openingDelimiter) {
+                delimiters.pop();
+                continue;
+            }
+
+            // A `)` that closes no block ends the function before the whole
+            // argument is read, so uBlock cannot use the argument as text.
+            if (char === CLOSE_PARENTHESIS && delimiters.length === 0) {
                 return false;
             }
         }
@@ -1739,11 +1779,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
             const char = argument.charAt(index);
 
             if (char === BACKSLASH) {
+                // The first loop rejects a trailing backslash.
                 index += 1;
-
-                if (index === argument.length) {
-                    return false;
-                }
             } else if (char === firstChar) {
                 return index === argument.length - 1;
             }

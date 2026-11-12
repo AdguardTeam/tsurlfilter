@@ -1376,6 +1376,26 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div:has-text(/a(b)c/)'],
                     },
 
+                    // `:contains()` special pseudo-class selector - a closer
+                    // ends only the block it matches, so `)` in `[^)]` and a
+                    // stray `]` or `}` are plain CSS tokens
+                    {
+                        actual: '$$script:contains(/window\\.open\\([^)]*\\)/)',
+                        expected: ['##^script:has-text(/window\\.open\\([^)]*\\)/)'],
+                    },
+                    {
+                        actual: '$$div:contains(/foo[)]/)',
+                        expected: ['##^div:has-text(/foo[)]/)'],
+                    },
+                    {
+                        actual: '$$div:contains(a])',
+                        expected: ['##^div:has-text(a])'],
+                    },
+                    {
+                        actual: '$$div:contains(a}b)',
+                        expected: ['##^div:has-text(a}b)'],
+                    },
+
                     // `:has-text()` special pseudo-class selector - native uBlock
                     // syntax, kept as-is instead of a mixed-syntax error
                     {
@@ -1688,6 +1708,23 @@ describe('HtmlRuleConverter', () => {
                         input: '$$div:contains((function(g,b,a,c,e,d)',
                         // eslint-disable-next-line max-len
                         error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: '(function(g,b,a,c,e,d'",
+                    },
+
+                    // invalid special pseudo-class selector - an unterminated
+                    // comment fails the CSS-tree parse
+                    {
+                        input: '$$div:contains(a/*)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: 'a/*'",
+                    },
+
+                    // invalid special pseudo-class selector - a `)` that
+                    // closes no block ends the function before the argument
+                    // is read
+                    {
+                        input: '$$div:contains(a)b)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'contains' is not valid in uBlock Origin: 'a)b'",
                     },
                 ])("should not convert '$input'", ({ input, error }) => {
                     if (typeof input !== 'string') {
