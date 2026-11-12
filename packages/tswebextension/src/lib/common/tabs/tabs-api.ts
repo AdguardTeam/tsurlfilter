@@ -57,7 +57,7 @@ export type TabFrameRequestContextCommon = {
     /**
      * The UUID of the parent document owning the frame that sent the request.
      *
-     * Available in Chrome 106+. Not available in Firefox.
+     * Available in Chrome 106+ and Firefox 153+. Not available in older Firefox.
      */
     parentDocumentId?: string;
 
@@ -89,7 +89,7 @@ export type IncrementBlockedCountParams = {
     referrerUrl: string;
 
     /**
-     * Parent document ID of the request (Chromium 106+).
+     * Parent document ID of the request (Chromium 106+, Firefox 153+).
      */
     parentDocumentId?: string;
 
@@ -543,6 +543,10 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      * Checks whether the tab with the specified ID is open
      * in incognito mode or not.
      *
+     * Note: a missing tab context also yields `false`, so `false` may mean
+     * "regular" or "unknown". Use {@link getTabIncognitoState} when the
+     * unknown case must be distinguished.
+     *
      * @param tabId Tab ID.
      *
      * @returns True if the tab is open in incognito mode, false otherwise.
@@ -552,6 +556,31 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
 
         if (!tabContext) {
             return false;
+        }
+
+        return tabContext.info.incognito;
+    }
+
+    /**
+     * Returns the incognito state of the tab with the specified ID, or
+     * `undefined` when it cannot be determined yet.
+     *
+     * Unlike {@link isIncognitoTab}, this method distinguishes a tab that is
+     * known to be regular from a tab whose context does not exist yet or was
+     * created synthetically (see {@link createTabContextIfNotExists}), because
+     * in those cases `incognito` is defaulted to `false` and may be wrong.
+     * Callers that must not act on a private tab's data should treat
+     * `undefined` as unknown and resolve the state from the browser.
+     *
+     * @param tabId Tab ID.
+     *
+     * @returns `true`/`false` when known, `undefined` otherwise.
+     */
+    public getTabIncognitoState(tabId: number): boolean | undefined {
+        const tabContext = this.getTabContext(tabId);
+
+        if (!tabContext || tabContext.isSyntheticTab) {
+            return undefined;
         }
 
         return tabContext.info.incognito;
@@ -603,7 +632,8 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      * Checks if the top-level frame ancestor's URL domain matches
      * the main frame's URL domain.
      *
-     * Used as Firefox fallback when parentDocumentId is not available.
+     * Used as fallback for browsers where parentDocumentId is not available
+     * (e.g. Firefox older than 153).
      *
      * @param mainFrameUrl Main frame URL of the tab.
      * @param frameAncestors Frame ancestors from the request (Firefox-specific).
@@ -667,13 +697,13 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      * Increments the blocked request count for a tab if the request belongs
      * to the current page. A request is considered part of the current page if:
      * - its referrer URL has the same domain as the tab URL (same-domain check);
-     * - its parentDocumentId chain leads to the main frame (Chromium 106+);
-     * - the top-level frame ancestor URL matches the tab URL (Firefox fallback).
+     * - its parentDocumentId chain leads to the main frame (Chromium 106+, Firefox 153+);
+     * - the top-level frame ancestor URL matches the tab URL (fallback for older Firefox).
      *
      * @param params Blocked request parameters.
      * @param params.tabId Tab ID.
      * @param params.referrerUrl Request initiator URL.
-     * @param params.parentDocumentId Parent document ID of the request (Chromium 106+).
+     * @param params.parentDocumentId Parent document ID of the request (Chromium 106+, Firefox 153+).
      * @param params.frameAncestors Frame ancestors of the request (Firefox).
      */
     public incrementTabBlockedRequestCount({
@@ -705,12 +735,12 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
         }
 
         if (parentDocumentId) {
-            // Chromium-based browsers: parentDocumentId is available.
+            // Chromium-based browsers and Firefox 153+: parentDocumentId is available.
             if (TabsApiCommon.isDescendantOfMainFrame(tabContext, parentDocumentId)) {
                 tabContext.incrementBlockedRequestCount();
             }
         } else if (TabsApiCommon.isSameDomainByAncestors(mainFrameUrl, frameAncestors)) {
-            // Firefox: no parentDocumentId.
+            // Firefox older than 153: no parentDocumentId.
             tabContext.incrementBlockedRequestCount();
         }
     }

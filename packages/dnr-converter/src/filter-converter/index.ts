@@ -1,5 +1,6 @@
 export {
     type BaseFilterConverterOptions,
+    type ComputedWithSourceMapOptions,
     type FilterConverterOptions as ConverterOptions,
     type SimpleConverterOptions,
     type SourceMapConverterOptions,

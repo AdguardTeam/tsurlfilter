@@ -9,7 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added the `fingerprinting` value for `$stealth`
+  (`StealthOptionName.Fingerprinting`).
+- Added `Engine.getDocumentOrStealthExceptionRules()` to retrieve `$stealth`
+  and `$document` exceptions with `$badfilter` applied.
+- Support of uBlock Origin `:remove-attr()` and `:remove-class()` pseudo-classes:
+  rules with them are recognized as Extended CSS and passed to the Extended CSS
+  engine [AdguardBrowserExtension#3538].
+
 ### Changed
+
+- Escaped regular-expression domains in non-basic `[$domain=...]` rules now
+  match correctly, while basic rules and classic cosmetic domain lists retain
+  their regexp escapes [#190].
+- Regexp domains now match case-insensitively without changing escape tokens
+  such as `\D` into `\d`.
 
 ### Deprecated
 
@@ -17,6 +31,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The library no longer uses a regexp lookbehind literal when it compares the
+  written text of `$badfilter` rules, so it parses in browsers without
+  lookbehind support, e.g. Safari before 16.4.
+- `$badfilter` incorrectly negated rules with different values of value-bearing
+  modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
+  `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when
+  the whole modifier list is written the same way — names, values, their order
+  and repeats, `$permissions` included — so `$redirect-rule` is no longer treated
+  as `$redirect`, and spellings that are equivalent after parsing (e.g.
+  `Set-Cookie` and `set-cookie`) do not negate each other.
+- `$badfilter` with `$domain` still disables the rule it refers to for the
+  domains present in both lists, but regular expression domains now keep their
+  case, so `$domain=/A/` no longer cancels `$domain=/a/`. This exception applies
+  only while neither rule has a negated `~domain`; otherwise the whole text is
+  compared.
+- Fixed cosmetic rules with multiple domains in the `$domain` modifier not
+  applying on permitted domains [AdguardBrowserExtension#3605].
+- Fixed duplicate cosmetic rule matches for overlapping domain restrictions
+  [AdguardBrowserExtension#3605].
+- Domain-scoped cosmetic and JavaScript rules not matching hosts with labels
+  ending in an underscore.
 - `:contains()` regexp arguments in HTML filtering rules that end with an
   escaped backslash (`/foo\\/`) or have one in a character class (`/[\\]/`)
   are now compiled as regexps instead of being matched as text.
@@ -44,6 +79,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   such as `##^div:contains(foo)` are no longer reported as a conversion error.
 
 ### Security
+
+[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.4...HEAD
+[#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
+[AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
+[AdguardBrowserExtension#3605]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3605
 
 ## [6.0.4] - 2026-10-15
 

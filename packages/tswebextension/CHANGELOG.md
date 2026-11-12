@@ -9,7 +9,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Partial support for `$csp` exceptions in Manifest V3 across built-in, custom,
+  and user filters [AdguardBrowserExtension#2965]: rebuilt CSP rules replace the
+  previous ones atomically within each DNR scope, are fitted into the quotas left
+  after the regular conversion, and the dynamic scope is rolled back when the
+  session update fails. Rule sets must be built with `exclude-unsafe-rules`,
+  otherwise the static copy of a CSP rule stays in the rule set and a `$csp`
+  exception has no effect.
+- `ConfigurationResult` reports what was dropped or failed: `cspRules.errors`
+  for built-in filters (user rules stay in `dynamicRules.errors`),
+  `dynamicRules.limitations` and `sessionRules.limitations` for the two separate
+  quotas, so the session overflow never reaches the dynamic counters, and
+  `dynamicRules.counts` with the final counts, rebuilt CSP rules included.
+  `configure()` logs the errors of built-in CSP rules at the debug level, since
+  built-in filters always hold a few `$csp` exceptions which DNR cannot
+  express, and the session limitations; `dynamicRules.errors` and
+  `dynamicRules.limitations` are left to the consumer.
+- `UnexpectedConversionError`, `RuleScanError`, `isRuleScanError` and
+  `DynamicRulesCounts` are now re-exported, so consumers can check errors with
+  `instanceof` and use the counters type.
+- Added opt-in canvas protection for Chromium MV3, Chromium MV2 and Firefox
+  MV2 with `stealth.protectCanvas` and methods to update protection.
+  Exceptions are compiled from filter rules and the allowlist, including
+  `$stealth=fingerprinting` and `$document`, with host boundaries preserved
+  and inverted wildcard entries covering one level below the domain, as frame
+  matching does. The filtering log shows the `$stealth` exception that keeps
+  a document native [AdguardBrowserExtension#3475].
+- MV3: `ConfigurationResult.loadDisabledStaticFilter()` and
+  `loadDisabledStaticFilters()` create the static rulesets of the filters not
+  enabled in the browser on demand, so the caller can read their rule counters
+  off the startup path. The per-filter loader lets callers wait only for the
+  counter they need; the batch loader creates the rest one at a time.
+
 ### Changed
+
+- Updated `@types/webextension-polyfill` to `0.12.6`, which adds Firefox 153+
+  `documentId`/`parentDocumentId` support to webNavigation types and renames
+  `WebRequest.BlockingResponseOrPromise` to `BlockingResponseOrPromiseOrVoid`;
+  documentation now reflects that document tracking works the same in Firefox 153+
+  as in Chromium. Consumers compiling against the published declarations must use
+  `@types/webextension-polyfill` >= 0.12.6, since the previous alias is gone.
+- Updated [@adguard/extended-css] to `v2.3.0`, which adds support for uBlock Origin
+  `:remove-attr()` and `:remove-class()` pseudo-classes [AdguardBrowserExtension#3538].
+- **BREAKING:** MV3: `start()` and `configure()` create only the static
+  rulesets enabled in the browser, so `ConfigurationResult.staticFilters` no
+  longer contains the rulesets of disabled filters. Creating a ruleset for the
+  first time prepares its filter list at runtime, which took over a second for
+  all bundled rulesets on a clean install. Call
+  `ConfigurationResult.loadDisabledStaticFilters()` to get the rest.
 
 ### Deprecated
 
@@ -17,6 +64,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Canvas protection keeps the script that the browser acknowledged across
+  service worker restarts, instead of removing it and registering it again on
+  every start.
+- MV3: the engine no longer prepares the enabled static filter lists again on
+  every start; it gets them from IndexedDB with their conversion data. Cached
+  filter lists are prepared again when the versions of the libraries that
+  perform the conversion change, so conversion fixes apply without a filter
+  update.
+- An overflow of the unsafe session rules reports how many of them can be
+  applied (the quota minus the ids reserved for stealth rules) instead of the
+  raw quota, so the counters of the limits warning are exact.
+- A CSP rule of an unreadable filter is reported in the channel of that filter
+  instead of being dropped from both: the error is classified by its filter id,
+  not by its kind only, and the session update re-adds the CSP rules of such a
+  filter from its own ruleset instead of dropping them with the rebuilt list.
+- The declarative filtering log listener is restarted when any step of
+  `configure()` fails after it was stopped, so the log does not stay silent
+  until the next successful `configure()`.
+- Filtering log now records CSS hits for elements that pages add and remove
+  while the page is loading, e.g. anti-adblock bait elements created by a
+  script in `<head>`.
+- `CssHitsCounter` now applies its documented `elementToString` default
+  (`true`) when the option is omitted or `undefined`; previously an options
+  object without this property disabled element stringification.
+- In MV3, `$domain` did not match the target hostname of a document request.
+  A document request started by the browser (new tab page, address bar,
+  bookmark, reload) has no initiator, so a rule such as
+  `*$document,csp=script-src-attr 'none',domain=example.com` did not work on the
+  first page load. The conversion now adds a `main_frame` rule with
+  `requestDomains` for such rules. Affected rules now consume two declarative
+  rules, and two regex-rule slots when a `$removeparam` rule generates a
+  regexp, so they count against the rule and regex budgets.
+- In MV3, static filters, custom filters and user rules were handed to the
+  converter already converted by the extension, so `$badfilter` rules from those
+  sources were compared by the converted text instead of the text as written and
+  could cancel a rule written differently, e.g. `$queryprune=foo` against
+  `$removeparam=foo`. The adapters now pass the original rule spelling.
+- Wrong `frameDomain` in cosmetic hits filtering-log events for subframes, breaking
+  exception rules created from the filtering log [AdguardBrowserExtension#1449].
+- Domain-scoped cosmetic and JavaScript rules not applying on hosts with labels
+  ending in an underscore in MV2 and MV3 extensions, and incorrect third-party
+  request classification for such hosts.
+- Browsing session from incognito window sometimes leaks to normal window when
+  "delete third-party cookies" option is enabled [AdguardBrowserExtension#3553].
+- Inverted allowlist entries with uppercase letters not matching their sites.
+- `$stealth` exception rules shown as `<dynamic rule text is not specified>`
+  instead of their text in the MV3 filtering log.
 - History API `$removeparam` rules now parse regexp values the same way as
   network `$removeparam`. A value with an escaped slash, e.g. `/utm_\/(a|b)`,
   no longer disables all History API `$removeparam` rules on the page.
@@ -47,6 +141,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$removeparam` regexp values with the `g` or `y` flag are now matched
   statelessly: matching no longer depends on the previously tested URL
   parameter, so all matching parameters are removed.
+
+[AdguardBrowserExtension#2965]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2965
+[AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
+[AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475
+[AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
+[AdguardBrowserExtension#3553]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3553
 
 ### Security
 

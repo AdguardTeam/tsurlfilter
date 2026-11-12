@@ -79,8 +79,15 @@ pnpm lint
 
 ### Running Tests
 
+The `browser` and `canvas-native` projects run in headless Chromium and
+Firefox. Install the Playwright browsers once before the first run:
+
 ```bash
-# Run all tests (mv2 + mv3 + common)
+pnpm exec playwright install chromium firefox
+```
+
+```bash
+# Run all tests (mv2, mv3, common, browser, canvas-native)
 pnpm test
 
 # Run MV2 tests only

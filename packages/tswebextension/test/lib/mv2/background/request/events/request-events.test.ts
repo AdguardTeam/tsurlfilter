@@ -10,10 +10,17 @@ import { type WebRequest } from 'webextension-polyfill';
 
 import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
 
-import { type RequestContext, RequestContextState, RequestEvents } from '../../../../../../src/lib';
+import {
+    type RequestContext,
+    RequestContextState,
+    requestContextStorage,
+    RequestEvents,
+} from '../../../../../../src/lib';
 import { defaultFilteringLog, FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
 import { DocumentLifecycle } from '../../../../../../src/lib/common/interfaces';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
+import { logger } from '../../../../../../src/lib/common/utils/logger';
+import { CanvasDeliveryUrl } from '../../../../../../src/lib/mv2/common/canvas-delivery';
 
 describe('Request Events', () => {
     const commonRequestData = {
@@ -286,6 +293,42 @@ describe('Request Events', () => {
         expect(browser.webRequest.onBeforeRedirect.addListener.calledOnce);
     });
 
+    test('creates no context and logs nothing for the reserved canvas delivery host', () => {
+        RequestEvents.init();
+
+        const publishEventSpy = vi.spyOn(defaultFilteringLog, 'publishEvent');
+        const errorSpy = vi.spyOn(logger, 'error');
+        const requestId = 'canvas-delivery-1';
+
+        browser.webRequest.onBeforeRequest.dispatch({
+            ...commonRequestData,
+            requestId,
+            type: 'xmlhttprequest',
+            url: CanvasDeliveryUrl.getUrl('extensionid'),
+            initiator: 'https://example.com',
+            timeStamp: Date.now(),
+        });
+
+        browser.webRequest.onBeforeRedirect.dispatch({
+            ...commonRequestData,
+            requestId,
+            type: 'xmlhttprequest',
+            url: CanvasDeliveryUrl.getUrl('extensionid'),
+            redirectUrl: 'data:text/javascript;charset=utf-8,',
+            fromCache: false,
+            statusCode: 307,
+            statusLine: 'HTTP/1.1 307 Internal Redirect',
+            timeStamp: Date.now(),
+        });
+
+        expect(requestContextStorage.has(requestId)).toBe(false);
+        expect(publishEventSpy).not.toHaveBeenCalled();
+        expect(errorSpy).not.toHaveBeenCalled();
+
+        publishEventSpy.mockRestore();
+        errorSpy.mockRestore();
+    });
+
     describe('prefetch request handling', () => {
         it('should set isPrefetchRequest=true for document request with documentId and active lifecycle', () => {
             RequestEvents.init();
@@ -376,6 +419,26 @@ describe('Request Events', () => {
             expect(tabReloadCalls).toHaveLength(0);
 
             filteringLogSpy.mockRestore();
+        });
+    });
+
+    describe('cookie store details capture', () => {
+        it('should store cookieStoreId and incognito from the onBeforeRequest details', () => {
+            RequestEvents.init();
+
+            const requestId = 'cookie-store-details-1';
+
+            browser.webRequest.onBeforeRequest.dispatch(<WebRequest.OnBeforeRequestDetailsType>{
+                ...commonRequestData,
+                requestId,
+                cookieStoreId: 'firefox-container-4',
+                incognito: true,
+            });
+
+            expect(requestContextStorage.get(requestId)).toEqual(expect.objectContaining({
+                cookieStoreId: 'firefox-container-4',
+                incognito: true,
+            }));
         });
     });
 });

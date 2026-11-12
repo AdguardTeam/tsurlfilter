@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Inherited the updated `@adguard/dnr-converter` behavior: `$badfilter` compares
+  the whole modifier list as written, different `$csp` policies are no longer
+  merged into one header, and `$csp` rules with an empty or `report-` directive
+  or combined with `$cookie` are parse errors. Note that this package builds rule sets
+  through `convert()`, which still rejects allowlist `$csp` rules: `$csp`
+  exceptions are resolved by `tswebextension` at runtime, not here. Rebuilt CSP
+  rules replace only the CSP rules stored in the metadata, so rule sets must be
+  built with `exclude-unsafe-rules`; otherwise the static copy of a CSP rule
+  stays in the rule set and a `$csp` exception has no effect.
+
 ### Deprecated
 
 ### Removed
@@ -20,6 +30,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   present in the filters metadata on `filters.adtidy.org`.
 
 ### Fixed
+
+- Fixed rules with `$domain` not matching document navigations started by the
+  browser (new tab page, address bar, bookmark, reload). The MV3 rulesets now
+  contain an additional `main_frame` rule with `requestDomains` for such rules,
+  so `$csp`, `$removeheader`, `$removeparam` and allowlist rules with `$domain`
+  work on the first page load. Affected rules now consume two declarative
+  rules, and two regex-rule slots when a `$removeparam` rule generates a
+  regexp, so they count against the rule and regex budgets.
+- Fixed `dnr-rulesets load` failing to copy packaged assets and returning a
+  successful exit status after copy errors.
 
 ### Security
 

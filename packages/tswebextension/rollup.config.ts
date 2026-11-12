@@ -8,6 +8,10 @@ import cleanup from 'rollup-plugin-cleanup';
 import dts from 'rollup-plugin-dts';
 import externals from 'rollup-plugin-node-externals';
 
+// Rollup loads its config without extension lookup, so this local module is named in full.
+// eslint-disable-next-line import/extensions
+import { canvasEngineSource } from './tasks/canvas-engine-plugin.ts';
+
 const BUILD_DIST = 'dist';
 
 const commonPlugins: Plugin[] = [
@@ -78,6 +82,7 @@ const tswebextensionConfig: RollupOptions = {
         moduleSideEffects: false,
     },
     plugins: [
+        canvasEngineSource(),
         ...commonPlugins,
     ],
 };

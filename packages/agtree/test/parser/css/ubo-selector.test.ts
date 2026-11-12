@@ -369,6 +369,106 @@ describe('UboSelectorParser', () => {
                 },
             },
 
+            // :remove-attr() and :remove-class() are actions applied by Extended CSS to the matched element,
+            // so they stay in the selector instead of being extracted as modifiers
+            {
+                actual: 'div:remove-attr(href)',
+                expected: (context: NodeExpectContext): UboSelectorParser => {
+                    return {
+                        type: 'UboSelector',
+                        selector: {
+                            type: 'Value',
+                            value: 'div:remove-attr(href)',
+                            ...context.getFullRange(),
+                        },
+                        modifiers: {
+                            type: 'ModifierList',
+                            children: [],
+                            ...context.getFullRange(),
+                        },
+                        ...context.getFullRange(),
+                    };
+                },
+            },
+            {
+                actual: 'div:remove-class(/^ad-[0-9]+$/)',
+                expected: (context: NodeExpectContext): UboSelectorParser => {
+                    return {
+                        type: 'UboSelector',
+                        selector: {
+                            type: 'Value',
+                            value: 'div:remove-class(/^ad-[0-9]+$/)',
+                            ...context.getFullRange(),
+                        },
+                        modifiers: {
+                            type: 'ModifierList',
+                            children: [],
+                            ...context.getFullRange(),
+                        },
+                        ...context.getFullRange(),
+                    };
+                },
+            },
+            // the declaration block of a CSS injection rule may follow an in-selector action
+            {
+                actual: 'div:remove-attr(href) { color: red }',
+                expected: (context: NodeExpectContext): UboSelectorParser => {
+                    return {
+                        type: 'UboSelector',
+                        selector: {
+                            type: 'Value',
+                            value: 'div:remove-attr(href) { color: red }',
+                            ...context.getFullRange(),
+                        },
+                        modifiers: {
+                            type: 'ModifierList',
+                            children: [],
+                            ...context.getFullRange(),
+                        },
+                        ...context.getFullRange(),
+                    };
+                },
+            },
+            {
+                actual: 'div:remove-attr(href){color:red}',
+                expected: (context: NodeExpectContext): UboSelectorParser => {
+                    return {
+                        type: 'UboSelector',
+                        selector: {
+                            type: 'Value',
+                            value: 'div:remove-attr(href){color:red}',
+                            ...context.getFullRange(),
+                        },
+                        modifiers: {
+                            type: 'ModifierList',
+                            children: [],
+                            ...context.getFullRange(),
+                        },
+                        ...context.getFullRange(),
+                    };
+                },
+            },
+            // the action may be at the end of the last selector in a list
+            {
+                actual: 'a, div:remove-attr(href)',
+                expected: (context: NodeExpectContext): UboSelectorParser => {
+                    return {
+                        type: 'UboSelector',
+                        selector: {
+                            type: 'Value',
+                            value: 'a, div:remove-attr(href)',
+                            ...context.getFullRange(),
+                        },
+                        modifiers: {
+                            type: 'ModifierList',
+                            children: [],
+                            ...context.getFullRange(),
+                        },
+                        ...context.getFullRange(),
+                    };
+                },
+            },
+
             // negated :matches-path()
             {
                 actual: ':not(:matches-path(/path))',
@@ -574,13 +674,13 @@ describe('UboSelectorParser', () => {
 
     describe('UboSelectorParser.parse - invalid', () => {
         test.each<{ actual: string; expected: NodeExpectFn<AdblockSyntaxError> }>([
-            // uBO style injection cannot be followed by anything else
+            // uBO actions cannot be followed by anything else
             {
                 actual: 'div:style(border: none!important):remove()',
                 //                                        ~~~~~~~~~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        ERROR_MESSAGES.UBO_STYLE_CANNOT_BE_FOLLOWED,
+                        ERROR_MESSAGES.UBO_ACTION_CANNOT_BE_FOLLOWED,
                         ...context.toTuple(context.getRangeFor(':remove()')),
                     );
                 },
@@ -590,7 +690,7 @@ describe('UboSelectorParser', () => {
                 //                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        ERROR_MESSAGES.UBO_STYLE_CANNOT_BE_FOLLOWED,
+                        ERROR_MESSAGES.UBO_ACTION_CANNOT_BE_FOLLOWED,
                         ...context.toTuple(context.getRangeFor(':style(border: none!important)')),
                     );
                 },
@@ -600,7 +700,7 @@ describe('UboSelectorParser', () => {
                 //                                         ~~~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        ERROR_MESSAGES.UBO_STYLE_CANNOT_BE_FOLLOWED,
+                        ERROR_MESSAGES.UBO_ACTION_CANNOT_BE_FOLLOWED,
                         ...context.toTuple(context.getRangeFor('div', -1)), // first 'div' from the end
                     );
                 },
@@ -610,8 +710,108 @@ describe('UboSelectorParser', () => {
                 //                    ~~~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        ERROR_MESSAGES.UBO_STYLE_CANNOT_BE_FOLLOWED,
+                        ERROR_MESSAGES.UBO_ACTION_CANNOT_BE_FOLLOWED,
                         ...context.toTuple(context.getRangeFor('div', -1)), // first 'div' from the end
+                    );
+                },
+            },
+            {
+                actual: 'div:remove-attr(href) div',
+                //                        ~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        ERROR_MESSAGES.UBO_ACTION_CANNOT_BE_FOLLOWED,
+                        ...context.toTuple(context.getRangeFor('div', -1)), // first 'div' from the end
+                    );
+                },
+            },
+            {
+                actual: 'div:remove-class(ads) span',
+                //                        ~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        ERROR_MESSAGES.UBO_ACTION_CANNOT_BE_FOLLOWED,
+                        ...context.toTuple(context.getRangeFor('span', -1)),
+                    );
+                },
+            },
+            {
+                actual: 'div:remove-attr(href):remove()',
+                //                      ~~~~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        ERROR_MESSAGES.UBO_ACTION_CANNOT_BE_FOLLOWED,
+                        ...context.toTuple(context.getRangeFor(':remove()')),
+                    );
+                },
+            },
+            // only in-selector actions may be followed by the declaration block of a CSS injection rule
+            {
+                actual: 'div:style(padding:0) { color: red }',
+                //                      ~~~~~~~~~~~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        ERROR_MESSAGES.UBO_ACTION_CANNOT_BE_FOLLOWED,
+                        ...context.toTuple(context.getRangeFor('{ color: red }')),
+                    );
+                },
+            },
+            {
+                actual: 'div:remove() { color: red }',
+                //               ~~~~~~~~~~~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        ERROR_MESSAGES.UBO_ACTION_CANNOT_BE_FOLLOWED,
+                        ...context.toTuple(context.getRangeFor('{ color: red }')),
+                    );
+                },
+            },
+            // actions must be at the end of the whole selector list
+            {
+                actual: 'a:remove-attr(href), div',
+                //                     ~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        ERROR_MESSAGES.UBO_ACTION_CANNOT_BE_FOLLOWED,
+                        ...context.toTuple(context.getRangeFor(', div')),
+                    );
+                },
+            },
+            {
+                actual: 'a:remove-attr(x):remove-class(y)',
+                //                  ~~~~~~~~~~~~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        ERROR_MESSAGES.UBO_ACTION_CANNOT_BE_FOLLOWED,
+                        ...context.toTuple(context.getRangeFor(':remove-class(y)')),
+                    );
+                },
+            },
+
+            // :remove-attr() and :remove-class() cannot be nested
+            {
+                actual: 'div:has(a:remove-attr(href))',
+                //           ~~~~~~~~~~~~~~~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        sprintf(
+                            ERROR_MESSAGES.UBO_MODIFIER_CANNOT_BE_NESTED,
+                            formatPseudoName(UboPseudoName.RemoveAttr),
+                        ),
+                        ...context.toTuple(context.getRangeFor(':remove-attr(href))')),
+                    );
+                },
+            },
+            {
+                actual: 'div:not(a:remove-class(ads))',
+                //           ~~~~~~~~~~~~~~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        sprintf(
+                            ERROR_MESSAGES.UBO_MODIFIER_CANNOT_BE_NESTED,
+                            formatPseudoName(UboPseudoName.RemoveClass),
+                        ),
+                        ...context.toTuple(context.getRangeFor(':remove-class(ads))')),
                     );
                 },
             },
@@ -828,6 +1028,14 @@ describe('UboSelectorParser', () => {
             {
                 actual: 'div:remove()',
                 expected: 'div:remove()',
+            },
+            {
+                actual: 'div:remove-attr(href)',
+                expected: 'div:remove-attr(href)',
+            },
+            {
+                actual: 'div:remove-class(/^ad-[0-9]+$/)',
+                expected: 'div:remove-class(/^ad-[0-9]+$/)',
             },
             {
                 actual: 'div:matches-path(/path)',

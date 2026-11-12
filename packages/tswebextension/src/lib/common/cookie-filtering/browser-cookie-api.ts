@@ -4,6 +4,7 @@ import browser from 'webextension-polyfill';
 
 import { logger } from '../utils/logger';
 
+import { type CookieStoreScope } from './cookie-store-scope';
 import { type ParsedCookie } from './parsed-cookie';
 
 import Cookies = browser.Cookies;
@@ -12,6 +13,13 @@ import SameSiteStatus = Cookies.SameSiteStatus;
 
 /**
  * Cookie api implementation.
+ *
+ * All cookie jar operations (`browser.cookies.set/remove/getAll`) receive an
+ * explicit {@link CookieStoreScope} — either a concrete `storeId` or an empty
+ * scope for the default store. `null` means the target store is unknown and
+ * the call is skipped, because omitting the scope silently resolves to the
+ * default (non-private) cookie store and would leak private sessions
+ * {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3553}.
  */
 export class BrowserCookieApi {
     /**
@@ -19,12 +27,21 @@ export class BrowserCookieApi {
      *
      * @param name Cookie name.
      * @param url Request url.
+     * @param scope Target cookie store scope, `null` to skip the call.
      *
      * @returns True if cookie was removed.
      */
-    async removeCookie(name: string, url: string): Promise<boolean> {
+    async removeCookie(
+        name: string,
+        url: string,
+        scope: CookieStoreScope | null,
+    ): Promise<boolean> {
+        if (scope === null) {
+            return false;
+        }
+
         try {
-            await browser.cookies.remove({ name, url });
+            await browser.cookies.remove({ name, url, ...scope });
             return true;
         } catch (e) {
             logger.error('[tsweb.BrowserCookieApi.removeCookie]: error on removing cookie via browser.cookies.remove: ', e);
@@ -37,12 +54,20 @@ export class BrowserCookieApi {
      * Updates cookie.
      *
      * @param cookie Cookie for update.
+     * @param scope Target cookie store scope, `null` to skip the call.
      *
      * @returns Promise resolved with true if cookie was updated, false otherwise.
      */
-    async modifyCookie(cookie: ParsedCookie): Promise<boolean> {
+    async modifyCookie(cookie: ParsedCookie, scope: CookieStoreScope | null): Promise<boolean> {
+        if (scope === null) {
+            return false;
+        }
+
         try {
-            const update = BrowserCookieApi.convertToSetDetailsType(cookie);
+            const update = {
+                ...BrowserCookieApi.convertToSetDetailsType(cookie),
+                ...scope,
+            };
             await browser.cookies.set(update);
 
             return true;
@@ -66,12 +91,20 @@ export class BrowserCookieApi {
      * Search for cookies that match a given pattern.
      *
      * @param pattern Pattern of cookies to find.
+     * @param scope Target cookie store scope, `null` to skip the call.
      *
      * @returns List of found cookies.
      */
-    async findCookies(pattern: Cookies.GetAllDetailsType): Promise<Cookies.Cookie[]> {
+    async findCookies(
+        pattern: Cookies.GetAllDetailsType,
+        scope: CookieStoreScope | null,
+    ): Promise<Cookies.Cookie[]> {
+        if (scope === null) {
+            return [];
+        }
+
         try {
-            const found = await browser.cookies.getAll(pattern);
+            const found = await browser.cookies.getAll({ ...pattern, ...scope });
 
             return found;
         } catch (e) {

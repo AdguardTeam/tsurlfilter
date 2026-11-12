@@ -192,6 +192,7 @@ import { logger } from '../../common/utils/logger';
 import { getDomain, isHttpOrWsRequest } from '../../common/utils/url';
 
 import {
+    canvasInjection,
     contentFiltering,
     cookieFiltering,
     cosmeticFrameProcessor,
@@ -221,7 +222,7 @@ import { TabsApi } from './tabs';
 import { FrameMV2 } from './tabs/frame';
 import { browserDetectorMV2 } from './utils/browser-detector';
 
-export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
+export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromiseOrVoid;
 
 export type InjectCosmeticParams = {
     frameId: number;
@@ -733,7 +734,11 @@ export class WebRequestApi {
             return;
         }
 
-        const { tabId, frameId, requestType } = context;
+        const {
+            tabId,
+            frameId,
+            requestType,
+        } = context;
 
         if (requestType !== RequestType.Document && requestType !== RequestType.SubDocument) {
             return;
@@ -855,9 +860,8 @@ export class WebRequestApi {
             parentFrameId,
         } = details;
 
-        // supported by Chrome 106+
-        // but not supported by Firefox so it is calculated based on tabId and frameId
-        // @ts-ignore
+        // supported by Chrome 106+ and Firefox 153+;
+        // for browsers without support it is calculated based on tabId and parentFrameId
         let { parentDocumentId } = details;
 
         const isDocumentLevelFrame = TabsApi.isDocumentLevelFrame(parentFrameId);
@@ -935,9 +939,8 @@ export class WebRequestApi {
         const {
             tabId,
             frameId,
-            // supported by Chrome 106+
-            // but not supported by Firefox so it is calculated based on tabId and frameId
-            // @ts-ignore
+            // supported by Chrome 106+ and Firefox 153+;
+            // for browsers without support it is calculated based on tabId and frameId
             documentId,
         } = details;
 
@@ -950,6 +953,8 @@ export class WebRequestApi {
             },
         );
 
+        // TODO: remove when Chromium MV2 is no longer supported.
+        canvasInjection.inject(tabId, frameId, details.url);
         WebRequestApi.injectCosmetic(details);
         removeParamInjectionService.injectRemoveParam(details.tabId, details.frameId, details.url);
     }
@@ -988,9 +993,8 @@ export class WebRequestApi {
         const {
             tabId,
             frameId,
-            // supported by Chrome 106+
-            // but not supported by Firefox so it is calculated based on tabId and frameId
-            // @ts-ignore
+            // supported by Chrome 106+ and Firefox 153+;
+            // for browsers without support it is calculated based on tabId and frameId
             documentId,
         } = details;
 
