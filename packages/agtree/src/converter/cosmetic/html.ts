@@ -361,7 +361,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
     /**
      * Converts a HTML rule to uBlock syntax, if possible.
-     * Also can be used to convert uBlock rules to uBlock syntax to validate them.
+     *
+     * A uBlock rule is returned unchanged.
      *
      * Note: a valid ADG rule may be kept as-is with `isConverted: false` when
      * a special attribute selector cannot be represented in uBlock without
@@ -660,9 +661,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * AdGuard `[tag-content]` and `[wildcard]` match the element HTML
      * (`innerHTML`), while uBlock `:has-text()` matches the element text
-     * (`textContent`). Tags exist only in the HTML, so a value that contains
-     * markup can never be found in uBlock's `textContent`, i.e. the converted
-     * rule would match nothing. Such rules are kept as-is instead.
+     * (`textContent`). The two strings differ when the element has child
+     * nodes, because tags are present only in the HTML. A converted rule can
+     * therefore match different text. For example, a page can show a literal
+     * `<b>` in its text, written as `&lt;b&gt;` in the HTML: the uBlock rule
+     * matches it, but the AdGuard rule does not. Such rules are kept as-is
+     * instead.
      *
      * Exception: for raw text elements the two strings are equal, see
      * {@link HtmlRuleConverter.isRawTextElement}.
