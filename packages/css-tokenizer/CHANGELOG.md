@@ -19,6 +19,11 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 ### Fixed
 
+- A right parenthesis inside a regexp character class in a raw function
+  argument no longer closes the function. For example, the whole argument
+  of `:has-text(/a[)]b/)` is now tokenized as one value up to the final
+  parenthesis, so the `)` inside `[)]` does not end the pseudo-class.
+
 ### Security
 
 ## [1.2.0] - 2025-01-31

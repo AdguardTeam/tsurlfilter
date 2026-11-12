@@ -13,6 +13,7 @@ import { type HtmlFilteringRuleBody, type Value } from '../../../../src/nodes';
 import {
     UboHtmlFilteringBodyParser,
 } from '../../../../src/parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
+import { SelectorListParser } from '../../../../src/parser/cosmetic/selector/selector-list-parser';
 import { defaultParserOptions, type ParserOptions } from '../../../../src/parser/options';
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 
@@ -90,6 +91,28 @@ describe('UboHtmlFilteringBodyParser', () => {
                         }],
                         ...context.getRangeFor('responseheader(  Test  )'),
                     },
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // a right parenthesis inside a regexp character class does not
+            // close the `:has-text()` argument
+            {
+                actual: 'div:has-text(/a[)]b/)',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: SelectorListParser.parse('div:has-text(/a[)]b/)', parsingEnabledDefaultParserOptions),
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // the same for `:contains()`, which uBlock Origin accepts in
+            // `##^` rules and normalizes to `:has-text()`
+            {
+                actual: 'div:contains(/a[)]b/)',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: SelectorListParser.parse('div:contains(/a[)]b/)', parsingEnabledDefaultParserOptions),
                     ...context.getFullRange(),
                 }),
             },

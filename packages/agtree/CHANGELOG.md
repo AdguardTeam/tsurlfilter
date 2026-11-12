@@ -81,14 +81,23 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   becomes `##^div:has-text(foo)`. Previously the alias was kept as-is, and
   uBlock Origin rejected the converted rule.
 - uBO→ADG conversion now rejects `:-abp-contains()` in uBlock HTML filtering
-  rules as mixed AdGuard and uBlock syntax, the same as `:contains()`.
-  Previously the alias was carried over into the converted AdGuard rule.
+  rules as mixed AdGuard and uBlock syntax. Previously the alias was carried
+  over into the converted AdGuard rule.
+- uBO→ADG conversion now accepts `:contains()` in uBlock HTML filtering
+  rules and keeps it as-is, e.g. `##^div:contains(foo)` becomes
+  `$$div:contains(foo)`. uBlock Origin accepts this pseudo-class in `##^`
+  rules and normalizes it to `:has-text()`.
 - `[tag-content]` values that CoreLibs reads as regular expressions, e.g.
   `/ads/`, are now escaped when converted to a standalone `:contains()`
   argument during ADG→ADG conversion, so they still match the literal text.
   The check mirrors CoreLibs' `:contains()` argument scanner, so values
   such as `/a++/`, `/a\/`, `///`, and `/ads` are escaped instead of becoming
   dead or over-broad rules.
+- HTML filtering rules with a right parenthesis inside a regexp character
+  class now parse and convert, e.g. `##^div:has-text(/a[)]b/)` and
+  `##^div:contains(/a[)]b/)` become `$$div:contains(/a[)]b/)`. Previously
+  the `)` closed the pseudo-class argument early, and tokenization threw
+  `Expected '<unknown-token>', but got '<]-token>'`.
 
 ### Security
 

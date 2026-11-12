@@ -49,6 +49,12 @@ const PSEUDO_VALUES: PseudoValues = {
         String.raw`/(a|b)/`, // regular expression with balanced parentheses
         String.raw`/^(a|b){3,}$/ig`, // regular expression with balanced parentheses and quantifiers and flags
         String.raw`/a\(\)/i`, // regular expression with escaped parentheses
+        String.raw`/a[)]b/`, // right parenthesis in a regexp character class
+        String.raw`/[(]a[)]b/`, // parentheses in regexp character classes
+        String.raw`/a[^)]b/`, // negated character class with a right parenthesis
+        String.raw`/a[\\)]b/`, // escaped reverse solidus before the right parenthesis in a class
+        String.raw`/a[\\)]b/i`, // same with a flag
+        String.raw`/a[)]b/i`, // right parenthesis in a class and a flag
     ]),
 
     // 1-length string

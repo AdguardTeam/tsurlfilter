@@ -1044,6 +1044,27 @@ describe('HtmlRuleConverter', () => {
                         actual: '##^div:has-text(/ex.*ple/i)',
                         expected: ['$$div:contains(/ex.*ple/i)'],
                     },
+
+                    // `:has-text()` argument is a regexp with a right parenthesis
+                    // inside a character class: the whole argument must be kept
+                    {
+                        actual: '##^div:has-text(/a[)]b/)',
+                        expected: ['$$div:contains(/a[)]b/)'],
+                    },
+
+                    // `:contains()` is accepted by uBlock Origin in `##^` rules
+                    // and kept as-is in AdGuard syntax
+                    {
+                        actual: '##^div:contains(example)',
+                        expected: ['$$div:contains(example)'],
+                    },
+
+                    // `:contains()` argument is a regexp with a right parenthesis
+                    // inside a character class: the whole argument must be kept
+                    {
+                        actual: '##^div:contains(/a[)]b/)',
+                        expected: ['$$div:contains(/a[)]b/)'],
+                    },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperly(
                         HtmlRuleConverter,
@@ -1221,12 +1242,6 @@ describe('HtmlRuleConverter', () => {
                         error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
                     },
 
-                    // invalid simple selector - mixed syntax (AdGuard special pseudo-class selector)
-                    {
-                        input: '##^div:contains(example)',
-                        error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
-                    },
-
                     // invalid simple selector - mixed syntax (`:-abp-contains()`
                     // is an AdGuard-only alias of `:contains()`)
                     {
@@ -1266,6 +1281,14 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '##^div:has-text(example)',
                         expected: ['$$div:contains(example)'],
+                    },
+                    {
+                        actual: '##^div:has-text(/a[)]b/)',
+                        expected: ['$$div:contains(/a[)]b/)'],
+                    },
+                    {
+                        actual: '##^div:contains(/a[)]b/)',
+                        expected: ['$$div:contains(/a[)]b/)'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');

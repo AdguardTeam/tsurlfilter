@@ -50,18 +50,64 @@ export const handleRegularExtendedCssPseudo: TokenizerContextFunction = (context
         context.onToken(TokenType.Delim, i, i + 1, undefined, context.stop);
     }
 
+    // The argument may be a regexp literal, e.g. `:has-text(/a[)]b/)`. In a regexp literal, parentheses inside a
+    // character class are literal characters, not function parentheses, so they must not change the balance:
+    // `:has-text(/a[)]b/)` must not close `:has-text()` on the `)` inside `[)]`.
+    // The state is only enabled if the argument starts with a solidus, i.e. it looks like a regexp literal. Thus
+    // plain-text arguments with square brackets, e.g. `:has-text([Anzeige])`, keep the previous behavior.
+    let regexpState: 'none' | 'opening' | 'body' | 'class' | 'done' = context.code === CodePoint.Solidus
+        ? 'opening'
+        : 'none';
+
+    // Whether the previous code point was an escaping reverse solidus
+    let escaped = false;
+
     // Consume until we find the closing parenthesis or we reach the end of the source
     while (!context.isEof()) {
-        if (context.code === CodePoint.LeftParenthesis && context.prevCode !== CodePoint.ReverseSolidus) {
-            // If we find an unescaped opening parenthesis, we increase the balance
-            balance += 1;
-        } else if (context.code === CodePoint.RightParenthesis && context.prevCode !== CodePoint.ReverseSolidus) {
-            // If we find an unescaped closing parenthesis, we decrease the balance
-            balance -= 1;
-
-            // If the balance is 0, it means that we found the closing parenthesis
-            if (balance === 0) {
+        // Update the regexp literal state
+        switch (regexpState) {
+            case 'opening':
+                // The current code point is the opening solidus of the literal
+                regexpState = 'body';
                 break;
+            case 'body':
+                if (escaped) {
+                    escaped = false;
+                } else if (context.code === CodePoint.ReverseSolidus) {
+                    escaped = true;
+                } else if (context.code === CodePoint.LeftSquareBracket) {
+                    regexpState = 'class';
+                } else if (context.code === CodePoint.Solidus) {
+                    // The current code point is the closing solidus of the literal
+                    regexpState = 'done';
+                }
+                break;
+            case 'class':
+                if (escaped) {
+                    escaped = false;
+                } else if (context.code === CodePoint.ReverseSolidus) {
+                    escaped = true;
+                } else if (context.code === CodePoint.RightSquareBracket) {
+                    regexpState = 'body';
+                }
+                break;
+            default:
+                break;
+        }
+
+        // Parentheses inside a regexp character class are literal characters
+        if (regexpState !== 'class') {
+            if (context.code === CodePoint.LeftParenthesis && context.prevCode !== CodePoint.ReverseSolidus) {
+                // If we find an unescaped opening parenthesis, we increase the balance
+                balance += 1;
+            } else if (context.code === CodePoint.RightParenthesis && context.prevCode !== CodePoint.ReverseSolidus) {
+                // If we find an unescaped closing parenthesis, we decrease the balance
+                balance -= 1;
+
+                // If the balance is 0, it means that we found the closing parenthesis
+                if (balance === 0) {
+                    break;
+                }
             }
         }
 
