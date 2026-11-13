@@ -29,6 +29,10 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
   `:matches-css(background-image: /^url\([)]/)`. A solidus without an
   unescaped closing one is still treated as plain text, so arguments such
   as `:has-text(/foo[bar)` keep the previous behavior.
+- The regexp literal search now stops at the pseudo-class closing
+  parenthesis, so a later part of the selector cannot turn a plain-text
+  argument into a regexp. A right parenthesis after an escaped reverse
+  solidus, e.g. `:has-text(/(a\\)/)`, now closes the argument as well.
 
 ### Security
 
