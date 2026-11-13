@@ -387,6 +387,9 @@ describe('NetworkRule - removeparam rules', () => {
         // A `?` inside the fragment is not a query delimiter.
         expect(modifier.removeParameters(`${comPage}#route?p0=0`)).toBe(`${comPage}#route?p0=0`);
         expect(modifier.removeParameters(`${comPage}#route`)).toBe(`${comPage}#route`);
+        // A real query string is removed and the fragment is preserved.
+        expect(modifier.removeParameters(`${comPage}?p0=0#route`)).toBe(`${comPage}#route`);
+        expect(modifier.removeParameters(`${comPage}?p0=0#route?p1=1`)).toBe(`${comPage}#route?p1=1`);
     });
 
     it('works if inverted removeparam is applied correctly', () => {
