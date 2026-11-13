@@ -13,11 +13,23 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- uBO→ADG conversion now accepts `:contains()` in uBlock HTML filtering
+  rules and keeps it as-is, e.g. `##^div:contains(foo)` becomes
+  `$$div:contains(foo)`. uBlock Origin accepts this pseudo-class in `##^`
+  rules and normalizes it to `:has-text()`. Previously the converter threw
+  a mixed-syntax error.
+
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- HTML filtering rules with a right parenthesis inside a regexp character
+  class now parse and convert, e.g. `##^div:has-text(/a[)]b/)` and
+  `##^div:contains(/a[)]b/)` become `$$div:contains(/a[)]b/)`. Previously
+  the `)` closed the pseudo-class argument early, and tokenization threw
+  `Expected '<unknown-token>', but got '<]-token>'`.
 
 ### Security
 

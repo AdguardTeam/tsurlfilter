@@ -691,31 +691,32 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * Handles special pseudo-class selectors during uBlock to AdGuard conversion:
      * - `:has-text(text)` -> `:contains(text)`
      *   direct conversion, no changes to argument
+     * - `:contains(text)` -> `:contains(text)`
+     *   kept as-is, no changes to argument. The uBlock Origin parser
+     *   accepts `:contains()` in `##^` rules and normalizes it to
+     *   `:has-text()`.
      * - `:min-text-length(min)` -> `:contains(/^(?=.{min,MAX_CONVERSION_DEFAULT}$).*\/s)`
      *   converts to a length-matching regular expression.
      *
-     * The converter rejects `:contains()` and its `:-abp-contains()` alias in
-     * uBlock rules as mixed syntax, because both names are AdGuard spellings.
-     * Note that uBlock Origin itself accepts `:contains()` in `##^` rules and
-     * normalizes it to `:has-text()`. Only the `-abp-*` names need the `#?#`
-     * syntax there, so uBlock rejects `##^div:-abp-contains(foo)`. The
-     * `:contains()` rejection is the converter's own rule, not a uBlock
-     * limitation. Converting a valid uBlock `:contains()` rule to AdGuard is
-     * a separate task.
+     * The converter rejects `:-abp-contains()` in uBlock rules as mixed
+     * syntax, because only the `-abp-*` names need the `#?#` syntax there,
+     * so uBlock rejects `##^div:-abp-contains(foo)`.
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
      *
      * @returns A {@link SimpleSelector} to add to the current complex selector.
      *
-     * @throws If `:contains()` or `:-abp-contains()` is found in a uBlock
-     * rule (mixed syntax).
+     * @throws If `:-abp-contains()` is found in a uBlock rule (mixed syntax).
      */
     private static convertSpecialPseudoClassSelectorUboToAdg(name: string, argument: string): SimpleSelector {
         switch (name) {
             // `:has-text(text)` -> `:contains(text)`
             // direct conversion, no changes to argument
-            case UboPseudoClasses.HasText: {
+            // `:contains(text)` is accepted by uBlock Origin in `##^` rules,
+            // so it is kept as-is; the name is a valid AdGuard spelling too
+            case UboPseudoClasses.HasText:
+            case AdgPseudoClasses.Contains: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
                     argument,
@@ -754,8 +755,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 );
             }
 
-            // Throw an error if the AdGuard-specific pseudo-class selector found in uBlock rule
-            case AdgPseudoClasses.Contains:
+            // Throw an error if the AdGuard-only alias is found in uBlock rule
             case AdgPseudoClasses.AbpContains: {
                 throw new RuleConversionError(sprintf(
                     ERROR_MESSAGES.INVALID_RULE,

@@ -93,6 +93,84 @@ describe('UboHtmlFilteringBodyParser', () => {
                     ...context.getFullRange(),
                 }),
             },
+
+            // a right parenthesis inside a regexp character class does not
+            // close the `:has-text()` argument
+            {
+                actual: 'div:has-text(/a[)]b/)',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: {
+                        type: 'SelectorList',
+                        children: [{
+                            type: 'ComplexSelector',
+                            children: [
+                                {
+                                    type: 'TypeSelector',
+                                    value: 'div',
+                                    ...context.getRangeFor('div'),
+                                },
+                                {
+                                    type: 'PseudoClassSelector',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'has-text',
+                                        ...context.getRangeFor('has-text'),
+                                    },
+                                    argument: {
+                                        type: 'Value',
+                                        value: '/a[)]b/',
+                                        ...context.getRangeFor('/a[)]b/'),
+                                    },
+                                    ...context.getRangeFor(':has-text(/a[)]b/)'),
+                                },
+                            ],
+                            ...context.getFullRange(),
+                        }],
+                        ...context.getFullRange(),
+                    },
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // the same for `:contains()`, which uBlock Origin accepts in
+            // `##^` rules and normalizes to `:has-text()`
+            {
+                actual: 'div:contains(/a[)]b/)',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: {
+                        type: 'SelectorList',
+                        children: [{
+                            type: 'ComplexSelector',
+                            children: [
+                                {
+                                    type: 'TypeSelector',
+                                    value: 'div',
+                                    ...context.getRangeFor('div'),
+                                },
+                                {
+                                    type: 'PseudoClassSelector',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'contains',
+                                        ...context.getRangeFor('contains'),
+                                    },
+                                    argument: {
+                                        type: 'Value',
+                                        value: '/a[)]b/',
+                                        ...context.getRangeFor('/a[)]b/'),
+                                    },
+                                    ...context.getRangeFor(':contains(/a[)]b/)'),
+                                },
+                            ],
+                            ...context.getFullRange(),
+                        }],
+                        ...context.getFullRange(),
+                    },
+                    ...context.getFullRange(),
+                }),
+            },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
             expect(UboHtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions)).toEqual(
                 expectedFn(new NodeExpectContext(actual)),
