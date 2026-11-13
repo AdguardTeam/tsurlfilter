@@ -970,7 +970,7 @@ describe('Converter integration tests', () => {
                 {
                     actual: 'example.com$$script[tag-content="12313"][max-length="262144"]',
                     expected: [
-                        'example.com##^script:has-text(12313)',
+                        'example.com##^script:has-text(/12313/)',
                     ],
                     shouldConvert: true,
                 },
@@ -992,7 +992,7 @@ describe('Converter integration tests', () => {
                     // eslint-disable-next-line max-len
                     actual: 'example.com,~example.net$@$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
                     expected: [
-                        'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)',
+                        'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(/12313/)',
                     ],
                     shouldConvert: true,
                 },
@@ -1000,7 +1000,7 @@ describe('Converter integration tests', () => {
                     // eslint-disable-next-line max-len
                     actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
                     expected: [
-                        "example.com,~example.net#@#^script:has-text(d.createElement('script'))",
+                        'example.com,~example.net#@#^script:has-text(/d\\.createElement\\(\\x27script\\x27\\)/)',
                     ],
                     shouldConvert: true,
                 },
@@ -1009,7 +1009,7 @@ describe('Converter integration tests', () => {
                     actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
                     expected: [
                         // eslint-disable-next-line max-len
-                        "example.com,~example.net#@#^script:has-text(d.createElement('script')):min-text-length(1234)",
+                        'example.com,~example.net#@#^script:has-text(/d\\.createElement\\(\\x27script\\x27\\)/):min-text-length(1234)',
                     ],
                     shouldConvert: true,
                 },
@@ -1017,14 +1017,14 @@ describe('Converter integration tests', () => {
                 // eslint-disable-next-line max-len
                     actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
                     expected: [
-                        'example.com,~example.net#@#^script:has-text(console.log("doubles"))',
+                        'example.com,~example.net#@#^script:has-text(/console\\.log\\(\\x22doubles\\x22\\)/)',
                     ],
                     shouldConvert: true,
                 },
                 {
                     actual: 'example.com,~example.net$@$script[data-test][tag-content="12313"][max-length="262144"]',
                     expected: [
-                        'example.com,~example.net#@#^script[data-test]:has-text(12313)',
+                        'example.com,~example.net#@#^script[data-test]:has-text(/12313/)',
                     ],
                     shouldConvert: true,
                 },
@@ -1054,7 +1054,7 @@ describe('Converter integration tests', () => {
                     // eslint-disable-next-line max-len
                     actual: 'example.com,~example.net$@$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
                     expected: [
-                        'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)',
+                        'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(/12313/)',
                     ],
                     shouldConvert: true,
                 },
@@ -1062,7 +1062,7 @@ describe('Converter integration tests', () => {
                     // eslint-disable-next-line max-len
                     actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
                     expected: [
-                        "example.com,~example.net#@#^script:has-text(d.createElement('script'))",
+                        'example.com,~example.net#@#^script:has-text(/d\\.createElement\\(\\x27script\\x27\\)/)',
                     ],
                     shouldConvert: true,
                 },
@@ -1071,7 +1071,7 @@ describe('Converter integration tests', () => {
                     actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
                     expected: [
                         // eslint-disable-next-line max-len
-                        "example.com,~example.net#@#^script:has-text(d.createElement('script')):min-text-length(1234)",
+                        'example.com,~example.net#@#^script:has-text(/d\\.createElement\\(\\x27script\\x27\\)/):min-text-length(1234)',
                     ],
                     shouldConvert: true,
                 },
@@ -1079,14 +1079,14 @@ describe('Converter integration tests', () => {
                 // eslint-disable-next-line max-len
                     actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
                     expected: [
-                        'example.com,~example.net#@#^script:has-text(console.log("doubles"))',
+                        'example.com,~example.net#@#^script:has-text(/console\\.log\\(\\x22doubles\\x22\\)/)',
                     ],
                     shouldConvert: true,
                 },
                 {
                     actual: 'example.com,~example.net$@$script[data-test][tag-content="12313"][max-length="262144"]',
                     expected: [
-                        'example.com,~example.net#@#^script[data-test]:has-text(12313)',
+                        'example.com,~example.net#@#^script[data-test]:has-text(/12313/)',
                     ],
                     shouldConvert: true,
                 },

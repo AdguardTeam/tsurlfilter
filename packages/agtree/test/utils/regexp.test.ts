@@ -455,6 +455,26 @@ describe('RegExpUtils', () => {
         });
     });
 
+    describe('escapeRegexSpecials', () => {
+        test('should escape RegExp specials and keep quotes by default', () => {
+            expect(RegExpUtils.escapeRegexSpecials("$('http')")).toBe('\\$\\(\'http\'\\)');
+            expect(RegExpUtils.escapeRegexSpecials('it\'s "x"')).toBe('it\'s "x"');
+        });
+
+        test('should keep the default behavior unchanged when escapeQuotes is false', () => {
+            expect(RegExpUtils.escapeRegexSpecials('a\'"b', false))
+                .toBe(RegExpUtils.escapeRegexSpecials('a\'"b'));
+        });
+
+        test('should escape quotes when escapeQuotes is true', () => {
+            expect(RegExpUtils.escapeRegexSpecials("$('http')", true)).toBe('\\$\\(\\x27http\\x27\\)');
+            expect(RegExpUtils.escapeRegexSpecials('a"b', true)).toBe('a\\x22b');
+            expect(RegExpUtils.escapeRegexSpecials('a\'b', true)).toBe('a\\x27b');
+            // The quotes are still escaped after a backslash
+            expect(RegExpUtils.escapeRegexSpecials('a\\\'b', true)).toBe('a\\\\\\x27b');
+        });
+    });
+
     describe('globToRegExp', () => {
         test.each([
             {
@@ -471,6 +491,72 @@ describe('RegExpUtils', () => {
             },
         ])("should return '$expected' for glob '$actual'", ({ actual, expected }) => {
             expect(RegExpUtils.globToRegExp(actual)).toBe(expected);
+        });
+    });
+
+    describe('globToUboRegExp', () => {
+        test.each([
+            {
+                actual: '*example*text*',
+                expected: '/^[\\s\\S]*example[\\s\\S]*text[\\s\\S]*$/',
+            },
+            {
+                // The escaped literal dot stays as-is
+                actual: '*example*$*.com',
+                expected: '/^[\\s\\S]*example[\\s\\S]*\\$[\\s\\S]*\\.com$/',
+            },
+            {
+                actual: '*[test]*{test}*',
+                expected: '/^[\\s\\S]*\\[test\\][\\s\\S]*\\{test\\}[\\s\\S]*$/',
+            },
+            {
+                // Without the `extended` option `?` is a literal question mark
+                actual: '*a?b*',
+                expected: '/^[\\s\\S]*a\\?b[\\s\\S]*$/',
+            },
+            {
+                // Quotes are emitted as hex escapes, because uBlock parses the
+                // `:has-text()` argument with CSS-tree before it reads the regexp
+                actual: "*it's*",
+                expected: '/^[\\s\\S]*it\\x27s[\\s\\S]*$/',
+            },
+            {
+                actual: '*a"b*',
+                expected: '/^[\\s\\S]*a\\x22b[\\s\\S]*$/',
+            },
+            {
+                // A quote escaped by the rule author is kept as-is: CSS-tree
+                // reads `\'` as an escaped quote, not a string delimiter
+                actual: String.raw`*a\'b*`,
+                expected: String.raw`/^[\s\S]*a\'b[\s\S]*$/`,
+            },
+        ])("should return '$expected' for glob '$actual'", ({ actual, expected }) => {
+            expect(RegExpUtils.globToUboRegExp(actual)).toBe(expected);
+        });
+
+        test('should produce a regexp that matches quoted text', () => {
+            const apostrophe = new RegExp(RegExpUtils.globToUboRegExp("*it's*").slice(1, -1));
+            expect(apostrophe.test("prefix it's suffix")).toBe(true);
+
+            const doubleQuote = new RegExp(RegExpUtils.globToUboRegExp('*a"b*').slice(1, -1));
+            expect(doubleQuote.test('prefix a"b suffix')).toBe(true);
+
+            const escapedApostrophe = new RegExp(
+                RegExpUtils.globToUboRegExp(String.raw`*a\'b*`).slice(1, -1),
+            );
+            expect(escapedApostrophe.test("prefix a'b suffix")).toBe(true);
+        });
+
+        test('should not emit the `s` or `i` flag', () => {
+            const regexpText = RegExpUtils.globToUboRegExp('*ads*');
+
+            expect(regexpText.endsWith('/')).toBe(true);
+            expect(regexpText.endsWith('/s')).toBe(false);
+            expect(regexpText.endsWith('/i')).toBe(false);
+
+            // The generated regexp is valid and matches across lines
+            const source = regexpText.slice(1, -1);
+            expect(new RegExp(source).test('line1\nads\nline2')).toBe(true);
         });
     });
 });

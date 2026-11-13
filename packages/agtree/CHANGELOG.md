@@ -11,6 +11,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `RegExpUtils.globToUboRegExp()` is exported. It converts a glob to a
+  uBlock-compatible regular expression with no flags.
+- `RegExpUtils.escapeRegexSpecials()` accepts an optional `escapeQuotes`
+  argument. It defaults to `false`, so the existing behavior does not
+  change. When it is `true`, single and double quotes are emitted as
+  `\x27` and `\x22`.
 - `collectRegexValueRegions()` and the `RegexValueRegion` type are exported
   from `@adguard/agtree/utils`. They locate the `=/…/` regex value regions of
   a network rule, including the replacement part of `$replace`, without
@@ -63,6 +69,30 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- ADG→uBO conversion now emits a `[tag-content]` value as a case-sensitive
+  escaped `:has-text()` regular expression. Single and double quotes are
+  emitted as `\x27` and `\x22`, so CSS-tree does not break the rule.
+- ADG→uBO conversion now emits a `[wildcard]` value as a uBlock-compatible
+  regular expression. `[\s\S]` replaces the unsupported `s` flag for the
+  dot-all match.
+- ADG→uBO conversion now keeps a rule as-is when a `[tag-content]` or
+  `[wildcard]` value contains HTML markup or an ampersand and the element
+  content is not serialized literally. The content of `script`, `style`,
+  `xmp`, `iframe`, `noembed`, `noframes` and `plaintext` is serialized
+  literally, so `innerHTML` equals `textContent` there and the rule still
+  converts. `noscript` is not such an element for uBlock: it parses the
+  response with scripting disabled, so the content of `noscript` is ordinary
+  markup. For other elements uBlock matches `textContent`, so the converted
+  rule would match different text. Limitation: a value without markup or an
+  ampersand can still match an element whose `textContent` equals it while
+  its `innerHTML` differs, e.g. text split across child tags.
+- ADG→uBO conversion now raises a conversion error for a `:contains()`
+  argument that uBlock would drop or change, e.g. an argument with an
+  unterminated quote, an unbalanced block, an unterminated comment, a `)`
+  that ends the function before the argument is read, text after a closing
+  quote, or a quoted argument that uBlock would unquote. A closer that does
+  not match the innermost open block, e.g. `)` in `[^)]` or a stray `]`, is
+  a plain CSS token and stays supported.
 - uBO CSS injection rules no longer treat modifier-like text inside a quoted
   CSS string as a rule modifier. Previously
   `##div[title=":matches-path(/x)"]:style(color:red)` parsed the attribute

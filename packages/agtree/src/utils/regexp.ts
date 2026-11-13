@@ -12,6 +12,7 @@ import {
     CLOSE_SQUARE_BRACKET,
     DOLLAR_SIGN,
     DOT,
+    DOUBLE_QUOTE,
     EMPTY,
     ESCAPE_CHARACTER,
     OPEN_CURLY_BRACKET,
@@ -21,6 +22,7 @@ import {
     PLUS,
     QUESTION_MARK,
     REGEX_MARKER,
+    SINGLE_QUOTE,
     SLASH,
 } from './constants';
 import { StringUtils } from './string';
@@ -29,6 +31,13 @@ import { StringUtils } from './string';
 export const REGEX_START = CARET; // '^'
 export const REGEX_END = DOLLAR_SIGN; // '$'
 export const REGEX_ANY_CHARACTERS = DOT + ASTERISK; // '.*'
+
+// uBlock parses a `:has-text()` argument with CSS-tree before it reads the
+// regexp, so a quote character must not reach CSS-tree: it starts a CSS
+// string and the rule is rejected. `\x27` and `\x22` are the same literal
+// characters for a JS RegExp, so they preserve the matching semantics.
+const UBO_SINGLE_QUOTE_ESCAPE = '\\x27';
+const UBO_DOUBLE_QUOTE_ESCAPE = '\\x22';
 
 // Special adblock pattern symbols and their RegExp equivalents
 export const ADBLOCK_URL_START = PIPE + PIPE; // '||'
@@ -414,6 +423,11 @@ export class RegExpUtils {
      * matched literally.
      *
      * @param value String to escape.
+     * @param escapeQuotes Whether to also escape single and double quotes as
+     * `\x27` and `\x22`. Defaults to `false`. Needed only for a uBlock
+     * `:has-text()` argument, which CSS-tree parses before uBlock reads the
+     * regexp: an unescaped quote there starts a CSS string and the rule is
+     * rejected.
      *
      * @returns Escaped string.
      *
@@ -421,8 +435,16 @@ export class RegExpUtils {
      * // Returns '\$\('http'\)'
      * RegExpUtils.escapeRegexSpecials("$('http')");
      */
-    public static escapeRegexSpecials(value: string): string {
-        return StringUtils.escapeCharacters(value, SPECIAL_REGEX_SYMBOLS);
+    public static escapeRegexSpecials(value: string, escapeQuotes = false): string {
+        const escaped = StringUtils.escapeCharacters(value, SPECIAL_REGEX_SYMBOLS);
+
+        if (!escapeQuotes) {
+            return escaped;
+        }
+
+        return escaped
+            .split(SINGLE_QUOTE).join(UBO_SINGLE_QUOTE_ESCAPE)
+            .split(DOUBLE_QUOTE).join(UBO_DOUBLE_QUOTE_ESCAPE);
     }
 
     /**
@@ -438,5 +460,75 @@ export class RegExpUtils {
      */
     public static globToRegExp(glob: string): string {
         return `${REGEX_MARKER + GlobToRegExp(glob).source + REGEX_MARKER}s`;
+    }
+
+    /**
+     * Converts a glob pattern to a uBlock-compatible RegExp string with
+     * slashes and no flags.
+     *
+     * Note that uBlock accepts only the `i` flag in a `:has-text()` regexp
+     * argument (its `regexFromString()` matches `/^\/(.+)\/([i]?)$/`), so
+     * the dot-all `s` flag used by {@link RegExpUtils.globToRegExp} cannot be
+     * emitted. To keep the glob semantics, where `*` may cross line breaks,
+     * each unescaped dot is replaced with a `[\s\S]` character class, which
+     * matches any character including line terminators. Globs are converted
+     * without the `extended` option, so `?` stays a literal question mark and
+     * contributes no unescaped dot. Without the `i` flag, the resulting
+     * regexp is case-sensitive, like AdGuard globs.
+     *
+     * Unescaped single and double quotes are emitted as hex escapes, because
+     * uBlock passes the argument through CSS-tree before it reads the regexp.
+     * A quote written with a leading backslash is kept as is: CSS-tree reads
+     * `\'` and `\"` as escaped quotes, not as string delimiters, so such a
+     * value needs no extra escaping.
+     *
+     * @param glob Glob pattern to convert.
+     *
+     * @returns RegExp string compatible with uBlock.
+     *
+     * @example
+     * // Returns '/^[\s\S]*foo[\s\S]*bar[\s\S]*$/'
+     * RegExpUtils.globToUboRegExp('*foo*bar*');
+     */
+    public static globToUboRegExp(glob: string): string {
+        const { source } = GlobToRegExp(glob);
+
+        let convertedSource = EMPTY;
+
+        for (let i = 0; i < source.length; i += 1) {
+            const char = source[i];
+
+            // Copy an escaped character as-is, e.g. `\.` is a literal dot.
+            // `GlobToRegExp()` never escapes quotes, so a backslash before a
+            // quote is written by the rule author and CSS-tree reads it as an
+            // escaped quote rather than a string delimiter.
+            if (char === ESCAPE_CHARACTER) {
+                convertedSource += char + (source[i + 1] ?? EMPTY);
+                i += 1;
+                continue;
+            }
+
+            if (char === SINGLE_QUOTE) {
+                convertedSource += UBO_SINGLE_QUOTE_ESCAPE;
+                continue;
+            }
+
+            if (char === DOUBLE_QUOTE) {
+                convertedSource += UBO_DOUBLE_QUOTE_ESCAPE;
+                continue;
+            }
+
+            if (char === DOT) {
+                // Unescaped dots come only from `*` (`.*`). Replace them with
+                // an equivalent that also matches line terminators, because
+                // uBlock does not support the `s` flag.
+                convertedSource += '[\\s\\S]';
+                continue;
+            }
+
+            convertedSource += char;
+        }
+
+        return `${REGEX_MARKER}${convertedSource}${REGEX_MARKER}`;
     }
 }
