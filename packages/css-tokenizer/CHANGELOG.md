@@ -11,9 +11,6 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 ### Added
 
-- `remove-attr` and `remove-class` pseudo-classes to Extended CSS handlers
-  [AdguardBrowserExtension#3538].
-
 ### Changed
 
 ### Deprecated
@@ -24,7 +21,15 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 ### Security
 
+## [1.3.0] - 2026-11-12
+
+### Added
+
+- `remove-attr` and `remove-class` pseudo-classes to Extended CSS handlers
+  [AdguardBrowserExtension#3538].
+
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
+[1.3.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/css-tokenizer-v1.3.0
 
 ## [1.2.0] - 2025-01-31
 

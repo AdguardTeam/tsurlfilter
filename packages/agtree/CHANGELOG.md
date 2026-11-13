@@ -11,6 +11,29 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- A value whose closing slash is escaped, e.g. `/a\/`, is no longer
+  treated as a RegExp literal. `RegExpUtils.isRegexPattern()` now checks
+  the consecutive backslashes before the closing slash: an odd count
+  escapes the slash, an even count does not. Previously the check always
+  passed. As a result, the uBO→ADG conversion of `:matches-path(/a\/)`
+  keeps the backslash, and its negated form produces a valid regexp
+  instead of `/^((?!a\).)*$/`. A value that ends with an escaped
+  backslash, e.g. `/a\\/`, stays a RegExp literal.
+
+### Security
+
+## [4.4.0] - 2026-11-12
+
+### Added
+
 - `RegExpUtils.parseCoreLibsRegexArgument()` and
   `RegExpUtils.isCoreLibsRegexArgument()` are now exported. The first splits
   the `:contains()` arguments that CoreLibs reads as normal regular
@@ -44,22 +67,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `+`, matching CoreLibs' `strtoimax` parsing, so `"1e2"`, `"1.5"` and
   `"5 "` are no longer converted.
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - Hostnames with labels ending in an underscore are now accepted by domain validation,
   while domains with a leading dot remain invalid.
-- A value whose closing slash is escaped, e.g. `/a\/`, is no longer
-  treated as a RegExp literal. `RegExpUtils.isRegexPattern()` now checks
-  the consecutive backslashes before the closing slash: an odd count
-  escapes the slash, an even count does not. Previously the check always
-  passed. As a result, the uBO→ADG conversion of `:matches-path(/a\/)`
-  keeps the backslash, and its negated form produces a valid regexp
-  instead of `/^((?!a\).)*$/`. A value that ends with an escaped
-  backslash, e.g. `/a\\/`, stays a RegExp literal.
 - ADG→uBO conversion of HTML filtering `[tag-content]` and `[wildcard]`
   attribute selectors now produces rules closer to the AdGuard behavior:
   `[tag-content]` becomes a case-sensitive escaped `:has-text()` regexp,
@@ -108,9 +119,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   such as `/a++/`, `/a\/`, `///`, and `/ads` are escaped instead of becoming
   dead or over-broad rules.
 
-### Security
-
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
+[4.4.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.4.0
 
 ## [4.3.0] - 2026-10-14
 
