@@ -311,5 +311,8 @@ describe('SimpleRegex.isRegexPattern', () => {
         // The two backslashes are an escaped backslash, so the closing slash
         // is a delimiter
         expect(SimpleRegex.isRegexPattern('/a\\\\/')).toBe(true);
+        // The bare delimiters are not regexp literals
+        expect(SimpleRegex.isRegexPattern('/')).toBe(false);
+        expect(SimpleRegex.isRegexPattern('//')).toBe(false);
     });
 });

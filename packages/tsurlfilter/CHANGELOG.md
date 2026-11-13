@@ -25,10 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is escaped, e.g. `/a\/`, the same as `RegExpUtils.isRegexPattern()` in
   [@adguard/agtree]. It counts the consecutive backslashes before the
   closing slash: an odd count escapes the slash, an even count does not.
-  Such a value is not a regexp literal, so `$path`, `$url`, and regexp
-  domain values of this form are used as plain values instead of being
-  compiled as regexps. A value that ends with an escaped backslash, e.g.
-  `/a\\/`, stays a regexp literal.
+  A `$domain` value of this form is now compared as a plain domain instead
+  of being compiled as a regexp. The method also rejects the bare
+  delimiters `/` and `//`. A value that ends with an escaped backslash,
+  e.g. `/a\\/`, stays a regexp literal.
 
 ### Security
 

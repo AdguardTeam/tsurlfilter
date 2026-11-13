@@ -108,8 +108,8 @@ export class RegExpUtils {
      * Checks whether a string possibly is a RegExp pattern.
      * Flags are not supported.
      *
-     * Note: it does not perform a full validation of the pattern,
-     * it just checks if the string starts and ends with a slash.
+     * Note: it does not perform a full validation of the pattern: it checks
+     * the leading and trailing slash and whether the closing slash is escaped.
      *
      * A pattern whose closing slash is escaped is not a RegExp literal,
      * e.g. `/a\/`: the backslash escapes the slash, so the literal is not

@@ -641,14 +641,15 @@ export class SimpleRegex {
      * regexp literal. This escape check matches
      * `RegExpUtils.isRegexPattern()` in `@adguard/agtree`, so both packages
      * agree about the same value. The other checks stay simpler here: this
-     * method does not trim and does not reject `//`.
+     * method does not trim the value. The bare delimiters `/` and `//` are
+     * rejected, because they are not regexp literals.
      *
      * @param str The string to check.
      *
      * @returns True if the string is a regex pattern, false otherwise.
      */
     public static isRegexPattern(str: string): boolean {
-        if (!str.startsWith('/') || !str.endsWith('/')) {
+        if (str.length <= 2 || !str.startsWith('/') || !str.endsWith('/')) {
             return false;
         }
 
