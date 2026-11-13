@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [7.0.0] - 2026-11-12
+
+### Added
+
 - Partial support for `$csp` exceptions in Manifest V3 across built-in, custom,
   and user filters [AdguardBrowserExtension#2965]: rebuilt CSP rules replace the
   previous ones atomically within each DNR scope, are fitted into the quotas left
@@ -57,10 +71,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   first time prepares its filter list at runtime, which took over a second for
   all bundled rulesets on a clean install. Call
   `ConfigurationResult.loadDisabledStaticFilters()` to get the rest.
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 
@@ -143,8 +153,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
 [AdguardBrowserExtension#3553]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3553
-
-### Security
+[7.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v7.0.0
 
 ## [6.0.1] - 2026-10-15
 

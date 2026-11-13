@@ -11,6 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [6.1.0] - 2026-11-13
+
+### Added
+
+- AdGuard Italian filter (ID 26) and AdGuard Polish filter (ID 27) to the MV3
+  rulesets (`chromium-mv3`, `edge-mv3`, `opera-mv3`). Updated
+  `tasks/validator-data.json` accordingly.
+
+### Changed
+
 - Inherited the updated `@adguard/dnr-converter` behavior: `$badfilter` compares
   the whole modifier list as written, different `$csp` policies are no longer
   merged into one header, and `$csp` rules with an empty or `report-` directive
@@ -20,8 +38,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rules replace only the CSP rules stored in the metadata, so rule sets must be
   built with `exclude-unsafe-rules`; otherwise the static copy of a CSP rule
   stays in the rule set and a `$csp` exception has no effect.
-
-### Deprecated
 
 ### Removed
 
@@ -41,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `dnr-rulesets load` failing to copy packaged assets and returning a
   successful exit status after copy errors.
 
-### Security
+[6.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v6.1.0
 
 ## [6.0.0] - 2026-09-29
 
