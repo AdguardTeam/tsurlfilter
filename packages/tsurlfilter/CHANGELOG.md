@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTML filtering rules with a right parenthesis inside a regexp character
+  class now load, e.g. `$$div:contains(/a[)]b/)` and
+  `##^div:has-text(/a[)]b/)` (via [@adguard/agtree]). uBO `:contains()` rules
+  such as `##^div:contains(foo)` are no longer reported as a conversion error.
 - `SimpleRegex.isRegexPattern()` now rejects a pattern whose closing slash
   is escaped, e.g. `/a\/`, the same as `RegExpUtils.isRegexPattern()` in
   [@adguard/agtree]. It counts the consecutive backslashes before the
