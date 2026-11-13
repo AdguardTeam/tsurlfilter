@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- AdGuard Italian filter (ID 26) and AdGuard Polish filter (ID 27) to the MV3
+  rulesets (`chromium-mv3`, `edge-mv3`, `opera-mv3`). Updated
+  `tasks/validator-data.json` accordingly.
+
 ### Changed
 
 - Inherited the updated `@adguard/dnr-converter` behavior: `$badfilter` compares
