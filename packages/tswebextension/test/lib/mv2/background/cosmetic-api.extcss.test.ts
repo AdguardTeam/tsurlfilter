@@ -465,6 +465,29 @@ describe('CosmeticApi.applyExtCss', () => {
         expect(frameContext.extCssAppliedData).toEqual(rules);
     });
 
+    it('does not retry when the frame context is gone', async () => {
+        vi.useFakeTimers();
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        let currentContext: FrameMV2 | undefined = frameContext;
+        vi.mocked(tabsApi.getFrameContext).mockImplementation(() => currentContext);
+        vi.mocked(TabsApi.injectScript).mockImplementation(async () => {
+            // The document the payload belongs to is gone when the call fails.
+            currentContext = undefined;
+            throw new Error('The frame was removed');
+        });
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        // Nothing can apply these rules any more, so the marker is released.
+        expect(frameContext.extCssInjectionMarker).toBeUndefined();
+
+        await vi.advanceTimersByTimeAsync(10);
+
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+    });
+
     it('does not retry a resolved engine guard failure and logs it as an error', async () => {
         vi.useFakeTimers();
         const rules = ['.ad:has(.child) { display: none !important; }'];

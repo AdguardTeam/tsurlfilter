@@ -90,6 +90,8 @@ Build output goes to `dist/`:
 - `dist/adguard-api.js` — Main API bundle (ESM)
 - `dist/adguard-content.js` — Content script bundle
 - `dist/adguard-assistant.js` — Assistant bundle
+- `dist/adguard-extcss.js` — ExtendedCss engine entry for the consumer's
+  bundler; the extension ships its bundled output as `settings.extCssScriptUrl`
 - `dist/types/` — TypeScript declarations
 
 ## Common Tasks

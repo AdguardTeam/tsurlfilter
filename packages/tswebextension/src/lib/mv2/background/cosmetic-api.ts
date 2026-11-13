@@ -302,14 +302,33 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Tells whether another attempt of a failed injection cannot succeed.
+     *
+     * An engine guard failure is deterministic: the document has no engine or
+     * a stale one, so a retry repeats it. So is a failure of an injection
+     * whose frame context is gone, since the retry would apply the payload of
+     * a replaced document.
+     *
+     * @param error Error thrown by the injection.
+     * @param isTargetGone Whether the frame context the injection belongs to
+     * is gone.
+     *
+     * @returns True if a retry cannot succeed.
+     */
+    private static isTerminalInjectionError(error: unknown, isTargetGone: () => boolean): boolean {
+        return error instanceof ExtCssGuardError || isTargetGone();
+    }
+
+    /**
      * Runs an injection, retrying it after the retry timeout while attempts
      * remain.
      *
-     * An engine guard failure is terminal: the document has no engine or a
-     * stale one, so another attempt would repeat the same deterministic
-     * failure. It reaches {@link onFailure} right away, without spending the
-     * remaining attempts.
+     * A terminal failure — an engine guard error or a gone frame context —
+     * reaches {@link onFailure} right away, without spending the remaining
+     * attempts.
      *
+     * @param isTargetGone Tells whether the frame context the injection
+     * belongs to is gone.
      * @param inject Injection to run.
      * @param retry Schedules the next attempt.
      * @param onFailure Handles the error of the last allowed attempt.
@@ -320,6 +339,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @returns True if the injection succeeded, otherwise false.
      */
     private static async injectWithRetry(
+        isTargetGone: () => boolean,
         inject: () => Promise<void>,
         retry: () => void,
         onFailure: (error: unknown) => void,
@@ -331,7 +351,7 @@ export class CosmeticApi extends CosmeticApiCommon {
 
             return true;
         } catch (e) {
-            if (!(e instanceof ExtCssGuardError) && tries < maxTries) {
+            if (!CosmeticApi.isTerminalInjectionError(e, isTargetGone) && tries < maxTries) {
                 setTimeout(retry, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
                 onFailure(e);
@@ -361,6 +381,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         await CosmeticApi.injectWithRetry(
+            () => !tabsApi.getFrameContext(tabId, frameId),
             () => CosmeticApi.injectScript(tabId, frameId, scriptText),
             () => {
                 CosmeticApi.applyJs(tabId, frameId, tries + 1);
@@ -437,6 +458,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         await CosmeticApi.injectWithRetry(
+            () => !tabsApi.getFrameContext(tabId, frameId),
             () => CosmeticApi.injectCss(tabId, frameId, cssText),
             () => {
                 CosmeticApi.applyCss(tabId, frameId, tries + 1);
@@ -596,18 +618,23 @@ export class CosmeticApi extends CosmeticApiCommon {
             }
             : (): Promise<void> => TabsApi.injectScript(tabId, frameId, code);
 
-        // A terminal guard failure reports right away, so the call ends here
-        // even though the retry budget is not spent.
+        // A terminal failure reports right away — an engine guard error or a
+        // gone frame context — so the call ends here even though the retry
+        // budget is not spent.
         let isTerminalFailure = false;
 
+        const isFrameContextGone = (): boolean => tabsApi.getFrameContext(tabId, frameId) !== frameContext;
+
         const isInjected = await CosmeticApi.injectWithRetry(
+            isFrameContextGone,
             inject,
             () => {
                 CosmeticApi.applyExtCss(tabId, frameId, tries + 1, extCssDocumentVersion);
             },
             (e) => {
+                isTerminalFailure = CosmeticApi.isTerminalInjectionError(e, isFrameContextGone);
+
                 if (e instanceof ExtCssGuardError) {
-                    isTerminalFailure = true;
                     logger.error(`[tsweb.CosmeticApi.applyExtCss]: ${e.message} (guard ${e.code}, tabId ${tabId}, frameId ${frameId})`);
 
                     return;
@@ -622,8 +649,8 @@ export class CosmeticApi extends CosmeticApiCommon {
         // Keep the marker until the chain ends: a failed attempt schedules its
         // retry after a delay, and an event arriving in that gap must not start
         // a second chain. The last attempt has no retry, and neither has a
-        // terminal guard failure, so both clear the marker and let a later
-        // event try again.
+        // terminal failure, so both clear the marker and let a later event try
+        // again.
         if (frameContext.extCssInjectionMarker === extCssDocumentVersion
             && (isInjected || isTerminalFailure || tries >= maxTries)
         ) {
@@ -736,6 +763,9 @@ export class CosmeticApi extends CosmeticApiCommon {
         const code = serializeExtCssForCode(extCssRules, areHitsStatsCollected, EXTCSS_PROTOCOL);
 
         await CosmeticApi.injectWithRetry(
+            // A frame without a context has none to lose, so only the guard
+            // failure and the retry budget end this chain.
+            () => false,
             async () => {
                 await TabsApi.injectScriptFile(tabId, frameId, extCssScriptUrl);
 

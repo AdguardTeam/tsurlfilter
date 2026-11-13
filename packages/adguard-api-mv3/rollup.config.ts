@@ -81,12 +81,13 @@ const assistantInjectScriptConfig = {
 };
 
 /**
- * The prebuilt ExtendedCss script asset.
+ * The prebuilt ExtendedCss engine entry.
  *
- * The file is a single self-contained script the background injects into a
- * frame before the ExtendedCss rules, so it must stay a separate copyable
- * file. It re-exports the asset of `@adguard/tswebextension`, which the
- * consumer's bundler resolves when the file is copied into the extension.
+ * The entry re-exports the asset of `@adguard/tswebextension`, which stays
+ * external, so the emitted file is an ESM wrapper with a bare import. It is
+ * an input for the consumer's bundler, not a script the background can copy
+ * and inject. The bundled output is what the extension ships and passes as
+ * `settings.extCssScriptUrl`.
  */
 const extCssInjectScriptConfig = {
     cache,

@@ -76,6 +76,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   defaults on upgrade.
 - MV2 `:contains()` now uses the `init()` snapshot of the native
   `textContent` getter, matching MV3.
+- A cosmetic injection whose frame context is gone is no longer retried, so a
+  closed tab or a replaced document does not repeat it up to a hundred times.
 
 ### Deprecated
 
