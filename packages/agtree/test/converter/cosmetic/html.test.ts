@@ -1052,6 +1052,27 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/a[)]b/)'],
                     },
 
+                    // a regexp argument with a right parenthesis in a class does
+                    // not swallow the following selector
+                    {
+                        actual: '##^div:has-text(/a[)]b/) + a[href="/x]y/"]',
+                        expected: ['$$div:contains(/a[)]b/) + a[href="/x]y/"]'],
+                    },
+
+                    // a later selector with `]` and `/` does not turn the plain-text
+                    // argument into a regexp
+                    {
+                        actual: '##^div:has-text(/foo[bar) + a[href="/x]y/"]',
+                        expected: ['$$div:contains(/foo[bar) + a[href="/x]y/"]'],
+                    },
+
+                    // a right parenthesis after an escaped reverse solidus still
+                    // closes the argument
+                    {
+                        actual: '##^div:has-text(/(a\\\\)/)',
+                        expected: ['$$div:contains(/(a\\\\)/)'],
+                    },
+
                     // `:contains()` is accepted by uBlock Origin in `##^` rules
                     // and kept as-is in AdGuard syntax
                     {
@@ -1064,6 +1085,13 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '##^div:contains(/a[)]b/)',
                         expected: ['$$div:contains(/a[)]b/)'],
+                    },
+
+                    // the `:contains()` regexp argument does not swallow the
+                    // following selector either
+                    {
+                        actual: '##^div:contains(/a[)]b/) + a[href="/x]y/"]',
+                        expected: ['$$div:contains(/a[)]b/) + a[href="/x]y/"]'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperly(

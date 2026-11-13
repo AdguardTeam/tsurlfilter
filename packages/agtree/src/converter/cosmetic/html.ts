@@ -713,7 +713,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
         switch (name) {
             // `:has-text(text)` -> `:contains(text)`
             // direct conversion, no changes to argument
-            case UboPseudoClasses.HasText: {
+            // `:contains(text)` is accepted by uBlock Origin in `##^` rules,
+            // so it is kept as-is; the name is a valid AdGuard spelling too
+            case UboPseudoClasses.HasText:
+            case AdgPseudoClasses.Contains: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
                     argument,
@@ -749,15 +752,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
                     RegExpUtils.getLengthRegexp(minLength, ADG_HTML_CONVERSION_MAX_LENGTH),
-                );
-            }
-
-            // `:contains(text)` is accepted by uBlock Origin in `##^` rules,
-            // so it is kept as-is; the name is a valid AdGuard spelling too
-            case AdgPseudoClasses.Contains: {
-                return HtmlRuleConverter.getPseudoClassSelectorNode(
-                    AdgPseudoClasses.Contains,
-                    argument,
                 );
             }
 
