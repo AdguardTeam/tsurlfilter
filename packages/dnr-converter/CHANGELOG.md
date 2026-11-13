@@ -25,19 +25,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Partial `$csp` exception support for exact conditions, exceptions which are
   wider than the blocker, and clean domain exclusions, including a standalone
-  CSP conversion API which resolves exceptions across all filters at once. It
-  parses only candidate lines instead of the whole filter list; the regular
-  `convert()` still rejects an allowlist `$csp` rule and owns `$badfilter`
-  lines.
-- `TooManyError`, `isCspDeclarativeRule`, `UnexpectedConversionError`,
-  `RuleScanError`, `isRuleScanError` and `isUnavailableFilterSourceError` are now
-  exported, so an error can be checked with `instanceof`.
-  `IRulesetWithSourceMap` gained a required `getSourceRuleIndexes()`, which maps
-  a declarative rule id to source rule indexes without reading the rule text, and
+  CSP conversion API, `FilterConverter.convertCspRules()`, which resolves
+  exceptions across all filters at once. It parses only candidate lines instead
+  of the whole filter list; the regular `convert()` still rejects an allowlist
+  `$csp` rule and owns `$badfilter` lines.
+- `TooManyError`, `UnexpectedConversionError` and `RuleScanError` are now
+  exported, so an error can be checked with `instanceof`;
+  `isCspDeclarativeRule`, `isRuleScanError` and `isUnavailableFilterSourceError`
+  are exported too. `IRulesetWithSourceMap` gained a required
+  `getSourceRuleIndexes()`, which returns `SourceRuleIdxAndFilterId[]` and maps a
+  declarative rule id to source rule indexes without reading the rule text, and
   `ComputedWithSourceMapOptions` describes the source-map-only options.
 - `excludeCspRules` conversion option leaves CSP rules to the standalone CSP
-  conversion.
+  conversion. It is available only in source-map mode (`withSourceMap: true`),
+  and `convertCspRules()` has to run afterwards, otherwise the CSP rules are not
+  converted at all.
 - `Rule.cspDirective` keeps the `$csp` directive in a dedicated field.
+- `Rule.originalText` keeps the rule text as written, and `$badfilter` compares
+  it, so a rule no longer needs a separate comparison key.
+- A `$csp` exception is applied only when it really covers the blocking rule:
+  the URL identity is compared field by field, and an exception which would
+  lose a part of its condition is rejected and reported instead of matching
+  more than written. An exception whose condition cannot be built at all, e.g. a
+  domain label punycode cannot encode, is reported the same way instead of
+  failing the whole conversion. An exception whose `$domain`, `$to` or
+  `$denyallow` value contains a port is rejected, since a DNR domain list
+  cannot hold one.
+- An exception with a permitted `$domain` against a blocker with the additional
+  `main_frame` rule is rejected only when the excluded domain overlaps the
+  target domains: `*$csp=x,domain=a.com` + `@@||cdn.example.net^$csp,domain=a.com`
+  is resolvable, while an exception for `sub.a.com` stays rejected.
+- A `$csp` exception applies only when it outranks the blocking rule, so
+  `$important` keeps its policy: `@@||example.com^$csp` does not cancel
+  `||example.com^$csp=...,important`, and neither does a valued exception. In
+  MV2 only a value-less exception cancels the blocking rule; a valued one goes
+  through the same priority check.
+- A filter whose content cannot be read does not fail the standalone CSP pass:
+  the pass skips it and reports an `UnavailableFilterSourceError`.
+- A `$csp` exception is recognized when its pattern ends right after the domain
+  (`@@||example.com$csp`), and a url filter is compared case-insensitively when
+  the exception is not marked with `$match-case`, like DNR matches it. A pattern
+  which ends right after the domain is a host prefix, so it is never called
+  disjoint from another domain: `||example.com$csp=script-src 'none'` with
+  `@@||example.company^$csp` excludes `example.company` instead of dropping the
+  exception.
 
 ### Changed
 
@@ -52,14 +83,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   either dropped the second policy or changed what is blocked through the
   `default-src` fallback. Only identical policies are deduplicated now,
   everything else stays in its own header, where a browser enforces both.
-- `Rule.writtenKeys` is gone: `$badfilter` compares the rule text as written
-  (`Rule.originalText`), so a rule no longer keeps a comparison key.
 
 ### Fixed
 
-- `$badfilter` comparison no longer uses a regexp lookbehind literal, so the
-  package loads in browsers without lookbehind support, e.g. Safari before
-  16.4.
 - Non-ASCII values no longer break the conversion: a hostname in a URL filter is
   converted to punycode, also after a `*` or `*.` wildcard and in unanchored or
   scheme-prefixed patterns, the rest of the pattern is percent-encoded, and
@@ -69,35 +95,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the wildcard a separator instead of folding it into a label, and the hostname
   of the pattern is lowercased, so `||ПРИМЕР.рф^` matches the host
   `xn--e1afmkfd.xn--p1ai`.
-- A `$csp` exception is applied only when it really covers the blocking rule:
-  the URL identity is compared field by field, and an exception which would
-  lose a part of its condition is rejected and reported instead of matching
-  more than written. An exception whose condition cannot be built at all, e.g. a
-  domain label punycode cannot encode, is reported the same way instead of
-  failing the whole conversion. An exception whose `$domain`, `$to` or
-  `$denyallow` value contains a port is rejected, since a DNR domain list
-  cannot hold one.
-- An exception with a permitted `$domain` against a blocker with the additional
-  `main_frame` rule is rejected only when the excluded domain overlaps the
-  target domains: `*$csp=x,domain=a.com` + `@@||cdn.example.net^$csp,domain=a.com`
-  is resolvable, while an exception for `sub.a.com` stays rejected.
-- A `$csp` exception does not cancel a blocking rule with a higher priority, so
-  `$important` wins over a value-less exception
-  (`@@||example.com^$csp` keeps `||example.com^$csp=...,important`) and over a
-  valued one, while MV2 cancels the blocking rule: `$important` keeps its
-  documented priority over exceptions.
-- A filter whose content cannot be read no longer fails the whole conversion:
-  the standalone CSP pass skips it and reports an `UnavailableFilterSourceError`.
 - The `$csp` directive is no longer replaced by a following value-bearing
   advanced modifier: `$csp=script-src 'none',urltransform=/a/b/` used to emit a
   CSP header with `/a/b/`, and `$redirect=noopjs,csp=x` redirected to the wrong
   resource.
-- A `$csp` exception is recognized when its pattern ends right after the domain
-  (`@@||example.com$csp`), and a url filter is compared case-insensitively when
-  the exception is not marked with `$match-case`, like DNR matches it. A pattern
-  which ends right after the domain is a host prefix, so it is never called
-  disjoint from another domain: `||example.com$csp` with `@@||example.company^`
-  excludes `example.company` instead of dropping the exception.
 - `$domain` did not match the target hostname of a document request. Chrome
   matches `initiatorDomains` against the request initiator only, and a document
   request started by the browser (new tab page, address bar, bookmark, reload)
@@ -124,11 +125,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   as `$redirect`, and spellings that are equivalent after parsing (e.g.
   `Set-Cookie` and `set-cookie`) do not negate each other.
 - `$badfilter` with `$domain` still disables the rule it refers to for the
-  domains present in both lists, but regular expression domains now keep their
-  case, so `$domain=/A/` no longer cancels `$domain=/a/`. This exception applies
-  only while neither rule has a negated `~domain`; otherwise the whole text is
-  compared. As before, the whole declarative rule is disabled rather than only
-  the domains named in both lists.
+  domains present in both lists, and plain domains are now compared
+  case-insensitively, so `$domain=foo.com,badfilter` also disables
+  `$domain=FOO.com`, which 2.0.0 left alone. Regular expression domains keep
+  their case, as before. This exception applies only while neither rule has a
+  negated `~domain`; otherwise the whole text is compared. As before, the whole
+  declarative rule is disabled rather than only the domains named in both lists.
 - `$badfilter` rules that also carried a convertible modifier (e.g.
   `||example.com^$csp=script-src 'none',badfilter`) were converted into
   declarative rules instead of disabling the rule they refer to.
