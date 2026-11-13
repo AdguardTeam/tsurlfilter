@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- Bare `$removeparam` rules no longer treat a `?` inside a hash fragment as a
+  query delimiter, so `https://example.com/page#route?param=1` stays unchanged
+  (AG-61691).
+
+### Security
+
+[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.1.0...HEAD
+
+## [6.1.0] - 2026-11-12
+
+### Added
+
 - Added the `fingerprinting` value for `$stealth`
   (`StealthOptionName.Fingerprinting`).
 - Added `Engine.getDocumentOrStealthExceptionRules()` to retrieve `$stealth`
@@ -24,19 +44,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   their regexp escapes [#190].
 - Regexp domains now match case-insensitively without changing escape tokens
   such as `\D` into `\d`.
-
-### Deprecated
-
-### Removed
+- Updated [@adguard/agtree] to `v4.4.0`.
+- Updated [@adguard/css-tokenizer] to `v1.3.0`.
+- Updated `tldts` to `v7.0.32`.
 
 ### Fixed
 
-- Bare `$removeparam` rules no longer treat a `?` inside a hash fragment as a
-  query delimiter, so `https://example.com/page#route?param=1` stays unchanged
-  (AG-61691).
-- The library no longer uses a regexp lookbehind literal when it compares the
-  written text of `$badfilter` rules, so it parses in browsers without
-  lookbehind support, e.g. Safari before 16.4.
 - `$badfilter` incorrectly negated rules with different values of value-bearing
   modifiers, e.g. `||example.com^$removeparam=foo,badfilter` cancelled
   `||example.com^$removeparam=bar`. A `$badfilter` now disables a rule only when
@@ -48,16 +61,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   domains present in both lists, but regular expression domains now keep their
   case, so `$domain=/A/` no longer cancels `$domain=/a/`. This exception applies
   only while neither rule has a negated `~domain`; otherwise the whole text is
-  compared.
+  compared. In this case the position of `$domain` is not compared, unlike the
+  position of every other modifier, so
+  `||example.com^$domain=example.com,script,badfilter` cancels
+  `||example.com^$script,domain=example.com`.
 - Fixed cosmetic rules with multiple domains in the `$domain` modifier not
   applying on permitted domains [AdguardBrowserExtension#3605].
 - Fixed duplicate cosmetic rule matches for overlapping domain restrictions
   [AdguardBrowserExtension#3605].
 - Domain-scoped cosmetic and JavaScript rules not matching hosts with labels
-  ending in an underscore.
+  ending in an underscore. With `tldts` 5 such hosts had no domain, so
+  `thirdParty` was `null` for their requests: `$third-party` rules did not
+  apply and `$~third-party` rules did.
 - `:contains()` regexp arguments in HTML filtering rules that end with an
   escaped backslash (`/foo\\/`) or have one in a character class (`/[\\]/`)
-  are now compiled as regexps instead of being matched as text.
+  are now compiled as regexps instead of being matched as text. The last slash
+  is the delimiter now, so `:contains(/foo/bar/)` is also read as a regexp,
+  while 6.0.4 matched it as text.
 - `[tag-content]` values that CoreLibs reads as a regular expression, e.g.
   `/ads/`, now match the literal text in HTML filtering rules (via
   [@adguard/agtree]): `FilterList` converts raw rules with
@@ -77,12 +97,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pseudo-class parentheses, so `$$div:contains( "foo" )` now matches the text
   `"foo"` with a space on each side.
 
-### Security
-
-[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.4...HEAD
 [#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
 [AdguardBrowserExtension#3605]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3605
+[6.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v6.1.0
 
 ## [6.0.4] - 2026-10-15
 
