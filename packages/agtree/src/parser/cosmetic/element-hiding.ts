@@ -206,10 +206,12 @@ function getRawQuoteMode(
  * Find the closing `)` token of a `:matches-path()` argument whose value is a
  * complete regexp literal (`/.../`).
  *
- * A regexp literal is raw text: a parenthesis inside it does not close the
- * argument. Escapes and character classes are skipped, so a class parenthesis
+ * The scan stops at the argument's own closing `)`: the first `)` outside a
+ * character class explains a parenthesis group inside the regexp. A value is a
+ * regexp literal only when its last non-whitespace character before that `)`
+ * is `/`. Escapes and character classes are skipped, so a class parenthesis
  * is plain text. A value that is not a complete `/.../` literal (for example
- * `/[/`, which some lists use as plain text) is not a regexp literal, and the
+ * `/foo`, which some lists use as plain text) is not a regexp literal, and the
  * caller keeps the balanced-parenthesis scan.
  *
  * @param types Token type array.
@@ -236,6 +238,7 @@ function findMatchesPathRegexpEnd(
     ti += 1;
 
     let inClass = false;
+    let parenDepth = 0;
     while (ti < endTi) {
         const t = types[ti];
 
@@ -256,13 +259,20 @@ function findMatchesPathRegexpEnd(
 
         if (t === TokenType.OpenSquare) {
             inClass = true;
-        } else if (t === TokenType.Slash) {
-            // The closing `/` must be followed by the argument's `)`.
-            let next = ti + 1;
-            while (next < endTi && types[next] === TokenType.Whitespace) {
-                next += 1;
+        } else if (t === TokenType.OpenParen) {
+            parenDepth += 1;
+        } else if (t === TokenType.CloseParen) {
+            if (parenDepth > 0) {
+                parenDepth -= 1;
+            } else {
+                // This is the argument boundary. The literal must end with
+                // `/` here, otherwise the value is plain text.
+                let prev = ti - 1;
+                while (prev > openParenTi && types[prev] === TokenType.Whitespace) {
+                    prev -= 1;
+                }
+                return types[prev] === TokenType.Slash ? ti : -1;
             }
-            return next < endTi && types[next] === TokenType.CloseParen ? next : -1;
         }
 
         ti += 1;

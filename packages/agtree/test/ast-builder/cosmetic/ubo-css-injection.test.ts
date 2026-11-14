@@ -651,6 +651,37 @@ describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
         expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
     });
 
+    test(':matches-path() keeps an internal unescaped slash in a complete regexp literal', () => {
+        const ast = parser.parse('##div:matches-path(/^/[(]/):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children[0].value?.value).toBe('/^/[(]/');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test(':not()-wrapped :matches-path() keeps a class parenthesis', () => {
+        const ast = parser.parse('##div:not(:matches-path(/[)]/)):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].name.value).toBe('matches-path');
+        expect(ast.modifiers?.children[0].value?.value).toBe('/[)]/');
+        expect(ast.modifiers?.children[0].exception).toBe(true);
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test('a plain /foo value does not consume a later regexp in the rule', () => {
+        const ast = parser.parse('##div:matches-path(/foo):style(background:url(/))') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].value?.value).toBe('/foo');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'background:url(/)' });
+    });
+
     test(':style() nested inside another pseudo-class still throws', () => {
         expect(() => {
             parser.parse('##div:not(:style(color:red))');

@@ -73,10 +73,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   taken as raw text, so a parenthesis inside a character class no longer
   changes the modifier nesting. For example,
   `##div:matches-path(/[(]/):style(color:red)` now parses as a CSS injection
-  rule with the value `/[(]/` and the selector `div`. Previously such a rule
-  threw `:style() cannot be nested inside a pseudo-class`, and
-  `##div:matches-path(/[)]/):style(color:red)` silently lost part of the
-  regexp and the selector.
+  rule with the value `/[(]/` and the selector `div`. Previously the whole
+  body became the selector, and `##div:matches-path(/[)]/):style(color:red)`
+  silently lost part of the regexp and the selector.
 - ADG→uBO conversion now emits a `[tag-content]` value as a case-sensitive
   escaped `:has-text()` regular expression. Single and double quotes are
   emitted as `\x27` and `\x22`, so CSS-tree does not break the rule.
