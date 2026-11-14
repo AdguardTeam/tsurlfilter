@@ -29,12 +29,19 @@ import {
     type SimpleSelector,
 } from '../../nodes';
 import {
+    ASTERISK,
     BACKSLASH,
+    CLOSE_CURLY_BRACKET,
+    CLOSE_PARENTHESIS,
+    CLOSE_SQUARE_BRACKET,
     COLON,
     DOUBLE_QUOTE,
     EMPTY,
     EQUALS,
+    OPEN_CURLY_BRACKET,
+    OPEN_PARENTHESIS,
     OPEN_SQUARE_BRACKET,
+    REGEX_MARKER,
     SINGLE_QUOTE,
     SLASH,
 } from '../../utils/constants';
@@ -127,6 +134,35 @@ const SPECIAL_ATTRIBUTE_SELECTOR_PATTERN = new RegExp(
 );
 
 /**
+ * HTML elements whose content is text and whose HTML serialization writes that
+ * text literally, without escaping, so their `innerHTML` equals their
+ * `textContent`.
+ *
+ * The HTML fragment serialization algorithm writes the text content of the
+ * `style`, `script`, `xmp`, `iframe`, `noembed`, `noframes` and `plaintext`
+ * elements literally. `title` and `textarea` are not included: their content
+ * is escaped during serialization, so `innerHTML` differs from `textContent`
+ * there.
+ *
+ * `noscript` is not included either. A browser extension serializes it
+ * literally, but uBlock Origin parses the response with `DOMParser`, whose
+ * document has scripting disabled. There the content of `noscript` is parsed
+ * as ordinary markup, so its `textContent` is not the literal source text.
+ *
+ * @see {@link https://html.spec.whatwg.org/multipage/parsing.html#serialising-html-fragments}
+ * @see {@link https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#dom-domparser-parsefromstring}
+ */
+const LITERAL_TEXT_ELEMENTS = new Set<string>([
+    'iframe',
+    'noembed',
+    'noframes',
+    'plaintext',
+    'script',
+    'style',
+    'xmp',
+]);
+
+/**
  * Pattern matching [tag-content] values that are NOT chain-safe, i.e. cannot
  * be emitted as a standalone `:contains()` literal directly followed by
  * another special pseudo-class: quotes, parentheses, brackets, braces,
@@ -156,6 +192,7 @@ export const ERROR_MESSAGES = {
     SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT: "Value of special attribute selector '%s' must be an integer, got '%s'",
     SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE: "Value of special attribute selector '%s' must be a positive integer, got '%s'",
     SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED: "Special attribute selector '%s' is not supported in conversion",
+    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INVALID_IN_UBO: "Argument of special pseudo-class selector '%s' is not valid in uBlock Origin: '%s'",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED: "Special pseudo-class selector '%s' requires an argument",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT: "Argument of special pseudo-class selector '%s' must be an integer, got '%s'",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE: "Argument of special pseudo-class selector '%s' must be a positive integer, got '%s'",
@@ -168,11 +205,18 @@ export const ERROR_MESSAGES = {
  *
  * @param name Name of the special attribute selector.
  * @param value Value of the special attribute selector.
+ * @param typeSelector Lowercase type selector of the compound selector that
+ * contains the special attribute selector, or `null` if the compound selector
+ * has no type selector.
  *
  * @returns A {@link SimpleSelector} to add to the current complex selector,
  * or `false` to skip it, or `true` to keep it as-is.
  */
-type OnSpecialAttributeSelectorCallback = (name: string, value: string) => SimpleSelector | boolean;
+type OnSpecialAttributeSelectorCallback = (
+    name: string,
+    value: string,
+    typeSelector: string | null,
+) => SimpleSelector | boolean;
 
 /**
  * Callback type for handling special pseudo-class selectors during selector list conversion.
@@ -333,7 +377,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
     /**
      * Converts a HTML rule to uBlock syntax, if possible.
-     * Also can be used to convert uBlock rules to uBlock syntax to validate them.
+     *
+     * A uBlock rule is returned unchanged.
+     *
+     * Note: a valid ADG rule may be kept as-is with `isConverted: false` when
+     * a special attribute selector cannot be represented in uBlock without
+     * changing its matching semantics, e.g. HTML markup or an ampersand in
+     * `[tag-content]`/`[wildcard]` for an element whose content is not
+     * serialized literally, see {@link HtmlRuleConverter.containsHtmlMarkup},
+     * {@link HtmlRuleConverter.containsHtmlAmpersand} and
+     * {@link HtmlRuleConverter.isLiteralTextElement}. Callers must not treat
+     * `isConverted: false` as proof of rule invalidity.
      *
      * @param rule Rule node to convert.
      *
@@ -353,13 +407,55 @@ export class HtmlRuleConverter extends RuleConverterBase {
             throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
         }
 
+        // Set when a special attribute selector cannot be represented in
+        // uBlock without changing its matching semantics. uBlock cannot mix
+        // AdGuard-only selectors into the converted top-level selector list,
+        // so the whole rule is kept as-is instead of emitting a rule that
+        // matches other elements.
+        let isUnconvertible = false;
+
+        const onSpecialAttributeSelector: OnSpecialAttributeSelectorCallback = (name, value, typeSelector) => {
+            // The markup and ampersand checks do not apply to elements whose
+            // content is serialized literally: their `innerHTML` equals
+            // `textContent`, so the value is still present in the text that
+            // uBlock matches.
+            if (
+                (name === AdgAttributeSelectors.TagContent
+                    || name === AdgAttributeSelectors.Wildcard)
+                && (
+                    HtmlRuleConverter.containsHtmlMarkup(value)
+                    || HtmlRuleConverter.containsHtmlAmpersand(value)
+                )
+                && !HtmlRuleConverter.isLiteralTextElement(typeSelector)
+            ) {
+                isUnconvertible = true;
+                // Keep the selector: `convertBody()` converts the body
+                // before `isUnconvertible` is checked below, and dropping the
+                // only selector of a complex selector makes it throw
+                // `RuleConversionError: Complex selector cannot be empty`.
+                // The converted body is discarded anyway.
+                return true;
+            }
+
+            return HtmlRuleConverter.convertSpecialAttributeSelectorAdgToUbo(name, value);
+        };
+
         // Convert body
         const convertedBody = HtmlRuleConverter.convertBody(
             rule.body,
             UboHtmlFilteringBodyGenerator,
-            HtmlRuleConverter.convertSpecialAttributeSelectorAdgToUbo,
+            onSpecialAttributeSelector,
             HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToUbo,
         );
+
+        if (isUnconvertible) {
+            // A selector list is a union of complex selectors, and special
+            // attribute selectors cannot be mixed into the converted selector
+            // list, so dropping only the unconvertible complex selectors
+            // would change the rule. Keep the original rule as a native HTML
+            // filtering selector instead.
+            return createNodeConversionResult([rule], false);
+        }
 
         return createNodeConversionResult(
             [{
@@ -577,14 +673,95 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
+     * Checks whether a special attribute selector value contains HTML markup
+     * characters (`<` or `>`).
+     *
+     * AdGuard `[tag-content]` and `[wildcard]` match the element HTML
+     * (`innerHTML`), while uBlock `:has-text()` matches the element text
+     * (`textContent`). The two strings differ when the element has child
+     * nodes, because tags are present only in the HTML. A converted rule can
+     * therefore match different text. For example, a page can show a literal
+     * `<b>` in its text, written as `&lt;b&gt;` in the HTML: the uBlock rule
+     * matches it, but the AdGuard rule does not. Such rules are kept as-is
+     * instead.
+     *
+     * Exception: for elements whose content is serialized literally, the two
+     * strings are equal, see {@link HtmlRuleConverter.isLiteralTextElement}.
+     *
+     * @param value Value of the special attribute selector.
+     *
+     * @returns `true` if the value contains HTML markup, otherwise `false`.
+     */
+    private static containsHtmlMarkup(value: string): boolean {
+        return value.includes('<') || value.includes('>');
+    }
+
+    /**
+     * Checks whether a special attribute selector value contains an ampersand.
+     *
+     * AdGuard `[tag-content]` and `[wildcard]` match the element HTML
+     * (`innerHTML`), where a literal `&` in text or in an attribute value is
+     * serialized as `&amp;`, and where an HTML character reference stays
+     * encoded. The uBlock `:has-text()` matcher tests `textContent`, where a
+     * character reference is decoded and a literal `&` stays `&`. Any `&`
+     * therefore changes the matching semantics, so such rules are kept as-is
+     * instead.
+     * This check also covers every character reference, e.g. `&lt;`, `&amp;`,
+     * `&#39;` or `&copy 2024`.
+     *
+     * Exception: a literal `&` survives in elements whose content is
+     * serialized literally, where `innerHTML` and `textContent` are equal, see
+     * {@link HtmlRuleConverter.isLiteralTextElement}.
+     *
+     * @param value Value of the special attribute selector.
+     *
+     * @returns `true` if the value contains an ampersand, otherwise `false`.
+     */
+    private static containsHtmlAmpersand(value: string): boolean {
+        return value.includes('&');
+    }
+
+    /**
+     * Checks whether the type selector refers to an element whose content is
+     * serialized literally.
+     *
+     * For these elements the content is text, not a tree of child nodes, so
+     * `innerHTML` and `textContent` are equal, see
+     * {@link LITERAL_TEXT_ELEMENTS}. A `[tag-content]` or `[wildcard]` value
+     * with markup characters or an ampersand can therefore still match in
+     * uBlock `:has-text()`, which tests `textContent`.
+     *
+     * @param typeSelector Type selector of the compound selector, or `null`
+     * if the compound selector has no type selector.
+     *
+     * @returns `true` if the type selector refers to an element whose content
+     * is serialized literally, otherwise `false`.
+     */
+    private static isLiteralTextElement(typeSelector: string | null): boolean {
+        return typeSelector !== null && LITERAL_TEXT_ELEMENTS.has(typeSelector);
+    }
+
+    /**
      * Handles special attribute selectors during AdGuard to uBlock conversion:
-     * - `[tag-content="content"]` -> `:has-text(content)`
-     *   direct conversion, no changes to value
-     * - `[wildcard="*content*"]` -> `:has-text(/^.*content.*$/s)`
-     *   convert search pattern to regular expression
+     * - `[tag-content="content"]` -> `:has-text(/content/)`
+     *   The literal is escaped and emitted as a regular expression. A plain
+     *   uBlock `:has-text()` argument is matched case-insensitively, while
+     *   AdGuard `[tag-content]` is case-sensitive. Only the `i` flag is
+     *   accepted by uBlock, so a regexp without flags stays case-sensitive.
+     * - `[wildcard="*content*"]` -> `:has-text(/^[\s\S]*content[\s\S]*$/)`
+     *   convert search pattern to a uBlock-compatible regular expression:
+     *   uBlock accepts only the `i` flag, so the dot-all `s` flag cannot be
+     *   used and `[\s\S]` replaces the dots.
      * - `[min-length="min"]` -> `:min-text-length(min)`
      *   direct conversion, no changes to value
      * - `[max-length]` is skipped.
+     *
+     * Note: values that contain HTML markup or an ampersand are passed to this
+     * method only for elements whose content is serialized literally, where
+     * `innerHTML` equals `textContent`; for other elements such rules are kept
+     * as-is, see {@link HtmlRuleConverter.containsHtmlMarkup},
+     * {@link HtmlRuleConverter.containsHtmlAmpersand} and
+     * {@link HtmlRuleConverter.isLiteralTextElement}.
      *
      * @param name Name of the special attribute selector.
      * @param value Value of the special attribute selector.
@@ -593,20 +770,23 @@ export class HtmlRuleConverter extends RuleConverterBase {
      */
     private static convertSpecialAttributeSelectorAdgToUbo(name: string, value: string): SimpleSelector | false {
         switch (name) {
-            // `[tag-content="content"]` -> `:has-text(content)`
+            // `[tag-content="content"]` -> `:has-text(/content/)`
+            // the escaped literal is a case-sensitive regexp in uBlock, and
+            // quotes are emitted as hex escapes for CSS-tree, which parses the
+            // argument before uBlock reads the regexp
             case AdgAttributeSelectors.TagContent: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.HasText,
-                    value,
+                    `${REGEX_MARKER}${RegExpUtils.escapeRegexSpecials(value, true)}${REGEX_MARKER}`,
                 );
             }
 
-            // `[wildcard="*content*"]` -> `:has-text(/^.*content.*$/s)`
-            // convert search pattern to regular expression
+            // `[wildcard="*content*"]` -> `:has-text(/^[\s\S]*content[\s\S]*$/)`
+            // convert search pattern to a uBlock-compatible regular expression
             case AdgAttributeSelectors.Wildcard: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.HasText,
-                    RegExpUtils.globToRegExp(value),
+                    RegExpUtils.globToUboRegExp(value),
                 );
             }
 
@@ -645,10 +825,24 @@ export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Handles special pseudo-class selectors during AdGuard to uBlock conversion:
      * - `:contains(text)` -> `:has-text(text)`
-     *   direct conversion, no changes to argument.
+     *   Direct conversion, no changes to argument. A text argument that the
+     *   uBlock parser would reject (e.g. `:contains(it's)`) is not converted.
+     *   A quoted argument (e.g. `:contains("foo")`) is not converted either:
+     *   uBlock unquotes it and matches `foo`, while AdGuard matches the quotes
+     *   as literal characters.
      * - `:has-text(text)` -> kept as-is
      *   `:has-text()` is native uBlock syntax and a documented synonym of
      *   `:contains()` in AdGuard products, so no conversion is needed.
+     *
+     * Known limitation: uBlock matches a plain `:has-text()` argument
+     * case-insensitively against `textContent`, while AdGuard matches
+     * `:contains()` case-sensitively against `innerHTML`. The argument is
+     * kept as-is, so a `:contains()` value with markup or an ampersand, or a
+     * value whose case matters, can still diverge after conversion. The
+     * uBlock parser also accepts only the `i` flag in a regexp argument, so a
+     * regexp with another flag, e.g. `/ads/s`, becomes a plain text argument
+     * there. This is outside the scope of the `[tag-content]` and
+     * `[wildcard]` fix. See the AG-61883 ticket.
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
@@ -656,7 +850,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * @returns A {@link SimpleSelector} to add to the current complex selector,
      * or `true` to keep the original pseudo-class selector as-is.
      *
-     * @throws If a uBlock-only pseudo-class selector is found in an AdGuard rule.
+     * @throws If a uBlock-only pseudo-class selector is found in an AdGuard rule,
+     * or the `:contains()` argument is not valid in uBlock.
      */
     private static convertSpecialPseudoClassSelectorAdgToUbo(
         name: string,
@@ -666,6 +861,14 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // `:contains(text)` -> `:has-text(text)`
             // direct conversion, no changes to argument
             case AdgPseudoClasses.Contains: {
+                if (!HtmlRuleConverter.isUboTextArgumentSupported(argument)) {
+                    throw new RuleConversionError(sprintf(
+                        ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INVALID_IN_UBO,
+                        name,
+                        argument,
+                    ));
+                }
+
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.HasText,
                     argument,
@@ -694,6 +897,41 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 ));
             }
         }
+    }
+
+    /**
+     * Returns the lowercase type selector of the compound selector that
+     * contains the simple selector at the given index.
+     *
+     * A compound selector starts after a combinator, and a type selector,
+     * when present, is its first simple selector.
+     *
+     * @param selectors Child selectors of a complex selector.
+     * @param index Index of the simple selector within the complex selector.
+     *
+     * @returns Lowercase type selector, or `null` if the compound selector
+     * has no type selector.
+     */
+    private static getCompoundTypeSelector(
+        selectors: (SimpleSelector | SelectorCombinator)[],
+        index: number,
+    ): string | null {
+        let compoundStart = 0;
+
+        for (let i = index - 1; i >= 0; i -= 1) {
+            if (selectors[i].type === 'SelectorCombinator') {
+                compoundStart = i + 1;
+                break;
+            }
+        }
+
+        const firstSelector = selectors[compoundStart];
+
+        if (firstSelector.type !== 'TypeSelector') {
+            return null;
+        }
+
+        return firstSelector.value.toLowerCase();
     }
 
     /**
@@ -1034,7 +1272,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         // - add returned simple selector if it's not boolean
                         // - skip adding if returned value is false
                         // - keep original simple selector if returned value is true
-                        const result = onSpecialAttributeSelector(name, value);
+                        const result = onSpecialAttributeSelector(
+                            name,
+                            value,
+                            HtmlRuleConverter.getCompoundTypeSelector(selectors, j),
+                        );
                         if (typeof result !== 'boolean') {
                             convertedSelectors.push(result);
                             continue;
@@ -1428,6 +1670,133 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 value: argument,
             } : undefined,
         };
+    }
+
+    /**
+     * Checks whether uBlock Origin accepts a plain-text argument in an HTML
+     * filtering `:has-text()` pseudo-class without unquoting it.
+     *
+     * The uBlock parser first parses the whole cosmetic filter with CSS-tree
+     * and discards the rule if that parse fails. The argument must therefore
+     * be a valid CSS component value sequence: strings must be closed, blocks
+     * must be balanced, comments must be terminated, and a trailing backslash
+     * is not valid.
+     *
+     * A closer ends only the block that it matches. Any other closer is a
+     * plain token inside the current block, e.g. `)` in `[^)]` or a stray
+     * `]`. A `)` that closes no block ends the `:has-text()` function before
+     * the whole argument is read, so such an argument is not supported.
+     *
+     * After that, uBlock reads the text argument with `compileText()`, which
+     * calls `unquoteString()`. This unquoting removes the outer quotes from an
+     * argument that starts and ends with the same quote. AdGuard matches the
+     * argument as-is, including those quotes, so such an argument cannot be
+     * converted without changing the matching semantics. Any argument that
+     * starts with a quote is therefore not supported.
+     *
+     * @param argument Argument to check.
+     *
+     * @returns `true` if uBlock Origin accepts the argument and does not
+     * unquote it, `false` otherwise.
+     */
+    private static isUboTextArgumentSupported(argument: string): boolean {
+        if (argument === EMPTY) {
+            return false;
+        }
+
+        const closingDelimiters: Record<string, string> = {
+            [CLOSE_PARENTHESIS]: OPEN_PARENTHESIS,
+            [CLOSE_SQUARE_BRACKET]: OPEN_SQUARE_BRACKET,
+            [CLOSE_CURLY_BRACKET]: OPEN_CURLY_BRACKET,
+        };
+
+        let quote: string | null = null;
+        const delimiters: string[] = [];
+
+        for (let i = 0; i < argument.length; i += 1) {
+            const char = argument.charAt(i);
+
+            if (quote !== null) {
+                // A backslash escapes the next character inside a string.
+                if (char === BACKSLASH) {
+                    i += 1;
+                } else if (char === quote) {
+                    quote = null;
+                }
+
+                continue;
+            }
+
+            // A comment is skipped as a whole and cannot open a string or a
+            // block. CSS-tree rejects an unterminated comment.
+            if (char === SLASH && argument.charAt(i + 1) === ASTERISK) {
+                const commentEnd = argument.indexOf(`${ASTERISK}${SLASH}`, i + 2);
+
+                if (commentEnd === -1) {
+                    return false;
+                }
+
+                i = commentEnd + 1;
+                continue;
+            }
+
+            // Outside a string a backslash escapes the next character.
+            // CSS-tree rejects a trailing backslash.
+            if (char === BACKSLASH) {
+                i += 1;
+
+                if (i === argument.length) {
+                    return false;
+                }
+
+                continue;
+            }
+
+            if (char === SINGLE_QUOTE || char === DOUBLE_QUOTE) {
+                quote = char;
+                continue;
+            }
+
+            if (
+                char === OPEN_PARENTHESIS
+                || char === OPEN_SQUARE_BRACKET
+                || char === OPEN_CURLY_BRACKET
+            ) {
+                delimiters.push(char);
+                continue;
+            }
+
+            const openingDelimiter = closingDelimiters[char];
+
+            if (openingDelimiter === undefined) {
+                continue;
+            }
+
+            // A closer ends only the block it matches. Any other closer is a
+            // plain token in the current block, e.g. `)` in `[^)]`.
+            if (delimiters.length !== 0 && delimiters[delimiters.length - 1] === openingDelimiter) {
+                delimiters.pop();
+                continue;
+            }
+
+            // A `)` that closes no block ends the function before the whole
+            // argument is read, so uBlock cannot use the argument as text.
+            if (char === CLOSE_PARENTHESIS && delimiters.length === 0) {
+                return false;
+            }
+        }
+
+        if (quote !== null || delimiters.length !== 0) {
+            return false;
+        }
+
+        // uBlock reads the text argument with `compileText()`, which calls
+        // `unquoteString()`. An argument that starts with a quote loses the
+        // outer quotes in uBlock, while AdGuard matches them as literal
+        // characters, so such an argument cannot be converted unchanged.
+        const firstChar = argument.charAt(0);
+
+        return firstChar !== SINGLE_QUOTE && firstChar !== DOUBLE_QUOTE;
     }
 
     /**
