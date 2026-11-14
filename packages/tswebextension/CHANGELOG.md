@@ -238,8 +238,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Conversion metadata (`badFilterRules`, `rulesHashMap`) is now kept in
   memory after `configure()` instead of being freed via the previous
   `unloadMetadata()` call. Keeping it avoids stale cached rulesets
-  returning empty metadata on subsequent `configure()` calls; a lazy
-  reload from IDB is tracked in AG-53262.
+  returning empty metadata on subsequent `configure()` calls.
 - Updated [@adguard/extended-css] to `v2.2.0`.
 - WebRTC IP handling policy changed from `disable_non_proxied_udp` to
   `default_public_interface_only` to reduce VoIP breakage while still
