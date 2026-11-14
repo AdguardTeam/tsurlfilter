@@ -1048,6 +1048,33 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$script:contains(/a\\.b\\*c/i)'],
                     },
 
+                    // `\\` in the quoted text loses one backslash, and the
+                    // remaining backslash is regexp-escaped
+                    {
+                        actual: '##^div:has-text("a\\\\b")',
+                        expected: ['$$div:contains(/a\\\\b/i)'],
+                    },
+
+                    // any other backslash is not an escape in uBlock: it stays
+                    // in the text and is then regexp-escaped
+                    {
+                        actual: '##^div:has-text("a\\qb")',
+                        expected: ['$$div:contains(/a\\\\qb/i)'],
+                    },
+
+                    // a slash in the plain text is escaped, so the emitted
+                    // argument stays a CoreLibs `/.../i` regexp
+                    {
+                        actual: '##^div:has-text("a/b")',
+                        expected: ['$$div:contains(/a\\/b/i)'],
+                    },
+
+                    // an empty quoted text matches any text, like uBlock's /^/
+                    {
+                        actual: '##^div:has-text("")',
+                        expected: ['$$div:contains(/^/i)'],
+                    },
+
                     // `:has-text()` special pseudo-class selector - the quoted text
                     // keeps its case, the `i` flag makes the match case-insensitive
                     {
