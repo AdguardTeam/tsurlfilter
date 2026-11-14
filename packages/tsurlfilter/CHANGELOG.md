@@ -18,8 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Bare `$removeparam` rules no longer treat a `?` inside a hash fragment as a
-  query delimiter, so `https://example.com/page#route?param=1` stays unchanged
-  (AG-61691).
+  query delimiter, so `https://example.com/page#route?param=1` stays unchanged.
 - HTML filtering rules with a right parenthesis inside a regexp character
   class now load, e.g. `$$div:contains(/a[)]b/)` and
   `##^div:has-text(/a[)]b/)` (via [@adguard/agtree]). uBO `:contains()` rules
