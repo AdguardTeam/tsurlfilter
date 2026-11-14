@@ -347,10 +347,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
                  * special attribute selectors are present. They are deprecated
                  * and always deferred or merged by `convertBody()` and emitted
                  * by `appendSpecialAttributePseudoClasses()`, so the callback
-                 * only marks the rule as converted and returns `false`.
+                 * only marks the rule as converted and returns `true`
+                 * ("keep as-is"), so that an unexpected special selector is
+                 * never silently dropped.
                  */
                 isConverted = true;
-                return false;
+                return true;
             };
             onSpecialPseudoClassSelector = (name, argument) => {
                 const result = HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToAdg(name, argument);
