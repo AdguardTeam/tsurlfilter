@@ -78,11 +78,14 @@ For a full description of each modifier, see the knowledgebase https://adguard.c
 # MV3 specific limitations
 <a name="mv3_specific_limitations__$badfilter"></a>
 ## $badfilter
-A `$badfilter` rule applies to the other rules of the same filter list. Static
+A `$badfilter` rule applies within one conversion batch. By default, static
 filter lists are converted separately, so a `$badfilter` rule in one list does
-not cancel a rule in another list. Dynamic rules (custom filters and user
+not cancel a rule in another list; with `combine: true` all input filters are
+converted as one batch, so it can. Dynamic rules (custom filters and user
 rules) are combined into one ruleset, so a `$badfilter` rule there applies to
-all dynamic rules.
+all dynamic rules. `badFilterRules` applies static badfilters to dynamic rules
+at scan time, and `computeRulesToDisable()` applies dynamic badfilters to an
+already-built static ruleset, disabling whole declarative rules.
 
 From these two filters:
 ```adblock
@@ -119,14 +122,15 @@ the written `$domain` list.
 <a name="mv3_specific_limitations__$badfilter__problem_1"></a>
 ### Problem 1
 When neither rule negates a domain (`~domain`) and the two `$domain` lists
-share an identically written entry, a `$badfilter` rule cancels the target
-rule only for the domains that the badfilter covers. The converter narrows
-the `$domain` list of the target rule: it removes a target entry that a
-badfilter entry covers, and it excludes a badfilter entry that overlaps a kept
-target entry. A `$badfilter` without `$domain` cancels the target rule
-completely. While either rule negates a domain, the `$domain` entries stay in
-the text and the whole text is compared, so the rule is cancelled only when
-the whole text matches. For example, for these two rules:
+share an entry that compares equal after domain-name normalization, a
+`$badfilter` rule cancels the target rule only for the domains that the
+badfilter covers. The converter narrows the `$domain` list of the target rule:
+it removes a target entry that a badfilter entry covers, and it excludes a
+badfilter entry that overlaps a kept target entry. A `$badfilter` without
+`$domain` cancels the target rule completely. While either rule negates a
+domain, the `$domain` entries stay in the text and the whole text is compared,
+so the rule is cancelled only when the whole text matches. For example, for
+these two rules:
 ```adblock
 /some$domain=example.com|example.org
 /some$domain=example.com,badfilter
@@ -140,8 +144,9 @@ Five cases are still not covered:
   the exclusion with `excludedInitiatorDomains`;
 - a regexp entry in the badfilter's `$domain` list cancels a blocking target
   rule completely unless it is an anchored literal domain that cannot match a
-  kept target entry; an exception target rule is narrowed instead, so it may
-  keep allowing domains that the regexp cancels: DNR cannot exclude initiator
+  kept target entry or only matches a domain that the narrowed rule already
+  excludes; an exception target rule is narrowed instead, so it may keep
+  allowing domains that the regexp cancels: DNR cannot exclude initiator
   domains that match a regexp, so a narrowed rule would keep applying where
   the badfilter cancels it;
 - a `$badfilter` rule from a dynamic ruleset disables a whole declarative rule
@@ -153,11 +158,14 @@ Five cases are still not covered:
   an entry outside that list is not covered, and the full public suffix list
   is not used;
 - for a document rule, MV2 matches `$domain` on either end of the navigation,
-  and the badfilter does too, while the narrowed rule matches only the end
-  named by its remaining entries: with
+  and the badfilter does too, so MV2 cancels both directions. The converter
+  instead emits the base rule with `initiatorDomains: ["bar.com"]` and an
+  additional `main_frame` rule with `requestDomains: ["bar.com"]`, so the
+  narrowed rule still applies to both `foo.com` → `bar.com` and
+  `bar.com` → `foo.com`: with
   `*$document,csp=script-src 'none',domain=foo.com|bar.com` and the same rule
-  with `domain=foo.com,badfilter`, MV2 cancels both `foo.com` → `bar.com`
-  and `bar.com` → `foo.com`, while the narrowed rule still applies to both.
+  with `domain=foo.com,badfilter`, the converted rules keep applying in both
+  directions.
 
 <a name="mv3_specific_limitations__$badfilter__problem_2"></a>
 ### Problem 2
@@ -2414,15 +2422,17 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
 <br/>
 <b>MV3 limitations:</b>
 <br/>
-Within one static filter, a `$badfilter` rule applies to the other rules of
-that filter. Static filters are converted separately, so a badfilter in one
-filter list does not affect a rule in another list. Dynamic rules (custom
-filters and user rules) are combined into one ruleset, so a badfilter there
-applies to all dynamic rules. A `$domain` list cancels the target rule only
-for the domains that the badfilter covers, and only while neither rule negates
-a domain (`~domain`). A target rule without `$domain` is still cancelled
-completely. A badfilter from a dynamic ruleset can disable a rule from an
-already-built static ruleset only as a whole rule.
+Within one conversion batch, a `$badfilter` rule applies to the other rules of
+that batch. Static filters are converted separately by default, so a badfilter
+in one filter list does not affect a rule in another list; `combine: true`
+merges them into one batch. Dynamic rules (custom filters and user rules) are
+combined into one ruleset, so a badfilter there applies to all dynamic rules.
+`badFilterRules` applies static badfilters to dynamic rules at scan time, and
+`computeRulesToDisable()` applies dynamic badfilters to an already-built static
+ruleset, disabling whole declarative rules. A `$domain` list cancels the target
+rule only for the domains that the badfilter covers, and only while neither
+rule negates a domain (`~domain`). A target rule without `$domain` is still
+cancelled completely.
 <br/>
 <b>Examples:</b>
 <br/>
