@@ -211,6 +211,12 @@ export class RegularRuleConverter {
     private static readonly DOMAIN_SPECIFIC_PATTERN_PREFIXES = [ADBLOCK_URL_START, 'http://', 'https:/', '://'];
 
     /**
+     * Start of an anchored pattern: the `|` or `||` anchor and an optional
+     * scheme. What follows it is the host and, after the first `/`, the path.
+     */
+    private static readonly ANCHORED_PATTERN_START = /^\|{1,2}(?:[a-z][a-z0-9+.-]*:\/\/)?/i;
+
+    /**
      * String path to web accessible resources, relative to the extension root dir.
      * Should start with leading slash and end without trailing slash (`'/'`).
      */
@@ -860,16 +866,23 @@ export class RegularRuleConverter {
                     const prefix = condition.urlFilter.slice(0, -ADBLOCK_URL_SEPARATOR.length);
                     const hasDomainAnchor = prefix.startsWith(ADBLOCK_URL_START);
                     const authority = hasDomainAnchor ? prefix.slice(ADBLOCK_URL_START.length).split('/')[0] : '';
+                    // The trailing separator can take the query delimiter only when the pattern ends
+                    // inside the path. After a bare host it matches the `/` or the port colon,
+                    // so the native URL filter already finds the first parameter there.
+                    const hasPath = prefix.replace(RegularRuleConverter.ANCHORED_PATTERN_START, '').includes('/');
                     if (
                         useRemoveParamRegex
                         && condition.urlFilter.endsWith(ADBLOCK_URL_SEPARATOR)
                         && prefix.startsWith('|')
+                        && hasPath
                         && !/[*?#^]/.test(prefix)
                         && (!hasDomainAnchor || (authority.length > 0 && !authority.includes('@')))
                     ) {
                         // Share the trailing separator with the query delimiter when the parameter is first.
                         // Anchoring keeps this delimiter at the actual query boundary.
                         // Unanchored patterns can match inside the query and retain native URL-filter matching.
+                        // Patterns without a path keep it too: a filter list has thousands of them,
+                        // and DNR allows only 1000 regexp rules.
                         const patternRegexp = RegExpUtils.patternToRegexp(condition.urlFilter);
                         let prefixRegexp = patternRegexp.slice(0, -ADBLOCK_URL_SEPARATOR_REGEX.length);
                         if (hasDomainAnchor) {
@@ -883,10 +896,7 @@ export class RegularRuleConverter {
                         const paramNameRegexp = paramRegexp.slice(ADBLOCK_URL_SEPARATOR_REGEX.length);
                         // DNR matches ASCII-serialized URLs. Bound classes to ASCII to keep RE2 compilation small.
                         const pathSeparator = '[^[:^ascii:] a-zA-Z0-9.%_?#-]';
-                        const pathTail = hasDomainAnchor && !prefix.includes('/')
-                            // A separator in the authority must not turn a username into a host match.
-                            ? '(?:[^[:^ascii:] a-zA-Z0-9.%_/?#@-][^[:^ascii:]/?#@]*)?(?:/[^[:^ascii:]?#]*)?'
-                            : `(?:${pathSeparator}[^[:^ascii:]?#]*)?`;
+                        const pathTail = `(?:${pathSeparator}[^[:^ascii:]?#]*)?`;
                         condition.regexFilter = `${prefixRegexp}${pathTail}`
                             + `\\?(?:[^[:^ascii:]#]*&)?${paramNameRegexp}`;
                         delete condition.urlFilter;
