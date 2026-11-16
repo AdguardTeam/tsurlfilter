@@ -20,20 +20,26 @@ import {
 
 import { CanvasAvailabilityStatus } from '../../../../src/lib/common/canvas-protection/constants';
 import { CanvasProtectionRegistration } from '../../../../src/lib/common/canvas-protection/registration';
+import { CollectHitStatsNotifier } from '../../../../src/lib/common/collect-hit-stats';
 import { MemoryStorage } from '../../../../src/lib/common/storage/core';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { TsWebExtension } from '../../../../src/lib/mv3/background/app';
 import { appContext } from '../../../../src/lib/mv3/background/app-context';
 import { ChromiumCanvasRegistration } from '../../../../src/lib/mv3/background/canvas-registration';
-import { type ConfigurationMV3 } from '../../../../src/lib/mv3/background/configuration';
+import { type ConfigurationMV3, type ConfigurationMV3Context } from '../../../../src/lib/mv3/background/configuration';
 import { declarativeFilteringLog } from '../../../../src/lib/mv3/background/declarative-filtering-log';
 import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
-import { extSessionStorage, type SessionStorageSchema } from '../../../../src/lib/mv3/background/ext-session-storage';
+import {
+    extSessionStorage,
+    SessionStorageKey,
+    type SessionStorageSchema,
+} from '../../../../src/lib/mv3/background/ext-session-storage';
 import FiltersApi from '../../../../src/lib/mv3/background/filters-api';
 import { CspService } from '../../../../src/lib/mv3/background/services/csp-service';
 import { StealthService } from '../../../../src/lib/mv3/background/services/stealth-service';
 import { SessionRulesApi } from '../../../../src/lib/mv3/background/session-rules-api';
+import { tabsApi } from '../../../../src/lib/mv3/tabs/tabs-api';
 import { getConfigurationMv3Fixture } from '../fixtures/configuration';
 
 const configureBoundaries = TsWebExtension as unknown as {
@@ -452,6 +458,101 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
             await instance.initStorage();
             expect(remove).toHaveBeenCalledOnce();
         });
+    });
+});
+
+describe('TsWebExtension MV3 collect hit stats notifications', () => {
+    beforeEach(() => {
+        appContext.isStorageInitialized = true;
+    });
+
+    it('does not notify on the first configure', async () => {
+        prepareConfigure();
+        const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+        await instance.configure(getConfigurationMv3Fixture());
+
+        expect(notifySpy).not.toHaveBeenCalled();
+    });
+
+    it('notifies when configure changes collectStats', async () => {
+        prepareConfigure();
+        const config = getConfigurationMv3Fixture();
+        await instance.configure(config);
+        const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+        await instance.configure({
+            ...config,
+            settings: {
+                ...config.settings,
+                collectStats: false,
+            },
+        });
+
+        expect(notifySpy).toHaveBeenCalledTimes(1);
+        expect(notifySpy).toHaveBeenCalledWith(false, expect.any(Function));
+    });
+
+    it('notifies setCollectHitStats only on an actual change', () => {
+        instance.configuration = {
+            settings: {
+                collectStats: true,
+            },
+        } as ConfigurationMV3Context;
+        const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+        instance.setCollectHitStats(false);
+        instance.setCollectHitStats(false);
+        instance.setCollectHitStats(true);
+
+        expect(notifySpy).toHaveBeenCalledTimes(2);
+        expect(notifySpy).toHaveBeenNthCalledWith(1, false, expect.any(Function));
+        expect(notifySpy).toHaveBeenNthCalledWith(2, true, expect.any(Function));
+    });
+
+    it('persists setCollectHitStats to session storage', () => {
+        instance.configuration = {
+            settings: {
+                collectStats: true,
+            },
+        } as ConfigurationMV3Context;
+        const setSpy = vi.spyOn(extSessionStorage, 'set');
+        vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+        instance.setCollectHitStats(false);
+
+        expect(setSpy).toHaveBeenCalledWith(
+            SessionStorageKey.Configuration,
+            expect.objectContaining({
+                settings: expect.objectContaining({ collectStats: false }),
+            }),
+        );
+    });
+
+    it('resolves collect stats per tab when collection is enabled', () => {
+        const allowlistedTabId = 1;
+        const regularTabId = 2;
+        instance.configuration = {
+            settings: {
+                collectStats: false,
+            },
+        } as ConfigurationMV3Context;
+        vi.spyOn(tabsApi, 'getTabContext').mockImplementation(((tabId: number) => (
+            tabId === allowlistedTabId
+                ? { mainFrameRule: { isFilteringDisabled: (): boolean => true } }
+                : { mainFrameRule: { isFilteringDisabled: (): boolean => false } }
+        )) as never);
+        const updateMainFrameRuleSpy = vi.spyOn(tabsApi, 'updateTabMainFrameRule');
+        const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+        instance.setCollectHitStats(true);
+
+        const resolver = notifySpy.mock.calls[0][1] as (tabId: number) => boolean;
+        expect(resolver(allowlistedTabId)).toBe(false);
+        expect(resolver(regularTabId)).toBe(true);
+        // The navigation handler owns mainFrameRule. Rematching it from
+        // the tab URL can restore a stale allowlist rule.
+        expect(updateMainFrameRuleSpy).not.toHaveBeenCalled();
     });
 });
 

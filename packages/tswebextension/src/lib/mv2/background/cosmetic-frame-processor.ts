@@ -243,6 +243,7 @@ export class CosmeticFrameProcessor {
             preparedCosmeticResult: {
                 scriptText: combinedScriptText,
                 cssText,
+                areHitsStatsCollected,
             },
         };
     }
