@@ -335,6 +335,20 @@ describe('FilterConverter', () => {
             expect(exception?.condition.initiatorDomains).toEqual(['b.com']);
         });
 
+        it('keeps a rule when a literal regexp only covers an excluded subdomain', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=bar.com|baz.com',
+                '||example.org^$domain=baz.com|sub.bar.com|/^sub\\.bar\\.com$/,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['bar.com']);
+            expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['sub.bar.com']);
+        });
+
         it('does not convert a $badfilter rule that also carries a convertible modifier', async () => {
             const filter = createFilter([
                 "||example.org^$csp=script-src 'self'",

@@ -570,17 +570,12 @@ export class RuleBadfilter {
      * @returns True when the regexp can match a domain covered by a kept entry.
      */
     private static regexpCoversKeptEntry(regexpEntry: string, keptEntries: readonly string[]): boolean {
-        const body = regexpEntry.slice(1, -1);
+        const literalDomain = RuleBadfilter.getRegexpLiteralDomain(regexpEntry);
 
         // A pattern anchored at only one end, or not anchored at all, can match
-        // part of a subdomain label, so the subdomains of a kept entry cannot
-        // be ruled out.
-        if (!body.startsWith('^') || !body.endsWith('$')) {
-            return true;
-        }
-
-        const literalDomain = getLiteralDomain(body.slice(1, -1));
-
+        // part of a subdomain label, and a non-literal anchored pattern matches
+        // more than one domain, so the subdomains of a kept entry cannot be
+        // ruled out.
         if (literalDomain === null) {
             return true;
         }
@@ -611,25 +606,63 @@ export class RuleBadfilter {
     }
 
     /**
+     * Returns the literal domain of a fully anchored regexp entry.
+     *
+     * @param regexpEntry Regexp entry from the badfilter `$domain` list.
+     *
+     * @returns The literal domain in lower case, or `null` when the pattern is
+     *   not a fully anchored literal domain.
+     */
+    private static getRegexpLiteralDomain(regexpEntry: string): string | null {
+        const body = regexpEntry.slice(1, -1);
+
+        if (!body.startsWith('^') || !body.endsWith('$')) {
+            return null;
+        }
+
+        return getLiteralDomain(body.slice(1, -1));
+    }
+
+    /**
      * Checks whether any of the given badfilter regexp entries may match a
      * domain that the kept permitted entries cover in DNR.
      *
+     * A fully anchored literal regexp that only covers an already excluded
+     * domain does not need to drop the rule, because DNR can represent that
+     * exclusion. Unanchored and non-literal patterns stay conservative.
+     *
      * @param regexpEntries Regexp entries from the applied badfilters.
      * @param keptEntries Permitted `$domain` entries that stay in the target.
+     * @param excludedEntries Domains that the narrowed rule already excludes.
      *
-     * @returns True when a regexp may match a domain covered by a kept entry.
+     * @returns True when a regexp may match a kept domain that is not excluded.
      */
     public static regexpEntriesCoverKeptEntries(
         regexpEntries: readonly string[],
         keptEntries: readonly string[] | null,
+        excludedEntries: readonly string[] = [],
     ): boolean {
         if (keptEntries === null || keptEntries.length === 0) {
             return false;
         }
 
-        return regexpEntries.some(
-            (regexp) => RuleBadfilter.regexpCoversKeptEntry(regexp, keptEntries),
-        );
+        const normalizedExclusions = excludedEntries.map(RuleBadfilter.normalizeForComparison);
+
+        return regexpEntries.some((regexp) => {
+            if (!RuleBadfilter.regexpCoversKeptEntry(regexp, keptEntries)) {
+                return false;
+            }
+
+            const literalDomain = RuleBadfilter.getRegexpLiteralDomain(regexp);
+
+            if (literalDomain === null) {
+                return true;
+            }
+
+            return !normalizedExclusions.some(
+                (exclusion) => RuleBadfilter.isEntryUnder(literalDomain, exclusion),
+            );
+        });
     }
 
     /**

@@ -685,6 +685,26 @@ const ENGINE_DOMAIN_BADFILTER_CASES: [
         'https://sub.example.com/',
         true,
     ],
+    // A literal regexp that only matches a domain the narrowed rule already
+    // excludes does not drop the rule.
+    [
+        '||example.com^$domain=bar.com|baz.com',
+        '||example.com^$domain=baz.com|sub.bar.com|/^sub\\.bar\\.com$/,badfilter',
+        'https://bar.com/',
+        false,
+    ],
+    [
+        '||example.com^$domain=bar.com|baz.com',
+        '||example.com^$domain=baz.com|sub.bar.com|/^sub\\.bar\\.com$/,badfilter',
+        'https://x.bar.com/',
+        false,
+    ],
+    [
+        '||example.com^$domain=bar.com|baz.com',
+        '||example.com^$domain=baz.com|sub.bar.com|/^sub\\.bar\\.com$/,badfilter',
+        'https://sub.bar.com/',
+        true,
+    ],
     // A negated domain makes the cancellation complete, so the whole text is
     // compared and a matching text cancels the rule.
     [

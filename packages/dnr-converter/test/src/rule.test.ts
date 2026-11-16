@@ -822,6 +822,54 @@ describe('Rule', () => {
             expect(result?.permittedDomains).toEqual(['sub.example.*']);
             expect(result?.restrictedDomains).toEqual(['example.com']);
         });
+
+        it('keeps a rule when a literal regexp only covers an excluded subdomain', () => {
+            const [badfilterRule] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=baz.com|sub.bar.com|/^sub\\.bar\\.com$/,badfilter',
+            );
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=bar.com|baz.com');
+
+            const result = Rule.applyBadfilters(targetRule, [badfilterRule]);
+
+            // The regexp matches only `sub.bar.com`, which DNR can exclude, so
+            // the kept `bar.com` entry is not a reason to drop the rule.
+            expect(result?.permittedDomains).toEqual(['bar.com']);
+            expect(result?.restrictedDomains).toEqual(['sub.bar.com']);
+        });
+
+        it('keeps a rule when a later literal regexp only covers an earlier exclusion', () => {
+            const [plainBadfilter] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=baz.com|sub.bar.com,badfilter',
+            );
+            const [regexpBadfilter] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=baz.com|/^sub\\.bar\\.com$/,badfilter',
+            );
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=bar.com|baz.com');
+
+            const result = Rule.applyBadfilters(targetRule, [plainBadfilter, regexpBadfilter]);
+
+            expect(result?.permittedDomains).toEqual(['bar.com']);
+            expect(result?.restrictedDomains).toEqual(['sub.bar.com']);
+        });
+
+        it('still drops a rule when an unanchored regexp can match outside the exclusion', () => {
+            const [badfilterRule] = Rule.createFromText(
+                1,
+                0,
+                '||example.com^$domain=baz.com|sub.bar.com|/sub/,badfilter',
+            );
+            const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=bar.com|baz.com');
+
+            // `/sub/` also matches hosts outside `sub.bar.com`, so the literal
+            // exclusion cannot represent it.
+            expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
+        });
     });
 
     describe('advancedModifierValue', () => {

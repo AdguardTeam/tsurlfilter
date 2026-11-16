@@ -1099,13 +1099,20 @@ export class Rule {
         // Run the regexp check once, against the final list: an earlier
         // badfilter may remove the entry that a regexp covers, while a later one
         // may remove the regexp-matched entry instead, so checking inside the
-        // loop would make the result depend on the badfilter order.
+        // loop would make the result depend on the badfilter order. Exclusions
+        // that the narrowed rule already represents are passed too: a literal
+        // regexp that only covers an excluded domain does not drop the rule.
+        const effectiveExcludedDomains = [
+            ...(current.restrictedDomains ?? []),
+            ...excludedDomains,
+        ];
         if (
             deferRegexpCheck !== DEFER_REGEXP_CHECK
             && !targetRule.allowlist
             && RuleBadfilter.regexpEntriesCoverKeptEntries(
                 deferredRegexpEntries,
                 current.permittedDomains,
+                effectiveExcludedDomains,
             )
         ) {
             return null;
