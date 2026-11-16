@@ -1228,7 +1228,7 @@ describe('PreregisteredScriptsService', () => {
             expect(appContext.preregisteredScriptRulesAtBootFailed).toBe(false);
         });
 
-        it('does not re-register when reapplyGate fires during stop', async () => {
+        it('does not re-register when reapply fires during stop', async () => {
             appContext.preregisteredScripts = { domains: ['youtube.com'], path: SCRIPTS_PATH };
 
             let releaseClear = (): void => {};
@@ -1245,7 +1245,7 @@ describe('PreregisteredScriptsService', () => {
             // The filtering log closes while the clear is in flight: the
             // stored configuration must already be gone, otherwise the gate
             // enqueues an init that re-registers what stop() removes.
-            PreregisteredScriptsService.reapplyGate(true);
+            PreregisteredScriptsService.reapply(true);
 
             releaseClear();
             await stopPromise;
@@ -1510,11 +1510,11 @@ describe('PreregisteredScriptsService', () => {
         });
     });
 
-    describe('reapplyGate', () => {
+    describe('reapply', () => {
         it('is a no-op until configure() has stored the configuration', () => {
             const initSpy = vi.spyOn(PreregisteredScriptsService, 'init').mockResolvedValue();
 
-            PreregisteredScriptsService.reapplyGate(true);
+            PreregisteredScriptsService.reapply(true);
 
             // A service-worker restart restores the session configuration but
             // not the in-memory build-time one: re-evaluating now would take
@@ -1529,7 +1529,7 @@ describe('PreregisteredScriptsService', () => {
             appContext.preregisteredScripts = config;
             const initSpy = vi.spyOn(PreregisteredScriptsService, 'init').mockResolvedValue();
 
-            PreregisteredScriptsService.reapplyGate(false);
+            PreregisteredScriptsService.reapply(false);
 
             expect(initSpy).toHaveBeenCalledWith(false, config);
 
@@ -1542,7 +1542,7 @@ describe('PreregisteredScriptsService', () => {
             await PreregisteredScriptsService.stop();
 
             const initSpy = vi.spyOn(PreregisteredScriptsService, 'init').mockResolvedValue();
-            PreregisteredScriptsService.reapplyGate(true);
+            PreregisteredScriptsService.reapply(true);
 
             // The build-time configuration must not outlive the running app:
             // a later setDebugScriptlets() must not re-register the scripts.

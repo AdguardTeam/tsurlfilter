@@ -59,10 +59,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [AdguardBrowserExtension#3605].
 - Domain-scoped cosmetic and JavaScript rules not matching hosts with labels
   ending in an underscore.
-- A regular expression `$domain` containing an escaped separator
-  (`$domain=/a\|b/`) was split into pieces, so the rule was filed under the
-  domains table and never matched. The value is now split the way the parser
-  reads it.
+- The `$domain` value was split on every `|`, so a regular expression
+  containing one (`$domain=/a|b/`) was torn into pieces and the rule was filed
+  under keys that never match; an escaped separator, spaces around a separator
+  and an uppercase name had the same effect. The value is now split and
+  normalized the way the parser reads it: a `|` inside `/.../` stays in the
+  pattern, values are trimmed, and plain domain names are lowercased.
 - The `shortcut*` fast path is skipped for `$match-case` rules: `/ads/*`
   matches `/ADS/` only when the modifier is absent, and the pattern is compiled
   as a case-sensitive regex otherwise.

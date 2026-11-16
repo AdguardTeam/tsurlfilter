@@ -196,13 +196,6 @@ const parsePatternHost = (pattern: string): PatternHost | undefined => {
 };
 
 /**
- * Escapes a literal for a regular expression.
- *
- * @param text Literal text.
- *
- * @returns Escaped text.
- */
-/**
  * Checks whether a rule without a host part still matches the root page of the
  * hostname. Such an exception decides the very page the registration covers
  * and no exclusion can express it.
@@ -218,6 +211,13 @@ const reachesRootPage = (rule: NetworkRule, hostname: string): boolean => (
     ))
 );
 
+/**
+ * Escapes a literal for a regular expression.
+ *
+ * @param text Literal text.
+ *
+ * @returns Escaped text.
+ */
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**

@@ -207,7 +207,7 @@ export class PreregisteredScriptsService {
 
     /**
      * Tears down preregistration: drops the stored build-time configuration
-     * synchronously (so a concurrent `reapplyGate()` cannot capture it and
+     * synchronously (so a concurrent `reapply()` cannot capture it and
      * enqueue an init that re-registers what stop removed), clears the
      * persisted registrations through the queue (so an in-flight sync
      * settles first), then resets the published coverage and the boot
@@ -234,7 +234,7 @@ export class PreregisteredScriptsService {
     }
 
     /**
-     * Re-applies the preregistration gate at runtime, using the build-time
+     * Re-applies the preregistration at runtime, using the stored
      * configuration stored for the current service-worker lifetime.
      *
      * Does nothing until `configure()` has stored that configuration: it
@@ -244,7 +244,7 @@ export class PreregisteredScriptsService {
      *
      * @param preregistrationEnabled Whether preregistration should be active.
      */
-    public static reapplyGate(preregistrationEnabled: boolean): void {
+    public static reapply(preregistrationEnabled: boolean): void {
         const { preregisteredScripts } = appContext;
         if (!preregisteredScripts) {
             return;
@@ -253,7 +253,7 @@ export class PreregisteredScriptsService {
         PreregisteredScriptsService
             .init(preregistrationEnabled, preregisteredScripts)
             .catch((e) => {
-                logger.error('[tsweb.PreregisteredScriptsService.reapplyGate]: Failed to re-evaluate preregistration', e);
+                logger.error('[tsweb.PreregisteredScriptsService.reapply]: Failed to re-evaluate preregistration', e);
             });
     }
 
@@ -321,8 +321,9 @@ export class PreregisteredScriptsService {
     /**
      * Synchronizes preregistered content scripts with the current engine state.
      *
-     * Unregisters everything when preregistration is disabled or no domains
-     * are given. Safe to call repeatedly — diffs against current browser
+     * Unregisters everything when preregistration is disabled, when no domains
+     * are given, or when every configured hostname falls back to the dynamic
+     * path. Safe to call repeatedly — diffs against current browser
      * registrations. Concurrent calls are serialized internally.
      *
      * @param preregistrationEnabled Whether preregistration should be active.

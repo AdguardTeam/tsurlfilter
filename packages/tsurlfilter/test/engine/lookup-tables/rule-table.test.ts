@@ -10,11 +10,10 @@ import { NetworkRule } from '../../../src/rules/network-rule';
 import { createRuleStorage } from './lookup-table';
 
 describe('getRuleTable', () => {
-    it('keeps the enum values the baked artifacts depend on', () => {
-        // The numbers travel into the gate entries and the page-side walk
-        // compares them in this order, while `NetworkEngine` walks its tables
-        // in the source order. Reordering the members must fail here, not in
-        // the page.
+    it('keeps the enum values in the order the engine walks the tables', () => {
+        // `NetworkEngine.addRule()` tries the tables in this order and the first
+        // one that accepts the rule keeps it, so reordering the members
+        // changes the routing. The test fails here, not in a matched page.
         expect([
             RuleTable.Hostname,
             RuleTable.Shortcut,

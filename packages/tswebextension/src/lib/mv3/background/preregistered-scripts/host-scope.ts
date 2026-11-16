@@ -85,7 +85,7 @@ export const matchesHostScope = (pattern: string, hostname: string): boolean => 
         // The engine's `.*` matches across the authority boundary (it runs
         // against the whole URL), so only the literal prefix before the first
         // `*` is a sound host-scope signal. Over-inclusion is harmless: the
-        // baked condition is the engine's own regex.
+        // rule's own pattern decides the exclusion.
         const literalPrefix = hostPart.slice(0, hostPart.indexOf('*'));
         return !literalPrefix || isHostPartOfHost(literalPrefix, hostname, false, allowSubdomains);
     }

@@ -873,7 +873,7 @@ export class TsWebExtension implements AppInterface<
         this.configuration.settings.debugScriptlets = debug;
 
         const { filteringEnabled } = this.configuration.settings;
-        PreregisteredScriptsService.reapplyGate(filteringEnabled && !debug);
+        PreregisteredScriptsService.reapply(filteringEnabled && !debug);
     }
 
     /**

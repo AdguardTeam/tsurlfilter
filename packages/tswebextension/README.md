@@ -354,9 +354,10 @@ document whose frame id is not zero: a subframe's verdict depends on the
 main frame's rule and URL, and the page cannot read that URL when the
 domains differ. Subframes therefore always stay on the dynamic injection
 path, where the engine sees the main-frame rule; they trade
-`document_start` timing for the correct verdict. The runtime registers the
-configured expansion. A rule with no baked file is dropped and stays on the
-dynamic path.
+`document_start` timing for the correct verdict. The runtime registers each
+hostname of the configured expansion that keeps at least one rule and whose
+exceptions can be expressed; a host that loses every rule, or whose exceptions
+cannot be expressed, stays on the dynamic path.
 
 At runtime, each configured hostname (plus its `www.` alias) is matched
 against the engine with `$path` ignored, the matching rules are hashed, and

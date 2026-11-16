@@ -1,6 +1,6 @@
 import { type NetworkRuleParts } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage';
-import { DomainModifier } from '../../modifiers/domain-modifier';
+import { DomainModifier, PIPE_SEPARATOR } from '../../modifiers/domain-modifier';
 import { type Request } from '../../request';
 import { type NetworkRule } from '../../rules/network-rule';
 import { fastHash } from '../../utils/string-utils';
@@ -8,43 +8,69 @@ import { fastHash } from '../../utils/string-utils';
 import { type ILookupTable } from './lookup-table';
 
 /**
- * Splits the raw `$domain` value into domains the way the rule parser does:
- * only an unescaped `|` separates values, so a regex domain that contains one
- * (`/a\|b/`) stays a single value.
- *
- * The parser resolves the escape, so the engine and `getRuleTable()` see the
- * same list: a raw split would turn the regex into pieces that no longer look
- * like a regex, and the rule would be filed under domains that never match.
+ * Splits a `$domain` value on unescaped separators without normalizing it.
+ * Only a fallback for lists the parser rejects.
  *
  * @param text Raw `$domain` value.
  *
- * @returns Domain values as written, restricted ones keeping the `~` prefix.
+ * @returns Domain values as written.
  */
-const splitDomains = (text: string): string[] => {
+const splitRawDomains = (text: string): string[] => {
     const domains: string[] = [];
     let current = '';
 
     for (let i = 0; i < text.length; i += 1) {
         const char = text[i];
+
         if (char === '|') {
-            // Count the backslashes before the separator: an odd number means
-            // the pipe is escaped and belongs to the value.
             let backslashes = 0;
             while (current[current.length - 1 - backslashes] === '\\') {
                 backslashes += 1;
             }
+
             if (backslashes % 2 === 0) {
                 domains.push(current);
                 current = '';
                 continue;
             }
         }
+
         current += char;
     }
 
     domains.push(current);
 
     return domains;
+};
+
+/**
+ * Reads the raw `$domain` value with `DomainModifier`, i.e. with the same
+ * parse-and-normalize path the rule itself goes through. There is no second
+ * reader of the list: `|` inside a regexp literal stays in the pattern, escaped
+ * separators are resolved, values are trimmed and plain domain names are
+ * lowercased, so the table is filed under the keys a request produces.
+ *
+ * A value the parser rejects falls back to a raw split on unescaped
+ * separators: the rule is kept in this table exactly as it was before the
+ * normalizing path existed, instead of moving to the sequence scan, which
+ * refuses a rule it cannot parse.
+ *
+ * @param text Raw `$domain` value.
+ *
+ * @returns Domain values as the engine sees them, restricted ones keeping the
+ * `~` prefix.
+ */
+const splitDomains = (text: string): string[] => {
+    try {
+        const modifier = new DomainModifier(text, PIPE_SEPARATOR);
+
+        return [
+            ...(modifier.getPermittedDomains() ?? []),
+            ...(modifier.getRestrictedDomains() ?? []).map((domain) => `~${domain}`),
+        ];
+    } catch {
+        return splitRawDomains(text);
+    }
 };
 
 /**

@@ -52,7 +52,7 @@ describe('resolveHostExclusions', () => {
         expect(exclusions.get('www.youtube.com')).toEqual(['https://www.youtube.com/ads*']);
     });
 
-    it('bakes every disabling exception of the host', () => {
+    it('excludes every page a disabling exception names', () => {
         const { exclusions } = scan([{
             filterId: 2,
             content: '@@||youtube.com/ads$document\n@@||youtube.com/shorts$jsinject\n',
@@ -120,7 +120,7 @@ describe('resolveHostExclusions', () => {
         expect(dynamicHosts.size).toBe(0);
     });
 
-    it('bakes nothing when the exception is cancelled inside its own filter', () => {
+    it('excludes nothing when the exception is cancelled inside its own filter', () => {
         const { exclusions, dynamicHosts } = scan([{
             filterId: 2,
             content: '@@||youtube.com/my_video_ad$document\n@@||youtube.com/my_video_ad$document,badfilter\n',

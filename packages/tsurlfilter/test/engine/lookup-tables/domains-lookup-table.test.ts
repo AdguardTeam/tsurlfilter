@@ -31,6 +31,39 @@ describe('Domains Lookup Table Tests', () => {
         expect(table.getRulesCount()).toBe(1);
     });
 
+    it('keeps a separator inside a regexp literal and rejects the rule', () => {
+        const ruleStorage = createRuleStorage([]);
+        const table = new DomainsLookupTable(ruleStorage);
+
+        // `/foo|bar/` is one pattern: a raw split would tear it into two plain
+        // domains, both accepted by `accepts()`, and the rule would be filed
+        // under keys that never match.
+        expect(table.addRule(getRuleParts('path$domain=/foo|bar/') as NetworkRuleParts, 0)).toBeFalsy();
+        expect(table.getRulesCount()).toBe(0);
+    });
+
+    it('files a normalized $domain under the keys a request produces', () => {
+        const rules = [
+            'path$domain=FOO.COM',
+            'path$domain=foo.com | bar.com',
+        ];
+
+        const ruleStorage = createRuleStorage(rules);
+        const table = new DomainsLookupTable(ruleStorage);
+
+        fillLookupTable(table, ruleStorage);
+
+        const matches = (url: string): number => (
+            table.matchAll(new Request(url, url, RequestType.Document)).length
+        );
+
+        // The parser trims the value and lowercases a plain domain; the raw
+        // text would file `FOO.COM` and ` bar.com` under unreachable keys.
+        expect(matches('http://foo.com/path')).toBe(2);
+        expect(matches('http://bar.com/path')).toBe(1);
+        expect(matches('http://other.com/path')).toBe(0);
+    });
+
     it('matches rules from lookup table', () => {
         const rules = [
             'path',
