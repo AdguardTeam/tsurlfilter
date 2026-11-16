@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed named `$removeparam` rules with an anchored pattern without a path,
+  e.g. `||example.com^$removeparam=foo`, being converted to regexp rules: a
+  filter list with thousands of them exceeded the DNR limit of 1000 regexp
+  rules. Such rules use `urlFilter` again, and only patterns with a path, e.g.
+  `||example.com/path^$removeparam=foo`, generate a regexp.
+
 ### Security
 
 ## [2.1.0] - 2026-11-12
