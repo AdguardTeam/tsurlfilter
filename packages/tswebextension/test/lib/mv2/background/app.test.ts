@@ -23,8 +23,9 @@ import {
     CanvasAvailabilityStatus,
     CanvasRegistrationStatus,
 } from '../../../../src/lib/common/canvas-protection/constants';
+import { CollectHitStatsNotifier } from '../../../../src/lib/common/collect-hit-stats';
 import { type Message } from '../../../../src/lib/common/message';
-import { canvasDeliveryChannel } from '../../../../src/lib/mv2/background/api';
+import { canvasDeliveryChannel, tabsApi } from '../../../../src/lib/mv2/background/api';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { assistant, Assistant } from '../../../../src/lib/mv2/background/assistant';
 import { configurationMV2Validator } from '../../../../src/lib/mv2/background/configuration';
@@ -112,6 +113,23 @@ describe('TsWebExtension', () => {
             expect(result.conversionErrors).toEqual(mockErrors);
         });
 
+        it('should notify content scripts when configure changes collectStats', async () => {
+            await instance.initStorage();
+            await instance.start(config);
+            const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+            await instance.configure({
+                ...config,
+                settings: {
+                    ...config.settings,
+                    collectStats: false,
+                },
+            });
+
+            expect(notifySpy).toHaveBeenCalledWith(false, expect.any(Function));
+            notifySpy.mockRestore();
+        });
+
         it('should be updated correctly and return conversion errors', async () => {
             const mockErrors: never[] = [];
             vi.spyOn(engineApi, 'startEngine').mockResolvedValue({ conversionErrors: mockErrors });
@@ -186,6 +204,48 @@ describe('TsWebExtension', () => {
             instance.setCollectHitStats(expected);
 
             expect(instance.configuration.settings.collectStats).toBe(expected);
+        });
+
+        it('should notify content scripts when collectStats changes', () => {
+            const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+            instance.setCollectHitStats(false);
+
+            expect(notifySpy).toHaveBeenCalledWith(false, expect.any(Function));
+            notifySpy.mockRestore();
+        });
+
+        it('should not notify content scripts when collectStats does not change', () => {
+            const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+            instance.setCollectHitStats(true);
+
+            expect(notifySpy).not.toHaveBeenCalled();
+            notifySpy.mockRestore();
+        });
+
+        it('resolves collect stats per tab when collection is enabled', () => {
+            const allowlistedTabId = 1;
+            const regularTabId = 2;
+            vi.spyOn(tabsApi, 'getTabContext').mockImplementation(((tabId: number) => (
+                tabId === allowlistedTabId
+                    ? { mainFrameRule: { isFilteringDisabled: (): boolean => true } }
+                    : { mainFrameRule: { isFilteringDisabled: (): boolean => false } }
+            )) as never);
+
+            // Ensure the next call is a real change and notifies.
+            instance.configuration.settings.collectStats = false;
+            const updateMainFrameRuleSpy = vi.spyOn(tabsApi, 'updateTabMainFrameRule');
+            const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+            instance.setCollectHitStats(true);
+
+            const resolver = notifySpy.mock.calls[0][1] as (tabId: number) => boolean;
+            expect(resolver(allowlistedTabId)).toBe(false);
+            expect(resolver(regularTabId)).toBe(true);
+            // The navigation handler owns mainFrameRule. Rematching it from
+            // the tab URL can restore a stale allowlist rule.
+            expect(updateMainFrameRuleSpy).not.toHaveBeenCalled();
         });
 
         it('should update stealthModeEnabled correctly', async () => {

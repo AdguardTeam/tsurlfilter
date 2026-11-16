@@ -223,41 +223,87 @@ describe('CssHitsCounter', () => {
         cssHitsCounter.stop();
     });
 
-    it('counts every element matched by the same ExtendedCss rule', () => {
+    it('reports an ExtendedCss hit once per element and rule', () => {
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
         const onCssHitsFound = vi.fn();
-        const cssHitsCounter = new CssHitsCounter(onCssHitsFound);
-        // Drop the native hits of the fixture counted on construction.
-        onCssHitsFound.mockClear();
+        const counter = new CssHitsCounter(onCssHitsFound);
 
-        // One parsed rule object shared by every element it matches, as
-        // ExtendedCss keeps it.
-        const sharedRule = { style: { content: 'adguard7%3B7' } };
-        const firstNode = document.createElement('div');
-        firstNode.id = 'firstExtCss';
-        const secondNode = document.createElement('div');
-        secondNode.id = 'secondExtCss';
-        document.body.append(firstNode, secondNode);
+        try {
+            const element = document.getElementById('testDiv')!;
+            const firstRule = { style: { content: 'adguard50%3B50' } };
+            const secondRule = { style: { content: 'adguard55%3B55' } };
+            const affectedElement = { rules: [firstRule, secondRule], node: element };
 
-        const firstEl = { rules: [sharedRule], node: firstNode };
-        cssHitsCounter.countAffectedByExtendedCss(firstEl);
-        cssHitsCounter.countAffectedByExtendedCss({ rules: [sharedRule], node: secondNode });
+            counter.countAffectedByExtendedCss(affectedElement);
+            counter.countAffectedByExtendedCss(affectedElement);
 
-        const reported = onCssHitsFound.mock.calls.flatMap(([batch]) => batch);
-        expect(reported).toEqual([
-            { filterId: 7, ruleIndex: 7, element: '<div id="firstExtCss">' },
-            { filterId: 7, ruleIndex: 7, element: '<div id="secondExtCss">' },
-        ]);
-        // The marker is stripped from the copy applied to the element only, so
-        // the shared rule keeps it for the remaining elements.
-        expect(firstEl.rules[0].style.content).toBe('');
-        expect(sharedRule.style.content).toBe('adguard7%3B7');
+            const hits = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(hits.filter((stat: any) => stat.filterId === 50)).toHaveLength(1);
+            expect(hits.filter((stat: any) => stat.filterId === 55)).toHaveLength(1);
+            expect(firstRule.style.content).toBe('');
+            expect(secondRule.style.content).toBe('');
 
-        // The same node and rule pair is reported once, even when ExtendedCss
-        // re-matches the node later.
-        cssHitsCounter.countAffectedByExtendedCss({ rules: [sharedRule], node: firstNode });
-        expect(onCssHitsFound.mock.calls.flatMap(([batch]) => batch)).toEqual(reported);
+            counter.stop();
+        } finally {
+            restoreFixtureMarkers();
+        }
+    });
 
-        cssHitsCounter.stop();
+    it('queues an ExtendedCss hit once per rule while paused', () => {
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+        const onCssHitsFound = vi.fn();
+        const counter = new CssHitsCounter(onCssHitsFound);
+
+        try {
+            counter.pause();
+
+            const element = document.getElementById('testDiv')!;
+            const firstRule = { style: { content: 'adguard51%3B51' } };
+            const secondRule = { style: { content: 'adguard56%3B56' } };
+            const affectedElement = { rules: [firstRule, secondRule], node: element };
+
+            counter.countAffectedByExtendedCss(affectedElement);
+            counter.countAffectedByExtendedCss(affectedElement);
+
+            expect(onCssHitsFound).not.toHaveBeenCalled();
+
+            counter.resume();
+
+            const hits = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(hits.filter((stat: any) => stat.filterId === 51)).toHaveLength(1);
+            expect(hits.filter((stat: any) => stat.filterId === 56)).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            restoreFixtureMarkers();
+        }
+    });
+
+    it('queues ExtendedCss hits when the counter starts paused', () => {
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+        const onCssHitsFound = vi.fn();
+        const counter = new CssHitsCounter(onCssHitsFound, { paused: true });
+
+        try {
+            const rule = { style: { content: 'adguard57%3B57' } };
+            counter.countAffectedByExtendedCss({
+                rules: [rule],
+                node: document.getElementById('testDiv')!,
+            });
+
+            // The marker is cleared so it cannot be painted. The hit waits
+            // for resume instead of being lost.
+            expect(rule.style.content).toBe('');
+            expect(onCssHitsFound).not.toHaveBeenCalled();
+
+            counter.resume();
+            const hits = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(hits.filter((stat: any) => stat.filterId === 57)).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            restoreFixtureMarkers();
+        }
     });
 
     it('keeps a content value that only mentions the marker', () => {
@@ -276,33 +322,6 @@ describe('CssHitsCounter', () => {
         expect(rules[0].style.content).toBe('attr(data-adguard)');
 
         cssHitsCounter.stop();
-    });
-
-    it('does not share the reported hits between counters', () => {
-        // The dedupe state belongs to the counter: a counter created after
-        // `stop()` must still report the nodes the previous one counted.
-        const onFirstHitsFound = vi.fn();
-        const firstCounter = new CssHitsCounter(onFirstHitsFound);
-        const rule = { style: { content: 'adguard9%3B9' } };
-        const node = document.createElement('div');
-
-        firstCounter.countAffectedByExtendedCss({ rules: [rule], node });
-        firstCounter.stop();
-        expect(onFirstHitsFound).toHaveBeenCalledWith([
-            { filterId: 9, ruleIndex: 9, element: '<div>' },
-        ]);
-
-        const onSecondHitsFound = vi.fn();
-        const secondCounter = new CssHitsCounter(onSecondHitsFound);
-        onSecondHitsFound.mockClear();
-
-        secondCounter.countAffectedByExtendedCss({ rules: [rule], node });
-
-        expect(onSecondHitsFound).toHaveBeenCalledWith([
-            { filterId: 9, ruleIndex: 9, element: '<div>' },
-        ]);
-
-        secondCounter.stop();
     });
 
     it('counts --adguard-hit marker without leaking marker text (AG-265)', () => {
@@ -1917,6 +1936,628 @@ describe('CssHitsCounter', () => {
             delete (document as unknown as { readyState?: string }).readyState;
             restoreMutationObserver();
             vi.useRealTimers();
+        }
+    });
+
+    it('stops counting mutations while paused and counts them after resume', () => {
+        const restoreMutationObserver = mockMutationObserver();
+
+        const style = document.createElement('style');
+        style.textContent = "div.pause-bait { display: none !important; --adguard-hit: 'adguard30%3B30' !important; }";
+        document.head.appendChild(style);
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            const getBaitHits = (): unknown[] => onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 30);
+
+            counter.pause();
+
+            const pausedBait = document.createElement('div');
+            pausedBait.className = 'pause-bait';
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [pausedBait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(getBaitHits()).toHaveLength(0);
+
+            counter.resume();
+
+            const resumedBait = document.createElement('div');
+            resumedBait.className = 'pause-bait';
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [resumedBait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(getBaitHits()).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            style.remove();
+            restoreMutationObserver();
+        }
+    });
+
+    it('stops the collector and timers on pause and restarts them on resume while loading', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+        const readyState = 'loading';
+        Object.defineProperty(document, 'readyState', {
+            configurable: true,
+            get: () => readyState,
+        });
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.collector-pause-bait',
+            "{ display: none !important; --adguard-hit: 'adguard31%3B31' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        try {
+            const collector = new PendingProbesCollector();
+            collector.start();
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, { pendingProbesCollector: collector });
+
+            counter.pause();
+
+            expect(collector.isObserving).toBe(false);
+            expect(vi.getTimerCount()).toBe(0);
+
+            counter.resume();
+
+            expect(collector.isObserving).toBe(true);
+
+            const bait = document.createElement('div');
+            bait.className = 'collector-pause-bait';
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            vi.advanceTimersByTime(1000);
+
+            const hits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 31);
+            expect(hits).toHaveLength(1);
+            expect(bait.parentNode).toBeNull();
+
+            counter.stop();
+        } finally {
+            delete (document as unknown as { readyState?: string }).readyState;
+            style.remove();
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
+    it('restarts its own observer on resume while loading without a collector', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+        const readyState = 'loading';
+        Object.defineProperty(document, 'readyState', {
+            configurable: true,
+            get: () => readyState,
+        });
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.own-observer-bait',
+            "{ display: none !important; --adguard-hit: 'adguard35%3B35' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            // The constructor attaches the counter's own observer while
+            // loading when no collector is provided.
+            expect(MutationObserverMock.last).toBeDefined();
+
+            counter.pause();
+            expect(MutationObserverMock.last!.isDisconnected).toBe(true);
+
+            counter.resume();
+
+            const bait = document.createElement('div');
+            bait.className = 'own-observer-bait';
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            const hits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 35);
+            expect(hits).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            delete (document as unknown as { readyState?: string }).readyState;
+            style.remove();
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
+    it('reports hits from an interrupted full scan after resume', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.rollback-bait',
+            "{ display: none !important; --adguard-hit: 'adguard40%3B40' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        const container = document.createElement('div');
+        for (let i = 0; i < 60; i += 1) {
+            const bait = document.createElement('div');
+            bait.className = 'rollback-bait';
+            container.appendChild(bait);
+        }
+        document.body.appendChild(container);
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            // The first batches have already recorded provisional hits, but
+            // the scan has not committed or reported them.
+            counter.pause();
+            counter.resume();
+
+            vi.advanceTimersByTime(1000);
+
+            const hits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 40);
+            expect(hits).toHaveLength(60);
+
+            counter.stop();
+        } finally {
+            container.remove();
+            style.remove();
+            restoreFixtureMarkers();
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
+    it('commits a hit counted by a mutation before an interrupted scan is discarded', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.scan-mutation-bait',
+            "{ display: none !important; --adguard-hit: 'adguard41%3B41' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        const bait = document.createElement('div');
+        bait.className = 'scan-mutation-bait';
+        document.body.prepend(bait);
+
+        // Keep the first batch from finishing the scan, so the bait stays
+        // provisional when the mutation arrives.
+        const fillers = Array.from({ length: 40 }, () => document.createElement('div'));
+        fillers.forEach((filler) => document.body.appendChild(filler));
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            // The first scan batch has recorded the bait provisionally, so
+            // the mutation path must still commit and report it.
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 41)).toHaveLength(1);
+
+            // Remove the bait and interrupt the scan. The provisional entry
+            // is discarded, but the mutation-reported hit must survive.
+            bait.remove();
+            counter.pause();
+            counter.resume();
+
+            vi.advanceTimersByTime(1000);
+
+            const hits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 41);
+            expect(hits).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            bait.remove();
+            fillers.forEach((filler) => filler.remove());
+            style.remove();
+            restoreFixtureMarkers();
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
+    it('keeps a full-scan hit when a mutation counts another rule', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.scan-switch-bait',
+            "{ display: none !important; --adguard-hit: 'adguard53%3B53' !important; }",
+            'div.scan-switch-bait.switched',
+            "{ --adguard-hit: 'adguard54%3B54' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        const bait = document.createElement('div');
+        bait.className = 'scan-switch-bait';
+        document.body.prepend(bait);
+
+        // Keep the first scan batch from finishing, so the bait stays
+        // provisional when the mutation arrives.
+        const fillers = Array.from({ length: 40 }, () => document.createElement('div'));
+        fillers.forEach((filler) => document.body.appendChild(filler));
+
+        const onCssHitsFound = vi.fn();
+
+        const getHits = (filterId: number): Array<{ filterId: number }> => {
+            return onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === filterId);
+        };
+
+        try {
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            // The first scan batch has read rule 53 for the bait.
+            bait.classList.add('switched');
+
+            // The mutation path reports rule 54 and stores it.
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            expect(getHits(54)).toHaveLength(1);
+
+            vi.advanceTimersByTime(1000);
+
+            // Rule 53 was read by the scan and rule 54 was counted by the
+            // mutation. They are different rules, so both are valid hits.
+            expect(getHits(53)).toHaveLength(1);
+            expect(getHits(54)).toHaveLength(1);
+
+            // A later scan must see both rules as already counted.
+            counter.pause();
+            counter.resume();
+            vi.advanceTimersByTime(1000);
+
+            expect(getHits(53)).toHaveLength(1);
+            expect(getHits(54)).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            bait.remove();
+            fillers.forEach((filler) => filler.remove());
+            style.remove();
+            restoreFixtureMarkers();
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
+    it('does not duplicate a full-scan hit counted by a same-rule mutation', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.scan-same-bait',
+            "{ display: none !important; --adguard-hit: 'adguard63%3B63' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        const bait = document.createElement('div');
+        bait.className = 'scan-same-bait';
+        document.body.prepend(bait);
+
+        const fillers = Array.from({ length: 40 }, () => document.createElement('div'));
+        fillers.forEach((filler) => document.body.appendChild(filler));
+
+        const onCssHitsFound = vi.fn();
+
+        try {
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            // The first scan batch has read rule 63 into its pending state.
+            // The mutation path counts the same rule before the scan commits.
+            MutationObserverMock.last!.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            vi.advanceTimersByTime(1000);
+
+            const hits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 63);
+            expect(hits).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            bait.remove();
+            fillers.forEach((filler) => filler.remove());
+            style.remove();
+            restoreFixtureMarkers();
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
+    it('rechecks a probed element until marker styles are applied', () => {
+        const restoreMutationObserver = mockMutationObserver();
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.recheck-bait',
+            "{ display: none !important; --adguard-hit: 'adguard64%3B64' !important; }",
+        ].join(' ');
+        const bait = document.createElement('div');
+        bait.className = 'recheck-bait';
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+            const observer = MutationObserverMock.last!;
+            const mutation = [{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord];
+
+            observer.trigger(mutation);
+            expect(onCssHitsFound).not.toHaveBeenCalled();
+
+            // The first probe ran before marker styles were applied. The
+            // element must be rechecked, not skipped as already probed.
+            document.head.appendChild(style);
+            observer.trigger(mutation);
+
+            const hits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 64);
+            expect(hits).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            bait.remove();
+            style.remove();
+            restoreFixtureMarkers();
+            restoreMutationObserver();
+        }
+    });
+
+    it('reports native and ExtendedCss hits for the same element', () => {
+        vi.useFakeTimers();
+        const restoreMutationObserver = mockMutationObserver();
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.mixed-hit-bait',
+            "{ display: none !important; --adguard-hit: 'adguard60%3B60' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        const bait = document.createElement('div');
+        bait.className = 'mixed-hit-bait';
+        document.body.prepend(bait);
+
+        // Keep the first scan batch from finishing, so the native hit stays
+        // provisional when the ExtendedCss hook runs.
+        const fillers = Array.from({ length: 40 }, () => document.createElement('div'));
+        fillers.forEach((filler) => document.body.appendChild(filler));
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound);
+
+            counter.countAffectedByExtendedCss({
+                node: bait,
+                rules: [{ style: { content: 'adguard61%3B61' } }],
+            });
+
+            vi.advanceTimersByTime(1000);
+
+            const hits = onCssHitsFound.mock.calls.flatMap((c) => c[0]);
+            expect(hits.filter((stat: any) => stat.filterId === 60)).toHaveLength(1);
+            expect(hits.filter((stat: any) => stat.filterId === 61)).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            bait.remove();
+            fillers.forEach((filler) => filler.remove());
+            style.remove();
+            restoreFixtureMarkers();
+            restoreMutationObserver();
+            vi.useRealTimers();
+        }
+    });
+
+    it('blanks ExtendedCss markers while paused and reports the hits on resume', () => {
+        const restoreMutationObserver = mockMutationObserver();
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+        const onCssHitsFound = vi.fn();
+        const counter = new CssHitsCounter(onCssHitsFound);
+
+        try {
+            counter.pause();
+
+            const rule = { style: { content: 'adguard32;32' } };
+            counter.countAffectedByExtendedCss({
+                rules: [rule],
+                node: document.getElementById('testDiv')!,
+            });
+
+            expect(rule.style.content).toBe('');
+            expect(onCssHitsFound).not.toHaveBeenCalled();
+
+            counter.resume();
+
+            expect(onCssHitsFound).toHaveBeenCalledTimes(1);
+            expect(onCssHitsFound).toHaveBeenLastCalledWith([
+                expect.objectContaining({
+                    filterId: 32,
+                    ruleIndex: 32,
+                }),
+            ]);
+
+            // The same rule object is reused for a new element after the
+            // marker declaration was blanked.
+            const secondElement = document.createElement('div');
+            document.body.appendChild(secondElement);
+            counter.countAffectedByExtendedCss({
+                rules: [rule],
+                node: secondElement,
+            });
+
+            expect(onCssHitsFound).toHaveBeenCalledTimes(2);
+            expect(onCssHitsFound).toHaveBeenLastCalledWith([
+                expect.objectContaining({
+                    filterId: 32,
+                    ruleIndex: 32,
+                }),
+            ]);
+
+            secondElement.remove();
+            counter.stop();
+        } finally {
+            restoreFixtureMarkers();
+            restoreMutationObserver();
+        }
+    });
+
+    it('caps the ExtendedCss hits queued while paused', () => {
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+        const onCssHitsFound = vi.fn();
+        const counter = new CssHitsCounter(onCssHitsFound);
+
+        try {
+            counter.pause();
+
+            const rule = { style: { content: 'adguard62%3B62' } };
+            const elements = Array.from({ length: 501 }, () => document.createElement('div'));
+
+            elements.forEach((element) => {
+                counter.countAffectedByExtendedCss({ rules: [rule], node: element });
+            });
+
+            counter.resume();
+
+            const hits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 62);
+            expect(hits).toHaveLength(500);
+
+            // The hit that did not fit in the queue was not marked as
+            // counted, so a later hook call can still report it.
+            counter.countAffectedByExtendedCss({
+                rules: [rule],
+                node: elements[elements.length - 1],
+            });
+            const allHits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 62);
+            expect(allHits).toHaveLength(501);
+
+            counter.stop();
+        } finally {
+            restoreFixtureMarkers();
+        }
+    });
+
+    it('stops a running probes collector when created paused', () => {
+        const { collector } = createProbesCollector();
+        const onCssHitsFound = vi.fn();
+        const counter = new CssHitsCounter(onCssHitsFound, {
+            pendingProbesCollector: collector,
+            paused: true,
+        });
+
+        expect(collector.stop).toHaveBeenCalledTimes(1);
+        expect(onCssHitsFound).not.toHaveBeenCalled();
+
+        counter.stop();
+    });
+
+    it('starts paused without scanning the DOM and resumes on demand', () => {
+        const restoreFixtureMarkers = removeFixtureMarkerElements();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            'div.paused-constructor-bait',
+            "{ display: none !important; --adguard-hit: 'adguard52%3B52' !important; }",
+        ].join(' ');
+        document.head.appendChild(style);
+
+        const bait = document.createElement('div');
+        bait.className = 'paused-constructor-bait';
+        document.body.appendChild(bait);
+
+        try {
+            const onCssHitsFound = vi.fn();
+            const counter = new CssHitsCounter(onCssHitsFound, { paused: true });
+
+            expect(onCssHitsFound).not.toHaveBeenCalled();
+
+            counter.resume();
+
+            const hits = onCssHitsFound.mock.calls
+                .flatMap((c) => c[0])
+                .filter((stat: any) => stat.filterId === 52);
+            expect(hits).toHaveLength(1);
+
+            counter.stop();
+        } finally {
+            bait.remove();
+            style.remove();
+            restoreFixtureMarkers();
         }
     });
 });

@@ -11,9 +11,15 @@ import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 // `vi.mock` factories are hoisted above top-level `const` declarations, so the
 // mock functions must be created via `vi.hoisted` to be referenceable inside
 // the factories and the test body alike.
-const { matchCosmeticMock, getTabContextMock, appContextMock } = vi.hoisted(() => ({
+const {
+    matchCosmeticMock,
+    getTabContextMock,
+    getFrameContextMock,
+    appContextMock,
+} = vi.hoisted(() => ({
     matchCosmeticMock: vi.fn(),
     getTabContextMock: vi.fn(),
+    getFrameContextMock: vi.fn(),
     // Mutable so individual tests can toggle `collectStats`.
     appContextMock: {
         isStorageInitialized: true,
@@ -31,7 +37,10 @@ vi.mock('../../../../src/lib/mv3/background/engine-api', () => ({
 }));
 
 vi.mock('../../../../src/lib/mv3/tabs/tabs-api', () => ({
-    tabsApi: { getTabContext: getTabContextMock },
+    tabsApi: {
+        getTabContext: getTabContextMock,
+        getFrameContext: getFrameContextMock,
+    },
 }));
 
 vi.mock('../../../../src/lib/common/utils/create-frame-match-query', () => ({
@@ -43,6 +52,8 @@ describe('CosmeticApi.getContentScriptData (MV3) — ExtendedCss removed from co
         vi.restoreAllMocks();
         matchCosmeticMock.mockReset();
         getTabContextMock.mockReset();
+        getFrameContextMock.mockReset();
+        getFrameContextMock.mockReturnValue(undefined);
         matchCosmeticMock.mockReturnValue({});
         getTabContextMock.mockReturnValue({
             info: { url: 'https://example.com/' },
@@ -75,6 +86,8 @@ describe('CosmeticApi.getContentScriptData (MV3) — native CSS hits stats flag'
         vi.restoreAllMocks();
         matchCosmeticMock.mockReset();
         getTabContextMock.mockReset();
+        getFrameContextMock.mockReset();
+        getFrameContextMock.mockReturnValue(undefined);
         matchCosmeticMock.mockReturnValue({});
         getTabContextMock.mockReturnValue({
             info: { url: 'https://example.com/' },

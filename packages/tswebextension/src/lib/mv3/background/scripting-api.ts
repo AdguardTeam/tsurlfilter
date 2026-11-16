@@ -86,7 +86,7 @@ export type ExecuteCombinedScriptParams = ExecuteTarget & {
 /**
  * Target of an ExtendedCss injection.
  */
-type ExecuteExtCssTarget = ExecuteTarget & {
+export type ExecuteExtCssTarget = ExecuteTarget & {
     /**
      * The ID of the document the rules were prepared for, when known.
      */

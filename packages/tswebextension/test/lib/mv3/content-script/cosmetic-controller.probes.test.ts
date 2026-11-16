@@ -30,6 +30,7 @@ describe('short-lived probes', () => {
             const cosmeticData: ContentScriptCosmeticData = {
                 isAppStarted: true,
                 areHitsStatsCollected: true,
+                areNativeHitsStatsCollected: true,
                 extCssRules: [],
                 nativeCssSelectors: null,
             };

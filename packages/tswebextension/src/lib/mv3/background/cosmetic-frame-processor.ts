@@ -139,6 +139,7 @@ export class CosmeticFrameProcessor {
                 {
                     areHitsStatsCollected,
                     // always true for MV3
+                    // since minimum version of mv3 browser already supports :has()
                     isNativeHasSupported: true,
                 },
             ),

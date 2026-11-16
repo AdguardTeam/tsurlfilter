@@ -168,7 +168,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
         vi.mocked(ScriptingApi.executeExtCss).mockRejectedValue(injectionError);
         const infoSpy = vi.spyOn(logger, 'info');
 
-        // Must not throw: applyExtCssRules catches internally and the ExtendedCss
+        // Must not throw: the injection helper catches internally and the ExtendedCss
         // task is not awaited, so no unhandled rejection reaches the worker.
         const result = await CosmeticApi.applyCosmeticRules(1, 0, true);
 
@@ -178,7 +178,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
 
         // Logged once at info level — the same level as the other injection
         // failures in this class — with the context-tagged message and the error.
-        const expectedMessage = '[tsweb.CosmeticApi.applyExtCssRules]:'
+        const expectedMessage = '[tsweb.CosmeticApi.injectExtCssRules]:'
             + ' error occurred during injection into tabId 1 and frameId 0 ';
         await vi.waitFor(() => {
             expect(infoSpy).toHaveBeenCalledTimes(1);
