@@ -206,13 +206,14 @@ function getRawQuoteMode(
  * Find the closing `)` token of a `:matches-path()` argument whose value is a
  * complete regexp literal (`/.../`).
  *
- * The scan stops at the argument's own closing `)`: the first `)` outside a
- * character class explains a parenthesis group inside the regexp. A value is a
- * regexp literal only when its last non-whitespace character before that `)`
- * is `/`. Escapes and character classes are skipped, so a class parenthesis
- * is plain text. A value that is not a complete `/.../` literal (for example
- * `/foo`, which some lists use as plain text) is not a regexp literal, and the
- * caller keeps the balanced-parenthesis scan.
+ * The scan stops at the argument's own closing `)`. An escaped character and
+ * any character inside a character class are plain text, so their parentheses
+ * are not counted. A `)` that closes a group inside the regexp does not end
+ * the argument either. A value is a regexp literal only when its last
+ * non-whitespace character before the closing `)` is `/`. A value that is not
+ * a complete `/.../` literal (for example `/foo`, which some lists use as
+ * plain text) is not a regexp literal, and the caller keeps the
+ * balanced-parenthesis scan.
  *
  * @param types Token type array.
  * @param openParenTi Index of the opening `(` of the argument.
