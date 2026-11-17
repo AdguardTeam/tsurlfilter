@@ -17,12 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+### Security
+
+## [7.0.1] - 2026-11-17
+
+### Fixed
+
 - HTML filtering rules with a right parenthesis inside a regexp character
   class now load, e.g. `$$div:contains(/a[)]b/)` and
   `##^div:has-text(/a[)]b/)` (via [@adguard/tsurlfilter]). uBO `:contains()`
   rules such as `##^div:contains(foo)` are no longer a conversion error.
 
-### Security
+[7.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v7.0.1
 
 ## [7.0.0] - 2026-11-12
 
