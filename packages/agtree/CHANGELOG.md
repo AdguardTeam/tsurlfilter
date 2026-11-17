@@ -17,6 +17,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   argument. It defaults to `false`, so the existing behavior does not
   change. When it is `true`, single and double quotes are emitted as
   `\x27` and `\x22`.
+- `RegExpUtils.parseCoreLibsRegexArgument()` and
+  `RegExpUtils.isCoreLibsRegexArgument()` are added, together with the
+  `RegexLiteralParts` type. The first splits the `:contains()` arguments that
+  CoreLibs reads as normal regular expressions; the second also covers the
+  underflow class, e.g. `/ads`.
 - `collectRegexValueRegions()` and the `RegexValueRegion` type are exported
   from `@adguard/agtree/utils`. They locate the `=/…/` regex value regions of
   a network rule, including the replacement part of `$replace`, without
@@ -111,6 +116,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   same nested-modifier error and now parses as a CSS injection rule. A
   parenthesis inside a quoted argument no longer hides a later `:style()`,
   for example `##div:has-text("Great :("):style(color:red)`.
+- `[tag-content]` values that CoreLibs reads as regular expressions, e.g.
+  `/ads/`, are now escaped when converted to a standalone `:contains()`
+  argument during ADG→ADG conversion, so they still match the literal text.
+  The check mirrors CoreLibs' `:contains()` argument scanner, so values
+  such as `/a++/`, `/a\/`, `///`, and `/ads` are escaped instead of becoming
+  dead or over-broad rules.
 - `RuleParserPipeline.parseRange` now rejects a non-zero `dataOffset` for
   cosmetic rules. Their structural parsers write at fixed offsets, so a
   non-zero offset previously produced a rule with an empty selector and no
