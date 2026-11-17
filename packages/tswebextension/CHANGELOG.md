@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
+  unquotes the argument and matches it case-insensitively, e.g.
+  `##^script:has-text("admc")` becomes `$$script:contains(/admc/i)` (via
+  [@adguard/tsurlfilter]).
+
 ### Security
 
 ## [7.0.1] - 2026-11-17

@@ -1097,6 +1097,13 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/ex.*ple/i)'],
                     },
 
+                    // a regexp-looking argument with a flag other than `i` is
+                    // plain text in uBlock, so it is escaped like any text
+                    {
+                        actual: '##^div:has-text(/ads/g)',
+                        expected: ['$$div:contains(/\\/ads\\/g/i)'],
+                    },
+
                     // `:has-text()` special pseudo-class selector - uBlock unquotes
                     // the argument before it reads a regexp, so a quoted regexp is
                     // still a regexp

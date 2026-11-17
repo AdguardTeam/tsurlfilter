@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   class now load, e.g. `$$div:contains(/a[)]b/)` and
   `##^div:has-text(/a[)]b/)` (via [@adguard/agtree]). uBO `:contains()` rules
   such as `##^div:contains(foo)` are no longer reported as a conversion error.
+- uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
+  unquotes the argument and matches it case-insensitively, e.g.
+  `##^script:has-text("admc")` becomes `$$script:contains(/admc/i)` (via
+  [@adguard/agtree]).
 
 ### Security
 

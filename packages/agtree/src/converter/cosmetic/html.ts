@@ -1910,8 +1910,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @returns Argument for the AdGuard `:contains()` pseudo-class.
      *
-     * @throws If uBlock rejects the argument, i.e. characters follow the
-     * closing quote of a quoted argument.
+     * @throws If uBlock rejects the argument, i.e. it is empty or characters
+     * follow the closing quote of a quoted argument.
      */
     private static convertUboTextArgumentToAdg(name: string, argument: string): string {
         const text = HtmlRuleConverter.unquoteUboTextArgument(argument);
