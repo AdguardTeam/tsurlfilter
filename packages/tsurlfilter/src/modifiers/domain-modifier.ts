@@ -346,12 +346,22 @@ export class DomainModifier {
      *
      * @returns Normalized domain value.
      *
-     * @throws An error if a regexp value does not compile after unescaping.
+     * @throws An error if a slash-delimited value is not a regexp literal,
+     * or if a regexp value does not compile after unescaping.
      */
     private static normalizeDomain(domain: string, separator: DomainSeparator, nonBasicModifier: boolean): string {
         const unescaped = unescapeChar(domain, separator);
 
         if (!SimpleRegex.isRegexPattern(unescaped)) {
+            // A slash-delimited value that is not a valid regexp literal is
+            // not a plain domain either. Reject it: a negated `$domain` value
+            // would otherwise become an empty restriction and turn the rule
+            // on for every site.
+            if (unescaped.startsWith(SimpleRegex.MASK_REGEX_RULE)
+                && unescaped.endsWith(SimpleRegex.MASK_REGEX_RULE)) {
+                throw new SyntaxError(`Invalid regular expression as domain pattern: "${unescaped}"`);
+            }
+
             return unescaped.toLowerCase();
         }
 

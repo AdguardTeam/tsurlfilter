@@ -171,6 +171,17 @@ describe('NetworkRule constructor', () => {
             .toThrow('$denyallow does not support wildcards and regex domains');
     });
 
+    it('rejects slash-delimited $domain and $denyallow values that are not regexp literals', () => {
+        expect(() => createNetworkRule(String.raw`||example.org^$domain=~/a\/`, 0))
+            .toThrow('Invalid regular expression as domain pattern');
+        expect(() => createNetworkRule('||example.org^$domain=~//', 0))
+            .toThrow('Invalid regular expression as domain pattern');
+        expect(() => createNetworkRule(String.raw`@@||example.org^$denyallow=/`, 0))
+            .toThrow('Invalid regular expression as domain pattern');
+        expect(() => createNetworkRule(String.raw`@@||example.org^$denyallow=/a\/`, 0))
+            .toThrow('Invalid regular expression as domain pattern');
+    });
+
     it('works when it handles empty $domain modifier', () => {
         expect(() => {
             createNetworkRule('||example.org^$domain=', 0);

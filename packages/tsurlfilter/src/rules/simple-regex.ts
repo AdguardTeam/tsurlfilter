@@ -649,13 +649,17 @@ export class SimpleRegex {
      * @returns True if the string is a regex pattern, false otherwise.
      */
     public static isRegexPattern(str: string): boolean {
-        if (str.length <= 2 || !str.startsWith('/') || !str.endsWith('/')) {
+        if (str.length <= this.MASK_REGEX_RULE.length * 2
+            || !str.startsWith(this.MASK_REGEX_RULE)
+            || !str.endsWith(this.MASK_REGEX_RULE)) {
             return false;
         }
 
+        const closingMarkerIndex = str.length - this.MASK_REGEX_RULE.length;
+
         // Count the consecutive backslashes before the closing slash
         let backslashes = 0;
-        for (let i = str.length - 2; i >= 0 && str[i] === '\\'; i -= 1) {
+        for (let i = closingMarkerIndex - 1; i >= 0 && str[i] === '\\'; i -= 1) {
             backslashes += 1;
         }
 

@@ -278,6 +278,17 @@ describe('Domain modifier', () => {
             expect(() => new DomainModifier(String.raw`/foo\[bar/`, PIPE_SEPARATOR, true))
                 .toThrow('Invalid regular expression as domain pattern');
         });
+
+        it('rejects slash-delimited values that are not regexp literals', () => {
+            expect(() => new DomainModifier(String.raw`~/a\/`, PIPE_SEPARATOR, true))
+                .toThrow('Invalid regular expression as domain pattern');
+            expect(() => new DomainModifier(String.raw`/a\/`, PIPE_SEPARATOR, true))
+                .toThrow('Invalid regular expression as domain pattern');
+            expect(() => new DomainModifier('~//', PIPE_SEPARATOR, true))
+                .toThrow('Invalid regular expression as domain pattern');
+            expect(() => new DomainModifier('~/', PIPE_SEPARATOR, true))
+                .toThrow('Invalid regular expression as domain pattern');
+        });
     });
 
     describe('DomainModifier.isDomainOrSubdomainOfAny', () => {

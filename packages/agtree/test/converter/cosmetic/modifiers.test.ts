@@ -372,9 +372,18 @@ describe('Cosmetic rule modifiers conversion', () => {
             // A `$domain` value whose closing slash is escaped is kept
             // as-is: it is not a regexp literal
             {
-                actual: String.raw`[$domain=/a\/]example.com##.banner`,
+                actual: String.raw`[$domain=/a\/]##.banner`,
                 expected: [
                     String.raw`/a\/##.banner`,
+                ],
+                shouldConvert: true,
+            },
+            // The reverse `:matches-path()` conversion keeps the escaped
+            // slash too, because the value is not a regexp literal
+            {
+                actual: String.raw`[$path=/a\/]example.com##.foo`,
+                expected: [
+                    String.raw`example.com##:matches-path(/a\/) .foo`,
                 ],
                 shouldConvert: true,
             },
