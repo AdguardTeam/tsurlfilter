@@ -1,6 +1,7 @@
 import { AbstractRemoveParamInjectionService } from '../../../common/abstract-remove-param-injection-service';
 import { patchHistoryForRemoveParam } from '../../../common/content-script/remove-param-main-world';
 import { defaultFilteringLog } from '../../../common/filtering-log';
+import { DocumentLifecycle } from '../../../common/interfaces';
 import { logger } from '../../../common/utils/logger';
 import { type RemoveParamDescriptor } from '../../../common/utils/remove-param-rules';
 import { tabsApi } from '../../tabs/tabs-api';
@@ -24,6 +25,17 @@ export class RemoveParamInjectionService extends AbstractRemoveParamInjectionSer
     private readonly handleHistoryStateUpdated = (
         details: chrome.webNavigation.WebNavigationFramedCallbackDetails,
     ): void => {
+        /**
+         * Same reason as in `WebRequestApi.onCommitted`: a prerendered document
+         * is not the page the user navigated to, and this service logs every
+         * rule it applies, so handling a history update here would report
+         * `$removeparam` rules for a page that may never be shown. The event is
+         * delivered again when the prerendered page is activated.
+         */
+        if (details.documentLifecycle === DocumentLifecycle.Prerender) {
+            return;
+        }
+
         this.onHistoryStateUpdated(details.tabId, details.frameId, details.url);
     };
 

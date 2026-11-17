@@ -40,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$removeparam` regexp values with the `g` or `y` flag are now matched
   statelessly: matching no longer depends on the previously tested URL
   parameter, so all matching parameters are removed.
+- MV3: `$removeparam` rules are no longer applied and reported in the
+  filtering log for a prerendered page that the user has not opened, e.g.
+  when a URL is pasted into the address bar without pressing Enter. The
+  rules are applied and logged when the prerendered page is activated.
 
 ### Security
 

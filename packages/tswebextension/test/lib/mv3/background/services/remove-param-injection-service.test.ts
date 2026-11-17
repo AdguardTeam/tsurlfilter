@@ -12,6 +12,7 @@ import { RemoveParamModifier } from '@adguard/tsurlfilter';
 import { MAIN_FRAME_ID } from '../../../../../src/lib/common/constants';
 import { patchHistoryForRemoveParam } from '../../../../../src/lib/common/content-script/remove-param-main-world';
 import { defaultFilteringLog } from '../../../../../src/lib/common/filtering-log';
+import { DocumentLifecycle } from '../../../../../src/lib/common/interfaces';
 import { getRemoveParamDescriptors } from '../../../../../src/lib/common/utils/remove-param-rules';
 import { ScriptingApi } from '../../../../../src/lib/mv3/background/scripting-api';
 import {
@@ -296,6 +297,53 @@ describe('RemoveParamInjectionService (MV3)', () => {
                     scriptFunction: patchHistoryForRemoveParam,
                 }),
             );
+        });
+
+        it('ignores history updates of a prerendered document', () => {
+            // A prerendered document is not the page the user navigated to, and
+            // this service logs every rule it applies, so a history update of a
+            // prerendered page must not report `$removeparam` (AG-58004).
+            vi.mocked(getRemoveParamDescriptors).mockReturnValue({
+                descriptors: [],
+                rules: [],
+            });
+
+            (removeParamInjectionService as any).handleHistoryStateUpdated({
+                tabId: 1,
+                frameId: MAIN_FRAME_ID,
+                url: 'https://example.com/?utm_source=spec',
+                documentId: 'document-id',
+                documentLifecycle: DocumentLifecycle.Prerender,
+                timeStamp: 123,
+                processId: 1,
+            });
+
+            expect(tabsApi.getTabContext).not.toHaveBeenCalled();
+            expect(ScriptingApi.executeScriptFunc).not.toHaveBeenCalled();
+            expect(defaultFilteringLog.publishEvent).not.toHaveBeenCalled();
+        });
+
+        it('handles history updates of an active document', () => {
+            vi.mocked(tabsApi.getTabContext).mockReturnValue({
+                info: { url: 'https://example.com/' },
+                mainFrameRule: null,
+            } as any);
+            vi.mocked(getRemoveParamDescriptors).mockReturnValue({
+                descriptors: [],
+                rules: [],
+            });
+
+            (removeParamInjectionService as any).handleHistoryStateUpdated({
+                tabId: 1,
+                frameId: MAIN_FRAME_ID,
+                url: 'https://example.com/spa-page',
+                documentId: 'document-id',
+                documentLifecycle: DocumentLifecycle.Active,
+                timeStamp: 123,
+                processId: 1,
+            });
+
+            expect(tabsApi.getTabContext).toHaveBeenCalledWith(1);
         });
 
         it('skips non-main-frame history updates', () => {

@@ -11,6 +11,7 @@ import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
 import { defaultFilteringLog } from '../../../../src/lib/common/filtering-log';
 import { DocumentLifecycle } from '../../../../src/lib/common/interfaces';
 import { ContentType } from '../../../../src/lib/common/request-type';
+import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 import { CosmeticFrameProcessor } from '../../../../src/lib/mv3/background/cosmetic-frame-processor';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
 import { RequestBlockingApi } from '../../../../src/lib/mv3/background/request/request-blocking-api';
@@ -55,8 +56,17 @@ vi.mock('../../../../src/lib/mv3/tabs/tabs-api', () => ({
     tabsApi: {
         createTabContextIfNotExists: vi.fn(),
         setFrameContext: vi.fn(),
+        updateFrameContext: vi.fn(),
+        getTabContext: vi.fn(() => undefined),
         getTabFrameRule: vi.fn(),
         incrementTabBlockedRequestCount: vi.fn(),
+    },
+}));
+
+vi.mock('../../../../src/lib/mv3/background/cosmetic-api', () => ({
+    CosmeticApi: {
+        shouldApplyCosmetics: vi.fn(() => true),
+        applyCosmeticRules: vi.fn(() => Promise.resolve([])),
     },
 }));
 
@@ -328,5 +338,65 @@ describe('WebRequestApi MV3 prefetch handling', () => {
                 tabId: 1,
             }),
         );
+    });
+});
+
+describe('WebRequestApi MV3 onCommitted', () => {
+    const COMMITTED_URL = 'https://example.com/?utm_source=spec';
+
+    /**
+     * Creates navigation details delivered by `webNavigation.onCommitted`.
+     *
+     * @param documentLifecycle Document lifecycle of the committed document.
+     *
+     * @returns Navigation event details.
+     */
+    const createOnCommittedDetails = (
+        documentLifecycle: DocumentLifecycle,
+    ): chrome.webNavigation.WebNavigationFramedCallbackDetails => ({
+        tabId: 1,
+        frameId: 0,
+        frameType: 'outermost_frame' as chrome.webNavigation.WebNavigationFramedCallbackDetails['frameType'],
+        url: COMMITTED_URL,
+        documentId: 'document-id',
+        documentLifecycle,
+        timeStamp: 123,
+        processId: 1,
+    });
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.mocked(CosmeticApi.shouldApplyCosmetics).mockReturnValue(true);
+        vi.mocked(CosmeticApi.applyCosmeticRules).mockResolvedValue([]);
+    });
+
+    it('does not inject $removeparam for a prerendered document', () => {
+        // A prerendered document is loaded speculatively, e.g. while the user
+        // pastes a URL into the address bar, and may never be shown. The
+        // injection service publishes a filtering log event for every applied
+        // rule, so injecting here logs a `$removeparam` rule for a page the
+        // user never opened (AG-58004).
+        (WebRequestApi as any).onCommitted(createOnCommittedDetails(DocumentLifecycle.Prerender));
+
+        expect(vi.mocked(removeParamInjectionService.injectRemoveParam)).not.toHaveBeenCalled();
+    });
+
+    it('injects $removeparam when a prerendered document is activated', () => {
+        // The same document is committed again with the `active` lifecycle
+        // when the prerendered page is shown, so the rules are applied and
+        // logged at that point.
+        (WebRequestApi as any).onCommitted(createOnCommittedDetails(DocumentLifecycle.Active));
+
+        expect(vi.mocked(removeParamInjectionService.injectRemoveParam)).toHaveBeenCalledWith(
+            1,
+            0,
+            COMMITTED_URL,
+        );
+    });
+
+    it('still applies cosmetic rules for a prerendered document', () => {
+        (WebRequestApi as any).onCommitted(createOnCommittedDetails(DocumentLifecycle.Prerender));
+
+        expect(vi.mocked(CosmeticApi.applyCosmeticRules)).toHaveBeenCalledWith(1, 0, true);
     });
 });

@@ -877,6 +877,23 @@ export class WebRequestApi {
             logger.error('[tsweb.WebRequestApi.onCommitted]: error on cosmetics injection: ', e);
         });
 
+        /**
+         * A prerendered document is not the page the user navigated to: it is
+         * loaded speculatively, e.g. while the user is typing or pasting a URL
+         * into the address bar, and it may never be shown. Injecting
+         * `$removeparam` here would also publish a filtering log event for that
+         * never-opened page, because the injection service logs every rule it
+         * applies.
+         *
+         * `onCommitted` is delivered again with the `active` lifecycle when the
+         * prerendered page is actually activated — the `documentId` stays the
+         * same while the lifecycle changes — so the rules are applied and
+         * logged at that point.
+         */
+        if (details.documentLifecycle === DocumentLifecycle.Prerender) {
+            return;
+        }
+
         removeParamInjectionService.injectRemoveParam(tabId, frameId, details.url);
     }
 
