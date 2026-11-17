@@ -405,6 +405,28 @@ export class RuleBadfilter {
     }
 
     /**
+     * Checks whether `badfilterRule` cancels `targetRule` using the permitted
+     * `$domain` lists only.
+     *
+     * Unlike {@link RuleBadfilter.negates}, a regexp that covers a kept entry is
+     * not treated as a full cancellation here, because another badfilter may
+     * remove that entry before the rule is converted.
+     *
+     * @param badfilterRule The rule that carries the `$badfilter` modifier.
+     * @param targetRule The rule to test for negation.
+     *
+     * @returns `true` if the badfilter removes every permitted target entry.
+     */
+    public static negatesFully(badfilterRule: BadfilterTarget, targetRule: BadfilterTarget): boolean {
+        return RuleBadfilter.negationScope(
+            badfilterRule,
+            targetRule,
+            targetRule.permittedDomains,
+            true,
+        ).kind === BadfilterNegationKind.Full;
+    }
+
+    /**
      * Groups `$badfilter` rules by pattern hash.
      *
      * A badfilter rule can only negate a rule with the same pattern, so a rule

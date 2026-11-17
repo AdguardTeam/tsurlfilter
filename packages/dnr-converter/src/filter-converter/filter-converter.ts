@@ -560,7 +560,7 @@ export class FilterConverter {
                 // that covers a kept entry is not safe to skip before the
                 // in-list badfilters are applied.
                 return !fastMatched.some(
-                    (badfilter) => badfilter.negatesBadfilterFully(r),
+                    (badfilter) => RuleBadfilter.negatesFully(badfilter, r),
                 );
             };
         }
