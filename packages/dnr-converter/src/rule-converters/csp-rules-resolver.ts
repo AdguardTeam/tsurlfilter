@@ -1,0 +1,565 @@
+import { DomainUtils } from '@adguard/agtree';
+
+import { OPTION_NAMES } from '../rule/option-names';
+import { type Rule } from '../rule/rule';
+import { RuleDeclarativeValidator } from '../rule/rule-validator';
+import { prepareASCII } from '../utils/string';
+
+import { isCspRule } from './action-kind';
+import { coversCondition, coversNonUrlConditions, isDomainCovered } from './csp-condition-coverage';
+import { RegularRuleConverter } from './regular-rule-converter';
+
+/**
+ * Result of CSP exception resolution.
+ */
+export interface CspRulesResolution {
+    /**
+     * Blocking CSP rules which remain active.
+     */
+    rules: Rule[];
+
+    /**
+     * Request domains to exclude from each remaining blocking rule.
+     */
+    excludedRequestDomains: Map<Rule, string[]>;
+
+    /**
+     * CSP exceptions which cannot be applied safely.
+     */
+    unsupportedExceptions: Rule[];
+}
+
+type CspPairResult = {
+    cancels: boolean;
+    excludedDomain: string | null;
+    safe: boolean;
+};
+
+/**
+ * Resolves CSP exceptions before rules are converted to DNR.
+ */
+export class CspRulesResolver {
+    /**
+     * Error message for an exception which cannot be applied safely.
+     */
+    public static readonly UNRESOLVABLE_EXCEPTION_MESSAGE = 'Network allowlist rule with $csp modifier'
+        + ' cannot be resolved safely';
+
+    /**
+     * Returns why a CSP exception cannot enter resolution.
+     *
+     * An exception which would lose a part of its condition or whose condition
+     * cannot be built at all is not resolved: it is reported as unsupported
+     * instead of silently matching more than written. The reason is returned
+     * instead of a boolean, so the caller reports it as is.
+     *
+     * @param exceptionRule CSP exception rule.
+     *
+     * @returns Reason of the rejection, or `null` if the exception can enter
+     * resolution.
+     */
+    public static getUnprocessableReason(exceptionRule: Rule): string | null {
+        if (!RegularRuleConverter.areDomainConditionsRepresentable(exceptionRule)) {
+            return 'Network allowlist rule with $csp modifier has a domain condition'
+                + ' which cannot be represented in DNR';
+        }
+
+        if (!RegularRuleConverter.areConditionRestrictionsRepresentable(exceptionRule)) {
+            return 'Network allowlist rule with $csp modifier combines an inclusion'
+                + ' with an exclusion in the same condition, which cannot be represented'
+                + ' in DNR';
+        }
+
+        try {
+            return RuleDeclarativeValidator.shouldProcessCspException(exceptionRule)
+                ? null
+                : CspRulesResolver.UNRESOLVABLE_EXCEPTION_MESSAGE;
+        } catch (error) {
+            return error instanceof Error
+                ? error.message
+                : CspRulesResolver.UNRESOLVABLE_EXCEPTION_MESSAGE;
+        }
+    }
+
+    /**
+     * Checks whether an exception applies to the blocking rule's CSP value.
+     *
+     * An exception applies only when it outranks the blocking rule:
+     * `$important` must win over a regular allowlist rule. A valued exception
+     * additionally applies only when both values are equal, while an exception
+     * without a value applies to any value.
+     *
+     * @param exceptionRule CSP exception rule.
+     * @param blockingRule Blocking CSP rule.
+     *
+     * @returns `true` if the exception applies to the blocking rule's value.
+     */
+    private static hasApplicableValue(exceptionRule: Rule, blockingRule: Rule): boolean {
+        if (exceptionRule.priority <= blockingRule.priority) {
+            return false;
+        }
+
+        const exceptionValue = exceptionRule.cspDirective;
+        if (!exceptionValue) {
+            return true;
+        }
+
+        return exceptionValue === blockingRule.cspDirective;
+    }
+
+    /**
+     * Checks whether an exception covers the whole condition of a blocking CSP
+     * rule: the same URL identity and no narrower value in any other field.
+     *
+     * Conditions of domain and header fields are compared by coverage, not by
+     * equality: the exception must not be narrower than the blocking rule in
+     * any of them.
+     *
+     * @param exceptionRule CSP exception rule.
+     * @param blockingRule Blocking CSP rule.
+     *
+     * @returns `true` if the exception covers the blocking rule's condition.
+     */
+    private static hasCoveringCondition(exceptionRule: Rule, blockingRule: Rule): boolean {
+        return coversCondition(
+            RegularRuleConverter.getCondition(exceptionRule),
+            RegularRuleConverter.getCondition(blockingRule),
+        );
+    }
+
+    /**
+     * Checks whether an exception covers a blocking rule's non-URL conditions.
+     *
+     * Conditions of domain and header fields are compared by coverage: the
+     * exception must not be narrower than the blocking rule in any of them.
+     *
+     * @param exceptionRule CSP exception rule.
+     * @param blockingRule Blocking CSP rule.
+     *
+     * @returns `true` if the exception is not narrower than the blocking rule.
+     */
+    private static hasCoveringNonUrlConditions(exceptionRule: Rule, blockingRule: Rule): boolean {
+        return coversNonUrlConditions(
+            RegularRuleConverter.getCondition(exceptionRule),
+            RegularRuleConverter.getCondition(blockingRule),
+        );
+    }
+
+    /**
+     * Normalizes a domain written in a rule pattern.
+     *
+     * The host in a URL is always lowercased, so a `$match-case` rule with an
+     * uppercase domain can never match a request: such a domain is kept as
+     * written instead of being normalized into a matching one.
+     *
+     * @param rule Rule the domain belongs to.
+     * @param domain Domain as written in the pattern.
+     *
+     * @returns Domain to compare, or `null` if it is not a valid domain.
+     */
+    private static normalizeDomain(rule: Rule, domain: string): string | null {
+        // Punycode keeps the case of non-ASCII letters, so the domain is
+        // lowercased before the conversion to compare it with a host from a URL.
+        const normalizedDomain = prepareASCII(domain.toLowerCase());
+
+        // Validation expects the canonical lowercased form.
+        if (!DomainUtils.isValidDomainOrHostname(normalizedDomain)) {
+            return null;
+        }
+
+        return rule.isModifierEnabled(OPTION_NAMES.MATCH_CASE)
+            ? prepareASCII(domain)
+            : normalizedDomain;
+    }
+
+    /**
+     * Checks whether an exception can match a request host.
+     *
+     * The host in a URL is always lowercased, so a `$match-case` exception
+     * whose pattern domain is written with uppercase letters can never match.
+     *
+     * @param exceptionRule CSP exception rule.
+     *
+     * @returns `true` if the exception can match a request host.
+     */
+    private static canMatchRequestHost(exceptionRule: Rule): boolean {
+        if (!exceptionRule.isModifierEnabled(OPTION_NAMES.MATCH_CASE)) {
+            return true;
+        }
+
+        // Every pattern `getDomain()` accepts is also matched by
+        // `getAnchoredDomain()`, with the same result.
+        const domain = CspRulesResolver.getAnchoredDomain(exceptionRule);
+
+        return domain === null || domain === domain.toLowerCase();
+    }
+
+    /**
+     * Extracts a domain from a clean domain-anchored pattern.
+     *
+     * @param rule Rule to inspect.
+     *
+     * @returns ASCII domain or `null` for a non-domain-only pattern.
+     */
+    private static getDomain(rule: Rule): string | null {
+        const match = /^\|\|([^*/^|]+)\^$/.exec(rule.pattern);
+        if (!match) {
+            return null;
+        }
+
+        return CspRulesResolver.normalizeDomain(rule, match[1]);
+    }
+
+    /**
+     * Extracts the domain from an anchored pattern without broad wildcards.
+     *
+     * The pattern may end right after the domain:
+     * `||example.com` matches the same hosts as `||example.com^` plus the hosts
+     * which only start with the domain, so it is at least as wide. The domain
+     * of a pattern without a separator is a prefix rather than a host, so the
+     * coverage of its subdomains is approximate, as for `||example.com/`.
+     *
+     * @param rule Rule to inspect.
+     *
+     * @returns ASCII domain or `null` for an unsupported pattern.
+     */
+    private static getAnchoredDomain(rule: Rule): string | null {
+        const match = /^\|\|([^*/^|]+)(?:\^|\/|$)/.exec(rule.pattern);
+        if (!match) {
+            return null;
+        }
+
+        return CspRulesResolver.normalizeDomain(rule, match[1]);
+    }
+
+    /**
+     * Extracts the domain from an anchored pattern which ends with a separator.
+     *
+     * A pattern without the separator (`||example.com`) also matches the hosts
+     * which only start with the domain, so it is wider than the separated form
+     * and cannot be treated as a plain domain when a full cancellation is
+     * decided.
+     *
+     * @param rule Rule to inspect.
+     *
+     * @returns ASCII domain or `null` for an unterminated or unsupported pattern.
+     */
+    private static getTerminatedDomain(rule: Rule): string | null {
+        const match = /^\|\|([^*/^|]+)(?:\^|\/)/.exec(rule.pattern);
+        if (!match) {
+            return null;
+        }
+
+        return CspRulesResolver.normalizeDomain(rule, match[1]);
+    }
+
+    /**
+     * Extracts the domain from a clean domain pattern of an exception.
+     *
+     * Both `||example.com^` and `||example.com` are accepted: the second form
+     * matches the same hosts plus the hosts which only start with the domain,
+     * so it covers a blocking rule with the separator. A pattern with a path is
+     * narrower, so it is not a domain exception and returns `null`.
+     *
+     * @param rule Rule to inspect.
+     *
+     * @returns ASCII domain or `null` for a non-domain-only pattern.
+     */
+    private static getExceptionDomain(rule: Rule): string | null {
+        const match = /^\|\|([^*/^|]+)\^?$/.exec(rule.pattern);
+        if (!match) {
+            return null;
+        }
+
+        return CspRulesResolver.normalizeDomain(rule, match[1]);
+    }
+
+    /**
+     * Checks whether a domain exception covers a domain blocking rule.
+     *
+     * @param exceptionRule CSP exception rule.
+     * @param blockingRule Blocking CSP rule.
+     *
+     * @returns `true` if the exception covers the blocking rule.
+     */
+    private static coversBlockingDomain(exceptionRule: Rule, blockingRule: Rule): boolean {
+        const exceptionDomain = CspRulesResolver.getExceptionDomain(exceptionRule);
+        const blockingDomain = CspRulesResolver.getTerminatedDomain(blockingRule);
+
+        return exceptionDomain !== null
+            && blockingDomain !== null
+            && isDomainCovered(blockingDomain, exceptionDomain)
+            && CspRulesResolver.hasCoveringNonUrlConditions(exceptionRule, blockingRule);
+    }
+
+    /**
+     * Checks whether an exception covers a blocking rule entirely.
+     *
+     * A pattern-less exception applies to every URL, so it covers any blocking
+     * rule whose non-URL conditions it is not narrower than. A `*`-only
+     * pattern matches every URL as well and is treated the same way. This
+     * handles global blockers narrowed by `$denyallow`/`$domain` that a
+     * pattern-less exception fully covers.
+     *
+     * @param exceptionRule CSP exception rule.
+     * @param blockingRule Blocking CSP rule.
+     *
+     * @returns `true` if the exception covers the whole blocking rule.
+     */
+    private static coversWholeRule(exceptionRule: Rule, blockingRule: Rule): boolean {
+        return (!exceptionRule.pattern || exceptionRule.pattern === '*')
+            && CspRulesResolver.hasCoveringNonUrlConditions(exceptionRule, blockingRule);
+    }
+
+    /**
+     * Checks whether two rules cannot match the same request domain.
+     *
+     * Only terminated domains are compared: a pattern which ends right after
+     * the domain (`||example.com`) matches every host which starts with it, so
+     * it is a host prefix rather than a host and cannot be called disjoint
+     * from `example.company`.
+     *
+     * @param exceptionRule CSP exception rule.
+     * @param blockingRule Blocking CSP rule.
+     *
+     * @returns `true` if the domain scopes are disjoint.
+     */
+    private static areDomainsDisjoint(exceptionRule: Rule, blockingRule: Rule): boolean {
+        const exceptionDomain = CspRulesResolver.getTerminatedDomain(exceptionRule);
+        const blockingDomain = CspRulesResolver.getTerminatedDomain(blockingRule);
+        if (!exceptionDomain || !blockingDomain) {
+            return false;
+        }
+
+        return !isDomainCovered(exceptionDomain, blockingDomain)
+            && !isDomainCovered(blockingDomain, exceptionDomain);
+    }
+
+    /**
+     * Checks whether two rules cannot match the same initiator domain.
+     *
+     * @param exceptionRule CSP exception rule.
+     * @param blockingRule Blocking CSP rule.
+     *
+     * @returns `true` if the initiator domain scopes are disjoint.
+     */
+    private static areInitiatorDomainsDisjoint(exceptionRule: Rule, blockingRule: Rule): boolean {
+        const exceptionDomains = RegularRuleConverter.getCondition(exceptionRule).initiatorDomains;
+        const blockingDomains = RegularRuleConverter.getCondition(blockingRule).initiatorDomains;
+        if (!exceptionDomains || !blockingDomains) {
+            return false;
+        }
+
+        return exceptionDomains.every((exceptionDomain) => (
+            blockingDomains.every((blockingDomain) => (
+                !isDomainCovered(exceptionDomain, blockingDomain)
+                && !isDomainCovered(blockingDomain, exceptionDomain)
+            ))
+        ));
+    }
+
+    /**
+     * Gets a domain which can be excluded from a global blocking rule.
+     *
+     * @param exceptionRule CSP exception rule.
+     * @param blockingRule Blocking CSP rule.
+     *
+     * @returns Domain to exclude or `null` if subtraction is unsupported.
+     */
+    private static getExcludedDomain(exceptionRule: Rule, blockingRule: Rule): string | null {
+        if (!CspRulesResolver.hasCoveringNonUrlConditions(exceptionRule, blockingRule)) {
+            return null;
+        }
+
+        const exceptionDomain = CspRulesResolver.getDomain(exceptionRule);
+        if (!exceptionDomain) {
+            return null;
+        }
+
+        // A domain that can never match a request must not be excluded from a blocker.
+        if (!CspRulesResolver.canMatchRequestHost(exceptionRule)) {
+            return null;
+        }
+
+        if (CspRulesResolver.areDomainsDisjoint(exceptionRule, blockingRule)) {
+            return null;
+        }
+
+        // The additional `main_frame` rule of the blocker matches by the
+        // target host, while an exception with a permitted `$domain` matches
+        // by the initiator only, so the exclusion would drop the policy for
+        // navigations the exception does not cover. The exclusion is set per
+        // source rule, so the base rule does not get it either.
+        //
+        // The overlap is impossible when the target domains and the excluded
+        // domain do not cover each other: the additional rule never matches
+        // the excluded host, and the base rule is guarded by the covering
+        // check above.
+        const targetDomains = RegularRuleConverter.getCondition(blockingRule).initiatorDomains ?? [];
+        const intersectsTargetDomains = targetDomains.some((domain) => (
+            isDomainCovered(domain, exceptionDomain)
+            || isDomainCovered(exceptionDomain, domain)
+        ));
+
+        if (
+            (exceptionRule.permittedDomains?.length ?? 0) > 0
+            && RegularRuleConverter.hasTargetDomainRule(blockingRule)
+            && intersectsTargetDomains
+        ) {
+            return null;
+        }
+
+        return exceptionDomain;
+    }
+
+    /**
+     * Classifies how a CSP exception affects a blocking rule.
+     *
+     * @param exceptionRule CSP exception rule.
+     * @param blockingRule Blocking CSP rule.
+     *
+     * @returns Pair resolution result.
+     */
+    private static classifyPair(exceptionRule: Rule, blockingRule: Rule): CspPairResult {
+        try {
+            return CspRulesResolver.classifyProcessablePair(exceptionRule, blockingRule);
+        } catch {
+            // A condition which cannot be built, for example a domain with a
+            // label punycode cannot encode, must not fail the whole
+            // conversion: the pair is left untouched and the exception is
+            // reported as unsupported by `resolve()`.
+            return {
+                cancels: false,
+                excludedDomain: null,
+                safe: false,
+            };
+        }
+    }
+
+    /**
+     * Classifies a pair of rules whose conditions can be built.
+     *
+     * @param exceptionRule CSP exception rule.
+     * @param blockingRule Blocking CSP rule.
+     *
+     * @returns Pair resolution result.
+     */
+    private static classifyProcessablePair(exceptionRule: Rule, blockingRule: Rule): CspPairResult {
+        const hasApplicableValue = CspRulesResolver.hasApplicableValue(exceptionRule, blockingRule);
+        const cancels = hasApplicableValue
+            && (
+                CspRulesResolver.hasCoveringCondition(exceptionRule, blockingRule)
+                || CspRulesResolver.coversBlockingDomain(exceptionRule, blockingRule)
+                || CspRulesResolver.coversWholeRule(exceptionRule, blockingRule)
+            );
+        const excludedDomain = hasApplicableValue && !cancels
+            ? CspRulesResolver.getExcludedDomain(exceptionRule, blockingRule)
+            : null;
+
+        return {
+            cancels,
+            excludedDomain,
+            safe: !hasApplicableValue
+                || cancels
+                || excludedDomain !== null
+                || !CspRulesResolver.canMatchRequestHost(exceptionRule)
+                || CspRulesResolver.areDomainsDisjoint(exceptionRule, blockingRule)
+                || CspRulesResolver.areInitiatorDomainsDisjoint(exceptionRule, blockingRule),
+        };
+    }
+
+    /**
+     * Creates a cached CSP pair result getter.
+     *
+     * @returns Pair result getter scoped to one resolution.
+     */
+    private static createPairResultGetter(): (exceptionRule: Rule, blockingRule: Rule) => CspPairResult {
+        const pairResults = new Map<Rule, Map<Rule, CspPairResult>>();
+
+        return (exceptionRule: Rule, blockingRule: Rule): CspPairResult => {
+            let resultsForException = pairResults.get(exceptionRule);
+            if (!resultsForException) {
+                resultsForException = new Map();
+                pairResults.set(exceptionRule, resultsForException);
+            }
+
+            let result = resultsForException.get(blockingRule);
+            if (!result) {
+                result = CspRulesResolver.classifyPair(exceptionRule, blockingRule);
+                resultsForException.set(blockingRule, result);
+            }
+
+            return result;
+        };
+    }
+
+    /**
+     * Resolves CSP exceptions against blocking rules.
+     *
+     * Each exception is applied per pair with a blocking rule: a pair cancels
+     * the blocking rule when the exception fully covers it, or contributes an
+     * excluded request domain when the exception is a clean domain. An
+     * exception is never required to be safe against every blocking rule; an
+     * unsafe pair simply leaves its blocking rule untouched while other pairs
+     * of the same exception still apply.
+     *
+     * @param rules CSP rules from active sources.
+     *
+     * @returns Remaining rules and exception resolution details.
+     */
+    public static resolve(rules: Rule[]): CspRulesResolution {
+        const cspRules = rules.filter(isCspRule);
+        const blockingRules = cspRules.filter((rule) => !rule.allowlist);
+        const exceptionRules = cspRules.filter((rule) => rule.allowlist);
+        const processableExceptions = exceptionRules.filter((exceptionRule) => (
+            CspRulesResolver.getUnprocessableReason(exceptionRule) === null
+        ));
+        const getPairResult = CspRulesResolver.createPairResultGetter();
+        const appliedExceptions = new Set<Rule>();
+        const excludedRequestDomains = new Map<Rule, string[]>();
+
+        const remainingRules = blockingRules.filter((blockingRule) => {
+            let cancelled = false;
+            const excludedDomains: string[] = [];
+
+            processableExceptions.forEach((exceptionRule) => {
+                const pair = getPairResult(exceptionRule, blockingRule);
+                if (pair.cancels) {
+                    cancelled = true;
+                    appliedExceptions.add(exceptionRule);
+                } else if (pair.excludedDomain !== null) {
+                    excludedDomains.push(pair.excludedDomain);
+                    appliedExceptions.add(exceptionRule);
+                }
+            });
+
+            if (cancelled) {
+                return false;
+            }
+
+            if (excludedDomains.length > 0) {
+                excludedRequestDomains.set(blockingRule, Array.from(new Set(excludedDomains)));
+            }
+
+            return true;
+        });
+
+        const unsupportedExceptions = exceptionRules.filter((exceptionRule) => {
+            if (!processableExceptions.includes(exceptionRule)) {
+                return true;
+            }
+
+            if (appliedExceptions.has(exceptionRule)) {
+                return false;
+            }
+
+            return blockingRules.some((blockingRule) => !getPairResult(exceptionRule, blockingRule).safe);
+        });
+
+        return {
+            rules: remainingRules,
+            excludedRequestDomains,
+            unsupportedExceptions,
+        };
+    }
+}

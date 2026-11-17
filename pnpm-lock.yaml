@@ -1727,6 +1727,9 @@ importers:
       '@adguard/assistant':
         specifier: 'catalog:'
         version: 4.4.12
+      '@adguard/css-tokenizer':
+        specifier: workspace:^
+        version: link:../css-tokenizer
       '@adguard/dnr-converter':
         specifier: workspace:^
         version: link:../dnr-converter

@@ -214,6 +214,20 @@ describe('FilterList', () => {
         expect(list.getContent()).toBe(badRule);
     });
 
+    it('should convert large [min-length]/[max-length] values without a conversion error', () => {
+        // A real AdGuard Base filter rule: values above the PCRE2 quantifier
+        // limit (65535) must still convert. Otherwise FilterList.prepare()
+        // keeps the raw line, tsurlfilter treats the attributes as literal
+        // DOM attributes, and the rule becomes a no-op in the engine.
+        const rule = 'meteologix.com$$script[tag-content="Flags."][min-length="20000"][max-length="300000"]';
+        const list = new FilterList(rule);
+
+        expect(list.getConversionErrors()).toHaveLength(0);
+        expect(list.getContent()).toBe(
+            'meteologix.com$$script:contains(Flags.):contains(/^(?=.{20000,300000}$).*/s)',
+        );
+    });
+
     it('should propagate filterId to every FilterListConversionError', () => {
         const FILTER_ID = 42;
         const list = new FilterList(

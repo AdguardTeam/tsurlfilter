@@ -8,6 +8,7 @@ import {
 
 import { FilteringEventType } from '../../../../src/lib/common/filtering-log';
 import { MESSAGE_HANDLER_NAME, MessageType } from '../../../../src/lib/common/message-constants';
+import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { MessagesApi } from '../../../../src/lib/mv2/background/messages-api';
 
 vi.mock('../../../../src/lib/mv2/background/api', () => ({
@@ -18,6 +19,16 @@ vi.mock('../../../../src/lib/mv2/background/api', () => ({
     cookieFiltering: {},
 }));
 
+vi.mock('../../../../src/lib/mv2/background/app-context', () => ({
+    appContext: {
+        configuration: {
+            settings: {
+                collectStats: true,
+            },
+        },
+    },
+}));
+
 vi.mock('../../../../src/lib/mv2/background/assistant', () => ({
     Assistant: {
         onCreateRule: { dispatch: vi.fn() },
@@ -25,7 +36,11 @@ vi.mock('../../../../src/lib/mv2/background/assistant', () => ({
 }));
 
 vi.mock('../../../../src/lib/mv2/background/cosmetic-api', () => ({
-    CosmeticApi: {},
+    CosmeticApi: {
+        getContentScriptData: vi.fn(),
+        reapplyMarkedCosmeticData: vi.fn(),
+        waitForPendingCssInjection: vi.fn().mockResolvedValue(undefined),
+    },
 }));
 
 vi.mock('../../../../src/lib/mv2/background/request', () => ({
@@ -61,6 +76,173 @@ const createSender = (frameId?: number, url?: string): any => ({
 });
 
 describe('MessagesApi', () => {
+    describe('handleGetCollectHitStats', () => {
+        it('returns the configured collectStats value', async () => {
+            const tabsApi = {
+                createTabContextIfNotExists: vi.fn(),
+                updateTabMainFrameRule: vi.fn(),
+                getTabContext: vi.fn().mockReturnValue({
+                    info: { url: TAB_URL },
+                    mainFrameRule: { isFilteringDisabled: () => false },
+                }),
+            };
+            const messagesApi = new MessagesApi(tabsApi as any, {} as any);
+
+            const result = await messagesApi.handleMessage({
+                handlerName: MESSAGE_HANDLER_NAME,
+                type: MessageType.GetCollectHitStats,
+                payload: null,
+            }, {
+                tab: { id: TAB_ID, url: TAB_URL },
+            } as any);
+
+            expect(tabsApi.createTabContextIfNotExists).toHaveBeenCalledWith(TAB_ID, TAB_URL);
+            // The navigation handler owns mainFrameRule. Rematching it from
+            // the tab URL can restore a stale allowlist rule.
+            expect(tabsApi.updateTabMainFrameRule).not.toHaveBeenCalled();
+            expect(result).toBe(true);
+        });
+
+        it('returns null when the tab context is unknown', async () => {
+            const tabsApi = {
+                createTabContextIfNotExists: vi.fn(),
+                updateTabMainFrameRule: vi.fn(),
+                getTabContext: vi.fn().mockReturnValue(undefined),
+            };
+            const messagesApi = new MessagesApi(tabsApi as any, {} as any);
+
+            const result = await messagesApi.handleMessage({
+                handlerName: MESSAGE_HANDLER_NAME,
+                type: MessageType.GetCollectHitStats,
+                payload: null,
+            }, {
+                tab: { id: TAB_ID, url: TAB_URL },
+            } as any);
+
+            expect(result).toBeNull();
+        });
+
+        it('returns false for an allowlisted tab', async () => {
+            const tabsApi = {
+                createTabContextIfNotExists: vi.fn(),
+                updateTabMainFrameRule: vi.fn(),
+                getTabContext: vi.fn().mockReturnValue({
+                    info: { url: TAB_URL },
+                    mainFrameRule: { isFilteringDisabled: () => true },
+                }),
+            };
+            const messagesApi = new MessagesApi(tabsApi as any, {} as any);
+
+            const result = await messagesApi.handleMessage({
+                handlerName: MESSAGE_HANDLER_NAME,
+                type: MessageType.GetCollectHitStats,
+                payload: null,
+            }, createSender(0));
+
+            expect(result).toBe(false);
+        });
+    });
+
+    describe('handleGetCosmeticData', () => {
+        beforeEach(() => {
+            vi.mocked(CosmeticApi.getContentScriptData).mockReset();
+            vi.mocked(CosmeticApi.reapplyMarkedCosmeticData).mockReset();
+            vi.mocked(CosmeticApi.waitForPendingCssInjection).mockReset();
+        });
+
+        it('does not rematch the main frame rule from the stale tab url', async () => {
+            const tabsApi = {
+                createTabContextIfNotExists: vi.fn(),
+                updateTabMainFrameRule: vi.fn(),
+            };
+            const data = {
+                isAppStarted: true,
+                areHitsStatsCollected: true,
+                areNativeHitsStatsCollected: true,
+                extCssRules: null,
+                nativeCssSelectors: null,
+            };
+            vi.mocked(CosmeticApi.getContentScriptData).mockReturnValue(data);
+            let resolveWait!: () => void;
+            const waitPromise = new Promise<void>((resolve) => {
+                resolveWait = resolve;
+            });
+            vi.mocked(CosmeticApi.waitForPendingCssInjection).mockReturnValue(waitPromise);
+            const messagesApi = new MessagesApi(tabsApi as any, {} as any);
+
+            const resultPromise = messagesApi.handleMessage({
+                handlerName: MESSAGE_HANDLER_NAME,
+                type: MessageType.GetCosmeticData,
+                payload: { documentUrl: TAB_URL },
+            }, {
+                tab: { id: TAB_ID, url: TAB_URL },
+                frameId: 0,
+            } as any);
+
+            await Promise.resolve();
+
+            expect(CosmeticApi.getContentScriptData).not.toHaveBeenCalled();
+            expect(CosmeticApi.waitForPendingCssInjection).toHaveBeenCalledWith(TAB_ID, 0);
+
+            resolveWait();
+            const result = await resultPromise;
+
+            expect(result).toBe(data);
+            expect(tabsApi.createTabContextIfNotExists).toHaveBeenCalledWith(TAB_ID, TAB_URL);
+            expect(tabsApi.updateTabMainFrameRule).not.toHaveBeenCalled();
+            expect(CosmeticApi.getContentScriptData).toHaveBeenCalledWith(TAB_URL, TAB_ID, 0);
+        });
+
+        it('waits for the pending injection before reapply', async () => {
+            const tabsApi = {
+                createTabContextIfNotExists: vi.fn(),
+                updateTabMainFrameRule: vi.fn(),
+            };
+            const data = {
+                isAppStarted: true,
+                areHitsStatsCollected: true,
+                areNativeHitsStatsCollected: true,
+                extCssRules: null,
+                nativeCssSelectors: null,
+            };
+            vi.mocked(CosmeticApi.reapplyMarkedCosmeticData).mockResolvedValue(data);
+            let resolveWait!: () => void;
+            const waitPromise = new Promise<void>((resolve) => {
+                resolveWait = resolve;
+            });
+            vi.mocked(CosmeticApi.waitForPendingCssInjection).mockReturnValue(waitPromise);
+            const messagesApi = new MessagesApi(tabsApi as any, {} as any);
+
+            const resultPromise = messagesApi.handleMessage({
+                handlerName: MESSAGE_HANDLER_NAME,
+                type: MessageType.GetCosmeticData,
+                payload: {
+                    documentUrl: TAB_URL,
+                    reapplyHits: true,
+                },
+            }, {
+                tab: { id: TAB_ID, url: TAB_URL },
+                frameId: 0,
+            } as any);
+
+            await Promise.resolve();
+
+            expect(CosmeticApi.reapplyMarkedCosmeticData).not.toHaveBeenCalled();
+            expect(CosmeticApi.waitForPendingCssInjection).toHaveBeenCalledWith(TAB_ID, 0);
+
+            resolveWait();
+            const result = await resultPromise;
+
+            expect(result).toBe(data);
+            expect(CosmeticApi.reapplyMarkedCosmeticData).toHaveBeenCalledWith(
+                TAB_URL,
+                TAB_ID,
+                0,
+            );
+            expect(tabsApi.updateTabMainFrameRule).not.toHaveBeenCalled();
+        });
+    });
+
     describe('handleSaveCssHitsStats', () => {
         let publishEvent: ReturnType<typeof vi.fn>;
         let getTabFrame: ReturnType<typeof vi.fn>;

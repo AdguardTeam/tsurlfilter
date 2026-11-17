@@ -64,7 +64,12 @@ export function patchHistoryForRemoveParam(
 
     /**
      * Parses a modifier value string into a RegExp, following the same logic
-     * as `RemoveParamModifier` in `@adguard/tsurlfilter`.
+     * as `RemoveParamModifier` -> `SimpleRegex.patternFromString` in
+     * `@adguard/tsurlfilter`.
+     *
+     * Throws when `new RegExp()` rejects the pattern or the flags. The
+     * descriptor parser catches the error per descriptor, so one invalid value
+     * cannot disable the patch or the other descriptors.
      *
      * @param value The modifier value.
      *
@@ -85,18 +90,41 @@ export function patchHistoryForRemoveParam(
         }
 
         if (rawValue.startsWith('/')) {
-            // Regex literal: /pattern/flags
-            const lastSlash = rawValue.lastIndexOf('/');
-            if (lastSlash > 0) {
-                const pattern = rawValue.substring(1, lastSlash);
-                const flags = rawValue.substring(lastSlash + 1);
-                return { regex: new RegExp(pattern, flags), isNegated };
+            // Regex literal: /pattern/flags. Mirrors
+            // `RemoveParamModifier` -> `SimpleRegex.patternFromString`:
+            // split on every unescaped slash, use the first part as the
+            // pattern and the second part as the flags. A regexp literal
+            // with more delimiters keeps only the flags between the first
+            // and second delimiters, as the engine does. `SimpleRegex`
+            // `.fromLiteral` is a different parser and is not used for
+            // `$removeparam`.
+            //
+            // This is a local copy because MV2 serializes this function via
+            // `Function.prototype.toString()`, so it must not reference
+            // module-level helpers.
+            const body = rawValue.substring(1);
+            const parts: string[] = [];
+            let part = '';
+
+            for (let i = 0; i < body.length; i += 1) {
+                const char = body.charAt(i);
+                if (char === '/' && (i === 0 || body.charAt(i - 1) !== '\\')) {
+                    parts.push(part);
+                    part = '';
+                    continue;
+                }
+                part += char;
             }
-            // Fallback: treat as literal
-            return {
-                regex: new RegExp(`^${escapeRegex(rawValue)}=[^&#]*$`),
-                isNegated,
-            };
+            parts.push(part);
+
+            // Unescape `\/` in the pattern body, like the engine does.
+            const pattern = parts[0].replace(/\\\//g, '/');
+            let flags = parts[1] || '';
+            if (flags.indexOf('g') < 0) {
+                flags += 'g';
+            }
+
+            return { regex: new RegExp(pattern, flags), isNegated };
         }
 
         return {
@@ -105,14 +133,32 @@ export function patchHistoryForRemoveParam(
         };
     }
 
-    let descriptors: Descriptor[] | null = rawDescriptors.map((d: RemoveParamDescriptor) => {
-        const { regex, isNegated } = parseValue(d.value);
-        return {
-            valueRegExp: regex,
-            isAllowlist: d.isAllowlist,
-            isNegated,
-        };
-    });
+    /**
+     * Parses serialized descriptors and skips every invalid one.
+     *
+     * @param rawDescs Serialized descriptors from the background.
+     *
+     * @returns Parsed descriptors that compiled successfully.
+     */
+    function parseDescriptors(rawDescs: RemoveParamDescriptor[]): Descriptor[] {
+        const parsed: Descriptor[] = [];
+        for (const rawDesc of rawDescs) {
+            try {
+                const { regex, isNegated } = parseValue(rawDesc.value);
+                parsed.push({
+                    valueRegExp: regex,
+                    isAllowlist: rawDesc.isAllowlist,
+                    isNegated,
+                });
+            } catch {
+                // Skip the descriptor: one invalid value must not disable
+                // the remaining descriptors.
+            }
+        }
+        return parsed;
+    }
+
+    let descriptors: Descriptor[] | null = parseDescriptors(rawDescriptors);
 
     const proto = History.prototype;
     const pushStateDesc = Object.getOwnPropertyDescriptor(proto, 'pushState');
@@ -140,6 +186,23 @@ export function patchHistoryForRemoveParam(
             return url;
         }
 
+        /**
+         * Tests a string against the regexp without depending on the previous
+         * match. The `g` and `y` flags make `test()` start at `lastIndex` and
+         * update it: a match moves it forward, a miss resets it to 0.
+         * Resetting it before every call keeps matching stateless while
+         * preserving the rule's flags and, therefore, the same matching
+         * semantics as the tsurlfilter engine.
+         *
+         * @param str The string to test.
+         *
+         * @returns True if the regexp matches the string.
+         */
+        const matches = (str: string): boolean => {
+            regExp.lastIndex = 0;
+            return regExp.test(str);
+        };
+
         let hashPart = '';
         const hashIndex = url.indexOf('#');
         let urlWithoutHash = url;
@@ -159,13 +222,13 @@ export function patchHistoryForRemoveParam(
                     if (!x) {
                         return false;
                     }
-                    const match = regExp.test(x);
+                    const match = matches(x);
                     if (match) {
                         return true;
                     }
                     try {
                         const decoded = decodeURIComponent(x);
-                        return regExp.test(decoded);
+                        return matches(decoded);
                     } catch {
                         return false;
                     }
@@ -176,12 +239,12 @@ export function patchHistoryForRemoveParam(
                 .split('&')
                 .filter((x) => {
                     const test = x.includes('=') ? x : `${x}=`;
-                    if (regExp.test(test)) {
+                    if (matches(test)) {
                         return false;
                     }
                     try {
                         const decoded = decodeURIComponent(test);
-                        return !regExp.test(decoded);
+                        return !matches(decoded);
                     } catch {
                         return true;
                     }
@@ -193,14 +256,12 @@ export function patchHistoryForRemoveParam(
             return url;
         }
 
-        // Normalize: remove leading '&' and empty '=' entries
+        // Normalize: drop empty entries and nameless ones (`=2`);
+        // value-less entries (`noval`, `a=`) are not dropped here.
         modifiedQuery = modifiedQuery
             .split('&')
             .filter((x) => x && !x.startsWith('='))
             .join('&');
-        while (modifiedQuery.charAt(0) === '&') {
-            modifiedQuery = modifiedQuery.slice(1);
-        }
 
         let result = pathPart;
         if (modifiedQuery) {
@@ -364,14 +425,7 @@ export function patchHistoryForRemoveParam(
                 return;
             }
 
-            descriptors = rawDescs.map((d: RemoveParamDescriptor) => {
-                const { regex, isNegated } = parseValue(d.value);
-                return {
-                    valueRegExp: regex,
-                    isAllowlist: d.isAllowlist,
-                    isNegated,
-                };
-            });
+            descriptors = parseDescriptors(rawDescs);
 
             // Apply newly loaded descriptors to the current URL immediately.
             // This handles the case where the page navigated (via pushState)

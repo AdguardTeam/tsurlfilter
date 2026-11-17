@@ -1,2 +1,5 @@
-export { UnavailableFilterSourceError } from './unavailable-filter-source-error';
+export {
+    isUnavailableFilterSourceError,
+    UnavailableFilterSourceError,
+} from './unavailable-filter-source-error';
 export { UnavailableRulesetSourceError } from './unavailable-ruleset-source-error';

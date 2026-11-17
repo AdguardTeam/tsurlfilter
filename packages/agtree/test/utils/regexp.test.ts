@@ -66,6 +66,102 @@ describe('RegExpUtils', () => {
         });
     });
 
+    describe('parseCoreLibsRegexArgument', () => {
+        test.each([
+            // Not normal CoreLibs regular expressions: too short, no leading
+            // slash, no closing slash, an uppercase flag, an empty pattern, or
+            // the underflow class (only lowercase letters after the leading
+            // slash). See isCoreLibsRegexArgument for the underflow class.
+            { actual: '', expected: null },
+            { actual: '/', expected: null },
+            { actual: '//', expected: null },
+            { actual: 'plain string', expected: null },
+            { actual: ' /test/', expected: null },
+            { actual: '/ads', expected: null },
+            { actual: '/ab', expected: null },
+            { actual: '/1ab', expected: null },
+            // CoreLibs strips trailing lowercase letters only
+            { actual: '/ads/I', expected: null },
+            // The stripped flags leave an empty pattern, so the argument is
+            // literal text
+            { actual: '//x', expected: null },
+            { actual: '//abc', expected: null },
+            // Regular expressions
+            { actual: '/test/', expected: { pattern: 'test', flags: '' } },
+            { actual: '/a++/', expected: { pattern: 'a++', flags: '' } },
+            { actual: '/[/]/', expected: { pattern: '[/]', flags: '' } },
+            // CoreLibs takes the last slash as the delimiter and ignores
+            // escapes and character classes, unlike a JavaScript literal
+            // scanner
+            {
+                actual: String.raw`/a\/`,
+                expected: { pattern: 'a\\', flags: '' },
+            },
+            {
+                actual: '/a[b/',
+                expected: { pattern: 'a[b', flags: '' },
+            },
+            // `///` is the regular expression `/`
+            { actual: '///', expected: { pattern: '/', flags: '' } },
+            // Every trailing lowercase letter is a flag, even if CoreLibs
+            // does not honor it
+            { actual: '/ads/i', expected: { pattern: 'ads', flags: 'i' } },
+            { actual: '/a/bc', expected: { pattern: 'a', flags: 'bc' } },
+            { actual: '/ads/', expected: { pattern: 'ads', flags: '' } },
+            // Slashes inside the pattern are part of the pattern
+            { actual: '/a/b/c/', expected: { pattern: 'a/b/c', flags: '' } },
+            // Escapes are ignored, so the pattern keeps them
+            {
+                actual: String.raw`/a\\/`,
+                expected: { pattern: String.raw`a\\`, flags: '' },
+            },
+            {
+                actual: String.raw`/a[\\]b/`,
+                expected: { pattern: String.raw`a[\\]b`, flags: '' },
+            },
+        ])('parseCoreLibsRegexArgument should parse \'$actual\'', ({ actual, expected }) => {
+            expect(RegExpUtils.parseCoreLibsRegexArgument(actual)).toEqual(expected);
+        });
+    });
+
+    describe('isCoreLibsRegexArgument', () => {
+        test.each([
+            // Not regular expressions for CoreLibs
+            { actual: '', expected: false },
+            { actual: '/', expected: false },
+            // CoreLibs requires an argument longer than two characters, so
+            // `/a` is literal text
+            { actual: '/a', expected: false },
+            { actual: '//', expected: false },
+            { actual: 'plain string', expected: false },
+            { actual: ' /test/', expected: false },
+            // An uppercase flag is not stripped, and the last character is not
+            // a slash
+            { actual: '/ads/I', expected: false },
+            // Not only lowercase letters after the leading slash: the last
+            // character before the stripped flags is not a slash
+            { actual: '/1ab', expected: false },
+            // The stripped flags leave an empty pattern
+            { actual: '//a', expected: false },
+            { actual: '//abc', expected: false },
+            // Normal CoreLibs regular expressions
+            { actual: '/test/', expected: true },
+            { actual: '/a++/', expected: true },
+            { actual: '/ads/', expected: true },
+            { actual: '/ads/i', expected: true },
+            { actual: '/a/b/c/', expected: true },
+            { actual: '///', expected: true },
+            { actual: String.raw`/a\/`, expected: true },
+            { actual: '/a[b/', expected: true },
+            // The underflow class: `/` followed only by lowercase letters.
+            // CoreLibs strips all of them and takes the regexp branch.
+            { actual: '/ads', expected: true },
+            { actual: '/ab', expected: true },
+        ])('isCoreLibsRegexArgument should return \'$expected\' for \'$actual\'', ({ actual, expected }) => {
+            expect(RegExpUtils.isCoreLibsRegexArgument(actual)).toBe(expected);
+        });
+    });
+
     describe('negateRegexPattern', () => {
         test.each([
             {
@@ -204,6 +300,26 @@ describe('RegExpUtils', () => {
                     min: null,
                     max: null,
                     expected: '/^(?=.{0,}$).*/s',
+                },
+                {
+                    min: '65535',
+                    max: null,
+                    expected: '/^(?=.{65535,}$).*/s',
+                },
+                {
+                    min: null,
+                    max: '65535',
+                    expected: '/^(?=.{0,65535}$).*/s',
+                },
+                {
+                    min: '100000',
+                    max: null,
+                    expected: '/^(?=.{100000,}$).*/s',
+                },
+                {
+                    min: null,
+                    max: '300000',
+                    expected: '/^(?=.{0,300000}$).*/s',
                 },
             ])('should return correct length regex for min: $min and max: $max', ({ min, max, expected }) => {
                 expect(RegExpUtils.getLengthRegexp(min, max)).toBe(expected);
@@ -354,6 +470,72 @@ describe('RegExpUtils', () => {
             },
         ])("should return '$expected' for glob '$actual'", ({ actual, expected }) => {
             expect(RegExpUtils.globToRegExp(actual)).toBe(expected);
+        });
+    });
+
+    describe('globToUboRegExp', () => {
+        test.each([
+            {
+                actual: '*example*text*',
+                expected: '/^[\\s\\S]*example[\\s\\S]*text[\\s\\S]*$/',
+            },
+            {
+                // The escaped literal dot stays as-is
+                actual: '*example*$*.com',
+                expected: '/^[\\s\\S]*example[\\s\\S]*\\$[\\s\\S]*\\.com$/',
+            },
+            {
+                actual: '*[test]*{test}*',
+                expected: '/^[\\s\\S]*\\[test\\][\\s\\S]*\\{test\\}[\\s\\S]*$/',
+            },
+            {
+                // Without the `extended` option `?` is a literal question mark
+                actual: '*a?b*',
+                expected: '/^[\\s\\S]*a\\?b[\\s\\S]*$/',
+            },
+            {
+                // Quotes are emitted as hex escapes, because uBlock parses the
+                // `:has-text()` argument with CSS-tree before it reads the regexp
+                actual: "*it's*",
+                expected: '/^[\\s\\S]*it\\x27s[\\s\\S]*$/',
+            },
+            {
+                actual: '*a"b*',
+                expected: '/^[\\s\\S]*a\\x22b[\\s\\S]*$/',
+            },
+            {
+                // A quote escaped by the rule author is kept as-is: CSS-tree
+                // reads `\'` as an escaped quote, not a string delimiter
+                actual: String.raw`*a\'b*`,
+                expected: String.raw`/^[\s\S]*a\'b[\s\S]*$/`,
+            },
+        ])("should return '$expected' for glob '$actual'", ({ actual, expected }) => {
+            expect(RegExpUtils.globToUboRegExp(actual)).toBe(expected);
+        });
+
+        test('should produce a regexp that matches quoted text', () => {
+            const apostrophe = new RegExp(RegExpUtils.globToUboRegExp("*it's*").slice(1, -1));
+            expect(apostrophe.test("prefix it's suffix")).toBe(true);
+
+            const doubleQuote = new RegExp(RegExpUtils.globToUboRegExp('*a"b*').slice(1, -1));
+            expect(doubleQuote.test('prefix a"b suffix')).toBe(true);
+
+            const escapedApostrophe = new RegExp(
+                RegExpUtils.globToUboRegExp(String.raw`*a\'b*`).slice(1, -1),
+            );
+            expect(escapedApostrophe.test("prefix a'b suffix")).toBe(true);
+        });
+
+        test('should not emit the `s` or `i` flag', () => {
+            const regexpText = RegExpUtils.globToUboRegExp('*ads*');
+
+            expect(regexpText.endsWith('/')).toBe(true);
+            expect(regexpText.endsWith('/s')).toBe(false);
+            expect(regexpText.endsWith('/i')).toBe(false);
+
+            // The generated regexp is valid and matches across lines
+            const source = regexpText.slice(1, -1);
+            expect(new RegExp(source).test('line1\nads\nline2')).toBe(true);
         });
     });
 });

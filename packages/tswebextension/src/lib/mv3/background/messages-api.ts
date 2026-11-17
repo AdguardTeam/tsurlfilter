@@ -3,6 +3,7 @@ import type browser from 'webextension-polyfill';
 
 import { NetworkRuleOption } from '@adguard/tsurlfilter';
 
+import { isCollectStatsEnabledForDocument } from '../../common/collect-hit-stats';
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { type CookieRule } from '../../common/content-script/cookie-controller';
 import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
@@ -115,12 +116,48 @@ export class MessagesApi {
             case MessageType.SaveCssHitsStats: {
                 return this.handleSaveCssHitsStats(sender, message.payload);
             }
+            case MessageType.GetCollectHitStats: {
+                return this.handleGetCollectHitStats(sender);
+            }
             default: {
                 logger.error('[tsweb.MessagesApi.handleMessage]: did not found handler for message');
             }
         }
 
         return undefined;
+    }
+
+    /**
+     * Handles a request for the current hit stats collection state.
+     *
+     * @param sender Message sender.
+     *
+     * @returns Whether CSS hits must be collected for the sender frame, or
+     * `null` if the app is not configured yet.
+     */
+    private handleGetCollectHitStats(
+        sender: browser.Runtime.MessageSender,
+    ): boolean | null {
+        const collectStats = appContext.configuration?.settings.collectStats;
+        if (collectStats === undefined) {
+            return null;
+        }
+
+        const tabId = sender.tab?.id;
+        if (typeof tabId !== 'number') {
+            return null;
+        }
+
+        if (sender.tab?.url) {
+            this.tabsApi.createTabContextIfNotExists(tabId, sender.tab.url);
+        }
+
+        const tabContext = this.tabsApi.getTabContext(tabId);
+        if (!tabContext) {
+            return null;
+        }
+
+        return isCollectStatsEnabledForDocument(collectStats, tabContext.mainFrameRule);
     }
 
     /**
@@ -131,10 +168,10 @@ export class MessagesApi {
      *
      * @returns Content script data for applying cosmetic rules or null if no data.
      */
-    private handleGetCosmeticData(
+    private async handleGetCosmeticData(
         sender: browser.Runtime.MessageSender,
         payload?: unknown,
-    ): ContentScriptCosmeticData | undefined {
+    ): Promise<ContentScriptCosmeticData | undefined> {
         logger.trace('[tsweb.MessagesApi.handleGetCosmeticData]: received call: ', payload);
         if (!payload || !sender?.tab?.id) {
             return undefined;
@@ -156,6 +193,16 @@ export class MessagesApi {
 
         if (!frameId) {
             frameId = MAIN_FRAME_ID;
+        }
+
+        if (sender.tab.url) {
+            this.tabsApi.createTabContextIfNotExists(tabId, sender.tab.url);
+        }
+
+        await CosmeticApi.waitForPendingCssInjection(tabId, frameId);
+
+        if (res.data.reapplyHits) {
+            return CosmeticApi.reapplyMarkedCosmeticData(res.data.documentUrl, tabId, frameId);
         }
 
         return CosmeticApi.getContentScriptData(res.data.documentUrl, tabId, frameId);

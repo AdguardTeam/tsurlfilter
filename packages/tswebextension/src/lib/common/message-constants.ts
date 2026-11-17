@@ -23,4 +23,6 @@ export enum MessageType {
     CloseAssistant = 'closeAssistant',
     AssistantCreateRule = 'assistantCreateRule',
     SaveCssHitsStats = 'saveCssHitsStats',
+    GetCollectHitStats = 'getCollectHitStats',
+    SetCollectHitStats = 'setCollectHitStats',
 }

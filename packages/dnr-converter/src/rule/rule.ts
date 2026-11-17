@@ -34,17 +34,6 @@ export type { HttpHeaderMatcher } from './rule-types';
 const DOMAIN_LIST_PIPE_SEPARATOR = '|';
 
 /**
- * Token for the scan-time pass that defers the badfilter regexp coverage check.
- *
- * {@link Rule.applyBadfilters} runs the check by default. The scan-time pass
- * passes this token to carry the check to the conversion pass instead, because
- * an in-list badfilter may remove an entry that a regexp covers. The token is
- * not exported from the package root, so external callers cannot defer the
- * check.
- */
-export const DEFER_REGEXP_CHECK: unique symbol = Symbol('defer-regexp-check');
-
-/**
  * Maps canonical content-type modifier names to their DNR `ResourceType`
  * equivalents. Only modifier names that correspond to adblock filter syntax
  * content-type options are included here (excluded `webtransport` and `webbundle`).
@@ -284,12 +273,6 @@ interface RuleOverrides {
      * it narrows, because MV2 does not change the weight of that rule.
      */
     readonly priority?: number;
-
-    /**
-     * Badfilter regexp entries whose coverage still has to be checked against
-     * the final `$domain` list when the rule is narrowed in a later pass.
-     */
-    readonly deferredBadfilterRegexps?: readonly string[];
 }
 
 /**
@@ -377,18 +360,6 @@ export class Rule {
     readonly originalRestrictedDomains: string[] | null = null;
 
     /**
-     * Badfilter regexp entries whose coverage still has to be checked against
-     * the final `$domain` list.
-     *
-     * A rule can be narrowed in two passes: the scanner applies the badfilters
-     * from `badFilterRules`, and `RulesConverter` applies the ones from the
-     * filter list. A regexp may cover an entry that the later pass removes, so
-     * the check is carried from the first pass to the next
-     * {@link Rule.applyBadfilters} call instead of running between the passes.
-     */
-    readonly deferredBadfilterRegexps: readonly string[] = [];
-
-    /**
      * Permitted destination domains from the `$to` modifier.
      */
     readonly permittedToDomains: string[] | null = null;
@@ -443,6 +414,16 @@ export class Rule {
      * identity see {@link originalText}.
      */
     readonly advancedModifierValue: string | null = null;
+
+    /**
+     * CSP directive of a `$csp` rule, `null` when the directive is omitted.
+     *
+     * A dedicated field is required because {@link advancedModifierValue} is
+     * shared by every value-bearing advanced modifier and keeps only the last
+     * one: `$csp=script-src 'none',urltransform=/a/b/` would otherwise carry
+     * the url-transform value as the directive.
+     */
+    readonly cspDirective: string | null = null;
 
     /**
      * Rule text exactly as written in the filter list, before conversion to AG
@@ -778,13 +759,48 @@ export class Rule {
                     break;
 
                 case OPTION_NAMES.CSP:
+                    this.enabledModifiers.add(name);
+                    this.cspDirective = value || null;
+                    // Only an allowlist `$csp` may omit the directive: it means
+                    // "cancel the CSP rules of the matching scope". A blocking
+                    // rule without a directive would silently degrade into a
+                    // plain blocking rule, so it is rejected, like in tsurlfilter.
+                    if (!isAllowlist && !value) {
+                        throw new SyntaxError(
+                            'Invalid $csp rule: CSP directive must not be empty',
+                        );
+                    }
+                    // `report-uri` and `report-to` make the browser send
+                    // violation reports to a third-party host. tsurlfilter
+                    // rejects any directive containing `report-`, so an unsupported
+                    // report target cannot leak the browsing context.
+                    if (value && value.toLowerCase().includes('report-')) {
+                        throw new SyntaxError(
+                            `Invalid $csp rule: forbidden CSP directive: ${value}`,
+                        );
+                    }
+                    break;
+
+                case OPTION_NAMES.PERMISSIONS:
+                    this.enabledModifiers.add(name);
+                    this.advancedModifierName = rawName;
+                    this.advancedModifierValue = value || null;
+                    // Same as `$csp`: only an allowlist rule may omit the
+                    // directive. A blocking rule without it would silently
+                    // degrade into a plain blocking rule.
+                    if (!isAllowlist && !value) {
+                        throw new SyntaxError(
+                            'Invalid $permissions rule: permissions directive must not be empty',
+                        );
+                    }
+                    break;
+
                 case OPTION_NAMES.COOKIE:
                 case OPTION_NAMES.REPLACE:
                 case OPTION_NAMES.JSONPRUNE:
                 case OPTION_NAMES.XMLPRUNE:
                 case OPTION_NAMES.HLS:
                 case OPTION_NAMES.REFERRERPOLICY:
-                case OPTION_NAMES.PERMISSIONS:
                 case OPTION_NAMES.URLTRANSFORM:
                     this.enabledModifiers.add(name);
                     this.advancedModifierName = rawName;
@@ -801,9 +817,16 @@ export class Rule {
                     break;
 
                 case OPTION_NAMES.REMOVEHEADER: {
+                    // A rule without a header name cannot remove anything and
+                    // would degrade into a plain blocking rule.
+                    if (!value) {
+                        throw new SyntaxError(
+                            'Invalid $removeheader rule: removeheader value must not be empty',
+                        );
+                    }
                     this.enabledModifiers.add(name);
                     this.advancedModifierName = rawName;
-                    this.advancedModifierValue = value || null;
+                    this.advancedModifierValue = value;
                     const info = Rule.computeRemoveHeaderInfo(value);
                     this.removeHeaderName = info.name;
                     this.removeHeaderIsRequestType = info.isRequest;
@@ -854,6 +877,17 @@ export class Rule {
         if (this.denyAllowDomains !== null && this.permittedToDomains !== null) {
             throw new SyntaxError(
                 'Modifiers $denyallow and $to cannot be used together',
+            );
+        }
+
+        // One declarative rule produces one action, and the CSP action would
+        // win the conversion and then be dropped by the CSP scope checks, so
+        // such a rule would do nothing at all. Reject the combination instead
+        // of silently removing cookies only.
+        if (this.enabledModifiers.has(OPTION_NAMES.CSP)
+            && this.enabledModifiers.has(OPTION_NAMES.COOKIE)) {
+            throw new SyntaxError(
+                '$csp is not compatible with $cookie',
             );
         }
 
@@ -912,10 +946,6 @@ export class Rule {
         this.originalRestrictedDomains = overrides?.originalRestrictedDomains !== undefined
             ? overrides.originalRestrictedDomains
             : this.restrictedDomains;
-
-        this.deferredBadfilterRegexps = overrides?.deferredBadfilterRegexps
-            ? [...overrides.deferredBadfilterRegexps]
-            : [];
 
         this.permittedResourceTypes = [...permittedResourceTypesSet];
         this.restrictedResourceTypes = [...restrictedResourceTypesSet];
@@ -1036,6 +1066,23 @@ export class Rule {
     }
 
     /**
+     * Checks whether this rule (which must carry `$badfilter`) cancels
+     * `targetRule` completely using the permitted `$domain` lists only.
+     *
+     * Unlike {@link Rule.negatesBadfilter}, a regexp that covers a kept entry
+     * is not treated as a full cancellation here, because another badfilter may
+     * remove that entry before the rule is converted.
+     *
+     * @param targetRule The rule to test for negation.
+     *
+     * @returns `true` if the badfilter removes every permitted target entry.
+     */
+    public negatesBadfilterFully(targetRule: Rule): boolean {
+        return RuleBadfilter.negationScope(this, targetRule, targetRule.permittedDomains, true).kind
+            === BadfilterNegationKind.Full;
+    }
+
+    /**
      * Applies every `$badfilter` rule to `targetRule`.
      *
      * A rule that a badfilter cancels completely is dropped. A rule that a
@@ -1049,16 +1096,8 @@ export class Rule {
      * badfilter is applied is dropped, and an exception rule is kept narrowed
      * instead.
      *
-     * The regexp coverage check runs against the final list of this call. The
-     * scan-time pass passes {@link DEFER_REGEXP_CHECK} to carry the check to the
-     * conversion pass instead, because an in-list badfilter may remove an entry
-     * that a regexp covers. The token is internal to the package, so a public
-     * call always finalizes the check.
-     *
      * @param targetRule The rule to apply the badfilter rules to.
      * @param badfilterRules Rules that carry the `$badfilter` modifier.
-     * @param deferRegexpCheck Internal token for the scan-time pass. Omit it to
-     *   run the regexp coverage check and drop the rule when it is needed.
      *
      * @returns The narrowed rule, or `null` when a badfilter cancels it
      *   completely.
@@ -1066,11 +1105,10 @@ export class Rule {
     public static applyBadfilters(
         targetRule: Rule,
         badfilterRules: readonly Rule[],
-        deferRegexpCheck?: typeof DEFER_REGEXP_CHECK,
     ): Rule | null {
         let current = targetRule;
         let excludedDomains: string[] = [];
-        let deferredRegexpEntries: string[] = [...(targetRule.deferredBadfilterRegexps ?? [])];
+        let deferredRegexpEntries: string[] = [];
 
         for (let i = 0; i < badfilterRules.length; i += 1) {
             const negation = RuleBadfilter.negationScope(
@@ -1107,8 +1145,7 @@ export class Rule {
             ...excludedDomains,
         ];
         if (
-            deferRegexpCheck !== DEFER_REGEXP_CHECK
-            && !targetRule.allowlist
+            !targetRule.allowlist
             && RuleBadfilter.regexpEntriesCoverKeptEntries(
                 deferredRegexpEntries,
                 current.permittedDomains,
@@ -1118,13 +1155,9 @@ export class Rule {
             return null;
         }
 
-        const result = excludedDomains.length > 0
+        return excludedDomains.length > 0
             ? current.withExcludedDomains(excludedDomains)
             : current;
-
-        return deferredRegexpEntries.length > 0
-            ? result.withDeferredBadfilterRegexps(deferredRegexpEntries)
-            : result;
     }
 
     /**
@@ -1194,30 +1227,11 @@ export class Rule {
     }
 
     /**
-     * Creates a copy of this rule with the badfilter regexp entries whose
-     * coverage still has to be checked against the final `$domain` list.
-     *
-     * Used by {@link Rule.applyBadfilters} when a scan-time pass cannot decide
-     * whether a regexp covers a kept entry until the in-list badfilters have
-     * removed theirs.
-     *
-     * @param deferredBadfilterRegexps Badfilter regexp entries to carry over.
-     *
-     * @returns A copy of this rule with the given pending entries.
-     */
-    private withDeferredBadfilterRegexps(
-        deferredBadfilterRegexps: readonly string[],
-    ): Rule {
-        return this.copyWithOverrides({ deferredBadfilterRegexps });
-    }
-
-    /**
      * Creates a copy of this rule with the given overrides.
      *
      * Copies keep the written rule text, the pattern hash, the written `$domain`
-     * entries, the priority and the deferred badfilter regexp entries, so a
-     * narrowed rule still matches its `$badfilter` and a later pass can finish
-     * the regexp check.
+     * entries and the priority, so a narrowed rule still matches its
+     * `$badfilter`.
      *
      * @param overrides Fields that the copy changes.
      *
@@ -1235,7 +1249,6 @@ export class Rule {
                 originalPermittedDomains: this.originalPermittedDomains ?? this.permittedDomains ?? undefined,
                 originalRestrictedDomains: this.originalRestrictedDomains,
                 priority: this.priority,
-                deferredBadfilterRegexps: this.deferredBadfilterRegexps,
                 ...overrides,
             },
         );

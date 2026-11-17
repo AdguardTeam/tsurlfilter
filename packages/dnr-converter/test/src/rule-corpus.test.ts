@@ -91,10 +91,22 @@ describe('Rule corpus parsing', () => {
             expect(rule.permittedMethods?.sort()).toEqual(['get', 'post']);
         });
 
-        it('$csp sets advanced modifier value', () => {
+        it('$csp sets the dedicated directive field', () => {
             const [rule] = Rule.createFromText(1, 0, "||example.com^$csp=script-src 'none'");
             expect(rule.isModifierEnabled(OPTION_NAMES.CSP)).toBe(true);
-            expect(rule.advancedModifierValue).toBe("script-src 'none'");
+            expect(rule.cspDirective).toBe("script-src 'none'");
+        });
+
+        it('$csp keeps its directive when another advanced modifier follows', () => {
+            const [rule] = Rule.createFromText(1, 0, "||example.com^$csp=script-src 'none',urltransform=/a/b/");
+            expect(rule.cspDirective).toBe("script-src 'none'");
+            expect(rule.advancedModifierValue).toBe('/a/b/');
+        });
+
+        it('$csp does not overwrite the value of a preceding advanced modifier', () => {
+            const [rule] = Rule.createFromText(1, 0, '||example.com^$redirect=noopjs,csp=x');
+            expect(rule.cspDirective).toBe('x');
+            expect(rule.advancedModifierValue).toBe('noopjs');
         });
 
         it('$redirect sets advanced modifier value', () => {

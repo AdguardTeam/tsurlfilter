@@ -5,6 +5,7 @@ import { type AppInterface, type MessageHandler } from '../../common/app';
 import { type RegistrationResult } from '../../common/canvas-protection/contracts';
 import { CanvasProtectionController } from '../../common/canvas-protection/controller';
 import { type CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
+import { CollectHitStatsNotifier, isCollectStatsEnabledForDocument } from '../../common/collect-hit-stats';
 import { type FilteringLog, type FilteringLogEvent } from '../../common/filtering-log';
 import { type EventChannel } from '../../common/utils/channels';
 import { logger } from '../../common/utils/logger';
@@ -241,6 +242,9 @@ export class TsWebExtension implements AppInterface<
 
         TsWebExtension.updateLogLevel(configuration.logLevel);
 
+        // Take the value right before the assignment so the comparison at the
+        // end of configure() sees any live `setCollectHitStats()` change.
+        const previousCollectStats = this.configuration.settings.collectStats;
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 
         this.documentBlockingService.configure(configuration);
@@ -250,6 +254,13 @@ export class TsWebExtension implements AppInterface<
 
         await WebRequestApi.flushMemoryCache();
         await this.stealthApi.updateWebRtcPrivacyPermissions();
+
+        if (previousCollectStats !== this.configuration.settings.collectStats) {
+            CollectHitStatsNotifier.notify(
+                this.configuration.settings.collectStats,
+                (tabId, tabUrl) => this.isCollectStatsEnabledForTab(tabId, tabUrl),
+            );
+        }
 
         return {
             conversionErrors: result.conversionErrors,
@@ -400,7 +411,45 @@ export class TsWebExtension implements AppInterface<
      * @throws Error if {@link configuration} not set.
      */
     public setCollectHitStats(isCollectStats: boolean): void {
+        const previousCollectStats = this.configuration.settings.collectStats;
         this.configuration.settings.collectStats = isCollectStats;
+        // The setting is changed in place, but the session storage saves only
+        // an assigned configuration.
+        this.configuration = this.configuration!;
+
+        if (previousCollectStats !== isCollectStats) {
+            CollectHitStatsNotifier.notify(
+                isCollectStats,
+                (tabId, tabUrl) => this.isCollectStatsEnabledForTab(tabId, tabUrl),
+            );
+        }
+    }
+
+    /**
+     * Returns the effective hit stats collection state for a tab.
+     *
+     * @param tabId Tab identifier.
+     * @param tabUrl Tab URL, if known.
+     *
+     * @returns Whether hits must be collected for the tab, or `null` when the
+     * tab context is unknown.
+     */
+    private isCollectStatsEnabledForTab(tabId: number, tabUrl?: string): boolean | null {
+        const { collectStats } = this.configuration.settings;
+
+        if (tabUrl) {
+            this.tabsApi.createTabContextIfNotExists(tabId, tabUrl);
+        }
+
+        const tabContext = this.tabsApi.getTabContext(tabId);
+        if (!tabContext) {
+            return null;
+        }
+
+        return isCollectStatsEnabledForDocument(
+            collectStats,
+            tabContext.mainFrameRule,
+        );
     }
 
     /**
