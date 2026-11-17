@@ -391,8 +391,9 @@ Known limitations:
   both paths rely on scriptlets being idempotent.
 - An exception that cannot be written as a match pattern (a wildcard inside
   the path, a query, a host-wide exception, an uppercase path without
-  `$match-case`, a higher-ranked exception that keeps JS injection on) keeps
-  its host on the dynamic path: the registration cannot exclude the page, and
+  `$match-case`, an uppercase spelling of the host, a higher-ranked exception
+  that keeps JS injection on) keeps its host on the dynamic path: the
+  registration cannot exclude the page, and
   running the script there would contradict the engine. Only the affected
   host falls back.
 - The path of a match pattern is compared case-sensitively by the browser and
@@ -401,12 +402,10 @@ Known limitations:
   written in uppercase without `$match-case` keeps its host on the dynamic path
   instead.
 - An exception that names no host (`@@/ads/$document`, a regexp) cannot be
-  excluded from a registration. One that matches the host's own page keeps
-  the host on the dynamic path; any other is only logged at debug level, so
-  a page it happens to match still receives the scriptlets while the engine
-  injects nothing there.
-- A subframe is never preregistered: its verdict depends on the main frame's
-  rule and URL — see the coverage notes above.
+  excluded from a registration. One that matches the host's own page, or that
+  `$domain` pins to the host, keeps the host on the dynamic path; any other is
+  only logged at debug level, so a page it happens to match still receives the
+  scriptlets while the engine injects nothing there.
 - Subframes never take the fast path: they are injected dynamically, on
   `webRequest.onResponseStarted` or `webNavigation.onCommitted`, after the
   frame's document starts. A frame whose own inline script reads a property

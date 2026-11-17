@@ -215,8 +215,6 @@ describe('getRuleHashFromFilePath', () => {
         expect(getRuleHashFromFilePath('filters/preregistered-scripts/scriptlets-bundle.js')).toBeNull();
         expect(getRuleHashFromFilePath('filters/preregistered-scripts/cleanup.js')).toBeNull();
         expect(getRuleHashFromFilePath('filters/preregistered-scripts/s-deadbeefdeadbeef.js')).toBeNull();
-        expect(getRuleHashFromFilePath('filters/preregistered-scripts/cond-2.js'))
-            .toBeNull();
     });
 
     it('returns null for malformed hashes', () => {

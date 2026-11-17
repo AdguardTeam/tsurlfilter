@@ -32,9 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with, so a `$badfilter` of another filter and a user rule or a custom filter
   resolve against the rules the engine actually matches with. A host whose
   exceptions the browser cannot express keeps the dynamic injection path,
-  where the engine decides. One gap stays open: an uppercase spelling of an
+  where the engine decides. Two gaps stay open: an uppercase spelling of an
   excluded path is not excluded, because the browser matches the pattern
-  case-sensitively while the engine does not.
+  case-sensitively while the engine does not; and an exception that names no
+  host is applied only when it matches the host's own page or is pinned by
+  `$domain`, otherwise it is logged at debug level and its pages keep the
+  scriptlets.
 
 ### Changed
 

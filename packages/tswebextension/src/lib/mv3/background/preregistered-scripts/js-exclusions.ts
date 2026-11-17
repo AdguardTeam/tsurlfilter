@@ -8,7 +8,6 @@ import {
 } from '@adguard/tsurlfilter';
 
 import { convertRuleLine, isExceptionCandidateLine, splitFilterLines } from './filter-lines';
-import { matchesHostScope } from './host-scope';
 import { createPreregisteredPageRequest } from './page-request';
 import { getPreregisteredRootUrl } from './root-request';
 
@@ -69,6 +68,13 @@ interface Candidate {
      * Filter line the rule was parsed from.
      */
     writtenText: string;
+
+    /**
+     * Host part of the rule's pattern, or `undefined` when the pattern names
+     * no host. Parsed once for all hostnames: the reach of a pattern is a
+     * lexical question, and the scan asks it for every host.
+     */
+    patternHost: PatternHost | undefined;
 }
 
 /**
@@ -125,7 +131,6 @@ type PatternHost = {
      * longer host or the query of another site.
      */
     anchored: boolean;
-
 };
 
 /**
@@ -309,11 +314,12 @@ const toExcludePattern = (
         return undefined;
     }
 
-    // `$match-case` makes the engine compare the whole URL case-sensitively.
-    // The exclusion names the hostname of the registration, which is
-    // lowercased, so an uppercase spelling in the pattern would exclude a page
-    // the engine allows.
-    if (caseSensitive && patternHost.host !== patternHost.host.toLowerCase()) {
+    // The engine keys a `||host` pattern by the host as written, and its
+    // hostname table is case-sensitive, so `||YouTube.com/ads` matches no
+    // real URL and the engine keeps JS on. The exclusion names the lowercased
+    // hostname of the registration, so it would exclude a page the engine
+    // allows — the scriptlets would be lost.
+    if (patternHost.host !== patternHost.host.toLowerCase()) {
         return undefined;
     }
 
@@ -364,13 +370,27 @@ const collectCandidates = (sources: readonly ExceptionSource[]): Candidate[] => 
                     continue;
                 }
 
-                candidates.push({ rule, writtenText: line });
+                candidates.push({ rule, writtenText: line, patternHost: parsePatternHost(rule.getPattern()) });
             }
         }
     }
 
     return candidates;
 };
+
+/**
+ * Checks whether the rule's `$domain` list pins it to the hostname.
+ *
+ * @param rule Candidate rule.
+ * @param hostname Hostname of the registration.
+ *
+ * @returns True when a permitted domain covers the hostname.
+ */
+const isPermittedOnHost = (rule: NetworkRule, hostname: string): boolean => (
+    rule.getPermittedDomains()?.some((domain) => (
+        hostname === domain || hostname.endsWith(`.${domain}`)
+    )) ?? false
+);
 
 /**
  * Collects the URL exclusions of one hostname.
@@ -391,12 +411,17 @@ const collectCandidates = (sources: readonly ExceptionSource[]): Candidate[] => 
  * One predicate decides both questions — "does the rule reach the host" and
  * "can the reach be expressed as an exclusion" — for disabling and keeping
  * rules alike: a rule that reaches a page of the host and cannot be pinned to
- * its name makes the host dynamic instead of being dropped.
+ * its name makes the host dynamic instead of being dropped. The scope is
+ * computed once per candidate and reused, so `matchModifiers()` — the
+ * expensive half of the scan — runs only for rules that can reach the host.
  *
  * @param candidates Candidate rules of all enabled filters.
  * @param hostname Hostname to build exclusions for.
  *
  * @returns Exclusion patterns of the host, or the reason it stays dynamic.
+ * Report of the host-less exceptions is not included for a host that turned
+ * dynamic: what such a host collected depends on the iteration order, and the
+ * caller logs the union across hosts.
  */
 const buildHostExclusions = (
     candidates: readonly Candidate[],
@@ -407,46 +432,74 @@ const buildHostExclusions = (
     unanchored?: string[];
 } => {
     const writtenTextByRule = new Map<NetworkRule, string>();
-    for (const { rule, writtenText } of candidates) {
+    const patternHostByRule = new Map<NetworkRule, PatternHost | undefined>();
+
+    for (const { rule, writtenText, patternHost } of candidates) {
         writtenTextByRule.set(rule, writtenText);
+        patternHostByRule.set(rule, patternHost);
     }
 
-    const rules = candidates.map((candidate) => candidate.rule);
+    const writtenTextOf = (rule: NetworkRule): string => writtenTextByRule.get(rule) ?? rule.getPattern();
 
     const rootUrl = getPreregisteredRootUrl(hostname);
 
     const cosmeticRequest = createPreregisteredPageRequest(hostname);
     const documentRequest = new Request(rootUrl, '', RequestType.Document);
 
-    const cosmeticRules = rules.filter((rule) => rule.hasCosmeticOption()
-        && rule.matchModifiers(cosmeticRequest));
-    // The domains table returns nothing for a request without a source, so
-    // its rules can never win the document slot of a main frame.
-    const documentRules = rules.filter((rule) => rule.isDocumentLevelAllowlistRule()
-        && !rule.isInDomainsTable()
-        && rule.matchModifiers(documentRequest));
+    // Reach is a lexical question, so it is answered before the modifier
+    // passes: `matchModifiers()` is the expensive half of the scan, and a rule
+    // whose pattern names another site can never decide this host. A pattern
+    // with no host part can match any URL, so it always reaches.
+    const inScope = candidates
+        .map((candidate) => ({
+            candidate,
+            scope: candidate.patternHost
+                ? resolveScope(candidate.patternHost, hostname)
+                : 'hostless' as const,
+        }))
+        .filter(({ scope }) => scope !== 'other');
+
+    const cosmeticRules: NetworkRule[] = [];
+    const documentRules: NetworkRule[] = [];
+
+    for (const { candidate } of inScope) {
+        const { rule } = candidate;
+
+        if (rule.hasCosmeticOption() && rule.matchModifiers(cosmeticRequest)) {
+            cosmeticRules.push(rule);
+        }
+
+        // The domains table returns nothing for a request without a source, so
+        // its rules can never win the document slot of a main frame.
+        if (rule.isDocumentLevelAllowlistRule()
+            && !rule.isInDomainsTable()
+            && rule.matchModifiers(documentRequest)) {
+            documentRules.push(rule);
+        }
+    }
 
     // `$badfilter` cancels its counterpart within the rule set that matched
     // the request, and compares the written text: the scan parses the list
     // itself, so it has to pass the original line, not the converted one.
     // The call does not mutate its argument.
     const resolveWrittenText = (rule: NetworkRule): string | null => writtenTextByRule.get(rule) ?? null;
-    const activeCosmeticRules = MatchingResult.removeBadfilterRules(cosmeticRules, resolveWrittenText);
-    const activeDocumentRules = MatchingResult.removeBadfilterRules(documentRules, resolveWrittenText);
-
-    const reaching = rules
-        .filter((rule) => activeCosmeticRules.includes(rule) || activeDocumentRules.includes(rule))
-        .filter((rule) => matchesHostScope(rule.getPattern(), hostname));
+    const activeRules = new Set<NetworkRule>([
+        ...MatchingResult.removeBadfilterRules(cosmeticRules, resolveWrittenText),
+        ...MatchingResult.removeBadfilterRules(documentRules, resolveWrittenText),
+    ]);
 
     const disabling: NetworkRule[] = [];
     const keeping: NetworkRule[] = [];
     const unanchored: string[] = [];
 
-    const writtenTextOf = (rule: NetworkRule): string => writtenTextByRule.get(rule) ?? rule.getPattern();
+    for (const { candidate, scope } of inScope) {
+        const { rule, patternHost } = candidate;
 
-    for (const rule of reaching) {
+        if (!activeRules.has(rule)) {
+            continue;
+        }
+
         const text = writtenTextOf(rule);
-        const patternHost = parsePatternHost(rule.getPattern());
 
         // A pattern that names no host can still match every URL: `@@$document`
         // and `@@$jsinject` decide every page of every host, so no
@@ -459,9 +512,17 @@ const buildHostExclusions = (
                 };
             }
 
-            // A host-less pattern is a substring search: it may match a page
-            // of the host, but no exclusion can express it. Reported for the
-            // debug log; the owner accepted the pages it covers.
+            // `$domain` pins the rule to this host, but the pattern is still a
+            // substring: the same text can appear in the query of another page,
+            // so an exclusion would be narrower than the rule's reach. The
+            // whole host falls back, where the engine decides per page.
+            if (isPermittedOnHost(rule, hostname)) {
+                return {
+                    patterns: [],
+                    dynamic: `${text}: the exception names no host but is pinned by $domain`,
+                };
+            }
+
             // The extension generates such a rule for its own allowlist
             // (`@@///(www\.)?host/$document,important`): it names no host but
             // matches the root page, so the host cannot stay preregistered.
@@ -469,15 +530,12 @@ const buildHostExclusions = (
                 return {
                     patterns: [],
                     dynamic: `${text}: the exception names no host but matches the page`,
-                    unanchored,
                 };
             }
 
             unanchored.push(text);
             continue;
         }
-
-        const scope = resolveScope(patternHost, hostname);
 
         // A pattern that reaches the host but cannot be anchored to its name
         // (a wildcard or a truncated host part) may decide a page of the
@@ -487,10 +545,6 @@ const buildHostExclusions = (
                 patterns: [],
                 dynamic: `${text}: the pattern reaches the host but is not anchored to its name`,
             };
-        }
-
-        if (scope === 'other') {
-            continue;
         }
 
         if (!rule.isOptionEnabled(NetworkRuleOption.Jsinject)) {
@@ -521,7 +575,6 @@ const buildHostExclusions = (
         return {
             patterns: [],
             dynamic: `${writtenTextOf(shield)}: a higher-ranked exception keeps JS injection on`,
-            unanchored,
         };
     }
 
@@ -529,9 +582,8 @@ const buildHostExclusions = (
 
     for (const rule of disabling) {
         const text = writtenTextOf(rule);
-        const patternHost = parsePatternHost(rule.getPattern());
-
-        // `parsePatternHost` above saw the same pattern: it is not undefined.
+        // Every disabling rule was parsed on collection, so the entry exists.
+        const patternHost = patternHostByRule.get(rule);
         const pattern = patternHost
             ? toExcludePattern(patternHost, hostname, rule.isOptionEnabled(NetworkRuleOption.MatchCase))
             : undefined;
@@ -549,7 +601,6 @@ const buildHostExclusions = (
 
     return { patterns: [...patterns].sort(), unanchored };
 };
-
 /**
  * Resolves the URL exclusions of the registrations for the given hostnames.
  *

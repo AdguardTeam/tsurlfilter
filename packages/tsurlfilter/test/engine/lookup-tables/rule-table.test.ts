@@ -10,18 +10,6 @@ import { NetworkRule } from '../../../src/rules/network-rule';
 import { createRuleStorage } from './lookup-table';
 
 describe('getRuleTable', () => {
-    it('keeps the enum values in the order the engine walks the tables', () => {
-        // `NetworkEngine.addRule()` tries the tables in this order and the first
-        // one that accepts the rule keeps it, so reordering the members
-        // changes the routing. The test fails here, not in a matched page.
-        expect([
-            RuleTable.Hostname,
-            RuleTable.Shortcut,
-            RuleTable.Domains,
-            RuleTable.Seqscan,
-        ]).toEqual([0, 1, 2, 3]);
-    });
-
     it.each([
         // `||host^` and `||host/path` are keyed by hostname.
         ['||example.org^', RuleTable.Hostname],

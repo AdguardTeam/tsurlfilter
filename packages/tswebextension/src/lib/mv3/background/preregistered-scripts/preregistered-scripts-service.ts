@@ -234,8 +234,8 @@ export class PreregisteredScriptsService {
     }
 
     /**
-     * Re-applies the preregistration at runtime, using the stored
-     * configuration stored for the current service-worker lifetime.
+     * Re-applies the preregistration at runtime, using the configuration
+     * stored for the current service-worker lifetime.
      *
      * Does nothing until `configure()` has stored that configuration: it
      * stores it right after the engine starts, while a call without a
@@ -452,9 +452,11 @@ export class PreregisteredScriptsService {
      * the browser does not inject the content script there at all.
      *
      * A host whose exceptions the browser cannot express keeps the dynamic
-     * path, where the engine decides. The one accepted divergence is a page
-     * whose path differs from the excluded one in case only: `excludeMatches`
-     * is matched case-sensitively by the browser.
+     * path, where the engine decides. Two accepted divergences stay: a page
+     * whose path differs from the excluded one in case only, because
+     * `excludeMatches` is matched case-sensitively by the browser, and a
+     * host-less exception that matches neither the host's page nor a `$domain`
+     * entry, which is only logged and left unapplied.
      *
      * @param hostnames Configured hostnames, expanded.
      * @param scriptsPath Extension-relative path to preregistered scripts.

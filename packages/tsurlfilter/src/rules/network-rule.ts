@@ -1116,8 +1116,9 @@ export class NetworkRule implements IRule {
      * the pattern: `match()` is this check plus the shortcut prefilter and the
      * pattern test.
      *
-     * Used by build tools that ask "could this rule participate in the decision
-     * for this request" while the actual pattern is evaluated elsewhere.
+     * Used by the runtime exclusion scan of `@adguard/tswebextension`, which
+     * asks "could this rule participate in the decision for this request"
+     * while the actual pattern is evaluated elsewhere.
      *
      * @param request Request to check.
      *
