@@ -1107,7 +1107,7 @@ describe('RuleConverter', () => {
 
         it('percent-encodes a non-ASCII param name in the $removeparam regexp', () => {
             const rule = createRuleMock({
-                pattern: '||example.com^',
+                pattern: '||example.com/path^',
                 isRegexRule: false,
                 enabledOptions: [OPTION_NAMES.REMOVEPARAM],
                 advancedModifierValue: 'ф',
@@ -1116,6 +1116,32 @@ describe('RuleConverter', () => {
 
             expect(condition.urlFilter).toBeUndefined();
             expect(condition.regexFilter).toContain('%D1%84=');
+        });
+
+        it('keeps the native $removeparam condition for a pattern without a path', () => {
+            const rule = createRuleMock({
+                pattern: '||example.com^',
+                isRegexRule: false,
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
+                advancedModifierValue: 'foo',
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+
+            expect(condition.regexFilter).toBeUndefined();
+            expect(condition.urlFilter).toBe('||asciiPrepared(example.com)^*^foo=');
+        });
+
+        it('keeps the native $removeparam condition for a scheme-anchored pattern without a path', () => {
+            const rule = createRuleMock({
+                pattern: '|https://example.com^',
+                isRegexRule: false,
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
+                advancedModifierValue: 'foo',
+            });
+            const condition = RegularRuleConverter.getCondition(rule);
+
+            expect(condition.regexFilter).toBeUndefined();
+            expect(condition.urlFilter).toMatch(/\^\*\^foo=$/);
         });
 
         it('percent-encodes a non-ASCII param name in the native $removeparam condition', () => {
