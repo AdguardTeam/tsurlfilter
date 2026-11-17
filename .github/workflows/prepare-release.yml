@@ -1,5 +1,10 @@
 name: Prepare release
 
+# The run list shows the requested package and version together with the workflow
+# name. `github.workflow` repeats the `name` value from one place, so a rename of
+# the workflow also updates the run name.
+run-name: '${{ github.workflow }} ${{ inputs.package }} ${{ inputs.version }}'
+
 # Opens a release PR for one monorepo package (finalizes its CHANGELOG.md,
 # optionally bumps its version). After the PR is merged, publish-release.yml
 # takes over.
