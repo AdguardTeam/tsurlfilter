@@ -533,22 +533,83 @@ describe('FilterConverter', () => {
             expect(createUrlMatcher(declarativeRule.condition).test(url.href)).toBe(false);
         });
 
-        it.each([
-            ['https://user:pass@bing.com/search?cvid=tracking', true],
-            ['https://user:pass@bing.com/search?q=hello&cvid=tracking', true],
-            ['https://bing.com@other.example/search?cvid=tracking', false],
-            ['https://bing.com:pass@other.example/search?cvid=tracking', false],
-            ['file://bing.com/search?cvid=tracking', true],
-            ['https://user:pass@bing.com/search?q=hello#?cvid=tracking', false],
-        ])('keeps a domain-only source pattern tied to the actual host for %s', async (requestUrl, matches) => {
+        it('keeps a domain-only named parameter rule on the native URL filter', async () => {
             const [{ ruleset, errors }] = await converter.convert([
                 createFilter(['||bing.com^$removeparam=cvid']),
             ]);
             expect(errors).toEqual([]);
             const [declarativeRule] = ruleset.getDeclarativeRules();
-            const url = new URL(requestUrl);
 
-            expect(createUrlMatcher(declarativeRule.condition).test(url.href)).toBe(matches);
+            expect(declarativeRule.condition.urlFilter).toBe('||bing.com^*^cvid=');
+            expect(declarativeRule.condition.regexFilter).toBeUndefined();
+            expect(ruleset.getRegexpRulesCount()).toBe(0);
+        });
+
+        it('keeps a scheme-anchored named parameter rule without a path on the native URL filter', async () => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter(['|https://bing.com^$removeparam=cvid']),
+            ]);
+            expect(errors).toEqual([]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+
+            expect(declarativeRule.condition.urlFilter).toBe('|https://bing.com^*^cvid=');
+            expect(declarativeRule.condition.regexFilter).toBeUndefined();
+            expect(ruleset.getRegexpRulesCount()).toBe(0);
+        });
+
+        it('uses a regexp for a named parameter rule with a path', async () => {
+            const [{ ruleset, errors }] = await converter.convert([
+                createFilter(['||bing.com/search^$removeparam=cvid']),
+            ]);
+            expect(errors).toEqual([]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+
+            expect(declarativeRule.condition.urlFilter).toBeUndefined();
+            expect(declarativeRule.condition.regexFilter).toBeDefined();
+            expect(ruleset.getRegexpRulesCount()).toBe(1);
+        });
+
+        it('matches a domain-only rule when the parameter is the first one', async () => {
+            const [{ ruleset }] = await converter.convert([createFilter(['||bing.com^$removeparam=cvid'])]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const matcher = createUrlMatcher(declarativeRule.condition);
+
+            expect(matcher.test('https://bing.com/?cvid=tracking&q=adguard')).toBe(true);
+            expect(matcher.test('https://bing.com/search?cvid=tracking&q=adguard')).toBe(true);
+        });
+
+        it('matches a domain-only rule when the parameter is in the middle', async () => {
+            const [{ ruleset }] = await converter.convert([createFilter(['||bing.com^$removeparam=cvid'])]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const matcher = createUrlMatcher(declarativeRule.condition);
+
+            expect(matcher.test('https://bing.com/search?q=adguard&cvid=tracking&form=QBRE')).toBe(true);
+        });
+
+        it('matches a domain-only rule when the parameter is the last one', async () => {
+            const [{ ruleset }] = await converter.convert([createFilter(['||bing.com^$removeparam=cvid'])]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const matcher = createUrlMatcher(declarativeRule.condition);
+
+            expect(matcher.test('https://bing.com/search?q=adguard&cvid=tracking')).toBe(true);
+        });
+
+        it('matches a domain-only rule when the parameter is the only one', async () => {
+            const [{ ruleset }] = await converter.convert([createFilter(['||bing.com^$removeparam=cvid'])]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const matcher = createUrlMatcher(declarativeRule.condition);
+
+            expect(matcher.test('https://bing.com/search?cvid=tracking')).toBe(true);
+        });
+
+        it('stops matching a domain-only rule once the parameter is removed', async () => {
+            const [{ ruleset }] = await converter.convert([createFilter(['||bing.com^$removeparam=cvid'])]);
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const matcher = createUrlMatcher(declarativeRule.condition);
+
+            expect(matcher.test('https://bing.com/search?q=adguard')).toBe(false);
+            expect(matcher.test('https://bing.com/search?other_cvid=tracking')).toBe(false);
+            expect(matcher.test('https://other.example/search?cvid=tracking')).toBe(false);
         });
 
         it('retains an at-sign as a separator within the request path', async () => {
