@@ -21,8 +21,11 @@ const checkFunctionName = (functionName: string): void => {
     // function name may contain escaped characters, like '\75' instead of 'u', so we need to decode it
     const decodedFunctionName = decodeIdent(functionName);
 
-    if (FORBIDDEN_CSS_FUNCTIONS.has(decodedFunctionName)) {
-        throw new Error(`Using '${decodedFunctionName}()' is not allowed`);
+    // CSS function names are ASCII case-insensitive, so we need to lowercase it before checking
+    const lowerCaseFunctionName = decodedFunctionName.toLowerCase();
+
+    if (FORBIDDEN_CSS_FUNCTIONS.has(lowerCaseFunctionName)) {
+        throw new Error(`Using '${lowerCaseFunctionName}()' is not allowed`);
     }
 };
 
