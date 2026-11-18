@@ -101,6 +101,75 @@ describe('MV2 ExtCSS injection chain', () => {
         expect(ad.style.getPropertyPriority('display')).toBe('important');
     });
 
+    it('does not let an unmarked retry overtake the forced marked payload', async () => {
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+        vi.useFakeTimers();
+
+        try {
+            const frameContext = makeFrameContext();
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+            const executions: string[] = [];
+
+            /**
+             * Evaluates the code of an injection call and records it.
+             *
+             * @param call Call of the `executeScript` stub.
+             * @param call.args Arguments of the call.
+             */
+            const execute = (call: { args: unknown[] }): void => {
+                const [, details] = call.args as [number, { code: string }];
+                runInThisContext(details.code);
+                executions.push(details.code);
+            };
+
+            // The first attempt fails, so the unmarked payload waits for its
+            // retry instead of reaching the page.
+            browser.tabs.executeScript
+                .onFirstCall()
+                .callsFake(() => Promise.reject(new Error('Missing host permission')))
+                .onSecondCall()
+                .returns(undefined);
+
+            const unmarked = CosmeticApi.applyExtCss(1, 0);
+            await vi.advanceTimersByTimeAsync(0);
+
+            // The marked reapply arrives while the unmarked retry waits.
+            const marked = CosmeticApi.applyExtCss(1, 0, {
+                extCssData: { extCssRules: MARKED_RULES, areHitsStatsCollected: true },
+                force: true,
+            });
+
+            await vi.advanceTimersByTimeAsync(10);
+
+            const isMarkedApplied = await marked;
+            const isUnmarkedApplied = await unmarked;
+
+            // The superseded payload stops at its retry boundary, so no
+            // unmarked retry runs after the marked payload.
+            expect(browser.tabs.executeScript.callCount).toBe(2);
+            expect(isMarkedApplied).toBe(true);
+            expect(isUnmarkedApplied).toBe(false);
+
+            execute(browser.tabs.executeScript.secondCall);
+
+            expect(executions).toHaveLength(1);
+            expect(executions[0]).toBe(
+                serializeExtCssForCode(MARKED_RULES, true, EXTCSS_PROTOCOL),
+            );
+
+            const retained = (window as unknown as Record<
+                string, { cssRules?: string[] } | undefined
+            >)[EXTCSS_PROTOCOL.instanceKey];
+            expect(retained?.cssRules).toEqual(MARKED_RULES);
+            expect(frameContext.extCssAppliedData).toEqual(MARKED_RULES);
+            expect(frameContext.extCssHitsMarkersApplied).toBe(true);
+            expect(frameContext.extCssInjectionChain).toBeUndefined();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('runs the payloads in start order so the marked copy lands last', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
@@ -132,7 +201,7 @@ describe('MV2 ExtCSS injection chain', () => {
             .returns(undefined);
 
         const unmarked = CosmeticApi.applyExtCss(1, 0);
-        const marked = CosmeticApi.applyExtCss(1, 0, 0, undefined, {
+        const marked = CosmeticApi.applyExtCss(1, 0, {
             extCssData: { extCssRules: MARKED_RULES, areHitsStatsCollected: true },
             force: true,
         });

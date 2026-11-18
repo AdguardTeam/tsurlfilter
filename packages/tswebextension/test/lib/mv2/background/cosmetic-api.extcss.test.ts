@@ -277,18 +277,59 @@ describe('CosmeticApi.applyExtCss', () => {
         expect(TabsApi.injectScript).not.toHaveBeenCalled();
     });
 
-    it('does not mark a frame context that was replaced during the injection', async () => {
+    it('does not inject into a frame context that was replaced before the payload runs', async () => {
         const rules = ['.ad:has(.child) { display: none !important; }'];
         const original = makeFrameContext(makePrepared(rules));
         const replacement = makeFrameContext(makePrepared(rules));
 
         vi.mocked(tabsApi.getFrameContext)
             .mockReturnValueOnce(original)
-            .mockReturnValueOnce(replacement);
+            .mockReturnValue(replacement);
 
-        await CosmeticApi.applyExtCss(1, 0);
+        const isApplied = await CosmeticApi.applyExtCss(1, 0);
+
+        expect(isApplied).toBe(false);
+        expect(TabsApi.injectScript).not.toHaveBeenCalled();
+        expect(original.extCssAppliedData).toBeUndefined();
+        expect(replacement.extCssAppliedData).toBeUndefined();
+    });
+
+    it('does not run a queued payload when the frame context was replaced', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const markedRules = [
+            ".ad:has(.child) { display: none !important; content: 'adguard0%3B1' !important; }",
+        ];
+        const original = makeFrameContext(makePrepared(rules));
+        const replacement = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(original);
+
+        let resolveFirst!: () => void;
+        vi.mocked(TabsApi.injectScript).mockImplementationOnce(() => new Promise<void>((resolve) => {
+            resolveFirst = resolve;
+        }));
+
+        const first = CosmeticApi.applyExtCss(1, 0);
+        await flushOperations();
+
+        const second = CosmeticApi.applyExtCss(1, 0, {
+            extCssData: { extCssRules: markedRules, areHitsStatsCollected: true },
+            force: true,
+        });
+        await flushOperations();
 
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+
+        // The frame context is replaced while the first payload is in flight.
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(replacement);
+        resolveFirst();
+
+        await first;
+        const isSecondApplied = await second;
+
+        // The queued payload belongs to the dismissed context, so it never
+        // reaches the browser and no state is written.
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        expect(isSecondApplied).toBe(false);
         expect(original.extCssAppliedData).toBeUndefined();
         expect(replacement.extCssAppliedData).toBeUndefined();
     });
@@ -384,12 +425,15 @@ describe('CosmeticApi.applyExtCss', () => {
             .mockRejectedValueOnce(new Error('Missing host permission'))
             .mockResolvedValueOnce();
 
-        await CosmeticApi.applyExtCss(1, 0);
+        const injection = CosmeticApi.applyExtCss(1, 0);
+
+        await vi.advanceTimersByTimeAsync(0);
 
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
         expect(frameContext.extCssAppliedData).toBeUndefined();
 
         await vi.advanceTimersByTimeAsync(10);
+        await injection;
 
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
         expect(frameContext.extCssAppliedData).toEqual(rules);
@@ -404,19 +448,28 @@ describe('CosmeticApi.applyExtCss', () => {
             ));
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
             vi.mocked(TabsApi.injectScript)
-                .mockRejectedValue(new Error('Missing host permission'));
+                .mockRejectedValueOnce(new Error('Missing host permission'))
+                .mockResolvedValue();
 
-            // The attempt fails and schedules its retry, so the marker must
-            // stay set: an event arriving in the gap would otherwise send the
-            // same payload again and start a second chain.
-            await CosmeticApi.applyExtCss(1, 0);
+            const injection = CosmeticApi.applyExtCss(1, 0);
 
+            // The attempt fails and the operation waits for its retry, so the
+            // marker must stay set: an event arriving in the gap would
+            // otherwise send the same payload again.
+            await vi.advanceTimersByTimeAsync(0);
             expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
             expect(frameContext.extCssInjectionMarker).toBeDefined();
 
             await CosmeticApi.applyExtCss(1, 0);
 
             expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+
+            // The retry belongs to the same operation and settles with it.
+            await vi.advanceTimersByTimeAsync(10);
+            await injection;
+
+            expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
+            expect(frameContext.extCssInjectionMarker).toBeUndefined();
         } finally {
             vi.useRealTimers();
         }
@@ -466,16 +519,22 @@ describe('CosmeticApi.applyExtCss', () => {
     });
 
     it('logs at debug after the retry budget', async () => {
+        vi.useFakeTimers();
+
         const error = new Error('Missing host permission');
         vi.mocked(tabsApi.getFrameContext)
             .mockReturnValue(makeFrameContext(makePrepared(['.ad { display: none !important; }'])));
         vi.mocked(TabsApi.injectScript).mockRejectedValue(error);
         const debugSpy = vi.spyOn(logger, 'debug');
 
-        await CosmeticApi.applyExtCss(1, 0, 100, 0);
+        // The retries belong to the operation, so the operation settles only
+        // after the whole budget is spent.
+        const injection = CosmeticApi.applyExtCss(1, 0);
+        await vi.runAllTimersAsync();
+        await injection;
 
         expect(debugSpy).toHaveBeenCalledWith(
-            expect.stringContaining('[tsweb.CosmeticApi.applyExtCss]'),
+            expect.stringContaining('[tsweb.CosmeticApi.injectExtCssWithRetries]'),
             error,
         );
     });
@@ -493,10 +552,14 @@ describe('CosmeticApi.applyExtCss', () => {
                 resolveSecond = resolve;
             }));
 
-        await CosmeticApi.applyExtCss(1, 0);
+        const first = CosmeticApi.applyExtCss(1, 0);
 
-        // A same-URL commit keeps the context and starts its own chain from
-        // the commit handler, which is still in flight when the retry fires.
+        // The first attempt fails and the operation waits for its retry.
+        await vi.advanceTimersByTimeAsync(0);
+
+        // A same-URL commit keeps the context and starts its own operation
+        // from the commit handler, which is still in flight when the retry
+        // wakes up.
         frameContext.extCssDocumentVersion += 1;
         frameContext.extCssAppliedData = undefined;
         const second = CosmeticApi.applyExtCss(1, 0);
@@ -504,35 +567,14 @@ describe('CosmeticApi.applyExtCss', () => {
         await vi.advanceTimersByTimeAsync(10);
 
         // The retry belongs to the previous document, so it neither sends its
-        // payload again nor releases the marker of the new chain.
+        // payload again nor releases the marker of the new operation.
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
         expect(frameContext.extCssInjectionMarker).toBe(1);
 
         resolveSecond();
         await second;
+        await first;
 
-        expect(frameContext.extCssInjectionMarker).toBeUndefined();
-    });
-
-    it('releases its marker when a retry finds the rules applied', async () => {
-        vi.useFakeTimers();
-        const rules = ['.ad:has(.child) { display: none !important; }'];
-        const frameContext = makeFrameContext(makePrepared(rules));
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
-        vi.mocked(TabsApi.injectScript).mockRejectedValueOnce(new Error('Missing host permission'));
-
-        await CosmeticApi.applyExtCss(1, 0);
-
-        expect(frameContext.extCssInjectionMarker).toBe(0);
-
-        // Another path put the rules into the document while the retry waited.
-        frameContext.extCssAppliedData = rules;
-
-        await vi.advanceTimersByTimeAsync(10);
-
-        // Nothing is left to do, so the chain ends and a later event can try
-        // again instead of being skipped by a marker nobody owns.
-        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
         expect(frameContext.extCssInjectionMarker).toBeUndefined();
     });
 
@@ -623,7 +665,7 @@ describe('CosmeticApi.applyExtCss', () => {
         }));
 
         const unmarked = CosmeticApi.applyExtCss(1, 0);
-        const marked = CosmeticApi.applyExtCss(1, 0, 0, undefined, {
+        const marked = CosmeticApi.applyExtCss(1, 0, {
             extCssData: { extCssRules: markedRules, areHitsStatsCollected: true },
             force: true,
         });
@@ -658,7 +700,7 @@ describe('CosmeticApi.applyExtCss', () => {
         const frameContext = makeFrameContext(makePrepared(unmarkedRules));
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
 
-        await CosmeticApi.applyExtCss(1, 0, 0, undefined, {
+        await CosmeticApi.applyExtCss(1, 0, {
             extCssData: { extCssRules: markedRules, areHitsStatsCollected: true },
             force: true,
         });

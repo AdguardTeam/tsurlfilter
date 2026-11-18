@@ -16,7 +16,31 @@ export type ExtCssFrameData = {
 };
 
 /**
- * ExtendedCSS operation queued for a frame context.
+ * ExtendedCSS operation queued for a frame or for a context-free frame key.
+ */
+export type ExtCssInjectionOperation = {
+    /**
+     * Whether a newer operation replaced this one.
+     *
+     * A superseded operation stops at its next retry boundary and records
+     * nothing: the newer payload decides the state of the page.
+     */
+    superseded: boolean;
+
+    /**
+     * Whether this operation injects a marked payload that must not be
+     * replaced by an unmarked one.
+     */
+    priority: boolean;
+
+    /**
+     * Promise of the operation, resolved when it settles.
+     */
+    promise: Promise<void>;
+};
+
+/**
+ * ExtendedCSS operations queued for one frame and document.
  */
 export type ExtCssInjectionChain = {
     /**
@@ -25,9 +49,9 @@ export type ExtCssInjectionChain = {
     documentVersion: number;
 
     /**
-     * Promise of the last queued operation, resolved when it settles.
+     * Last enqueued operation.
      */
-    promise: Promise<void>;
+    current: ExtCssInjectionOperation;
 };
 
 /**
@@ -144,14 +168,15 @@ export class FrameMV2 extends FrameCommon {
     public extCssInjectionMarker?: number;
 
     /**
-     * Last ExtendedCSS operation queued for this context.
+     * Queue of the ExtendedCSS operations of this document.
      *
-     * Every apply, dispose and marked reapply starts after the previous
-     * operation of the same document settles, in start order: the injected
-     * payload disposes the current instance before it applies, so two
-     * overlapping payloads could leave the page with the older rule set. The
-     * operations of another document are not awaited, because their payload
-     * targets a page that is no longer displayed.
+     * Every apply, dispose and marked reapply runs through this queue, in start
+     * order: the injected payload disposes the current instance before it
+     * applies, so two overlapping payloads could leave the page with the older
+     * rule set. Retries run inside the queued operation, so a retry can never
+     * overtake a newer payload. The operations of another document are not
+     * awaited, because their payload targets a page that is no longer
+     * displayed.
      */
     public extCssInjectionChain?: ExtCssInjectionChain;
 }

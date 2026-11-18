@@ -1031,6 +1031,101 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
         },
     );
 
+    it('resumes and reports a pending native hit when collection is toggled during a reapply', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+        document.body.innerHTML = '';
+
+        const style = document.createElement('style');
+        style.textContent = [
+            "@property --adguard-hit { syntax: '*'; inherits: false; initial-value: ''; }",
+            "div.native-toggle-bait { display: none !important; --adguard-hit: 'adguard0%3B39' !important; }",
+        ].join('\n');
+
+        let reapplyRequests = 0;
+        let resolveReapply!: (value: ContentScriptCosmeticData) => void;
+        let reapplyStartedResolve!: () => void;
+
+        const reapplyPromise = new Promise<ContentScriptCosmeticData>((resolve) => {
+            resolveReapply = resolve;
+        });
+        const reapplyStarted = new Promise<void>((resolve) => {
+            reapplyStartedResolve = resolve;
+        });
+
+        try {
+            const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockImplementation(async (message) => {
+                    const isReapply = message.type === MessageType.GetCosmeticData
+                        && (message.payload as { reapplyHits?: boolean }).reapplyHits;
+
+                    if (isReapply) {
+                        reapplyRequests += 1;
+                        reapplyStartedResolve();
+
+                        return reapplyPromise;
+                    }
+
+                    return {
+                        isAppStarted: true,
+                        areHitsStatsCollected: true,
+                        areNativeHitsStatsCollected: false,
+                        extCssMarkersState: ExtCssMarkersState.NotRequired,
+                        extCssRules: null,
+                        nativeCssSelectors: null,
+                    };
+                });
+
+            const cosmeticController = createController(CosmeticController);
+            cosmeticController.init();
+
+            await reapplyStarted;
+
+            // The setting is disabled and enabled again while the marked data
+            // is being injected.
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: false },
+            });
+            triggerRuntimeMessage({
+                handlerName: 'tsWebExtension',
+                type: MessageType.SetCollectHitStats,
+                payload: { isCollectStats: true },
+            });
+
+            const bait = document.createElement('div');
+            bait.className = 'native-toggle-bait';
+            bait.textContent = 'text';
+            document.body.appendChild(bait);
+
+            // The background marked the rule of the element above before the
+            // reapply response resumed the counter.
+            document.head.appendChild(style);
+
+            resolveReapply({
+                isAppStarted: true,
+                areHitsStatsCollected: true,
+                areNativeHitsStatsCollected: true,
+                extCssMarkersState: ExtCssMarkersState.Applied,
+                extCssRules: null,
+                nativeCssSelectors: null,
+            });
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            // The enable dropped during the reapply is served by the response
+            // in flight, so no second request is made.
+            expect(reapplyRequests).toBe(1);
+            expect(getBaitStats(sendAppMessageSpy, 0).length).toBeGreaterThan(0);
+        } finally {
+            style.remove();
+            document.body.innerHTML = '';
+            restoreMutationObserver();
+        }
+    });
+
     it('stops reporting after a disable and leaves ExtCSS hits to the background', async () => {
         const restoreMutationObserver = mockMutationObserver();
         document.body.innerHTML = [

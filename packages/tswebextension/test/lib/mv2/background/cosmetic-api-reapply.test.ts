@@ -554,6 +554,83 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(data.areNativeHitsStatsCollected).toBe(true);
     });
 
+    it('applies the marked payload last when an earlier context-free retry is pending', async () => {
+        // The page was loaded while collection was disabled, so its
+        // context-free payload carries no markers.
+        appContextMock.configuration.settings.collectStats = false;
+        tabsApiMock.getFrameContext.mockReturnValue(undefined);
+        vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
+
+        const codes: string[] = [];
+        let failingCalls = 1;
+        vi.spyOn(TabsApi, 'injectScript').mockImplementation(async (_tabId, _frameId, code) => {
+            codes.push(code);
+            if (failingCalls > 0) {
+                failingCalls -= 1;
+                throw new Error('transient failure');
+            }
+        });
+
+        vi.useFakeTimers();
+
+        // An earlier context-free payload of the frame is still retrying.
+        CosmeticApi.getContentScriptData('https://example.org/', TAB_ID, FRAME_ID);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(codes).toHaveLength(1);
+        expect(codes[0]).not.toContain("content: 'adguard");
+
+        // Collection is enabled on the open page.
+        appContextMock.configuration.settings.collectStats = true;
+
+        const resultPromise = CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        await vi.runAllTimersAsync();
+        const data = await resultPromise;
+
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.Applied);
+
+        // The unmarked retry never runs after the marked payload, so the page
+        // keeps the instance that reports hits.
+        expect(codes).toHaveLength(2);
+        expect(codes[0]).not.toContain("content: 'adguard");
+        expect(codes[1]).toBe(serializeExtCssForCode(markedExtCssRules, true, EXTCSS_PROTOCOL));
+    });
+
+    it('does not inject marked native CSS when the document reloads during the retry delay', async () => {
+        const injectCssSpy = vi.spyOn(CosmeticApi, 'injectCss')
+            .mockRejectedValueOnce(new Error('transient failure'))
+            .mockResolvedValue();
+        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue();
+
+        vi.useFakeTimers();
+
+        const frameContext = tabsApiMock.getFrameContext();
+        const resultPromise = CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        // Let the marked ExtendedCss payload and the first native attempt run.
+        await vi.advanceTimersByTimeAsync(0);
+        expect(injectCssSpy).toHaveBeenCalledTimes(1);
+
+        // A same-URL reload keeps the context and bumps its document version.
+        frameContext.extCssDocumentVersion += 1;
+
+        await vi.runAllTimersAsync();
+        const data = await resultPromise;
+
+        // The retry must not put the previous document's CSS into the new one.
+        expect(injectCssSpy).toHaveBeenCalledTimes(1);
+        expect(data.areNativeHitsStatsCollected).toBe(false);
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.NotRequired);
+    });
+
     it('does not inject marked native CSS into the next document after a navigation', async () => {
         const injectCssSpy = vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
 
