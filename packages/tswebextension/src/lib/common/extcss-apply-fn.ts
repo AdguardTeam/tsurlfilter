@@ -27,6 +27,13 @@ import { type ExtCssApplySuccess, type ExtCssInjectionResult, type ExtCssProtoco
  * injections for the same document keep the engine state and the inline
  * styles the page applied in the meantime.
  *
+ * The replacement is fail-closed when the retained instance cannot be
+ * disposed: the new rules are NOT applied, because the stale instance would
+ * become unreachable while its styles or observer stay active. A permanently
+ * failing `dispose()` therefore leaves the replacement rules unapplied for
+ * that document until navigation instead of claiming a success the page does
+ * not have.
+ *
  * @param cssRules ExtendedCSS rule strings to apply to the current document.
  * @param collectStats When true, register a CSS-hits `beforeStyleApplied`
  * callback (else nothing is registered and no overhead is incurred). The
@@ -53,14 +60,14 @@ export const extCssInjectedApply = (
 ): ExtCssInjectionResult => {
     /**
      * Retained ExtendedCss instance together with the rule strings it was
-     * built from and the per-node hits dedupe state. The rule strings are kept
-     * so a failed re-apply can rebuild the previous instance instead of
-     * leaving the page unprotected; the dedupe state is kept so a re-apply
-     * does not report the same hits again.
+     * built from. The rule strings are kept so a failed re-apply can rebuild
+     * the previous instance instead of leaving the page unprotected. The
+     * per-node hits dedupe state is NOT kept here: it lives on `window`
+     * (see `protocol.countedHitsKey`), so dropping the instance cannot make
+     * the next apply report the same hits again.
      */
     type RetainedExtCss = ExtendedCss & {
         cssRules?: string[];
-        countedHits?: WeakMap<Element, Set<string>>;
     };
 
     const w = window as unknown as Record<string, unknown>;
@@ -129,11 +136,16 @@ export const extCssInjectedApply = (
     // `chrome.scripting.executeScript({ func })`).
     const { applyExtendedCss, cssHitsHelpers } = engine;
 
-    // The helpers keep no state between injections, so the dedupe map
-    // is created here, retained on the instance and passed explicitly. Nodes
-    // reported before a re-apply are skipped, while nodes matched for the
-    // first time by the new instance are still reported.
-    const countedHits = previous?.countedHits ?? new WeakMap<Element, Set<string>>();
+    /**
+     * Per-node reported hits of this document, kept on `window` rather than on
+     * the retained instance: a failed apply, a failed restore or a failed
+     * disposal can drop the instance, and the next apply must still skip the
+     * pairs that were already reported. A disposal ends the filtering session
+     * and removes the map, so a fresh session reports its hits again.
+     */
+    const countedHits = (w[protocol.countedHitsKey] as WeakMap<Element, Set<string>> | undefined)
+        ?? new WeakMap<Element, Set<string>>();
+    w[protocol.countedHitsKey] = countedHits;
 
     /**
      * Marker-stripped copies of the parsed rules, keyed by the original rule.
@@ -262,6 +274,11 @@ export const extCssInjectedApply = (
             // request for the same rules applies for real instead of trusting
             // the instance, and the key is kept so a later disposal still
             // reaches it.
+            //
+            // The trade is deliberate and fail-closed: a permanently failing
+            // `dispose()` keeps ExtendedCss filtering off for that document
+            // until navigation instead of claiming a success the page does not
+            // have.
             delete previous.cssRules;
             throw e;
         }
@@ -275,7 +292,6 @@ export const extCssInjectedApply = (
             ? applyExtendedCss(cssRules, beforeStyleApplied)
             : applyExtendedCss(cssRules);
         next.cssRules = cssRules;
-        next.countedHits = countedHits;
         w[protocol.instanceKey] = next;
     } catch (e) {
         // Rebuild the previous instance from its retained rule strings. The
@@ -290,7 +306,6 @@ export const extCssInjectedApply = (
                     ? applyExtendedCss(previousRules, beforeStyleApplied)
                     : applyExtendedCss(previousRules);
                 restored.cssRules = previousRules;
-                restored.countedHits = countedHits;
                 w[protocol.instanceKey] = restored;
                 isRestored = true;
             } catch {
@@ -328,15 +343,16 @@ export const extCssInjectedApply = (
  * identifier; the instance key arrives via the `protocol` argument.
  *
  * @param protocol Serialized protocol values (see `EXTCSS_PROTOCOL`); only
- * `instanceKey` is used.
+ * `instanceKey` and `countedHitsKey` are used.
  *
  * @returns The {@link ExtCssApplySuccess} sentinel after the disposal
  * completed.
  *
- * @throws The error that `dispose()` raised. The key is kept and the instance
- * loses its rule metadata, so the background reports the disposal as failed,
- * a later disposal still reaches the instance, and a later apply for the same
- * rules cannot trust it.
+ * @throws The error that `dispose()` raised. The instance key and the
+ * per-node dedupe map are kept, and the instance loses its rule metadata, so
+ * the background reports the disposal as failed, a later disposal still
+ * reaches the instance without re-reporting its hits, and a later apply for
+ * the same rules cannot trust it.
  */
 export const extCssInjectedDispose = (protocol: ExtCssProtocol): ExtCssApplySuccess => {
     const w = window as unknown as Record<string, {
@@ -362,6 +378,11 @@ export const extCssInjectedDispose = (protocol: ExtCssProtocol): ExtCssApplySucc
 
         w[protocol.instanceKey] = null;
     }
+
+    // A disposal ends the filtering session, so the next apply starts with a
+    // fresh per-node dedupe map and reports its hits again. A failed disposal
+    // keeps the map, because its retry still describes the same session.
+    delete w[protocol.countedHitsKey];
 
     return true;
 };

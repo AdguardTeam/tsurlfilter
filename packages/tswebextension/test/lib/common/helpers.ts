@@ -25,9 +25,11 @@ export const resetExtCssState = (): void => {
     } catch {
         // A test may leave an instance whose dispose() throws on purpose. The
         // production function reports that failure instead of hiding it, so the
-        // cleanup drops the key itself.
+        // cleanup drops both document keys itself: the instance and the
+        // per-node dedupe map belong to the same filtering session.
         const holder = window as unknown as Record<string, unknown>;
         delete holder[EXTCSS_PROTOCOL.instanceKey];
+        delete holder[EXTCSS_PROTOCOL.countedHitsKey];
     }
 
     document.body.innerHTML = '';

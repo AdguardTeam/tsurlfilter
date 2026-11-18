@@ -375,10 +375,17 @@ export class MessagesApi {
             return false;
         }
 
-        // The ExtendedCss payload reports hits straight from the page, so a
-        // paused content-script counter cannot stop it: a live disable or an
-        // allowlisted document is filtered out here. An unknown configuration
-        // keeps the hits, so the hits of a startup are not lost.
+        /**
+         * The ExtendedCss payload reports hits straight from the page, so a
+         * paused content-script counter cannot stop it: a live disable or an
+         * allowlisted document is filtered out here. An unknown configuration
+         * keeps the hits, so the hits of a startup are not lost.
+         *
+         * A hit dropped here stays counted in the page payload: the injected
+         * function already marked the element-and-rule pair, so it is not
+         * replayed when collection is enabled later. Collection off means not
+         * collected.
+         */
         const collectStats = appContext.configuration?.settings.collectStats;
 
         if (collectStats !== undefined

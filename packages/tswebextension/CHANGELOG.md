@@ -85,6 +85,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- ExtendedCss CSS hits are no longer reported twice after a failed apply
+  dropped the retained instance: the per-node dedupe state is kept per
+  document and cleared only when the document's filtering session ends.
 - An ExtendedCss apply or disposal that threw in the page is no longer
   recorded as completed: the injected functions return an explicit success
   sentinel, and the background accepts only that value, so a missing result

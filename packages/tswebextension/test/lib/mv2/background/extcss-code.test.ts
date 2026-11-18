@@ -85,6 +85,8 @@ const resetRetainedInstance = (key: string): void => {
     }
 
     (window as unknown as Record<string, null>)[key] = null;
+    // The per-node hits dedupe map belongs to the same filtering session.
+    delete (window as unknown as Record<string, unknown>)[EXTCSS_PROTOCOL.countedHitsKey];
 };
 
 describe('extcss-code serializer', () => {
@@ -159,6 +161,7 @@ describe('extcss-code serializer', () => {
             handlerName: 'customHandler',
             messageType: 'customMessage',
             instanceKey: '__customExtCss',
+            countedHitsKey: '__customExtCssCountedHits',
             engineKey: EXTCSS_PROTOCOL.engineKey,
             engineVersion: EXTCSS_PROTOCOL.engineVersion,
             applyErrors: EXTCSS_PROTOCOL.applyErrors,
@@ -173,6 +176,8 @@ describe('extcss-code serializer', () => {
 
         expect(getRetainedInstance(protocol.instanceKey)).not.toBeNull();
         resetRetainedInstance(protocol.instanceKey);
+        // The custom protocol's dedupe map is document state too.
+        delete (window as unknown as Record<string, unknown>)[protocol.countedHitsKey];
     });
 
     it('serializes an empty rule set as a valid apply call', () => {

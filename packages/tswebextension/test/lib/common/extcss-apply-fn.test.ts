@@ -493,6 +493,8 @@ describe('extCssInjectedApply — CSS hits stats', () => {
             instanceKey: '__customExtCss',
             // eslint-disable-next-line no-underscore-dangle -- deliberate test marker key
             removedElementsKey: '__customExtCssRemoved',
+            // eslint-disable-next-line no-underscore-dangle -- deliberate test marker key
+            countedHitsKey: '__customExtCssCountedHits',
             // The engine asset is installed under the shared key and version:
             // the custom protocol must keep pointing at it, otherwise nothing
             // can apply.
@@ -577,6 +579,96 @@ describe('extCssInjectedApply — CSS hits stats', () => {
 
         await new Promise((resolve) => { setTimeout(resolve, 0); });
         expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not replay a hit the background declined', async () => {
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+
+        // The background drops the batch, e.g. because collection is off.
+        sendMessageSpy.mockResolvedValue(false);
+
+        createSerializedApply()([MARKER_RULE], true, EXTCSS_PROTOCOL);
+
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
+        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+
+        // A later apply that is not an equal-rules no-op builds a new instance
+        // and matches the same element with the same marker rule. The pair is
+        // still counted from the declined batch, so it is not reported again:
+        // collection off means not collected, not deferred.
+        createSerializedApply()(
+            [MARKER_RULE, '.unrelated { display: none !important; }'],
+            true,
+            EXTCSS_PROTOCOL,
+        );
+
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
+        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the dedupe state when a failed restore drops the retained instance', async () => {
+        const engine = window[EXTCSS_PROTOCOL.engineKey];
+        if (!engine) {
+            throw new Error('The engine asset must be installed by the test setup');
+        }
+
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+
+        const w = window as unknown as Record<string, unknown>;
+        const rulesA = [MARKER_RULE];
+        const rulesB = ['.banner { display: none !important; }'];
+
+        const applySpy = vi.spyOn(engine, 'applyExtendedCss');
+
+        try {
+            createSerializedApply()(rulesA, true, EXTCSS_PROTOCOL);
+
+            await new Promise((resolve) => { setTimeout(resolve, 0); });
+            expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+
+            // The replacement and the restore of the previous rule set both
+            // throw, so the retained instance is dropped.
+            applySpy
+                .mockImplementationOnce(() => {
+                    throw new Error('apply B failed');
+                })
+                .mockImplementationOnce(() => {
+                    throw new Error('restore A failed');
+                });
+
+            expect(() => createSerializedApply()(rulesB, true, EXTCSS_PROTOCOL))
+                .toThrow('apply B failed');
+            expect(w[EXTCSS_PROTOCOL.instanceKey]).toBeUndefined();
+
+            // The per-node dedupe map lives on `window`, so the dead instance
+            // does not take it along: the same element-and-rule pair is not
+            // reported a second time.
+            createSerializedApply()(rulesA, true, EXTCSS_PROTOCOL);
+
+            await new Promise((resolve) => { setTimeout(resolve, 0); });
+            expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+            expect(applySpy).toHaveBeenCalledTimes(4);
+        } finally {
+            applySpy.mockRestore();
+        }
+    });
+
+    it('reports the same pair again in a new session after a disposal', async () => {
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+
+        createSerializedApply()([MARKER_RULE], true, EXTCSS_PROTOCOL);
+
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
+        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+
+        // A disposal ends the filtering session and drops the dedupe map, so
+        // the next apply reports the same pair again.
+        extCssInjectedDispose(EXTCSS_PROTOCOL);
+
+        createSerializedApply()([MARKER_RULE], true, EXTCSS_PROTOCOL);
+
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
+        expect(sendMessageSpy).toHaveBeenCalledTimes(2);
     });
 
     it('reports hits for elements matched after a re-injection', async () => {

@@ -167,6 +167,14 @@ export type ExtCssProtocol = {
     removedElementsKey: typeof EXTCSS_REMOVED_ELEMENTS_KEY;
 
     /**
+     * `window` key under which the injected function keeps the per-node hits
+     * dedupe state of the document. The map outlives a retained instance, so
+     * dropping the instance after a failed apply or a failed disposal does not
+     * report the hits that were already sent again.
+     */
+    countedHitsKey: typeof EXTCSS_COUNTED_HITS_KEY;
+
+    /**
      * `window` key under which the prebuilt ExtendedCss script asset installs
      * the engine, so the injected function can apply rules without carrying
      * the engine source.
@@ -206,6 +214,26 @@ export type ExtCssProtocol = {
 const EXTCSS_INSTANCE_KEY = '__adguardExtCss' as const;
 
 /**
+ * Canonical `window` key under which the injected function keeps the per-node
+ * hits dedupe state of the document. Kept apart from the retained instance so
+ * a failed apply, a failed restore or a failed disposal cannot make the next
+ * apply report the same hits again. Typed as a literal so a typo in
+ * {@link EXTCSS_PROTOCOL} fails the type check.
+ */
+const EXTCSS_COUNTED_HITS_KEY = '__adguardExtCssCountedHits' as const;
+
+declare global {
+    interface Window {
+        /**
+         * Per-node CSS-hits dedupe state of the document, shared between the
+         * injected ExtendedCss functions. Created on the first apply and
+         * dropped when the document is disposed.
+         */
+        [EXTCSS_COUNTED_HITS_KEY]?: WeakMap<Element, Set<string>>;
+    }
+}
+
+/**
  * Canonical {@link ExtCssProtocol} values passed by `ScriptingApi` as
  * `executeScript` arguments and serialized into the MV2 code string.
  */
@@ -215,6 +243,7 @@ export const EXTCSS_PROTOCOL: ExtCssProtocol = {
     messageType: MessageType.SaveCssHitsStats,
     instanceKey: EXTCSS_INSTANCE_KEY,
     removedElementsKey: EXTCSS_REMOVED_ELEMENTS_KEY,
+    countedHitsKey: EXTCSS_COUNTED_HITS_KEY,
     engineKey: EXTCSS_ENGINE_KEY,
     engineVersion: EXTCSS_ENGINE_VERSION,
     applyErrors: {
