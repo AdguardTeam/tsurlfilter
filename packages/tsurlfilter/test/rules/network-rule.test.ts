@@ -182,6 +182,17 @@ describe('NetworkRule constructor', () => {
             .toThrow('Invalid regular expression as domain pattern');
     });
 
+    it('rejects slash-leading $domain and $denyallow values without a closing slash', () => {
+        expect(() => createNetworkRule(String.raw`||example.org^$domain=~/a\/|example.com`, 0))
+            .toThrow('Invalid regular expression as domain pattern');
+        expect(() => createNetworkRule('||example.org^$domain=~/|example.com', 0))
+            .toThrow('Invalid regular expression as domain pattern');
+        expect(() => createNetworkRule(String.raw`||example.org^$domain=/a\/|example.com`, 0))
+            .toThrow('Invalid regular expression as domain pattern');
+        expect(() => createNetworkRule(String.raw`@@||example.org^$denyallow=/a\/|example.com`, 0))
+            .toThrow('Invalid regular expression as domain pattern');
+    });
+
     it('works when it handles empty $domain modifier', () => {
         expect(() => {
             createNetworkRule('||example.org^$domain=', 0);
