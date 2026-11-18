@@ -78,6 +78,22 @@ const PSEUDO_VALUES: PseudoValues = {
         COMPLEX_XPATH,
     ]),
 
+    // XPath with parentheses and quotes inside literals
+    ...generateDelimStream([
+        // a right parenthesis inside a single-quoted literal
+        String.raw`//div[contains(text(),')')]`,
+        // a quotation mark inside a single-quoted literal
+        String.raw`//div[@a='x"y']`,
+        // double-quoted forms keep the current behavior
+        String.raw`//div[contains(text(),")")]`,
+        String.raw`//div[@a="x'y"]`,
+        // mixed quotes
+        String.raw`//div[contains(text(),'x') and @a="y"]`,
+        // CSS-escaped quotes do not open a string
+        String.raw`//div[contains(text(),\')]`,
+        String.raw`//div[@a=\"x]`,
+    ]),
+
     // complex XPath as string parameter
     [`'${COMPLEX_XPATH}'`]: [
         [TokenType.String, 0, 2 + COMPLEX_XPATH.length],

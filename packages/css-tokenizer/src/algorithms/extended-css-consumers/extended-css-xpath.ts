@@ -56,19 +56,25 @@ export const handleXpathExtendedCssPseudo: TokenizerContextFunction = (context: 
     // :xpath() is a bit tricky, because it can contain unescaped parentheses inside strings in the XPath expression,
     // like this:
     // :xpath(//div[@class="foo(bar)"])
-    // but in this case, not required the whole XPath expression to be a string
-    let inString = false;
+    // but in this case, not required the whole XPath expression to be a string.
+    // XPath 1.0 literals can be single-quoted or double-quoted, so we store the quote that opened the string.
+    let stringQuote: number | null = null;
 
     // Consume until we find the closing parenthesis or we reach the end of the source
     while (!context.isEof()) {
-        // If we find an unescaped quote mark, we toggle the "inString" flag
+        // If we find an unescaped quote mark, we open or close the string
         // It is important, because we should omit parentheses inside strings.
-        if (context.code === CodePoint.QuotationMark && context.prevCode !== CodePoint.ReverseSolidus) {
-            inString = !inString;
+        if ((context.code === CodePoint.Apostrophe || context.code === CodePoint.QuotationMark)
+            && context.prevCode !== CodePoint.ReverseSolidus) {
+            if (stringQuote === null) {
+                stringQuote = context.code;
+            } else if (context.code === stringQuote) {
+                stringQuote = null;
+            }
         }
 
         // If we are not inside a string, we should check parentheses balance
-        if (!inString) {
+        if (stringQuote === null) {
             if (context.code === CodePoint.LeftParenthesis && context.prevCode !== CodePoint.ReverseSolidus) {
                 // If we find an unescaped opening parenthesis, we increase the balance
                 balance += 1;

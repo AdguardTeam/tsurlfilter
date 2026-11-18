@@ -69,6 +69,11 @@ describe('Converter integration tests', () => {
                     actual: "example.com##^script:has-text(d.createElement('script'))",
                     expected: ["example.com$$script:contains(d.createElement('script'))"],
                 },
+                {
+                    // A right parenthesis inside a single-quoted XPath literal must not close the pseudo-class
+                    actual: String.raw`example.com##^div:xpath(//div[contains(text(),')')])`,
+                    expected: [String.raw`example.com$$div:xpath(//div[contains(text(),')')])`],
+                },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
@@ -353,6 +358,11 @@ describe('Converter integration tests', () => {
                 {
                     actual: 'example.org#?##case26:remove()',
                     expected: ['example.org#$?##case26 { remove: true; }'],
+                },
+                {
+                    // A right parenthesis inside a single-quoted XPath literal must not close the pseudo-class
+                    actual: String.raw`example.com#?#div:xpath(//div[contains(text(),')')]):style(color:red)`,
+                    expected: [String.raw`example.com#$?#div:xpath(//div[contains(text(),')')]) { color:red }`],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
