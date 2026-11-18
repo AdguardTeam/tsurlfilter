@@ -89,7 +89,11 @@ jobs:
             # Branch is "on the current CI" if these probe files exist at its
             # tip; probed shallowly — no full clone, no gh dep.
             ref="refs/heads/stable/dnr-rulesets-${line}"
-            if git fetch -q --depth=1 origin "${ref}" 2>/dev/null \
+            FETCH_OK=false
+            if git fetch -q --depth=1 origin "${ref}" 2>/dev/null; then
+              FETCH_OK=true
+            fi
+            if [ "$FETCH_OK" = true ] \
               && git cat-file -e "FETCH_HEAD:scripts/inject-package-versions.mjs" 2>/dev/null \
               && git cat-file -e "FETCH_HEAD:.github/actions/docker-build/action.yml" 2>/dev/null \
               && git cat-file -e "FETCH_HEAD:scripts/ci/timeout-wrapper.sh" 2>/dev/null \
@@ -102,12 +106,31 @@ jobs:
               fi
               echo "Line ${line}: publish under '${tag}'"
               INCLUDE="${INCLUDE:+${INCLUDE},}{\"line\":\"${line}\",\"tag\":\"${tag}\"}"
-            elif [ -n "$REQUESTED_LINE" ]; then
-              # An explicit dispatch must not silently publish nothing.
-              echo "::error::Line ${line} is not on the current CI (no stable/dnr-rulesets-${line} branch, or it lacks scripts/inject-package-versions.mjs, .github/actions/docker-build, scripts/ci helpers, or the dnr-rulesets-auto-build-output target); backport the CI first"
-              exit 1
             else
-              echo "Line ${line} is not on the current CI yet; skipping it this round"
+              # A failed fetch reads the same as a branch that is not on the
+              # current CI: a scheduled round would skip that line, stay
+              # green, and notify-failure would not fire. Tell them apart and
+              # fail the round when the branch exists but the fetch failed.
+              if [ "$FETCH_OK" = false ]; then
+                if git ls-remote --exit-code --heads origin "${ref}" >/dev/null 2>&1; then
+                  echo "::error::Could not fetch ${ref} although the branch exists on origin; a scheduled round must not skip it"
+                  exit 1
+                else
+                  ls_exit=$?
+                  # ls-remote exits 2 when no ref matches: the branch is absent.
+                  if [ "$ls_exit" -ne 2 ]; then
+                    echo "::error::Could not check whether ${ref} exists on origin (git ls-remote exit ${ls_exit})"
+                    exit 1
+                  fi
+                fi
+              fi
+              if [ -n "$REQUESTED_LINE" ]; then
+                # An explicit dispatch must not silently publish nothing.
+                echo "::error::Line ${line} is not on the current CI (no stable/dnr-rulesets-${line} branch, or it lacks scripts/inject-package-versions.mjs, .github/actions/docker-build, scripts/ci helpers, or the dnr-rulesets-auto-build-output target); backport the CI first"
+                exit 1
+              else
+                echo "Line ${line} is not on the current CI yet; skipping it this round"
+              fi
             fi
           done
 
