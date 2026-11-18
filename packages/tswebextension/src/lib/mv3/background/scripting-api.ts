@@ -3,7 +3,7 @@ import { type ScriptletData } from '@adguard/tsurlfilter';
 
 import { extCssInjectedApply, extCssInjectedDispose } from '../../common/extcss-apply-fn';
 import { ExtCssGuardError } from '../../common/extcss-guard-error';
-import { EXTCSS_PROTOCOL } from '../../common/extcss-protocol';
+import { EXTCSS_PROTOCOL, type ExtCssApplyResult } from '../../common/extcss-protocol';
 
 import { appContext } from './app-context';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
@@ -341,6 +341,10 @@ export class ScriptingApi {
      * @throws {ExtCssGuardError} If the injected apply function reports an
      * engine guard failure. The caller reports it as a terminal failure: a
      * stale asset cannot be fixed by another attempt.
+     * @throws {Error} If the injected apply function did not report the
+     * success sentinel. Chromium resolves `executeScript` after an in-page
+     * exception and reports `null` for it, so a missing result is a generic
+     * apply failure, not a success.
      */
     public static async executeExtCss(params: ExecuteExtCssParams): Promise<void> {
         const {
@@ -372,12 +376,25 @@ export class ScriptingApi {
         });
 
         // Chromium resolves executeScript when the injected function throws,
-        // so the engine guards return an explicit failure instead. Other apply
-        // errors retain their previous null-result behavior.
-        const applyResult = injectionResults?.[0]?.result;
-        if (applyResult) {
-            throw new ExtCssGuardError(applyResult);
+        // so the payload reports its outcome through the returned value: the
+        // `true` sentinel for a completed apply, or an explicit guard failure
+        // object. `null`, `undefined`, a missing array element and any other
+        // value mean the in-page call did not finish, so they are a generic
+        // apply failure instead of a success.
+        const applyResult: unknown = injectionResults?.[0]?.result;
+
+        if (applyResult === true) {
+            return;
         }
+
+        if (applyResult !== null
+            && typeof applyResult === 'object'
+            && 'error' in applyResult
+        ) {
+            throw new ExtCssGuardError(applyResult as ExtCssApplyResult);
+        }
+
+        throw new Error(`ExtendedCss apply did not report success in tabId ${tabId} and frameId ${frameId}`);
     }
 
     /**

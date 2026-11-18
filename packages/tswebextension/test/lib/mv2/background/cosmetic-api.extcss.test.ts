@@ -98,7 +98,7 @@ describe('CosmeticApi.applyExtCss', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         vi.mocked(tabsApi.getFrameContext).mockReset();
-        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
+        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(true);
         vi.spyOn(TabsApi, 'injectScriptFile').mockResolvedValue();
     });
 
@@ -351,8 +351,8 @@ describe('CosmeticApi.applyExtCss', () => {
         const replacement = makeFrameContext(makePrepared(rules));
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(original);
 
-        let resolveFirst!: () => void;
-        vi.mocked(TabsApi.injectScript).mockImplementationOnce(() => new Promise<void>((resolve) => {
+        let resolveFirst!: (result: boolean) => void;
+        vi.mocked(TabsApi.injectScript).mockImplementationOnce(() => new Promise<boolean>((resolve) => {
             resolveFirst = resolve;
         }));
 
@@ -371,7 +371,7 @@ describe('CosmeticApi.applyExtCss', () => {
         // The frame context is replaced while the first payload's code
         // injection is in flight.
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(replacement);
-        resolveFirst();
+        resolveFirst(true);
 
         await first;
         const isSecondApplied = await second;
@@ -418,8 +418,8 @@ describe('CosmeticApi.applyExtCss', () => {
         const frameContext = makeFrameContext(makePrepared(rules));
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
 
-        let resolveInjection!: () => void;
-        vi.mocked(TabsApi.injectScript).mockImplementation(() => new Promise<void>((resolve) => {
+        let resolveInjection!: (result: boolean) => void;
+        vi.mocked(TabsApi.injectScript).mockImplementation(() => new Promise<boolean>((resolve) => {
             resolveInjection = resolve;
         }));
 
@@ -435,7 +435,7 @@ describe('CosmeticApi.applyExtCss', () => {
         frameContext.extCssDocumentVersion += 1;
         frameContext.extCssAppliedData = undefined;
 
-        resolveInjection();
+        resolveInjection(true);
         await injection;
 
         expect(frameContext.extCssAppliedData).toBeUndefined();
@@ -446,8 +446,8 @@ describe('CosmeticApi.applyExtCss', () => {
         const frameContext = makeFrameContext(makePrepared(rules));
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
 
-        let resolveInjection!: () => void;
-        vi.mocked(TabsApi.injectScript).mockImplementation(() => new Promise<void>((resolve) => {
+        let resolveInjection!: (result: boolean) => void;
+        vi.mocked(TabsApi.injectScript).mockImplementation(() => new Promise<boolean>((resolve) => {
             resolveInjection = resolve;
         }));
 
@@ -457,7 +457,7 @@ describe('CosmeticApi.applyExtCss', () => {
 
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
 
-        resolveInjection();
+        resolveInjection(true);
         await injection;
 
         expect(frameContext.extCssAppliedData).toEqual(rules);
@@ -468,9 +468,47 @@ describe('CosmeticApi.applyExtCss', () => {
         const frameContext = makeFrameContext(makePrepared(rules));
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
 
-        await CosmeticApi.applyExtCss(1, 0);
+        // The apply code returns the success sentinel.
+        vi.mocked(TabsApi.injectScript).mockResolvedValue(true);
 
+        const isApplied = await CosmeticApi.applyExtCss(1, 0);
+
+        expect(isApplied).toBe(true);
         expect(frameContext.extCssAppliedData).toEqual(rules);
+    });
+
+    it('does not record the applied rule set when the code resolves without the success sentinel', async () => {
+        vi.useFakeTimers();
+
+        try {
+            const rules = ['.ad:has(.child) { display: none !important; }'];
+            const frameContext = makeFrameContext(makePrepared(rules));
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+            // Chromium resolves the code injection after an in-page exception
+            // with no value, which must not pass as an applied rule set.
+            vi.mocked(TabsApi.injectScript).mockResolvedValue(undefined);
+
+            const injection = CosmeticApi.applyExtCss(1, 0);
+            await vi.runAllTimersAsync();
+            const isApplied = await injection;
+
+            expect(isApplied).toBe(false);
+            expect(frameContext.extCssAppliedData).toBeUndefined();
+            // The operation left the queue and released its marker.
+            expect(frameContext.extCssInjectionChain).toBeUndefined();
+            expect(frameContext.extCssInjectionMarker).toBeUndefined();
+
+            // A later call is not blocked by the failed operation.
+            vi.mocked(TabsApi.injectScript).mockResolvedValue(true);
+
+            const isAppliedLater = await CosmeticApi.applyExtCss(1, 0);
+
+            expect(isAppliedLater).toBe(true);
+            expect(frameContext.extCssAppliedData).toEqual(rules);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('re-injects when the stored rule set changes', async () => {
@@ -506,7 +544,7 @@ describe('CosmeticApi.applyExtCss', () => {
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
         vi.mocked(TabsApi.injectScript)
             .mockRejectedValueOnce(new Error('Missing host permission'))
-            .mockResolvedValueOnce(undefined);
+            .mockResolvedValueOnce(true);
 
         const injection = CosmeticApi.applyExtCss(1, 0);
 
@@ -635,7 +673,7 @@ describe('CosmeticApi.applyExtCss', () => {
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
             vi.mocked(TabsApi.injectScript)
                 .mockRejectedValueOnce(new Error('Missing host permission'))
-                .mockResolvedValue(undefined);
+                .mockResolvedValue(true);
 
             const injection = CosmeticApi.applyExtCss(1, 0);
 
@@ -667,13 +705,13 @@ describe('CosmeticApi.applyExtCss', () => {
         ));
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
 
-        let resolveFirst!: () => void;
-        let resolveSecond!: () => void;
+        let resolveFirst!: (result: boolean) => void;
+        let resolveSecond!: (result: boolean) => void;
         vi.mocked(TabsApi.injectScript)
-            .mockImplementationOnce(() => new Promise<void>((resolve) => {
+            .mockImplementationOnce(() => new Promise<boolean>((resolve) => {
                 resolveFirst = resolve;
             }))
-            .mockImplementationOnce(() => new Promise<void>((resolve) => {
+            .mockImplementationOnce(() => new Promise<boolean>((resolve) => {
                 resolveSecond = resolve;
             }));
 
@@ -695,14 +733,14 @@ describe('CosmeticApi.applyExtCss', () => {
             expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
         });
 
-        resolveFirst();
+        resolveFirst(true);
         await first;
 
         // The first injection belongs to the previous document, so it must not
         // release the marker of the second one.
         expect(frameContext.extCssInjectionMarker).toBeDefined();
 
-        resolveSecond();
+        resolveSecond(true);
         await second;
 
         expect(frameContext.extCssInjectionMarker).toBeUndefined();
@@ -735,10 +773,10 @@ describe('CosmeticApi.applyExtCss', () => {
         const frameContext = makeFrameContext(makePrepared(rules));
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
 
-        let resolveSecond!: () => void;
+        let resolveSecond!: (result: boolean) => void;
         vi.mocked(TabsApi.injectScript)
             .mockRejectedValueOnce(new Error('Missing host permission'))
-            .mockImplementationOnce(() => new Promise<void>((resolve) => {
+            .mockImplementationOnce(() => new Promise<boolean>((resolve) => {
                 resolveSecond = resolve;
             }));
 
@@ -761,7 +799,7 @@ describe('CosmeticApi.applyExtCss', () => {
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
         expect(frameContext.extCssInjectionMarker).toBe(1);
 
-        resolveSecond();
+        resolveSecond(true);
         await second;
         await first;
 
@@ -849,8 +887,8 @@ describe('CosmeticApi.applyExtCss', () => {
         const frameContext = makeFrameContext(makePrepared(unmarkedRules));
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
 
-        const resolvers: Array<() => void> = [];
-        vi.mocked(TabsApi.injectScript).mockImplementation(() => new Promise<void>((resolve) => {
+        const resolvers: Array<(result: boolean) => void> = [];
+        vi.mocked(TabsApi.injectScript).mockImplementation(() => new Promise<boolean>((resolve) => {
             resolvers.push(resolve);
         }));
 
@@ -873,14 +911,14 @@ describe('CosmeticApi.applyExtCss', () => {
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
         expect(frameContext.extCssAppliedData).toBeUndefined();
 
-        resolvers[0]();
+        resolvers[0](true);
         await unmarked;
 
         await vi.waitFor(() => {
             expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
         });
 
-        resolvers[1]();
+        resolvers[1](true);
         await marked;
 
         expect(frameContext.extCssAppliedData).toEqual(markedRules);

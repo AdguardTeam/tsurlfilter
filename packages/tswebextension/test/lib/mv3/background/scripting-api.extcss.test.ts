@@ -13,12 +13,41 @@ import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
 
 const SCRIPT_URL = 'extcss-inject.js';
 
+/**
+ * Returns the `executeScript` mock with a successful asset call and a given
+ * apply call result.
+ *
+ * @param applyResults Result the apply call resolves with.
+ *
+ * @returns The mock.
+ */
+const mockInjection = (applyResults: unknown): Mock => {
+    const executeScript = vi.mocked(chrome.scripting.executeScript) as unknown as Mock;
+
+    return executeScript
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce(applyResults);
+};
+
+/**
+ * Parameters of a minimal ExtendedCss injection.
+ */
+const INJECTION_PARAMS = {
+    tabId: 1,
+    frameId: 0,
+    cssRules: ['div:has(.ad) { display: none !important; }'],
+    collectStats: false,
+    scriptUrl: SCRIPT_URL,
+};
+
 describe('ScriptingApi.executeExtCss', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
     it('injects the engine asset first and the rules second, in the ISOLATED world', async () => {
+        mockInjection([{ result: true }]);
+
         await ScriptingApi.executeExtCss({
             tabId: 1,
             frameId: 0,
@@ -44,6 +73,8 @@ describe('ScriptingApi.executeExtCss', () => {
     });
 
     it('sends no engine source in the apply call', async () => {
+        mockInjection([{ result: true }]);
+
         await ScriptingApi.executeExtCss({
             tabId: 1,
             frameId: 0,
@@ -62,6 +93,8 @@ describe('ScriptingApi.executeExtCss', () => {
     });
 
     it('binds both injections to the document when its id is known', async () => {
+        mockInjection([{ result: true }]);
+
         await ScriptingApi.executeExtCss({
             tabId: 1,
             frameId: 0,
@@ -94,6 +127,30 @@ describe('ScriptingApi.executeExtCss', () => {
         expect(chrome.scripting.executeScript).toHaveBeenCalledTimes(1);
     });
 
+    it('resolves when the apply call returns the success sentinel', async () => {
+        mockInjection([{ result: true }]);
+
+        await expect(ScriptingApi.executeExtCss(INJECTION_PARAMS)).resolves.toBeUndefined();
+    });
+
+    it.each([
+        { name: 'a missing result array', applyResults: undefined },
+        { name: 'an empty result array', applyResults: [] },
+        { name: 'a missing result property', applyResults: [{}] },
+        { name: 'a null result', applyResults: [{ result: null }] },
+        { name: 'an undefined result', applyResults: [{ result: undefined }] },
+        { name: 'a non-boolean result', applyResults: [{ result: 'ok' }] },
+    ])('treats $name as a failed apply', async ({ applyResults }) => {
+        mockInjection(applyResults);
+
+        const injection = ScriptingApi.executeExtCss(INJECTION_PARAMS);
+
+        // Chromium reports `null` both for an in-page exception and for a
+        // `null`/`undefined` return, so only the sentinel proves success.
+        await expect(injection).rejects.toThrow('did not report success');
+        await expect(injection).rejects.not.toBeInstanceOf(ExtCssGuardError);
+    });
+
     it.each([
         {
             name: 'missing engine',
@@ -106,10 +163,7 @@ describe('ScriptingApi.executeExtCss', () => {
             message: 'ExtendedCss engine version mismatch',
         },
     ])('throws when Chromium resolves the apply call with a $name failure', async ({ error, message }) => {
-        const executeScript = vi.mocked(chrome.scripting.executeScript) as unknown as Mock;
-        executeScript
-            .mockResolvedValueOnce([])
-            .mockResolvedValueOnce([{ result: { error, message } }]);
+        mockInjection([{ result: { error, message } }]);
 
         const injection = ScriptingApi.executeExtCss({
             tabId: 1,

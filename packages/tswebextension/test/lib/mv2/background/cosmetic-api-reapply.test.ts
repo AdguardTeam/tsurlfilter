@@ -148,7 +148,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         // native CSS, the engine asset and the ExtendedCSS payload are mocked
         // separately.
         vi.spyOn(TabsApi, 'injectScriptFile').mockResolvedValue(undefined);
-        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
+        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(true);
         const frameContext = makeFrameContext(makePrepared('unmarked', false));
         markExtCssInjected(frameContext);
         tabsApiMock.getFrameContext.mockReturnValue(frameContext);
@@ -538,7 +538,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
         vi.spyOn(TabsApi, 'injectScript')
             .mockRejectedValueOnce(new Error('transient failure'))
-            .mockResolvedValue(undefined);
+            .mockResolvedValue(true);
         vi.useFakeTimers();
 
         const resultPromise = CosmeticApi.reapplyMarkedCosmeticData(
@@ -572,6 +572,8 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
                 failingCalls -= 1;
                 throw new Error('transient failure');
             }
+
+            return true;
         });
 
         vi.useFakeTimers();
@@ -607,7 +609,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         const injectCssSpy = vi.spyOn(CosmeticApi, 'injectCss')
             .mockRejectedValueOnce(new Error('transient failure'))
             .mockResolvedValue();
-        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
+        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(true);
 
         vi.useFakeTimers();
 
@@ -637,8 +639,8 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
     it('does not inject marked native CSS into the next document after a navigation', async () => {
         const injectCssSpy = vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
 
-        let resolveInjection!: () => void;
-        vi.spyOn(TabsApi, 'injectScript').mockImplementation(() => new Promise<void>((resolve) => {
+        let resolveInjection!: (result: boolean) => void;
+        vi.spyOn(TabsApi, 'injectScript').mockImplementation(() => new Promise<boolean>((resolve) => {
             resolveInjection = resolve;
         }));
 
@@ -657,7 +659,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         // A same-URL commit keeps the context and bumps the document version
         // while the payload is in flight.
         frameContext.extCssDocumentVersion += 1;
-        resolveInjection();
+        resolveInjection(true);
 
         const data = await resultPromise;
 

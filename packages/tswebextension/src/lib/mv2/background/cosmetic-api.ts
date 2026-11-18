@@ -1423,16 +1423,30 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param code Serialized apply code string.
      *
      * @throws {ExtCssGuardError} If the injected apply function reports an
-     * engine guard failure. Other in-page errors keep their existing behavior.
+     * engine guard failure.
+     * @throws {Error} If the injected code did not return the success
+     * sentinel. Chromium resolves `executeScript` after an in-page exception
+     * and reports `null` for it, so a missing result is a generic apply
+     * failure, not a success.
      */
     private static async injectExtCssCode(tabId: number, frameId: number, code: string): Promise<void> {
-        const result = await TabsApi.injectScript<ExtCssApplyResult | undefined>(tabId, frameId, code);
+        const result: unknown = await TabsApi.injectScript(tabId, frameId, code);
 
-        // Chromium resolves executeScript after an in-page exception, so only
-        // the explicit engine guard result reaches this path.
-        if (result) {
-            throw new ExtCssGuardError(result);
+        // `true` is the only success signal: `executeScript` resolves with
+        // `null` after an in-page exception, and an absent result must never
+        // pass as an applied rule set.
+        if (result === true) {
+            return;
         }
+
+        if (result !== null
+            && typeof result === 'object'
+            && 'error' in result
+        ) {
+            throw new ExtCssGuardError(result as ExtCssApplyResult);
+        }
+
+        throw new Error(`ExtendedCss apply did not report success in tabId ${tabId} and frameId ${frameId}`);
     }
 
     /**

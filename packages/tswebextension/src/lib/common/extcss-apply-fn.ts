@@ -1,7 +1,7 @@
 import { type ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
 
 import { type ExtendedCssHit } from './content-script/utils/css-hits-helpers';
-import { type ExtCssApplyResult, type ExtCssProtocol } from './extcss-protocol';
+import { type ExtCssApplySuccess, type ExtCssInjectionResult, type ExtCssProtocol } from './extcss-protocol';
 
 /**
  * Self-contained ExtendedCSS apply function shared by MV2 and MV3.
@@ -37,10 +37,11 @@ import { type ExtCssApplyResult, type ExtCssProtocol } from './extcss-protocol';
  * required argument (not a module-scope default) so the serialized body has
  * zero free identifiers.
  *
- * @returns `undefined` on success, or an explicit failure when the engine is
- * missing or has another version. Returning the guard failures lets the
- * background observe them even when the browser resolves `executeScript`
- * after an in-page exception.
+ * @returns The {@link ExtCssApplySuccess} sentinel when the rules are applied
+ * or the call is an in-page no-op; an explicit failure when the engine is
+ * missing or has another version. Returning the sentinel and the guard
+ * failures lets the background tell a completed apply from an in-page
+ * exception, which Chromium also reports as a `null` result.
  *
  * @throws The error that made the new apply fail, after the previous rule
  * strings have been re-applied so the page stays protected.
@@ -49,7 +50,7 @@ export const extCssInjectedApply = (
     cssRules: string[],
     collectStats: boolean,
     protocol: ExtCssProtocol,
-): ExtCssApplyResult | undefined => {
+): ExtCssInjectionResult => {
     /**
      * Retained ExtendedCss instance together with the rule strings it was
      * built from and the per-node hits dedupe state. The rule strings are kept
@@ -86,7 +87,7 @@ export const extCssInjectedApply = (
         && previousRules.length === cssRules.length
         && previousRules.every((rule, index) => rule === cssRules[index])
     ) {
-        return undefined;
+        return true;
     }
 
     /**
@@ -288,7 +289,7 @@ export const extCssInjectedApply = (
         throw e;
     }
 
-    return undefined;
+    return true;
 };
 
 /**
@@ -308,8 +309,11 @@ export const extCssInjectedApply = (
  *
  * @param protocol Serialized protocol values (see `EXTCSS_PROTOCOL`); only
  * `instanceKey` is used.
+ *
+ * @returns The {@link ExtCssApplySuccess} sentinel, so the background can tell
+ * a completed disposal from an in-page exception.
  */
-export const extCssInjectedDispose = (protocol: ExtCssProtocol): void => {
+export const extCssInjectedDispose = (protocol: ExtCssProtocol): ExtCssApplySuccess => {
     const w = window as unknown as Record<string, { dispose(): void } | null | undefined>;
     const previous = w[protocol.instanceKey];
     if (previous) {
@@ -320,4 +324,6 @@ export const extCssInjectedDispose = (protocol: ExtCssProtocol): void => {
         }
         w[protocol.instanceKey] = null;
     }
+
+    return true;
 };

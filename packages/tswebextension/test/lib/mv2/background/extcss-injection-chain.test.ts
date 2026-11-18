@@ -92,6 +92,8 @@ describe('MV2 ExtCSS injection chain', () => {
     it('injects the engine asset, then the serialized rules, and the page applies them', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext());
+        // The apply code returns the success sentinel to the background.
+        browser.tabs.executeScript.onSecondCall().returns([true]);
 
         await CosmeticApi.applyExtCss(1, 0);
 
@@ -156,7 +158,7 @@ describe('MV2 ExtCSS injection chain', () => {
                 .onFirstCall()
                 .callsFake(() => Promise.reject(new Error('Missing host permission')))
                 .onSecondCall()
-                .returns(undefined);
+                .returns([true]);
 
             const unmarked = CosmeticApi.applyExtCss(1, 0);
             await vi.advanceTimersByTimeAsync(0);
@@ -220,7 +222,7 @@ describe('MV2 ExtCSS injection chain', () => {
             executions.push(details.code);
         };
 
-        let resolveFirst!: (value?: unknown) => void;
+        let resolveFirst!: (value: unknown[]) => void;
 
         browser.tabs.executeScript
             .onFirstCall()
@@ -228,7 +230,7 @@ describe('MV2 ExtCSS injection chain', () => {
                 resolveFirst = resolve;
             }))
             .onSecondCall()
-            .returns(undefined);
+            .returns([true]);
 
         const unmarked = CosmeticApi.applyExtCss(1, 0);
 
@@ -250,7 +252,7 @@ describe('MV2 ExtCSS injection chain', () => {
         expect(browser.tabs.executeScript.callCount).toBe(1);
 
         execute(browser.tabs.executeScript.firstCall);
-        resolveFirst();
+        resolveFirst([true]);
         await unmarked;
 
         await Promise.resolve();

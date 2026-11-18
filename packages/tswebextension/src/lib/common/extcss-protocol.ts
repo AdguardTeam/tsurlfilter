@@ -54,7 +54,8 @@ export enum ExtCssApplyError {
 
 /**
  * Failure returned by the injected apply function. A successful apply returns
- * `undefined`; other apply errors keep their existing exception behavior.
+ * the {@link ExtCssApplySuccess} sentinel; other apply errors keep their
+ * existing exception behavior.
  */
 export type ExtCssApplyResult = {
     /**
@@ -67,6 +68,26 @@ export type ExtCssApplyResult = {
      */
     message: string;
 };
+
+/**
+ * Success sentinel returned by the injected ExtendedCss functions.
+ *
+ * `undefined` and `null` cannot signal success across the injection boundary:
+ * Chromium resolves `executeScript` after an in-page exception, and the
+ * reported `InjectionResult.result` is `null` both for a `null`/`undefined`
+ * return and for a thrown error. The payload therefore returns `true` only
+ * after it completed its work, and the background treats any other value as a
+ * failure.
+ */
+export type ExtCssApplySuccess = true;
+
+/**
+ * Outcome of the injected apply function: the {@link ExtCssApplySuccess}
+ * sentinel, or an explicit engine guard failure. Every other value that
+ * reaches the background is a failure too, so the reader never treats a
+ * missing result as success.
+ */
+export type ExtCssInjectionResult = ExtCssApplySuccess | ExtCssApplyResult;
 
 /**
  * Engine payload installed by the prebuilt `extcss-inject.js` script asset and

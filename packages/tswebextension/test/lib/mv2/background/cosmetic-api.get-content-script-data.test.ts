@@ -96,7 +96,7 @@ describe('CosmeticApi.getContentScriptData', () => {
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
         vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
         const fileSpy = vi.spyOn(TabsApi, 'injectScriptFile').mockResolvedValue();
-        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
+        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(true);
 
         CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
 
@@ -123,7 +123,7 @@ describe('CosmeticApi.getContentScriptData', () => {
         const rules = ['.ad:has(.child) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
         vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
-        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
+        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(true);
 
         // The frame commits a document of its own while the asset call is in
         // flight: its commit handler creates the context and applies the rules
@@ -148,7 +148,7 @@ describe('CosmeticApi.getContentScriptData', () => {
         const rules = ['.ad:has(.child) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
         vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
-        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
+        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(true);
 
         // The navigation started but never committed, so the frame still shows
         // the previous document and its rules must still be applied.
@@ -203,7 +203,7 @@ describe('CosmeticApi.getContentScriptData', () => {
         vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
         const injectSpy = vi.spyOn(TabsApi, 'injectScript')
             .mockRejectedValueOnce(new Error('Missing host permission'))
-            .mockResolvedValueOnce(undefined);
+            .mockResolvedValueOnce(true);
 
         CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
 
@@ -239,7 +239,7 @@ describe('CosmeticApi.getContentScriptData', () => {
         appContext.isAppStarted = false;
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
         vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
-        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
+        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(true);
 
         CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
 

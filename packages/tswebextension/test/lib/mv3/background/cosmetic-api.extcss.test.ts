@@ -290,24 +290,31 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
         vi.mocked(ScriptingApi.executeExtCss).mockRestore();
 
-        const { applyExtCssRules, extCssInjectionInFlight } = CosmeticApi as unknown as {
+        const { applyExtCssRules, extCssInjectionInFlight, extCssMarkersApplied } = CosmeticApi as unknown as {
             applyExtCssRules: (context: FrameMV3) => Promise<void>;
             extCssInjectionInFlight: WeakMap<object, { promise: Promise<void> }>;
+            extCssMarkersApplied: WeakMap<object, { applied: boolean }>;
         };
 
         const executeScript = vi.mocked(chrome.scripting.executeScript) as unknown as Mock;
         let resolveAsset: () => void = () => {};
         executeScript
             .mockReset()
-            .mockImplementationOnce(() => new Promise<void>((resolve) => {
-                resolveAsset = resolve;
-            }))
-            .mockResolvedValueOnce([]);
+            .mockImplementationOnce(() => {
+                // The registry entry must already exist when the asset call
+                // reaches the browser, so a marked re-apply can wait for it.
+                expect(extCssInjectionInFlight.get(frameContext)).toBeDefined();
+
+                return new Promise<void>((resolve) => {
+                    resolveAsset = resolve;
+                });
+            })
+            .mockResolvedValueOnce([{ result: true }]);
 
         const injection = applyExtCssRules(frameContext);
 
-        // The operation is registered synchronously, before the asset call
-        // reaches the browser, so a marked re-apply can wait for it.
+        // The operation is registered synchronously by the caller, before the
+        // asset call reaches the browser.
         expect(extCssInjectionInFlight.get(frameContext)).toBeDefined();
 
         await vi.waitFor(() => {
@@ -318,6 +325,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
         }));
         // Still registered while only the asset call has run.
         expect(extCssInjectionInFlight.get(frameContext)).toBeDefined();
+        expect(extCssMarkersApplied.get(frameContext)).toBeUndefined();
 
         resolveAsset();
         await injection;
@@ -329,6 +337,36 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
             func: expect.any(Function),
         }));
         expect(extCssInjectionInFlight.get(frameContext)).toBeUndefined();
+        expect(extCssMarkersApplied.get(frameContext)?.applied).toBe(true);
+    });
+
+    it('does not record Applied when the apply call resolves without the success sentinel', async () => {
+        const rules = ['div:has(.ad) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules), { documentId: 'document-1' });
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        vi.mocked(ScriptingApi.executeExtCss).mockRestore();
+
+        const { applyExtCssRules, extCssMarkersApplied } = CosmeticApi as unknown as {
+            applyExtCssRules: (context: FrameMV3) => Promise<void>;
+            extCssMarkersApplied: WeakMap<object, { applied: boolean }>;
+        };
+
+        // Chromium resolves with a `null` result when the injected function
+        // throws, so the missing sentinel must not pass as a success.
+        const executeScript = vi.mocked(chrome.scripting.executeScript) as unknown as Mock;
+        executeScript
+            .mockReset()
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([{ result: null }]);
+        const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});
+
+        await applyExtCssRules(frameContext);
+
+        expect(extCssMarkersApplied.get(frameContext)?.applied).toBe(false);
+        expect(infoSpy).toHaveBeenCalledWith(
+            expect.stringContaining('injectExtCssRules'),
+            expect.any(Error),
+        );
     });
 
     it('does not record Applied for a document that changed while the asset was injected', async () => {

@@ -992,9 +992,10 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * This is the only place where an ExtendedCss injection is registered as
      * pending: it owns the frame context key, the prepared result and the
-     * document id. The registration happens synchronously, before the
-     * injection settles, so a marked re-apply for the same document can wait
-     * for it even though the caller does not await this injection.
+     * document id. The registration happens synchronously, before the engine
+     * asset call starts, so a marked re-apply for the same document can wait
+     * for it even though the caller does not await this injection. The
+     * registered promise settles only after the record is written.
      *
      * @param frameContext Frame context with the prepared ExtendedCss rules.
      *
@@ -1011,6 +1012,27 @@ export class CosmeticApi extends CosmeticApiCommon {
         // The rules are prepared for this document, so a navigation during the
         // injection must not move them to the next one.
         const { tabId, frameId, documentId } = frameContext;
+
+        /**
+         * Resolves when the operation has written its record and left the
+         * registry, so a waiter that awaits the registered promise observes
+         * the final state of the document.
+         */
+        let settleOperation: () => void = () => {};
+        const operationSettled = new Promise<void>((resolve) => {
+            settleOperation = resolve;
+        });
+
+        const operation = {
+            preparedCosmeticResult,
+            documentId,
+            promise: operationSettled,
+        };
+
+        // Register the operation synchronously, before the engine asset call
+        // starts: a marked re-apply for this document can then wait for the
+        // unmarked injection instead of racing the asset and the apply.
+        CosmeticApi.extCssInjectionInFlight.set(frameContext, operation);
 
         const promise = CosmeticApi.injectExtCssRules(
             { tabId, frameId, documentId },
@@ -1031,15 +1053,11 @@ export class CosmeticApi extends CosmeticApiCommon {
                 );
             }
         }).finally(() => {
-            if (CosmeticApi.extCssInjectionInFlight.get(frameContext)?.promise === promise) {
+            if (CosmeticApi.extCssInjectionInFlight.get(frameContext) === operation) {
                 CosmeticApi.extCssInjectionInFlight.delete(frameContext);
             }
-        });
 
-        CosmeticApi.extCssInjectionInFlight.set(frameContext, {
-            preparedCosmeticResult,
-            documentId,
-            promise,
+            settleOperation();
         });
 
         await promise;
