@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   History API URL has no query string but its fragment contains `?`, e.g.
   `/page#route?x=1` now stays unchanged instead of becoming
   `/page#route#route?x=1`.
+- `$domain` and `$denyallow` values that start with a slash but are not
+  valid regexp literals, such as `/a\/`, `//`, or `~/a\/|example.org`,
+  are now rejected with `Invalid regular expression as domain pattern`
+  instead of becoming empty restrictions that turn the rule on for every
+  site (via [@adguard/tsurlfilter]).
 
 ### Security
 
