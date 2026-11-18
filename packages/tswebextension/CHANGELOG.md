@@ -168,6 +168,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$removeparam` regexp values with the `g` or `y` flag are now matched
   statelessly: matching no longer depends on the previously tested URL
   parameter, so all matching parameters are removed.
+- CSS injection rules with mixed-case forbidden functions such as `URL(...)` or
+  `Image-Set(...)` are now rejected and can no longer load external resources
+  (via [@adguard/tsurlfilter]).
 
 [AdguardBrowserExtension#2965]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2965
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
