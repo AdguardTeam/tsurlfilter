@@ -1152,6 +1152,19 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/a\\\\qb/i)'],
                     },
 
+                    // a backslash before the argument quote is an escape: the
+                    // backslash is removed and the quote stays in the text
+                    {
+                        actual: '##^div:has-text("a\\"b")',
+                        expected: ['$$div:contains(/a"b/i)'],
+                    },
+
+                    // the same for a single-quoted argument
+                    {
+                        actual: "##^div:has-text('a\\'b')",
+                        expected: ["$$div:contains(/a'b/i)"],
+                    },
+
                     // a slash in the plain text is escaped, so the emitted
                     // argument stays a CoreLibs `/.../i` regexp
                     {
