@@ -954,14 +954,18 @@ export class CosmeticApi extends CosmeticApiCommon {
      * empty or null, the dispose code string is injected once per document,
      * but only when the context may describe a document that holds an
      * instance: it applied one, or the startup pass created it. The dispose is
-     * not retried, and the document is recorded as disposed even when the
-     * attempt fails. Otherwise no code is injected.
+     * attempted once per event and is recorded only when the payload reports
+     * success, so a failed disposal is attempted again by a later event.
+     * Otherwise no code is injected.
      *
      * A context that describes a navigation that has not committed gets no
      * injection at all: the frame still shows the previous document, and the
      * commit handler injects the incoming document's rules once it is the
      * displayed one. The same check runs after the engine asset is injected,
      * because the frame may navigate while that call is in flight.
+     *
+     * A failed replacement clears the applied record, because the payload may
+     * have disposed the previous instance and failed to restore it.
      *
      * An engine guard failure is terminal: the document has no engine or a
      * stale one, so the call is not retried and the failure is logged as an
@@ -1126,17 +1130,27 @@ export class CosmeticApi extends CosmeticApiCommon {
         // later change of the rule set is not skipped.
         if (isSameDocument) {
             if (extCssRules?.length) {
-                // A failed apply records nothing, so a later event retries it.
                 if (isInjected) {
                     frameContext.extCssAppliedData = extCssRules;
                     frameContext.extCssHitsMarkersApplied = extCssData.areHitsStatsCollected;
                     frameContext.extCssDisposedDocumentVersion = undefined;
+                } else {
+                    // The failed replacement may have disposed the previous
+                    // instance and failed to restore it, so the document may
+                    // hold no rule set at all. Clear the record: a later
+                    // request must inject again instead of trusting it, and the
+                    // payload must not take its equal-rules no-op. The instance
+                    // may still be in the page, so a later empty rule set
+                    // attempts the disposal.
+                    frameContext.extCssAppliedData = undefined;
+                    frameContext.extCssHitsMarkersApplied = false;
+                    frameContext.extCssInstanceMayExist = true;
                 }
-            } else {
-                // A failed dispose is not retried, so the document is recorded
-                // as disposed anyway: a second attempt would run with the same
-                // permissions. An instance the document still holds is retired
-                // on the next commit or when the context is recreated.
+            } else if (isInjected) {
+                // The disposal is recorded only when the payload reported
+                // success. A failed disposal leaves the old instance and its
+                // observer active, so the record stays as it was and a later
+                // event attempts the disposal again.
                 frameContext.extCssAppliedData = undefined;
                 frameContext.extCssHitsMarkersApplied = false;
                 frameContext.extCssDisposedDocumentVersion = documentVersion;
@@ -1184,10 +1198,11 @@ export class CosmeticApi extends CosmeticApiCommon {
      * The prebuilt engine script asset is injected before the rule strings, so
      * the payload carries only the rules. The engine has to be in the document
      * before its rules, so a retry repeats both injections: the file is
-     * installed again and the code string applies the rules on top of it. The
-     * apply code is executed through {@link CosmeticApi.injectExtCssCode},
-     * which turns an in-page engine guard failure into an error. Such a failure
-     * is terminal, so the attempt is not retried.
+     * installed again and the code string applies the rules on top of it. Both
+     * the apply and the dispose code are executed through
+     * {@link CosmeticApi.injectExtCssCode}, which requires the `true` success
+     * sentinel and turns an in-page engine guard failure into an error. Such a
+     * failure is terminal, so the attempt is not retried.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
@@ -1232,13 +1247,12 @@ export class CosmeticApi extends CosmeticApiCommon {
                     if (isSuperseded() || !isDocumentDisplayed()) {
                         return false;
                     }
-
-                    // eslint-disable-next-line no-await-in-loop
-                    await CosmeticApi.injectExtCssCode(tabId, frameId, code);
-                } else {
-                    // eslint-disable-next-line no-await-in-loop
-                    await TabsApi.injectScript(tabId, frameId, code);
                 }
+
+                // Both payloads report the `true` success sentinel, so the
+                // dispose path uses the same strict reader as the apply path.
+                // eslint-disable-next-line no-await-in-loop
+                await CosmeticApi.injectExtCssCode(tabId, frameId, code);
 
                 return true;
             } catch (e) {
@@ -1434,7 +1448,7 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         // `true` is the only success signal: `executeScript` resolves with
         // `null` after an in-page exception, and an absent result must never
-        // pass as an applied rule set.
+        // pass as an applied rule set or a completed disposal.
         if (result === true) {
             return;
         }
@@ -1446,7 +1460,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             throw new ExtCssGuardError(result as ExtCssApplyResult);
         }
 
-        throw new Error(`ExtendedCss apply did not report success in tabId ${tabId} and frameId ${frameId}`);
+        throw new Error(`ExtendedCss payload did not report success in tabId ${tabId} and frameId ${frameId}`);
     }
 
     /**

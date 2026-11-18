@@ -414,19 +414,34 @@ export class ScriptingApi {
      * for, when known.
      *
      * @returns Promise that resolves when the disposal is executed.
+     *
+     * @throws {Error} If the injected disposal function did not report the
+     * success sentinel. An in-page disposal exception leaves the old styles
+     * and observer active, and Chromium reports it as a `null` result, so a
+     * missing sentinel must not pass as a completed disposal.
      */
     public static async disposeExtCss({
         tabId,
         frameId,
         documentId,
     }: ExecuteExtCssTarget): Promise<void> {
-        await chrome.scripting.executeScript({
+        const injectionResults = await chrome.scripting.executeScript({
             target: ScriptingApi.buildInjectionTarget({ tabId, frameId, documentId }),
             func: extCssInjectedDispose,
             args: [EXTCSS_PROTOCOL],
             injectImmediately: true,
             world: 'ISOLATED',
         });
+
+        // The disposal uses the same success sentinel as the apply path: an
+        // absent result means the in-page disposal threw.
+        const disposeResult: unknown = injectionResults?.[0]?.result;
+
+        if (disposeResult === true) {
+            return;
+        }
+
+        throw new Error(`ExtendedCss disposal did not report success in tabId ${tabId} and frameId ${frameId}`);
     }
 
     /**

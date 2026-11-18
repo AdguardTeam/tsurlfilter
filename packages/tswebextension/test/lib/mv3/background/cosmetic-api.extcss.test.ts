@@ -171,6 +171,36 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
         });
     });
 
+    it('does not record a failed disposal as applied and retries it on a later request', async () => {
+        const frameContext = makeFrameContext(makePrepared([]), { documentId: 'document-1' });
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        const { applyExtCssRules, extCssMarkersApplied } = CosmeticApi as unknown as {
+            applyExtCssRules: (context: FrameMV3) => Promise<void>;
+            extCssMarkersApplied: WeakMap<object, { applied: boolean }>;
+        };
+
+        // The in-page dispose() threw, so the old instance and its observer are
+        // still active and the state must not be reported as applied.
+        vi.mocked(ScriptingApi.disposeExtCss).mockRejectedValueOnce(new Error('dispose threw'));
+        const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});
+
+        await applyExtCssRules(frameContext);
+
+        expect(extCssMarkersApplied.get(frameContext)?.applied).toBe(false);
+        expect(infoSpy).toHaveBeenCalledWith(
+            expect.stringContaining('injectExtCssRules'),
+            expect.any(Error),
+        );
+
+        // A later request disposes again without a disposed marker, and only a
+        // successful disposal is recorded.
+        await applyExtCssRules(frameContext);
+
+        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledTimes(2);
+        expect(extCssMarkersApplied.get(frameContext)?.applied).toBe(true);
+    });
+
     it('does not inject ExtendedCss on onResponseStarted (shouldApplyCss=false)', async () => {
         const rules = ['div:has(.ad) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));

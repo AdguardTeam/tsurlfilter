@@ -210,12 +210,28 @@ describe('ScriptingApi.insertCSS', () => {
     });
 });
 
+/**
+ * Returns the `executeScript` mock that resolves with the given disposal
+ * result.
+ *
+ * @param disposeResults Result the disposal call resolves with.
+ *
+ * @returns The mock.
+ */
+const mockDisposal = (disposeResults: unknown): Mock => {
+    const executeScript = vi.mocked(chrome.scripting.executeScript) as unknown as Mock;
+
+    return executeScript.mockResolvedValueOnce(disposeResults);
+};
+
 describe('ScriptingApi.disposeExtCss', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
     it('injects the disposal func in the ISOLATED world', async () => {
+        mockDisposal([{ result: true }]);
+
         await ScriptingApi.disposeExtCss({ tabId: 1, frameId: 0 });
 
         expect(chrome.scripting.executeScript).toHaveBeenCalledTimes(1);
@@ -229,6 +245,8 @@ describe('ScriptingApi.disposeExtCss', () => {
     });
 
     it('binds the disposal to the document when its id is known', async () => {
+        mockDisposal([{ result: true }]);
+
         await ScriptingApi.disposeExtCss({
             tabId: 1,
             frameId: 0,
@@ -238,5 +256,20 @@ describe('ScriptingApi.disposeExtCss', () => {
         expect(chrome.scripting.executeScript).toHaveBeenCalledWith(expect.objectContaining({
             target: { tabId: 1, documentIds: ['document-1'] },
         }));
+    });
+
+    it.each([
+        { name: 'a missing result array', disposeResults: undefined },
+        { name: 'an empty result array', disposeResults: [] },
+        { name: 'a null result', disposeResults: [{ result: null }] },
+        { name: 'an undefined result', disposeResults: [{ result: undefined }] },
+    ])('treats $name as a failed disposal', async ({ disposeResults }) => {
+        mockDisposal(disposeResults);
+
+        // The in-page disposal threw, which Chromium reports as a null result.
+        // The old instance stays active, so it must not be recorded as
+        // disposed.
+        await expect(ScriptingApi.disposeExtCss({ tabId: 1, frameId: 0 }))
+            .rejects.toThrow('did not report success');
     });
 });

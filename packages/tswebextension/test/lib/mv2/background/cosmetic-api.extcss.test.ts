@@ -511,6 +511,49 @@ describe('CosmeticApi.applyExtCss', () => {
         }
     });
 
+    it('clears the applied record when the replacement fails and applies again later', async () => {
+        vi.useFakeTimers();
+
+        try {
+            const firstRules = ['.ad:has(.child) { display: none !important; }'];
+            const secondRules = ['.banner:has(.close) { display: none !important; }'];
+            const frameContext = makeFrameContext(makePrepared(firstRules));
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+            await CosmeticApi.applyExtCss(1, 0);
+            expect(frameContext.extCssAppliedData).toEqual(firstRules);
+
+            // The replacement throws in the page, and so does the restore of
+            // the previous rule set, so the document may hold no rule set.
+            frameContext.preparedCosmeticResult = makePrepared(secondRules);
+            const injectionsBefore = vi.mocked(TabsApi.injectScript).mock.calls.length;
+            vi.mocked(TabsApi.injectScript).mockResolvedValue(undefined);
+
+            const injection = CosmeticApi.applyExtCss(1, 0);
+            await vi.runAllTimersAsync();
+            const isApplied = await injection;
+
+            expect(isApplied).toBe(false);
+            // The record must not keep claiming the previous rule set.
+            expect(frameContext.extCssAppliedData).toBeUndefined();
+            expect(frameContext.extCssHitsMarkersApplied).toBe(false);
+            expect(frameContext.extCssInstanceMayExist).toBe(true);
+
+            // A later request for the first rule set injects again instead of
+            // trusting the stale record.
+            vi.mocked(TabsApi.injectScript).mockResolvedValue(true);
+            frameContext.preparedCosmeticResult = makePrepared(firstRules);
+
+            const isAppliedLater = await CosmeticApi.applyExtCss(1, 0);
+
+            expect(isAppliedLater).toBe(true);
+            expect(vi.mocked(TabsApi.injectScript).mock.calls.length).toBeGreaterThan(injectionsBefore);
+            expect(frameContext.extCssAppliedData).toEqual(firstRules);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('re-injects when the stored rule set changes', async () => {
         const firstRules = ['.ad:has(.child) { display: none !important; }'];
         const secondRules = ['.banner:has(.close) { display: none !important; }'];
@@ -806,26 +849,55 @@ describe('CosmeticApi.applyExtCss', () => {
         expect(frameContext.extCssInjectionMarker).toBeUndefined();
     });
 
-    it('attempts the disposal once and records it even when it fails', async () => {
+    it('does not record a failed disposal and does not retry it within the event', async () => {
         vi.useFakeTimers();
+
+        try {
+            const frameContext = makeFrameContext(makePrepared(null), false, true);
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+            vi.mocked(TabsApi.injectScript).mockRejectedValue(new Error('Missing host permission'));
+
+            const isDisposed = await CosmeticApi.applyExtCss(1, 0);
+
+            expect(isDisposed).toBe(false);
+            expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+
+            await vi.advanceTimersByTimeAsync(20);
+
+            // The disposal keeps its one-attempt-per-event policy: no retry is
+            // armed, and the failed attempt is not recorded as a disposal.
+            expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+            expect(frameContext.extCssInjectionMarker).toBeUndefined();
+            expect(frameContext.extCssDisposedDocumentVersion).toBeUndefined();
+            expect(frameContext.extCssInstanceMayExist).toBe(true);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('does not record the disposed document when the disposal returns no sentinel', async () => {
         const frameContext = makeFrameContext(makePrepared(null), false, true);
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
-        vi.mocked(TabsApi.injectScript).mockRejectedValue(new Error('Missing host permission'));
+        // Chromium resolves the code injection with no value when the in-page
+        // disposal throws.
+        vi.mocked(TabsApi.injectScript).mockResolvedValue(undefined);
 
-        await CosmeticApi.applyExtCss(1, 0);
+        const isDisposed = await CosmeticApi.applyExtCss(1, 0);
 
-        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        expect(isDisposed).toBe(false);
+        expect(frameContext.extCssDisposedDocumentVersion).toBeUndefined();
 
-        await vi.advanceTimersByTimeAsync(20);
+        // A later event disposes again, and a successful attempt is recorded.
+        vi.mocked(TabsApi.injectScript).mockResolvedValue(true);
 
-        // The dispose has no retry, so a failed attempt cannot arm a second
-        // chain, and the document is recorded as disposed all the same.
-        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
-        expect(frameContext.extCssInjectionMarker).toBeUndefined();
+        const isDisposedLater = await CosmeticApi.applyExtCss(1, 0);
+
+        expect(isDisposedLater).toBe(true);
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
         expect(frameContext.extCssDisposedDocumentVersion).toBe(0);
     });
 
-    it('does not dispose again from a later event after a failed attempt', async () => {
+    it('retries the disposal on a later event after a failed attempt', async () => {
         const frameContext = makeFrameContext(makePrepared(null), false, true);
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
         vi.mocked(TabsApi.injectScript).mockRejectedValue(new Error('Missing host permission'));
@@ -833,7 +905,8 @@ describe('CosmeticApi.applyExtCss', () => {
         await CosmeticApi.applyExtCss(1, 0);
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
+        expect(frameContext.extCssDisposedDocumentVersion).toBeUndefined();
     });
 
     it('skips the injection when an equal rule set was applied', async () => {

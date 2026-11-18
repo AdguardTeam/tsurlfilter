@@ -274,6 +274,8 @@ export const extCssInjectedApply = (
         // restored rules carry the same markers, so the callback is registered
         // too: the retained dedupe state skips the already reported hits while
         // elements matched from now on are still counted.
+        let isRestored = false;
+
         if (previousRules && previousRules.length > 0) {
             try {
                 const restored: RetainedExtCss = collectStats
@@ -282,10 +284,20 @@ export const extCssInjectedApply = (
                 restored.cssRules = previousRules;
                 restored.countedHits = countedHits;
                 w[protocol.instanceKey] = restored;
+                isRestored = true;
             } catch {
-                // Nothing else can be done in the page context.
+                // The restore failed too, so nothing protects the page.
             }
         }
+
+        if (!isRestored) {
+            // The retained object still names the previous rule strings even
+            // though its instance is disposed or was never rebuilt. Drop the
+            // key and its metadata, so a later request for those rules cannot
+            // take the equal-rules no-op and skips the real apply.
+            delete w[protocol.instanceKey];
+        }
+
         throw e;
     }
 
@@ -310,18 +322,23 @@ export const extCssInjectedApply = (
  * @param protocol Serialized protocol values (see `EXTCSS_PROTOCOL`); only
  * `instanceKey` is used.
  *
- * @returns The {@link ExtCssApplySuccess} sentinel, so the background can tell
- * a completed disposal from an in-page exception.
+ * @returns The {@link ExtCssApplySuccess} sentinel after the disposal
+ * completed.
+ *
+ * @throws The error that `dispose()` raised. The instance and its
+ * `MutationObserver` stay active in that case, so the key is kept and the
+ * background reports the disposal as failed instead of recording a state the
+ * page does not have.
  */
 export const extCssInjectedDispose = (protocol: ExtCssProtocol): ExtCssApplySuccess => {
     const w = window as unknown as Record<string, { dispose(): void } | null | undefined>;
     const previous = w[protocol.instanceKey];
+
     if (previous) {
-        try {
-            previous.dispose();
-        } catch {
-            // Ignore disposal errors; the key is cleared regardless.
-        }
+        // A throwing `dispose()` leaves the old styles and observer in the
+        // page. The error escapes to the background, and the key is cleared
+        // only after a successful disposal.
+        previous.dispose();
         w[protocol.instanceKey] = null;
     }
 

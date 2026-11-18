@@ -20,6 +20,15 @@ export const createFilter = (
  * into the next test.
  */
 export const resetExtCssState = (): void => {
-    extCssInjectedDispose(EXTCSS_PROTOCOL);
+    try {
+        extCssInjectedDispose(EXTCSS_PROTOCOL);
+    } catch {
+        // A test may leave an instance whose dispose() throws on purpose. The
+        // production function reports that failure instead of hiding it, so the
+        // cleanup drops the key itself.
+        const holder = window as unknown as Record<string, unknown>;
+        delete holder[EXTCSS_PROTOCOL.instanceKey];
+    }
+
     document.body.innerHTML = '';
 };

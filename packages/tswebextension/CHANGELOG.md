@@ -85,10 +85,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- An ExtendedCss apply that threw in the page is no longer recorded as
-  applied: the injected function returns an explicit success sentinel, and the
-  background accepts only that value, so a missing result (`executeScript`
-  resolves with `null` after an in-page exception) is reported as a failure.
+- An ExtendedCss apply or disposal that threw in the page is no longer
+  recorded as completed: the injected functions return an explicit success
+  sentinel, and the background accepts only that value, so a missing result
+  (`executeScript` resolves with `null` after an in-page exception) is
+  reported as a failure. A failed replacement drops the retained rule set and
+  the applied record, so a later request applies again instead of taking the
+  equal-rules no-op, and a failed disposal is retried by a later event.
 - The MV3 rules-limits page could overcount unsafe rules, because the
   excluded-rule list shared by the total and unsafe limit errors included rules
   dropped by the other limit. The total limit error now carries only the rules

@@ -722,16 +722,70 @@ describe('extCssInjectedDispose', () => {
         expect(() => extCssInjectedDispose(EXTCSS_PROTOCOL)).not.toThrow();
     });
 
-    it('clears the key even when the retained dispose throws', () => {
+    it('keeps the retained instance when its dispose throws', () => {
         const dispose = vi.fn(() => {
             throw new Error('dispose failed');
         });
         const w = window as unknown as Record<string, unknown>;
-        w[EXTCSS_PROTOCOL.instanceKey] = { dispose };
+        const retained = { dispose };
+        w[EXTCSS_PROTOCOL.instanceKey] = retained;
 
-        expect(() => extCssInjectedDispose(EXTCSS_PROTOCOL)).not.toThrow();
+        // A throwing dispose leaves the old styles and observer active, so the
+        // error escapes and the key stays set: the background reports a failed
+        // disposal and a later one retries the same instance.
+        expect(() => extCssInjectedDispose(EXTCSS_PROTOCOL)).toThrow('dispose failed');
 
         expect(dispose).toHaveBeenCalledTimes(1);
-        expect(w[EXTCSS_PROTOCOL.instanceKey]).toBeNull();
+        expect(w[EXTCSS_PROTOCOL.instanceKey]).toBe(retained);
+    });
+});
+
+describe('extCssInjectedApply — restore failure', () => {
+    it('drops the retained rule set when the restore also throws', () => {
+        const engine = window[EXTCSS_PROTOCOL.engineKey];
+        if (!engine) {
+            throw new Error('The engine asset must be installed by the test setup');
+        }
+
+        const instanceA = { dispose: vi.fn() };
+        const rulesA = ['.a { display: none !important; }'];
+        const rulesB = ['.b { display: none !important; }'];
+        const w = window as unknown as Record<string, unknown>;
+
+        // The stubbed engine succeeds by default, fails the replacement and
+        // fails the restore of the previous rule set.
+        const applySpy = vi.spyOn(engine, 'applyExtendedCss')
+            .mockImplementation(() => instanceA as never);
+
+        try {
+            expect(createSerializedApply()(rulesA, false, EXTCSS_PROTOCOL)).toBe(true);
+            expect(w[EXTCSS_PROTOCOL.instanceKey]).toBe(instanceA);
+
+            applySpy
+                .mockImplementationOnce(() => {
+                    throw new Error('apply B failed');
+                })
+                .mockImplementationOnce(() => {
+                    throw new Error('restore A failed');
+                });
+
+            expect(() => createSerializedApply()(rulesB, false, EXTCSS_PROTOCOL))
+                .toThrow('apply B failed');
+
+            // The retained object still named rule set A, but its instance is
+            // gone and the restore failed, so the key and its metadata must be
+            // dropped.
+            expect(w[EXTCSS_PROTOCOL.instanceKey]).toBeUndefined();
+
+            // A later request for the same rule set applies for real instead of
+            // taking the equal-rules no-op on rules that are not in the page.
+            expect(createSerializedApply()(rulesA, false, EXTCSS_PROTOCOL)).toBe(true);
+
+            expect(applySpy).toHaveBeenCalledTimes(4);
+            expect(applySpy).toHaveBeenLastCalledWith(rulesA);
+            expect(w[EXTCSS_PROTOCOL.instanceKey]).toBe(instanceA);
+        } finally {
+            applySpy.mockRestore();
+        }
     });
 });
