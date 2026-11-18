@@ -298,17 +298,19 @@ export function patchHistoryForRemoveParam(
             }
 
             if (desc.valueRegExp === null) {
-                // Bare removeparam: remove all query parameters, preserve hash
-                const queryIndex = purgedUrl.indexOf('?');
+                // Bare removeparam: remove all query parameters, preserve hash.
+                // Split off the hash first: a `?` inside the fragment is not a
+                // query delimiter, so searching the whole URL would cut the
+                // fragment and append it a second time.
+                const hashIdx = purgedUrl.indexOf('#');
+                const hashSuffix = hashIdx >= 0 ? purgedUrl.substring(hashIdx) : '';
+                const urlWithoutHash = hashIdx >= 0
+                    ? purgedUrl.substring(0, hashIdx)
+                    : purgedUrl;
+                const queryIndex = urlWithoutHash.indexOf('?');
+
                 if (queryIndex >= 0) {
-                    let hashSuffix = '';
-
-                    const hashIdx = purgedUrl.indexOf('#');
-                    if (hashIdx >= 0) {
-                        hashSuffix = purgedUrl.substring(hashIdx);
-                    }
-
-                    const newUrl = purgedUrl.substring(0, queryIndex) + hashSuffix;
+                    const newUrl = urlWithoutHash.substring(0, queryIndex) + hashSuffix;
                     if (newUrl !== purgedUrl) {
                         applied.push(desc);
                         purgedUrl = newUrl;
