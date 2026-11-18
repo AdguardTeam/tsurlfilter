@@ -5,6 +5,7 @@ import { USER_FILTER_ID } from '../../common/constants';
 import {
     type ContentScriptCosmeticData,
     CosmeticApiCommon,
+    ExtCssMarkersState,
     type LogJsRulesParams,
     type MarkedCssFrameContext,
 } from '../../common/cosmetic-api';
@@ -195,6 +196,9 @@ export class CosmeticApi extends CosmeticApiCommon {
             isAppStarted: false,
             areHitsStatsCollected: false,
             areNativeHitsStatsCollected: false,
+            // The content script applies ExtendedCss itself on MV2, so the
+            // background cannot know the marker state.
+            extCssMarkersState: ExtCssMarkersState.ContentScript,
             extCssRules: null,
             nativeCssSelectors: null,
         };

@@ -10,7 +10,7 @@ import {
 } from 'vitest';
 
 import * as SendMessageModule from '../../../../src/lib/common/content-script/send-app-message';
-import { type ContentScriptCosmeticData } from '../../../../src/lib/common/cosmetic-api';
+import { type ContentScriptCosmeticData, ExtCssMarkersState } from '../../../../src/lib/common/cosmetic-api';
 import { MessageType } from '../../../../src/lib/common/message-constants';
 import { CosmeticController } from '../../../../src/lib/mv3/content-script/cosmetic-controller';
 import { mockMutationObserver, MutationObserverMock } from '../../../helpers/mutation-observer';
@@ -31,6 +31,7 @@ describe('short-lived probes', () => {
                 isAppStarted: true,
                 areHitsStatsCollected: true,
                 areNativeHitsStatsCollected: true,
+                extCssMarkersState: ExtCssMarkersState.NotRequired,
                 extCssRules: [],
                 nativeCssSelectors: null,
             };
@@ -105,6 +106,7 @@ describe('short-lived probes', () => {
             vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue({
                 isAppStarted: true,
                 areHitsStatsCollected: false,
+                extCssMarkersState: ExtCssMarkersState.NotRequired,
                 extCssRules: [],
                 nativeCssSelectors: null,
             });

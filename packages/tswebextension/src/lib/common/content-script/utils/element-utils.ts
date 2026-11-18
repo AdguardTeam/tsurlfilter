@@ -1,5 +1,7 @@
 import { type RuleInfoBasic } from '../../rule-info';
 
+import { cssHitsHelpers } from './css-hits-helpers';
+
 /**
  * Utils class.
  */
@@ -12,23 +14,7 @@ export class ElementUtils {
      * @returns String representation of the element.
      */
     public static elementToString(element: Element): string {
-        const s = [];
-
-        s.push('<');
-        s.push(element.localName);
-        const { attributes } = element;
-        for (let i = 0; i < attributes.length; i += 1) {
-            const attr = attributes[i];
-            s.push(' ');
-            s.push(attr.name);
-            s.push('="');
-            const value = attr.value === null ? '' : attr.value.replace(/"/g, '\\"');
-            s.push(value);
-            s.push('"');
-        }
-        s.push('>');
-
-        return s.join('');
+        return cssHitsHelpers.elementToString(element);
     }
 
     /**
@@ -84,39 +70,7 @@ export class ElementUtils {
      * @returns Rule info or null.
      */
     public static parseInfo(content: string, attributeMarker: string): RuleInfoBasic | null {
-        if (!content || content.indexOf(attributeMarker) < 0) {
-            return null;
-        }
-
-        let filterIdAndRuleText: string;
-        try {
-            filterIdAndRuleText = decodeURIComponent(content);
-        } catch {
-            // `decodeURIComponent` throws `URIError` on a malformed percent
-            // escape. A broken marker must not break cosmetic application.
-            return null;
-        }
-        // 'content' value may include open and close quotes.
-        filterIdAndRuleText = ElementUtils.removeQuotes(filterIdAndRuleText);
-        // Remove prefix
-        filterIdAndRuleText = filterIdAndRuleText.substring(attributeMarker.length);
-        // Attribute 'content' in css looks like: {content: 'adguard{filterId};{ruleIndex}'}
-        const index = filterIdAndRuleText.indexOf(';');
-        if (index < 0) {
-            return null;
-        }
-
-        const filterId = Number.parseInt(filterIdAndRuleText.slice(0, index), 10);
-        if (Number.isNaN(filterId)) {
-            return null;
-        }
-
-        const ruleIndex = Number.parseInt(filterIdAndRuleText.slice(index + 1), 10);
-        if (Number.isNaN(ruleIndex)) {
-            return null;
-        }
-
-        return { filterId, ruleIndex };
+        return cssHitsHelpers.parseInfo(content, attributeMarker);
     }
 
     /**
@@ -131,31 +85,6 @@ export class ElementUtils {
         content: string,
         attributeMarker: string,
     ): RuleInfoBasic | null {
-        const important = '!important';
-        const indexOfImportant = content.lastIndexOf(important);
-        if (indexOfImportant === -1) {
-            return ElementUtils.parseInfo(content, attributeMarker);
-        }
-
-        const contentWithoutImportant = content.substring(0, indexOfImportant).trim();
-        return ElementUtils.parseInfo(contentWithoutImportant, attributeMarker);
-    }
-
-    /**
-     * Unquotes specified value.
-     *
-     * @param value Value to unquote.
-     *
-     * @returns Unquoted value.
-     */
-    private static removeQuotes(value: string): string {
-        if (value.length > 1
-            && ((value[0] === '"' && value[value.length - 1] === '"')
-                || (value[0] === '\'' && value[value.length - 1] === '\''))) {
-            // Remove double-quotes or single-quotes
-            return value.substring(1, value.length - 1);
-        }
-
-        return value;
+        return cssHitsHelpers.parseExtendedStyleInfo(content, attributeMarker);
     }
 }

@@ -21,6 +21,11 @@ export type InsertCSSParams = {
     frameId: number;
 
     /**
+     * The ID of the document the CSS was prepared for, when known.
+     */
+    documentId?: string;
+
+    /**
      * The CSS text to be applied.
      */
     cssText: string;
@@ -36,6 +41,17 @@ type ExecuteTarget = {
      * The ID of the frame.
      */
     frameId: number;
+};
+
+/**
+ * Target of an injection prepared for a specific document.
+ */
+type DocumentTarget = ExecuteTarget & {
+    /**
+     * The ID of the document the injected content was prepared for, when
+     * known.
+     */
+    documentId?: string;
 };
 
 /**
@@ -86,12 +102,7 @@ export type ExecuteCombinedScriptParams = ExecuteTarget & {
 /**
  * Target of an ExtendedCss injection.
  */
-export type ExecuteExtCssTarget = ExecuteTarget & {
-    /**
-     * The ID of the document the rules were prepared for, when known.
-     */
-    documentId?: string;
-};
+export type ExecuteExtCssTarget = DocumentTarget;
 
 /**
  * Parameters for executing the ExtendedCss engine + rules.
@@ -119,6 +130,7 @@ export class ScriptingApi {
      * @param params Parameters for applying CSS rules.
      * @param params.tabId Tab id.
      * @param params.frameId Frame id.
+     * @param params.documentId Document the CSS was prepared for, when known.
      * @param params.cssText CSS text.
      *
      * @returns Promise that resolves when the CSS is injected.
@@ -126,12 +138,13 @@ export class ScriptingApi {
     public static async insertCSS({
         tabId,
         frameId,
+        documentId,
         cssText,
     }: InsertCSSParams): Promise<void> {
         await chrome.scripting.insertCSS({
             css: cssText,
             origin: 'USER',
-            target: { tabId, frameIds: [frameId] },
+            target: ScriptingApi.buildInjectionTarget({ tabId, frameId, documentId }),
         });
     }
 
@@ -319,7 +332,7 @@ export class ScriptingApi {
             collectStats,
         } = params;
         await chrome.scripting.executeScript({
-            target: ScriptingApi.buildExtCssTarget({ tabId, frameId, documentId }),
+            target: ScriptingApi.buildInjectionTarget({ tabId, frameId, documentId }),
             func: extCssInjectedApply,
             args: [cssRules, collectStats, EXTCSS_PROTOCOL],
             injectImmediately: true,
@@ -351,7 +364,7 @@ export class ScriptingApi {
         documentId,
     }: ExecuteExtCssTarget): Promise<void> {
         await chrome.scripting.executeScript({
-            target: ScriptingApi.buildExtCssTarget({ tabId, frameId, documentId }),
+            target: ScriptingApi.buildInjectionTarget({ tabId, frameId, documentId }),
             func: extCssInjectedDispose,
             args: [EXTCSS_PROTOCOL],
             injectImmediately: true,
@@ -360,14 +373,14 @@ export class ScriptingApi {
     }
 
     /**
-     * Builds the `executeScript` target for the ExtendedCss functions.
+     * Builds the `insertCSS` and `executeScript` target.
      *
-     * The rules are prepared for a specific document, while `frameIds`
-     * resolves to whatever document the frame holds at execution time: a
-     * navigation between queueing and executing the injection would apply the
-     * previous document's rules to the new one. When the document id is known,
-     * the injection is therefore bound to it, and `executeScript` fails
-     * instead of injecting into a different document. Frames without a
+     * The injected content is prepared for a specific document, while
+     * `frameIds` resolves to whatever document the frame holds at execution
+     * time: a navigation between queueing and executing the injection would
+     * apply the previous document's content to the new one. When the document
+     * id is known, the injection is therefore bound to it, and the API call
+     * fails instead of injecting into a different document. Frames without a
      * document id fall back to the frame target.
      *
      * @param params Target parameters.
@@ -375,13 +388,13 @@ export class ScriptingApi {
      * @param params.frameId The ID of the frame.
      * @param params.documentId The ID of the document, when known.
      *
-     * @returns The `executeScript` target.
+     * @returns The injection target.
      */
-    private static buildExtCssTarget({
+    private static buildInjectionTarget({
         tabId,
         frameId,
         documentId,
-    }: ExecuteExtCssTarget): chrome.scripting.InjectionTarget {
+    }: DocumentTarget): chrome.scripting.InjectionTarget {
         return documentId
             ? { tabId, documentIds: [documentId] }
             : { tabId, frameIds: [frameId] };

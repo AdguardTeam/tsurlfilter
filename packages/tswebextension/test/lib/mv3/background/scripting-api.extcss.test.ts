@@ -47,6 +47,36 @@ describe('ScriptingApi.executeExtCss', () => {
     });
 });
 
+describe('ScriptingApi.insertCSS', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('falls back to the frame target without a document id', async () => {
+        await ScriptingApi.insertCSS({ tabId: 1, frameId: 0, cssText: 'div { display: none !important; }' });
+
+        expect(chrome.scripting.insertCSS).toHaveBeenCalledTimes(1);
+        expect(chrome.scripting.insertCSS).toHaveBeenCalledWith({
+            css: 'div { display: none !important; }',
+            origin: 'USER',
+            target: { tabId: 1, frameIds: [0] },
+        });
+    });
+
+    it('binds the injection to the document when its id is known', async () => {
+        await ScriptingApi.insertCSS({
+            tabId: 1,
+            frameId: 0,
+            documentId: 'document-1',
+            cssText: 'div { display: none !important; }',
+        });
+
+        expect(chrome.scripting.insertCSS).toHaveBeenCalledWith(expect.objectContaining({
+            target: { tabId: 1, documentIds: ['document-1'] },
+        }));
+    });
+});
+
 describe('ScriptingApi.disposeExtCss', () => {
     beforeEach(() => {
         vi.clearAllMocks();

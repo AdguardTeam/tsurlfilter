@@ -14,7 +14,7 @@ import {
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
 import * as SendMessageModule from '../../../../src/lib/common/content-script/send-app-message';
-import { type ContentScriptCosmeticData } from '../../../../src/lib/common/cosmetic-api';
+import { type ContentScriptCosmeticData, ExtCssMarkersState } from '../../../../src/lib/common/cosmetic-api';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { CosmeticController } from '../../../../src/lib/mv2/content-script/cosmetic-controller';
 import { createCosmeticRule } from '../../../helpers/rule-creator';
@@ -59,6 +59,7 @@ const getCosmeticData = (rules: string[], areHitsStatsCollected: boolean): Conte
         isAppStarted: true,
         areHitsStatsCollected,
         areNativeHitsStatsCollected: areHitsStatsCollected,
+        extCssMarkersState: ExtCssMarkersState.ContentScript,
         extCssRules,
         nativeCssSelectors: null,
     };
@@ -102,6 +103,7 @@ describe('invalid native CSS selectors are handled gracefully', () => {
             isAppStarted: true,
             areHitsStatsCollected: false,
             areNativeHitsStatsCollected: false,
+            extCssMarkersState: ExtCssMarkersState.NotRequired,
             extCssRules: null,
             nativeCssSelectors: [...validSelectors, invalidSelector],
         };

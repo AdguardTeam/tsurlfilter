@@ -1,6 +1,8 @@
 import { type ExtCssConfiguration, ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
 
 import { type ContentScriptCosmeticData } from '../cosmetic-api';
+// Imported directly so the content script does not bundle the cosmetic API module.
+import { ExtCssMarkersState } from '../ext-css-markers-state';
 import { MessageType } from '../message-constants';
 import { validateSelectors } from '../utils/selector-validator';
 
@@ -73,10 +75,12 @@ export class CosmeticControllerCommon {
     private cosmeticDataApplied = false;
 
     /**
-     * Whether the applied cosmetic data contains hit markers and the counter
-     * hook is attached.
+     * Whether a part of the marked data prepared by the background is still
+     * missing.
+     *
+     * Assumed until a response says otherwise, so an early enable can retry.
      */
-    private hitsMarkersApplied = false;
+    private markersOutstanding = true;
 
     /**
      * Whether the applied ExtendedCss rules contain hit markers.
@@ -167,6 +171,7 @@ export class CosmeticControllerCommon {
             extCssRules,
             areHitsStatsCollected,
             areNativeHitsStatsCollected,
+            extCssMarkersState,
             nativeCssSelectors,
         } = cosmeticData;
 
@@ -203,14 +208,15 @@ export class CosmeticControllerCommon {
         this.extendedCssMarkersApplied = areHitsStatsCollected
             && !!extCssRules
             && extCssRules.length > 0;
-        this.hitsMarkersApplied = areHitsStatsCollected
-            && areNativeHitsStatsCollected
-            && !!this.cssHitsCounter;
+
+        const hasMarkedNativeCss = areHitsStatsCollected && areNativeHitsStatsCollected;
+        this.markersOutstanding = !hasMarkedNativeCss
+            || extCssMarkersState === ExtCssMarkersState.Failed;
 
         // A state message may arrive before the cosmetic data response. When
-        // it enabled collection and either the ExtendedCss rules or the native
-        // CSS was built without markers, ask the background for a marked copy.
-        if (collectStats && (!areHitsStatsCollected || !areNativeHitsStatsCollected)) {
+        // it enabled collection and a part of the marked data the background
+        // prepared is missing, ask the background for a marked copy.
+        if (collectStats && this.markersOutstanding) {
             this.reapplyMarkedCosmeticData();
         }
     }
@@ -244,9 +250,9 @@ export class CosmeticControllerCommon {
 
         if (isCollectStats) {
             // A previous reapply may have failed or been interrupted, leaving
-            // a counter over unmarked CSS. Resume only when the markers are
-            // actually applied.
-            if (!this.hitsMarkersApplied) {
+            // a counter over unmarked CSS. Resume only when every part the
+            // background prepared was applied.
+            if (this.markersOutstanding) {
                 this.reapplyMarkedCosmeticData();
                 return;
             }
@@ -330,9 +336,7 @@ export class CosmeticControllerCommon {
             const hasResponseExtendedCss = !!res.extCssRules && res.extCssRules.length > 0;
             const hasMarkedNativeCss = res.areNativeHitsStatsCollected;
 
-            if (!this.extendedCssMarkersApplied
-                && res.extCssRules
-                && res.extCssRules.length > 0) {
+            if (!this.extendedCssMarkersApplied && hasResponseExtendedCss) {
                 // A response without rules can mean the background lost the
                 // tab context, not that the document has no ExtendedCss rules.
                 // Keep the applied instance in that case.
@@ -341,8 +345,10 @@ export class CosmeticControllerCommon {
             }
 
             const hasMarkedExtendedCss = this.extendedCssMarkersApplied
-                || hasResponseExtendedCss;
-            this.hitsMarkersApplied = hasMarkedNativeCss;
+                || hasResponseExtendedCss
+                || res.extCssMarkersState === ExtCssMarkersState.Applied;
+            this.markersOutstanding = !hasMarkedNativeCss
+                || res.extCssMarkersState === ExtCssMarkersState.Failed;
             this.cosmeticDataApplied = true;
             this.reapplyTries = 0;
 
@@ -368,7 +374,7 @@ export class CosmeticControllerCommon {
             if (this.reapplyRequested) {
                 this.reapplyRequested = false;
 
-                if (this.isCollectHitStatsEnabled() && !this.hitsMarkersApplied) {
+                if (this.isCollectHitStatsEnabled() && this.markersOutstanding) {
                     this.reapplyMarkedCosmeticData();
                 }
             }

@@ -199,10 +199,15 @@ export class MessagesApi {
             this.tabsApi.createTabContextIfNotExists(tabId, sender.tab.url);
         }
 
-        await CosmeticApi.waitForPendingCssInjection(tabId, frameId);
+        await CosmeticApi.waitForPendingCssInjection(tabId, frameId, sender.documentId);
 
         if (res.data.reapplyHits) {
-            return CosmeticApi.reapplyMarkedCosmeticData(res.data.documentUrl, tabId, frameId);
+            return CosmeticApi.reapplyMarkedCosmeticData(
+                res.data.documentUrl,
+                tabId,
+                frameId,
+                sender.documentId,
+            );
         }
 
         return CosmeticApi.getContentScriptData(res.data.documentUrl, tabId, frameId);

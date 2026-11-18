@@ -6,6 +6,7 @@ import {
     vi,
 } from 'vitest';
 
+import { ExtCssMarkersState } from '../../../../src/lib/common/cosmetic-api';
 import { FilteringEventType } from '../../../../src/lib/common/filtering-log';
 import { MESSAGE_HANDLER_NAME, MessageType } from '../../../../src/lib/common/message-constants';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
@@ -159,6 +160,7 @@ describe('MessagesApi', () => {
                 isAppStarted: true,
                 areHitsStatsCollected: true,
                 areNativeHitsStatsCollected: true,
+                extCssMarkersState: ExtCssMarkersState.NotRequired,
                 extCssRules: null,
                 nativeCssSelectors: null,
             };
@@ -202,6 +204,7 @@ describe('MessagesApi', () => {
                 isAppStarted: true,
                 areHitsStatsCollected: true,
                 areNativeHitsStatsCollected: true,
+                extCssMarkersState: ExtCssMarkersState.NotRequired,
                 extCssRules: null,
                 nativeCssSelectors: null,
             };

@@ -6,6 +6,7 @@ import {
     vi,
 } from 'vitest';
 
+import { ExtCssMarkersState } from '../../../../src/lib/common/cosmetic-api';
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 
 // `vi.mock` factories are hoisted above top-level `const` declarations, so the
@@ -162,5 +163,14 @@ describe('CosmeticApi.getContentScriptData (MV3) — native CSS hits stats flag'
 
         expect(result.isAppStarted).toBe(true);
         expect(result.areHitsStatsCollected).toBe(false);
+    });
+
+    it('reports notRequired ExtendedCss markers on an early return', () => {
+        appContextMock.configuration.settings.collectStats = true;
+        getTabContextMock.mockReturnValue(undefined);
+
+        const result = CosmeticApi.getContentScriptData('https://example.com/', 1, 0);
+
+        expect(result.extCssMarkersState).toBe(ExtCssMarkersState.NotRequired);
     });
 });

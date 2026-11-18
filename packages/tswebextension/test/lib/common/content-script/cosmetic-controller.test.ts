@@ -17,7 +17,7 @@ import { CosmeticResult } from '@adguard/tsurlfilter';
 
 import { CosmeticControllerCommon } from '../../../../src/lib/common/content-script/cosmetic-controller';
 import * as SendMessageModule from '../../../../src/lib/common/content-script/send-app-message';
-import { type ContentScriptCosmeticData } from '../../../../src/lib/common/cosmetic-api';
+import { type ContentScriptCosmeticData, ExtCssMarkersState } from '../../../../src/lib/common/cosmetic-api';
 import { MessageType } from '../../../../src/lib/common/message-constants';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import {
@@ -118,6 +118,9 @@ const getCosmeticData = (rules: string[], areHitsStatsCollected: boolean): Conte
         isAppStarted: true,
         areHitsStatsCollected,
         areNativeHitsStatsCollected: areHitsStatsCollected,
+        extCssMarkersState: areHitsStatsCollected && !!extCssRules && extCssRules.length > 0
+            ? ExtCssMarkersState.Applied
+            : ExtCssMarkersState.NotRequired,
         extCssRules,
         nativeCssSelectors: null,
     };
@@ -138,6 +141,7 @@ describe.each(controllers)('%s short-lived probes', (_name, CosmeticController) 
                 isAppStarted: true,
                 areHitsStatsCollected: true,
                 areNativeHitsStatsCollected: true,
+                extCssMarkersState: ExtCssMarkersState.NotRequired,
                 extCssRules: [],
                 nativeCssSelectors: null,
             };
@@ -333,6 +337,7 @@ describe.each(controllers)('%s short-lived probes', (_name, CosmeticController) 
                 isAppStarted: true,
                 areHitsStatsCollected: false,
                 areNativeHitsStatsCollected: false,
+                extCssMarkersState: ExtCssMarkersState.NotRequired,
                 extCssRules: [],
                 nativeCssSelectors: null,
             });
@@ -406,6 +411,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                     isAppStarted: true,
                     areHitsStatsCollected: true,
                     areNativeHitsStatsCollected: true,
+                    extCssMarkersState: ExtCssMarkersState.NotRequired,
                     extCssRules: [],
                     nativeCssSelectors: null,
                 });
@@ -512,6 +518,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                 isAppStarted: true,
                 areHitsStatsCollected: true,
                 areNativeHitsStatsCollected: true,
+                extCssMarkersState: ExtCssMarkersState.NotRequired,
                 extCssRules: [],
                 nativeCssSelectors: null,
             });
@@ -578,6 +585,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                             isAppStarted: true,
                             areHitsStatsCollected: true,
                             areNativeHitsStatsCollected: true,
+                            extCssMarkersState: ExtCssMarkersState.NotRequired,
                             extCssRules: [],
                             nativeCssSelectors: null,
                         };
@@ -587,6 +595,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                         isAppStarted: true,
                         areHitsStatsCollected: false,
                         areNativeHitsStatsCollected: false,
+                        extCssMarkersState: ExtCssMarkersState.NotRequired,
                         extCssRules: [],
                         nativeCssSelectors: null,
                     };
@@ -854,6 +863,105 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
         }
     });
 
+    it('retries marked data when the ExtendedCss markers were not applied', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+        let reapplyRequests = 0;
+
+        try {
+            vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockImplementation(async (message) => {
+                    const isReapply = message.type === MessageType.GetCosmeticData
+                        && (message.payload as { reapplyHits?: boolean }).reapplyHits;
+
+                    if (isReapply) {
+                        reapplyRequests += 1;
+                        return {
+                            ...getCosmeticData([], true),
+                            extCssMarkersState: ExtCssMarkersState.Applied,
+                        };
+                    }
+
+                    // The background prepared and applied the native markers
+                    // but failed to inject the marked ExtendedCss rules.
+                    return {
+                        ...getCosmeticData([], true),
+                        extCssMarkersState: ExtCssMarkersState.Failed,
+                    };
+                });
+
+            const cosmeticController = createController(CosmeticController);
+            cosmeticController.init();
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            expect(reapplyRequests).toBe(1);
+        } finally {
+            restoreMutationObserver();
+        }
+    });
+
+    it.each([
+        ['null', null],
+        ['an empty array', []],
+    ] as Array<[string, string[] | null]>)(
+        'does not re-apply marked data again for %s ExtendedCss rules',
+        async (_label, extCssRules) => {
+            const restoreMutationObserver = mockMutationObserver();
+            let reapplyRequests = 0;
+
+            try {
+                vi.spyOn(SendMessageModule, 'sendAppMessage')
+                    .mockImplementation(async (message) => {
+                        const isReapply = message.type === MessageType.GetCosmeticData
+                            && (message.payload as { reapplyHits?: boolean }).reapplyHits;
+
+                        if (isReapply) {
+                            reapplyRequests += 1;
+                        }
+
+                        return {
+                            isAppStarted: true,
+                            areHitsStatsCollected: true,
+                            areNativeHitsStatsCollected: true,
+                            extCssMarkersState: ExtCssMarkersState.NotRequired,
+                            extCssRules,
+                            nativeCssSelectors: null,
+                        };
+                    });
+
+                const cosmeticController = createController(CosmeticController);
+                cosmeticController.init();
+
+                await new Promise((resolve) => {
+                    setTimeout(resolve, 20);
+                });
+
+                for (let i = 0; i < 2; i += 1) {
+                    triggerRuntimeMessage({
+                        handlerName: 'tsWebExtension',
+                        type: MessageType.SetCollectHitStats,
+                        payload: { isCollectStats: false },
+                    });
+                    triggerRuntimeMessage({
+                        handlerName: 'tsWebExtension',
+                        type: MessageType.SetCollectHitStats,
+                        payload: { isCollectStats: true },
+                    });
+                }
+
+                await new Promise((resolve) => {
+                    setTimeout(resolve, 20);
+                });
+
+                expect(reapplyRequests).toBe(0);
+            } finally {
+                restoreMutationObserver();
+            }
+        },
+    );
+
     it('keeps ExtendedCss hits when collection is toggled during reapply', async () => {
         const restoreMutationObserver = mockMutationObserver();
         document.body.innerHTML = '';
@@ -942,6 +1050,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                         isAppStarted: true,
                         areHitsStatsCollected: false,
                         areNativeHitsStatsCollected: false,
+                        extCssMarkersState: ExtCssMarkersState.NotRequired,
                         extCssRules: [],
                         nativeCssSelectors: null,
                     };
@@ -1021,6 +1130,7 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                         isAppStarted: true,
                         areHitsStatsCollected: false,
                         areNativeHitsStatsCollected: false,
+                        extCssMarkersState: ExtCssMarkersState.NotRequired,
                         extCssRules: [],
                         nativeCssSelectors: null,
                     });

@@ -6,6 +6,7 @@ import {
     vi,
 } from 'vitest';
 
+import { ExtCssMarkersState } from '../../../../src/lib/common/cosmetic-api';
 import { FilteringEventType } from '../../../../src/lib/common/filtering-log';
 import { MESSAGE_HANDLER_NAME, MessageType } from '../../../../src/lib/common/message-constants';
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
@@ -159,6 +160,7 @@ describe('MessagesApi', () => {
                 isAppStarted: true,
                 areHitsStatsCollected: true,
                 areNativeHitsStatsCollected: true,
+                extCssMarkersState: ExtCssMarkersState.NotRequired,
                 extCssRules: null,
                 nativeCssSelectors: null,
             };
@@ -186,7 +188,11 @@ describe('MessagesApi', () => {
             await Promise.resolve();
 
             expect(CosmeticApi.getContentScriptData).not.toHaveBeenCalled();
-            expect(CosmeticApi.waitForPendingCssInjection).toHaveBeenCalledWith(TAB_ID, 0);
+            expect(CosmeticApi.waitForPendingCssInjection).toHaveBeenCalledWith(
+                TAB_ID,
+                0,
+                undefined,
+            );
 
             resolveWait();
             const result = await resultPromise;
@@ -206,6 +212,7 @@ describe('MessagesApi', () => {
                 isAppStarted: true,
                 areHitsStatsCollected: true,
                 areNativeHitsStatsCollected: true,
+                extCssMarkersState: ExtCssMarkersState.NotRequired,
                 extCssRules: null,
                 nativeCssSelectors: null,
             };
@@ -231,21 +238,32 @@ describe('MessagesApi', () => {
             }, {
                 tab: { id: TAB_ID, url: TAB_URL },
                 frameId: 0,
+                documentId: 'document-1',
             } as any);
 
             await Promise.resolve();
 
             expect(CosmeticApi.reapplyMarkedCosmeticData).not.toHaveBeenCalled();
-            expect(CosmeticApi.waitForPendingCssInjection).toHaveBeenCalledWith(TAB_ID, 0);
+            // The wait must look for the injection of the document the request
+            // came from, not the one the frame context holds now.
+            expect(CosmeticApi.waitForPendingCssInjection).toHaveBeenCalledWith(
+                TAB_ID,
+                0,
+                'document-1',
+            );
 
             resolveWait();
             const result = await resultPromise;
 
             expect(result).toBe(data);
+            // The re-apply is bound to the document the request came from, so
+            // a navigation that already replaced the frame context cannot
+            // redirect the marked rules.
             expect(CosmeticApi.reapplyMarkedCosmeticData).toHaveBeenCalledWith(
                 TAB_URL,
                 TAB_ID,
                 0,
+                'document-1',
             );
             expect(tabsApi.updateTabMainFrameRule).not.toHaveBeenCalled();
         });

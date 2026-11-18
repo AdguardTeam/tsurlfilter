@@ -7,6 +7,7 @@ import {
     LF,
     SEMICOLON,
 } from './constants';
+import { ExtCssMarkersState } from './ext-css-markers-state';
 import { defaultFilteringLog, FilteringEventType } from './filtering-log';
 import { type ContentType } from './request-type';
 import { type PreparedCosmeticResultCommon } from './tabs/frame';
@@ -14,6 +15,8 @@ import { CssCapabilities } from './utils/css-capabilities';
 import { nanoid } from './utils/nanoid';
 import { getRuleTexts, type RuleTextProvider } from './utils/rule-text-provider';
 import { getDomain } from './utils/url';
+
+export { ExtCssMarkersState };
 
 /**
  * Information for logging js rules.
@@ -62,6 +65,14 @@ export type ContentScriptCosmeticData = {
      * failed, e.g. for an old subframe whose context is gone.
      */
     areNativeHitsStatsCollected: boolean;
+
+    /**
+     * Marker state of the ExtendedCss path.
+     *
+     * On MV3 the background applies ExtendedCss, so it is the only side that
+     * can report whether the marked rules reached the document.
+     */
+    extCssMarkersState: ExtCssMarkersState;
 
     /**
      * Extended css rules to apply.
@@ -137,6 +148,15 @@ type CssInjectionInFlight = {
     preparedCosmeticResult: PreparedCosmeticResultCommon;
     documentId: string | undefined;
     areHitsStatsCollected: boolean;
+    promise: Promise<void>;
+};
+
+/**
+ * In-flight ExtendedCss injection for a frame context.
+ */
+type ExtCssInjectionInFlight = {
+    preparedCosmeticResult: PreparedCosmeticResultCommon;
+    documentId: string | undefined;
     promise: Promise<void>;
 };
 
@@ -284,6 +304,14 @@ export class CosmeticApiCommon {
     protected static cssInjectionInFlight = new WeakMap<object, CssInjectionInFlight>();
 
     /**
+     * ExtendedCss injections currently in progress, keyed by frame context.
+     *
+     * An ExtendedCss injection replaces the instance the document holds, so
+     * two injections for the same document must not run concurrently.
+     */
+    protected static extCssInjectionInFlight = new WeakMap<object, ExtCssInjectionInFlight>();
+
+    /**
      * Returns the prepared result identity used by the injection cache.
      *
      * @param frameContext Frame context.
@@ -389,12 +417,20 @@ export class CosmeticApiCommon {
     }
 
     /**
-     * Waits for a marked CSS injection that is still in progress.
+     * Waits for a marked native CSS injection that is still in progress.
+     *
+     * ExtendedCss injections are not awaited here: see
+     * {@link waitForPendingExtCssInjectionForContext}.
      *
      * @param frameContext Frame context.
+     * @param documentId Document to wait for. Defaults to the document the
+     * frame context holds; a caller that knows the document the request came
+     * from must pass it explicitly, because a navigation mutates the frame
+     * context in place.
      */
     protected static async waitForPendingCssInjectionForContext(
         frameContext: MarkedCssFrameContext | undefined,
+        documentId: string | undefined = frameContext?.documentId,
     ): Promise<void> {
         if (!frameContext) {
             return;
@@ -404,7 +440,39 @@ export class CosmeticApiCommon {
         if (!pending
             || !pending.areHitsStatsCollected
             || pending.preparedCosmeticResult !== frameContext.preparedCosmeticResult
-            || pending.documentId !== frameContext.documentId) {
+            || pending.documentId !== documentId) {
+            return;
+        }
+
+        await pending.promise;
+    }
+
+    /**
+     * Waits for an ExtendedCss injection that is still in progress for the
+     * same document and prepared result.
+     *
+     * The pending injection is awaited regardless of its marker state: it
+     * replaces the document's ExtendedCss instance, so an injection started
+     * from the same prepared result would race it.
+     *
+     * @param frameContext Frame context.
+     * @param documentId Document to wait for. Defaults to the document the
+     * frame context holds; a caller that captured an earlier document id must
+     * pass it explicitly, because a navigation mutates the frame context in
+     * place.
+     */
+    protected static async waitForPendingExtCssInjectionForContext(
+        frameContext: MarkedCssFrameContext | undefined,
+        documentId: string | undefined = frameContext?.documentId,
+    ): Promise<void> {
+        if (!frameContext) {
+            return;
+        }
+
+        const pending = CosmeticApiCommon.extCssInjectionInFlight.get(frameContext);
+        if (!pending
+            || pending.preparedCosmeticResult !== frameContext.preparedCosmeticResult
+            || pending.documentId !== documentId) {
             return;
         }
 

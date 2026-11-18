@@ -5,6 +5,7 @@ import { BACKGROUND_TAB_ID } from '../../common/constants';
 import {
     type ContentScriptCosmeticData,
     CosmeticApiCommon,
+    ExtCssMarkersState,
     type LogJsRulesParams,
     type MarkedCssFrameContext,
 } from '../../common/cosmetic-api';
@@ -58,17 +59,56 @@ export class CosmeticApi extends CosmeticApiCommon {
     private static readonly INJECTION_MAX_TRIES = 100;
 
     /**
-     * Waits for a marked CSS injection that is still in progress.
+     * Actual marked ExtendedCss state per frame context.
+     */
+    protected static extCssMarkersApplied = new WeakMap<object, {
+        preparedCosmeticResult: PreparedCosmeticResultMV3 | undefined;
+        applied: boolean;
+    }>();
+
+    /**
+     * Waits for a marked native CSS injection that is still in progress.
+     *
+     * ExtendedCss is deliberately not awaited here: its payload is large and
+     * compiled in every matched frame, so making the ordinary cosmetic data
+     * response wait for it would block the content script. Only the marked
+     * re-apply waits for a pending ExtendedCss injection, because it replaces
+     * the same document's instance.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
+     * @param documentId Document the request came from, when known. Defaults to
+     * the document the frame context holds.
      *
      * @returns A promise that resolves when the pending injection settles.
      */
-    public static waitForPendingCssInjection(tabId: number, frameId: number): Promise<void> {
+    public static waitForPendingCssInjection(
+        tabId: number,
+        frameId: number,
+        documentId?: string,
+    ): Promise<void> {
         return CosmeticApiCommon.waitForPendingCssInjectionForContext(
             tabsApi.getFrameContext(tabId, frameId),
+            documentId,
         );
+    }
+
+    /**
+     * Records whether marked ExtendedCss rules are applied for a frame.
+     *
+     * @param frameContext Frame context.
+     * @param preparedCosmeticResult Prepared result used for the frame.
+     * @param applied Whether the marked ExtendedCss rules are applied.
+     */
+    protected static setExtCssMarkersApplied(
+        frameContext: object,
+        preparedCosmeticResult: PreparedCosmeticResultMV3 | undefined,
+        applied: boolean,
+    ): void {
+        CosmeticApi.extCssMarkersApplied.set(frameContext, {
+            preparedCosmeticResult,
+            applied,
+        });
     }
 
     /**
@@ -224,6 +264,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             isAppStarted: false,
             areHitsStatsCollected: false,
             areNativeHitsStatsCollected: false,
+            extCssMarkersState: ExtCssMarkersState.NotRequired,
             extCssRules: null,
             nativeCssSelectors: null,
         };
@@ -272,6 +313,20 @@ export class CosmeticApi extends CosmeticApiCommon {
         data.areNativeHitsStatsCollected = !!nativeHitsState?.applied
             && nativeHitsState.preparedCosmeticResult === frameContext?.preparedCosmeticResult;
 
+        // The ExtendedCss rules are prepared and applied by the background, so
+        // only its record of the last injection can tell whether the marked
+        // rules reached this document.
+        const extCssState = frameContext
+            ? CosmeticApi.extCssMarkersApplied.get(frameContext)
+            : undefined;
+        if (frameContext
+            && extCssState
+            && extCssState.preparedCosmeticResult === frameContext.preparedCosmeticResult) {
+            data.extCssMarkersState = extCssState.applied
+                ? ExtCssMarkersState.Applied
+                : ExtCssMarkersState.Failed;
+        }
+
         const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
         const cosmeticResult = engineApi.matchCosmetic(matchQuery);
@@ -294,9 +349,14 @@ export class CosmeticApi extends CosmeticApiCommon {
      * markers when the page was loaded with collection disabled. Marked copies
      * are added, so filtering behavior is unchanged.
      *
+     * Both marked injections are bound to the document the request came from:
+     * the sender reports it, and the frame context may already describe the
+     * next document after a navigation.
+     *
      * @param frameUrl Frame url.
      * @param tabId Tab id.
      * @param frameId Frame id.
+     * @param targetDocumentId Document the request came from, when known.
      *
      * @returns Content script data for the frame.
      */
@@ -304,6 +364,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         frameUrl: string,
         tabId: number,
         frameId: number,
+        targetDocumentId?: string,
     ): Promise<ContentScriptCosmeticData> {
         const data = CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
 
@@ -319,15 +380,95 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
+        // The rules must reach the document the sender runs in, even when the
+        // frame context is already gone or has moved on to the next document.
+        // The id is captured once, because a navigation mutates the frame
+        // context in place while the injections below are awaited.
+        const documentId = targetDocumentId ?? frameContext?.documentId;
+
+        // The frame context is a live object, so its document id is kept to
+        // detect a navigation that happens while an injection is awaited.
+        const frameContextDocumentId = frameContext?.documentId;
+
+        // The seeded marker state describes the document the frame context
+        // holds. A request from another document must report its own state, so
+        // the context's state is cleared instead of passed through to the
+        // response.
+        if (frameContext?.documentId !== documentId) {
+            data.areNativeHitsStatsCollected = false;
+            data.extCssMarkersState = ExtCssMarkersState.NotRequired;
+        }
+
+        // The marked CSS cache and the marker records are keyed by the frame
+        // context and store its document id, so they can describe only that
+        // document.
+        let recordsFrameContext = CosmeticApi.getRecordsFrameContext(frameContext, documentId);
+
         // The frame context is only an injection cache key. Old subframes no
         // longer have one, so match from the frame URL and tab context.
-        if (frameContext && CosmeticApi.hasMarkedCssInjected(frameContext)) {
+        if (recordsFrameContext && CosmeticApi.hasMarkedCssInjected(recordsFrameContext)) {
             data.areNativeHitsStatsCollected = true;
             CosmeticApi.setNativeHitsMarkersApplied(
-                frameContext,
-                frameContext.preparedCosmeticResult,
+                recordsFrameContext,
+                recordsFrameContext.preparedCosmeticResult,
                 true,
             );
+
+            const { preparedCosmeticResult } = recordsFrameContext;
+            const extCssState = CosmeticApi.extCssMarkersApplied.get(recordsFrameContext);
+
+            // The cache can be written by the initial marked CSS injection
+            // before the floating ExtendedCss injection settles, so a cache
+            // hit alone does not prove that the marked ExtendedCss rules were
+            // applied.
+            if (preparedCosmeticResult
+                && extCssState?.preparedCosmeticResult === preparedCosmeticResult
+                && !extCssState.applied) {
+                // The unmarked instance may still be applying; the marked
+                // rules replace it, so wait for it instead of racing it. The
+                // captured document id is passed explicitly, because the frame
+                // context may already hold the next document.
+                await CosmeticApi.waitForPendingExtCssInjectionForContext(
+                    recordsFrameContext,
+                    documentId,
+                );
+
+                // The frame context is a live object: a navigation mutates its
+                // document id in place. The marked rules replace the instance
+                // of the document they were prepared for.
+                if (frameContext && frameContext.documentId !== frameContextDocumentId) {
+                    return data;
+                }
+
+                const extCssApplied = await CosmeticApi.injectExtCssRules(
+                    { tabId, frameId, documentId },
+                    preparedCosmeticResult.extCssRules,
+                    preparedCosmeticResult.areHitsStatsCollected,
+                );
+
+                data.extCssMarkersState = extCssApplied
+                    ? ExtCssMarkersState.Applied
+                    : ExtCssMarkersState.Failed;
+
+                recordsFrameContext = CosmeticApi.getRecordsFrameContext(frameContext, documentId);
+                if (recordsFrameContext) {
+                    CosmeticApi.setExtCssMarkersApplied(
+                        recordsFrameContext,
+                        preparedCosmeticResult,
+                        extCssApplied,
+                    );
+
+                    if (extCssApplied) {
+                        CosmeticApi.setMarkedCssInjected(recordsFrameContext);
+                    }
+                }
+
+                return data;
+            }
+
+            // The marked native CSS is in place and no failed ExtendedCss
+            // injection is recorded for this prepared result.
+            data.extCssMarkersState = ExtCssMarkersState.Applied;
             return data;
         }
 
@@ -344,15 +485,55 @@ export class CosmeticApi extends CosmeticApiCommon {
             isNativeHasSupported: true,
         });
 
-        await CosmeticApi.injectExtCssRules(
-            {
-                tabId,
-                frameId,
-                documentId: frameContext?.documentId,
-            },
-            extCssRules,
-            true,
-        );
+        // The initial injection is left floating, so it may still be applying
+        // the unmarked rules to this document. The marked rules replace the
+        // document's ExtendedCss instance, so wait for it instead of racing it.
+        // The captured document id is passed explicitly, because the frame
+        // context may already hold the next document.
+        await CosmeticApi.waitForPendingExtCssInjectionForContext(frameContext, documentId);
+
+        // The rules matched above belong to the captured document. A
+        // navigation during the wait mutates the frame context instead of
+        // replacing it, so inject nothing rather than into another document.
+        if (frameContext && frameContext.documentId !== frameContextDocumentId) {
+            return data;
+        }
+
+        // The wait only orders the injections. An injection that already
+        // carried markers for this prepared result applied the same rules, so
+        // injecting them again would replace an identical instance. An
+        // unmarked injection still needs the marked replacement.
+        recordsFrameContext = CosmeticApi.getRecordsFrameContext(frameContext, documentId);
+        const extCssState = recordsFrameContext
+            ? CosmeticApi.extCssMarkersApplied.get(recordsFrameContext)
+            : undefined;
+        const areExtCssMarkersApplied = !!recordsFrameContext
+            && extCssState?.applied === true
+            && extCssState.preparedCosmeticResult === recordsFrameContext.preparedCosmeticResult
+            && recordsFrameContext.preparedCosmeticResult?.areHitsStatsCollected === true;
+
+        const extCssApplied = areExtCssMarkersApplied
+            ? true
+            : await CosmeticApi.injectExtCssRules(
+                { tabId, frameId, documentId },
+                extCssRules,
+                true,
+            );
+
+        data.extCssMarkersState = extCssApplied
+            ? ExtCssMarkersState.Applied
+            : ExtCssMarkersState.Failed;
+
+        // The records describe the injected document, so they are written only
+        // while the frame context still holds it.
+        recordsFrameContext = CosmeticApi.getRecordsFrameContext(frameContext, documentId);
+        if (recordsFrameContext) {
+            CosmeticApi.setExtCssMarkersApplied(
+                recordsFrameContext,
+                recordsFrameContext.preparedCosmeticResult,
+                extCssApplied,
+            );
+        }
 
         const cssText = CosmeticApi.getCssText(cosmeticResult, {
             areHitsStatsCollected: true,
@@ -362,12 +543,35 @@ export class CosmeticApi extends CosmeticApiCommon {
         if (!cssText) {
             // There is no native CSS to inject, so no native hit can be lost.
             data.areNativeHitsStatsCollected = true;
-            if (frameContext) {
+            if (recordsFrameContext) {
                 CosmeticApi.setNativeHitsMarkersApplied(
-                    frameContext,
-                    frameContext.preparedCosmeticResult,
+                    recordsFrameContext,
+                    recordsFrameContext.preparedCosmeticResult,
                     true,
                 );
+                // The cache is written only when both marked parts succeeded,
+                // so a failed ExtendedCss injection is retried on the next
+                // enable.
+                if (extCssApplied) {
+                    CosmeticApi.setMarkedCssInjected(recordsFrameContext);
+                }
+            }
+            return data;
+        }
+
+        // The cache is written only when both marked parts succeeded, so a
+        // failed ExtendedCss injection leaves the marked native CSS in the
+        // document while the cache stays unwritten. Injecting it again would
+        // duplicate the stylesheet.
+        const nativeHitsState = recordsFrameContext
+            ? CosmeticApi.nativeHitsMarkersApplied.get(recordsFrameContext)
+            : undefined;
+        if (recordsFrameContext
+            && nativeHitsState?.applied
+            && nativeHitsState.preparedCosmeticResult === recordsFrameContext.preparedCosmeticResult) {
+            data.areNativeHitsStatsCollected = true;
+            if (extCssApplied) {
+                CosmeticApi.setMarkedCssInjected(recordsFrameContext);
             }
             return data;
         }
@@ -377,25 +581,30 @@ export class CosmeticApi extends CosmeticApiCommon {
                 tabId,
                 frameId,
                 cssText,
+                documentId,
                 frameContext,
             );
             data.areNativeHitsStatsCollected = true;
-            if (frameContext) {
+            recordsFrameContext = CosmeticApi.getRecordsFrameContext(frameContext, documentId);
+            if (recordsFrameContext) {
                 CosmeticApi.setNativeHitsMarkersApplied(
-                    frameContext,
-                    frameContext.preparedCosmeticResult,
+                    recordsFrameContext,
+                    recordsFrameContext.preparedCosmeticResult,
                     true,
                 );
-                CosmeticApi.setMarkedCssInjected(frameContext);
+                if (extCssApplied) {
+                    CosmeticApi.setMarkedCssInjected(recordsFrameContext);
+                }
             }
         } catch (e) {
             // Marked ExtendedCss rules are still applied by the content
             // script, but native hits cannot be counted without this CSS.
             data.areNativeHitsStatsCollected = false;
-            if (frameContext) {
+            recordsFrameContext = CosmeticApi.getRecordsFrameContext(frameContext, documentId);
+            if (recordsFrameContext) {
                 CosmeticApi.setNativeHitsMarkersApplied(
-                    frameContext,
-                    frameContext.preparedCosmeticResult,
+                    recordsFrameContext,
+                    recordsFrameContext.preparedCosmeticResult,
                     false,
                 );
             }
@@ -562,6 +771,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param tabId Tab id.
      * @param frameId Frame id.
      * @param cssText Marked CSS text.
+     * @param documentId Document the CSS was prepared for, when known.
      * @param frameContext Frame context that was matched for {@link cssText}.
      * @param tries Number of tries already made.
      *
@@ -571,11 +781,17 @@ export class CosmeticApi extends CosmeticApiCommon {
         tabId: number,
         frameId: number,
         cssText: string,
-        frameContext: object | undefined,
+        documentId: string | undefined,
+        frameContext: MarkedCssFrameContext | undefined,
         tries = 0,
     ): Promise<void> {
         try {
-            await ScriptingApi.insertCSS({ cssText, tabId, frameId });
+            await ScriptingApi.insertCSS({
+                cssText,
+                tabId,
+                frameId,
+                documentId,
+            });
         } catch (e) {
             if (tries >= CosmeticApi.INJECTION_MAX_TRIES) {
                 throw e;
@@ -585,7 +801,13 @@ export class CosmeticApi extends CosmeticApiCommon {
                 setTimeout(resolve, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             });
 
-            if (tabsApi.getFrameContext(tabId, frameId) !== frameContext) {
+            const currentFrameContext = tabsApi.getFrameContext(tabId, frameId);
+
+            if (!CosmeticApi.isSameDocumentAfterRetryDelay(
+                currentFrameContext,
+                documentId,
+                frameContext,
+            )) {
                 // The frame navigated while waiting. Do not inject the old
                 // document's CSS into the new document.
                 throw e;
@@ -595,6 +817,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 tabId,
                 frameId,
                 cssText,
+                documentId,
                 frameContext,
                 tries + 1,
             );
@@ -602,10 +825,60 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Checks whether a retry still targets the document of the first attempt.
+     *
+     * A navigation mutates the document id of the live frame context in place,
+     * so the id is compared when either side knows it. Without any document
+     * id, a replaced frame context is the only signal of a navigation.
+     *
+     * @param currentFrameContext Frame context read after the retry delay.
+     * @param documentId Document id the first attempt was bound to.
+     * @param frameContext Frame context the operation started with.
+     *
+     * @returns True when the retry may inject into the same document.
+     */
+    private static isSameDocumentAfterRetryDelay(
+        currentFrameContext: MarkedCssFrameContext | undefined,
+        documentId: string | undefined,
+        frameContext: MarkedCssFrameContext | undefined,
+    ): boolean {
+        if (documentId !== undefined || currentFrameContext?.documentId !== undefined) {
+            return currentFrameContext?.documentId === documentId;
+        }
+
+        return currentFrameContext === frameContext;
+    }
+
+    /**
+     * Returns the frame context for reading and writing marked CSS records,
+     * but only while it still describes the given document.
+     *
+     * The records are keyed by the frame context and store its document id, so
+     * they can describe only that document. A navigation mutates the frame
+     * context in place, so the check must run when the record is used rather
+     * than when the operation starts.
+     *
+     * @param frameContext Frame context.
+     * @param documentId Document id the operation targets.
+     *
+     * @returns The frame context, or undefined when it describes another
+     * document.
+     */
+    private static getRecordsFrameContext<T extends MarkedCssFrameContext>(
+        frameContext: T | undefined,
+        documentId: string | undefined,
+    ): T | undefined {
+        return frameContext && frameContext.documentId === documentId
+            ? frameContext
+            : undefined;
+    }
+
+    /**
      * Injects prepared CSS.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
+     * @param documentId Document the CSS was prepared for, when known.
      * @param frameContext Frame context that was matched for {@link cssText}.
      * @param preparedCosmeticResult Prepared cosmetic result.
      * @param cssText CSS text to inject.
@@ -613,6 +886,7 @@ export class CosmeticApi extends CosmeticApiCommon {
     private static async injectPreparedCss(
         tabId: number,
         frameId: number,
+        documentId: string | undefined,
         frameContext: MarkedCssFrameContext,
         preparedCosmeticResult: PreparedCosmeticResultMV3,
         cssText: string,
@@ -622,17 +896,37 @@ export class CosmeticApi extends CosmeticApiCommon {
                 cssText,
                 tabId,
                 frameId,
+                documentId,
             });
-            CosmeticApi.setNativeHitsMarkersApplied(
+
+            const recordsFrameContext = CosmeticApi.getRecordsFrameContext(
                 frameContext,
+                documentId,
+            );
+            if (!recordsFrameContext) {
+                return;
+            }
+
+            CosmeticApi.setNativeHitsMarkersApplied(
+                recordsFrameContext,
                 preparedCosmeticResult,
                 preparedCosmeticResult.areHitsStatsCollected,
             );
             if (preparedCosmeticResult.areHitsStatsCollected) {
-                CosmeticApi.setMarkedCssInjected(frameContext);
+                CosmeticApi.setMarkedCssInjected(recordsFrameContext);
             }
         } catch (e) {
-            CosmeticApi.setNativeHitsMarkersApplied(frameContext, preparedCosmeticResult, false);
+            const recordsFrameContext = CosmeticApi.getRecordsFrameContext(
+                frameContext,
+                documentId,
+            );
+            if (recordsFrameContext) {
+                CosmeticApi.setNativeHitsMarkersApplied(
+                    recordsFrameContext,
+                    preparedCosmeticResult,
+                    false,
+                );
+            }
             logger.info(`[tsweb.CosmeticApi.injectPreparedCss]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
         }
     }
@@ -658,6 +952,10 @@ export class CosmeticApi extends CosmeticApiCommon {
             return Promise.resolve();
         }
 
+        // The CSS is prepared for this document, so a navigation during the
+        // injection must not move it to the next one.
+        const { documentId } = frameContext;
+
         return CosmeticApiCommon.applyCssWithCache({
             frameContext,
             preparedCosmeticResult,
@@ -665,6 +963,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             inject: () => CosmeticApi.injectPreparedCss(
                 tabId,
                 frameId,
+                documentId,
                 frameContext,
                 preparedCosmeticResult,
                 cssText as string,
@@ -689,6 +988,12 @@ export class CosmeticApi extends CosmeticApiCommon {
      * markers and the injected func registers a `beforeStyleApplied` callback
      * that reports hits back to the background.
      *
+     * This is the only place where an ExtendedCss injection is registered as
+     * pending: it owns the frame context key, the prepared result and the
+     * document id. The registration happens synchronously, before the
+     * injection settles, so a marked re-apply for the same document can wait
+     * for it even though the caller does not await this injection.
+     *
      * @param frameContext Frame context with the prepared ExtendedCss rules.
      *
      * @returns A promise that resolves when the rules are injected.
@@ -701,8 +1006,41 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         const { extCssRules, areHitsStatsCollected } = preparedCosmeticResult;
+        // The rules are prepared for this document, so a navigation during the
+        // injection must not move them to the next one.
+        const { tabId, frameId, documentId } = frameContext;
 
-        await CosmeticApi.injectExtCssRules(frameContext, extCssRules, areHitsStatsCollected);
+        const promise = CosmeticApi.injectExtCssRules(
+            { tabId, frameId, documentId },
+            extCssRules,
+            areHitsStatsCollected,
+        ).then((applied) => {
+            // The record describes the injected document, so it is written
+            // only while the frame context still holds it.
+            const recordsFrameContext = CosmeticApi.getRecordsFrameContext(
+                frameContext,
+                documentId,
+            );
+            if (recordsFrameContext) {
+                CosmeticApi.setExtCssMarkersApplied(
+                    recordsFrameContext,
+                    preparedCosmeticResult,
+                    applied,
+                );
+            }
+        }).finally(() => {
+            if (CosmeticApi.extCssInjectionInFlight.get(frameContext)?.promise === promise) {
+                CosmeticApi.extCssInjectionInFlight.delete(frameContext);
+            }
+        });
+
+        CosmeticApi.extCssInjectionInFlight.set(frameContext, {
+            preparedCosmeticResult,
+            documentId,
+            promise,
+        });
+
+        await promise;
     }
 
     /**
@@ -728,18 +1066,19 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param collectStats Whether the rules carry hits markers and the injected
      * func must report hits back to the background.
      *
-     * @returns A promise that resolves when the rules are injected.
+     * @returns True when the injection ran or nothing was expected, false when
+     * it threw.
      */
     private static async injectExtCssRules(
         { tabId, frameId, documentId }: ExecuteExtCssTarget,
         extCssRules: string[] | null,
         collectStats: boolean,
-    ): Promise<void> {
+    ): Promise<boolean> {
         try {
             if (!extCssRules || extCssRules.length === 0) {
                 await ScriptingApi.disposeExtCss({ tabId, frameId, documentId });
 
-                return;
+                return true;
             }
 
             await ScriptingApi.executeExtCss({
@@ -749,8 +1088,12 @@ export class CosmeticApi extends CosmeticApiCommon {
                 cssRules: extCssRules,
                 collectStats,
             });
+
+            return true;
         } catch (e) {
             logger.info(`[tsweb.CosmeticApi.injectExtCssRules]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
+
+            return false;
         }
     }
 

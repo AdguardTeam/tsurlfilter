@@ -9,6 +9,7 @@ import {
 
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
+import { ExtCssMarkersState } from '../../../../src/lib/common/cosmetic-api';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { createCosmeticRule } from '../../../helpers/rule-creator';
@@ -94,6 +95,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(data.areHitsStatsCollected).toBe(true);
         expect(data.areNativeHitsStatsCollected).toBe(false);
         expect(data.extCssRules?.some((rule) => rule.includes('adguard'))).toBe(true);
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.ContentScript);
     });
 
     it('reports prepared markers after initial injection succeeds', async () => {
@@ -154,6 +156,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(data.areHitsStatsCollected).toBe(true);
         expect(data.areNativeHitsStatsCollected).toBe(true);
         expect(data.extCssRules?.some((rule) => rule.includes('adguard'))).toBe(true);
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.ContentScript);
         expect(injectSpy).toHaveBeenCalledTimes(1);
 
         const cssText = injectSpy.mock.calls[0][2];
