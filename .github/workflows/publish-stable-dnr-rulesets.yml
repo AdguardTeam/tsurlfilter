@@ -2,12 +2,13 @@ name: Publish stable DNR rulesets
 
 # Once daily (00:17 UTC, ahead of the 00:30 extension auto-build), build and
 # publish @adguard/dnr-rulesets from each of the
-# supported stable/dnr-rulesets-* branches (5.0, 6.0).
-# The lines carry incompatible ruleset formats: 6.0 is built with
+# supported stable/dnr-rulesets-* branches (5.0, 6.0, 6.1).
+# The lines carry incompatible ruleset formats: 6.0 and 6.1 are built with
 # @adguard/dnr-converter 2.x (metadata split into `metadata.chunk` rules) and
 # 5.0 with 1.x; neither reader loads the other format. So each line has its
 # own dist-tag: `latest` stays on LATEST_LINE until consumers migrate, every
-# other line publishes under `stable-<line>` (6.0 under `stable-6.0`).
+# other line publishes under `stable-<line>` (6.0 under `stable-6.0`, 6.1
+# under `stable-6.1`).
 # 5.0 introduced the switch to the standalone @adguard/dnr-converter,
 # replacing @adguard/tsurlfilter's DNR APIs; older lines are not published.
 #
@@ -27,7 +28,7 @@ on:
   workflow_dispatch:
     inputs:
       line:
-        description: 'Stable line to publish (5.0 or 6.0); empty = all lines'
+        description: 'Stable line to publish (5.0, 6.0 or 6.1); empty = all lines'
         required: false
         type: string
 
@@ -62,7 +63,7 @@ jobs:
 
           # Single source of truth for the published stable lines — the
           # check-package-lists.mjs drift guard asserts this assignment.
-          ALL_LINES="5.0 6.0"
+          ALL_LINES="5.0 6.0 6.1"
           # The line that owns `latest`. Move it to 6.0 once consumers read
           # the 6.0 format; every other line publishes under stable-<line>.
           # The drift guard asserts it is in ALL_LINES and matches the

@@ -98,22 +98,25 @@ section instead.
    Octopass `protected-push` (the commit avoids `[skip ci]` so `mirror.yml`
    still syncs the update to the public repo). Failures are reported to Slack.
 - `publish-stable-dnr-rulesets.yml` builds and publishes `@adguard/dnr-rulesets`
-   once daily (00:17 UTC) from the `stable/dnr-rulesets-5.0` and
-   `stable/dnr-rulesets-6.0` branches; the older stable lines are no longer
-   published. The two lines carry incompatible ruleset formats: 6.0 is built
-   with `@adguard/dnr-converter` 2.x (metadata split into `metadata.chunk`
-   rules), 5.0 with 1.x, and neither reader loads the other format. Each line
-   therefore has its own dist-tag:
+   once daily (00:17 UTC) from the `stable/dnr-rulesets-5.0`,
+   `stable/dnr-rulesets-6.0` and `stable/dnr-rulesets-6.1` branches; the older
+   stable lines are no longer published. The lines carry incompatible ruleset
+   formats: 6.0 and 6.1 are built with `@adguard/dnr-converter` 2.x (metadata
+   split into `metadata.chunk` rules), 5.0 with 1.x, and neither reader loads
+   the other format. Each line therefore has its own dist-tag:
 
    | Line | Branch | Dist-tag |
    | --- | --- | --- |
    | 5.0 | `stable/dnr-rulesets-5.0` | `latest` |
    | 6.0 | `stable/dnr-rulesets-6.0` | `stable-6.0` |
+   | 6.1 | `stable/dnr-rulesets-6.1` | `stable-6.1` |
 
    `latest` stays on 5.0 until consumers read the 6.0 format; to move it,
    change `LATEST_LINE` in the workflow, this table and `AGENTS.md`
-   (`scripts/ci/check-package-lists.mjs` fails on a mismatch). Versions use
-   `<major>.<minor>.<UTC timestamp>` and are injected only for that build.
+   (`scripts/ci/check-package-lists.mjs` fails on a mismatch). 6.0 stays in
+   the list while `stable/v5.5`, which pins a 6.0 version, is still supported.
+   Versions use `<major>.<minor>.<UTC timestamp>` and are injected only for
+   that build.
    Each line runs `_publish-stable-dnr-rulesets-line.yml` and publishes its
    tarball to the internal Artifact Keeper npm registry (shared
    `deploy-to-ak-npm.yml`), where the browser-extension auto-build installs

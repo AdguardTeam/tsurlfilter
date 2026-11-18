@@ -139,12 +139,13 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   leg is ungated, like the stable line) → tag after publish → mirror → GitHub
   Release → Slack, with a failure-notify Slack job).
 - `publish-stable-dnr-rulesets.yml` — once-daily scheduled build/publish of
-  `@adguard/dnr-rulesets` from the `stable/dnr-rulesets-5.0` and
-  `stable/dnr-rulesets-6.0` branches; older stable lines are no longer
-  published. The lines carry incompatible ruleset formats (6.0 is built with
-  `@adguard/dnr-converter` 2.x, 5.0 with 1.x), so each has its own dist-tag:
-  5.0 publishes under `latest` until consumers migrate (`LATEST_LINE` in the
-  workflow), 6.0 under `stable-6.0`. A `resolve-lines` job holds the line list
+  `@adguard/dnr-rulesets` from the `stable/dnr-rulesets-5.0`,
+  `stable/dnr-rulesets-6.0` and `stable/dnr-rulesets-6.1` branches; older
+  stable lines are no longer published. The lines carry incompatible ruleset
+  formats (6.0 and 6.1 are built with `@adguard/dnr-converter` 2.x, 5.0 with
+  1.x), so each has its own dist-tag: 5.0 publishes under `latest` until
+  consumers migrate (`LATEST_LINE` in the workflow), 6.0 under `stable-6.0`
+  and 6.1 under `stable-6.1`. A `resolve-lines` job holds the line list
   (`ALL_LINES`, asserted by `scripts/ci/check-package-lists.mjs` against this
   file and `DEPLOYMENT.md`) and skips a line whose branch is not on the current
   CI (root `Dockerfile` with `dnr-rulesets-auto-build-output`,
