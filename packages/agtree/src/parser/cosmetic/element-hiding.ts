@@ -276,23 +276,26 @@ function endsRegexpLiteralAt(
 }
 
 /**
- * Whether a `)` inside a character class belongs to that class.
+ * Whether a `)` inside a possible character class belongs to that class.
  *
  * A plain `:matches-path()` value can contain `[`, for example `/foo[` or
- * `/[/`. Such a `[` is not a character class: reading it as one makes the
- * class swallow the argument's own `)` and latch onto a later `/` + `)` in
- * the rule. A class member `)` is therefore accepted only when the class
- * closes (a `]` appears) before the next parenthesis. For example, in
- * `/foo[):has-text(/]/)` the class would have to span `:has-text(`, so the
- * `)` ends the argument instead.
+ * `/[/`. Reading that `[` as a character class makes the class swallow the
+ * argument's own `)` and latch onto a later `/` + `)` in the rule. A `)` is
+ * therefore a class member only when the class closes at a `]` without
+ * swallowing a pseudo-class call such as `:has-text(`. That call belongs to
+ * the selector, not to a regexp. Parentheses alone do not make the class
+ * invalid, because a regexp character class can hold them, for example
+ * `[))]` or `[)(]`. Consequently, a real class that itself contains both a
+ * `)` and a `:name(` text, such as `[):has-text(]`, is read as a plain value.
+ * Such a class is not expected in a filter list.
  *
  * @param types Token type array.
  * @param afterParenTi Token index right after the `)`.
  * @param endTi Exclusive upper bound.
  *
- * @returns `true` if the class closes before another parenthesis.
+ * @returns `true` if the class closes before a pseudo-class call.
  */
-function classClosesBeforeParen(
+function classClosesBeforePseudoClass(
     types: Uint8Array,
     afterParenTi: number,
     endTi: number,
@@ -303,8 +306,13 @@ function classClosesBeforeParen(
         if (t === TokenType.CloseSquare) {
             return true;
         }
-        if (t === TokenType.OpenParen || t === TokenType.CloseParen) {
-            return false;
+        if (t === TokenType.Colon) {
+            const identEndTi = skipPseudoName(types, ti + 1, endTi);
+            if (identEndTi > ti + 1
+                && identEndTi < endTi
+                && types[identEndTi] === TokenType.OpenParen) {
+                return false;
+            }
         }
         ti += 1;
     }
@@ -324,7 +332,7 @@ function classClosesBeforeParen(
  * lists use as plain text) is not a regexp literal, and the caller keeps the
  * balanced-parenthesis scan. The same applies to a plain value whose `[` is
  * not a character class, such as `/foo[` or `/[/`; see
- * {@link classClosesBeforeParen}.
+ * {@link classClosesBeforePseudoClass}.
  *
  * @param ctx Parser context.
  * @param openParenTi Index of the opening `(` of the argument.
@@ -363,9 +371,9 @@ function findMatchesPathRegexpEnd(
                 inClass = false;
             } else if (t === TokenType.CloseParen
                 && parenDepth === 0
-                && !classClosesBeforeParen(types, ti + 1, endTi)) {
-                // The `[` cannot be a class that closes before another
-                // parenthesis, so this `)` ends a plain value. It is a
+                && !classClosesBeforePseudoClass(types, ti + 1, endTi)) {
+                // The `[` cannot be a class that closes before a
+                // pseudo-class call, so this `)` ends a plain value. It is a
                 // complete literal only if the value ends with `/` here.
                 return endsRegexpLiteralAt(ctx, ti, openParenTi) ? ti : -1;
             }

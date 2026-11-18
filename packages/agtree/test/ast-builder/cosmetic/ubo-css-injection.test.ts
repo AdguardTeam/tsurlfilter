@@ -668,6 +668,30 @@ describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
         expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
     });
 
+    test.each(['/[))]/', '/[)(]/', '/[a-z)(]/'])(
+        ':matches-path() keeps %s, a class with several parentheses',
+        (value) => {
+            const ast = parser.parse(`##div:matches-path(${value}):style(color:red)`) as CssInjectionRule;
+
+            expect(ast.type).toBe('CssInjectionRule');
+            expect(ast.modifiers?.children).toHaveLength(1);
+            expect(ast.modifiers?.children[0].value?.value).toBe(value);
+            expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+            expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+        },
+    );
+
+    test(':not()-wrapped :matches-path() keeps a class with several parentheses', () => {
+        const ast = parser.parse('##div:not(:matches-path(/[)(]/)):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].value?.value).toBe('/[)(]/');
+        expect(ast.modifiers?.children[0].exception).toBe(true);
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
     test(':matches-path() keeps a close parenthesis after a range in a regexp character class', () => {
         const ast = parser.parse('##div:matches-path(/[a-z)]/):style(color:red)') as CssInjectionRule;
 
