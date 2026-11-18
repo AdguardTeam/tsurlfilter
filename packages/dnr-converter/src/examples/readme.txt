@@ -9,31 +9,34 @@
 !
 ! # MV3 specific limitations
 ! ## $badfilter
-! In the current implementation, rules with `$badfilter` work across all filters.
-! From these three filters:
+! A `$badfilter` rule applies within one conversion batch. By default, static
+! filter lists are converted separately, so a `$badfilter` rule in one list does
+! not cancel a rule in another list; with `combine: true` all input filters are
+! converted as one batch, so it can. Dynamic rules (custom filters and user
+! rules) are combined into one ruleset, so a `$badfilter` rule there applies to
+! all dynamic rules. `badFilterRules` applies static badfilters to dynamic rules
+! during conversion, together with the filter's own badfilters, and
+! `computeRulesToDisable()` applies dynamic badfilters to an already-built static
+! ruleset, disabling whole declarative rules.
+!
+! From these two filters:
 ! ```adblock
 ! !filter 1
 ! ||example.org^
 ! ```
 ! ```adblock
 ! !filter 2
-! ||example.com^
-! ||example.com^$badfilter
-! ||example.org^$badfilter
-! ||persistent.com^
-! ```
-! ```adblock
-! !filter3
 ! ||example.org^$badfilter
 ! ```
 !
-! The output will contain only one rule:
+! The output contains the rule from filter 1, because the badfilter from filter
+! 2 does not apply to another filter:
 ! ```json
 ! {
 !   "id": "<ruleId>",
 !   "action": {"type": "block"},
 !   "condition": {
-!     "urlFilter": "||persistent.com^",
+!     "urlFilter": "||example.org^",
 !     "isUrlFilterCaseSensitive": "false"
 !   },
 !   "priority": "1"
@@ -42,20 +45,58 @@
 !
 ! <b> Please note </b> that in the current approach, the application of
 ! `$badfilter` rules affects the filtering process, but we do not currently
-! display this in the declarative filtering log, as declarative rules are canceled.
+! display the application in the declarative filtering log for rules that a
+! badfilter cancels completely, as declarative rules are canceled. A partly
+! cancelled rule stays in the ruleset with a narrowed `$domain` list, and the
+! declarative filtering log shows it with a condition that no longer matches
+! the written `$domain` list.
 !
 ! ### Problem 1
-! A `$domain` intersection is handled only partially: a rule with `$badfilter`
-! cancels the matching rule when the domain lists intersect, but the whole
-! declarative rule is disabled, not only the intersecting domains. For example,
-! for these two rules:
+! When neither rule negates a domain (`~domain`) and the two `$domain` lists
+! share an entry that compares equal after domain-name normalization, a
+! `$badfilter` rule cancels the target rule only for the domains that the
+! badfilter covers. The converter narrows the `$domain` list of the target rule:
+! it removes a target entry that a badfilter entry covers, and it excludes a
+! badfilter entry that overlaps a kept target entry. A `$badfilter` without
+! `$domain` cancels the target rule completely. While either rule negates a
+! domain, the `$domain` entries stay in the text and the whole text is compared,
+! so the rule is cancelled only when the whole text matches. For example, for
+! these two rules:
 ! ```adblock
 ! /some$domain=example.com|example.org
 ! /some$domain=example.com,badfilter
 ! ```
-! The rule with `$badfilter` fully negates the first rule and the output array of
-! declarative rules will be empty, including `example.org`. Rules with negated
-! domains are compared by the whole text.
+! the output contains the first rule with `initiatorDomains` set to
+! `["example.org"]`.
+!
+! Five cases are still not covered:
+! - a target rule without `$domain` is cancelled completely: the converter
+!   narrows only an existing permitted `$domain` list, although DNR could express
+!   the exclusion with `excludedInitiatorDomains`;
+! - a regexp entry in the badfilter's `$domain` list cancels a blocking target
+!   rule completely unless it is an anchored literal domain that cannot match a
+!   kept target entry or only matches a domain that the narrowed rule already
+!   excludes; an exception target rule is narrowed instead, so it may keep
+!   allowing domains that the regexp cancels: DNR cannot exclude initiator
+!   domains that match a regexp, so a narrowed rule would keep applying where
+!   the badfilter cancels it;
+! - a `$badfilter` rule from a dynamic ruleset disables a whole declarative rule
+!   from an already-built static ruleset, because such a rule can only be
+!   disabled as a whole, not narrowed. This applies even when the static rule
+!   was already narrowed by a badfilter in its own filter list, so the dynamic
+!   rule cancels the remaining domains too;
+! - wildcard-TLD entries (`example.*`) are expanded with a popular TLD list, so
+!   an entry outside that list is not covered, and the full public suffix list
+!   is not used;
+! - for a document rule, MV2 matches `$domain` on either end of the navigation,
+!   and the badfilter does too, so MV2 cancels both directions. The converter
+!   instead emits the base rule with `initiatorDomains: ["bar.com"]` and an
+!   additional `main_frame` rule with `requestDomains: ["bar.com"]`, so the
+!   narrowed rule still applies to both `foo.com` → `bar.com` and
+!   `bar.com` → `foo.com`: with
+!   `*$document,csp=script-src 'none',domain=foo.com|bar.com` and the same rule
+!   with `domain=foo.com,badfilter`, the converted rules keep applying in both
+!   directions.
 !
 ! ### Problem 2
 ! ~~Previously, `$removeparam` rules with identical conditions were merged into a
@@ -448,8 +489,18 @@ page$domain=targetdomain.com|~example.org
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
-! In the current implementation, it works across all filters, but it does not cover
-! rules with `$domain` intersections.
+! Within one conversion batch, a `$badfilter` rule applies to the other rules of
+! that batch. Static filters are converted separately by default, so a badfilter
+! in one filter list does not affect a rule in another list; `combine: true`
+! merges them into one batch. Dynamic rules (custom filters and user rules) are
+! combined into one ruleset, so a badfilter there applies to all dynamic rules.
+! `badFilterRules` applies static badfilters to dynamic rules during conversion,
+! together with the filter's own badfilters, and `computeRulesToDisable()` applies
+! dynamic badfilters to an already-built static ruleset, disabling whole
+! declarative rules. A `$domain` list cancels the target
+! rule only for the domains that the badfilter covers, and only while neither
+! rule negates a domain (`~domain`). A target rule without `$domain` is still
+! cancelled completely.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>

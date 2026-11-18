@@ -23,10 +23,9 @@
  *                               │     │ Parse filter text into Rules. │
  *                               │     │ When withSourceMap is true and       │
  *                               │     │ options.badFilterRules is provided,  │
- *                               │     │ builds a skipNegatedRulesFn to skip  │
- *                               │     │ rules negated by $badfilter during   │
- *                               │     │ scanning. For simple mode            │
- *                               │     │ no pre-filtering is applied.         │
+ *                               │     │ they are applied in applyBadFilter() │
+ *                               │     │ together with the in-list badfilters.│
+ *                               │     │ For simple mode they are not applied.│
  *                               │     │┌────────────────────────────────┐    │
  *                               │     └┤                                │    │
  *                               │      │   RulesScanner.scanFilters()   │    │
@@ -106,8 +105,8 @@ import {
 } from '../errors/limitation-errors';
 import { type FilterConverterOptions } from '../filter-converter/filter-converter-options';
 import { UrlTransformRulesConverter } from '../grouped-rules-converters/url-transform-converter';
-import { OPTION_NAMES } from '../rule/option-names';
-import { type Rule } from '../rule/rule';
+import { Rule } from '../rule/rule';
+import { RuleBadfilter } from '../rule/rule-badfilter';
 import { type ScannedFilter } from '../rules-scanner';
 import { type Source } from '../ruleset/source-map';
 import { isSafeRule } from '../utils/is-safe-rule';
@@ -177,7 +176,12 @@ export class RulesConverter {
         scannedFilters: ScannedFilter[],
         options?: FilterConverterOptions,
     ): Promise<ConvertedRules> {
-        const filters = RulesConverter.applyBadFilter(scannedFilters);
+        const extraBadFilterRules = options && 'badFilterRules' in options
+            ? options.badFilterRules
+            : undefined;
+        const filters = extraBadFilterRules
+            ? RulesConverter.applyBadFilter(scannedFilters, extraBadFilterRules)
+            : RulesConverter.applyBadFilter(scannedFilters);
 
         return RulesConverter.convertGroupedFilters(filters, options);
     }
@@ -197,7 +201,12 @@ export class RulesConverter {
         scannedFilters: ScannedFilter[],
         options?: FilterConverterOptions,
     ): Promise<ConvertedRules> {
-        const filters = RulesConverter.applyBadFilter(scannedFilters);
+        const extraBadFilterRules = options && 'badFilterRules' in options
+            ? options.badFilterRules
+            : undefined;
+        const filters = extraBadFilterRules
+            ? RulesConverter.applyBadFilter(scannedFilters, extraBadFilterRules)
+            : RulesConverter.applyBadFilter(scannedFilters);
         const cspRules = filters.flatMap(([, groupedRules]) => groupedRules[RulesGroup.Csp]);
         const blockingPreflightResults = await Promise.all(filters.map(async ([filterId, groupedRules]) => (
             new CspConverter(options?.resourcesPath).convert(
@@ -477,14 +486,14 @@ export class RulesConverter {
      * @param ruleId The ID of the truncated rule.
      * @param sourcesIndex The index of sources.
      * @param errorsIndex The index of errors.
-     * @param excludedRulesIds The list of excluded rule IDs.
+     *
+     * @returns IDs of the source rules truncated with the declarative rule.
      */
     private static removeTruncatedRuleSourcesAndErrors(
         ruleId: number,
         sourcesIndex: Map<number, Source[]>,
         errorsIndex: Map<number, ConversionError[]>,
-        excludedRulesIds: number[],
-    ): void {
+    ): number[] {
         // Removing a source for a truncated rule
         const sources = sourcesIndex.get(ruleId) || [];
         const sourcesRulesIds = sources.map(({ sourceRuleIndex }) => sourceRuleIndex);
@@ -493,8 +502,7 @@ export class RulesConverter {
         // Removing an error for a truncated rule
         errorsIndex.set(ruleId, []);
 
-        // Note: be sure, that sourceRulesIds are not too much to overflow stack.
-        excludedRulesIds.push(...sourcesRulesIds);
+        return sourcesRulesIds;
     }
 
     /**
@@ -551,9 +559,18 @@ export class RulesConverter {
         // Checks and, if necessary, trims the maximum number of rules
         if (maxNumberOfRules && declarativeRules.length > 0) {
             const filteredRules: DeclarativeRule[] = [];
-            const excludedRulesIds: number[] = [];
+            // Both lists hold source rule ids, and a declarative rule produced
+            // from several source rules adds several ids. The total list holds
+            // the rules that the total limit drops. The unsafe list feeds the
+            // extension's unsafe-rule count, so it also holds the unsafe rules
+            // that the total limit drops; it is reported only when the unsafe
+            // limit itself is exceeded, and it does not include unsafe rules
+            // that the regexp limit drops later.
+            const unsafeExcludedRulesIds: number[] = [];
+            const totalExcludedRulesIds: number[] = [];
 
             let unsafeRulesCounter = 0;
+            let totalLimitExcludedCount = 0;
 
             for (let i = 0; i < declarativeRules.length; i += 1) {
                 const rule = declarativeRules[i];
@@ -562,28 +579,39 @@ export class RulesConverter {
                     unsafeRulesCounter += 1;
 
                     if (unsafeRulesCounter > maxNumberOfUnsafeRules) {
-                        RulesConverter.removeTruncatedRuleSourcesAndErrors(
-                            rule.id,
-                            sourcesIndexLoader.get(),
-                            errorsIndexLoader.get(),
-                            excludedRulesIds,
+                        // Note: be sure, that the source rule ids are not too
+                        // many to overflow the stack when spread.
+                        unsafeExcludedRulesIds.push(
+                            ...RulesConverter.removeTruncatedRuleSourcesAndErrors(
+                                rule.id,
+                                sourcesIndexLoader.get(),
+                                errorsIndexLoader.get(),
+                            ),
                         );
 
                         continue;
                     }
                 }
 
-                if (i < maxNumberOfRules) {
+                if (filteredRules.length < maxNumberOfRules) {
                     filteredRules.push(rule);
                     continue;
                 }
 
-                RulesConverter.removeTruncatedRuleSourcesAndErrors(
+                totalLimitExcludedCount += 1;
+
+                const excludedSourceRulesIds = RulesConverter.removeTruncatedRuleSourcesAndErrors(
                     rule.id,
                     sourcesIndexLoader.get(),
                     errorsIndexLoader.get(),
-                    excludedRulesIds,
                 );
+                totalExcludedRulesIds.push(...excludedSourceRulesIds);
+
+                // An unsafe rule dropped by the total limit is still an unsafe
+                // rule the user tried to enable.
+                if (maxNumberOfUnsafeRules && !isSafeRule(rule)) {
+                    unsafeExcludedRulesIds.push(...excludedSourceRulesIds);
+                }
             }
 
             if (
@@ -593,20 +621,21 @@ export class RulesConverter {
                 const err = new TooManyUnsafeRulesError(
                     // eslint-disable-next-line max-len
                     `After conversion, too many unsafe rules remain: ${unsafeRulesCounter} exceeds the limit provided - ${maxNumberOfUnsafeRules}`,
-                    excludedRulesIds,
+                    unsafeExcludedRulesIds,
                     maxNumberOfUnsafeRules,
                     unsafeRulesCounter - maxNumberOfUnsafeRules,
                 );
                 limitations.push(err);
             }
 
-            if (declarativeRules.length > maxNumberOfRules) {
+            if (totalLimitExcludedCount > 0) {
+                const consideredRulesCount = filteredRules.length + totalLimitExcludedCount;
                 const err = new TooManyRulesError(
                     // eslint-disable-next-line max-len
-                    `After conversion, too many declarative rules remain: ${declarativeRules.length} exceeds the limit provided - ${maxNumberOfRules}`,
-                    excludedRulesIds,
+                    `After conversion, too many declarative rules remain: ${consideredRulesCount} exceeds the limit provided - ${maxNumberOfRules}`,
+                    totalExcludedRulesIds,
                     maxNumberOfRules,
-                    declarativeRules.length - maxNumberOfRules,
+                    totalLimitExcludedCount,
                 );
                 limitations.push(err);
             }
@@ -627,11 +656,12 @@ export class RulesConverter {
                     regexpRulesCounter += 1;
 
                     if (regexpRulesCounter > maxNumberOfRegexpRules) {
-                        RulesConverter.removeTruncatedRuleSourcesAndErrors(
-                            rule.id,
-                            sourcesIndexLoader.get(),
-                            errorsIndexLoader.get(),
-                            excludedRulesIds,
+                        excludedRulesIds.push(
+                            ...RulesConverter.removeTruncatedRuleSourcesAndErrors(
+                                rule.id,
+                                sourcesIndexLoader.get(),
+                                errorsIndexLoader.get(),
+                            ),
                         );
 
                         continue;
@@ -685,16 +715,32 @@ export class RulesConverter {
     }
 
     /**
-     * Filters rules that have been affected by `$badfilter` rules and groups them by modifiers.
+     * Applies `$badfilter` rules to the scanned rules and groups the result by
+     * modifiers.
+     *
+     * A rule that a badfilter cancels completely is dropped. A rule that a
+     * badfilter cancels only partly keeps the remaining domains of its permitted
+     * `$domain` list and excludes the badfilter domains that overlap the kept
+     * entries.
      *
      * @param scannedFilters List of {@link ScannedFilter}.
+     * @param extraBadFilterRules Additional badfilters, e.g. from
+     *   `options.badFilterRules`, applied in the same pass as the in-list ones.
      *
      * @returns Result tuple of {@link FiltersIdsWithGroupedRules}.
      */
-    private static applyBadFilter(scannedFilters: ScannedFilter[]): FiltersIdsWithGroupedRules {
+    private static applyBadFilter(
+        scannedFilters: ScannedFilter[],
+        extraBadFilterRules: readonly Rule[] = [],
+    ): FiltersIdsWithGroupedRules {
         // The scanner already collects `$badfilter` rules into the metadata,
         // so use them directly instead of re-collecting from grouped rules.
-        const allBadFilterRules = scannedFilters.flatMap(({ badFilterRules }) => badFilterRules);
+        // Badfilters from `options.badFilterRules` are applied in the same pass,
+        // so the result does not depend on where a badfilter came from.
+        const allBadFilterRules = [
+            ...scannedFilters.flatMap(({ badFilterRules }) => badFilterRules),
+            ...extraBadFilterRules,
+        ];
 
         // Group rules
         const filterIdsWithGroupedRules = scannedFilters.map(({ id, rules }) => {
@@ -704,26 +750,34 @@ export class RulesConverter {
             return tuple;
         });
 
-        // Define filter function
-        const filterByBadFilterFn = (ruleToTest: Rule): boolean => {
-            for (const rule of allBadFilterRules) {
-                if (rule.negatesBadfilter(ruleToTest)) {
-                    return false;
-                }
-            }
-            return true;
+        // A badfilter rule can only negate a rule with the same pattern, so a
+        // rule only needs the badfilters with its own pattern hash.
+        const badFilterRulesByHash = RuleBadfilter.groupByHash(allBadFilterRules);
+
+        // Define the badfilter function: it drops a fully cancelled rule and
+        // narrows the `$domain` list of a partly cancelled one.
+        const applyBadFilterFn = (ruleToTest: Rule): Rule | null => {
+            const matchingBadFilterRules = badFilterRulesByHash.get(ruleToTest.hash);
+
+            return Rule.applyBadfilters(ruleToTest, matchingBadFilterRules ?? []);
         };
 
-        // For each group of filters' rules apply filter function
+        // For each group of filters' rules apply the badfilter function
         return filterIdsWithGroupedRules.map(([filterId, groupedRules]) => {
             const filtered = groupedRules;
             // Map because RulesGroup values are numbers
             const groups = Object.keys(filtered).map(Number);
             groups.forEach((key: RulesGroup) => {
-                filtered[key] = filtered[key].filter((rule) => (
-                    !rule.isModifierEnabled(OPTION_NAMES.BADFILTER)
-                    && filterByBadFilterFn(rule)
-                ));
+                // Badfilter rules are not converted, so they need no narrowing.
+                if (key === RulesGroup.BadFilter) {
+                    return;
+                }
+
+                filtered[key] = filtered[key].flatMap((rule) => {
+                    const keptRule = applyBadFilterFn(rule);
+
+                    return keptRule === null ? [] : [keptRule];
+                });
             });
 
             // Clean up bad filters rules — they are not converted

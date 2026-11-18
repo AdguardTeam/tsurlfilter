@@ -62,12 +62,13 @@ extensions.
 ### Supported rule types
 
 The converter supports virtually all adblock network rule modifiers. The known
-MV3 limitations (inherent to the Declarative Net Request API) are:
+MV3 limitations are:
 
 **Supported modifiers** (with MV3 notes):
 
-- Basic blocking/allowing rules, `$third-party`, `$domain` (no regexps / `.*`
-  TLDs), all content types (`$script`, `$image`, `$stylesheet`, etc.)
+- Basic blocking/allowing rules, `$third-party`, `$domain` (no regexp entries;
+  `.*` TLD entries are expanded to popular TLDs), all content types (`$script`,
+  `$image`, `$stylesheet`, etc.)
 - `$important`, `$match-case`, `$method`, `$to`, `$denyallow`, `$header`
   (no regex values), `$all`
 - `$redirect` — allowlist rules not supported
@@ -98,8 +99,13 @@ MV3 limitations (inherent to the Declarative Net Request API) are:
   document navigations started by the browser. An excluded-only `$domain`
   still matches them through the base rule.
 - `$cookie` — limited; only supported without parameters (bare `$cookie`)
-- `$badfilter` — partial: a `$domain` intersection disables the whole
-  declarative rule, not only the intersecting domains
+- `$badfilter` — partial: a target rule without `$domain` is still cancelled
+  completely, a regexp `$domain` entry cancels a blocking rule completely unless
+  it is an anchored literal domain that cannot match a kept entry (an exception
+  rule is narrowed instead), wildcard-TLD entries cover only the expanded
+  popular TLDs, a dynamic `$badfilter` disables a whole static rule, and a
+  narrowed document rule still matches a navigation whose other end is a
+  cancelled domain
 
 **Not yet supported / not convertible to DNR**:
 
@@ -142,7 +148,7 @@ selected by the `withSourceMap` option:
 | **Converter** | `FilterConverter` | `FilterConverter` |
 | **Ruleset** | `Ruleset` (sync, in-memory) | `RulesetWithSourceMap` (lazy-load, source map) |
 | **Input filter** | `IFilter` | `IFilter` |
-| **Use case** | When you only need `DeclarativeRule[]` output from plain filter text | When you need source maps, `$badfilter` cross-filter application, and serialization |
+| **Use case** | When you only need `DeclarativeRule[]` output from plain filter text | When you need source maps, `$badfilter` application across conversion batches (`badFilterRules`, `computeRulesToDisable`), and serialization |
 
 ### `IFilter`
 
@@ -198,8 +204,8 @@ Configuration for the conversion process:
 | `maxNumberOfUnsafeRules` | `number?` | Maximum unsafe (dynamic) rules allowed. |
 | `maxNumberOfRegexpRules` | `number?` | Maximum rules using `regexFilter`. |
 | `combine` | `boolean?` | Merge all input filters into a single combined rule set. |
-| `withSourceMap` | `boolean?` | When `true`, returns `RulesetWithSourceMap` instead of `Ruleset`. Enables source maps, `$badfilter` cross-filter support, and lazy loading. |
-| `badFilterRules` | `Rule[]?` | Static `$badfilter` rules to apply at scan time (`withSourceMap: true` only). |
+| `withSourceMap` | `boolean?` | When `true`, returns `RulesetWithSourceMap` instead of `Ruleset`. Enables source maps, `$badfilter` application across conversion batches (`badFilterRules`, `computeRulesToDisable`), and lazy loading. |
+| `badFilterRules` | `Rule[]?` | Static `$badfilter` rules to apply to dynamic rules during conversion (`withSourceMap: true` only). |
 | `excludeCspRules` | `boolean?` | Skip CSP rules during regular conversion when they are rebuilt by [`convertCspRules()`](#standalone-csp-conversion-convertcsprules) (`withSourceMap: true` only). |
 
 ### Simple flow: `FilterConverter` + `Ruleset`
@@ -254,8 +260,9 @@ const restored = Ruleset.deserialize(ruleset.getId(), json);
 ### Advanced flow: `FilterConverter` with `withSourceMap: true` + `RulesetWithSourceMap`
 
 Use this mode in browser extension internals when you need source maps,
-`$badfilter` cross-filter application, serialization with hash maps, and lazy
-content loading. Pass `withSourceMap: true` in the options to get
+`$badfilter` application across conversion batches (`badFilterRules`,
+`computeRulesToDisable`), serialization with hash maps, and lazy content
+loading. Pass `withSourceMap: true` in the options to get
 `RulesetWithSourceMap` results.
 
 ```ts

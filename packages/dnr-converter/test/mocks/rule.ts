@@ -29,6 +29,11 @@ interface CreateRuleMockOptions {
     pattern?: string;
 
     /**
+     * The rule text as written in the filter list. Defaults to {@link pattern}.
+     */
+    originalText?: string;
+
+    /**
      * The allowlist status of the rule to be returned by the mock. Defaults to {@link node.exception}.
      */
     allowlist?: boolean;
@@ -142,16 +147,6 @@ interface CreateRuleMockOptions {
      * @returns The hash number.
      */
     getRuleTextHash?: (salt?: number) => number;
-
-    /**
-     * Returns `true` if this rule negates the `ruleToCheck`.
-     * Only makes sense when this rule has a `$badfilter` modifier.
-     *
-     * @param ruleToCheck Rule to check.
-     *
-     * @returns `true` if this rule negates the specified rule, `false` otherwise.
-     */
-    negatesBadfilter?: (rule: Rule) => boolean;
 }
 
 /**
@@ -176,6 +171,7 @@ export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
             },
         },
         pattern = node.pattern.value,
+        originalText = pattern,
         allowlist = node.exception,
         hash = fastHash(pattern),
         priority = 1,
@@ -205,7 +201,6 @@ export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
 
             return fastHash31(trialText);
         },
-        negatesBadfilter = () => false,
     } = options;
 
     const enabledOptionsSet = new Set<string>(enabledOptions);
@@ -221,6 +216,9 @@ export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
         index,
         node,
         pattern,
+        originalText,
+        originalPermittedDomains: permittedDomains,
+        originalRestrictedDomains: restrictedDomains,
         allowlist,
         hash,
         priority,
@@ -256,6 +254,5 @@ export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
                 ? requestHeaderNameToRemove
                 : responseHeaderNameToRemove
         ),
-        negatesBadfilter,
     } as unknown as Rule;
 }

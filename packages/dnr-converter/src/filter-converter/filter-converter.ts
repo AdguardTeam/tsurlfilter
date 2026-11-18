@@ -31,10 +31,9 @@
  *                               │     │ Parse filter text into Rules. │
  *                               │     │ When withSourceMap is true and       │
  *                               │     │ options.badFilterRules is provided,  │
- *                               │     │ builds a skipNegatedRulesFn to skip  │
- *                               │     │ rules negated by $badfilter during   │
- *                               │     │ scanning. For simple mode            │
- *                               │     │ no pre-filtering is applied.         │
+ *                               │     │ they are applied during conversion   │
+ *                               │     │ together with the in-list badfilters.│
+ *                               │     │ For simple mode they are not applied.│
  *                               │     │┌────────────────────────────────┐    │
  *                               │     └┤                                │    │
  *                               │      │   RulesScanner.scanFilters()   │    │
@@ -111,6 +110,7 @@ import { UnavailableFilterSourceError } from '../errors/unavailable-sources-erro
 import { type IFilter } from '../filter/types';
 import { OPTION_NAMES } from '../rule/option-names';
 import { type Rule } from '../rule/rule';
+import { RuleBadfilter } from '../rule/rule-badfilter';
 import { type ConvertedRules } from '../rule-converters';
 import { isCspRule } from '../rule-converters/action-kind';
 import { RulesConverter } from '../rule-converters/rules-converter';
@@ -510,8 +510,8 @@ export class FilterConverter {
      * convert them again, while `$badfilter` rules are kept because they can
      * still disable other rules.
      *
-     * @param skipNegatedRulesFn Predicate to skip rules negated by `$badfilter`,
-     * if any.
+     * @param skipNegatedRulesFn Predicate to skip rules fully negated by
+     *   `$badfilter`, if any.
      * @param excludeCspRules Whether CSP rules are rebuilt separately.
      *
      * @returns Predicate to filter out rules.
@@ -532,8 +532,8 @@ export class FilterConverter {
     }
 
     /**
-     * Runs the advanced conversion flow: scans with optional `$badfilter`
-     * pre-filtering, converts, wraps in {@link RulesetWithSourceMap}.
+     * Runs the advanced conversion flow: scans, converts, wraps in
+     * {@link RulesetWithSourceMap}.
      *
      * @param filters Filters to convert.
      * @param options Converter options.
@@ -547,9 +547,7 @@ export class FilterConverter {
         let skipNegatedRulesFn: ((r: Rule) => boolean) | undefined;
 
         if (options?.badFilterRules && options.badFilterRules.length > 0) {
-            const badFilterHashMap = FilterConverter.buildRulesBadFilterHashMap(
-                options.badFilterRules,
-            );
+            const badFilterHashMap = RuleBadfilter.groupByHash(options.badFilterRules);
 
             skipNegatedRulesFn = (r: Rule): boolean => {
                 const fastMatched = badFilterHashMap.get(r.hash);
@@ -558,13 +556,12 @@ export class FilterConverter {
                     return true;
                 }
 
-                for (let i = 0; i < fastMatched.length; i += 1) {
-                    if (fastMatched[i].negatesBadfilter(r)) {
-                        return false;
-                    }
-                }
-
-                return true;
+                // Only a plain full cancellation can be skipped here. A regexp
+                // that covers a kept entry is not safe to skip before the
+                // in-list badfilters are applied.
+                return !fastMatched.some(
+                    (badfilter) => RuleBadfilter.negatesFully(badfilter, r),
+                );
             };
         }
 
@@ -706,32 +703,6 @@ export class FilterConverter {
     }
 
     /**
-     * Creates dictionary where key is hash of network rule and value is array
-     * of rules with this hash.
-     *
-     * @param badFilterRules A flat list of `$badfilter` network rules.
-     *
-     * @returns Dictionary with all $badfilter rules indexed by hash.
-     */
-    private static buildRulesBadFilterHashMap(
-        badFilterRules: Rule[],
-    ): Map<number, Rule[]> {
-        const result: Map<number, Rule[]> = new Map();
-
-        badFilterRules.forEach((r) => {
-            const { hash } = r;
-            const existing = result.get(hash);
-            if (existing) {
-                existing.push(r);
-            } else {
-                result.set(hash, [r]);
-            }
-        });
-
-        return result;
-    }
-
-    /**
      * Checks if some rules (fastMatchedRulesByHash) from the staticRuleset,
      * which have been fast matched by hash, can be negated with the provided
      * badFilterRule via the `$badfilter` option.
@@ -783,6 +754,11 @@ export class FilterConverter {
 
             // NOTE: Here we use .some but not .every to simplify first
             // version of applying $badfilter rules.
+            // A partly cancelled rule is disabled completely: an already-built
+            // declarative rule can only be disabled as a whole, not narrowed.
+            // The source rule is re-parsed from the filter text, so a narrowing
+            // that `Rule.applyBadfilters` applied during conversion is not
+            // visible here.
             const someRulesMatched = rules
                 .flat()
                 .some((rule) => badFilterRule.negatesBadfilter(rule));
