@@ -350,6 +350,32 @@ describe('patchHistoryForRemoveParam', () => {
         expect(calledUrl).not.toContain('?');
     });
 
+    it.each([
+        ['/page#route?x=1', null],
+        ['/page?a=1&b=2#section', '/page#section'],
+        ['/page#route', null],
+        ['/page?a=1#route?b=2', '/page#route?b=2'],
+    ])('applies bare removeparam to %s without corrupting the fragment', (url, expected) => {
+        const descriptors: RemoveParamDescriptor[] = [
+            descriptor(''),
+        ];
+
+        window.history.pushState({}, '', url);
+
+        patchHistoryForRemoveParam(descriptors, TEST_NONCE, TEST_SECRET);
+
+        if (expected === null) {
+            expect(mockReplaceState).not.toHaveBeenCalled();
+            return;
+        }
+
+        expect(mockReplaceState).toHaveBeenCalledWith(
+            {},
+            '',
+            new URL(expected, document.baseURI).href,
+        );
+    });
+
     it('removes value-less parameter not matching negated descriptor', () => {
         const descriptors: RemoveParamDescriptor[] = [
             descriptor('~safe'),
