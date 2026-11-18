@@ -371,6 +371,11 @@ export function patchHistoryForRemoveParam(
             title: string,
             url?: string | URL | null,
         ): void {
+            // Read the base URI before the native call: for a path-relative
+            // URL the call moves `document.baseURI` to the new document URL,
+            // so reading it after the call would resolve the URL twice.
+            const { baseURI } = document;
+
             // Always call the original method first to preserve SPA behaviour.
             originalMethod.call(this, state, title, url);
 
@@ -378,7 +383,7 @@ export function patchHistoryForRemoveParam(
                 return;
             }
 
-            const absoluteUrl = new URL(url.toString(), document.baseURI).href;
+            const absoluteUrl = new URL(url.toString(), baseURI).href;
 
             // Skip non-HTTP URLs and URLs without query parameters.
             if (!absoluteUrl.startsWith('http') || !absoluteUrl.includes('?')) {

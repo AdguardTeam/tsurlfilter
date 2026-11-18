@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   History API URL has no query string but its fragment contains `?`, e.g.
   `/page#route?x=1` now stays unchanged instead of becoming
   `/page#route#route?x=1`.
+- Path-relative URLs passed to `history.pushState()` and
+  `history.replaceState()` are now resolved against the base URI from
+  before the navigation, so `$removeparam` rules remove tracking
+  parameters synchronously instead of leaving them in the address bar.
 
 ### Security
 

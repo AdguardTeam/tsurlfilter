@@ -1,3 +1,6 @@
+// @vitest-environment jsdom
+// @vitest-environment-options { "url": "https://example.com/dir/start" }
+
 import {
     afterEach,
     beforeEach,
@@ -580,6 +583,50 @@ describe('patchHistoryForRemoveParam', () => {
             expect(calledUrl).not.toContain('initial_param');
             // injected_param should be kept (attacker's descriptor was rejected)
             expect(calledUrl).toContain('injected_param');
+        });
+    });
+
+    describe('path-relative History API URLs', () => {
+        /**
+         * Navigates to the start page, restores the native `replaceState`
+         * and patches the History API.
+         *
+         * @param url Start page URL.
+         */
+        const patchOnStartPage = (url: string): void => {
+            // Keep the real `replaceState` so that the patched method updates
+            // `window.location.href`, which the assertions use.
+            History.prototype.replaceState = saveReplaceState;
+            window.history.pushState({}, '', url);
+
+            patchHistoryForRemoveParam([descriptor('utm_source')], TEST_NONCE, TEST_SECRET);
+        };
+
+        it('removes a parameter from a path-relative pushState URL', () => {
+            patchOnStartPage('/dir/start');
+
+            window.history.pushState({}, '', 'sub/page?utm_source=g&safe=1');
+
+            expect(window.location.href).toBe('https://example.com/dir/sub/page?safe=1');
+        });
+
+        it('removes a parameter from a path-relative replaceState URL', () => {
+            patchOnStartPage('/dir/start');
+
+            window.history.replaceState({}, '', 'sub/page?utm_source=g&safe=1');
+
+            expect(window.location.href).toBe('https://example.com/dir/sub/page?safe=1');
+        });
+
+        it.each([
+            '/page?utm_source=g&safe=1',
+            'https://example.com/page?utm_source=g&safe=1',
+        ])('keeps removing parameters from the %s URL', (url) => {
+            patchOnStartPage('/dir/start');
+
+            window.history.pushState({}, '', url);
+
+            expect(window.location.href).toBe('https://example.com/page?safe=1');
         });
     });
 });
