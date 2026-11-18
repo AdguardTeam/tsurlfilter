@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Rule.applyBadfilters()` applies `$badfilter` rules to a rule and returns the
+  narrowed copy, or `null` when a badfilter cancels the rule completely.
+  `Rule.withPermittedDomains()` and `Rule.withExcludedDomains()` create copies
+  with a different `$domain` list, and `Rule.originalPermittedDomains` and
+  `Rule.originalRestrictedDomains` keep the `$domain` entries as written in the
+  rule text.
 - Partial `$csp` exception support for exact conditions, exceptions which are
   wider than the blocker, and clean domain exclusions, including a standalone
   CSP conversion API which resolves exceptions across all filters at once. It
@@ -47,6 +53,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The total declarative-rule limit counted rules that the unsafe-rule limit had
+  already dropped, so it could drop safe rules that fit and report a wrong
+  number of excluded rules. It now counts the rules that remain after the
+  unsafe limit.
+- `TooManyRulesError` and `TooManyUnsafeRulesError` shared one list of excluded
+  source rules, so each error listed rules excluded by the other limit.
+  `TooManyRulesError` now lists only the rules that the total limit drops, and
+  `TooManyUnsafeRulesError` also lists the unsafe rules that the total limit
+  drops, so, when the unsafe limit is exceeded too, a consumer can account for
+  the unsafe rules that these two limits exclude. Both lists hold source-rule
+  ids, one per source rule of each excluded declarative rule, so a source rule
+  that produces several excluded declarative rules is listed several times and
+  a declarative rule merged from several source rules adds several ids. The
+  unsafe list does not include unsafe rules that the regexp limit drops, so its
+  length can differ from the number of excluded unsafe rules.
 - Non-ASCII values no longer break the conversion: a hostname in a URL filter is
   converted to punycode, also after a `*` or `*.` wildcard and in unanchored or
   scheme-prefixed patterns, the rest of the pattern is percent-encoded, and
@@ -110,12 +131,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and repeats, `$permissions` included — so `$redirect-rule` is no longer treated
   as `$redirect`, and spellings that are equivalent after parsing (e.g.
   `Set-Cookie` and `set-cookie`) do not negate each other.
-- `$badfilter` with `$domain` still disables the rule it refers to for the
-  domains present in both lists, but regular expression domains now keep their
-  case, so `$domain=/A/` no longer cancels `$domain=/a/`. This exception applies
-  only while neither rule has a negated `~domain`; otherwise the whole text is
-  compared. As before, the whole declarative rule is disabled rather than only
-  the domains named in both lists.
+- `$badfilter` with `$domain` cancelled the whole target rule in MV3 instead of
+  only the domains that the badfilter covers, so
+  `||example.com^$domain=foo.com|bar.com` stopped applying on `bar.com` after
+  `||example.com^$domain=foo.com,badfilter`. The converter now narrows the
+  `$domain` list of the target rule, as MV2 and CoreLibs do: it removes a target
+  entry that the badfilter covers and excludes a badfilter entry that overlaps a
+  kept target entry. Regular expression domains keep their case in the
+  comparison, so `$domain=/A/` no longer cancels `$domain=/a/`, and this
+  exception applies only while neither rule has a negated `~domain`; otherwise
+  the whole text is compared. A target rule without `$domain` is still cancelled
+  completely, because the converter narrows only an existing permitted list. A
+  blocking target rule whose kept entries a regexp badfilter entry may cover is
+  also cancelled completely unless the entry is an anchored literal domain that
+  cannot match a kept domain, because DNR cannot express an exclusion that
+  matches a regexp; an exception rule is narrowed instead. A `$badfilter` from a
+  dynamic ruleset still disables a whole rule from an already-built static
+  ruleset, because such a rule can only be disabled as a whole. Wildcard-TLD
+  entries are expanded with a popular TLD list, so an entry outside that list is
+  not covered.
 - `$badfilter` rules that also carried a convertible modifier (e.g.
   `||example.com^$csp=script-src 'none',badfilter`) were converted into
   declarative rules instead of disabling the rule they refer to.

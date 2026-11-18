@@ -10,8 +10,13 @@ import {
 import { RE2 } from '@adguard/re2-wasm';
 import { SimpleRegex } from '@adguard/tsurlfilter';
 
+import { RuleActionType } from '../../../src/declarative-rule/rule-action';
 import { type RuleCondition } from '../../../src/declarative-rule/rule-condition';
-import { UnsupportedModifierError, UnsupportedRegexpError } from '../../../src/errors/conversion-errors';
+import {
+    EmptyDomainsError,
+    UnsupportedModifierError,
+    UnsupportedRegexpError,
+} from '../../../src/errors/conversion-errors';
 import {
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRulesError,
@@ -232,6 +237,173 @@ describe('FilterConverter', () => {
 
             expect(errors).toHaveLength(0);
             expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('keeps a rule on the domains that a $domain badfilter does not cancel', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=foo.com|bar.com',
+                '||example.org^$domain=foo.com,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['bar.com']);
+        });
+
+        it('excludes a subdomain that a $domain badfilter cancels', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=foo.com|bar.com',
+                '||example.org^$domain=foo.com|sub.bar.com,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['bar.com']);
+            expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['sub.bar.com']);
+        });
+
+        it('excludes a concrete entry that a kept wildcard TLD entry covers', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=example.*|example.com',
+                '||example.org^$domain=example.com,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).not.toContain('example.com');
+            expect(declarativeRules[0].condition.initiatorDomains).toContain('example.org');
+            expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['example.com']);
+        });
+
+        it('excludes a wildcard entry that only overlaps a kept plain entry', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=foo.com|example.com',
+                '||example.org^$domain=foo.com|sub.example.*,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['example.com']);
+            expect(declarativeRules[0].condition.excludedInitiatorDomains).toContain('sub.example.com');
+        });
+
+        it('excludes a plain entry that only overlaps a kept wildcard entry', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=foo.com|sub.example.*',
+                '||example.org^$domain=foo.com|example.com,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toContain('sub.example.com');
+            expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['example.com']);
+        });
+
+        it('reports an empty-domains error when narrowing leaves only regexp domains', async () => {
+            const filter = createFilter([
+                '/some$domain=example.com|/^ads\\./',
+                '/some$domain=example.com,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            // DNR cannot express a regexp domain, so the narrowed rule would
+            // match everywhere. The converter reports it instead of converting it.
+            expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toBeInstanceOf(EmptyDomainsError);
+            // The message names the narrowed list, not only the original rule.
+            expect((errors[0] as EmptyDomainsError).message).toContain('"/^ads\\./"');
+        });
+
+        it('removes a rule that a $domain badfilter cancels for every domain', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=foo.com',
+                '||example.org^$domain=foo.com|bar.com,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(errors).toHaveLength(0);
+            expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('removes a rule that a regexp $domain badfilter could cancel on a kept domain', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=example.com|/foo/',
+                '||example.org^$domain=/foo/,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            // DNR cannot exclude a regexp domain, so the narrowed rule would
+            // apply on the domains that the badfilter cancels. The converter
+            // cancels the rule completely instead.
+            expect(errors).toHaveLength(0);
+            expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('removes a rule when a later regexp $domain badfilter covers a kept domain', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=a.com|b.com',
+                '||example.org^$domain=a.com,badfilter',
+                '||example.org^$domain=a.com|/b/,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(errors).toHaveLength(0);
+            expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('keeps a rule when a later regexp $domain badfilter matches only a removed domain', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=a.com|b.com',
+                '||example.org^$domain=a.com,badfilter',
+                '||example.org^$domain=a.com|/^a\\.com$/,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['b.com']);
+        });
+
+        it('keeps an exception rule narrowed when a regexp $domain badfilter covers a kept domain', async () => {
+            const filter = createFilter([
+                '||example.org^',
+                '@@||example.org^$domain=a.com|b.com|/foo/',
+                '@@||example.org^$domain=a.com|/foo/,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(2);
+
+            const exception = declarativeRules.find((rule) => rule.action.type === RuleActionType.Allow);
+            expect(exception?.condition.initiatorDomains).toEqual(['b.com']);
+        });
+
+        it('keeps a rule when a literal regexp only covers an excluded subdomain', async () => {
+            const filter = createFilter([
+                '||example.org^$domain=bar.com|baz.com',
+                '||example.org^$domain=baz.com|sub.bar.com|/^sub\\.bar\\.com$/,badfilter',
+            ]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['bar.com']);
+            expect(declarativeRules[0].condition.excludedInitiatorDomains).toEqual(['sub.bar.com']);
         });
 
         it('does not convert a $badfilter rule that also carries a convertible modifier', async () => {

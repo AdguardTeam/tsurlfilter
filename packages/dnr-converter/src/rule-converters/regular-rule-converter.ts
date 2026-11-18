@@ -906,14 +906,22 @@ export class RegularRuleConverter {
             condition.domainType = DomainType.FirstParty;
         }
 
-        // set `initiatorDomains`
+        // set `initiatorDomains` and `excludedInitiatorDomains`
         const permittedDomains = RegularRuleConverter.prepareDeclarativeDomains(rule.permittedDomains);
-        if (permittedDomains.length > 0) {
+        const excludedDomains = RegularRuleConverter.prepareDeclarativeDomains(rule.restrictedDomains);
+        const excludedDomainsSet = new Set(excludedDomains);
+        const initiatorDomains = permittedDomains.filter((domain) => !excludedDomainsSet.has(domain));
+
+        if (initiatorDomains.length > 0) {
+            condition.initiatorDomains = initiatorDomains;
+        } else if (permittedDomains.length > 0) {
+            // DNR gives `excludedInitiatorDomains` precedence over
+            // `initiatorDomains`, so keeping the overlap makes the rule match
+            // nothing. Dropping the last permitted entry would make the rule
+            // match every initiator except the excluded ones.
             condition.initiatorDomains = permittedDomains;
         }
 
-        // set `excludedInitiatorDomains`
-        const excludedDomains = RegularRuleConverter.prepareDeclarativeDomains(rule.restrictedDomains);
         if (excludedDomains.length > 0) {
             condition.excludedInitiatorDomains = excludedDomains;
         }
@@ -1295,13 +1303,15 @@ export class RegularRuleConverter {
             return new EmptyResourcesError('Conversion resourceTypes is empty', rule, declarativeRule);
         }
 
-        // Check for empty initiator domains if original rule has permitted domains
+        // Check for empty initiator domains if the rule has permitted domains
         const { permittedDomains } = rule;
         if (permittedDomains && permittedDomains.length > 0) {
             const { initiatorDomains } = declarativeRule.condition;
             if (!initiatorDomains || initiatorDomains.length === 0) {
                 const ruleText = RuleGenerator.generate(rule.node);
-                const msg = `Conversion initiatorDomains is empty, but original rule's domains not: "${ruleText}"`;
+                const permittedDomainsText = permittedDomains.join('|');
+                const msg = 'Conversion initiatorDomains is empty, but the rule\'s permitted domains '
+                    + `are not representable in DNR: "${permittedDomainsText}" (rule: "${ruleText}")`;
                 return new EmptyDomainsError(msg, rule, declarativeRule);
             }
         }

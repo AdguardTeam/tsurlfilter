@@ -64,6 +64,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The MV3 rules-limits page could overcount unsafe rules, because the
+  excluded-rule list shared by the total and unsafe limit errors included rules
+  dropped by the other limit. The total limit error now carries only the rules
+  it drops, and the unsafe limit error also carries the unsafe rules that the
+  total limit drops, so, when the unsafe limit is exceeded too, the page can
+  account for the unsafe rules that these two limits exclude; the total limit
+  also no longer drops safe rules that the unsafe limit made room for. Both
+  lists hold source-rule ids, one per source rule of each excluded declarative
+  rule, so their length can differ from the number of excluded rules, and unsafe
+  rules dropped by the regexp limit are not included.
+- In MV3, `$badfilter` rules with `$domain` cancelled the whole target rule
+  instead of only the domains that the badfilter covers. Such a rule now keeps
+  applying on the other domains. A target rule without `$domain` is still
+  cancelled completely. A blocking target rule whose kept entries a regexp
+  badfilter entry may cover is also cancelled completely unless the entry is an
+  anchored literal domain that cannot match a kept domain; an exception rule is
+  narrowed instead. A `$badfilter` from a dynamic ruleset still disables a whole
+  rule from a static ruleset, because DNR cannot disable a rule for a part of
+  its domains.
 - CSS hits statistics now pause and resume immediately when the `collectStats`
   setting changes, without reloading the page. Enabling collection on an open
   page re-applies the marked cosmetic data, and a bfcache restore re-syncs the
