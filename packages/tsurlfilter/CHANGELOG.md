@@ -94,6 +94,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   trimmed (via [@adguard/agtree]): the argument is the raw text between the
   pseudo-class parentheses, so `$$div:contains( "foo" )` now matches the text
   `"foo"` with a space on each side.
+- CSS injection rules: forbidden CSS functions (`url()`, `image-set()`,
+  `image()`, `cross-fade()` and their `-webkit-*` variants) now match
+  case-insensitively, so mixed-case function names such as `URL("...")` or
+  `Image-Set("..." 1x)` can no longer be used to load external resources.
 
 ### Security
 

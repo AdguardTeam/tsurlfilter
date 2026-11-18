@@ -742,6 +742,26 @@ describe('CosmeticRule.CSS', () => {
         );
     });
 
+    it('throws error when cosmetic rule contains mixed-case unsafe functions', () => {
+        expect(
+            () => createCosmeticRule('example.org#$#body { background: URL("https://tracker.example/4.gif") }', 0),
+        ).toThrowError(
+            "Using 'url()' is not allowed",
+        );
+
+        expect(
+            () => createCosmeticRule('example.org#$#body { background: Image-Set("https://tracker.example/6.gif" 1x) }', 0),
+        ).toThrowError(
+            "Using 'image-set()' is not allowed",
+        );
+
+        expect(
+            () => createCosmeticRule('example.org#$#body { background: \\55 RL("https://tracker.example/11.gif") }', 0),
+        ).toThrowError(
+            "Using 'url()' is not allowed",
+        );
+    });
+
     it('doesnt throw error if cosmetic rule contains url in selector', () => {
         const validRule = 'example.com#$#body[style*="background-image: url()"] { margin-top: 45px !important; }';
         const rule = createCosmeticRule(validRule, 0);
