@@ -1585,6 +1585,9 @@ describe('HtmlRuleConverter', () => {
 
             /**
              * The uBlock `:has-text()` semantics for plain text, see
+             * `compileText()` in
+             * https://github.com/gorhill/uBlock/blob/master/src/js/static-filtering-parser.js
+             * and `regexFromString()` in
              * https://github.com/gorhill/uBlock/blob/master/src/js/html-filtering.js:
              * - `compileText()` unquotes the argument once;
              * - `regexFromString()` escapes a non-regexp argument and matches
