@@ -197,18 +197,29 @@ npx lerna run test
 pnpm test
 ```
 
+Neither command runs the `*.firefox.spec.ts` specs: `vitest.config.ts`
+excludes them, and only `vitest.firefox.config.ts` includes them.
+
 For `@adguard/tsurlfilter` and `@adguard/tswebextension`, build first, then
 run the full validation:
 
 ```bash
 pnpm build
-pnpm test:prod   # lint + smoke tests + full test suite (no cache)
+pnpm test:prod   # lint + smoke tests + test:ci (no cache)
+```
+
+`@adguard/tswebextension` also has a separate Firefox e2e gate. `test:prod`
+does not run it, but CI does:
+
+```bash
+npx playwright install firefox
+pnpm test:e2e:firefox
 ```
 
 ## CI Checks and `test:prod`
 
 Every package that is published or tested in CI exposes a `test:prod` script
-that is the single entry point for verifying a package is healthy. It runs the
+that is the entry point for verifying a package is healthy. It runs the
 same ordered set of checks regardless of the package:
 
 ```text
@@ -222,12 +233,19 @@ lint → test:smoke (where applicable) → test:ci
 - **`test:ci`** — runs the full Vitest suite and writes JUnit XML output for
   CI reporting.
 
+`@adguard/tswebextension` has one more gate that no other package needs: the
+Firefox-only e2e specs. Its Docker stage runs `pnpm test:e2e:firefox` after
+`test:prod` and writes `tests-reports/tswebextension-firefox.xml`. A
+contributor must run it locally as well, because `test:prod` does not run the
+`*.firefox.spec.ts` specs.
+
 Not every package needs all three steps — packages with no unit tests (e.g.
 `@adguard/api`, `@adguard/eslint-plugin-logger-context`) define `test:prod` as
 `pnpm lint` only. The key rule is: **every package must have `test:prod`**, and
 its Dockerfile stage must call it.
 
-Each package's Docker test stage invokes `pnpm test:prod`. The `build.yml`
+Each package's Docker test stage invokes `pnpm test:prod`. The
+`test-tswebextension` stage also runs `pnpm test:e2e:firefox`. The `build.yml`
 matrix computes affected packages through a **transitive** walk of `workspace:`
 dependencies, so a change in `@adguard/agtree` automatically triggers the
 `test-tsurlfilter` job without extra workflow conditions.

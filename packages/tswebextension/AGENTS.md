@@ -54,6 +54,7 @@ packages/tswebextension/
 ├── dist/                       # Build output (gitignored)
 ├── rollup.config.ts            # Rollup build config
 ├── vitest.config.ts            # Vitest multi-project config
+├── vitest.firefox.config.ts    # Vitest Firefox-only browser config
 ├── vitest.setup.ts             # Vitest setup (mocks, globals)
 ├── .eslintrc.cjs               # ESLint config
 ├── tsconfig*.json              # TypeScript configs (base, build, main)
@@ -67,16 +68,24 @@ packages/tswebextension/
   (`@adguard/tsurlfilter`, `@adguard/agtree`, etc.). If you get stale-artifact
   type errors, rebuild from the repo root:
   `npx lerna run build --scope=@adguard/tswebextension --include-dependencies`
-- `pnpm test` — run all tests via Vitest (mv2, mv3, common, browser and
-  canvas-native projects). The last two need the Playwright browsers, see
+- `pnpm test` — run all projects in `vitest.config.ts` (mv2, mv3, common,
+  browser and canvas-native). The last two need the Playwright browsers, see
   [Running Tests](DEVELOPMENT.md#running-tests).
 - `pnpm test:mv2` — run MV2 tests only
 - `pnpm test:mv3` — run MV3 tests only
 - `pnpm test:common` — run common tests only
 - `pnpm test:coverage` — run tests with V8 coverage
 - `pnpm test:smoke` — run smoke tests (exports validation + Rollup builder)
-- `pnpm test:prod` — **full validation**: lint + smoke tests + full test suite
-  (no cache). Run this before submitting changes.
+- `pnpm test:e2e` — run the browser-mode e2e specs: the `browser` project in
+  headless Chromium plus the `canvas-native` project in headless Chromium and
+  Firefox. Prerequisite: `npx playwright install chromium firefox`.
+- `pnpm test:e2e:firefox` — run the Firefox browser-mode e2e specs via
+  `vitest.firefox.config.ts`. Prerequisite: `npx playwright install firefox`.
+  This is a separate gate: `test:prod` does not include it.
+- `pnpm test:prod` — **full validation**: lint + smoke tests + `test:ci` (no
+  cache). `test:ci` loads every project in `vitest.config.ts`, so it also runs
+  the Chromium `browser` specs and `canvas-native`. Run this before submitting
+  changes.
 - `pnpm lint` — run ESLint and TypeScript type checking
 - `pnpm lint:code` — run ESLint only
 - `pnpm lint:types` — run TypeScript type checking only
@@ -88,8 +97,13 @@ You MUST follow the following rules for EVERY task that you perform:
 - You MUST build the package first using
   `npx lerna run build --scope=@adguard/tswebextension --include-dependencies`
   (from the repo root). This rebuilds upstream deps (`tsurlfilter`, `agtree`,
-  etc.) and avoids stale-artifact type errors. Then run `pnpm test:prod` which
-  includes lint, smoke tests, and the full test suite.
+  etc.) and avoids stale-artifact type errors. Then run `pnpm test:prod`, which
+  includes lint, smoke tests, and `test:ci`; `test:ci` also runs the Chromium
+  `browser` specs and `canvas-native`.
+
+- You MUST also run `pnpm test:e2e:firefox` (prerequisite:
+  `npx playwright install firefox`). `test:prod` does not run the Firefox e2e
+  specs, but CI does.
 
 - You MUST verify your changes pass `pnpm lint` before completing a task.
 
@@ -162,11 +176,16 @@ You MUST follow the following rules for EVERY task that you perform:
 1. **Multi-project Vitest config.** Tests are organized into five Vitest
    projects in `vitest.config.ts`: `mv2`, `mv3` and `common` run in jsdom
    against the corresponding source and test directories; `browser` runs the
-   e2e specs in headless Chromium; `canvas-native` runs the canvas protection
-   specs in headless Chromium and Firefox.
+   e2e specs in headless Chromium (`test/e2e/**/*.spec.ts`, excluding
+   `*.firefox.spec.ts`), so `pnpm test` and `test:ci` run those specs too;
+   `canvas-native` runs the canvas protection specs in headless Chromium and
+   Firefox. `vitest.firefox.config.ts` holds the separate Firefox project for
+   the `*.firefox.spec.ts` specs.
 
    **Rationale**: Prevents MV2-specific mocks from interfering with MV3 tests
-   and vice versa.
+   and vice versa. The Firefox specs need their own config so that `pnpm test`,
+   `test:ci`, and `test:prod` do not run the `*.firefox.spec.ts` specs (the
+   `canvas-native` project, which also runs in Firefox, is unaffected).
 
 2. **Smoke tests** validate that published exports resolve correctly and the
    package can be bundled via Rollup. Located in `test/smoke/` and
@@ -175,4 +194,5 @@ You MUST follow the following rules for EVERY task that you perform:
    **Rationale**: Catches packaging regressions before publishing.
 
 3. **`test:prod` is the gate.** Always run `pnpm test:prod` before
-   considering a change complete.
+   considering a change complete. It does not include the Firefox e2e specs,
+   so run `pnpm test:e2e:firefox` as well.

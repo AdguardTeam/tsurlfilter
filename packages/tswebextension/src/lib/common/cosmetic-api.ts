@@ -69,13 +69,20 @@ export type ContentScriptCosmeticData = {
     /**
      * Marker state of the ExtendedCss path.
      *
-     * On MV3 the background applies ExtendedCss, so it is the only side that
-     * can report whether the marked rules reached the document.
+     * The background applies ExtendedCss, so it is the only side that can
+     * report whether the marked rules reached the document. On MV2 the
+     * ExtendedCss instance is injected from the background too, but the
+     * content script never gets a confirmed marker state back, so the value
+     * means "marker state not reported by the background".
      */
     extCssMarkersState: ExtCssMarkersState;
 
     /**
-     * Extended css rules to apply.
+     * Always `null` — ExtendedCSS is applied by the background.
+     *
+     * @deprecated Always `null`. ExtendedCSS is applied by the background, so
+     * the content script must not read this field. It stays in the message
+     * contract for compatibility and can be removed in the next major.
      */
     extCssRules: string[] | null;
 

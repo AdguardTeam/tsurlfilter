@@ -20,7 +20,7 @@ import DynamicRulesApi, {
     type DynamicConversionResult,
     type DynamicRulesSnapshot,
 } from '../../../../src/lib/mv3/background/dynamic-rules-api';
-import { createFilter } from '../helpers';
+import { createFilter } from '../../common/helpers';
 
 /**
  * Overrides for the mocked DNR quota limits.

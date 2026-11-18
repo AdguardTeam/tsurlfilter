@@ -260,7 +260,7 @@ describe('TsWebExtension MV3 canvas protection lifecycle', () => {
             rollback: ReturnType<typeof vi.fn>;
             configure: () => ReturnType<TsWebExtension['configure']>;
         }> => {
-            const { createFilter } = await import('../helpers');
+            const { createFilter } = await import('../../common/helpers');
             const staticFilter = createFilter(staticFilterRules, 1);
             if (unreadableStaticFilter) {
                 vi.spyOn(staticFilter, 'getContent').mockRejectedValue(new Error('filter source is offline'));

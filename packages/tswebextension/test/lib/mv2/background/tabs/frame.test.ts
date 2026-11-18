@@ -5,6 +5,20 @@ import { type CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../../../../src/lib/common/constants';
 import { FrameMV2 } from '../../../../../src/lib/mv2/background/tabs/frame';
 
+/**
+ * Creates a frame with the default test values.
+ *
+ * @returns A new {@link FrameMV2} instance.
+ */
+const createFrame = (): FrameMV2 => new FrameMV2({
+    url: 'https://example.com',
+    tabId: 1,
+    frameId: MAIN_FRAME_ID,
+    parentFrameId: NO_PARENT_FRAME_ID,
+    timeStamp: Date.now(),
+    parentDocumentId: '1',
+});
+
 describe('Frame', () => {
     describe('constructor', () => {
         it('should create a new Frame instance with the correct properties', () => {
@@ -35,6 +49,16 @@ describe('Frame', () => {
             expect(frame.tabId).toBe(tabId);
             expect(frame.cosmeticResult).toBe(cosmeticResult);
             expect(frame.matchingResult).toBe(matchingResult);
+        });
+    });
+
+    describe('ExtendedCSS document state', () => {
+        it('has no applied rule set by default', () => {
+            expect(createFrame().extCssAppliedData).toBeUndefined();
+        });
+
+        it('has no disposed document by default', () => {
+            expect(createFrame().extCssDisposedDocumentVersion).toBeUndefined();
         });
     });
 });

@@ -1,7 +1,7 @@
 import { Filter, type IFilter } from '@adguard/dnr-converter';
 
-import { extCssInjectedDispose } from '../../../src/lib/mv3/background/extcss-apply-fn';
-import { EXTCSS_PROTOCOL } from '../../../src/lib/mv3/background/extcss-protocol';
+import { extCssInjectedDispose } from '../../../src/lib/common/extcss-apply-fn';
+import { EXTCSS_PROTOCOL } from '../../../src/lib/common/extcss-protocol';
 
 export const createFilter = (
     rules: string[],

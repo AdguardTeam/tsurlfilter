@@ -7,10 +7,10 @@ import {
     vi,
 } from 'vitest';
 
+import { extCssInjectedApply, extCssInjectedDispose } from '../../../../src/lib/common/extcss-apply-fn';
+import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
-import { extCssInjectedApply, extCssInjectedDispose } from '../../../../src/lib/mv3/background/extcss-apply-fn';
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/mv3/background/extcss-protocol';
 import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
 import { type FrameMV3, type PreparedCosmeticResultMV3 } from '../../../../src/lib/mv3/tabs/frame';
 import { tabsApi } from '../../../../src/lib/mv3/tabs/tabs-api';

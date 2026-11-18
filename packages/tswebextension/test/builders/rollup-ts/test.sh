@@ -36,11 +36,16 @@ tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
 # shared chunk added or renamed by the bundler is included instead of silently
 # dropping out of the sum. The smoke builder's CJS bundle tree-shakes the
 # collector, so its size is not the shipped size either.
-# Current payload: 80,126 bytes. The ExtendedCss `:remove()` handoff adds the
-# shared `window` key and the getter that reads it, so the counter learns about
-# nodes removed by the engine injected from the MV3 background. Raise this only
-# when a genuine size increase lands, never to silence a regression.
-max_size=80300
+# The measured bytes include comments. Comments are deliberately kept in
+# `dist`: the Chrome Web Store review narrative for script-rule execution
+# (`JS_RULES_EXECUTION`) and the policy notes around `chrome.scripting` must be
+# readable in the shipped bundles, so stripping them is not an option.
+# Current payload: 85,043 bytes. The merge keeps the CSS hits lifecycle in the
+# content script, adds the ExtendedCss removed-elements handoff and the hit
+# helpers, and drops the in-page ExtendedCss application, which no manifest
+# uses any more. Raise this only when a genuine size increase lands, never to
+# silence a regression.
+max_size=85200
 package_dist="node_modules/@adguard/tswebextension/dist"
 if ! filesize=$(node measure-payload.mjs "$package_dist/css-hits-counter.js"); then
     echo "Failed to measure the shipped css-hits-counter payload"

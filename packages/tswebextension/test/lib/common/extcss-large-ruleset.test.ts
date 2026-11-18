@@ -10,9 +10,10 @@ import {
     it,
 } from 'vitest';
 
-import { extCssInjectedApply } from '../../../../src/lib/mv3/background/extcss-apply-fn';
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/mv3/background/extcss-protocol';
-import { resetExtCssState } from '../helpers';
+import { extCssInjectedApply } from '../../../src/lib/common/extcss-apply-fn';
+import { EXTCSS_PROTOCOL } from '../../../src/lib/common/extcss-protocol';
+
+import { resetExtCssState } from './helpers';
 
 // Large rule set: "hundreds of ExtendedCss rules". 500 is well above
 // "hundreds" and exercises the args serialization path heavily.

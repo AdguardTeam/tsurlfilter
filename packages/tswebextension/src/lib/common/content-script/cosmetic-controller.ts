@@ -1,5 +1,3 @@
-import { type ExtCssConfiguration, ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
-
 import { type ContentScriptCosmeticData } from '../cosmetic-api';
 // Imported directly so the content script does not bundle the cosmetic API module.
 import { ExtCssMarkersState } from '../ext-css-markers-state';
@@ -83,11 +81,6 @@ export class CosmeticControllerCommon {
     private markersOutstanding = true;
 
     /**
-     * Whether the applied ExtendedCss rules contain hit markers.
-     */
-    private extendedCssMarkersApplied = false;
-
-    /**
      * Whether a marked-data reapply request is in flight.
      */
     private reapplyInFlight = false;
@@ -98,16 +91,10 @@ export class CosmeticControllerCommon {
     private reapplyRequested = false;
 
     /**
-     * ExtendedCss instance whose rules are currently applied.
-     */
-    private extendedCss?: ExtendedCss;
-
-    /**
      * Creates a new {@link CosmeticControllerCommon}.
      */
     constructor() {
         this.process = this.process.bind(this);
-        this.beforeStyleApplied = this.beforeStyleApplied.bind(this);
         this.onCollectHitStatsChange = this.onCollectHitStatsChange.bind(this);
     }
 
@@ -168,7 +155,6 @@ export class CosmeticControllerCommon {
     private applyCosmetic(cosmeticData: ContentScriptCosmeticData): void {
         const {
             isAppStarted,
-            extCssRules,
             areHitsStatsCollected,
             areNativeHitsStatsCollected,
             extCssMarkersState,
@@ -204,10 +190,6 @@ export class CosmeticControllerCommon {
         this.cosmeticDataApplied = true;
 
         CosmeticControllerCommon.repairNativeCss(nativeCssSelectors);
-        this.applyExtendedCssRules(extCssRules, !!this.cssHitsCounter);
-        this.extendedCssMarkersApplied = areHitsStatsCollected
-            && !!extCssRules
-            && extCssRules.length > 0;
 
         const hasMarkedNativeCss = areHitsStatsCollected && areNativeHitsStatsCollected;
         this.markersOutstanding = !hasMarkedNativeCss
@@ -333,20 +315,9 @@ export class CosmeticControllerCommon {
                 this.ensureCounter(true);
             }
 
-            const hasResponseExtendedCss = !!res.extCssRules && res.extCssRules.length > 0;
             const hasMarkedNativeCss = res.areNativeHitsStatsCollected;
+            const hasMarkedExtendedCss = res.extCssMarkersState === ExtCssMarkersState.Applied;
 
-            if (!this.extendedCssMarkersApplied && hasResponseExtendedCss) {
-                // A response without rules can mean the background lost the
-                // tab context, not that the document has no ExtendedCss rules.
-                // Keep the applied instance in that case.
-                this.applyExtendedCssRules(res.extCssRules, true);
-                this.extendedCssMarkersApplied = true;
-            }
-
-            const hasMarkedExtendedCss = this.extendedCssMarkersApplied
-                || hasResponseExtendedCss
-                || res.extCssMarkersState === ExtCssMarkersState.Applied;
             this.markersOutstanding = !hasMarkedNativeCss
                 || res.extCssMarkersState === ExtCssMarkersState.Failed;
             this.cosmeticDataApplied = true;
@@ -409,52 +380,6 @@ export class CosmeticControllerCommon {
             pendingProbesCollector: this.pendingProbesCollector,
             paused,
         });
-    }
-
-    /**
-     * Disposes the previous ExtendedCss instance and applies new rules.
-     *
-     * @param extCssRules Extended CSS rules from the background.
-     * @param withCounter Whether the hit counting hook must be attached.
-     */
-    private applyExtendedCssRules(
-        extCssRules: string[] | null,
-        withCounter: boolean,
-    ): void {
-        if (this.extendedCss) {
-            this.extendedCss.dispose();
-            this.extendedCss = undefined;
-        }
-
-        if (!extCssRules || extCssRules.length === 0) {
-            return;
-        }
-
-        const extendedCssConfig: ExtCssConfiguration = {
-            cssRules: extCssRules,
-        };
-
-        if (withCounter) {
-            extendedCssConfig.beforeStyleApplied = this.beforeStyleApplied;
-        }
-
-        this.extendedCss = new ExtendedCss(extendedCssConfig);
-        this.extendedCss.apply();
-    }
-
-    /**
-     * Preprocesses {@link IAffectedElement} for the {@link ExtendedCss} instance.
-     *
-     * @param el Record with the required `content` style property of rules.
-     *
-     * @returns Affected element record.
-     */
-    private beforeStyleApplied(el: IAffectedElement): IAffectedElement {
-        if (!this.cssHitsCounter) {
-            return el;
-        }
-
-        return this.cssHitsCounter.countAffectedByExtendedCss(el);
     }
 
     /**

@@ -286,11 +286,13 @@ COPY --from=test-dnr-converter /out/ /
 
 # ============================================================================
 # Stage: test-tswebextension
-# Runs test:prod (lint + smoke + test:ci) for @adguard/tswebextension
+# Runs test:prod (lint + smoke + test:ci) for @adguard/tswebextension,
+# then the Firefox-only e2e specs (test:e2e:firefox).
 # ============================================================================
 FROM built-tswebextension AS test-tswebextension
 
-# Install both browsers and system dependencies used by the package test projects.
+# Install both browsers and system dependencies used by the package test projects
+# (Chromium and Firefox e2e specs).
 RUN cd packages/tswebextension && npx playwright install --with-deps chromium firefox && \
     apt-get install -y --no-install-recommends libegl1 libegl-mesa0 libgl1-mesa-dri && \
     rm -rf /var/lib/apt/lists/*
@@ -309,6 +311,22 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     EXIT_CODE=$?; \
     bash ./scripts/ci/copy-test-reports.sh packages/tswebextension; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
+    exit 0
+
+# Firefox-only e2e: runs the serialized MV2 ExtCSS code string in real Gecko.
+# The test:prod exit code takes precedence; write the Firefox code only when
+# test:prod succeeded and Firefox failed.
+RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
+    pnpm config set store-dir /pnpm-store && \
+    EXISTING_EXIT_CODE=$(cat /out/exit-code.txt 2>/dev/null || echo 0); \
+    set +e; \
+    bash ./scripts/ci/timeout-wrapper.sh 600s sh -c \
+      'cd packages/tswebextension && pnpm test:e2e:firefox'; \
+    FIREFOX_EXIT_CODE=$?; \
+    bash ./scripts/ci/copy-test-reports.sh packages/tswebextension; \
+    if [ "${EXISTING_EXIT_CODE}" = "0" ] && [ ${FIREFOX_EXIT_CODE} -ne 0 ]; then \
+      echo ${FIREFOX_EXIT_CODE} > /out/exit-code.txt; \
+    fi; \
     exit 0
 
 FROM scratch AS test-tswebextension-output

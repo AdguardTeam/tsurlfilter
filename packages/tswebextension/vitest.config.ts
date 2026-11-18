@@ -48,12 +48,10 @@ const createProjectForManifestVersion = (
             ? { include: ['test/**/*.bench.ts'] }
             : { include: [] },
     },
-    // The ExtCSS and CSS-hits inlining plugins are only needed for the MV3
-    // project, where the `extCssInjectedApply` function (and its tests) live.
-    // They are no-ops for MV2, which still needs the shared canvas plugin.
-    plugins: manifestVersion === ManifestVersionEnv.Third
-        ? [...plugins, inlineExtCssBundle(), inlineCssHitsHelpers()]
-        : plugins,
+    // Both manifest-version projects run tests for the shared ExtCSS payload
+    // and its MV2 serializer, so both need the build-time inliners on top of
+    // the shared canvas plugin.
+    plugins: [...plugins, inlineExtCssBundle(), inlineCssHitsHelpers()],
 });
 
 export default defineConfig({
@@ -66,7 +64,6 @@ export default defineConfig({
         environmentOptions: {},
         projects: [
             defineProject({
-                plugins,
                 test: {
                     name: 'common',
                     setupFiles: [
@@ -87,6 +84,9 @@ export default defineConfig({
                     // collect the MV3 bench, which needs the MV3-only plugins.
                     benchmark: { include: [] },
                 },
+                // The shared ExtCSS payload and its tests live in `common` and
+                // rely on the build-time inliners, as the MV3 project does.
+                plugins: [...plugins, inlineExtCssBundle(), inlineCssHitsHelpers()],
             }),
             createProjectForManifestVersion(ManifestVersionEnv.Second),
             createProjectForManifestVersion(ManifestVersionEnv.Third),
@@ -94,11 +94,17 @@ export default defineConfig({
                 test: {
                     name: 'browser',
                     include: ['test/e2e/**/*.spec.ts'],
-                    // Same as the `common` project: no benchmarks here.
-                    benchmark: { include: [] },
+                    // Firefox specs run via `pnpm test:e2e:firefox`
+                    // (vitest.firefox.config.ts), not in the Chromium project.
                     // The canvas-protection specs run in the `canvas-native`
                     // project, which enables WebGL.
-                    exclude: ['test/e2e/canvas-protection/**'],
+                    exclude: [
+                        '**/node_modules/**',
+                        '**/*.firefox.spec.ts',
+                        'test/e2e/canvas-protection/**',
+                    ],
+                    // Same as the `common` project: no benchmarks here.
+                    benchmark: { include: [] },
                     browser: {
                         enabled: true,
                         provider: playwright(),

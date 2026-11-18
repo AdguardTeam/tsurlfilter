@@ -181,7 +181,9 @@ You MUST follow the following rules for EVERY task that you perform:
 
 - For `@adguard/tsurlfilter` and `@adguard/tswebextension`, build first
   (`pnpm build`), then run `pnpm test:prod` which includes lint, smoke tests,
-  and the full test suite.
+  and the full test suite. For `@adguard/tswebextension`, also run
+  `pnpm test:e2e:firefox` (prerequisite: `npx playwright install firefox`);
+  `test:prod` does not run the Firefox e2e specs, but CI does.
 
 - You MUST use `workspace:^` for internal monorepo dependencies.
 

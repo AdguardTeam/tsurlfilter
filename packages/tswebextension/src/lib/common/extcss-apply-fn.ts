@@ -1,10 +1,6 @@
 import { type ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
 
-import type {
-    cssHitsHelpers as cssHitsHelpersImpl,
-    ExtendedCssHit,
-} from '../../common/content-script/utils/css-hits-helpers';
-
+import type { cssHitsHelpers as cssHitsHelpersImpl, ExtendedCssHit } from './content-script/utils/css-hits-helpers';
 import type applyExtendedCssImpl from './extcss-inject-src';
 import { type ExtCssProtocol } from './extcss-protocol';
 
@@ -40,10 +36,13 @@ declare const cssHitsHelpers: typeof cssHitsHelpersImpl;
 declare const applyExtendedCss: typeof applyExtendedCssImpl;
 
 /**
- * Self-contained ExtendedCss apply function injected into pages via
- * `chrome.scripting.executeScript({ func, args })`.
+ * Self-contained ExtendedCSS apply function shared by MV2 and MV3.
  *
- * NEVER called in the service worker — it is serialized by `toString()` and
+ * In MV3 it is injected with
+ * `chrome.scripting.executeScript({ func, args })`. In MV2 it is serialized
+ * into a code string for `browser.tabs.executeScript({ code })`.
+ *
+ * NEVER called in the background — it is serialized by `toString()` and
  * re-evaluated in the page's ISOLATED world, so it MUST NOT reference any
  * outer-scope identifier: only literal source in this body (and `window`)
  * survives. The `inlineExtCssBundle` build plugin replaces the inlining
@@ -55,11 +54,16 @@ declare const applyExtendedCss: typeof applyExtendedCssImpl;
  * constant is the single source of truth. Self-containment is pinned by the
  * `String(extCssInjectedApply)` unit tests.
  *
- * @param cssRules ExtendedCss rule strings to apply to the current document.
+ * A call whose rule strings match the ones the retained instance was built
+ * from is a no-op: the instance is neither disposed nor rebuilt, so repeated
+ * injections for the same document keep the engine state and the inline
+ * styles the page applied in the meantime.
+ *
+ * @param cssRules ExtendedCSS rule strings to apply to the current document.
  * @param collectStats When true, register a CSS-hits `beforeStyleApplied`
  * callback (else nothing is registered and no overhead is incurred). The
- * callback is registered on every injection; the per-node dedupe state is
- * retained across injections, so a re-apply reports only the hits that were
+ * callback is registered on every apply; the per-node dedupe state is
+ * retained across applies, so a re-apply reports only the hits that were
  * not reported before.
  * @param protocol Serialized protocol values (see `EXTCSS_PROTOCOL`). A
  * required argument (not a module-scope default) so the serialized body has
@@ -73,16 +77,6 @@ export const extCssInjectedApply = (
     collectStats: boolean,
     protocol: ExtCssProtocol,
 ): void => {
-    __INLINE_EXTCSS_BUNDLE__();
-
-    // Inlined CSS-hits helpers — the SAME source used by MV2's
-    // `ElementUtils` and `CssHitsCounter`. Defines a local `cssHitsHelpers`
-    // object with `collectExtendedCssHits()` so the `beforeStyleApplied`
-    // callback below can use it without any module-scope references (which
-    // would not survive toString()-based serialization for
-    // `chrome.scripting.executeScript({ func })`).
-    __INLINE_CSS_HITS_HELPERS__();
-
     /**
      * Retained ExtendedCss instance together with the rule strings it was
      * built from and the per-node hits dedupe state. The rule strings are kept
@@ -101,6 +95,38 @@ export const extCssInjectedApply = (
     // unresolved free identifier in the page's ISOLATED world.
     const previous = w[protocol.instanceKey] as RetainedExtCss | null | undefined;
     const previousRules = previous?.cssRules;
+
+    // Re-applying the rule strings the retained instance was built from is a
+    // no-op: dispose() + apply() would rebuild an identical instance, revert
+    // the inline styles the page changed since the previous apply, and re-walk
+    // the DOM for nothing. The background records an applied rule set and
+    // skips it, but a frame with no context has no state to record, and the
+    // content script can ask for its data again, so the payload still guards
+    // itself. The rules encode the hits flag (markers are added when
+    // statistics are collected), so an unchanged rule set also means an
+    // unchanged callback registration.
+    //
+    // The check runs before the inlined bundle is evaluated, so a repeated
+    // call does not evaluate the engine. It does not avoid parsing the code
+    // string, which the browser does before the function runs.
+    if (
+        previousRules
+        && previousRules.length === cssRules.length
+        && previousRules.every((rule, index) => rule === cssRules[index])
+    ) {
+        return;
+    }
+
+    __INLINE_EXTCSS_BUNDLE__();
+
+    // Inlined CSS-hits helpers — the SAME source used by MV2's
+    // `ElementUtils` and `CssHitsCounter`. Defines a local `cssHitsHelpers`
+    // object with `collectExtendedCssHits()` so the `beforeStyleApplied`
+    // callback below can use it without any module-scope references (which
+    // would not survive toString()-based serialization for
+    // `chrome.scripting.executeScript({ func })`).
+    __INLINE_CSS_HITS_HELPERS__();
+
     // The inlined helpers keep no state between injections, so the dedupe map
     // is created here, retained on the instance and passed explicitly. Nodes
     // reported before a re-apply are skipped, while nodes matched for the
@@ -174,6 +200,9 @@ export const extCssInjectedApply = (
      * @returns The same element (with the hit marker content cleared).
      */
     const beforeStyleApplied = (el: IAffectedElement): IAffectedElement => {
+        // ExtendedCss removes the node itself for `:remove()` rules, and it
+        // calls this callback first. Record the node before that, so the
+        // counter does not queue it as a probe and put it back into the page.
         if (el.rules) {
             for (const rule of el.rules) {
                 if (rule.style?.remove === 'true') {
@@ -260,13 +289,16 @@ export const extCssInjectedApply = (
 };
 
 /**
- * Self-contained ExtendedCss disposal function injected into pages via
- * `chrome.scripting.executeScript({ func, args })` when the rule set is empty.
- * The disposal is unconditional — the background cannot tell whether the
- * document still holds an instance — and is a no-op when it does not. Disposes
- * the retained ExtendedCss instance when present: disconnects its
- * MutationObserver and reverts its styles, so stale observers and styles do
- * not leak.
+ * Self-contained ExtendedCSS disposal function shared by MV2 and MV3.
+ *
+ * In MV3 it is injected with `chrome.scripting.executeScript({ func, args })`.
+ * In MV2 it is serialized into a code string for
+ * `browser.tabs.executeScript({ code })`. It runs when the rule set is empty
+ * and disposes the previously retained ExtendedCss instance (if any):
+ * disconnects its MutationObserver and reverts its styles, so stale observers
+ * and styles do not leak. The disposal is unconditional — a caller cannot tell
+ * whether the document still holds an instance — and is a no-op when it does
+ * not.
  *
  * Like {@link extCssInjectedApply}, it MUST NOT reference any outer-scope
  * identifier; the instance key arrives via the `protocol` argument.

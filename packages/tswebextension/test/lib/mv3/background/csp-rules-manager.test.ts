@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { type IFilter, isUnavailableFilterSourceError } from '@adguard/dnr-converter';
 
 import { CspRulesManager } from '../../../../src/lib/mv3/background/csp-rules-manager';
-import { createFilter } from '../helpers';
+import { createFilter } from '../../common/helpers';
 
 describe('CspRulesManager', () => {
     it('resolves exceptions globally and preserves the positive rule scope', async () => {

@@ -2,6 +2,10 @@
  * @vitest-environment jsdom
  */
 
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import {
     afterEach,
     beforeEach,
@@ -11,241 +15,289 @@ import {
     vi,
 } from 'vitest';
 
-import { CosmeticResult } from '@adguard/tsurlfilter';
-
-import * as SendMessageModule from '../../../../src/lib/common/content-script/send-app-message';
 import { type ContentScriptCosmeticData, ExtCssMarkersState } from '../../../../src/lib/common/cosmetic-api';
-import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { CosmeticController } from '../../../../src/lib/mv2/content-script/cosmetic-controller';
-import { createCosmeticRule } from '../../../helpers/rule-creator';
 
-vi.mock('../../../../src/lib/common/content-script/send-app-message', () => {
-    const module = vi.importActual('../../../../src/lib/common/content-script/send-app-message');
-    return module;
-});
+const { sendAppMessageMock, cssHitsCounterCtorSpy } = vi.hoisted(() => ({
+    sendAppMessageMock: vi.fn(),
+    // Used as a constructor (`new CssHitsCounter(cb)`); a plain vi.fn() can be
+    // `new`-ed and records its constructor call arguments.
+    cssHitsCounterCtorSpy: vi.fn(),
+}));
+vi.mock('../../../../src/lib/common/content-script/send-app-message', () => ({
+    sendAppMessage: sendAppMessageMock,
+}));
 
-/**
- * Creates cosmetic result for elemhide rules.
- *
- * @param rules Element hiding rules.
- *
- * @returns Element hiding rules cosmetic result.
- */
-const getElemhideCosmeticResult = (rules: string[]): CosmeticResult => {
-    const cosmeticResult = new CosmeticResult();
-    rules.forEach((rule) => {
-        cosmeticResult.elementHiding.append(createCosmeticRule(rule, 0));
-    });
-    return cosmeticResult;
-};
+vi.mock('../../../../src/lib/common/content-script/css-hits-counter', () => ({
+    CssHitsCounter: cssHitsCounterCtorSpy,
+}));
 
 /**
- * Returns cosmetic data based on `rules`.
- *
- * @param rules Element hiding rules.
- * @param areHitsStatsCollected Flag for hits counter.
- *
- * @returns Cosmetic data object.
+ * Makes the mocked counter constructor return an instance with the lifecycle
+ * methods the shared controller calls.
  */
-const getCosmeticData = (rules: string[], areHitsStatsCollected: boolean): ContentScriptCosmeticData => {
-    const cosmeticResult = getElemhideCosmeticResult(rules);
-    const extCssRules = CosmeticApi.getExtCssRules(
-        cosmeticResult,
-        {
-            areHitsStatsCollected,
-        },
-    );
-    return {
-        isAppStarted: true,
-        areHitsStatsCollected,
-        areNativeHitsStatsCollected: areHitsStatsCollected,
-        extCssMarkersState: ExtCssMarkersState.ContentScript,
-        extCssRules,
-        nativeCssSelectors: null,
-    };
+const mockHitsCounterInstance = (): void => {
+    // A constructor that returns an object yields that object, so the mocked
+    // counter keeps the lifecycle methods without an explicit class.
+    cssHitsCounterCtorSpy.mockImplementation(() => ({
+        pause: vi.fn(),
+        resume: vi.fn(),
+        stop: vi.fn(),
+    }));
 };
 
-describe('invalid native CSS selectors are handled gracefully', () => {
-    beforeEach(() => {
-        document.body.innerHTML = `
-            <div id="target" class="ad_banner" style="display: block">ad content</div>
-            <div id="valid-target" class="ad_popup" style="display: block">popup content</div>
-        `;
+vi.mock('../../../../src/lib/common/utils/selector-validator', () => ({
+    validateSelectors: vi.fn(() => ({
+        valid: ['.valid-sel'],
+        invalid: ['.invalid-sel'],
+    })),
+}));
 
-        global.CSS = {
-            supports: vi.fn((condition: string) => {
-                const match = condition.match(/^selector\((.+)\)$/);
-                if (!match) {
-                    return false;
-                }
-                const selector = match[1];
-                // Known invalid patterns
-                if (selector.includes('#.') || selector.includes('.#')) {
-                    return false;
-                }
-                return true;
-            }),
-        } as unknown as typeof CSS;
+// Resolve the source paths relative to THIS test file's directory.
+// `readFileSync` resolves relative paths against `process.cwd()` (the package
+// root under `pnpm test:mv2`), and `new URL(rel, import.meta.url)` is unreliable
+// here because the jsdom test environment makes the URL constructor resolve to
+// `http://localhost:3000/...`. Converting `import.meta.url` to a real path and
+// joining with `node:path` is robust regardless of the working directory.
+const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Returns the source of a controller, without comments.
+ *
+ * A comment that names a removed API must not trip the source guard.
+ *
+ * @param relativePath Path relative to this test file.
+ *
+ * @returns The controller source.
+ */
+const readControllerSource = (relativePath: string): string => readFileSync(
+    path.resolve(TEST_DIR, relativePath),
+    'utf8',
+).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+
+const MV2_CONTROLLER_SRC = readControllerSource(
+    '../../../../src/lib/mv2/content-script/cosmetic-controller.ts',
+);
+const SHARED_CONTROLLER_SRC = readControllerSource(
+    '../../../../src/lib/common/content-script/cosmetic-controller.ts',
+);
+
+/**
+ * Builds content-script cosmetic data for the tests.
+ *
+ * @param overrides Fields to override on the default response.
+ *
+ * @returns Cosmetic data returned by the mocked background.
+ */
+const makeCosmeticData = (
+    overrides: Partial<ContentScriptCosmeticData> = {},
+): ContentScriptCosmeticData => ({
+    isAppStarted: true,
+    areHitsStatsCollected: false,
+    areNativeHitsStatsCollected: false,
+    extCssMarkersState: ExtCssMarkersState.ContentScript,
+    extCssRules: null,
+    nativeCssSelectors: null,
+    ...overrides,
+});
+
+describe('MV2 CosmeticController — native CSS repair', () => {
+    beforeEach(() => {
+        mockHitsCounterInstance();
     });
 
     afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+        sendAppMessageMock.mockReset();
+        cssHitsCounterCtorSpy.mockClear();
         document.body.innerHTML = '';
-        document.head.querySelectorAll('style').forEach((el) => el.remove());
-        // @ts-ignore Clean up global mock
-        delete global.CSS;
+        document.head.innerHTML = '';
     });
 
-    it('applies valid selectors and skips invalid ones without error', async () => {
-        const validSelectors = ['.ad_banner', '.ad_popup'];
-        const invalidSelector = '#.broken';
-
-        const cosmeticData: ContentScriptCosmeticData = {
-            isAppStarted: true,
-            areHitsStatsCollected: false,
-            areNativeHitsStatsCollected: false,
-            extCssMarkersState: ExtCssMarkersState.NotRequired,
-            extCssRules: null,
-            nativeCssSelectors: [...validSelectors, invalidSelector],
-        };
-
-        vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(cosmeticData);
+    it('retries GetCosmeticData until isAppStarted is true, then repairs native CSS', async () => {
+        vi.useFakeTimers();
+        document.head.innerHTML = '';
+        sendAppMessageMock
+            .mockResolvedValueOnce(makeCosmeticData({ isAppStarted: false }))
+            .mockResolvedValueOnce(makeCosmeticData({ nativeCssSelectors: ['.some-sel'] }));
 
         const cosmeticController = new CosmeticController();
         cosmeticController.init();
 
-        // Wait for the cosmetic controller to process
-        await new Promise((resolve) => {
-            setTimeout(resolve, 20);
-        });
+        // First call returns isAppStarted:false → schedules a 100ms retry.
+        await vi.advanceTimersByTimeAsync(0);
+        expect(sendAppMessageMock).toHaveBeenCalledTimes(1);
+        // No repair yet.
+        expect(document.querySelector('style')).toBeNull();
 
-        const styleElements = document.head.querySelectorAll('style');
-        const injectedStyles = Array.from(styleElements)
-            .map((el) => el.textContent)
-            .join('\n');
+        // Advance past the 100ms retry interval → next call returns
+        // isAppStarted:true.
+        await vi.advanceTimersByTimeAsync(100);
+        expect(sendAppMessageMock).toHaveBeenCalledTimes(2);
 
-        for (const selector of validSelectors) {
-            expect(injectedStyles).toContain(selector);
+        // Native CSS repair ran once the engine was ready.
+        const style = document.querySelector('style');
+        expect(style).not.toBeNull();
+        expect(style?.textContent).toContain('.valid-sel');
+
+        // No further retries are scheduled once isAppStarted is true.
+        await vi.advanceTimersByTimeAsync(1000);
+        expect(sendAppMessageMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('stops retrying after MAX_GET_COSMETIC_DATA_TRIES attempts', async () => {
+        vi.useFakeTimers();
+        document.head.innerHTML = '';
+        sendAppMessageMock.mockResolvedValue(makeCosmeticData({ isAppStarted: false }));
+
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
+
+        // Advance well beyond 200 retries × 100ms (~20s) — the loop gives up.
+        await vi.advanceTimersByTimeAsync(25_000);
+
+        // 1 initial call + 201 retries: tries 0..200 retry, tries 201 falls
+        // through and stops.
+        expect(sendAppMessageMock).toHaveBeenCalledTimes(202);
+
+        // No style was injected (the engine never became ready).
+        expect(document.querySelector('style')).toBeNull();
+    });
+
+    it('still repairs invalid native CSS selectors', async () => {
+        vi.useFakeTimers();
+        document.head.innerHTML = '';
+        sendAppMessageMock.mockResolvedValue(makeCosmeticData({
+            nativeCssSelectors: ['.some-sel'],
+        }));
+
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
+        await vi.advanceTimersByTimeAsync(0);
+
+        const style = document.querySelector('style');
+        expect(style).not.toBeNull();
+        expect(style?.textContent).toContain('.valid-sel');
+    });
+
+    it('does not apply ExtCSS rules even when the response carries them', async () => {
+        vi.useFakeTimers();
+        document.body.innerHTML = '<div class="ad"><span class="child"></span></div>';
+        sendAppMessageMock.mockResolvedValue(makeCosmeticData({
+            extCssRules: ['.ad:has(.child) { display: none !important; }'],
+        }));
+
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
+        await vi.advanceTimersByTimeAsync(0);
+
+        const ad = document.querySelector('.ad') as HTMLElement;
+        expect(getComputedStyle(ad).display).toBe('block');
+    });
+
+    it('no longer references ExtendedCss (source guard)', () => {
+        // ExtCSS application moved to the background; the shared controller
+        // keeps only the native-CSS repair retry loop and the native hits
+        // counter lifecycle.
+        for (const source of [MV2_CONTROLLER_SRC, SHARED_CONTROLLER_SRC]) {
+            expect(source).not.toContain('@adguard/extended-css');
+            expect(source).not.toContain('new ExtendedCss');
+            expect(source).not.toContain('applyExtendedCss');
+            expect(source).not.toContain('beforeStyleApplied');
         }
-
-        expect(injectedStyles).not.toContain(invalidSelector);
+        // Native CSS hits counting stays in the content script.
+        expect(SHARED_CONTROLLER_SRC).toContain('CssHitsCounter');
+        // The MV2 controller stays a thin subclass of the shared controller.
+        expect(MV2_CONTROLLER_SRC).toContain('extends CosmeticControllerCommon');
     });
 });
 
-describe('some extended css rules are invalid', () => {
+describe('MV2 CosmeticController — native CssHitsCounter', () => {
     beforeEach(() => {
-        document.body.innerHTML = `
-            <div id="headerOff" class="ad_header" style="display: block">test text</div>
-            <div id="bannerOff" style="display: block"></div>
-
-            <div id="headerOn" class="ad_header" style="display: block">test text</div>
-            <div id="bannerOn" style="display: block"></div>
-        `;
+        mockHitsCounterInstance();
     });
 
     afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+        sendAppMessageMock.mockReset();
+        cssHitsCounterCtorSpy.mockClear();
         document.body.innerHTML = '';
+        document.head.innerHTML = '';
     });
 
-    it('no hits counter', async () => {
-        const rules = [
-            '#?##bannerOff:remove()',
-            '#?#.ad_header:contains(text)',
-        ];
+    it('creates a CssHitsCounter when areHitsStatsCollected is true and the app is started', async () => {
+        vi.useFakeTimers();
+        document.head.innerHTML = '';
+        sendAppMessageMock.mockResolvedValue(makeCosmeticData({
+            areHitsStatsCollected: true,
+        }));
 
-        // Mocking the sendAppMessage function
-        vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(getCosmeticData(rules, false));
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(cssHitsCounterCtorSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('does NOT create a CssHitsCounter when areHitsStatsCollected is false', async () => {
+        vi.useFakeTimers();
+        document.head.innerHTML = '';
+        sendAppMessageMock.mockResolvedValue(makeCosmeticData());
+
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(cssHitsCounterCtorSpy).not.toHaveBeenCalled();
+    });
+
+    it('sends SaveCssHitsStats messages through the counter callback', async () => {
+        vi.useFakeTimers();
+        document.head.innerHTML = '';
+        sendAppMessageMock.mockResolvedValue(makeCosmeticData({
+            areHitsStatsCollected: true,
+        }));
+
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(cssHitsCounterCtorSpy).toHaveBeenCalledTimes(1);
+        // Grab the callback handed to the counter and simulate a counted hit.
+        const hitsCallback = cssHitsCounterCtorSpy.mock.calls[0][0] as (stats: unknown) => void;
+        const stats = [{ filterId: 1, ruleIndex: 2, element: '<div class="ad">' }];
+        hitsCallback(stats);
+
+        expect(sendAppMessageMock).toHaveBeenCalledWith({
+            type: 'saveCssHitsStats',
+            payload: stats,
+        });
+    });
+
+    it('creates exactly one CssHitsCounter when a retry succeeds', async () => {
+        vi.useFakeTimers();
+        document.head.innerHTML = '';
+        sendAppMessageMock
+            .mockResolvedValueOnce(makeCosmeticData({
+                isAppStarted: false,
+                areHitsStatsCollected: true,
+            }))
+            .mockResolvedValueOnce(makeCosmeticData({
+                isAppStarted: true,
+                areHitsStatsCollected: true,
+            }));
 
         const cosmeticController = new CosmeticController();
         cosmeticController.init();
 
-        expect(cosmeticController).toBeDefined();
+        // The not-started response must not create a counter.
+        await vi.advanceTimersByTimeAsync(0);
+        expect(cssHitsCounterCtorSpy).not.toHaveBeenCalled();
 
-        // Wait for the cosmetic controller to process (using a delay)
-        await new Promise((resolve) => {
-            setTimeout(resolve, 20);
-        });
-
-        const headerElement = document.getElementById('headerOff');
-        if (!headerElement) {
-            throw new Error('#headerOff element is required');
-        }
-
-        const headerDisplayStyleValue = headerElement.style.getPropertyValue('display');
-        expect(headerDisplayStyleValue).toEqual('none');
-    });
-
-    it('hits counter enabled', async () => {
-        const rules = [
-            '#?##bannerOn:remove()',
-            '#?#.ad_header:contains(text)',
-        ];
-
-        // Mocking the sendAppMessage function
-        vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(getCosmeticData(rules, true));
-
-        const cosmeticController = new CosmeticController();
-        cosmeticController.init();
-
-        expect(cosmeticController).toBeDefined();
-
-        // Wait for the cosmetic controller to process (using a delay)
-        await new Promise((resolve) => {
-            setTimeout(resolve, 20);
-        });
-
-        const headerElement = document.getElementById('headerOn');
-        if (!headerElement) {
-            throw new Error('#headerOn element is required');
-        }
-
-        const headerDisplayStyleValue = headerElement.style.getPropertyValue('display');
-        expect(headerDisplayStyleValue).toEqual('none');
-    });
-});
-
-describe('uBO action pseudo-classes are applied by the content script', () => {
-    beforeEach(() => {
-        document.body.innerHTML = `
-            <a id="link" href="https://example.org/" onclick="void 0" class="ads ad-1 other">link</a>
-        `;
-    });
-
-    afterEach(() => {
-        document.body.innerHTML = '';
-    });
-
-    it('remove-attr and remove-class are applied, styles of action rules are ignored', async () => {
-        const rules = [
-            'example.org##a:remove-attr(href)',
-            'example.org##a:remove-attr(/^on[a-z]+$/)',
-            'example.org##a:remove-class(ads)',
-            'example.org##a:remove-class(/^ad-[0-9]+$/)',
-        ];
-
-        // Mocking the sendAppMessage function
-        vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(getCosmeticData(rules, false));
-
-        const cosmeticController = new CosmeticController();
-        cosmeticController.init();
-
-        expect(cosmeticController).toBeDefined();
-
-        // Wait for the cosmetic controller to process (using a delay)
-        await new Promise((resolve) => {
-            setTimeout(resolve, 20);
-        });
-
-        const linkElement = document.getElementById('link');
-        if (!linkElement) {
-            throw new Error('#link element is required');
-        }
-
-        expect(linkElement.hasAttribute('href')).toBe(false);
-        expect(linkElement.hasAttribute('onclick')).toBe(false);
-        expect(linkElement.classList.contains('ads')).toBe(false);
-        expect(linkElement.classList.contains('ad-1')).toBe(false);
-        // Unrelated classes and the element itself are kept
-        expect(linkElement.classList.contains('other')).toBe(true);
-        expect(linkElement.style.getPropertyValue('display')).toEqual('');
+        // The successful retry creates exactly one.
+        await vi.advanceTimersByTimeAsync(100);
+        expect(cssHitsCounterCtorSpy).toHaveBeenCalledTimes(1);
     });
 });

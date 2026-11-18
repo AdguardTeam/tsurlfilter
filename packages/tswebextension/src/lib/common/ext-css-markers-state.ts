@@ -3,8 +3,12 @@
  */
 export enum ExtCssMarkersState {
     /**
-     * The content script applies ExtendedCss itself, so the background cannot
-     * know the marker state.
+     * The background did not report the marker state.
+     *
+     * No manifest applies ExtendedCss in the page: the background injects it
+     * on both MV2 and MV3. On MV3 the background reports the state; on MV2 the
+     * content script gets this value, which means "marker state not reported by
+     * the background".
      */
     ContentScript = 'contentScript',
 

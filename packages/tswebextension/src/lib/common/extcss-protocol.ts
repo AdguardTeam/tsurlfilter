@@ -1,11 +1,23 @@
-import { CSS_HITS_MARKER_PREFIX } from '../../common/constants';
-import { EXTCSS_REMOVED_ELEMENTS_KEY } from '../../common/content-script/extcss-removed-elements';
-import { MESSAGE_HANDLER_NAME, MessageType } from '../../common/message-constants';
+/**
+ * @file
+ * Literal values crossing the ExtendedCSS injection boundary.
+ *
+ * Kept out of the `common` barrel (`common/index.ts`) on purpose: the values
+ * are an implementation detail of the injected payload and its handover to the
+ * content script, so the published package does not expose an injection
+ * protocol that consumers could start to depend on. Import it directly from the
+ * background modules that need it.
+ */
+
+import { CSS_HITS_MARKER_PREFIX } from './constants';
+import { EXTCSS_REMOVED_ELEMENTS_KEY } from './content-script/extcss-removed-elements';
+import { MESSAGE_HANDLER_NAME, MessageType } from './message-constants';
 
 /**
- * Literal values crossing the `chrome.scripting.executeScript({ func, args })`
- * injection boundary into the self-contained ExtendedCss function
- * (`extCssInjectedApply`).
+ * Literal values crossing the ExtendedCSS injection boundaries into the
+ * self-contained ExtendedCss function (`extCssInjectedApply`): the MV3
+ * `chrome.scripting.executeScript({ func, args })` arguments and the JSON
+ * argument embedded in the MV2 `browser.tabs.executeScript({ code })` string.
  *
  * The injected function is serialized via `toString()` and re-evaluated in
  * the page's ISOLATED world, so it MUST NOT reference module-scope
@@ -55,12 +67,7 @@ const EXTCSS_INSTANCE_KEY = '__adguardExtCss' as const;
 
 /**
  * Canonical {@link ExtCssProtocol} values passed by `ScriptingApi` as
- * serialized `executeScript` arguments.
- *
- * This module is MV3-internal on purpose: it is not re-exported from the
- * `common` barrel, so the published package does not expose an injection
- * protocol that consumers could start to depend on. Import it directly from
- * the MV3 background modules that need it.
+ * `executeScript` arguments and serialized into the MV2 code string.
  */
 export const EXTCSS_PROTOCOL: ExtCssProtocol = {
     markerPrefix: CSS_HITS_MARKER_PREFIX,

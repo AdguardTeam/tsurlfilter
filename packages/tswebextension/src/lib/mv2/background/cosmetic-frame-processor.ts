@@ -228,6 +228,14 @@ export class CosmeticFrameProcessor {
             },
         );
 
+        const extCssRules = CosmeticApi.getExtCssRules(
+            cosmeticResult,
+            {
+                areHitsStatsCollected,
+                isNativeHasSupported,
+            },
+        );
+
         const { scriptText } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult, url);
         const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, matchingResult);
 
@@ -243,6 +251,7 @@ export class CosmeticFrameProcessor {
             preparedCosmeticResult: {
                 scriptText: combinedScriptText,
                 cssText,
+                extCssRules,
                 areHitsStatsCollected,
             },
         };

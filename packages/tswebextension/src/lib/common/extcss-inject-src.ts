@@ -1,15 +1,15 @@
 import { type ExtCssConfiguration, ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
 
 /**
- * Self-contained injectable IIFE entry point.
+ * Self-contained injectable IIFE entry point for the shared MV2/MV3 payload.
  *
  * Bundled by `tasks/inline-extcss-bundle.ts` into a minified in-memory IIFE
  * exposing `applyExtendedCss` as a function-scoped `var`, then inlined into
- * the body of `extCssInjectedApply` (`extcss-apply-fn.ts`). It imports ONLY the
- * public root export of `@adguard/extended-css` — the library stays a
- * generic DOM-selection engine while this consumer owns its injection
- * payload. Uses a default export so Rollup assigns the function itself to
- * the IIFE global name.
+ * the body of `extCssInjectedApply` (`extcss-apply-fn.ts`), which both MV2
+ * and MV3 inject into pages. It imports ONLY the public root export of
+ * `@adguard/extended-css` — the library stays a generic DOM-selection engine
+ * while this consumer owns its injection payload. Uses a default export so
+ * Rollup assigns the function itself to the IIFE global name.
  *
  * Internally calls `init()` before `apply()` so that the native
  * `Node.prototype.textContent` getter is snapshotted before the page can

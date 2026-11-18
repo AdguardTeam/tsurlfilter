@@ -17,9 +17,9 @@ import {
 
 import { type IAffectedElement } from '@adguard/extended-css';
 
-import applyExtendedCss from '../../../../src/lib/mv3/background/extcss-inject-src';
-import { inlineCssHitsHelpers } from '../../../../tasks/inline-css-hits-helpers';
-import { getExtCssBundle, inlineExtCssBundle, resetExtCssBundle } from '../../../../tasks/inline-extcss-bundle';
+import applyExtendedCss from '../../../src/lib/common/extcss-inject-src';
+import { inlineCssHitsHelpers } from '../../../tasks/inline-css-hits-helpers';
+import { getExtCssBundle, inlineExtCssBundle, resetExtCssBundle } from '../../../tasks/inline-extcss-bundle';
 
 /**
  * Inject entry the builder caches its payload for, resolved the same way the
@@ -27,7 +27,7 @@ import { getExtCssBundle, inlineExtCssBundle, resetExtCssBundle } from '../../..
  */
 const EXT_CSS_INJECT_SRC = resolve(
     dirname(fileURLToPath(import.meta.url)),
-    '../../../../src/lib/mv3/background/extcss-inject-src.ts',
+    '../../../src/lib/common/extcss-inject-src.ts',
 );
 
 // `vi.mock` factories are hoisted above top-level `const` declarations, so the

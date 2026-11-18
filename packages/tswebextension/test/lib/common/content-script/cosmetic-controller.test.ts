@@ -12,7 +12,6 @@ import {
 } from 'vitest';
 import browser from 'webextension-polyfill';
 
-import { ExtendedCss } from '@adguard/extended-css';
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
 import { CosmeticControllerCommon } from '../../../../src/lib/common/content-script/cosmetic-controller';
@@ -630,12 +629,20 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
         }
     });
 
-    it('re-applies marked ExtendedCss rules on live enable', async () => {
+    it('requests marked data on live enable and resumes the counter', async () => {
         const restoreMutationObserver = mockMutationObserver();
-        const disposeSpy = vi.spyOn(ExtendedCss.prototype, 'dispose');
         document.body.innerHTML = '<div id="live-ext-bait" class="ad_header">text</div>';
 
-        const rules = ['#?#.ad_header:contains(text)'];
+        // ExtendedCss is applied by the background, so this page gets no
+        // ExtCSS instance that the controller could count. The marked native
+        // CSS the background injects with it shows that the counter resumed.
+        const style = document.createElement('style');
+        style.textContent = [
+            "@property --adguard-hit { syntax: '*'; inherits: false; initial-value: ''; }",
+            "div.ad_header { display: none !important; --adguard-hit: 'adguard0%3B36' !important; }",
+        ].join('\n');
+
+        let reapplyRequests = 0;
 
         try {
             const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
@@ -643,7 +650,27 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                     const isReapply = message.type === MessageType.GetCosmeticData
                         && (message.payload as { reapplyHits?: boolean }).reapplyHits;
 
-                    return getCosmeticData(rules, !!isReapply);
+                    if (isReapply) {
+                        reapplyRequests += 1;
+
+                        return {
+                            isAppStarted: true,
+                            areHitsStatsCollected: true,
+                            areNativeHitsStatsCollected: true,
+                            extCssMarkersState: ExtCssMarkersState.Applied,
+                            extCssRules: null,
+                            nativeCssSelectors: null,
+                        };
+                    }
+
+                    return {
+                        isAppStarted: true,
+                        areHitsStatsCollected: false,
+                        areNativeHitsStatsCollected: false,
+                        extCssMarkersState: ExtCssMarkersState.NotRequired,
+                        extCssRules: null,
+                        nativeCssSelectors: null,
+                    };
                 });
 
             const cosmeticController = createController(CosmeticController);
@@ -652,6 +679,11 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
             await new Promise((resolve) => {
                 setTimeout(resolve, 20);
             });
+
+            // The element was already in the document when collection was
+            // enabled. The background marked its rule before the reapply
+            // response resumed the counter.
+            document.head.appendChild(style);
 
             triggerRuntimeMessage({
                 handlerName: 'tsWebExtension',
@@ -663,19 +695,17 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                 setTimeout(resolve, 20);
             });
 
-            // The marked ExtendedCss rule must be applied to the element that
-            // was already in the document when collection was enabled.
+            expect(reapplyRequests).toBe(1);
             expect(getBaitStats(sendAppMessageSpy, 0).length).toBeGreaterThan(0);
-            expect(disposeSpy).toHaveBeenCalled();
         } finally {
+            style.remove();
             document.body.innerHTML = '';
             restoreMutationObserver();
         }
     });
 
-    it('does not reapply already marked ExtendedCss rules', async () => {
+    it('does not apply ExtendedCss rules in the page', async () => {
         const restoreMutationObserver = mockMutationObserver();
-        const disposeSpy = vi.spyOn(ExtendedCss.prototype, 'dispose');
         document.body.innerHTML = '<div class="ad_header">text</div>';
 
         const rules = ['#?#.ad_header:contains(text)'];
@@ -702,19 +732,23 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
             expect(sendAppMessageSpy).toHaveBeenCalledWith(expect.objectContaining({
                 payload: expect.objectContaining({ reapplyHits: true }),
             }));
-            expect(disposeSpy).not.toHaveBeenCalled();
+
+            // The background applies ExtendedCss, so a rule that arrives in the
+            // response must not hide anything in this page.
+            const bait = document.querySelector('.ad_header') as HTMLElement;
+            expect(getComputedStyle(bait).display).not.toBe('none');
         } finally {
             document.body.innerHTML = '';
             restoreMutationObserver();
         }
     });
 
-    it('keeps applied ExtendedCss rules when reapply has no rules', async () => {
+    it('does not request marked data again when the reapply reports no ExtendedCss rules', async () => {
         const restoreMutationObserver = mockMutationObserver();
-        const disposeSpy = vi.spyOn(ExtendedCss.prototype, 'dispose');
         document.body.innerHTML = '<div id="preserved-ext-bait" class="ad_header">text</div>';
 
         const rules = ['#?#.ad_header:contains(text)'];
+        let reapplyRequests = 0;
 
         try {
             vi.spyOn(SendMessageModule, 'sendAppMessage')
@@ -722,9 +756,20 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                     const isReapply = message.type === MessageType.GetCosmeticData
                         && (message.payload as { reapplyHits?: boolean }).reapplyHits;
 
-                    return isReapply
-                        ? getCosmeticData([], true)
-                        : getCosmeticData(rules, false);
+                    if (!isReapply) {
+                        return getCosmeticData(rules, false);
+                    }
+
+                    reapplyRequests += 1;
+
+                    return {
+                        isAppStarted: true,
+                        areHitsStatsCollected: true,
+                        areNativeHitsStatsCollected: true,
+                        extCssMarkersState: ExtCssMarkersState.NotRequired,
+                        extCssRules: null,
+                        nativeCssSelectors: null,
+                    };
                 });
 
             const cosmeticController = createController(CosmeticController);
@@ -734,48 +779,68 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                 setTimeout(resolve, 20);
             });
 
-            expect(disposeSpy).not.toHaveBeenCalled();
-            disposeSpy.mockClear();
+            /**
+             * Sends an enable message and lets the controller process it.
+             */
+            const enableCollectStats = async (): Promise<void> => {
+                triggerRuntimeMessage({
+                    handlerName: 'tsWebExtension',
+                    type: MessageType.SetCollectHitStats,
+                    payload: { isCollectStats: true },
+                });
 
-            triggerRuntimeMessage({
-                handlerName: 'tsWebExtension',
-                type: MessageType.SetCollectHitStats,
-                payload: { isCollectStats: true },
-            });
+                await new Promise((resolve) => {
+                    setTimeout(resolve, 20);
+                });
+            };
 
-            await new Promise((resolve) => {
-                setTimeout(resolve, 20);
-            });
+            await enableCollectStats();
+            await enableCollectStats();
 
-            expect(disposeSpy).not.toHaveBeenCalled();
+            // The marked data is in place, so a later enable must not ask for
+            // it again.
+            expect(reapplyRequests).toBe(1);
         } finally {
             document.body.innerHTML = '';
             restoreMutationObserver();
         }
     });
 
-    it('applies marked ExtendedCss rules when native CSS injection failed', async () => {
+    it('resumes the counter when only the ExtendedCss markers reached the page', async () => {
         const restoreMutationObserver = mockMutationObserver();
         document.body.innerHTML = '<div id="native-failed-bait" class="ad_header">text</div>';
 
-        const rules = ['#?#.ad_header:contains(text)'];
         let reapplyRequests = 0;
 
         try {
-            const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+            vi.spyOn(SendMessageModule, 'sendAppMessage')
                 .mockImplementation(async (message) => {
                     const isReapply = message.type === MessageType.GetCosmeticData
                         && (message.payload as { reapplyHits?: boolean }).reapplyHits;
 
                     if (isReapply) {
                         reapplyRequests += 1;
+
+                        // The background applied the marked ExtendedCss rules
+                        // but could not add the marked native CSS.
                         return {
-                            ...getCosmeticData(rules, true),
+                            isAppStarted: true,
+                            areHitsStatsCollected: true,
                             areNativeHitsStatsCollected: false,
+                            extCssMarkersState: ExtCssMarkersState.Applied,
+                            extCssRules: null,
+                            nativeCssSelectors: null,
                         };
                     }
 
-                    return getCosmeticData([], false);
+                    return {
+                        isAppStarted: true,
+                        areHitsStatsCollected: false,
+                        areNativeHitsStatsCollected: false,
+                        extCssMarkersState: ExtCssMarkersState.NotRequired,
+                        extCssRules: null,
+                        nativeCssSelectors: null,
+                    };
                 });
 
             const cosmeticController = createController(CosmeticController);
@@ -795,8 +860,12 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                 setTimeout(resolve, 20);
             });
 
-            // ExtendedCss hits do not depend on the native CSS injection.
-            expect(getBaitStats(sendAppMessageSpy, 0).length).toBeGreaterThan(0);
+            // ExtendedCss hits do not depend on the native CSS injection, so
+            // the counter must not stay paused.
+            const counter = (cosmeticController as unknown as {
+                cssHitsCounter?: { paused: boolean };
+            }).cssHitsCounter;
+            expect(counter?.paused).toBe(false);
             expect(reapplyRequests).toBe(1);
 
             // Native markers are still missing, so the next enable retries
@@ -962,11 +1031,17 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
         },
     );
 
-    it('keeps ExtendedCss hits when collection is toggled during reapply', async () => {
+    it('keeps pending hits when collection is toggled during a reapply', async () => {
         const restoreMutationObserver = mockMutationObserver();
         document.body.innerHTML = '';
 
-        const rules = ['#?#.ad_header:contains(text)'];
+        const style = document.createElement('style');
+        style.textContent = [
+            "@property --adguard-hit { syntax: '*'; inherits: false; initial-value: ''; }",
+            "div.ad_header { display: none !important; --adguard-hit: 'adguard0%3B37' !important; }",
+        ].join('\n');
+
+        let reapplyRequests = 0;
         let resolveReapply!: (value: ContentScriptCosmeticData) => void;
         let reapplyStartedResolve!: () => void;
 
@@ -984,13 +1059,19 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
                         && (message.payload as { reapplyHits?: boolean }).reapplyHits;
 
                     if (isReapply) {
+                        reapplyRequests += 1;
                         reapplyStartedResolve();
+
                         return reapplyPromise;
                     }
 
                     return {
-                        ...getCosmeticData(rules, true),
+                        isAppStarted: true,
+                        areHitsStatsCollected: true,
                         areNativeHitsStatsCollected: false,
+                        extCssMarkersState: ExtCssMarkersState.NotRequired,
+                        extCssRules: null,
+                        nativeCssSelectors: null,
                     };
                 });
 
@@ -1015,17 +1096,29 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
             bait.textContent = 'text';
             document.body.appendChild(bait);
 
+            // The background marked the rule of the element above before the
+            // reapply response resumed the counter.
+            document.head.appendChild(style);
+
             resolveReapply({
-                ...getCosmeticData(rules, true),
+                isAppStarted: true,
+                areHitsStatsCollected: true,
                 areNativeHitsStatsCollected: true,
+                extCssMarkersState: ExtCssMarkersState.Applied,
+                extCssRules: null,
+                nativeCssSelectors: null,
             });
 
             await new Promise((resolve) => {
                 setTimeout(resolve, 20);
             });
 
+            // The enable dropped during the reapply is served by the response
+            // in flight, so no second request is made.
+            expect(reapplyRequests).toBe(1);
             expect(getBaitStats(sendAppMessageSpy, 0).length).toBeGreaterThan(0);
         } finally {
+            style.remove();
             document.body.innerHTML = '';
             restoreMutationObserver();
         }

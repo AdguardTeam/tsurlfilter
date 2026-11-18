@@ -105,12 +105,27 @@ pnpm test:coverage
 # Run smoke tests (exports validation + Rollup builder)
 pnpm test:smoke
 
-# Full validation (lint + smoke + full test suite, no cache)
+# Run the browser-mode e2e specs (browser: Chromium;
+# canvas-native: Chromium and Firefox)
+pnpm test:e2e
+
+# Run the Firefox browser-mode e2e specs
+pnpm test:e2e:firefox
+
+# Full validation (lint + smoke + test:ci, no cache; test:ci runs every
+# project in vitest.config.ts, including the Chromium browser specs)
 pnpm test:prod
 ```
 
 **Always run `pnpm test:prod` before submitting changes.** It requires the
 package to be built first (`pnpm build`).
+
+`pnpm test:prod` does not run the Firefox e2e specs. Run
+`pnpm test:e2e:firefox` separately; it requires the Firefox browser once:
+
+```bash
+npx playwright install firefox
+```
 
 ### Build Output
 
@@ -178,19 +193,31 @@ npx lerna run build --scope @adguard/tswebextension --include-dependencies
 
 ### Issue: `test:prod` fails
 
-**Solution**: `test:prod` combines lint, smoke tests, and the full test suite.
-Ensure the package is built first:
+**Solution**: `test:prod` combines lint, smoke tests, and `test:ci`, which
+runs every project in `vitest.config.ts`, including the Chromium `browser`
+specs. Ensure the package is built first:
 
 ```bash
 pnpm build
 pnpm test:prod
 ```
 
+### Issue: the Firefox e2e specs fail
+
+**Solution**: These specs run only through `pnpm test:e2e:firefox`;
+`test:prod` does not include them. Install the browser once, then run them:
+
+```bash
+npx playwright install firefox
+pnpm test:e2e:firefox
+```
+
 ### Issue: MV2 vs MV3 test isolation
 
-Tests are organized into three Vitest projects (`mv2`, `mv3`, `common`). If
-MV2-specific mocks interfere with MV3 tests (or vice versa), ensure you are
-running the correct test project.
+Tests are organized into Vitest projects (`mv2`, `mv3`, `common`, the
+Chromium `browser` project, and `canvas-native`). If MV2-specific mocks
+interfere with MV3 tests (or vice versa), ensure you are running the correct
+test project.
 
 ## Additional Resources
 

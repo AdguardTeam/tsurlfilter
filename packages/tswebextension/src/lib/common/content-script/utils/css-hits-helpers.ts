@@ -15,7 +15,7 @@ export type ExtendedCssHit = RuleInfoBasic & {
 /**
  * Shared CSS-hits parser, serializer and collector, used by MV2's
  * `ElementUtils`/`CssHitsCounter` and, inlined by `inlineCssHitsHelpers`, by
- * MV3's `extCssInjectedApply`.
+ * the `extCssInjectedApply` payload that MV2 and MV3 inject.
  *
  * Only type-only imports are allowed here: the transpiled module is inlined
  * into the injected function and must have no free identifiers.
