@@ -211,15 +211,12 @@ function getRawQuoteMode(
  * uBO), so the suffix may contain these letters only.
  *
  * @param ctx Parser context.
- * @param ti Token index of the `Letter` token.
+ * @param ti Token index of the `Letter` token. The caller must pass a token
+ * that is a `Letter`.
  *
  * @returns `true` if the token contains only `i`, `m` and `u` letters.
  */
 function isUboRegexpFlags(ctx: ParserContext, ti: number): boolean {
-    if (ctx.types[ti] !== TokenType.Letter) {
-        return false;
-    }
-
     const start = tokenStart(ctx, ti);
     const end = ctx.ends[ti];
     for (let i = start; i < end; i += 1) {
