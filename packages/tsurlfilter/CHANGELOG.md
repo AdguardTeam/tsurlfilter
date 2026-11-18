@@ -29,7 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
   unquotes the argument and matches it case-insensitively, e.g.
   `##^script:has-text("admc")` becomes `$$script:contains(/admc/i)` (via
-  [@adguard/agtree]).
+  [@adguard/agtree]). The case-insensitive match folds ASCII case only.
+  Chained text constraints of one selector are merged into a single
+  `:contains()` regexp, because a rule with more than one regexp
+  `:contains()` is rejected.
 
 ### Security
 

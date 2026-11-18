@@ -1004,9 +1004,11 @@ describe('HtmlRuleConverter', () => {
                     },
 
                     // `:min-text-length()` special pseudo-class selector (max is conversion default) - multiple usages
+                    // are a conjunction, so only the largest one is kept, and the
+                    // single regexp `:contains()` stays valid for CoreLibs
                     {
                         actual: '##^div:min-text-length(10):min-text-length(20)',
-                        expected: ['$$div:contains(/^(?=.{10,65535}$).*/s):contains(/^(?=.{20,65535}$).*/s)'],
+                        expected: ['$$div:contains(/^(?=[\\s\\S]{20,65535}$)/i)'],
                     },
 
                     // `:min-text-length()` special pseudo-class selector - argument at the PCRE2 quantifier limit
@@ -1024,9 +1026,97 @@ describe('HtmlRuleConverter', () => {
                     },
 
                     // `:has-text()` special pseudo-class selector - multiple usages
+                    // are merged into a single regexp, because CoreLibs allows only
+                    // one regexp `:contains()` per rule
                     {
                         actual: '##^div:has-text(a):has-text(b)',
-                        expected: ['$$div:contains(/a/i):contains(/b/i)'],
+                        expected: ['$$div:contains(/^(?=[\\s\\S]*a)(?=[\\s\\S]*b)/i)'],
+                    },
+
+                    // `:has-text()` plain text next to a regexp argument: both are
+                    // merged into one regexp. The regexp argument is case-sensitive,
+                    // so the merged regexp is case-sensitive too
+                    {
+                        actual: '##^div:has-text(a):has-text(/b/)',
+                        expected: ['$$div:contains(/^(?=[\\s\\S]*a)(?=[\\s\\S]*(?:b))/)'],
+                    },
+
+                    // a case-insensitive regexp argument keeps the merged regexp
+                    // case-insensitive
+                    {
+                        actual: '##^div:has-text(a):has-text(/B/i)',
+                        expected: ['$$div:contains(/^(?=[\\s\\S]*a)(?=[\\s\\S]*(?:B))/i)'],
+                    },
+
+                    // the real-world uBlock script rule: the plain text and the
+                    // regexp are merged, because two regexp `:contains()` are
+                    // rejected by CoreLibs
+                    {
+                        actual: '##^script:has-text(===):has-text(/[\\w\\W]{16000}/)',
+                        expected: ['$$script:contains(/^(?=[\\s\\S]*===)(?=[\\s\\S]*(?:[\\w\\W]{16000}))/)'],
+                    },
+
+                    // plain text next to `:min-text-length()`: both constraints are
+                    // merged, and the `i` flag is kept because the length
+                    // constraint does not need a case-sensitive match
+                    {
+                        actual: '##^div:has-text(ad):min-text-length(5)',
+                        expected: ['$$div:contains(/^(?=[\\s\\S]{5,65535}$)(?=[\\s\\S]*ad)/i)'],
+                    },
+
+                    // several plain texts and a length constraint are merged into a
+                    // single regexp
+                    {
+                        actual: '##^div:has-text(a):has-text(b):min-text-length(5)',
+                        expected: ['$$div:contains(/^(?=[\\s\\S]{5,65535}$)(?=[\\s\\S]*a)(?=[\\s\\S]*b)/i)'],
+                    },
+
+                    // an empty text matches any text, so it adds no constraint to
+                    // the merged regexp
+                    {
+                        actual: '##^div:has-text(""):has-text(b)',
+                        expected: ['$$div:contains(/^(?=[\\s\\S]*b)/i)'],
+                    },
+
+                    // `:contains()` and `:has-text()` are the same constraint for
+                    // uBlock, so they are merged as well
+                    {
+                        actual: '##^div:contains(foo):has-text(bar)',
+                        expected: ['$$div:contains(/^(?=[\\s\\S]*foo)(?=[\\s\\S]*bar)/i)'],
+                    },
+
+                    // several regexp arguments are merged, and the merged regexp
+                    // stays case-sensitive because none of them has the `i` flag
+                    {
+                        actual: '##^div:has-text(/a/):has-text(/b/)',
+                        expected: ['$$div:contains(/^(?=[\\s\\S]*(?:a))(?=[\\s\\S]*(?:b))/)'],
+                    },
+
+                    // a regexp argument with the `i` flag next to a length
+                    // constraint keeps the merged regexp case-insensitive
+                    {
+                        actual: '##^div:min-text-length(5):has-text(/b/i)',
+                        expected: ['$$div:contains(/^(?=[\\s\\S]{5,65535}$)(?=[\\s\\S]*(?:b))/i)'],
+                    },
+
+                    // the largest `:min-text-length()` is kept regardless of the
+                    // order, and a zero-prefixed value is normalized
+                    {
+                        actual: '##^div:min-text-length(020):min-text-length(007)',
+                        expected: ['$$div:contains(/^(?=[\\s\\S]{20,65535}$)/i)'],
+                    },
+
+                    // a plain text is escaped in the merged regexp as well
+                    {
+                        actual: '##^div:has-text("a.b"):has-text("c*")',
+                        expected: ['$$div:contains(/^(?=[\\s\\S]*a\\.b)(?=[\\s\\S]*c\\*)/i)'],
+                    },
+
+                    // the constraints of different compound selectors are not
+                    // merged, each keeps its own `:contains()`
+                    {
+                        actual: '##^div:has-text(a) > span:has-text(b)',
+                        expected: ['$$div:contains(/a/i) > span:contains(/b/i)'],
                     },
 
                     // `:has-text()` special pseudo-class selector - double quotes are removed
@@ -1556,6 +1646,48 @@ describe('HtmlRuleConverter', () => {
                     expect(regexp.test('text "foo" text')).toBe(true);
                     expect(regexp.test('text "FOO" text')).toBe(true);
                     expect(regexp.test('text foo text')).toBe(false);
+                });
+
+                test('should merge chained plain texts case-insensitively', () => {
+                    const regexp = extractContainsRegexp(
+                        convertToAdgText('##^script:has-text("ad"):has-text("mc")'),
+                    );
+
+                    // Both constraints are conjunctive, so each one has to match
+                    expect(regexp.test('ADMC')).toBe(true);
+                    expect(regexp.test('admc')).toBe(true);
+                    expect(regexp.test('ad only')).toBe(false);
+                    expect(regexp.test('mc only')).toBe(false);
+                });
+
+                test('should keep a chained case-sensitive regexp case-sensitive', () => {
+                    const regexp = extractContainsRegexp(
+                        convertToAdgText('##^script:has-text("ad"):has-text(/mc/)'),
+                    );
+
+                    // The merged regexp has a single set of flags, and the
+                    // regexp argument requires a case-sensitive match
+                    expect(regexp.test('admc')).toBe(true);
+                    expect(regexp.test('ADMC')).toBe(false);
+                });
+
+                test('should keep a chained regexp with the `i` flag case-insensitive', () => {
+                    const regexp = extractContainsRegexp(
+                        convertToAdgText('##^script:has-text("ad"):has-text(/mc/i)'),
+                    );
+
+                    expect(regexp.test('ADMC')).toBe(true);
+                    expect(regexp.test('admc')).toBe(true);
+                });
+
+                test('should merge plain text with `:min-text-length()` and keep it case-insensitive', () => {
+                    const regexp = extractContainsRegexp(
+                        convertToAdgText('##^script:has-text("ad"):min-text-length(4)'),
+                    );
+
+                    expect(regexp.test('AD content')).toBe(true);
+                    expect(regexp.test('AD')).toBe(false);
+                    expect(regexp.test('no match here')).toBe(false);
                 });
             });
         });

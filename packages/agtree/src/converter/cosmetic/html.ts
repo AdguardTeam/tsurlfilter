@@ -142,6 +142,18 @@ const SUPPORTED_UBO_PSEUDO_CLASSES = new Set<string>([
 ]);
 
 /**
+ * Names of the HTML filtering pseudo-classes with a text argument which are
+ * converted to an AdGuard `:contains()` pseudo-class: `:has-text()`,
+ * `:min-text-length()` and the `:contains()` spelling which uBlock Origin
+ * accepts in `##^` rules.
+ */
+const UBO_TEXT_PSEUDO_CLASS_NAMES = new Set<string>([
+    UboPseudoClasses.HasText,
+    UboPseudoClasses.MinTextLength,
+    AdgPseudoClasses.Contains,
+]);
+
+/**
  * Set of {@link AdgAttributeSelectors}.
  */
 const SUPPORTED_ADG_ATTRIBUTE_SELECTORS = new Set<string>([
@@ -302,6 +314,51 @@ type OnSpecialAttributeSelectorCallback = (
 type OnSpecialPseudoClassSelectorCallback = (name: string, argument: string) => SimpleSelector | boolean;
 
 /**
+ * Kinds of a uBlock HTML filtering text constraint.
+ */
+enum UboTextConstraintKind {
+    /**
+     * Plain text, matched case-insensitively.
+     */
+    Text = 'text',
+
+    /**
+     * Regular expression argument, matched as uBlock reads it.
+     */
+    Regexp = 'regexp',
+
+    /**
+     * Minimum text length from `:min-text-length()`.
+     */
+    MinLength = 'minLength',
+}
+
+/**
+ * A text constraint of a uBlock HTML filtering compound selector, collected
+ * from `:has-text()`, `:contains()` or `:min-text-length()`.
+ *
+ * CoreLibs accepts at most one literal and one regular expression
+ * `:contains()` per rule, so the text constraints of one compound selector
+ * are emitted as a single `:contains()` pseudo-class, see
+ * {@link HtmlRuleConverter.appendUboTextConstraints}.
+ */
+type UboTextConstraint =
+    /**
+     * Plain text which uBlock matches case-insensitively.
+     */
+    | { kind: UboTextConstraintKind.Text; value: string }
+    /**
+     * Regular expression argument which uBlock matches as-is, with or
+     * without the `i` flag.
+     */
+    | { kind: UboTextConstraintKind.Regexp; argument: string }
+    /**
+     * Minimum text length from `:min-text-length()`, normalized to decimal
+     * digits.
+     */
+    | { kind: UboTextConstraintKind.MinLength; value: string };
+
+/**
  * Union type of HTML filtering rule body parsers:
  * - AdGuard HTML filtering body parser - {@link AdgHtmlFilteringBodyParser}
  * - uBlock HTML filtering body parser - {@link UboHtmlFilteringBodyParser}.
@@ -396,6 +453,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 onSpecialAttributeSelector,
                 onSpecialPseudoClassSelector,
                 rule.syntax === AdblockSyntax.Adg,
+                rule.syntax === AdblockSyntax.Ubo,
             );
         } catch (error) {
             // Tolerant fallback for AdGuard HTML filtering rules whose bodies
@@ -623,6 +681,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *   flag. A uBlock regexp argument, e.g. `/text/i`, is converted as-is.
      *   The uBlock Origin parser accepts `:contains()` in `##^` rules and
      *   normalizes it to `:has-text()`.
+     *   Note: CoreLibs compiles the emitted regexp with `PCRE2_NEVER_UTF`,
+     *   so its `i` flag folds ASCII case only, while uBlock folds Unicode
+     *   case.
      * - `:min-text-length(min)` -> `:contains(/^(?=.{min,MAX_CONVERSION_DEFAULT}$).*\/s)`
      *   converts to a length-matching regular expression.
      *
@@ -630,57 +691,37 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * syntax, because only the `-abp-*` names need the `#?#` syntax there,
      * so uBlock rejects `##^div:-abp-contains(foo)`.
      *
+     * Note: when converting a uBlock rule, `convertBody()` defers these
+     * pseudo-classes and emits the text constraints of a compound selector
+     * together, see {@link HtmlRuleConverter.appendUboTextConstraints}. The
+     * cases below convert a single constraint and keep the method complete.
+     *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
      *
      * @returns A {@link SimpleSelector} to add to the current complex selector.
      *
-     * @throws If `:-abp-contains()` is found in a uBlock rule (mixed syntax).
+     * @throws If `:-abp-contains()` is found in a uBlock rule (mixed syntax),
+     * a text argument is rejected by uBlock Origin (e.g. characters follow the
+     * closing quote of a quoted argument), or a `:min-text-length()` value is
+     * invalid.
      */
     private static convertSpecialPseudoClassSelectorUboToAdg(name: string, argument: string): SimpleSelector {
         switch (name) {
             // `:has-text(text)` -> `:contains(/text/i)`
             // `:contains(text)` -> `:contains(/text/i)`
-            // uBlock matches plain text case-insensitively and unquotes it.
-            // uBlock Origin also accepts `:contains()` in `##^` rules and
-            // normalizes it to `:has-text()`, so it is converted the same way.
-            case UboPseudoClasses.HasText:
-            case AdgPseudoClasses.Contains: {
-                return HtmlRuleConverter.getPseudoClassSelectorNode(
-                    AdgPseudoClasses.Contains,
-                    HtmlRuleConverter.convertUboTextArgumentToAdg(name, argument),
-                );
-            }
-
             // `:min-text-length(min)` -> `:contains(/^(?=.{min,MAX_CONVERSION_DEFAULT}$).*\/s)`
-            // converts to a length-matching regular expression
+            // uBlock matches plain text case-insensitively and unquotes it, so
+            // a plain-text argument is emitted as a regexp; a uBlock regexp
+            // argument is converted as-is.
+            case UboPseudoClasses.HasText:
+            case AdgPseudoClasses.Contains:
             case UboPseudoClasses.MinTextLength: {
-                // Validate length value
-                HtmlRuleConverter.assertValidLengthValue(
-                    name,
-                    argument,
-                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT,
-                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE,
-                    UBO_MIN_TEXT_LENGTH_ARGUMENT_PATTERN,
-                );
-
-                // It's safe to cast to number here after validation
-                const minLength = Number(argument);
-
-                // The generated regular expression must stay within the PCRE2
-                // quantifier limit — see the ADG_HTML_CONVERSION_MAX_LENGTH comment
-                if (minLength > ADG_HTML_CONVERSION_MAX_LENGTH) {
-                    throw new RuleConversionError(sprintf(
-                        ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_TOO_LARGE,
-                        name,
-                        ADG_HTML_CONVERSION_MAX_LENGTH,
-                        argument,
-                    ));
-                }
-
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
-                    RegExpUtils.getLengthRegexp(minLength, ADG_HTML_CONVERSION_MAX_LENGTH),
+                    HtmlRuleConverter.convertUboTextConstraintToArgument(
+                        HtmlRuleConverter.collectUboTextConstraint(name, argument),
+                    ),
                 );
             }
 
@@ -1109,6 +1150,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * @param shouldMergeLengthSelectors If true, `[min-length]` and `[max-length]` attribute
      * selectors within the same complex selector are merged into a single `:contains()` pseudo-class.
      * Defaults to `false`.
+     * @param shouldMergeUboTextSelectors If true, `:has-text()`, `:contains()` and `:min-text-length()`
+     * pseudo-class selectors within the same compound selector are merged into a single `:contains()`
+     * pseudo-class, because CoreLibs allows at most one regexp `:contains()` per rule.
+     * Defaults to `false`.
      *
      * @returns Converted selector list in which special simple selectors are
      * replaced, kept as-is, or dropped by the callbacks.
@@ -1124,6 +1169,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
         onSpecialAttributeSelector: OnSpecialAttributeSelectorCallback,
         onSpecialPseudoClassSelector: OnSpecialPseudoClassSelectorCallback,
         shouldMergeLengthSelectors = false,
+        shouldMergeUboTextSelectors = false,
     ): Value | HtmlFilteringRuleBody {
         // Handle case when body is raw value string.
         // If so, parse it first as we need to work with AST nodes.
@@ -1162,6 +1208,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
             const deferredTagContentValues: string[] = [];
             const deferredWildcardValues: string[] = [];
 
+            // Deferred text constraints (uBO→ADG only) of the current compound
+            // selector: CoreLibs allows at most one regexp `:contains()` per
+            // rule, so they are emitted together — see
+            // appendUboTextConstraints()
+            const deferredUboTextConstraints: UboTextConstraint[] = [];
+
             // Convert each selector
             const convertedSelectors: (SimpleSelector | SelectorCombinator)[] = [];
 
@@ -1192,6 +1244,16 @@ export class HtmlRuleConverter extends RuleConverterBase {
                                     selector.value,
                                 ),
                             ));
+                        }
+
+                        // The combinator ends the current compound selector, so
+                        // its deferred uBlock text constraints are emitted before it
+                        if (shouldMergeUboTextSelectors) {
+                            HtmlRuleConverter.appendUboTextConstraints(
+                                convertedSelectors,
+                                deferredUboTextConstraints,
+                            );
+                            deferredUboTextConstraints.length = 0;
                         }
 
                         break;
@@ -1318,6 +1380,19 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                         const argument = selector.argument.value;
 
+                        // `:has-text()`, `:contains()` and `:min-text-length()`
+                        // are deferred in uBO→ADG conversion: CoreLibs allows at
+                        // most one regexp `:contains()` per rule, so all text
+                        // constraints of the compound selector are emitted as a
+                        // single one after the selector loop — see
+                        // appendUboTextConstraints()
+                        if (shouldMergeUboTextSelectors && UBO_TEXT_PSEUDO_CLASS_NAMES.has(name)) {
+                            deferredUboTextConstraints.push(
+                                HtmlRuleConverter.collectUboTextConstraint(name, argument),
+                            );
+                            continue;
+                        }
+
                         // Invoke callback and:
                         // - add returned simple selector if it's not boolean
                         // - skip adding if returned value is false
@@ -1355,6 +1430,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     deferredTagContentValues,
                     deferredWildcardValues,
                     lengthConstraints,
+                );
+            }
+
+            // Emit the `:contains()` converted from the deferred uBlock text
+            // constraints of the last compound selector. Unlike the special
+            // attributes above, these pseudo-classes stay in their compound
+            // selector: they are emitted right after it.
+            if (shouldMergeUboTextSelectors) {
+                HtmlRuleConverter.appendUboTextConstraints(
+                    convertedSelectors,
+                    deferredUboTextConstraints,
                 );
             }
 
@@ -1891,54 +1977,270 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Converts a uBlock HTML filtering text argument (`:has-text()` or
-     * `:contains()`) to an AdGuard `:contains()` argument with the same
-     * matching semantics.
+     * Collects a uBlock HTML filtering text constraint from a special
+     * pseudo-class selector: `:has-text()`, `:contains()` or
+     * `:min-text-length()`.
      *
-     * The uBlock parser reads the argument with `compileText()`, which unquotes
-     * it, and then passes the text to `regexFromString()`. That function reads
-     * the text as a regular expression only when it matches
-     * {@link UBO_HAS_TEXT_REGEXP_PATTERN}; such an argument maps to an AdGuard
-     * regular expression argument as-is. Every other text is plain: uBlock
-     * matches it case-insensitively. AdGuard matches a literal `:contains()`
-     * argument case-sensitively, so the plain text is emitted as an escaped
-     * regular expression with the `i` flag, e.g. `admc` -> `/admc/i`. An empty
-     * text becomes `/^/i`, which matches any text, like uBlock's `/^/`.
+     * The uBlock parser reads a `:has-text()` / `:contains()` argument with
+     * `compileText()`, which unquotes it, and then passes the text to
+     * `regexFromString()`. That function reads the text as a regular expression
+     * only when it matches {@link UBO_HAS_TEXT_REGEXP_PATTERN}; every other
+     * text is plain and matched case-insensitively. Note that uBlock applies
+     * the JavaScript `i` flag, which folds Unicode case, while CoreLibs
+     * compiles the converted argument with `PCRE2_NEVER_UTF`, so the `i` flag
+     * of the emitted regular expression folds ASCII case only.
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Raw argument of the special pseudo-class.
      *
-     * @returns Argument for the AdGuard `:contains()` pseudo-class.
+     * @returns Collected text constraint.
      *
-     * @throws If uBlock rejects the argument, i.e. it is empty or characters
-     * follow the closing quote of a quoted argument.
+     * @throws If uBlock rejects the argument — it is empty or characters
+     * follow the closing quote of a quoted argument — or a
+     * `:min-text-length()` value is invalid.
      */
-    private static convertUboTextArgumentToAdg(name: string, argument: string): string {
-        const text = HtmlRuleConverter.unquoteUboTextArgument(argument);
+    private static collectUboTextConstraint(name: string, argument: string): UboTextConstraint {
+        switch (name) {
+            case UboPseudoClasses.HasText:
+            case AdgPseudoClasses.Contains: {
+                const text = HtmlRuleConverter.unquoteUboTextArgument(argument);
 
-        if (text === null) {
-            throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INVALID_IN_UBO,
-                name,
-                argument,
-            ));
+                if (text === null) {
+                    throw new RuleConversionError(sprintf(
+                        ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INVALID_IN_UBO,
+                        name,
+                        argument,
+                    ));
+                }
+
+                // uBlock reads the regexp form after it unquotes the argument,
+                // so a quoted regexp argument, e.g. `"/ads/i"`, is still a
+                // regexp there
+                return UBO_HAS_TEXT_REGEXP_PATTERN.test(text)
+                    ? { kind: UboTextConstraintKind.Regexp, argument: text }
+                    : { kind: UboTextConstraintKind.Text, value: text };
+            }
+
+            case UboPseudoClasses.MinTextLength: {
+                // Validate length value
+                HtmlRuleConverter.assertValidLengthValue(
+                    name,
+                    argument,
+                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT,
+                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE,
+                    UBO_MIN_TEXT_LENGTH_ARGUMENT_PATTERN,
+                );
+
+                // It's safe to cast to number here after validation
+                const minLength = Number(argument);
+
+                // The generated regular expression must stay within the PCRE2
+                // quantifier limit — see the ADG_HTML_CONVERSION_MAX_LENGTH comment
+                if (minLength > ADG_HTML_CONVERSION_MAX_LENGTH) {
+                    throw new RuleConversionError(sprintf(
+                        ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_TOO_LARGE,
+                        name,
+                        ADG_HTML_CONVERSION_MAX_LENGTH,
+                        argument,
+                    ));
+                }
+
+                // The value is normalized to a number, so a padded or
+                // zero-prefixed argument, e.g. `007`, is emitted as `7`
+                return { kind: UboTextConstraintKind.MinLength, value: String(minLength) };
+            }
+
+            // This line is unreachable due to exhausted cases, but we keep it to satisfy TS
+            default: {
+                throw new RuleConversionError(sprintf(
+                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED,
+                    name,
+                ));
+            }
+        }
+    }
+
+    /**
+     * Converts a single uBlock text constraint to an AdGuard `:contains()`
+     * argument with the same matching semantics.
+     *
+     * A plain text becomes an escaped regular expression with the `i` flag,
+     * e.g. `admc` -> `/admc/i`, so it keeps matching like uBlock's plain text.
+     * An empty text becomes `/^/i`, which matches any text, like uBlock's
+     * `/^/`. A regexp constraint is emitted as-is, and a
+     * `:min-text-length()` constraint becomes a length-matching regular
+     * expression.
+     *
+     * @param constraint Text constraint to convert.
+     *
+     * @returns Argument for the AdGuard `:contains()` pseudo-class.
+     */
+    private static convertUboTextConstraintToArgument(constraint: UboTextConstraint): string {
+        switch (constraint.kind) {
+            case UboTextConstraintKind.Text: {
+                // Quotes stay as-is: CoreLibs matches the regexp argument as a
+                // regular expression, so a quote is a literal character there
+                // and does not delimit the argument. This keeps the converted
+                // argument as close to the uBlock text as possible.
+                const escapedText = constraint.value === EMPTY
+                    ? CARET
+                    : RegExpUtils.escapeRegexSpecials(constraint.value);
+
+                return `${SLASH}${escapedText}${SLASH}i`;
+            }
+
+            case UboTextConstraintKind.Regexp: {
+                return constraint.argument;
+            }
+
+            case UboTextConstraintKind.MinLength: {
+                return RegExpUtils.getLengthRegexp(
+                    constraint.value,
+                    ADG_HTML_CONVERSION_MAX_LENGTH,
+                );
+            }
+
+            default: {
+                throw new RuleConversionError(sprintf(
+                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED,
+                    (constraint as UboTextConstraint).kind,
+                ));
+            }
+        }
+    }
+
+    /**
+     * Emits the `:contains()` pseudo-class converted from the deferred text
+     * constraints of a uBlock compound selector and appends it to the
+     * converted selectors.
+     *
+     * CoreLibs accepts at most one literal and one regular expression
+     * `:contains()` per rule (see `extract_attributes()` in its
+     * `htmlfilter.cpp`), so several text constraints cannot be emitted as
+     * separate pseudo-classes: a plain text is a regexp in AdGuard, and a
+     * second regexp `:contains()` makes CoreLibs reject the rule. Instead,
+     * several constraints are merged into a single regular expression, see
+     * {@link HtmlRuleConverter.mergeUboTextConstraints}.
+     *
+     * @param convertedSelectors Converted selectors of the complex selector,
+     * the emitted pseudo-class is appended to it.
+     * @param constraints Deferred text constraints of the compound selector.
+     */
+    private static appendUboTextConstraints(
+        convertedSelectors: (SimpleSelector | SelectorCombinator)[],
+        constraints: UboTextConstraint[],
+    ): void {
+        if (constraints.length === 0) {
+            return;
         }
 
-        // uBlock reads the regexp form after it unquotes the argument, so a
-        // quoted regexp argument, e.g. `"/ads/i"`, is still a regexp there
-        if (UBO_HAS_TEXT_REGEXP_PATTERN.test(text)) {
-            return text;
+        const argument = constraints.length === 1
+            ? HtmlRuleConverter.convertUboTextConstraintToArgument(constraints[0])
+            : HtmlRuleConverter.mergeUboTextConstraints(constraints);
+
+        convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
+            AdgPseudoClasses.Contains,
+            argument,
+        ));
+    }
+
+    /**
+     * Merges several uBlock text constraints into a single AdGuard
+     * `:contains()` regular expression.
+     *
+     * Every constraint becomes a lookahead of an anchored pattern:
+     * - a plain text `t` becomes `(?=[\s\S]*t)`, i.e. "the text contains `t`";
+     * - a uBlock regexp `/p/` becomes `(?=[\s\S]*(?:p))`, i.e. "the text
+     *   matches `p`", which is what uBlock's `RegExp.prototype.test()` does;
+     * - `:min-text-length(n)` becomes `(?=[\s\S]{n,MAX}$)`, i.e. "the text is
+     *   at least `n` characters long"; several constraints are a conjunction,
+     *   so only the largest one is kept.
+     *
+     * `[\s\S]` replaces the dot so that the constraints apply to the whole
+     * text without the `s` flag: the flag would also change how the dot of an
+     * embedded uBlock regexp matches.
+     *
+     * A merged regular expression has a single set of flags, so the `i` flag
+     * cannot be set per constraint. It is used only when no constraint needs a
+     * case-sensitive match, i.e. when every regexp argument has the `i` flag.
+     * Otherwise the merged regular expression is case-sensitive, and a plain
+     * text in such a chain keeps the case sensitivity it had as a literal
+     * argument before this conversion. CoreLibs compiles the result with
+     * `PCRE2_NEVER_UTF`, so `i` folds ASCII case only.
+     *
+     * @param constraints Text constraints to merge, at least two.
+     *
+     * @returns Argument for the AdGuard `:contains()` pseudo-class.
+     */
+    private static mergeUboTextConstraints(constraints: UboTextConstraint[]): string {
+        // `:min-text-length()` constraints are a conjunction, so only the
+        // largest one constrains the match. The values are validated decimal
+        // digits bounded by ADG_HTML_CONVERSION_MAX_LENGTH, so a number is safe.
+        let minLength: string | null = null;
+
+        for (const constraint of constraints) {
+            if (
+                constraint.kind === UboTextConstraintKind.MinLength
+                && (minLength === null || Number(constraint.value) > Number(minLength))
+            ) {
+                minLength = constraint.value;
+            }
         }
 
-        // Quotes stay as-is: CoreLibs matches the regexp argument as a
-        // regular expression, so a quote is a literal character there and
-        // does not delimit the argument. This keeps the converted argument
-        // as close to the uBlock text as possible.
-        const escapedText = text === EMPTY
-            ? CARET
-            : RegExpUtils.escapeRegexSpecials(text);
+        // A regexp argument is case-insensitive only with the `i` flag, and a
+        // single flag set applies to the whole merged pattern
+        const isCaseSensitive = constraints.some(
+            (constraint) => constraint.kind === UboTextConstraintKind.Regexp
+                && !constraint.argument.endsWith(`${SLASH}i`),
+        );
 
-        return `${SLASH}${escapedText}${SLASH}i`;
+        let merged = `${SLASH}${CARET}`;
+
+        if (minLength !== null) {
+            merged += `(?=[\\s\\S]{${minLength},${ADG_HTML_CONVERSION_MAX_LENGTH}}$)`;
+        }
+
+        for (const constraint of constraints) {
+            switch (constraint.kind) {
+                case UboTextConstraintKind.Text: {
+                    // An empty text matches any text, so it adds no constraint
+                    if (constraint.value !== EMPTY) {
+                        merged += `(?=[\\s\\S]*${RegExpUtils.escapeRegexSpecials(constraint.value)})`;
+                    }
+                    break;
+                }
+
+                case UboTextConstraintKind.Regexp: {
+                    // The argument matched UBO_HAS_TEXT_REGEXP_PATTERN above, so
+                    // the pattern is everything between the leading slash and
+                    // the optional `i` flag
+                    const pattern = constraint.argument.endsWith(`${SLASH}i`)
+                        ? constraint.argument.slice(1, -2)
+                        : constraint.argument.slice(1, -1);
+
+                    // The non-capturing group keeps the alternatives of the
+                    // pattern inside the lookahead
+                    merged += `(?=[\\s\\S]*(?:${pattern}))`;
+                    break;
+                }
+
+                case UboTextConstraintKind.MinLength: {
+                    // Emitted as a single normalized lookahead above
+                    break;
+                }
+
+                default: {
+                    throw new RuleConversionError(sprintf(
+                        ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED,
+                        (constraint as UboTextConstraint).kind,
+                    ));
+                }
+            }
+        }
+
+        merged += isCaseSensitive ? SLASH : `${SLASH}i`;
+
+        return merged;
     }
 
     /**

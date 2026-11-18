@@ -29,10 +29,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   mirrors uBlock for plain text: one pair of outer quotes is removed and
   the text is matched case-insensitively through an escaped `:contains()`
   regexp with the `i` flag, e.g. `##^script:has-text("admc")` becomes
-  `$$script:contains(/admc/i)`. The argument is not trimmed, so
-  `##^div:has-text( "foo" )` keeps its spaces and quotes. A rule with
-  characters after the closing quote, e.g. `##^div:has-text("foo"bar)`,
-  is rejected, as in uBlock.
+  `$$script:contains(/admc/i)`. The `i` flag folds ASCII case only, because
+  CoreLibs compiles `:contains()` regexps with `PCRE2_NEVER_UTF`. The
+  argument is not trimmed, so `##^div:has-text( "foo" )` keeps its spaces
+  and quotes. A rule with characters after the closing quote, e.g.
+  `##^div:has-text("foo"bar)`, is rejected, as in uBlock.
+- Chained text constraints of one compound selector are merged into a single
+  `:contains()` regexp, because CoreLibs rejects a rule with more than one
+  regexp `:contains()`: `##^div:has-text(a):has-text(/b/)` becomes
+  `$$div:contains(/^(?=[\s\S]*a)(?=[\s\S]*(?:b))/)`, and several
+  `:min-text-length()` collapse to the largest one.
 - HTML filtering rules with a right parenthesis inside a regexp character
   class now parse and convert, e.g. `##^div:has-text(/a[)]b/)` and
   `##^div:contains(/a[)]b/)` become `$$div:contains(/a[)]b/)`. Previously
