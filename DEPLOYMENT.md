@@ -38,7 +38,9 @@ derived from the package changelog and injected temporarily by
    `version` input — a release version **with** the `v` prefix, e.g. `v5.0.4`
    (matching the org-wide `create-release-pr` schema; a bare `5.0.4` is also
    accepted). It finalizes the package's `CHANGELOG.md`, pushes
-   `release-bump/<package>-v<version>` and opens the release PR.
+   `release-bump/<package>-v<version>` and opens the release PR. The Actions
+   run list shows the requested package and version, for example
+   `Prepare release tsurlfilter v4.2.0`.
 2. **Merge**: review and merge the release PR into `master`.
 3. **Publish**: `publish-release.yml` auto-fires on the merged
    `release-bump/<package>-v<version>` PR — Docker test + build → npm publish
