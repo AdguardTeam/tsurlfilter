@@ -9,6 +9,9 @@ export class ElementUtils {
     /**
      * Serialize HTML element.
      *
+     * Delegates to {@link cssHitsHelpers.elementToString} so that MV2 and the
+     * injected ExtendedCss payload share one implementation.
+     *
      * @param element Element to serialize.
      *
      * @returns String representation of the element.
@@ -64,6 +67,9 @@ export class ElementUtils {
     /**
      * Parses hits info from style content.
      *
+     * Delegates to {@link cssHitsHelpers.parseInfo} so that MV2 and the
+     * injected ExtendedCss payload share one implementation.
+     *
      * @param content Style content.
      * @param attributeMarker Attribute marker.
      *
@@ -75,6 +81,9 @@ export class ElementUtils {
 
     /**
      * Parses hits info from style content.
+     *
+     * Delegates to {@link cssHitsHelpers.parseExtendedStyleInfo} so that MV2
+     * and the injected ExtendedCss payload share one implementation.
      *
      * @param content Style.
      * @param attributeMarker Attribute marker.

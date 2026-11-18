@@ -10,6 +10,8 @@ import {
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
 import { ExtCssMarkersState } from '../../../../src/lib/common/cosmetic-api';
+import { ExtCssGuardError } from '../../../../src/lib/common/extcss-guard-error';
+import { ExtCssApplyError } from '../../../../src/lib/common/extcss-protocol';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 import { createCosmeticRule } from '../../../helpers/rule-creator';
@@ -28,6 +30,7 @@ const {
         configuration: {
             settings: {
                 collectStats: true,
+                extCssScriptUrl: 'extcss-inject.js',
             },
         },
     },
@@ -273,6 +276,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
             frameId: FRAME_ID,
             documentId: 'doc-1',
             collectStats: true,
+            scriptUrl: 'extcss-inject.js',
             cssRules: expect.arrayContaining([
                 expect.stringContaining('adguard'),
             ]),
@@ -819,6 +823,56 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(infoSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('reports failed ExtendedCss markers after an engine guard failure', async () => {
+        const frameContext = makeExtCssFrameContext('doc-1');
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+        executeExtCssMock.mockRejectedValue(new ExtCssGuardError({
+            error: ExtCssApplyError.EngineNotLoaded,
+            message: 'ExtendedCss engine is not loaded',
+        }));
+        const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
+
+        await applyExtCssRules(frameContext);
+
+        const data = CosmeticApi.getContentScriptData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        // A terminal engine failure must never be reported as applied.
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.Failed);
+        expect(errorSpy).toHaveBeenCalledWith(
+            expect.stringContaining('(guard engine-not-loaded'),
+        );
+    });
+
+    it('reports failed ExtendedCss markers for an empty engine script url', async () => {
+        const frameContext = makeExtCssFrameContext('doc-1');
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+        const { extCssScriptUrl } = appContextMock.configuration.settings;
+        appContextMock.configuration.settings.extCssScriptUrl = '';
+        const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
+
+        try {
+            await applyExtCssRules(frameContext);
+
+            const data = CosmeticApi.getContentScriptData(
+                'https://example.org/',
+                TAB_ID,
+                FRAME_ID,
+            );
+
+            // Without the asset the rules cannot be applied, so the document
+            // must not report the marked rules as applied.
+            expect(data.extCssMarkersState).toBe(ExtCssMarkersState.Failed);
+            expect(executeExtCssMock).not.toHaveBeenCalled();
+            expect(errorSpy).toHaveBeenCalledTimes(1);
+        } finally {
+            appContextMock.configuration.settings.extCssScriptUrl = extCssScriptUrl;
+        }
+    });
+
     it('waits for the pending ExtendedCss injection of the same document', async () => {
         const frameContext = makeExtCssFrameContext('doc-1');
         tabsApiMock.getFrameContext.mockReturnValue(frameContext);
@@ -850,6 +904,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(executeExtCssMock).toHaveBeenLastCalledWith(expect.objectContaining({
             documentId: 'doc-1',
             collectStats: true,
+            scriptUrl: 'extcss-inject.js',
         }));
         expect(data.areHitsStatsCollected).toBe(true);
     });

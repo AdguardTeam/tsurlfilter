@@ -3,8 +3,6 @@ import { defineConfig, defineProject, type UserWorkspaceConfig } from 'vitest/co
 
 import { canvasEngineSource } from './tasks/canvas-engine-plugin';
 import { ManifestVersionEnv } from './tasks/constants';
-import { inlineCssHitsHelpers } from './tasks/inline-css-hits-helpers';
-import { inlineExtCssBundle } from './tasks/inline-extcss-bundle';
 
 // Inline projects do not inherit root plugins, so each one that imports the library gets its own.
 const plugins = [canvasEngineSource()];
@@ -48,10 +46,9 @@ const createProjectForManifestVersion = (
             ? { include: ['test/**/*.bench.ts'] }
             : { include: [] },
     },
-    // Both manifest-version projects run tests for the shared ExtCSS payload
-    // and its MV2 serializer, so both need the build-time inliners on top of
-    // the shared canvas plugin.
-    plugins: [...plugins, inlineExtCssBundle(), inlineCssHitsHelpers()],
+    // Both manifest-version projects import the library, so they need the
+    // shared canvas plugin.
+    plugins,
 });
 
 export default defineConfig({
@@ -85,8 +82,8 @@ export default defineConfig({
                     benchmark: { include: [] },
                 },
                 // The shared ExtCSS payload and its tests live in `common` and
-                // rely on the build-time inliners, as the MV3 project does.
-                plugins: [...plugins, inlineExtCssBundle(), inlineCssHitsHelpers()],
+                // import the library, so the canvas plugin is needed here too.
+                plugins,
             }),
             createProjectForManifestVersion(ManifestVersionEnv.Second),
             createProjectForManifestVersion(ManifestVersionEnv.Third),

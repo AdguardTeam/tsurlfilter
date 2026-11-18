@@ -4,4 +4,5 @@ export const enum BuildOutput {
     Popup = 'pages/popup',
     DocumentBlocking = 'pages/document-blocking',
     AssistantInject = 'assistant-inject',
+    ExtCssInject = 'extcss-inject',
 }

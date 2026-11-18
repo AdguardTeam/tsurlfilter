@@ -1,6 +1,7 @@
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
+import terser from '@rollup/plugin-terser';
 import typescript from '@rollup/plugin-typescript';
 import { omit } from 'lodash-es';
 import { type Plugin, type RollupOptions } from 'rollup';
@@ -13,10 +14,6 @@ import externals from 'rollup-plugin-node-externals';
 // does not append the `.ts` extension to extensionless specifiers.
 // eslint-disable-next-line import/extensions -- see NOTE above
 import { canvasEngineSource } from './tasks/canvas-engine-plugin.ts';
-// eslint-disable-next-line import/extensions -- see NOTE above
-import { inlineCssHitsHelpers } from './tasks/inline-css-hits-helpers.ts';
-// eslint-disable-next-line import/extensions -- see NOTE above
-import { inlineExtCssBundle } from './tasks/inline-extcss-bundle.ts';
 
 const BUILD_DIST = 'dist';
 
@@ -27,13 +24,6 @@ const commonPlugins: Plugin[] = [
     resolve({ preferBuiltins: false }),
     cleanup({ comments: ['srcmaps'] }),
     commonjs(),
-    // Both inliners below MUST run after TypeScript so the type checker never
-    // sees the inlined `applyExtendedCss` / `cssHitsHelpers` alongside the
-    // type-only `declare const`. The two are independent — each replaces its
-    // own marker in `extcss-apply-fn.ts` — so their relative order does not
-    // matter, only that both come after `typescript()`.
-    inlineExtCssBundle(),
-    inlineCssHitsHelpers(),
 ];
 
 /**
@@ -100,6 +90,35 @@ const tswebextensionConfig: RollupOptions = {
     ],
 };
 
+/**
+ * Builds the prebuilt ExtendedCss injection script asset.
+ *
+ * The asset is a single self-contained IIFE: it bundles `@adguard/extended-css`
+ * and the CSS-hits helpers, then installs them on the document's ISOLATED
+ * world under the key the injected apply function reads (`EXTCSS_ENGINE_KEY`).
+ * MV2 and MV3 inject the file with the scripting API before they inject the
+ * rule strings, so the engine stops traveling inside every apply payload and
+ * the payload satisfies the service-worker CSP.
+ *
+ * The asset is minified because it is injected into every frame that has
+ * ExtendedCss rules, and because the previous inlined payload was minified as
+ * well; the rest of `dist` stays unminified.
+ */
+const extCssAssetConfig: RollupOptions = {
+    input: 'src/lib/common/extcss-engine.ts',
+    output: {
+        file: `${BUILD_DIST}/extcss-inject.js`,
+        format: 'iife',
+    },
+    plugins: [
+        json(),
+        typescript({ tsconfig: 'tsconfig.build.json' }),
+        resolve({ preferBuiltins: false }),
+        commonjs(),
+        terser(),
+    ],
+};
+
 const typesConfig: RollupOptions = {
     // omit entry points that are not exporting types
     input: omit(entryPoints, ['content-script.mv3', 'gpc', 'hide-document-referrer']),
@@ -118,4 +137,4 @@ const typesConfig: RollupOptions = {
 
 // TODO: Remove index files from 'src/lib', 'src/lib/mv2', 'src/lib/mv3' because
 // they are not participating in the build process and not specified as entry points.
-export default [tswebextensionConfig, typesConfig];
+export default [tswebextensionConfig, extCssAssetConfig, typesConfig];

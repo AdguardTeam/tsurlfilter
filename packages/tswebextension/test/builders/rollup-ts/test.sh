@@ -40,12 +40,12 @@ tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
 # `dist`: the Chrome Web Store review narrative for script-rule execution
 # (`JS_RULES_EXECUTION`) and the policy notes around `chrome.scripting` must be
 # readable in the shipped bundles, so stripping them is not an option.
-# Current payload: 85,043 bytes. The merge keeps the CSS hits lifecycle in the
-# content script, adds the ExtendedCss removed-elements handoff and the hit
-# helpers, and drops the in-page ExtendedCss application, which no manifest
-# uses any more. Raise this only when a genuine size increase lands, never to
-# silence a regression.
-max_size=85200
+# Current payload: 85,687 bytes. The merge keeps the CSS hits lifecycle in the
+# content script, keeps the ExtendedCss removed-elements handoff and the
+# shared hit helpers, and adds no in-page ExtendedCss application: the engine
+# itself travels in the prebuilt `extcss-inject.js` asset. Raise this only when
+# a genuine size increase lands, never to silence a regression.
+max_size=86000
 package_dist="node_modules/@adguard/tswebextension/dist"
 if ! filesize=$(node measure-payload.mjs "$package_dist/css-hits-counter.js"); then
     echo "Failed to measure the shipped css-hits-counter payload"
@@ -65,5 +65,42 @@ else
 fi
 
 rm $tswebextension
+
+# check that the prebuilt ExtendedCss script asset is shipped
+# The asset is injected by the background before the rule strings, so it must
+# exist in `dist`, install the engine under the key the injected apply function
+# reads, and stay small enough to inject into every frame with ExtCSS rules.
+# Current payload: ~56 KB minified with the bundled engine. Raise this only
+# when a genuine engine or helper growth lands, never to silence a regression.
+extcss_asset="$package_dist/extcss-inject.js"
+max_extcss_size=70000
+if [ ! -f "$extcss_asset" ]; then
+    echo "Shipped ExtendedCss script asset is missing: $extcss_asset"
+    echo "Testing bundling with rollup-ts ended with error"
+    exit 1
+fi
+if ! grep -q "__adguardExtCssEngine" "$extcss_asset"; then
+    echo "Shipped ExtendedCss script asset does not install the engine global"
+    echo "Testing bundling with rollup-ts ended with error"
+    exit 1
+fi
+# The asset is stamped with the package version and the background rejects an
+# asset built by another version, so a stale copy in a consumer extension is
+# reported instead of silently running an older engine.
+extcss_version=$(node -p "require('./node_modules/@adguard/tswebextension/package.json').version")
+if ! grep -q "$extcss_version" "$extcss_asset"; then
+    echo "Shipped ExtendedCss script asset is not stamped with the package version $extcss_version"
+    echo "Testing bundling with rollup-ts ended with error"
+    exit 1
+fi
+node check-extcss-asset.mjs "$extcss_asset" "$extcss_version"
+extcss_size=$(wc -c < "$extcss_asset" | tr -d ' ')
+if [ "$extcss_size" -gt $max_extcss_size ]; then
+    echo "Shipped ExtendedCss script asset is more than $max_extcss_size bytes with size $extcss_size"
+    echo "Testing bundling with rollup-ts ended with error"
+    exit 1
+else
+    echo "Shipped ExtendedCss script asset is less than or equal to $max_extcss_size bytes with size $extcss_size"
+fi
 
 echo "Testing bundling with rollup-ts ended successfully"

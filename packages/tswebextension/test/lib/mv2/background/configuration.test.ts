@@ -22,6 +22,7 @@ describe('configuration validator', () => {
             allowlistEnabled: false,
             documentBlockingPageUrl: 'https://example.org',
             assistantUrl: '/assistant-inject.js',
+            extCssScriptUrl: '/extcss-inject.js',
             stealth: {
                 blockChromeClientData: true,
                 hideReferrer: true,

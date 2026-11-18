@@ -16,4 +16,6 @@ export const CONTENT_SCRIPT = path.join(__dirname, '../extension/pages/content-s
 
 export const ASSISTANT_INJECT = path.join(__dirname, '../extension/pages/assistant-inject');
 
+export const EXT_CSS_INJECT = path.join(__dirname, '../extension/pages/extcss-inject');
+
 export const POPUP_PATH = path.join(__dirname, '../extension/pages/popup');

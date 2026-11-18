@@ -9,7 +9,8 @@ import {
     type LogJsRulesParams,
     type MarkedCssFrameContext,
 } from '../../common/cosmetic-api';
-import { EXTCSS_PROTOCOL } from '../../common/extcss-protocol';
+import { ExtCssGuardError } from '../../common/extcss-guard-error';
+import { EXTCSS_PROTOCOL, type ExtCssApplyResult } from '../../common/extcss-protocol';
 import { type PreparedCosmeticResultCommon } from '../../common/tabs/frame';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { CssCapabilities } from '../../common/utils/css-capabilities';
@@ -643,9 +644,33 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Tells whether another attempt of a failed injection cannot succeed.
+     *
+     * An engine guard failure is deterministic: the document has no engine or
+     * a stale one, so a retry repeats it. So is a failure of an injection
+     * whose frame context is gone, since the retry would apply the payload of
+     * a replaced document.
+     *
+     * @param error Error thrown by the injection.
+     * @param isTargetGone Whether the frame context the injection belongs to
+     * is gone.
+     *
+     * @returns True if a retry cannot succeed.
+     */
+    private static isTerminalInjectionError(error: unknown, isTargetGone: () => boolean): boolean {
+        return error instanceof ExtCssGuardError || isTargetGone();
+    }
+
+    /**
      * Runs an injection, retrying it after the retry timeout while attempts
      * remain.
      *
+     * A terminal failure — an engine guard error or a gone frame context —
+     * reaches {@link onFailure} right away, without spending the remaining
+     * attempts.
+     *
+     * @param isTargetGone Tells whether the frame context the injection
+     * belongs to is gone.
      * @param inject Injection to run.
      * @param retry Schedules the next attempt.
      * @param onFailure Handles the error of the last allowed attempt.
@@ -656,6 +681,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @returns True if the injection succeeded, otherwise false.
      */
     private static async injectWithRetry(
+        isTargetGone: () => boolean,
         inject: () => Promise<void>,
         retry: () => void,
         onFailure: (error: unknown) => void,
@@ -667,7 +693,7 @@ export class CosmeticApi extends CosmeticApiCommon {
 
             return true;
         } catch (e) {
-            if (tries < maxTries) {
+            if (!CosmeticApi.isTerminalInjectionError(e, isTargetGone) && tries < maxTries) {
                 setTimeout(retry, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
                 onFailure(e);
@@ -697,6 +723,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         await CosmeticApi.injectWithRetry(
+            () => !tabsApi.getFrameContext(tabId, frameId),
             () => CosmeticApi.injectScript(tabId, frameId, scriptText),
             () => {
                 CosmeticApi.applyJs(tabId, frameId, tries + 1);
@@ -922,17 +949,24 @@ export class CosmeticApi extends CosmeticApiCommon {
      * The rules come from the frame's prepared result, or from the data kept
      * on the context when the frame was matched on demand. When they are
      * non-empty and the current document does not already hold that rule set,
-     * the shared ExtCSS payload is serialized into a code string and injected.
-     * When the rule set is empty or null, the dispose code string is injected
-     * once per document, but only when the context may describe a document
-     * that holds an instance: it applied one, or the startup pass created it.
-     * The dispose is not retried, and the document is recorded as disposed
-     * even when the attempt fails. Otherwise no code is injected.
+     * the prebuilt engine script is injected first and the rule strings are
+     * serialized into a code string and injected second. When the rule set is
+     * empty or null, the dispose code string is injected once per document,
+     * but only when the context may describe a document that holds an
+     * instance: it applied one, or the startup pass created it. The dispose is
+     * not retried, and the document is recorded as disposed even when the
+     * attempt fails. Otherwise no code is injected.
      *
      * A context that describes a navigation that has not committed gets no
      * injection at all: the frame still shows the previous document, and the
      * commit handler injects the incoming document's rules once it is the
-     * displayed one.
+     * displayed one. The same check runs after the engine asset is injected,
+     * because the frame may navigate while that call is in flight.
+     *
+     * An engine guard failure is terminal: the document has no engine or a
+     * stale one, so the call is not retried and the failure is logged as an
+     * error. Without `settings.extCssScriptUrl` the rules cannot be applied at
+     * all, so the call reports a failure and injects nothing.
      *
      * The payload runs as one owned operation of the frame document queue: the
      * operation waits for the previous one to settle, retries inside itself and
@@ -983,6 +1017,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         const maxTries = extCssRules?.length ? CosmeticApi.INJECTION_MAX_TRIES : 0;
 
         let code: string;
+        let extCssScriptUrl: string | undefined;
 
         if (extCssRules?.length) {
             // A successful apply already put the same rule set into the page.
@@ -997,6 +1032,14 @@ export class CosmeticApi extends CosmeticApiCommon {
                 && (marksWouldBeLost || CosmeticApi.isExtCssApplied(frameContext, extCssRules))
             ) {
                 return true;
+            }
+
+            extCssScriptUrl = appContext.configuration?.settings.extCssScriptUrl;
+
+            if (!extCssScriptUrl) {
+                logger.error(`[tsweb.CosmeticApi.applyExtCss]: settings.extCssScriptUrl is not set, ExtendedCss rules are not applied in tabId ${tabId} and frameId ${frameId}`);
+
+                return false;
             }
 
             code = serializeExtCssForCode(
@@ -1045,6 +1088,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                     tabId,
                     frameId,
                     code,
+                    extCssScriptUrl,
                     isSuperseded,
                     () => tabsApi.getFrameContext(tabId, frameId) === frameContext
                         && frameContext.extCssDocumentVersion === documentVersion,
@@ -1137,9 +1181,19 @@ export class CosmeticApi extends CosmeticApiCommon {
      * applies. The operation stops at a retry boundary when a newer operation
      * supersedes it or when the captured document is no longer displayed.
      *
+     * The prebuilt engine script asset is injected before the rule strings, so
+     * the payload carries only the rules. The engine has to be in the document
+     * before its rules, so a retry repeats both injections: the file is
+     * installed again and the code string applies the rules on top of it. The
+     * apply code is executed through {@link CosmeticApi.injectExtCssCode},
+     * which turns an in-page engine guard failure into an error. Such a failure
+     * is terminal, so the attempt is not retried.
+     *
      * @param tabId Tab id.
      * @param frameId Frame id.
      * @param code Serialized payload.
+     * @param extCssScriptUrl Path to the prebuilt engine script asset, or
+     * undefined for a dispose payload, which needs no engine.
      * @param isSuperseded Whether a newer operation replaced this one.
      * @param isDocumentDisplayed Whether the captured document is still
      * displayed in the frame.
@@ -1152,6 +1206,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         tabId: number,
         frameId: number,
         code: string,
+        extCssScriptUrl: string | undefined,
         isSuperseded: () => boolean,
         isDocumentDisplayed: () => boolean,
         maxTries: number,
@@ -1162,13 +1217,48 @@ export class CosmeticApi extends CosmeticApiCommon {
             }
 
             try {
-                // Retries are sequential by design: the next attempt must not
-                // start before this one fails.
-                // eslint-disable-next-line no-await-in-loop
-                await TabsApi.injectScript(tabId, frameId, code);
+                if (extCssScriptUrl) {
+                    // Retries are sequential by design: the next attempt must
+                    // not start before this one fails.
+                    // eslint-disable-next-line no-await-in-loop
+                    await TabsApi.injectScriptFile(tabId, frameId, extCssScriptUrl);
+
+                    // A cross-process navigation answers its injections in any
+                    // order, so the frame may already show another document:
+                    // that document may have applied its own rules while this
+                    // asset call was in flight, and this rule set would replace
+                    // them. Its own commit handler injects its rules, so this
+                    // operation ends here.
+                    if (isSuperseded() || !isDocumentDisplayed()) {
+                        return false;
+                    }
+
+                    // eslint-disable-next-line no-await-in-loop
+                    await CosmeticApi.injectExtCssCode(tabId, frameId, code);
+                } else {
+                    // eslint-disable-next-line no-await-in-loop
+                    await TabsApi.injectScript(tabId, frameId, code);
+                }
 
                 return true;
             } catch (e) {
+                // An engine guard failure is deterministic: the document has
+                // no engine or a stale one, so a retry repeats it.
+                if (e instanceof ExtCssGuardError) {
+                    logger.error(`[tsweb.CosmeticApi.injectExtCssWithRetries]: ${e.message} (guard ${e.code}, tabId ${tabId}, frameId ${frameId})`);
+
+                    return false;
+                }
+
+                // A document that is gone or no longer displayed cannot take
+                // this payload any more, and a retry would apply the previous
+                // document's rules elsewhere.
+                if (!isDocumentDisplayed()) {
+                    logger.debug(`[tsweb.CosmeticApi.injectExtCssWithRetries]: the document is no longer displayed, the injection is not retried in tabId ${tabId} and frameId ${frameId}`, e);
+
+                    return false;
+                }
+
                 if (attempt >= maxTries) {
                     logger.debug(`[tsweb.CosmeticApi.injectExtCssWithRetries]: error occurred during ExtCSS injection into tabId ${tabId} and frameId ${frameId}`, e);
 
@@ -1220,6 +1310,12 @@ export class CosmeticApi extends CosmeticApiCommon {
      * queued payload, because the marked instance must not be replaced by an
      * unmarked copy.
      *
+     * The prebuilt engine script asset is injected before the rule strings, and
+     * the pair is repeated on a retry. A frame without a context cannot be
+     * observed for a navigation: only a committed context that appears while
+     * the asset call is in flight proves that the frame moved to another
+     * document, and that document's own commit handler applies its rules.
+     *
      * @param tabId Tab id.
      * @param frameId Frame id.
      * @param extCssRules Rule strings to inject.
@@ -1236,6 +1332,14 @@ export class CosmeticApi extends CosmeticApiCommon {
         areHitsStatsCollected: boolean,
         isPriority = false,
     ): Promise<boolean> {
+        const extCssScriptUrl = appContext.configuration?.settings.extCssScriptUrl;
+
+        if (!extCssScriptUrl) {
+            logger.error(`[tsweb.CosmeticApi.injectExtCssWithoutContext]: settings.extCssScriptUrl is not set, ExtendedCss rules are not applied in tabId ${tabId} and frameId ${frameId}`);
+
+            return false;
+        }
+
         const code = serializeExtCssForCode(extCssRules, areHitsStatsCollected, EXTCSS_PROTOCOL);
         const key = CosmeticApi.getContextFreeExtCssKey(tabId, frameId);
         const queue = CosmeticApi.contextFreeExtCssQueue.get(key);
@@ -1263,10 +1367,20 @@ export class CosmeticApi extends CosmeticApiCommon {
                     tabId,
                     frameId,
                     code,
+                    extCssScriptUrl,
                     isSuperseded,
                     // A frame without a context cannot be observed for a
-                    // navigation, so every attempt is made.
-                    () => true,
+                    // navigation: only a committed context that appears while
+                    // the asset call is in flight ends the operation, because
+                    // that document's commit handler applies its own rules. A
+                    // context that still awaits its commit describes a
+                    // navigation that may never commit, so the previous
+                    // document stays on screen and its rules still apply.
+                    () => {
+                        const currentContext = tabsApi.getFrameContext(tabId, frameId);
+
+                        return !currentContext || currentContext.extCssAwaitingCommit;
+                    },
                     CosmeticApi.INJECTION_MAX_TRIES,
                 );
             },
@@ -1295,6 +1409,30 @@ export class CosmeticApi extends CosmeticApiCommon {
      */
     private static getContextFreeExtCssKey(tabId: number, frameId: number): string {
         return `${tabId}:${frameId}`;
+    }
+
+    /**
+     * Injects a serialized ExtendedCss code string into a frame.
+     *
+     * The prebuilt engine asset must already be in the document: the payload
+     * applies the rules through the engine the asset installs, and reports an
+     * engine guard failure when it is missing or stale.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @param code Serialized apply code string.
+     *
+     * @throws {ExtCssGuardError} If the injected apply function reports an
+     * engine guard failure. Other in-page errors keep their existing behavior.
+     */
+    private static async injectExtCssCode(tabId: number, frameId: number, code: string): Promise<void> {
+        const result = await TabsApi.injectScript<ExtCssApplyResult | undefined>(tabId, frameId, code);
+
+        // Chromium resolves executeScript after an in-page exception, so only
+        // the explicit engine guard result reaches this path.
+        if (result) {
+            throw new ExtCssGuardError(result);
+        }
     }
 
     /**

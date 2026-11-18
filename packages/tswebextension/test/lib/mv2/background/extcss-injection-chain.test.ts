@@ -10,11 +10,16 @@ import {
     vi,
 } from 'vitest';
 
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
+// Installs the engine the way the background does: the prebuilt script asset
+// goes into the document before the rule strings.
+import '../../../../src/lib/common/extcss-engine';
+
+import { EXTCSS_PROTOCOL, type ExtCssApplyResult } from '../../../../src/lib/common/extcss-protocol';
 import { tabsApi } from '../../../../src/lib/mv2/background/api';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { serializeExtCssForCode } from '../../../../src/lib/mv2/background/extcss-code';
 import { FrameMV2, type PreparedCosmeticResultMV2 } from '../../../../src/lib/mv2/background/tabs/frame';
+import { TabsApi } from '../../../../src/lib/mv2/background/tabs/tabs-api';
 
 vi.mock('../../../../src/lib/mv2/background/api', () => ({
     engineApi: {},
@@ -24,7 +29,13 @@ vi.mock('../../../../src/lib/mv2/background/api', () => ({
 }));
 
 vi.mock('../../../../src/lib/mv2/background/app-context', () => ({
-    appContext: {},
+    appContext: {
+        configuration: {
+            settings: {
+                extCssScriptUrl: 'extcss-inject.js',
+            },
+        },
+    },
 }));
 
 vi.mock('../../../../src/lib/mv2/background/services/local-script-rules-service', () => ({
@@ -68,23 +79,34 @@ describe('MV2 ExtCSS injection chain', () => {
     beforeEach(() => {
         vi.mocked(tabsApi.getFrameContext).mockReset();
         browser.tabs.executeScript.resetHistory();
+        browser.tabs.executeScript.resetBehavior();
         document.body.innerHTML = '';
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
+        browser.tabs.executeScript.resetBehavior();
         document.body.innerHTML = '';
     });
 
-    it('passes the serialized payload to executeScript and the page applies it', async () => {
+    it('injects the engine asset, then the serialized rules, and the page applies them', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext());
 
         await CosmeticApi.applyExtCss(1, 0);
 
-        expect(browser.tabs.executeScript.callCount).toBe(1);
+        expect(browser.tabs.executeScript.callCount).toBe(2);
 
-        const [tabId, injectDetails] = browser.tabs.executeScript.firstCall.args;
+        const [assetTabId, assetDetails] = browser.tabs.executeScript.firstCall.args;
+        expect(assetTabId).toBe(1);
+        expect(assetDetails).toEqual({
+            file: 'extcss-inject.js',
+            frameId: 0,
+            runAt: 'document_start',
+            matchAboutBlank: true,
+        });
+
+        const [tabId, injectDetails] = browser.tabs.executeScript.secondCall.args;
         expect(tabId).toBe(1);
         expect(injectDetails).toEqual({
             code: serializeExtCssForCode(RULES, false, EXTCSS_PROTOCOL),
@@ -93,7 +115,9 @@ describe('MV2 ExtCSS injection chain', () => {
             matchAboutBlank: true,
         });
 
-        // Evaluate exactly what the browser receives, not a rebuilt copy.
+        // Evaluate exactly what the browser receives, not a rebuilt copy. The
+        // engine comes from the asset, which the test setup installs the same
+        // way the background does.
         runInThisContext(injectDetails.code);
 
         const ad = document.querySelector('.ad') as HTMLElement;
@@ -103,6 +127,9 @@ describe('MV2 ExtCSS injection chain', () => {
 
     it('does not let an unmarked retry overtake the forced marked payload', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+        // The engine asset is injected before every code string; it is mocked
+        // here so the assertions below count only the code injections.
+        vi.spyOn(TabsApi, 'injectScriptFile').mockResolvedValue();
         vi.useFakeTimers();
 
         try {
@@ -172,6 +199,9 @@ describe('MV2 ExtCSS injection chain', () => {
 
     it('runs the payloads in start order so the marked copy lands last', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+        // The engine asset is injected before every code string; it is mocked
+        // here so the assertions below count only the code injections.
+        vi.spyOn(TabsApi, 'injectScriptFile').mockResolvedValue();
 
         const frameContext = makeFrameContext();
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
@@ -201,6 +231,13 @@ describe('MV2 ExtCSS injection chain', () => {
             .returns(undefined);
 
         const unmarked = CosmeticApi.applyExtCss(1, 0);
+
+        // The engine asset is injected before the code string, so the code
+        // injection of the unmarked payload starts in a microtask.
+        await vi.waitFor(() => {
+            expect(browser.tabs.executeScript.callCount).toBe(1);
+        });
+
         const marked = CosmeticApi.applyExtCss(1, 0, {
             extCssData: { extCssRules: MARKED_RULES, areHitsStatsCollected: true },
             force: true,
@@ -233,5 +270,23 @@ describe('MV2 ExtCSS injection chain', () => {
         expect(retained?.cssRules).toEqual(MARKED_RULES);
         expect(frameContext.extCssAppliedData).toEqual(MARKED_RULES);
         expect(frameContext.extCssHitsMarkersApplied).toBe(true);
+    });
+
+    it('does not record an apply when Chromium resolves with an engine guard failure', async () => {
+        const frameContext = makeFrameContext();
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        browser.tabs.executeScript.onFirstCall().returns(Promise.resolve([]));
+        browser.tabs.executeScript.onSecondCall().returns(Promise.resolve([{
+            error: 'engine-version-mismatch' as ExtCssApplyResult['error'],
+            message: 'ExtendedCss engine version mismatch',
+        }]));
+
+        // An engine guard failure is terminal, so the retry budget is not
+        // spent and the frame state keeps no applied rule set.
+        const isApplied = await CosmeticApi.applyExtCss(1, 0);
+
+        expect(isApplied).toBe(false);
+        expect(browser.tabs.executeScript.callCount).toBe(2);
+        expect(frameContext.extCssAppliedData).toBeUndefined();
     });
 });

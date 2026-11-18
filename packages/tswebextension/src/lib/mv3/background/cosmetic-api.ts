@@ -9,6 +9,7 @@ import {
     type LogJsRulesParams,
     type MarkedCssFrameContext,
 } from '../../common/cosmetic-api';
+import { ExtCssGuardError } from '../../common/extcss-guard-error';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl } from '../../common/utils/url';
@@ -975,11 +976,12 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Injects ExtendedCss rules into the specified tab and frame directly from
      * the background via the Scripting API.
      *
-     * The injection is bound to the frame context's document, so a navigation
-     * between queueing and executing it cannot apply the rules to a different
-     * document. When there are no matching rules (empty or null), nothing is
-     * applied; an instance already injected into this document is disposed
-     * instead, so a stale instance cannot stay active. The disposal is
+     * The prebuilt engine asset is injected first and the rule strings second,
+     * and both injections are bound to the frame context's document, so a
+     * navigation between queueing and executing them cannot apply the rules to
+     * a different document. When there are no matching rules (empty or null),
+     * nothing is applied; an instance already injected into this document is
+     * disposed instead, so a stale instance cannot stay active. The disposal is
      * unconditional, because only the document itself knows whether it holds
      * an instance.
      *
@@ -1047,16 +1049,23 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Injects ExtendedCss rules into a frame's document, or disposes the
      * instance already there when the rule set is empty.
      *
-     * The injection is bound to the document when its id is known, so a
-     * navigation between queueing and executing it cannot apply the rules to a
-     * different document. The disposal is unconditional: the instance lives in
-     * the document's isolated world, while the background cannot tell whether
-     * that document still holds one — a BFCache restore or a prerender
-     * activation recreates the frame context. The injected function is a no-op
-     * without an instance.
+     * The prebuilt engine script asset is injected first and the rule strings
+     * second, both bound to the document when its id is known, so a
+     * navigation between queueing and executing them cannot apply the rules to
+     * a different document. The asset url comes from
+     * `settings.extCssScriptUrl`; without it the rules cannot be applied, so
+     * the injection reports a failure instead of running the apply function
+     * against a missing engine.
+     *
+     * The disposal is unconditional: the instance lives in the document's
+     * isolated world, while the background cannot tell whether that document
+     * still holds one — a BFCache restore or a prerender activation recreates
+     * the frame context. The injected function is a no-op without an instance.
      *
      * Errors are caught and logged, so restricted pages must not disrupt the
-     * extension.
+     * extension. An engine guard failure is terminal: the document has no
+     * engine or a stale one, so it is logged at the error level and reported
+     * as a failure.
      *
      * @param target Tab, frame and, when known, document to inject into.
      * @param target.tabId The ID of the tab.
@@ -1067,7 +1076,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * func must report hits back to the background.
      *
      * @returns True when the injection ran or nothing was expected, false when
-     * it threw.
+     * `settings.extCssScriptUrl` is not set, the engine asset or the rules
+     * could not be injected, or the in-page apply reported an engine guard
+     * failure.
      */
     private static async injectExtCssRules(
         { tabId, frameId, documentId }: ExecuteExtCssTarget,
@@ -1081,16 +1092,33 @@ export class CosmeticApi extends CosmeticApiCommon {
                 return true;
             }
 
+            const extCssScriptUrl = appContext.configuration?.settings.extCssScriptUrl;
+
+            if (!extCssScriptUrl) {
+                logger.error(`[tsweb.CosmeticApi.injectExtCssRules]: settings.extCssScriptUrl is not set, ExtendedCss rules are not applied in tabId ${tabId} and frameId ${frameId}`);
+
+                return false;
+            }
+
             await ScriptingApi.executeExtCss({
                 tabId,
                 frameId,
                 documentId,
                 cssRules: extCssRules,
                 collectStats,
+                scriptUrl: extCssScriptUrl,
             });
 
             return true;
         } catch (e) {
+            // An engine guard failure is terminal: the document has no engine
+            // or a stale one, so it reaches the default log level as an error.
+            if (e instanceof ExtCssGuardError) {
+                logger.error(`[tsweb.CosmeticApi.injectExtCssRules]: ${e.message} (guard ${e.code}, tabId ${tabId}, frameId ${frameId})`);
+
+                return false;
+            }
+
             logger.info(`[tsweb.CosmeticApi.injectExtCssRules]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
 
             return false;

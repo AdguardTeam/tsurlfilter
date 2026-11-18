@@ -25,6 +25,7 @@ const { appContextMock, tabsApiMock, engineApiMock } = vi.hoisted(() => ({
         configuration: {
             settings: {
                 collectStats: true,
+                extCssScriptUrl: 'extcss-inject.js',
             },
         },
     },
@@ -144,8 +145,10 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         engineApiMock.matchCosmetic.mockReturnValue(cosmeticResult);
 
         // The ExtendedCSS rules are injected from the background, so the
-        // native CSS and the ExtendedCSS payload are mocked separately.
-        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue();
+        // native CSS, the engine asset and the ExtendedCSS payload are mocked
+        // separately.
+        vi.spyOn(TabsApi, 'injectScriptFile').mockResolvedValue(undefined);
+        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
         const frameContext = makeFrameContext(makePrepared('unmarked', false));
         markExtCssInjected(frameContext);
         tabsApiMock.getFrameContext.mockReturnValue(frameContext);
@@ -535,7 +538,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
         vi.spyOn(TabsApi, 'injectScript')
             .mockRejectedValueOnce(new Error('transient failure'))
-            .mockResolvedValue();
+            .mockResolvedValue(undefined);
         vi.useFakeTimers();
 
         const resultPromise = CosmeticApi.reapplyMarkedCosmeticData(
@@ -604,7 +607,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         const injectCssSpy = vi.spyOn(CosmeticApi, 'injectCss')
             .mockRejectedValueOnce(new Error('transient failure'))
             .mockResolvedValue();
-        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue();
+        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
 
         vi.useFakeTimers();
 

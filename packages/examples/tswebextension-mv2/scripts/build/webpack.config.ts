@@ -12,6 +12,7 @@ import {
     BUILD_PATH,
     CONTENT_SCRIPT_PATH,
     DOCUMENT_BLOCKING_PATH,
+    EXT_CSS_INJECT_PATH,
     POPUP_PATH,
 } from '../constants';
 
@@ -25,6 +26,7 @@ export const config: Configuration = {
         [BuildOutput.Background]: BACKGROUND_PATH,
         [BuildOutput.ContentScript]: CONTENT_SCRIPT_PATH,
         [BuildOutput.AssistantInject]: ASSISTANT_INJECT_PATH,
+        [BuildOutput.ExtCssInject]: EXT_CSS_INJECT_PATH,
         [BuildOutput.Popup]: POPUP_PATH,
     },
     output: {

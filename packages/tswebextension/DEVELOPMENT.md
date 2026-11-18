@@ -46,7 +46,8 @@ pnpm build
 ```
 
 The build cleans `dist/`, emits type declarations, bundles via Rollup (ESM
-bundles + content scripts), and builds metadata.
+bundles + content scripts and the minified `extcss-inject.js` asset), and
+builds metadata.
 
 ### Running Locally
 
@@ -136,6 +137,8 @@ Build output goes to `dist/`:
 - `dist/content-script.js` — MV2 content script
 - `dist/content-script.mv3.js` — MV3 content script
 - `dist/assistant-inject.js` — Assistant injection script
+- `dist/extcss-inject.js` — prebuilt ExtendedCss engine script asset (minified
+  IIFE, injected into a frame before the rule strings)
 - `dist/gpc.mv3.js` — Global Privacy Control script (MV3)
 - `dist/hide-document-referrer.mv3.js` — Document referrer hiding (MV3)
 - `dist/cli.js` — CLI binary

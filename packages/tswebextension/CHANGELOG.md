@@ -62,12 +62,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ExtendedCSS rules in MV2 and MV3 are now applied solely by the background
   injection path — removed from the content scripts (`GetCosmeticData`
   returns `extCssRules: null`, `@adguard/extended-css` is no longer
-  instantiated in the content-script bundles). In MV2 the background
-  serializes the shared payload into a `tabs.executeScript` code string, and
-  in MV3 the background inserts them as soon as a document commits, so the
-  elements they hide no longer flash during page load.
+  instantiated in the content-script bundles), so the elements they hide no
+  longer flash during page load.
+- **BREAKING:** ExtendedCSS is now applied from the prebuilt
+  `dist/extcss-inject.js` asset (the new `./extcss-inject` entry point): the
+  background injects this file into a frame before it passes the matching
+  rule strings. Copy the file into the extension and point the new required
+  `settings.extCssScriptUrl` option to it, otherwise ExtendedCSS rules do not
+  apply. The asset must come from the same package version: a stale asset is
+  logged as an error instead of running an older engine.
+  Because the option is required, a configuration persisted by a previous
+  version no longer parses, so merge the stored settings with the new
+  defaults on upgrade.
 - MV2 `:contains()` now uses the `init()` snapshot of the native
   `textContent` getter, matching MV3.
+- A cosmetic injection whose frame context is gone is no longer retried, so a
+  closed tab or a replaced document does not repeat it up to a hundred times.
 
 ### Deprecated
 

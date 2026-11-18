@@ -7,7 +7,8 @@ import {
     vi,
 } from 'vitest';
 
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
+import { EXTCSS_PROTOCOL, type ExtCssApplyResult } from '../../../../src/lib/common/extcss-protocol';
+import { logger } from '../../../../src/lib/common/utils/logger';
 import { tabsApi } from '../../../../src/lib/mv2/background/api';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { type ConfigurationMV2Context } from '../../../../src/lib/mv2/background/configuration';
@@ -53,6 +54,7 @@ describe('CosmeticApi.getContentScriptData', () => {
         appContext.configuration = {
             settings: {
                 collectStats: false,
+                extCssScriptUrl: 'extcss-inject.js',
             },
         } as unknown as ConfigurationMV2Context;
 
@@ -89,19 +91,109 @@ describe('CosmeticApi.getContentScriptData', () => {
         });
     });
 
-    it('injects the on-demand rules when the frame has no context', () => {
+    it('injects the on-demand rules when the frame has no context', async () => {
         const rules = ['.ad:has(.child) { display: none !important; }'];
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
         vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
-        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue();
+        const fileSpy = vi.spyOn(TabsApi, 'injectScriptFile').mockResolvedValue();
+        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
 
         CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+
+        // The engine asset is injected first, so the code string follows in a
+        // microtask.
+        await vi.waitFor(() => {
+            expect(injectSpy).toHaveBeenCalledWith(
+                tabId,
+                frameId,
+                serializeExtCssForCode(rules, false, EXTCSS_PROTOCOL),
+            );
+        });
+
+        // The payload applies the rules through the engine that only this
+        // asset installs.
+        expect(fileSpy).toHaveBeenCalledTimes(1);
+        expect(fileSpy).toHaveBeenCalledWith(tabId, frameId, 'extcss-inject.js');
+        expect(fileSpy.mock.invocationCallOrder[0])
+            .toBeLessThan(injectSpy.mock.invocationCallOrder[0]);
+    });
+
+    it('does not send the context-less rules when the frame gets a context meanwhile', async () => {
+        vi.useFakeTimers();
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
+        vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
+        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
+
+        // The frame commits a document of its own while the asset call is in
+        // flight: its commit handler creates the context and applies the rules
+        // of that document.
+        vi.spyOn(TabsApi, 'injectScriptFile').mockImplementation(async () => {
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue({
+                cosmeticResult: {},
+            } as ReturnType<typeof tabsApi.getFrameContext>);
+        });
+
+        CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+
+        await vi.advanceTimersByTimeAsync(0);
+
+        // The rule set belongs to the previous document, so it is not sent.
+        expect(TabsApi.injectScriptFile).toHaveBeenCalledTimes(1);
+        expect(injectSpy).not.toHaveBeenCalled();
+    });
+
+    it('sends the context-less rules when the frame only awaits its commit', async () => {
+        vi.useFakeTimers();
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
+        vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
+        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
+
+        // The navigation started but never committed, so the frame still shows
+        // the previous document and its rules must still be applied.
+        vi.spyOn(TabsApi, 'injectScriptFile').mockImplementation(async () => {
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue({
+                cosmeticResult: {},
+                extCssAwaitingCommit: true,
+            } as ReturnType<typeof tabsApi.getFrameContext>);
+        });
+
+        CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+
+        await vi.advanceTimersByTimeAsync(0);
 
         expect(injectSpy).toHaveBeenCalledWith(
             tabId,
             frameId,
             serializeExtCssForCode(rules, false, EXTCSS_PROTOCOL),
         );
+    });
+
+    it('logs a guard failure of the context-less injection as an error', async () => {
+        vi.useFakeTimers();
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
+        vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
+        vi.spyOn(TabsApi, 'injectScriptFile').mockResolvedValue();
+        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue({
+            error: 'engine-not-loaded' as ExtCssApplyResult['error'],
+            message: 'ExtendedCss engine is not loaded',
+        });
+        const errorSpy = vi.spyOn(logger, 'error');
+
+        CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(errorSpy).toHaveBeenCalledWith(
+            expect.stringContaining('engine-not-loaded'),
+        );
+
+        // A guard failure is terminal, so no retry is armed.
+        await vi.advanceTimersByTimeAsync(10);
+
+        expect(injectSpy).toHaveBeenCalledTimes(1);
     });
 
     it('retries the context-less injection after a failure', async () => {
@@ -111,9 +203,12 @@ describe('CosmeticApi.getContentScriptData', () => {
         vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
         const injectSpy = vi.spyOn(TabsApi, 'injectScript')
             .mockRejectedValueOnce(new Error('Missing host permission'))
-            .mockResolvedValueOnce();
+            .mockResolvedValueOnce(undefined);
 
         CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+
+        // Let the engine asset call and the first code-string call settle.
+        await vi.advanceTimersByTimeAsync(0);
 
         expect(injectSpy).toHaveBeenCalledTimes(1);
 
@@ -144,7 +239,7 @@ describe('CosmeticApi.getContentScriptData', () => {
         appContext.isAppStarted = false;
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(undefined);
         vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
-        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue();
+        const injectSpy = vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
 
         CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
 

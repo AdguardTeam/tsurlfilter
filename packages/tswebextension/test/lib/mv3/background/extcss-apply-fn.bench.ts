@@ -4,6 +4,10 @@
 
 import { test } from 'vitest';
 
+// Installs the engine the way the background does: the prebuilt script asset
+// goes into the document before the rule strings.
+import '../../../../src/lib/common/extcss-engine';
+
 import { extCssInjectedApply } from '../../../../src/lib/common/extcss-apply-fn';
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
 import { resetExtCssState } from '../../common/helpers';

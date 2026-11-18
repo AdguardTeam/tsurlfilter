@@ -25,6 +25,7 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     declarativeLogEnabled: true,
     settings: {
         assistantUrl: 'assistant-inject.js',
+        extCssScriptUrl: 'extcss-inject.js',
         gpcScriptUrl: 'gpc.js',
         hideDocumentReferrerScriptUrl: 'hide-document-referrer.js',
         collectStats: true,

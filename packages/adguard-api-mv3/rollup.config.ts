@@ -80,4 +80,27 @@ const assistantInjectScriptConfig = {
     plugins,
 };
 
-export default [backgroundConfig, contentScriptConfig, assistantInjectScriptConfig];
+/**
+ * The prebuilt ExtendedCss engine entry.
+ *
+ * The entry re-exports the asset of `@adguard/tswebextension`, which stays
+ * external, so the emitted file is an ESM wrapper with a bare import. It is
+ * an input for the consumer's bundler, not a script the background can copy
+ * and inject. The bundled output is what the extension ships and passes as
+ * `settings.extCssScriptUrl`.
+ */
+const extCssInjectScriptConfig = {
+    cache,
+    input: 'src/content-script/extcss.ts',
+    output: [
+        {
+            file: `${OUTPUT_PATH}/adguard-extcss.js`,
+            format: 'esm',
+            sourcemap: true,
+        },
+    ],
+    external: ['@adguard/tswebextension/extcss-inject'],
+    plugins,
+};
+
+export default [backgroundConfig, contentScriptConfig, assistantInjectScriptConfig, extCssInjectScriptConfig];

@@ -9,9 +9,97 @@
  * background modules that need it.
  */
 
+import packageJson from '../../../package.json';
+
 import { CSS_HITS_MARKER_PREFIX } from './constants';
 import { EXTCSS_REMOVED_ELEMENTS_KEY } from './content-script/extcss-removed-elements';
+import { type cssHitsHelpers as cssHitsHelpersImpl } from './content-script/utils/css-hits-helpers';
+import type applyExtendedCssImpl from './extcss-inject-src';
 import { MESSAGE_HANDLER_NAME, MessageType } from './message-constants';
+
+/**
+ * `window` key under which the prebuilt ExtendedCss script asset installs the
+ * engine, so the injected apply function can reach it without carrying the
+ * engine source itself. Typed as a literal so a typo in
+ * {@link EXTCSS_PROTOCOL} or in the asset entry fails the type check.
+ */
+export const EXTCSS_ENGINE_KEY = '__adguardExtCssEngine' as const;
+
+/**
+ * Version of this package, stamped into the prebuilt script asset and into the
+ * protocol. The injected function refuses an engine built by another version,
+ * so a stale asset copied by a consumer fails loudly instead of running an
+ * older engine next to the current background code.
+ *
+ * NOTE: read straight from `package.json`, as
+ * {@link TSWEBEXTENSION_VERSION} does, so the asset and the background always
+ * agree without an extra runtime import.
+ */
+export const EXTCSS_ENGINE_VERSION: string = packageJson.version;
+
+/**
+ * Engine guard failures reported by the injected apply function.
+ */
+export enum ExtCssApplyError {
+    /**
+     * The engine asset did not install its global object.
+     */
+    EngineNotLoaded = 'engine-not-loaded',
+
+    /**
+     * The installed engine asset has another package version.
+     */
+    EngineVersionMismatch = 'engine-version-mismatch',
+}
+
+/**
+ * Failure returned by the injected apply function. A successful apply returns
+ * `undefined`; other apply errors keep their existing exception behavior.
+ */
+export type ExtCssApplyResult = {
+    /**
+     * Engine guard failure code.
+     */
+    error: ExtCssApplyError;
+
+    /**
+     * Error message for the background to throw and log.
+     */
+    message: string;
+};
+
+/**
+ * Engine payload installed by the prebuilt `extcss-inject.js` script asset and
+ * read by the injected apply function from the document's ISOLATED world.
+ */
+export type ExtCssEngine = {
+    /**
+     * Package version the asset was built from.
+     */
+    version: string;
+
+    /**
+     * Applies rule strings to the current document and returns the retained
+     * instance.
+     */
+    applyExtendedCss: typeof applyExtendedCssImpl;
+
+    /**
+     * CSS-hits helpers used by the `beforeStyleApplied` callback.
+     */
+    cssHitsHelpers: typeof cssHitsHelpersImpl;
+};
+
+declare global {
+    interface Window {
+        /**
+         * ExtendedCss engine installed by the prebuilt `extcss-inject.js`
+         * script asset. Absent until the background injects that asset into the
+         * document.
+         */
+        [EXTCSS_ENGINE_KEY]?: ExtCssEngine;
+    }
+}
 
 /**
  * Literal values crossing the ExtendedCSS injection boundaries into the
@@ -56,6 +144,37 @@ export type ExtCssProtocol = {
      * does not put them back into the page as probes.
      */
     removedElementsKey: typeof EXTCSS_REMOVED_ELEMENTS_KEY;
+
+    /**
+     * `window` key under which the prebuilt ExtendedCss script asset installs
+     * the engine, so the injected function can apply rules without carrying
+     * the engine source.
+     */
+    engineKey: typeof EXTCSS_ENGINE_KEY;
+
+    /**
+     * Package version the protocol belongs to. The injected function refuses an
+     * engine asset built by another version, so a stale copy is reported
+     * instead of running an older engine.
+     */
+    engineVersion: string;
+
+    /**
+     * Failure codes returned by the injected function. They arrive through the
+     * serialized protocol so the self-contained function does not duplicate
+     * protocol literals.
+     */
+    applyErrors: {
+        /**
+         * Missing engine failure code.
+         */
+        engineNotLoaded: ExtCssApplyError.EngineNotLoaded;
+
+        /**
+         * Engine version mismatch failure code.
+         */
+        engineVersionMismatch: ExtCssApplyError.EngineVersionMismatch;
+    };
 };
 
 /**
@@ -75,4 +194,10 @@ export const EXTCSS_PROTOCOL: ExtCssProtocol = {
     messageType: MessageType.SaveCssHitsStats,
     instanceKey: EXTCSS_INSTANCE_KEY,
     removedElementsKey: EXTCSS_REMOVED_ELEMENTS_KEY,
+    engineKey: EXTCSS_ENGINE_KEY,
+    engineVersion: EXTCSS_ENGINE_VERSION,
+    applyErrors: {
+        engineNotLoaded: ExtCssApplyError.EngineNotLoaded,
+        engineVersionMismatch: ExtCssApplyError.EngineVersionMismatch,
+    },
 };

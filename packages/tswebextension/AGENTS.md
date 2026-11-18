@@ -11,21 +11,24 @@ content scripts and a CLI for build-time tasks.
 
 ## Technical Context
 
-- **Language/Version**: TypeScript (ESM-only output), Node.js ≥ 22
+- **Language/Version**: TypeScript (ESM output plus one minified IIFE script
+  asset), Node.js ≥ 22
 - **Primary Dependencies**: `@adguard/tsurlfilter` (blocking engine),
   `@adguard/dnr-converter` (DNR rule conversion), `@adguard/agtree` (rule
   parsing), `@adguard/logger` (logging), `@adguard/scriptlets`,
   `@adguard/assistant`, `@adguard/extended-css`, `webextension-polyfill`,
   `zod` (schema validation), `lodash-es`, `lru-cache`, `idb` (IndexedDB
   wrapper), `superjson`, `bowser`, `tldts`
-- **Build Toolchain**: Rollup (with `@rollup/plugin-swc`), `rollup-plugin-dts`
+- **Build Toolchain**: Rollup (with `@rollup/plugin-swc`, and
+  `@rollup/plugin-terser` for the IIFE asset), `rollup-plugin-dts`
   (type bundling), `tsc` + custom `transform-dts.ts`
 - **Testing**: Vitest (multi-project config: `mv2`, `mv3`, `common`,
   `browser`, `canvas-native`), with `@vitest/coverage-v8`, `fake-indexeddb`,
   `sinon-chrome` and `@vitest/browser-playwright`
 - **Linting**: ESLint (airbnb-typescript base), `eslint-plugin-jsdoc`,
   `@vitest/eslint-plugin`
-- **Output Format**: ESM bundles + content scripts, type declarations
+- **Output Format**: ESM bundles + content scripts + one minified IIFE asset
+  (`dist/extcss-inject.js`, listed in `sideEffects`), type declarations
   (`dist/types/`)
 - **Target Platform**: Browser extensions (MV2 and MV3)
 - **Project Type**: Package inside the `tsurlfilter` pnpm monorepo

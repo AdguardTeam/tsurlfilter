@@ -11,6 +11,7 @@ import {
     BACKGROUND_PATH,
     BUILD_PATH,
     CONTENT_SCRIPT,
+    EXT_CSS_INJECT,
     POPUP_PATH,
 } from '../constants';
 
@@ -26,6 +27,7 @@ export const config: Configuration = {
         background: BACKGROUND_PATH,
         'content-script': CONTENT_SCRIPT,
         'adguard-assistant': ASSISTANT_INJECT,
+        'adguard-extcss': EXT_CSS_INJECT,
         popup: POPUP_PATH,
     },
     output: {

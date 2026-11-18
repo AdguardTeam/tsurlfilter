@@ -4,8 +4,13 @@ import {
     describe,
     expect,
     it,
+    type Mock,
     vi,
 } from 'vitest';
+
+// Installs the engine the way the background does: the prebuilt script asset
+// goes into the document before the rule strings.
+import '../../../../src/lib/common/extcss-engine';
 
 import { extCssInjectedApply, extCssInjectedDispose } from '../../../../src/lib/common/extcss-apply-fn';
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
@@ -18,6 +23,16 @@ import { tabsApi } from '../../../../src/lib/mv3/tabs/tabs-api';
 vi.mock('../../../../src/lib/mv3/tabs/tabs-api', () => ({
     tabsApi: {
         getFrameContext: vi.fn(),
+    },
+}));
+
+vi.mock('../../../../src/lib/mv3/background/app-context', () => ({
+    appContext: {
+        configuration: {
+            settings: {
+                extCssScriptUrl: 'extcss-inject.js',
+            },
+        },
     },
 }));
 
@@ -72,7 +87,26 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
             frameId: 0,
             cssRules: rules,
             collectStats: false,
+            scriptUrl: 'extcss-inject.js',
         });
+    });
+
+    it('does not inject the rules when the engine script url is not configured', async () => {
+        const rules = ['div:has(.ad) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
+        const { appContext } = await import('../../../../src/lib/mv3/background/app-context');
+        const { configuration } = appContext;
+        appContext.configuration = undefined;
+        const errorSpy = vi.spyOn(logger, 'error');
+
+        try {
+            await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+            expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
+            expect(errorSpy).toHaveBeenCalledTimes(1);
+        } finally {
+            appContext.configuration = configuration;
+        }
     });
 
     it('forwards areHitsStatsCollected from the prepared result to executeExtCss', async () => {
@@ -88,6 +122,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
             frameId: 0,
             cssRules: rules,
             collectStats: true,
+            scriptUrl: 'extcss-inject.js',
         });
     });
 
@@ -115,6 +150,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
             documentId: 'document-1',
             cssRules: rules,
             collectStats: false,
+            scriptUrl: 'extcss-inject.js',
         });
     });
 
@@ -188,6 +224,155 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
             injectionError,
         );
     });
+
+    it('logs an engine guard failure returned by a resolved Chromium injection at error level', async () => {
+        const rules = ['div:has(.ad) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
+        vi.mocked(ScriptingApi.executeExtCss).mockRestore();
+        const executeScript = vi.mocked(chrome.scripting.executeScript) as unknown as Mock;
+        const message = 'ExtendedCss engine is not loaded';
+        executeScript
+            .mockReset()
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([{
+                result: {
+                    error: 'engine-not-loaded',
+                    message,
+                },
+            }]);
+        const errorSpy = vi.spyOn(logger, 'error');
+        const infoSpy = vi.spyOn(logger, 'info');
+
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        // A guard failure is deterministic, so it reaches the default log
+        // level instead of the debug-only injection-failure path.
+        await vi.waitFor(() => {
+            expect(errorSpy).toHaveBeenCalledTimes(1);
+        });
+        expect(errorSpy).toHaveBeenCalledWith(
+            expect.stringContaining(`${message} (guard engine-not-loaded, tabId 1, frameId 0)`),
+        );
+        expect(infoSpy).not.toHaveBeenCalled();
+    });
+
+    it('reports Failed and injects nothing for an empty engine script url', async () => {
+        const rules = ['div:has(.ad) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        const { appContext } = await import('../../../../src/lib/mv3/background/app-context');
+        const { configuration } = appContext;
+        if (!configuration) {
+            throw new Error('The test configuration must be set');
+        }
+        const { extCssScriptUrl } = configuration.settings;
+        configuration.settings.extCssScriptUrl = '';
+        const errorSpy = vi.spyOn(logger, 'error');
+
+        try {
+            await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+            // An empty url is as unusable as a missing one: the asset cannot be
+            // injected, so the marked rules are recorded as failed rather than
+            // applied.
+            await vi.waitFor(() => {
+                expect(errorSpy).toHaveBeenCalledTimes(1);
+            });
+            expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
+        } finally {
+            configuration.settings.extCssScriptUrl = extCssScriptUrl;
+        }
+    });
+
+    it('registers the pending injection before the asset and settles it after the apply', async () => {
+        const rules = ['div:has(.ad) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules), { documentId: 'document-1' });
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        vi.mocked(ScriptingApi.executeExtCss).mockRestore();
+
+        const { applyExtCssRules, extCssInjectionInFlight } = CosmeticApi as unknown as {
+            applyExtCssRules: (context: FrameMV3) => Promise<void>;
+            extCssInjectionInFlight: WeakMap<object, { promise: Promise<void> }>;
+        };
+
+        const executeScript = vi.mocked(chrome.scripting.executeScript) as unknown as Mock;
+        let resolveAsset: () => void = () => {};
+        executeScript
+            .mockReset()
+            .mockImplementationOnce(() => new Promise<void>((resolve) => {
+                resolveAsset = resolve;
+            }))
+            .mockResolvedValueOnce([]);
+
+        const injection = applyExtCssRules(frameContext);
+
+        // The operation is registered synchronously, before the asset call
+        // reaches the browser, so a marked re-apply can wait for it.
+        expect(extCssInjectionInFlight.get(frameContext)).toBeDefined();
+
+        await vi.waitFor(() => {
+            expect(executeScript).toHaveBeenCalledTimes(1);
+        });
+        expect(executeScript.mock.calls[0][0]).toEqual(expect.objectContaining({
+            files: ['extcss-inject.js'],
+        }));
+        // Still registered while only the asset call has run.
+        expect(extCssInjectionInFlight.get(frameContext)).toBeDefined();
+
+        resolveAsset();
+        await injection;
+
+        // The apply call ran second, and the operation is settled only after
+        // it returned.
+        expect(executeScript).toHaveBeenCalledTimes(2);
+        expect(executeScript.mock.calls[1][0]).toEqual(expect.objectContaining({
+            func: expect.any(Function),
+        }));
+        expect(extCssInjectionInFlight.get(frameContext)).toBeUndefined();
+    });
+
+    it('does not record Applied for a document that changed while the asset was injected', async () => {
+        const rules = ['div:has(.ad) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules), { documentId: 'document-1' });
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        vi.mocked(ScriptingApi.executeExtCss).mockRestore();
+
+        const { applyExtCssRules, extCssMarkersApplied } = CosmeticApi as unknown as {
+            applyExtCssRules: (context: FrameMV3) => Promise<void>;
+            extCssMarkersApplied: WeakMap<object, { applied: boolean }>;
+        };
+
+        const executeScript = vi.mocked(chrome.scripting.executeScript) as unknown as Mock;
+        let resolveAsset: () => void = () => {};
+        executeScript
+            .mockReset()
+            .mockImplementationOnce(() => new Promise<void>((resolve) => {
+                resolveAsset = resolve;
+            }))
+            // The apply call still targets document-1, which is gone after the
+            // navigation, so Chromium rejects it.
+            .mockRejectedValueOnce(new Error('No document with id document-1'));
+
+        const injection = applyExtCssRules(frameContext);
+
+        await vi.waitFor(() => {
+            expect(executeScript).toHaveBeenCalledTimes(1);
+        });
+
+        // A same-URL commit keeps the frame context and replaces the document
+        // while the asset call is in flight.
+        frameContext.documentId = 'document-2';
+        resolveAsset();
+        await injection;
+
+        // The rules belong to document-1, so no record describes document-2,
+        // and the page cannot report the marked rules as applied.
+        expect(extCssMarkersApplied.get(frameContext)).toBeUndefined();
+        expect(executeScript).toHaveBeenCalledTimes(2);
+        expect(executeScript.mock.calls[1][0]).toEqual(expect.objectContaining({
+            target: { tabId: 1, documentIds: ['document-1'] },
+        }));
+    });
 });
 
 describe('CosmeticApi.applyCosmeticRules — end-to-end in jsdom', () => {
@@ -206,8 +391,8 @@ describe('CosmeticApi.applyCosmeticRules — end-to-end in jsdom', () => {
     it('the injected func hides a matching :has() element when executed', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        // Drive the real inlined `extCssInjectedApply` through the injection
-        // call shape that `executeExtCss` would hand to
+        // Drive the real `extCssInjectedApply` through the injection call
+        // shape that `executeExtCss` would hand to
         // `chrome.scripting.executeScript`.
         vi.spyOn(ScriptingApi, 'executeExtCss').mockImplementation(async (params) => {
             extCssInjectedApply(params.cssRules, params.collectStats, EXTCSS_PROTOCOL);

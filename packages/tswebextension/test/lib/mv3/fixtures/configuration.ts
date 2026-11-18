@@ -19,6 +19,7 @@ export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
         allowlistEnabled: false,
         documentBlockingPageUrl: 'https://example.org',
         assistantUrl: '/assistant-inject.js',
+        extCssScriptUrl: '/extcss-inject.js',
         gpcScriptUrl: '/gpc.js',
         hideDocumentReferrerScriptUrl: '/hide-document-referrer.js',
         stealth: {

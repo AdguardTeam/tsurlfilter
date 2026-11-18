@@ -126,11 +126,37 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
      * @param frameId Frame ID.
      * @param code Script text to be injected.
      *
+     * @returns Result of the injected code's last expression.
+     *
      * @throws Error if the script injection fails.
      */
-    public static async injectScript(tabId: number, frameId: number, code: string): Promise<void> {
+    public static async injectScript<T = void>(tabId: number, frameId: number, code: string): Promise<T> {
         const injectDetails: ExtensionTypes.InjectDetails = {
             code,
+            frameId,
+            runAt: 'document_start',
+            matchAboutBlank: true,
+        };
+
+        const results = await browser.tabs.executeScript(tabId, injectDetails);
+
+        return results?.[0] as T;
+    }
+
+    /**
+     * Injects a script file to the frame by tab id and frame id.
+     *
+     * @param tabId Tab ID.
+     * @param frameId Frame ID.
+     * @param file Path to the script file from the extension root, starting
+     * with a slash. Firefox resolves a relative path against the calling
+     * page, not the extension root.
+     *
+     * @throws Error if the script injection fails.
+     */
+    public static async injectScriptFile(tabId: number, frameId: number, file: string): Promise<void> {
+        const injectDetails: ExtensionTypes.InjectDetails = {
+            file,
             frameId,
             runAt: 'document_start',
             matchAboutBlank: true,

@@ -7,9 +7,10 @@ import {
     vi,
 } from 'vitest';
 
-import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
+import { EXTCSS_PROTOCOL, type ExtCssApplyResult } from '../../../../src/lib/common/extcss-protocol';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { tabsApi } from '../../../../src/lib/mv2/background/api';
+import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { serializeExtCssDisposeForCode, serializeExtCssForCode } from '../../../../src/lib/mv2/background/extcss-code';
 import { FrameMV2, type PreparedCosmeticResultMV2 } from '../../../../src/lib/mv2/background/tabs/frame';
@@ -23,7 +24,13 @@ vi.mock('../../../../src/lib/mv2/background/api', () => ({
 }));
 
 vi.mock('../../../../src/lib/mv2/background/app-context', () => ({
-    appContext: {},
+    appContext: {
+        configuration: {
+            settings: {
+                extCssScriptUrl: 'extcss-inject.js',
+            },
+        },
+    },
 }));
 
 vi.mock('../../../../src/lib/mv2/background/services/local-script-rules-service', () => ({
@@ -91,7 +98,8 @@ describe('CosmeticApi.applyExtCss', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         vi.mocked(tabsApi.getFrameContext).mockReset();
-        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue();
+        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue(undefined);
+        vi.spyOn(TabsApi, 'injectScriptFile').mockResolvedValue();
     });
 
     afterEach(() => {
@@ -111,6 +119,46 @@ describe('CosmeticApi.applyExtCss', () => {
             0,
             serializeExtCssForCode(rules, false, EXTCSS_PROTOCOL),
         );
+    });
+
+    it('injects the prebuilt engine script before the serialized apply code', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScriptFile).toHaveBeenCalledTimes(1);
+        expect(TabsApi.injectScriptFile).toHaveBeenCalledWith(1, 0, 'extcss-inject.js');
+        // The engine has to be installed before the rules are applied.
+        expect(vi.mocked(TabsApi.injectScriptFile).mock.invocationCallOrder[0])
+            .toBeLessThan(vi.mocked(TabsApi.injectScript).mock.invocationCallOrder[0]);
+    });
+
+    it('does not inject the engine script when disposing', async () => {
+        vi.mocked(tabsApi.getFrameContext)
+            .mockReturnValue(makeFrameContext(makePrepared(null)));
+
+        await CosmeticApi.applyExtCss(1, 0);
+
+        expect(TabsApi.injectScriptFile).not.toHaveBeenCalled();
+    });
+
+    it('does not inject the rules when the engine script url is not configured', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeFrameContext(makePrepared(rules)));
+        const { configuration } = appContext;
+        appContext.configuration = undefined;
+        const errorSpy = vi.spyOn(logger, 'error');
+
+        try {
+            await CosmeticApi.applyExtCss(1, 0);
+
+            expect(TabsApi.injectScriptFile).not.toHaveBeenCalled();
+            expect(TabsApi.injectScript).not.toHaveBeenCalled();
+            expect(errorSpy).toHaveBeenCalledTimes(1);
+        } finally {
+            appContext.configuration = configuration;
+        }
     });
 
     it('forwards areHitsStatsCollected to the serializer', async () => {
@@ -317,9 +365,11 @@ describe('CosmeticApi.applyExtCss', () => {
         });
         await flushOperations();
 
+        expect(TabsApi.injectScriptFile).toHaveBeenCalledTimes(1);
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
 
-        // The frame context is replaced while the first payload is in flight.
+        // The frame context is replaced while the first payload's code
+        // injection is in flight.
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(replacement);
         resolveFirst();
 
@@ -328,10 +378,39 @@ describe('CosmeticApi.applyExtCss', () => {
 
         // The queued payload belongs to the dismissed context, so it never
         // reaches the browser and no state is written.
+        expect(TabsApi.injectScriptFile).toHaveBeenCalledTimes(1);
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
         expect(isSecondApplied).toBe(false);
         expect(original.extCssAppliedData).toBeUndefined();
         expect(replacement.extCssAppliedData).toBeUndefined();
+    });
+
+    it('does not inject the code when the document changed while the asset was injected', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        let resolveAsset!: () => void;
+        vi.mocked(TabsApi.injectScriptFile).mockImplementation(() => new Promise<void>((resolve) => {
+            resolveAsset = resolve;
+        }));
+
+        const injection = CosmeticApi.applyExtCss(1, 0);
+
+        await vi.waitFor(() => {
+            expect(TabsApi.injectScriptFile).toHaveBeenCalledTimes(1);
+        });
+
+        // A same-URL commit keeps the context and bumps the document version.
+        frameContext.extCssDocumentVersion += 1;
+
+        resolveAsset();
+        await injection;
+
+        // The too-late code string would have replaced the new document's
+        // rules, so it is not injected at all.
+        expect(TabsApi.injectScript).not.toHaveBeenCalled();
+        expect(frameContext.extCssAppliedData).toBeUndefined();
     });
 
     it('does not mark a document that was committed during the injection', async () => {
@@ -346,7 +425,11 @@ describe('CosmeticApi.applyExtCss', () => {
 
         const injection = CosmeticApi.applyExtCss(1, 0);
 
-        await flushOperations();
+        // The engine asset is injected before the code string, so the code
+        // call happens in a microtask and the injection is still in flight.
+        await vi.waitFor(() => {
+            expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        });
 
         // A same-URL commit keeps the context and bumps the document version.
         frameContext.extCssDocumentVersion += 1;
@@ -423,7 +506,7 @@ describe('CosmeticApi.applyExtCss', () => {
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
         vi.mocked(TabsApi.injectScript)
             .mockRejectedValueOnce(new Error('Missing host permission'))
-            .mockResolvedValueOnce();
+            .mockResolvedValueOnce(undefined);
 
         const injection = CosmeticApi.applyExtCss(1, 0);
 
@@ -439,6 +522,109 @@ describe('CosmeticApi.applyExtCss', () => {
         expect(frameContext.extCssAppliedData).toEqual(rules);
     });
 
+    it('does not retry when the frame context is gone', async () => {
+        vi.useFakeTimers();
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        let currentContext: FrameMV2 | undefined = frameContext;
+        vi.mocked(tabsApi.getFrameContext).mockImplementation(() => currentContext);
+        vi.mocked(TabsApi.injectScript).mockImplementation(async () => {
+            // The document the payload belongs to is gone when the call fails.
+            currentContext = undefined;
+            throw new Error('The frame was removed');
+        });
+
+        const isApplied = await CosmeticApi.applyExtCss(1, 0);
+
+        expect(isApplied).toBe(false);
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        // Nothing can apply these rules any more, so the marker is released.
+        expect(frameContext.extCssInjectionMarker).toBeUndefined();
+
+        await vi.advanceTimersByTimeAsync(10);
+
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not retry a resolved engine guard failure and logs it as an error', async () => {
+        vi.useFakeTimers();
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        vi.mocked(TabsApi.injectScript).mockResolvedValueOnce({
+            error: 'engine-not-loaded' as ExtCssApplyResult['error'],
+            message: 'ExtendedCss engine is not loaded',
+        });
+        const errorSpy = vi.spyOn(logger, 'error');
+
+        const isApplied = await CosmeticApi.applyExtCss(1, 0);
+
+        // The guard failure is terminal: neither applied nor retried.
+        expect(isApplied).toBe(false);
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        expect(frameContext.extCssAppliedData).toBeUndefined();
+        // No retry is pending, so a later event may try again.
+        expect(frameContext.extCssInjectionMarker).toBeUndefined();
+        expect(errorSpy).toHaveBeenCalledWith(
+            expect.stringContaining('engine-not-loaded'),
+        );
+
+        // Another attempt cannot install the missing asset.
+        await vi.advanceTimersByTimeAsync(10);
+
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports a failed apply when the engine script url is empty', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        const { configuration } = appContext;
+        if (!configuration) {
+            throw new Error('The test configuration must be set');
+        }
+        const { extCssScriptUrl } = configuration.settings;
+        configuration.settings.extCssScriptUrl = '';
+        const errorSpy = vi.spyOn(logger, 'error');
+
+        try {
+            const isApplied = await CosmeticApi.applyExtCss(1, 0);
+
+            // Without the asset the rules cannot be applied, so the operation
+            // reports a failure instead of running the payload.
+            expect(isApplied).toBe(false);
+            expect(TabsApi.injectScriptFile).not.toHaveBeenCalled();
+            expect(TabsApi.injectScript).not.toHaveBeenCalled();
+            expect(errorSpy).toHaveBeenCalledTimes(1);
+        } finally {
+            configuration.settings.extCssScriptUrl = extCssScriptUrl;
+        }
+    });
+
+    it('reports a failed apply when the code injection throws after the asset was injected', async () => {
+        vi.useFakeTimers();
+
+        try {
+            const rules = ['.ad:has(.child) { display: none !important; }'];
+            const frameContext = makeFrameContext(makePrepared(rules));
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+            vi.mocked(TabsApi.injectScript).mockRejectedValue(
+                new Error('Cannot access contents of the page'),
+            );
+
+            const injection = CosmeticApi.applyExtCss(1, 0);
+            await vi.runAllTimersAsync();
+            const isApplied = await injection;
+
+            // The asset was injected, but the apply never reached the page.
+            expect(isApplied).toBe(false);
+            expect(TabsApi.injectScriptFile).toHaveBeenCalled();
+            expect(frameContext.extCssAppliedData).toBeUndefined();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('keeps the in-flight marker while a retry is pending', async () => {
         vi.useFakeTimers();
 
@@ -449,7 +635,7 @@ describe('CosmeticApi.applyExtCss', () => {
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
             vi.mocked(TabsApi.injectScript)
                 .mockRejectedValueOnce(new Error('Missing host permission'))
-                .mockResolvedValue();
+                .mockResolvedValue(undefined);
 
             const injection = CosmeticApi.applyExtCss(1, 0);
 
@@ -493,7 +679,11 @@ describe('CosmeticApi.applyExtCss', () => {
 
         const first = CosmeticApi.applyExtCss(1, 0);
 
-        await flushOperations();
+        // Wait until the code-string injection of the first call is in flight:
+        // it runs after the engine asset call, in a microtask.
+        await vi.waitFor(() => {
+            expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        });
 
         // A same-URL commit keeps the context and bumps the document version,
         // so the commit handler starts its own injection for the new document.
@@ -501,9 +691,9 @@ describe('CosmeticApi.applyExtCss', () => {
 
         const second = CosmeticApi.applyExtCss(1, 0);
 
-        await flushOperations();
-
-        expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
+        await vi.waitFor(() => {
+            expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
+        });
 
         resolveFirst();
         await first;
@@ -665,23 +855,30 @@ describe('CosmeticApi.applyExtCss', () => {
         }));
 
         const unmarked = CosmeticApi.applyExtCss(1, 0);
+
+        // The engine asset is injected before the code string, so the code
+        // injection of the unmarked payload starts in a microtask.
+        await vi.waitFor(() => {
+            expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        });
+
         const marked = CosmeticApi.applyExtCss(1, 0, {
             extCssData: { extCssRules: markedRules, areHitsStatsCollected: true },
             force: true,
         });
 
-        await flushOperations();
-
         // The injected payload disposes the current instance before it
         // applies, so the marked copy waits for the unmarked one to settle.
+        await flushOperations();
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
         expect(frameContext.extCssAppliedData).toBeUndefined();
 
         resolvers[0]();
         await unmarked;
-        await flushOperations();
 
-        expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
+        await vi.waitFor(() => {
+            expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
+        });
 
         resolvers[1]();
         await marked;

@@ -13,12 +13,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - ExtendedCSS rules in MV2 are now applied by the `@adguard/tswebextension`
   background; the content script no longer bundles the ExtendedCSS engine.
+- ExtendedCSS rules are now applied from the `@adguard/api/extcss` entry
+  point, which the background injects before the rules. The entry imports
+  `@adguard/tswebextension/extcss-inject`, so it is an entry point for your
+  bundler, not a file to copy: build it with your extension and ship the
+  result as `adguard-extcss.js` at the extension root, which the library
+  passes as `/adguard-extcss.js`. Without that file ExtendedCSS rules do not
+  apply.
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- MV2: the assistant is now injected from the extension root, so it opens in
+  Firefox, which resolves a relative path against the background page.
 
 ### Security
 
