@@ -341,6 +341,18 @@ export class MessagesApi {
             return false;
         }
 
+        // The ExtendedCss payload reports hits straight from the page, so a
+        // paused content-script counter cannot stop it: a live disable or an
+        // allowlisted document is filtered out here. An unknown configuration
+        // keeps the hits, so the hits of a startup are not lost.
+        const collectStats = appContext.configuration?.settings.collectStats;
+
+        if (collectStats !== undefined
+            && !isCollectStatsEnabledForDocument(collectStats, tabContext.mainFrameRule)
+        ) {
+            return false;
+        }
+
         const frameId = sender.frameId ?? MAIN_FRAME_ID;
 
         let { url } = tabContext.info;

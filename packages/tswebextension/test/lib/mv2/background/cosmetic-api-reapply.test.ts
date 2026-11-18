@@ -531,6 +531,63 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(infoSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('awaits a transient ExtendedCss retry and does not report a failure', async () => {
+        vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
+        vi.spyOn(TabsApi, 'injectScript')
+            .mockRejectedValueOnce(new Error('transient failure'))
+            .mockResolvedValue();
+        vi.useFakeTimers();
+
+        const resultPromise = CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        // The retry belongs to the reapply operation, so it is awaited before
+        // the content script gets the response.
+        await vi.runAllTimersAsync();
+        const data = await resultPromise;
+
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.Applied);
+        expect(data.areNativeHitsStatsCollected).toBe(true);
+    });
+
+    it('does not inject marked native CSS into the next document after a navigation', async () => {
+        const injectCssSpy = vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
+
+        let resolveInjection!: () => void;
+        vi.spyOn(TabsApi, 'injectScript').mockImplementation(() => new Promise<void>((resolve) => {
+            resolveInjection = resolve;
+        }));
+
+        const frameContext = tabsApiMock.getFrameContext();
+        const resultPromise = CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        // Let the marked ExtendedCss payload reach the browser.
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+
+        // A same-URL commit keeps the context and bumps the document version
+        // while the payload is in flight.
+        frameContext.extCssDocumentVersion += 1;
+        resolveInjection();
+
+        const data = await resultPromise;
+
+        // The response belongs to the document that sent the request, so the
+        // marked native CSS must not reach the new one.
+        expect(injectCssSpy).not.toHaveBeenCalled();
+        expect(data.areNativeHitsStatsCollected).toBe(false);
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.NotRequired);
+    });
+
     it('reports a failed ExtendedCss injection to the content script', async () => {
         vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
         vi.spyOn(TabsApi, 'injectScript').mockRejectedValue(new Error('injection failed'));

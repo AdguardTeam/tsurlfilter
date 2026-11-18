@@ -16,6 +16,21 @@ export type ExtCssFrameData = {
 };
 
 /**
+ * ExtendedCSS operation queued for a frame context.
+ */
+export type ExtCssInjectionChain = {
+    /**
+     * Number of the document the queued operations belong to.
+     */
+    documentVersion: number;
+
+    /**
+     * Promise of the last queued operation, resolved when it settles.
+     */
+    promise: Promise<void>;
+};
+
+/**
  * Prepared cosmetic result for MV2.
  *
  * This type represents the processed cosmetic data extracted from the initial cosmetic result.
@@ -129,12 +144,14 @@ export class FrameMV2 extends FrameCommon {
     public extCssInjectionMarker?: number;
 
     /**
-     * Number of the last ExtendedCSS injection started for this context.
+     * Last ExtendedCSS operation queued for this context.
      *
-     * Only the latest started injection describes the document: a marked
-     * reapply starts after the unmarked injection of the initial cosmetic
-     * data, and an older injection that settles later must not record its rule
-     * set over the newer one.
+     * Every apply, dispose and marked reapply starts after the previous
+     * operation of the same document settles, in start order: the injected
+     * payload disposes the current instance before it applies, so two
+     * overlapping payloads could leave the page with the older rule set. The
+     * operations of another document are not awaited, because their payload
+     * targets a page that is no longer displayed.
      */
-    public extCssInjectionSequence = 0;
+    public extCssInjectionChain?: ExtCssInjectionChain;
 }

@@ -9,6 +9,7 @@ import {
 import { ExtCssMarkersState } from '../../../../src/lib/common/cosmetic-api';
 import { FilteringEventType } from '../../../../src/lib/common/filtering-log';
 import { MESSAGE_HANDLER_NAME, MessageType } from '../../../../src/lib/common/message-constants';
+import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { MessagesApi } from '../../../../src/lib/mv2/background/messages-api';
 
@@ -249,6 +250,10 @@ describe('MessagesApi', () => {
     describe('handleSaveCssHitsStats', () => {
         let publishEvent: ReturnType<typeof vi.fn>;
         let getTabFrame: ReturnType<typeof vi.fn>;
+        let tabContext: {
+            info: { url: string };
+            mainFrameRule?: { isFilteringDisabled: () => boolean };
+        };
         let messagesApi: MessagesApi;
 
         const createMessage = (): {
@@ -264,11 +269,13 @@ describe('MessagesApi', () => {
         beforeEach(() => {
             publishEvent = vi.fn();
             getTabFrame = vi.fn();
+            tabContext = { info: { url: TAB_URL } };
+            appContext.configuration = {
+                settings: { collectStats: true },
+            } as typeof appContext.configuration;
 
             const tabsApi = {
-                getTabContext: vi.fn().mockReturnValue({
-                    info: { url: TAB_URL },
-                }),
+                getTabContext: vi.fn((): typeof tabContext => tabContext),
                 getTabFrame,
             };
 
@@ -350,6 +357,58 @@ describe('MessagesApi', () => {
                     frameDomain: 'example.com',
                 }),
             }));
+        });
+
+        it('drops hits when collection is off', async () => {
+            appContext.configuration!.settings.collectStats = false;
+
+            const result = await messagesApi.handleMessage(
+                createMessage() as any,
+                createSender(0),
+            );
+
+            // The ExtendedCss payload reports hits straight from the page, so
+            // the content-script pause cannot stop them: they must be dropped
+            // here, or a live disable still fills the filtering log.
+            expect(result).toBe(false);
+            expect(publishEvent).not.toHaveBeenCalled();
+        });
+
+        it('drops hits for an allowlisted document', async () => {
+            tabContext.mainFrameRule = { isFilteringDisabled: (): boolean => true };
+
+            const result = await messagesApi.handleMessage(
+                createMessage() as any,
+                createSender(0),
+            );
+
+            expect(result).toBe(false);
+            expect(publishEvent).not.toHaveBeenCalled();
+        });
+
+        it('publishes hits when collection is on', async () => {
+            tabContext.mainFrameRule = { isFilteringDisabled: (): boolean => false };
+
+            const result = await messagesApi.handleMessage(
+                createMessage() as any,
+                createSender(0),
+            );
+
+            expect(result).toBe(true);
+            expect(publishEvent).toHaveBeenCalledTimes(PAYLOAD.length);
+        });
+
+        it('keeps hits when the configuration is not available yet', async () => {
+            appContext.configuration = undefined;
+
+            const result = await messagesApi.handleMessage(
+                createMessage() as any,
+                createSender(0),
+            );
+
+            // Startup hits must not be lost while the configuration loads.
+            expect(result).toBe(true);
+            expect(publishEvent).toHaveBeenCalledTimes(PAYLOAD.length);
         });
     });
 });

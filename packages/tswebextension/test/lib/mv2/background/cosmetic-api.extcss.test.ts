@@ -76,6 +76,17 @@ const makeFrameContext = (
     return frameContext;
 };
 
+/**
+ * Lets the queued ExtendedCSS operations reach the browser.
+ *
+ * An operation starts after the previous one of the document settles, so it
+ * calls the browser one microtask after the caller.
+ */
+const flushOperations = async (): Promise<void> => {
+    await Promise.resolve();
+    await Promise.resolve();
+};
+
 describe('CosmeticApi.applyExtCss', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
@@ -294,6 +305,8 @@ describe('CosmeticApi.applyExtCss', () => {
 
         const injection = CosmeticApi.applyExtCss(1, 0);
 
+        await flushOperations();
+
         // A same-URL commit keeps the context and bumps the document version.
         frameContext.extCssDocumentVersion += 1;
         frameContext.extCssAppliedData = undefined;
@@ -316,6 +329,7 @@ describe('CosmeticApi.applyExtCss', () => {
 
         const injection = CosmeticApi.applyExtCss(1, 0);
         await CosmeticApi.applyExtCss(1, 0);
+        await flushOperations();
 
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
 
@@ -426,11 +440,15 @@ describe('CosmeticApi.applyExtCss', () => {
 
         const first = CosmeticApi.applyExtCss(1, 0);
 
+        await flushOperations();
+
         // A same-URL commit keeps the context and bumps the document version,
         // so the commit handler starts its own injection for the new document.
         frameContext.extCssDocumentVersion += 1;
 
         const second = CosmeticApi.applyExtCss(1, 0);
+
+        await flushOperations();
 
         expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
 
@@ -591,7 +609,7 @@ describe('CosmeticApi.applyExtCss', () => {
         expect(stringifySpy).not.toHaveBeenCalled();
     });
 
-    it('does not record an older injection over a newer one', async () => {
+    it('starts a queued payload only after the previous one settles', async () => {
         const unmarkedRules = ['.ad:has(.child) { display: none !important; }'];
         const markedRules = [
             ".ad:has(.child) { display: none !important; content: 'adguard0%3B1' !important; }",
@@ -610,16 +628,26 @@ describe('CosmeticApi.applyExtCss', () => {
             force: true,
         });
 
-        // The marked payload was started last, so it describes the document
-        // even when the unmarked injection settles after it.
-        resolvers[1]();
-        await marked;
+        await flushOperations();
+
+        // The injected payload disposes the current instance before it
+        // applies, so the marked copy waits for the unmarked one to settle.
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(1);
+        expect(frameContext.extCssAppliedData).toBeUndefined();
+
         resolvers[0]();
         await unmarked;
+        await flushOperations();
+
+        expect(TabsApi.injectScript).toHaveBeenCalledTimes(2);
+
+        resolvers[1]();
+        await marked;
 
         expect(frameContext.extCssAppliedData).toEqual(markedRules);
         expect(frameContext.extCssHitsMarkersApplied).toBe(true);
         expect(frameContext.extCssInjectionMarker).toBeUndefined();
+        expect(frameContext.extCssInjectionChain).toBeUndefined();
     });
 
     it('does not replace a marked rule set with an unmarked payload', async () => {

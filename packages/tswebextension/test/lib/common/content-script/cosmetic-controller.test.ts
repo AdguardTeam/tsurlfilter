@@ -1031,92 +1031,73 @@ describe.each(controllers)('%s collect hit stats changes', (_name, CosmeticContr
         },
     );
 
-    it('keeps pending hits when collection is toggled during a reapply', async () => {
+    it('stops reporting after a disable and leaves ExtCSS hits to the background', async () => {
         const restoreMutationObserver = mockMutationObserver();
-        document.body.innerHTML = '';
+        document.body.innerHTML = [
+            '<div id="extcss-bait" class="ad_header">text</div>',
+            '<div id="native-hits-after-disable" class="native-hit-bait">text</div>',
+        ].join('');
 
+        // The background hid the element with marked native CSS.
         const style = document.createElement('style');
         style.textContent = [
             "@property --adguard-hit { syntax: '*'; inherits: false; initial-value: ''; }",
-            "div.ad_header { display: none !important; --adguard-hit: 'adguard0%3B37' !important; }",
+            "div.native-hit-bait { display: none !important; --adguard-hit: 'adguard0%3B38' !important; }",
         ].join('\n');
-
-        let reapplyRequests = 0;
-        let resolveReapply!: (value: ContentScriptCosmeticData) => void;
-        let reapplyStartedResolve!: () => void;
-
-        const reapplyPromise = new Promise<ContentScriptCosmeticData>((resolve) => {
-            resolveReapply = resolve;
-        });
-        const reapplyStarted = new Promise<void>((resolve) => {
-            reapplyStartedResolve = resolve;
-        });
+        document.head.appendChild(style);
 
         try {
             const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
-                .mockImplementation(async (message) => {
-                    const isReapply = message.type === MessageType.GetCosmeticData
-                        && (message.payload as { reapplyHits?: boolean }).reapplyHits;
-
-                    if (isReapply) {
-                        reapplyRequests += 1;
-                        reapplyStartedResolve();
-
-                        return reapplyPromise;
-                    }
-
-                    return {
-                        isAppStarted: true,
-                        areHitsStatsCollected: true,
-                        areNativeHitsStatsCollected: false,
-                        extCssMarkersState: ExtCssMarkersState.NotRequired,
-                        extCssRules: null,
-                        nativeCssSelectors: null,
-                    };
+                .mockResolvedValue({
+                    isAppStarted: true,
+                    areHitsStatsCollected: true,
+                    areNativeHitsStatsCollected: true,
+                    extCssMarkersState: ExtCssMarkersState.Applied,
+                    // ExtendedCss is applied by the background, so a rule
+                    // string in the response must not reach the page.
+                    extCssRules: ['.ad_header:contains(text) { display: none !important; }'],
+                    nativeCssSelectors: null,
                 });
 
             const cosmeticController = createController(CosmeticController);
             cosmeticController.init();
 
-            await reapplyStarted;
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            // The rules of the response are never applied in the page.
+            const bait = document.querySelector('#extcss-bait') as HTMLElement;
+            expect(getComputedStyle(bait).display).not.toBe('none');
 
             triggerRuntimeMessage({
                 handlerName: 'tsWebExtension',
                 type: MessageType.SetCollectHitStats,
                 payload: { isCollectStats: false },
             });
-            triggerRuntimeMessage({
-                handlerName: 'tsWebExtension',
-                type: MessageType.SetCollectHitStats,
-                payload: { isCollectStats: true },
-            });
 
-            const bait = document.createElement('div');
-            bait.className = 'ad_header';
-            bait.textContent = 'text';
-            document.body.appendChild(bait);
-
-            // The background marked the rule of the element above before the
-            // reapply response resumed the counter.
-            document.head.appendChild(style);
-
-            resolveReapply({
-                isAppStarted: true,
-                areHitsStatsCollected: true,
-                areNativeHitsStatsCollected: true,
-                extCssMarkersState: ExtCssMarkersState.Applied,
-                extCssRules: null,
-                nativeCssSelectors: null,
-            });
+            const counter = (cosmeticController as unknown as {
+                cssHitsCounter?: { paused: boolean };
+            }).cssHitsCounter;
+            expect(counter?.paused).toBe(true);
 
             await new Promise((resolve) => {
                 setTimeout(resolve, 20);
             });
 
-            // The enable dropped during the reapply is served by the response
-            // in flight, so no second request is made.
-            expect(reapplyRequests).toBe(1);
-            expect(getBaitStats(sendAppMessageSpy, 0).length).toBeGreaterThan(0);
+            const statsAfterDisable = getBaitStats(sendAppMessageSpy, 0).length;
+
+            // A native hit found after the disable must not reach the log.
+            const lateBait = document.createElement('div');
+            lateBait.className = 'native-hit-bait';
+            lateBait.textContent = 'late';
+            document.body.appendChild(lateBait);
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            expect(getBaitStats(sendAppMessageSpy, 0)).toHaveLength(statsAfterDisable);
         } finally {
             style.remove();
             document.body.innerHTML = '';

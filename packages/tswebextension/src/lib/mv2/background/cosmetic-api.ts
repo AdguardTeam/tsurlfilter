@@ -57,6 +57,15 @@ type ApplyExtCssOptions = {
      * holds it.
      */
     force?: boolean;
+
+    /**
+     * Whether the retries of a failed injection belong to the operation.
+     *
+     * The marked-data reapply awaits its operation and reports its result, so a
+     * retry scheduled after the response would contradict that result. Such an
+     * operation awaits its retries and reports the final outcome instead.
+     */
+    awaitRetries?: boolean;
 };
 
 /**
@@ -358,6 +367,12 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
+
+        // The response belongs to the document the request came from. Every
+        // await below can be overtaken by a navigation, which replaces the
+        // context or bumps its version, so both are captured here.
+        const documentVersion = frameContext?.extCssDocumentVersion;
+
         const cosmeticResult = frameContext?.cosmeticResult
             ?? engineApi.matchCosmetic(createFrameMatchQuery(frameUrl, frameId, tabContext));
 
@@ -369,6 +384,17 @@ export class CosmeticApi extends CosmeticApiCommon {
             cosmeticResult,
             isNativeHasSupported,
         );
+
+        // The marked rules were injected into the document that asked for
+        // them. A navigation during the await means the new document gets its
+        // own cosmetic data, so neither the old rules nor the old native CSS
+        // describe it.
+        if (CosmeticApi.hasFrameDocumentChanged(tabId, frameId, frameContext, documentVersion)) {
+            data.areNativeHitsStatsCollected = false;
+            data.extCssMarkersState = ExtCssMarkersState.NotRequired;
+
+            return data;
+        }
 
         // The frame context is only an injection cache key. Old subframes no
         // longer have one, so match from the frame URL and tab context as
@@ -411,6 +437,14 @@ export class CosmeticApi extends CosmeticApiCommon {
                 cssText,
                 frameContext,
             );
+
+            // The native CSS was injected into the document that asked for it.
+            if (CosmeticApi.hasFrameDocumentChanged(tabId, frameId, frameContext, documentVersion)) {
+                data.areNativeHitsStatsCollected = false;
+
+                return data;
+            }
+
             data.areNativeHitsStatsCollected = true;
             if (frameContext) {
                 CosmeticApi.setNativeHitsMarkersApplied(
@@ -438,6 +472,37 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Checks whether the frame stopped describing the captured document.
+     *
+     * The response of a marked-data reapply belongs to the document that sent
+     * the request. A navigation replaces the frame context or bumps its
+     * document version, and the new document gets its own cosmetic data.
+     *
+     * A frame without a context cannot be observed for a navigation, so it is
+     * never reported as changed.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @param frameContext Frame context captured at entry, if any.
+     * @param documentVersion Document version captured at entry, if any.
+     *
+     * @returns True when the captured document is no longer displayed.
+     */
+    private static hasFrameDocumentChanged(
+        tabId: number,
+        frameId: number,
+        frameContext: FrameMV2 | undefined,
+        documentVersion: number | undefined,
+    ): boolean {
+        if (!frameContext) {
+            return false;
+        }
+
+        return tabsApi.getFrameContext(tabId, frameId) !== frameContext
+            || frameContext.extCssDocumentVersion !== documentVersion;
+    }
+
+    /**
      * Injects the marked ExtendedCss rules of a document.
      *
      * The prepared rules were built while collection was disabled, so the
@@ -445,6 +510,11 @@ export class CosmeticApi extends CosmeticApiCommon {
      * {@link CosmeticApi.applyExtCss} skips a document that already holds the
      * prepared rule set, so the injection is forced: the marked rules must
      * replace the unmarked instance.
+     *
+     * The injection is one complete operation: it starts after the queued
+     * payload of the document, injects, awaits its retries and reports the
+     * final outcome. The content script is running, so the document is ready
+     * and no commit retry is needed.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
@@ -476,11 +546,13 @@ export class CosmeticApi extends CosmeticApiCommon {
             // An old subframe no longer has a context, so there is no document
             // state to record the injection against. The payload keeps its
             // instance and returns early for the same rules, so a repeated
-            // call does not replace it.
+            // call does not replace it. The retries belong to the call, so no
+            // work is left behind after the response.
             const isApplied = await CosmeticApi.injectExtCssWithoutContext(
                 tabId,
                 frameId,
                 extCssRules,
+                true,
                 true,
             );
 
@@ -499,6 +571,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         const isApplied = await CosmeticApi.applyExtCss(tabId, frameId, 0, undefined, {
             extCssData: { extCssRules, areHitsStatsCollected: true },
             force: true,
+            awaitRetries: true,
         });
 
         return isApplied
@@ -821,13 +894,18 @@ export class CosmeticApi extends CosmeticApiCommon {
      * commit handler injects the incoming document's rules once it is the
      * displayed one.
      *
+     * Injections for one document are serialized in start order: the payload
+     * disposes the current instance before it applies, so two overlapping
+     * payloads could leave the page with the older rule set.
+     *
      * @param tabId Tab id.
      * @param frameId Frame id.
      * @param tries Number of tries for the injection in case of failure.
      * @param documentVersion Number of the document the retry chain belongs
      * to. The chain ends when the context has moved to another document.
      * @param options ExtendedCSS data to inject instead of the prepared one,
-     * and whether to inject it even when the document already holds it.
+     * whether to inject it even when the document already holds it, and
+     * whether the retries belong to the operation.
      *
      * @returns True when the document holds the requested ExtendedCSS state,
      * otherwise false.
@@ -866,11 +944,11 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const { extCssRules } = extCssData;
 
-        // An injection for this document is already in flight, so a second one
-        // would send the same payload again and start its own retry chain. A
-        // retry continues the chain it belongs to and passes this check. The
-        // marked-data reapply passes `force`: its payload differs from the one
-        // in flight, so it must not be skipped.
+        // A payload for this document is already queued or in flight, so a
+        // second one would send the same rules again and start its own retry
+        // chain. A retry continues the chain it belongs to and passes this
+        // check. The marked-data reapply passes `force`: its payload differs
+        // from the queued one, so it must not be skipped.
         if (!options.force
             && tries === 0
             && frameContext.extCssInjectionMarker === extCssDocumentVersion
@@ -928,51 +1006,112 @@ export class CosmeticApi extends CosmeticApiCommon {
             code = serializeExtCssDisposeForCode(EXTCSS_PROTOCOL);
         }
 
-        // Only the latest started injection describes the document: a
-        // payload started earlier can settle after a newer one, and its rule
-        // set must not be recorded over the newer state.
-        frameContext.extCssInjectionSequence += 1;
-        const injectionSequence = frameContext.extCssInjectionSequence;
+        // Every operation of one document starts after the previous one
+        // settles, in start order. A chain of another document is ignored: its
+        // payload targets a page that is no longer displayed.
+        const chain = frameContext.extCssInjectionChain;
+        const previousOperation = chain?.documentVersion === extCssDocumentVersion
+            ? chain.promise
+            : Promise.resolve();
+
+        // The document has a payload queued, so a duplicate would send the
+        // same rules again and start its own retry chain. The operation that
+        // owns the chain releases the marker.
         frameContext.extCssInjectionMarker = extCssDocumentVersion;
 
-        const isInjected = await CosmeticApi.injectWithRetry(
-            () => TabsApi.injectScript(tabId, frameId, code),
-            () => {
-                CosmeticApi.applyExtCss(
-                    tabId,
-                    frameId,
-                    tries + 1,
-                    extCssDocumentVersion,
-                    options,
-                );
-            },
-            (e) => {
-                logger.debug(`[tsweb.CosmeticApi.applyExtCss]: error occurred during injection into tabId ${tabId} and frameId ${frameId}`, e);
-            },
-            tries,
-            maxTries,
-        );
+        // Whether a commit replaced the document before the payload reached
+        // the page.
+        let isDocumentReplaced = false;
 
-        // Keep the marker until the chain ends: a failed attempt schedules its
-        // retry after a delay, and an event arriving in that gap must not start
-        // a second chain. The last attempt has no retry, so it clears the
-        // marker and lets a later event try again.
-        if (frameContext.extCssInjectionMarker === extCssDocumentVersion
-            && (isInjected || tries >= maxTries)
-            && frameContext.extCssInjectionSequence === injectionSequence
-        ) {
-            frameContext.extCssInjectionMarker = undefined;
+        const operation = (async (): Promise<boolean> => {
+            // A failed previous payload must not block this one.
+            await previousOperation.catch(() => {});
+
+            for (let attempt = tries; ; attempt += 1) {
+                if (frameContext.extCssDocumentVersion !== extCssDocumentVersion) {
+                    // A commit replaced the document while the operation
+                    // waited, so the payload must not reach the page that is
+                    // displayed now.
+                    isDocumentReplaced = true;
+
+                    return false;
+                }
+
+                try {
+                    // Retries are sequential by design: the next attempt must
+                    // not start before this one fails.
+                    // eslint-disable-next-line no-await-in-loop
+                    await TabsApi.injectScript(tabId, frameId, code);
+
+                    return true;
+                } catch (e) {
+                    if (attempt >= maxTries) {
+                        logger.debug(`[tsweb.CosmeticApi.applyExtCss]: error occurred during injection into tabId ${tabId} and frameId ${frameId}`, e);
+
+                        return false;
+                    }
+
+                    if (!options.awaitRetries) {
+                        // The caller does not wait for the retries, so they are
+                        // scheduled as the next operation of the document.
+                        setTimeout(() => {
+                            CosmeticApi.applyExtCss(
+                                tabId,
+                                frameId,
+                                attempt + 1,
+                                extCssDocumentVersion,
+                                options,
+                            );
+                        }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
+
+                        return false;
+                    }
+
+                    // The operation owns its retries, so it awaits the delay
+                    // and reports the final outcome instead of scheduling work
+                    // that would outlive the caller.
+                    // eslint-disable-next-line no-await-in-loop
+                    await new Promise<void>((resolve) => {
+                        setTimeout(resolve, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
+                    });
+                }
+            }
+        })();
+
+        const tail = operation.then(() => undefined, () => undefined);
+        frameContext.extCssInjectionChain = {
+            documentVersion: extCssDocumentVersion,
+            promise: tail,
+        };
+
+        const isInjected = await operation;
+
+        // Only the operation at the end of the chain describes the document: a
+        // payload queued behind this one decides the state and releases the
+        // marker.
+        const ownsChain = frameContext.extCssInjectionChain?.promise === tail;
+
+        if (ownsChain) {
+            frameContext.extCssInjectionChain = undefined;
+
+            // A failed attempt with retries left keeps the marker, so a new
+            // chain cannot race the retry. The last attempt releases it, so a
+            // later event tries again. A replaced document has no retry left,
+            // because the payload belongs to the previous one.
+            if (isDocumentReplaced || isInjected || tries >= maxTries) {
+                frameContext.extCssInjectionMarker = undefined;
+            }
         }
 
         // The frame context is replaced on navigation, so a write to the
         // captured object would land on the discarded document. A commit of
         // the same frame keeps the context and bumps the document version, so
         // an injection started for the previous document records nothing. A
-        // newer injection for the same document also records nothing from an
+        // newer operation for the same document also records nothing from an
         // older one that settles later.
         const isSameDocument = tabsApi.getFrameContext(tabId, frameId) === frameContext
             && frameContext.extCssDocumentVersion === extCssDocumentVersion
-            && frameContext.extCssInjectionSequence === injectionSequence;
+            && ownsChain;
 
         // A successful injection always leaves exactly one of the two markers
         // set: the document holds the applied rule set, or it was disposed. An
@@ -1001,11 +1140,12 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Releases the in-flight marker when the given call owns it.
+     * Releases the in-flight marker when no payload of the document holds it.
      *
-     * A retry that ends for a reason other than an injection result, such as
-     * a rule set that is already applied, would otherwise leave the marker set
-     * and skip every later event for the document.
+     * A call that ends for a reason other than an injection result, such as a
+     * rule set that is already applied, would otherwise leave the marker set
+     * and skip every later event for the document. A queued payload owns the
+     * marker and releases it when it settles.
      *
      * @param frameContext Frame context.
      * @param documentVersion Number of the document the call belongs to.
@@ -1014,9 +1154,15 @@ export class CosmeticApi extends CosmeticApiCommon {
         frameContext: FrameMV2,
         documentVersion: number,
     ): void {
-        if (frameContext.extCssInjectionMarker === documentVersion) {
-            frameContext.extCssInjectionMarker = undefined;
+        if (frameContext.extCssInjectionMarker !== documentVersion) {
+            return;
         }
+
+        if (frameContext.extCssInjectionChain?.documentVersion === documentVersion) {
+            return;
+        }
+
+        frameContext.extCssInjectionMarker = undefined;
     }
 
     /**
@@ -1051,10 +1197,15 @@ export class CosmeticApi extends CosmeticApiCommon {
      * injection failure. A repeated call is a no-op in the page, because the
      * payload returns early when the retained instance has the same rules.
      *
+     * A caller that reports the result of the injection must own its retries,
+     * so it passes `awaitRetries`: the operation then awaits every retry and
+     * returns the final outcome instead of leaving a retry behind.
+     *
      * @param tabId Tab id.
      * @param frameId Frame id.
      * @param extCssRules Rule strings to inject.
      * @param areHitsStatsCollected Whether hits statistics are collected.
+     * @param awaitRetries Whether the retries belong to the call.
      * @param tries Number of tries for the injection in case of failure.
      *
      * @returns True when the injection succeeded, otherwise false.
@@ -1064,26 +1215,50 @@ export class CosmeticApi extends CosmeticApiCommon {
         frameId: number,
         extCssRules: string[],
         areHitsStatsCollected: boolean,
+        awaitRetries = false,
         tries = 0,
     ): Promise<boolean> {
         const code = serializeExtCssForCode(extCssRules, areHitsStatsCollected, EXTCSS_PROTOCOL);
 
-        return CosmeticApi.injectWithRetry(
-            () => TabsApi.injectScript(tabId, frameId, code),
-            () => {
-                CosmeticApi.injectExtCssWithoutContext(
-                    tabId,
-                    frameId,
-                    extCssRules,
-                    areHitsStatsCollected,
-                    tries + 1,
-                );
-            },
-            (e) => {
+        try {
+            await TabsApi.injectScript(tabId, frameId, code);
+
+            return true;
+        } catch (e) {
+            if (tries >= CosmeticApi.INJECTION_MAX_TRIES) {
                 logger.debug(`[tsweb.CosmeticApi.injectExtCssWithoutContext]: error occurred during ExtCSS injection into tabId ${tabId} and frameId ${frameId}`, e);
-            },
-            tries,
-        );
+
+                return false;
+            }
+
+            if (!awaitRetries) {
+                setTimeout(() => {
+                    CosmeticApi.injectExtCssWithoutContext(
+                        tabId,
+                        frameId,
+                        extCssRules,
+                        areHitsStatsCollected,
+                        awaitRetries,
+                        tries + 1,
+                    );
+                }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
+
+                return false;
+            }
+
+            await new Promise<void>((resolve) => {
+                setTimeout(resolve, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
+            });
+
+            return CosmeticApi.injectExtCssWithoutContext(
+                tabId,
+                frameId,
+                extCssRules,
+                areHitsStatsCollected,
+                awaitRetries,
+                tries + 1,
+            );
+        }
     }
 
     /**

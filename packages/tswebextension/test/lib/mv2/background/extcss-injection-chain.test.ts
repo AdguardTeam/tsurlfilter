@@ -34,6 +34,13 @@ vi.mock('../../../../src/lib/mv2/background/services/local-script-rules-service'
 const RULES = ['.ad:has(.child) { display: none !important; }'];
 
 /**
+ * The same rule set with hit markers, as the marked-data reapply builds it.
+ */
+const MARKED_RULES = [
+    ".ad:has(.child) { display: none !important; content: 'adguard0%3B1' !important; }",
+];
+
+/**
  * Creates a frame context with an ExtCSS rule set that matches the DOM below.
  *
  * @returns The frame context.
@@ -92,5 +99,70 @@ describe('MV2 ExtCSS injection chain', () => {
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
         expect(ad.style.getPropertyPriority('display')).toBe('important');
+    });
+
+    it('runs the payloads in start order so the marked copy lands last', async () => {
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+
+        const frameContext = makeFrameContext();
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        const executions: string[] = [];
+
+        /**
+         * Evaluates the code of an injection call and records it.
+         *
+         * @param call Call of the `executeScript` stub.
+         * @param call.args Arguments of the call.
+         */
+        const execute = (call: { args: unknown[] }): void => {
+            const [, details] = call.args as [number, { code: string }];
+            runInThisContext(details.code);
+            executions.push(details.code);
+        };
+
+        let resolveFirst!: (value?: unknown) => void;
+
+        browser.tabs.executeScript
+            .onFirstCall()
+            .returns(new Promise((resolve) => {
+                resolveFirst = resolve;
+            }))
+            .onSecondCall()
+            .returns(undefined);
+
+        const unmarked = CosmeticApi.applyExtCss(1, 0);
+        const marked = CosmeticApi.applyExtCss(1, 0, 0, undefined, {
+            extCssData: { extCssRules: MARKED_RULES, areHitsStatsCollected: true },
+            force: true,
+        });
+
+        // The marked payload must not reach the browser while the unmarked one
+        // is still in flight: the payload disposes the applied instance first.
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(browser.tabs.executeScript.callCount).toBe(1);
+
+        execute(browser.tabs.executeScript.firstCall);
+        resolveFirst();
+        await unmarked;
+
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(browser.tabs.executeScript.callCount).toBe(2);
+
+        execute(browser.tabs.executeScript.secondCall);
+        await marked;
+
+        // The unmarked payload ran first and the marked one last, so the page
+        // keeps the instance that reports hits.
+        expect(executions).toHaveLength(2);
+        expect(executions[0]).not.toBe(executions[1]);
+        const retained = (window as unknown as Record<string, { cssRules?: string[] } | undefined>)[
+            EXTCSS_PROTOCOL.instanceKey
+        ];
+        expect(retained?.cssRules).toEqual(MARKED_RULES);
+        expect(frameContext.extCssAppliedData).toEqual(MARKED_RULES);
+        expect(frameContext.extCssHitsMarkersApplied).toBe(true);
     });
 });
