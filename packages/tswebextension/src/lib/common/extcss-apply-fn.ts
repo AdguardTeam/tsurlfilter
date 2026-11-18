@@ -254,8 +254,16 @@ export const extCssInjectedApply = (
     if (previous) {
         try {
             previous.dispose();
-        } catch {
-            // Ignore disposal errors; the new instance is applied regardless.
+        } catch (e) {
+            // A failing dispose may have torn the instance down or left it
+            // half-alive. The replacement is aborted, because applying on top
+            // of the old instance would make it unreachable while its styles
+            // or observer stay active. The rule metadata is dropped, so a later
+            // request for the same rules applies for real instead of trusting
+            // the instance, and the key is kept so a later disposal still
+            // reaches it.
+            delete previous.cssRules;
+            throw e;
         }
     }
 
@@ -325,20 +333,33 @@ export const extCssInjectedApply = (
  * @returns The {@link ExtCssApplySuccess} sentinel after the disposal
  * completed.
  *
- * @throws The error that `dispose()` raised. The instance and its
- * `MutationObserver` stay active in that case, so the key is kept and the
- * background reports the disposal as failed instead of recording a state the
- * page does not have.
+ * @throws The error that `dispose()` raised. The key is kept and the instance
+ * loses its rule metadata, so the background reports the disposal as failed,
+ * a later disposal still reaches the instance, and a later apply for the same
+ * rules cannot trust it.
  */
 export const extCssInjectedDispose = (protocol: ExtCssProtocol): ExtCssApplySuccess => {
-    const w = window as unknown as Record<string, { dispose(): void } | null | undefined>;
+    const w = window as unknown as Record<string, {
+        dispose(): void;
+        cssRules?: string[];
+    } | null | undefined>;
     const previous = w[protocol.instanceKey];
 
     if (previous) {
-        // A throwing `dispose()` leaves the old styles and observer in the
-        // page. The error escapes to the background, and the key is cleared
-        // only after a successful disposal.
-        previous.dispose();
+        try {
+            // A throwing `dispose()` may have disconnected the observer before
+            // it failed to revert the styles, so the error escapes and the key
+            // is kept: the background reports a failure and a later disposal
+            // still reaches the instance.
+            previous.dispose();
+        } catch (e) {
+            // The instance is not trustworthy any more, so its rule metadata is
+            // dropped: a later apply for the same rules applies for real
+            // instead of taking the equal-rules no-op.
+            delete previous.cssRules;
+            throw e;
+        }
+
         w[protocol.instanceKey] = null;
     }
 

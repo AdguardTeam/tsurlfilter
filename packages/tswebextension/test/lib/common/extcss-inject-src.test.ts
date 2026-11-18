@@ -21,10 +21,12 @@ const {
     constructorSpy,
     initSpy,
     applySpy,
+    disposeSpy,
 } = vi.hoisted(() => ({
     constructorSpy: vi.fn(),
     initSpy: vi.fn(),
     applySpy: vi.fn(),
+    disposeSpy: vi.fn(),
 }));
 
 // Mock the ExtendedCss class so the entry-point lifecycle (constructor →
@@ -55,6 +57,11 @@ vi.mock('@adguard/extended-css', () => ({
          * Mocked apply.
          */
         public apply = applySpy;
+
+        /**
+         * Mocked dispose.
+         */
+        public dispose = disposeSpy;
     },
 }));
 
@@ -63,6 +70,7 @@ describe('extcss-inject-src entry point', () => {
         constructorSpy.mockClear();
         initSpy.mockClear();
         applySpy.mockClear();
+        disposeSpy.mockClear();
     });
 
     it('calls init() before apply()', () => {
@@ -110,6 +118,36 @@ describe('extcss-inject-src entry point', () => {
             throw error;
         });
 
+        // The partial apply is cleaned up, and the original error is reported
+        // unchanged while the cleanup succeeds.
         expect(() => applyExtendedCss(['.ad { display: none !important; }'])).toThrow(error);
+        expect(disposeSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports a failed cleanup together with the original apply error', () => {
+        const applyError = new Error('apply failed');
+        const cleanupError = new Error('cleanup failed');
+        applySpy.mockImplementationOnce(() => {
+            throw applyError;
+        });
+        disposeSpy.mockImplementationOnce(() => {
+            throw cleanupError;
+        });
+
+        let thrown: unknown;
+        try {
+            applyExtendedCss(['.ad { display: none !important; }']);
+        } catch (e) {
+            thrown = e;
+        }
+
+        // A partial instance may stay on the page, so the cleanup failure is
+        // reported too instead of being swallowed, and the original apply
+        // error keeps the message and stays the cause.
+        expect(thrown).toBeInstanceOf(AggregateError);
+        const aggregate = thrown as AggregateError;
+        expect(aggregate.message).toBe('apply failed');
+        expect(aggregate.cause).toBe(applyError);
+        expect(aggregate.errors).toEqual([applyError, cleanupError]);
     });
 });

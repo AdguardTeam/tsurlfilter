@@ -722,6 +722,45 @@ describe('extCssInjectedDispose', () => {
         expect(() => extCssInjectedDispose(EXTCSS_PROTOCOL)).not.toThrow();
     });
 
+    it('applies for real after a failed disposal of the same rules', () => {
+        const rules = ['.ad { display: none !important; }'];
+
+        document.body.innerHTML = '<div class="ad">ad</div>';
+        createSerializedApply()(rules, false, EXTCSS_PROTOCOL);
+
+        const w = window as unknown as Record<string, unknown>;
+        const retained = w[EXTCSS_PROTOCOL.instanceKey] as {
+            dispose: () => void;
+            cssRules?: string[];
+        };
+        const realDispose = Object.getPrototypeOf(retained).dispose as () => void;
+
+        // `dispose()` disconnects observation before it reverts the styles, so
+        // a disposal can tear the instance down and still throw.
+        const disposeSpy = vi.spyOn(retained, 'dispose').mockImplementationOnce(() => {
+            realDispose.call(retained);
+            throw new Error('dispose failed');
+        });
+
+        try {
+            expect(() => extCssInjectedDispose(EXTCSS_PROTOCOL)).toThrow('dispose failed');
+
+            // The instance is not trustworthy any more, so its rule metadata is
+            // gone and the key is kept for a later disposal.
+            expect(retained.cssRules).toBeUndefined();
+            expect(w[EXTCSS_PROTOCOL.instanceKey]).toBe(retained);
+
+            // A request for the same rules applies for real instead of taking
+            // the equal-rules no-op on rules that are not in the page.
+            expect(createSerializedApply()(rules, false, EXTCSS_PROTOCOL)).toBe(true);
+            // The failed disposal, then the disposable instance again before
+            // the real apply.
+            expect(disposeSpy).toHaveBeenCalledTimes(2);
+        } finally {
+            disposeSpy.mockRestore();
+        }
+    });
+
     it('keeps the retained instance when its dispose throws', () => {
         const dispose = vi.fn(() => {
             throw new Error('dispose failed');
@@ -737,6 +776,55 @@ describe('extCssInjectedDispose', () => {
 
         expect(dispose).toHaveBeenCalledTimes(1);
         expect(w[EXTCSS_PROTOCOL.instanceKey]).toBe(retained);
+    });
+});
+
+describe('extCssInjectedApply — replacement disposal failure', () => {
+    it('does not apply a replacement when the previous disposal throws', () => {
+        const engine = window[EXTCSS_PROTOCOL.engineKey];
+        if (!engine) {
+            throw new Error('The engine asset must be installed by the test setup');
+        }
+
+        const rulesA = ['.a { display: none !important; }'];
+        const rulesB = ['.b { display: none !important; }'];
+        const w = window as unknown as Record<string, unknown>;
+
+        document.body.innerHTML = '<div class="a"></div><div class="b"></div>';
+
+        createSerializedApply()(rulesA, false, EXTCSS_PROTOCOL);
+
+        const retained = w[EXTCSS_PROTOCOL.instanceKey] as {
+            dispose: () => void;
+            cssRules?: string[];
+        };
+        expect(retained).toBeTruthy();
+
+        const applySpy = vi.spyOn(engine, 'applyExtendedCss');
+        const disposeSpy = vi.spyOn(retained, 'dispose').mockImplementation(() => {
+            throw new Error('previous dispose failed');
+        });
+
+        try {
+            expect(() => createSerializedApply()(rulesB, false, EXTCSS_PROTOCOL))
+                .toThrow('previous dispose failed');
+
+            // The replacement is aborted before the new rules are applied, and
+            // the old instance stays reachable for another disposal.
+            expect(applySpy).not.toHaveBeenCalled();
+            expect(w[EXTCSS_PROTOCOL.instanceKey]).toBe(retained);
+            // Its rule metadata is dropped, so the instance cannot authorize
+            // the equal-rules no-op later.
+            expect(retained.cssRules).toBeUndefined();
+
+            // Once the disposal works again, the same rules apply for real.
+            disposeSpy.mockRestore();
+            expect(createSerializedApply()(rulesA, false, EXTCSS_PROTOCOL)).toBe(true);
+            expect(applySpy).toHaveBeenCalledTimes(1);
+        } finally {
+            applySpy.mockRestore();
+            disposeSpy.mockRestore();
+        }
     });
 });
 

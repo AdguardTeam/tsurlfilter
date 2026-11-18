@@ -897,6 +897,74 @@ describe('CosmeticApi.applyExtCss', () => {
         expect(frameContext.extCssDisposedDocumentVersion).toBe(0);
     });
 
+    it('does not trust the applied rule set after a failed disposal', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules));
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+        await CosmeticApi.applyExtCss(1, 0);
+        expect(frameContext.extCssAppliedData).toEqual(rules);
+
+        // The rule set becomes empty and the disposal throws in the page.
+        frameContext.preparedCosmeticResult = makePrepared(null);
+        vi.mocked(TabsApi.injectScript).mockResolvedValue(undefined);
+
+        expect(await CosmeticApi.applyExtCss(1, 0)).toBe(false);
+
+        // The instance may be torn down, so its rule set cannot authorize the
+        // equal-rules no-op, and the context keeps signaling that an instance
+        // may be present.
+        expect(frameContext.extCssAppliedData).toBeUndefined();
+        expect(frameContext.extCssInstanceMayExist).toBe(true);
+
+        // The same rules arrive again and are applied for real.
+        vi.mocked(TabsApi.injectScript).mockResolvedValue(true);
+        frameContext.preparedCosmeticResult = makePrepared(rules);
+        const callsBefore = vi.mocked(TabsApi.injectScript).mock.calls.length;
+
+        expect(await CosmeticApi.applyExtCss(1, 0)).toBe(true);
+        expect(vi.mocked(TabsApi.injectScript).mock.calls.length).toBeGreaterThan(callsBefore);
+        expect(frameContext.extCssAppliedData).toEqual(rules);
+    });
+
+    it('disposes again after a failed replacement that followed a disposal', async () => {
+        vi.useFakeTimers();
+
+        try {
+            const rules = ['.ad:has(.child) { display: none !important; }'];
+            const frameContext = makeFrameContext(makePrepared(null), false, true);
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+
+            // The empty rule set is disposed and the disposal is recorded.
+            await CosmeticApi.applyExtCss(1, 0);
+            expect(frameContext.extCssDisposedDocumentVersion).toBe(0);
+
+            // A non-empty rule set arrives and its apply fails.
+            frameContext.preparedCosmeticResult = makePrepared(rules);
+            vi.mocked(TabsApi.injectScript).mockResolvedValue(undefined);
+            const injection = CosmeticApi.applyExtCss(1, 0);
+            await vi.runAllTimersAsync();
+
+            expect(await injection).toBe(false);
+            // The stale marker must not describe the document any more.
+            expect(frameContext.extCssDisposedDocumentVersion).toBeUndefined();
+
+            // The rule set is empty again, so the disposal must run again
+            // instead of being skipped by the previous marker.
+            vi.mocked(TabsApi.injectScript).mockResolvedValue(true);
+            frameContext.preparedCosmeticResult = makePrepared(null);
+            const callsBefore = vi.mocked(TabsApi.injectScript).mock.calls.length;
+
+            expect(await CosmeticApi.applyExtCss(1, 0)).toBe(true);
+
+            expect(vi.mocked(TabsApi.injectScript).mock.calls.length).toBe(callsBefore + 1);
+            expect(vi.mocked(TabsApi.injectScript).mock.lastCall?.[2])
+                .toBe(serializeExtCssDisposeForCode(EXTCSS_PROTOCOL));
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('retries the disposal on a later event after a failed attempt', async () => {
         const frameContext = makeFrameContext(makePrepared(null), false, true);
         vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);

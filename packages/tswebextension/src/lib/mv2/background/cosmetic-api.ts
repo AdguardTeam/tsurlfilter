@@ -965,7 +965,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * because the frame may navigate while that call is in flight.
      *
      * A failed replacement clears the applied record, because the payload may
-     * have disposed the previous instance and failed to restore it.
+     * have disposed the previous instance and failed to restore it. A failed
+     * disposal clears it as well, because the instance may be torn down, and
+     * keeps the context able to retry the disposal.
      *
      * An engine guard failure is terminal: the document has no engine or a
      * stale one, so the call is not retried and the failure is logged as an
@@ -1141,10 +1143,14 @@ export class CosmeticApi extends CosmeticApiCommon {
                     // request must inject again instead of trusting it, and the
                     // payload must not take its equal-rules no-op. The instance
                     // may still be in the page, so a later empty rule set
-                    // attempts the disposal.
+                    // attempts the disposal. The disposed marker is cleared
+                    // too: a disposal that ran before this replacement no
+                    // longer describes the document, so a later empty rule set
+                    // must dispose again instead of skipping it.
                     frameContext.extCssAppliedData = undefined;
                     frameContext.extCssHitsMarkersApplied = false;
                     frameContext.extCssInstanceMayExist = true;
+                    frameContext.extCssDisposedDocumentVersion = undefined;
                 }
             } else if (isInjected) {
                 // The disposal is recorded only when the payload reported
@@ -1154,6 +1160,14 @@ export class CosmeticApi extends CosmeticApiCommon {
                 frameContext.extCssAppliedData = undefined;
                 frameContext.extCssHitsMarkersApplied = false;
                 frameContext.extCssDisposedDocumentVersion = documentVersion;
+            } else {
+                // The failed disposal may have torn the instance down or left
+                // it half-alive, so its rule set must not authorize the
+                // equal-rules no-op. The instance is kept as possibly present,
+                // so a later empty rule set attempts the disposal again.
+                frameContext.extCssAppliedData = undefined;
+                frameContext.extCssHitsMarkersApplied = false;
+                frameContext.extCssInstanceMayExist = true;
             }
         }
 

@@ -50,9 +50,18 @@ const applyExtendedCss = (
         // `originalStyle` snapshot of the instance restored by the caller.
         try {
             extendedCss.dispose();
-        } catch {
-            // Ignore disposal errors; the original apply error is what matters.
+        } catch (disposeError) {
+            // The cleanup failed too, so a partially applied instance may stay
+            // on the page. Report both failures: the original apply error keeps
+            // the message and stays the `cause`, and the cleanup error is not
+            // swallowed.
+            throw new AggregateError(
+                [e, disposeError],
+                e instanceof Error ? e.message : 'ExtendedCss apply failed',
+                { cause: e },
+            );
         }
+
         throw e;
     }
 
