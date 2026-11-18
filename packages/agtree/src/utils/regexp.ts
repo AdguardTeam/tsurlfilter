@@ -132,9 +132,11 @@ export class RegExpUtils {
             return false;
         }
 
+        const closingMarkerIndex = trimmedPattern.length - REGEX_MARKER.length;
+
         // Count the consecutive backslashes before the closing slash
         let backslashes = 0;
-        for (let i = trimmedPattern.length - 2; i >= 0 && trimmedPattern[i] === ESCAPE_CHARACTER; i -= 1) {
+        for (let i = closingMarkerIndex - 1; i >= 0 && trimmedPattern[i] === ESCAPE_CHARACTER; i -= 1) {
             backslashes += 1;
         }
 
