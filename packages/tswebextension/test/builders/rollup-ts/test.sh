@@ -36,11 +36,12 @@ tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
 # shared chunk added or renamed by the bundler is included instead of silently
 # dropping out of the sum. The smoke builder's CJS bundle tree-shakes the
 # collector, so its size is not the shipped size either.
-# Current payload: 80,126 bytes. The ExtendedCss `:remove()` handoff adds the
-# shared `window` key and the getter that reads it, so the counter learns about
-# nodes removed by the engine injected from the MV3 background. Raise this only
-# when a genuine size increase lands, never to silence a regression.
-max_size=80300
+# Current payload: 85,013 bytes. The CSS hits lifecycle keeps the probe
+# collector, the paused-hit queue and the marker state in the content script,
+# and the ExtendedCss `:remove()` handoff keeps its shared `window` key and
+# getter. Raise this only when a genuine size increase lands, never to silence
+# a regression.
+max_size=85200
 package_dist="node_modules/@adguard/tswebextension/dist"
 if ! filesize=$(node measure-payload.mjs "$package_dist/css-hits-counter.js"); then
     echo "Failed to measure the shipped css-hits-counter payload"
