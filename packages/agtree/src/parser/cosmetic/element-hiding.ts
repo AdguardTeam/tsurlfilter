@@ -233,10 +233,10 @@ function isUboRegexpFlags(ctx: ParserContext, ti: number): boolean {
 /**
  * Whether the value that ends at `ti` is a complete uBO regexp literal.
  *
- * The value is complete when its last non-whitespace token is a `/`
- * delimiter, optionally preceded by uBO `[imu]` flags, and the opening `/`
- * is not that same delimiter. For example, `/[(]/` and `/[)]/i` are
- * complete, while the plain values `/foo[` and `/foo/bar` are not.
+ * A value is complete when the pattern is closed by a `/` delimiter that is
+ * not the opening one, and only the optional uBO `[imu]` flags follow that
+ * delimiter. For example, `/[(]/` and `/[)]/i` are complete, while the plain
+ * values `/foo[` and `/foo/bar` are not.
  *
  * @param ctx Parser context.
  * @param ti Token index of the argument's closing `)`.
