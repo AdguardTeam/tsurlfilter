@@ -1,7 +1,7 @@
 name: Publish stable DNR rulesets
 
-# Once daily (00:17 UTC, ahead of the 00:30 extension auto-build), build and
-# publish @adguard/dnr-rulesets from each of the
+# Once daily (00:17 UTC, ahead of the 12:00 and 17:00 UTC extension
+# auto-builds), build and publish @adguard/dnr-rulesets from each of the
 # supported stable/dnr-rulesets-* branches (5.0, 6.0, 6.1).
 # The lines carry incompatible ruleset formats: 6.0 and 6.1 are built with
 # @adguard/dnr-converter 2.x (metadata split into `metadata.chunk` rules) and
@@ -21,9 +21,9 @@ name: Publish stable DNR rulesets
 
 on:
   schedule:
-    # Once a day, ahead of the 00:30 extension auto-build. The round was cut
-    # from twice a day to one in AG-60418 (to hold npm traffic down) and the
-    # cadence stays with the npm leg disabled again (AG-58867).
+    # Once a day, ahead of the 12:00 and 17:00 UTC extension auto-builds. The
+    # round was cut from twice a day to one in AG-60418 (to hold npm traffic
+    # down), and the cadence stays with the npm leg disabled again (AG-58867).
     - cron: '17 0 * * *'
   workflow_dispatch:
     inputs:
