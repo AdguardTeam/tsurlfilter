@@ -44,6 +44,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `SimpleRegex.isRegexPattern()` now rejects a pattern whose closing slash
+  is escaped, e.g. `/a\/`, the same as `RegExpUtils.isRegexPattern()` in
+  [@adguard/agtree]. It counts the consecutive backslashes before the
+  closing slash: an odd count escapes the slash, an even count does not.
+  `DomainModifier` now rejects every `$domain` or `$denyallow` value that
+  starts with a slash and is not a regexp literal with `Invalid regular
+  expression as domain pattern`. Before, a value with an escaped closing
+  slash failed to compile as a regexp, while a value without a closing
+  slash became a plain domain that never matched a host, so a negated
+  value left an empty restriction and the rule applied on every site. The
+  bare delimiters `/` and `//` compiled to an empty regexp that matched
+  every domain. A value that ends with an escaped backslash, e.g.
+  `/a\\/`, stays a regexp literal.
 - Rule splitting no longer scans the whole rule once per `$` character. Regex
   value regions (`$replace=/…/`, `$removeparam=/…/`) are collected in a single
   pass, so a long rule with many `$` characters inside a regex no longer makes

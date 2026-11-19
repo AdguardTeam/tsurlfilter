@@ -384,12 +384,26 @@ export class DomainModifier {
      *
      * @returns Normalized domain value.
      *
-     * @throws An error if a regexp value does not compile after unescaping.
+     * @throws An error if a value that starts with a slash is not a regexp
+     * literal, or if a regexp value does not compile after unescaping.
      */
     private static normalizeDomain(domain: string, separator: DomainSeparator, nonBasicModifier: boolean): string {
         const unescaped = unescapeChar(domain, separator);
 
         if (!SimpleRegex.isRegexPattern(unescaped)) {
+            // A value that starts with a slash is not a plain domain either,
+            // since a domain name never starts with a slash. Reject it: a
+            // negated `$domain` value would otherwise become an empty
+            // restriction and turn the rule on for every site. The check
+            // reads only the leading slash on purpose: the domain list parser
+            // treats a leading slash as the start of a regexp literal, and
+            // when no closing delimiter follows it, the parser keeps the rest
+            // of the list in the same item, e.g. `~/a\/|example.org` becomes
+            // one item `/a\/|example.org`.
+            if (unescaped.startsWith(SimpleRegex.MASK_REGEX_RULE)) {
+                throw new SyntaxError(`Invalid regular expression as domain pattern: "${unescaped}"`);
+            }
+
             return unescaped.toLowerCase();
         }
 

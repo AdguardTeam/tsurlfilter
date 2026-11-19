@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `$domain` and `$denyallow` values that start with a slash but are not
+  valid regexp literals are now rejected with `Invalid regular expression
+  as domain pattern`. Before, such a value could turn the rule on for
+  every site: `$domain=~/a\/|example.org` lost the rest of the list, and
+  a positive `$domain=//` matched every domain as an empty regexp. `/a\/`
+  was already rejected because its pattern did not compile (via
+  [@adguard/tsurlfilter]).
 - HTML filtering rules with `:-abp-contains()` and `:has-text()` now work,
   and HTML filtering rules with an empty `:contains()` argument are now
   rejected (via [@adguard/tsurlfilter]).
