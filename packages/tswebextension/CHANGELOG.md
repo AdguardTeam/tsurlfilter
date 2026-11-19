@@ -37,6 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   chain needs a case-sensitive match. In such a mixed chain, a
   case-insensitive regexp becomes case-sensitive, because the merged regexp has
   a single flag set.
+- `$domain` and `$denyallow` values that start with a slash but are not
+  valid regexp literals are now rejected with `Invalid regular expression
+  as domain pattern`. Before, such a value could turn the rule on for
+  every site: `$domain=~/a\/|example.org` lost the rest of the list, and
+  a positive `$domain=//` matched every domain as an empty regexp. `/a\/`
+  was already rejected because its pattern did not compile (via
+  [@adguard/tsurlfilter]).
 
 ### Security
 

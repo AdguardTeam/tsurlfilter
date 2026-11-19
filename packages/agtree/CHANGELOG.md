@@ -53,6 +53,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `##^div:contains(/a[)]b/)` become `$$div:contains(/a[)]b/)`. Previously
   the `)` closed the pseudo-class argument early, and tokenization threw
   `Expected '<unknown-token>', but got '<]-token>'`.
+- A value whose closing slash is escaped, e.g. `/a\/`, is no longer
+  treated as a RegExp literal. `RegExpUtils.isRegexPattern()` now checks
+  the consecutive backslashes before the closing slash: an odd count
+  escapes the slash, an even count does not. Previously the check always
+  passed. As a result, the uBO→ADG conversion of `:matches-path(/a\/)`
+  keeps the backslash, and its negated form produces a valid regexp
+  instead of `/^((?!a\).)*$/`. A value that ends with an escaped
+  backslash, e.g. `/a\\/`, stays a RegExp literal.
 
 ### Security
 
