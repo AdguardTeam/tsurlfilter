@@ -254,23 +254,70 @@ describe.each(controllers)('%s short-lived probes', (_name, CosmeticController) 
         }
     });
 
-    it('stops the collector when the background does not respond', async () => {
+    it('retries a cosmetic data request answered without a response', async () => {
         const restoreMutationObserver = mockMutationObserver();
+        vi.useFakeTimers();
 
         try {
-            vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(null);
+            const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockResolvedValueOnce(undefined)
+                .mockResolvedValue(getCosmeticData([], false));
+
+            const cosmeticController = createController(CosmeticController);
+            cosmeticController.init();
+
+            const retryTimeout = (CosmeticControllerCommon as unknown as {
+                GET_COSMETIC_DATA_RETRY_TIMEOUT_MS: number;
+            }).GET_COSMETIC_DATA_RETRY_TIMEOUT_MS;
+            await vi.advanceTimersByTimeAsync(retryTimeout);
+
+            // An empty response is not final: the request is repeated and the
+            // response it gets is processed.
+            expect(sendAppMessageSpy).toHaveBeenCalledTimes(2);
+            expect(sendAppMessageSpy.mock.calls[1][0]).toEqual(expect.objectContaining({
+                type: MessageType.GetCosmeticData,
+            }));
+        } finally {
+            vi.useRealTimers();
+            restoreMutationObserver();
+        }
+    });
+
+    it('stops the collector after the app-start retry budget without a response', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+        vi.useFakeTimers();
+
+        try {
+            // `undefined` models the background answering before the app
+            // started; the same budget as an `isAppStarted: false` response
+            // must end the loop.
+            const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockResolvedValue(undefined);
 
             const cosmeticController = createController(CosmeticController);
             cosmeticController.init();
 
             const collectorObserver = MutationObserverMock.last!;
 
-            await new Promise((resolve) => {
-                setTimeout(resolve, 20);
+            const {
+                MAX_GET_COSMETIC_DATA_TRIES: maxTries,
+                GET_COSMETIC_DATA_RETRY_TIMEOUT_MS: retryTimeout,
+            } = (CosmeticControllerCommon as unknown as {
+                MAX_GET_COSMETIC_DATA_TRIES: number;
+                GET_COSMETIC_DATA_RETRY_TIMEOUT_MS: number;
             });
 
+            await vi.advanceTimersByTimeAsync(retryTimeout * (maxTries + 1));
+
             expect(collectorObserver.isDisconnected).toBe(true);
+            // The initial request plus every retry of the budget.
+            expect(sendAppMessageSpy).toHaveBeenCalledTimes(maxTries + 1);
+
+            // The budget is spent, so no further timer sends another request.
+            await vi.advanceTimersByTimeAsync(retryTimeout * 10);
+            expect(sendAppMessageSpy).toHaveBeenCalledTimes(maxTries + 1);
         } finally {
+            vi.useRealTimers();
             restoreMutationObserver();
         }
     });

@@ -87,6 +87,12 @@ export const extCssInjectedApply = (
     type RetainedExtCss = ExtendedCss & {
         cssRules?: string[];
         countedHits?: WeakMap<Element, Set<string>>;
+        /**
+         * Whether the instance was built with the hits callback. A restore
+         * rebuilds the same rule strings, so it must keep the callback even
+         * when the failed apply arrived without stats collection.
+         */
+        collectStats?: boolean;
     };
 
     const w = window as unknown as Record<string, unknown>;
@@ -266,19 +272,34 @@ export const extCssInjectedApply = (
             : applyExtendedCss(cssRules);
         next.cssRules = cssRules;
         next.countedHits = countedHits;
+        next.collectStats = collectStats;
         w[protocol.instanceKey] = next;
     } catch (e) {
         // Rebuild the previous instance from its retained rule strings. The
         // restored rules carry the same markers, so the callback is registered
         // too: the retained dedupe state skips the already reported hits while
         // elements matched from now on are still counted.
+        //
+        // The callback follows the retained instance's setting, not the failed
+        // call's: the retained rules were built with markers only when that
+        // apply collected stats, while the current call may have arrived
+        // without them (e.g. collection was disabled meanwhile). Registering
+        // no callback would leave the restored marked rules uncounted.
+        //
+        // A retained instance left by a previous extension version has no
+        // `collectStats` flag, so its marker state is read from the retained
+        // rule strings instead: a marker always embeds the protocol prefix.
+        const restoreCollectStats = previous?.collectStats
+            ?? previousRules?.some((rule) => rule.includes(protocol.markerPrefix))
+            ?? collectStats;
         if (previousRules && previousRules.length > 0) {
             try {
-                const restored: RetainedExtCss = collectStats
+                const restored: RetainedExtCss = restoreCollectStats
                     ? applyExtendedCss(previousRules, beforeStyleApplied)
                     : applyExtendedCss(previousRules);
                 restored.cssRules = previousRules;
                 restored.countedHits = countedHits;
+                restored.collectStats = restoreCollectStats;
                 w[protocol.instanceKey] = restored;
             } catch {
                 // Nothing else can be done in the page context.
