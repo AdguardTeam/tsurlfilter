@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `$domain` and `$denyallow` values with an unclosed regexp literal are
+  now rejected during parsing, e.g. `$domain=~/a\/|example.org` and
+  `$domain=~/|example.org` (via [@adguard/agtree]). Previously the parser
+  kept the rest of the list in one value that could not match a host.
 - Bare `$removeparam` rules no longer treat a `?` inside a hash fragment as a
   query delimiter, so `https://example.com/page#route?param=1` stays unchanged.
   They also keep the hash fragment when they remove a real query string, e.g.

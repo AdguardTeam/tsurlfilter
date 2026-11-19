@@ -25,6 +25,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- The list item parser now throws an `AdblockSyntaxError` when a regexp
+  literal has no closing delimiter, e.g. `$domain=~/a\/|example.org` or
+  `$domain=~/|example.org`. Previously such a value became one list item
+  and every separator inside it was lost.
 - uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
   mirrors uBlock for plain text: one pair of outer quotes is removed and
   the text is matched case-insensitively through an escaped `:contains()`

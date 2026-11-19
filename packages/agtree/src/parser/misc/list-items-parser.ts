@@ -21,6 +21,7 @@ export const LIST_PARSE_ERROR_PREFIX = {
     NO_SEPARATOR_AT_THE_BEGINNING: 'Value list cannot start with a separator',
     NO_SEPARATOR_AT_THE_END: 'Value list cannot end with a separator',
     NO_WHITESPACE_AFTER_NEGATION: 'Exception marker cannot be followed by whitespace',
+    UNCLOSED_REGEXP_LITERAL: 'Unclosed regexp literal, no closing delimiter found',
 };
 
 /**
@@ -117,10 +118,17 @@ export class ListItemsParser {
                         !insideCharacterClass
                         && raw[i] === REGEX_MARKER
                     ) {
-                        // check if slash followed by optional space followed by the separator
+                        // The closing delimiter must be followed by the separator
+                        // or by the end of the value.
                         const j = StringUtils.skipWS(raw, i + 1);
                         if (raw[j] === separator) {
                             separatorStartIndex = j;
+                            break;
+                        }
+
+                        // The regexp literal closes at the end of the value
+                        if (j >= raw.length) {
+                            separatorStartIndex = raw.length;
                             break;
                         }
                     }
@@ -129,6 +137,18 @@ export class ListItemsParser {
                 }
 
                 if (separatorStartIndex === -1) {
+                    // A regexp literal without a closing delimiter is valid only
+                    // as the last item, e.g. `example.org|/a\/`. If a separator
+                    // follows the item, the parser would silently drop the rest
+                    // of the list, so the list is syntactically invalid.
+                    if (raw.indexOf(separator, itemStart + 1) !== -1) {
+                        throw new AdblockSyntaxError(
+                            LIST_PARSE_ERROR_PREFIX.UNCLOSED_REGEXP_LITERAL,
+                            baseOffset + itemStart,
+                            baseOffset + raw.length,
+                        );
+                    }
+
                     separatorStartIndex = raw.length;
                 }
             } else {

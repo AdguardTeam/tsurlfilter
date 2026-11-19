@@ -1,5 +1,11 @@
-import { describe, expect, test } from 'vitest';
+import {
+    describe,
+    expect,
+    test,
+    vi,
+} from 'vitest';
 
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { type CommaSeparator, ListItemNodeType, type PipeSeparator } from '../../../src/nodes';
 import { LIST_PARSE_ERROR_PREFIX, ListItemsParser } from '../../../src/parser/misc/list-items-parser';
 import { defaultParserOptions } from '../../../src/parser/options';
@@ -217,6 +223,115 @@ describe('common parseListItems', () => {
             ])('$actual', ({ actual, expected }) => {
                 expectToThrowWhileParse(actual, expected, PIPE);
             });
+        });
+    });
+
+    describe('regexp literals', () => {
+        test.each([
+            {
+                actual: String.raw`/a\\/|example.org`,
+                expected: [
+                    {
+                        type: ListItemNodeType.Unknown,
+                        start: 0,
+                        end: 5,
+                        value: String.raw`/a\\/`,
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Unknown,
+                        start: 6,
+                        end: 17,
+                        value: 'example.org',
+                        exception: false,
+                    },
+                ],
+            },
+            {
+                actual: String.raw`example.org|/a\/`,
+                expected: [
+                    {
+                        type: ListItemNodeType.Unknown,
+                        start: 0,
+                        end: 11,
+                        value: 'example.org',
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Unknown,
+                        start: 12,
+                        end: 16,
+                        value: String.raw`/a\/`,
+                        exception: false,
+                    },
+                ],
+            },
+            {
+                actual: String.raw`example.org|/a\\/|example.com`,
+                expected: [
+                    {
+                        type: ListItemNodeType.Unknown,
+                        start: 0,
+                        end: 11,
+                        value: 'example.org',
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Unknown,
+                        start: 12,
+                        end: 17,
+                        value: String.raw`/a\\/`,
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Unknown,
+                        start: 18,
+                        end: 29,
+                        value: 'example.com',
+                        exception: false,
+                    },
+                ],
+            },
+            {
+                actual: String.raw`/examp[lp]e\.(com|org)/`,
+                expected: [
+                    {
+                        type: ListItemNodeType.Unknown,
+                        start: 0,
+                        end: 23,
+                        value: String.raw`/examp[lp]e\.(com|org)/`,
+                        exception: false,
+                    },
+                ],
+            },
+        ])('$actual', ({ actual, expected }) => {
+            expect(ListItemsParser.parse(actual, defaultParserOptions, 0, PIPE)).toEqual(expected);
+        });
+
+        test.each([
+            {
+                actual: String.raw`~/a\/|example.org`,
+                start: 1,
+                end: 17,
+            },
+            {
+                actual: String.raw`/a\/|example.org`,
+                start: 0,
+                end: 16,
+            },
+            {
+                actual: String.raw`~/|example.org`,
+                start: 1,
+                end: 14,
+            },
+        ])('$actual should throw on an unclosed regexp literal', ({ actual, start, end }) => {
+            const fn = vi.fn(() => ListItemsParser.parse(actual, defaultParserOptions, 0, PIPE));
+
+            expect(fn).toThrowError(LIST_PARSE_ERROR_PREFIX.UNCLOSED_REGEXP_LITERAL);
+
+            const error = fn.mock.results[0].value;
+            expect(error).toBeInstanceOf(AdblockSyntaxError);
+            expect(error).toMatchObject({ start, end });
         });
     });
 

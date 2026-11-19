@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Rules with an unclosed regexp literal in a `$domain` or `$denyallow`
+  value are now rejected during parsing, e.g.
+  `$domain=~/a\/|example.org` and `$domain=~/|example.org` (via
+  [@adguard/tsurlfilter]). Previously the parser kept the rest of the list
+  in one value that could not match a host.
 - Bare `$removeparam` rules no longer duplicate the hash fragment when a
   History API URL has no query string but its fragment contains `?`, e.g.
   `/page#route?x=1` now stays unchanged instead of becoming
