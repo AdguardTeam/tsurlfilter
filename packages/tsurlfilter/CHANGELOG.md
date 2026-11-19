@@ -26,6 +26,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   class now load, e.g. `$$div:contains(/a[)]b/)` and
   `##^div:has-text(/a[)]b/)` (via [@adguard/agtree]). uBO `:contains()` rules
   such as `##^div:contains(foo)` are no longer reported as a conversion error.
+- uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
+  unquotes the argument and matches it case-insensitively, e.g.
+  `##^script:has-text("admc")` becomes `$$script:contains(/admc/i)` (via
+  [@adguard/agtree]). The case-insensitive match folds ASCII case only.
+  Chained text constraints of one element selector are merged into a single
+  `:contains()` regexp, because CoreLibs rejects an element selector with more
+  than one regexp `:contains()`. A plain text stays case-insensitive in a
+  merged chain. The merged regexp keeps the `i` flag unless a constraint in the
+  chain needs a case-sensitive match. In such a mixed chain, a
+  case-insensitive regexp becomes case-sensitive, because the merged regexp has
+  a single flag set.
+- `SimpleRegex.isRegexPattern()` now rejects a pattern whose closing slash
+  is escaped, e.g. `/a\/`, the same as `RegExpUtils.isRegexPattern()` in
+  [@adguard/agtree]. It counts the consecutive backslashes before the
+  closing slash: an odd count escapes the slash, an even count does not.
+  `DomainModifier` now rejects every `$domain` or `$denyallow` value that
+  starts with a slash and is not a regexp literal with `Invalid regular
+  expression as domain pattern`. Before, a value with an escaped closing
+  slash failed to compile as a regexp, while a value without a closing
+  slash became a plain domain that never matched a host, so a negated
+  value left an empty restriction and the rule applied on every site. The
+  bare delimiters `/` and `//` compiled to an empty regexp that matched
+  every domain. A value that ends with an escaped backslash, e.g.
+  `/a\\/`, stays a regexp literal.
 
 ### Security
 
