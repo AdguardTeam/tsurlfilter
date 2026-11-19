@@ -141,8 +141,9 @@ describe('short-lived probes', () => {
         }
     });
 
-    it('stops the collector when the background does not respond', async () => {
+    it('stops the collector after the app-start retry budget without a response', async () => {
         const restoreMutationObserver = mockMutationObserver();
+        vi.useFakeTimers();
 
         try {
             vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(null);
@@ -152,12 +153,17 @@ describe('short-lived probes', () => {
 
             const collectorObserver = MutationObserverMock.last!;
 
-            await new Promise((resolve) => {
-                setTimeout(resolve, 20);
-            });
+            // A response without a payload is retried under the app-start
+            // budget, so the collector keeps observing while a retry can still
+            // succeed.
+            await vi.advanceTimersByTimeAsync(200);
+            expect(collectorObserver.isDisconnected).toBe(false);
 
+            // The budget is spent, so the collector stops.
+            await vi.advanceTimersByTimeAsync(25_000);
             expect(collectorObserver.isDisconnected).toBe(true);
         } finally {
+            vi.useRealTimers();
             restoreMutationObserver();
         }
     });
