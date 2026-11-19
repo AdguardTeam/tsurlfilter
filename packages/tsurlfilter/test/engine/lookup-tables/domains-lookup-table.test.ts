@@ -42,6 +42,16 @@ describe('Domains Lookup Table Tests', () => {
         expect(table.getRulesCount()).toBe(0);
     });
 
+    it('rejects a $domain list the parser refuses instead of splitting it raw', () => {
+        const ruleStorage = createRuleStorage([]);
+        const table = new DomainsLookupTable(ruleStorage);
+
+        // `|foo.com|bar.com` starts with a separator: `NetworkRule` refuses
+        // such a rule too, so the raw split would only file dead keys.
+        expect(table.addRule(getRuleParts('path$domain=|foo.com|bar.com') as NetworkRuleParts, 0)).toBeFalsy();
+        expect(table.getRulesCount()).toBe(0);
+    });
+
     it('files a normalized $domain under the keys a request produces', () => {
         const rules = [
             'path$domain=FOO.COM',

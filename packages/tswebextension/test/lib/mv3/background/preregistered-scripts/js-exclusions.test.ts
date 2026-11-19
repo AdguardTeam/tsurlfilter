@@ -258,6 +258,33 @@ describe('resolveHostExclusions', () => {
         expect(unanchoredExceptions).toEqual(['@@/prison/universal.php$document']);
     });
 
+    it('drops patterns no http(s) document can match', () => {
+        const { exclusions, dynamicHosts, unanchoredExceptions } = scan([{
+            filterId: 2,
+            content: '@@|ftp://youtube.com/ads$document\n@@|//youtube.com/watch$document\n@@||youtube.com/ads$document\n',
+        }]);
+
+        // A document is never loaded over ftp or over a protocol-relative URL,
+        // so the engine matches neither rule: reporting them as host-less
+        // would point a maintainer at the wrong thing.
+        expect(unanchoredExceptions).toEqual([]);
+        expect(dynamicHosts.size).toBe(0);
+        expect(exclusions.get('youtube.com')).toEqual(['*://youtube.com/ads*']);
+    });
+
+    it('keeps a host dynamic when a pipe-anchored prefix matches every page', () => {
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@|http$document\n',
+        }]);
+
+        // `|http` is plain text, not a scheme: it prefixes every http(s) URL,
+        // and the engine disables JS with it. It must stay a candidate.
+        expect(exclusions.size).toBe(0);
+        expect(dynamicHosts.get('youtube.com'))
+            .toContain('names no host but matches the page');
+    });
+
     it('keeps the scheme of a scheme-anchored exception and its host scope', () => {
         const { exclusions } = scan([{
             filterId: 2,

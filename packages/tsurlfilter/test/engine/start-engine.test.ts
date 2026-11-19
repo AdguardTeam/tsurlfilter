@@ -22,7 +22,7 @@ import { collectRuleParts } from './rule-parts';
  * Kept as named constants next to the corpus paths so a fixture change reports
  * which count failed.
  */
-const expectedLoadedRules = 38978;
+const expectedLoadedRules = 38977;
 const expectedNetworkMatchesCount = 4667;
 const expectedDnsMatchesCount = 8776;
 const expectedCosmeticMatchesCount = 1754;

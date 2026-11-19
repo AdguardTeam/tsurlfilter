@@ -75,6 +75,13 @@ interface Candidate {
      * lexical question, and the scan asks it for every host.
      */
     patternHost: PatternHost | undefined;
+
+    /**
+     * Whether the engine files the rule in the domains table. Neither the
+     * request nor the hostname can change that, and `getRuleTable()` re-runs
+     * the table predicates, so the answer is computed once for all hosts.
+     */
+    inDomainsTable: boolean;
 }
 
 /**
@@ -134,15 +141,37 @@ type PatternHost = {
 };
 
 /**
- * Reads the host part of a pattern that names one: `||host…`, `|scheme://host…`,
- * `://host…` or a bare `host/path` / `.host/path`.
+ * What a pattern can reach, read once per rule.
+ */
+type PatternParse =
+    /**
+     * The pattern names a host.
+     */
+    | { kind: 'host'; host: PatternHost }
+    /**
+     * The pattern names no host but can match any URL: a regexp, a bare path
+     * or a plain substring.
+     */
+    | { kind: 'hostless' }
+    /**
+     * No http(s) document can match the pattern: `|ftp://…`, `|//…`, `|/…`.
+     */
+    | { kind: 'unreachable' };
+
+/**
+ * Reads what a pattern can reach: `||host…`, `|scheme://host…`, `://host…` or a
+ * bare `host/path` / `.host/path` name a host; a regexp, a bare path or a plain
+ * substring name none.
+ *
+ * The scheme of a `|`-anchored pattern is decided here and nowhere else: a
+ * document is loaded over http(s) only, so an anchor to another scheme, to a
+ * protocol-relative prefix or to a path can never match one.
  *
  * @param pattern Rule pattern.
  *
- * @returns Host part and the text after it, or `undefined` when the pattern
- * does not name a host (a regexp, a bare path, a plain substring).
+ * @returns What the pattern reaches (see {@link PatternParse}).
  */
-const parsePatternHost = (pattern: string): PatternHost | undefined => {
+const parsePattern = (pattern: string): PatternParse => {
     let rest: string;
     let allowSubdomains = false;
     let scheme = ANY_SCHEME;
@@ -153,16 +182,25 @@ const parsePatternHost = (pattern: string): PatternHost | undefined => {
         allowSubdomains = true;
     } else if (pattern.startsWith(SimpleRegex.MASK_PIPE)) {
         const pipeAnchored = pattern.slice(SimpleRegex.MASK_PIPE.length);
+
+        // A document URL starts with its scheme, so neither a path nor a
+        // protocol-relative prefix can start one.
+        if (pipeAnchored.startsWith('/')) {
+            return { kind: 'unreachable' };
+        }
+
         const schemeIndex = pipeAnchored.indexOf(SCHEME_SEPARATOR);
         if (schemeIndex < 0) {
-            return undefined;
+            // Plain text: `|http` prefixes every http(s) URL, so it reaches
+            // any page while naming no host.
+            return { kind: 'hostless' };
         }
+
         scheme = pipeAnchored.slice(0, schemeIndex).toLowerCase();
-        // A document is loaded over http(s) only, so an exception anchored to
-        // another scheme never matches one.
         if (!DOCUMENT_SCHEMES.has(scheme)) {
-            return undefined;
+            return { kind: 'unreachable' };
         }
+
         rest = pipeAnchored.slice(schemeIndex + SCHEME_SEPARATOR.length);
     } else if (pattern.startsWith(SCHEME_SEPARATOR) || /^[a-z][\w+.-]*:\/\//i.test(pattern)) {
         // `://host…` and `scheme://host…` are substring searches as well: the
@@ -181,22 +219,25 @@ const parsePatternHost = (pattern: string): PatternHost | undefined => {
         const bare = pattern.startsWith('.') ? pattern.slice(1) : pattern;
         const [firstToken = ''] = bare.split(/[/^?#]/);
         if (!/^[\w*%-]+(\.[\w*%-]+)+$/.test(firstToken)) {
-            return undefined;
+            return { kind: 'hostless' };
         }
         rest = bare;
     }
 
     const host = rest.split(/[:/^?#]/)[0];
     if (!host) {
-        return undefined;
+        return { kind: 'hostless' };
     }
 
     return {
-        host,
-        allowSubdomains,
-        rest: rest.slice(host.length),
-        scheme,
-        anchored,
+        kind: 'host',
+        host: {
+            host,
+            allowSubdomains,
+            rest: rest.slice(host.length),
+            scheme,
+            anchored,
+        },
     };
 };
 
@@ -370,7 +411,21 @@ const collectCandidates = (sources: readonly ExceptionSource[]): Candidate[] => 
                     continue;
                 }
 
-                candidates.push({ rule, writtenText: line, patternHost: parsePatternHost(rule.getPattern()) });
+                const pattern = rule.getPattern();
+                const parsed = parsePattern(pattern);
+
+                // A pattern no http(s) document can match can neither exclude
+                // a page nor widen the fallback, so it is not a candidate.
+                if (parsed.kind === 'unreachable') {
+                    continue;
+                }
+
+                candidates.push({
+                    rule,
+                    writtenText: line,
+                    patternHost: parsed.kind === 'host' ? parsed.host : undefined,
+                    inDomainsTable: rule.isInDomainsTable(),
+                });
             }
         }
     }
@@ -415,7 +470,11 @@ const isPermittedOnHost = (rule: NetworkRule, hostname: string): boolean => (
  * computed once per candidate and reused, so `matchModifiers()` — the
  * expensive half of the scan — runs only for rules that can reach the host.
  *
- * @param candidates Candidate rules of all enabled filters.
+ * The candidate set does not depend on the hostname, so it arrives built once
+ * per sync: the scan walks it per host without rebuilding anything.
+ *
+ * @param candidatesByRule Candidate rules of all enabled filters, keyed by the
+ * rule they were parsed into.
  * @param hostname Hostname to build exclusions for.
  *
  * @returns Exclusion patterns of the host, or the reason it stays dynamic.
@@ -424,23 +483,13 @@ const isPermittedOnHost = (rule: NetworkRule, hostname: string): boolean => (
  * caller logs the union across hosts.
  */
 const buildHostExclusions = (
-    candidates: readonly Candidate[],
+    candidatesByRule: ReadonlyMap<NetworkRule, Candidate>,
     hostname: string,
 ): {
     patterns: string[];
     dynamic?: string;
     unanchored?: string[];
 } => {
-    const writtenTextByRule = new Map<NetworkRule, string>();
-    const patternHostByRule = new Map<NetworkRule, PatternHost | undefined>();
-
-    for (const { rule, writtenText, patternHost } of candidates) {
-        writtenTextByRule.set(rule, writtenText);
-        patternHostByRule.set(rule, patternHost);
-    }
-
-    const writtenTextOf = (rule: NetworkRule): string => writtenTextByRule.get(rule) ?? rule.getPattern();
-
     const rootUrl = getPreregisteredRootUrl(hostname);
 
     const cosmeticRequest = createPreregisteredPageRequest(hostname);
@@ -450,7 +499,7 @@ const buildHostExclusions = (
     // passes: `matchModifiers()` is the expensive half of the scan, and a rule
     // whose pattern names another site can never decide this host. A pattern
     // with no host part can match any URL, so it always reaches.
-    const inScope = candidates
+    const inScope = [...candidatesByRule.values()]
         .map((candidate) => ({
             candidate,
             scope: candidate.patternHost
@@ -470,9 +519,10 @@ const buildHostExclusions = (
         }
 
         // The domains table returns nothing for a request without a source, so
-        // its rules can never win the document slot of a main frame.
+        // its rules can never win the document slot of a main frame. The flag
+        // is host-independent and was answered on collection.
         if (rule.isDocumentLevelAllowlistRule()
-            && !rule.isInDomainsTable()
+            && !candidate.inDomainsTable
             && rule.matchModifiers(documentRequest)) {
             documentRules.push(rule);
         }
@@ -482,24 +532,22 @@ const buildHostExclusions = (
     // the request, and compares the written text: the scan parses the list
     // itself, so it has to pass the original line, not the converted one.
     // The call does not mutate its argument.
-    const resolveWrittenText = (rule: NetworkRule): string | null => writtenTextByRule.get(rule) ?? null;
+    const resolveWrittenText = (rule: NetworkRule): string | null => candidatesByRule.get(rule)?.writtenText ?? null;
     const activeRules = new Set<NetworkRule>([
         ...MatchingResult.removeBadfilterRules(cosmeticRules, resolveWrittenText),
         ...MatchingResult.removeBadfilterRules(documentRules, resolveWrittenText),
     ]);
 
-    const disabling: NetworkRule[] = [];
-    const keeping: NetworkRule[] = [];
+    const disabling: { rule: NetworkRule; patternHost: PatternHost; writtenText: string }[] = [];
+    const keeping: { rule: NetworkRule; writtenText: string }[] = [];
     const unanchored: string[] = [];
 
     for (const { candidate, scope } of inScope) {
-        const { rule, patternHost } = candidate;
+        const { rule, patternHost, writtenText: text } = candidate;
 
         if (!activeRules.has(rule)) {
             continue;
         }
-
-        const text = writtenTextOf(rule);
 
         // A pattern that names no host can still match every URL: `@@$document`
         // and `@@$jsinject` decide every page of every host, so no
@@ -548,7 +596,7 @@ const buildHostExclusions = (
         }
 
         if (!rule.isOptionEnabled(NetworkRuleOption.Jsinject)) {
-            keeping.push(rule);
+            keeping.push({ rule, writtenText: text });
             continue;
         }
 
@@ -559,7 +607,7 @@ const buildHostExclusions = (
             return { patterns: [], dynamic: text };
         }
 
-        disabling.push(rule);
+        disabling.push({ rule, patternHost, writtenText: text });
     }
 
     if (disabling.length === 0) {
@@ -569,24 +617,19 @@ const buildHostExclusions = (
     // An exception that keeps JS injection on and outranks a disabling one
     // would win on the same page: the registration cannot tell which page a
     // priority decides, so the host stays dynamic.
-    const lowestDisablingPriority = Math.min(...disabling.map((rule) => rule.getPriorityWeight()));
-    const shield = keeping.find((rule) => rule.getPriorityWeight() >= lowestDisablingPriority);
+    const lowestDisablingPriority = Math.min(...disabling.map(({ rule }) => rule.getPriorityWeight()));
+    const shield = keeping.find(({ rule }) => rule.getPriorityWeight() >= lowestDisablingPriority);
     if (shield) {
         return {
             patterns: [],
-            dynamic: `${writtenTextOf(shield)}: a higher-ranked exception keeps JS injection on`,
+            dynamic: `${shield.writtenText}: a higher-ranked exception keeps JS injection on`,
         };
     }
 
     const patterns = new Set<string>();
 
-    for (const rule of disabling) {
-        const text = writtenTextOf(rule);
-        // Every disabling rule was parsed on collection, so the entry exists.
-        const patternHost = patternHostByRule.get(rule);
-        const pattern = patternHost
-            ? toExcludePattern(patternHost, hostname, rule.isOptionEnabled(NetworkRuleOption.MatchCase))
-            : undefined;
+    for (const { rule, patternHost, writtenText: text } of disabling) {
+        const pattern = toExcludePattern(patternHost, hostname, rule.isOptionEnabled(NetworkRuleOption.MatchCase));
 
         if (!pattern) {
             return {
@@ -626,9 +669,10 @@ export const resolveHostExclusions = (
     }
 
     const candidates = collectCandidates(sources);
+    const candidatesByRule = new Map(candidates.map((candidate) => [candidate.rule, candidate]));
 
     for (const hostname of hostnames) {
-        const { patterns, dynamic, unanchored } = buildHostExclusions(candidates, hostname);
+        const { patterns, dynamic, unanchored } = buildHostExclusions(candidatesByRule, hostname);
 
         unanchored?.forEach((text) => unanchoredExceptions.add(text));
 

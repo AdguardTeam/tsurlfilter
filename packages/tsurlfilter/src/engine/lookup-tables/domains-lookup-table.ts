@@ -8,57 +8,20 @@ import { fastHash } from '../../utils/string-utils';
 import { type ILookupTable } from './lookup-table';
 
 /**
- * Splits a `$domain` value on unescaped separators without normalizing it.
- * Only a fallback for lists the parser rejects.
- *
- * @param text Raw `$domain` value.
- *
- * @returns Domain values as written.
- */
-const splitRawDomains = (text: string): string[] => {
-    const domains: string[] = [];
-    let current = '';
-
-    for (let i = 0; i < text.length; i += 1) {
-        const char = text[i];
-
-        if (char === '|') {
-            let backslashes = 0;
-            while (current[current.length - 1 - backslashes] === '\\') {
-                backslashes += 1;
-            }
-
-            if (backslashes % 2 === 0) {
-                domains.push(current);
-                current = '';
-                continue;
-            }
-        }
-
-        current += char;
-    }
-
-    domains.push(current);
-
-    return domains;
-};
-
-/**
  * Reads the raw `$domain` value with `DomainModifier`, i.e. with the same
  * parse-and-normalize path the rule itself goes through. There is no second
  * reader of the list: `|` inside a regexp literal stays in the pattern, escaped
  * separators are resolved, values are trimmed and plain domain names are
  * lowercased, so the table is filed under the keys a request produces.
  *
- * A value the parser rejects falls back to a raw split on unescaped
- * separators: the rule is kept in this table exactly as it was before the
- * normalizing path existed, instead of moving to the sequence scan, which
- * refuses a rule it cannot parse.
+ * A value the parser rejects (`$domain=|host`, which `NetworkRule` refuses too)
+ * is not filed at all: the raw split would store it under keys no request can
+ * produce, i.e. hide a dead rule instead of letting it go to the sequence scan.
  *
  * @param text Raw `$domain` value.
  *
  * @returns Domain values as the engine sees them, restricted ones keeping the
- * `~` prefix.
+ * `~` prefix, or an empty list when the value is unusable.
  */
 const splitDomains = (text: string): string[] => {
     try {
@@ -69,7 +32,7 @@ const splitDomains = (text: string): string[] => {
             ...(modifier.getRestrictedDomains() ?? []).map((domain) => `~${domain}`),
         ];
     } catch {
-        return splitRawDomains(text);
+        return [];
     }
 };
 
