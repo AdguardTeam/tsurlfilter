@@ -20,12 +20,17 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 ### Fixed
 
 - A right parenthesis inside a single-quoted `:xpath()` literal no longer
-  closes an Extended CSS pseudo-class early. A quotation mark inside such a
-  literal no longer breaks the pseudo-class either. `:xpath()` now tracks
-  both quote characters in XPath literals, e.g.
+  closes an Extended CSS pseudo-class early. A quotation mark of the other
+  kind inside such a literal no longer breaks the pseudo-class either.
+  `:xpath()` now tracks both quote characters in XPath literals, e.g.
   `:xpath(//div[contains(text(),')')])` and
-  `:xpath(//div[@a='x"y'])`. A quote after an escaped reverse solidus (`\\`)
-  still closes the literal.
+  `:xpath(//div[@a='x"y'])`. A literal ends only at its own quotation mark,
+  because XPath literals have no escape sequences, so the pseudo-class
+  `:xpath(//div[@a='C:\'])` closes at the right parenthesis. A quotation mark
+  or a parenthesis after an escaped reverse solidus (`\\`) is no longer
+  treated as escaped either, e.g. `:xpath(//div[@a="C:\\"])` and
+  `:xpath(//a[contains(a\\)])`. Previously such arguments consumed the rest
+  of the input.
 - A right parenthesis inside a regexp character class no longer closes an
   extended CSS pseudo-class early. Regexp literals are recognized both as
   the whole raw argument, e.g. `:has-text(/a[)]b/)`, and as the

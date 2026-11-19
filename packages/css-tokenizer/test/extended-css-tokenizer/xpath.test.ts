@@ -84,17 +84,22 @@ const PSEUDO_VALUES: PseudoValues = {
         String.raw`//div[contains(text(),')')]`,
         // a quotation mark inside a single-quoted literal
         String.raw`//div[@a='x"y']`,
-        // double-quoted forms keep the current behavior
+        // double-quoted forms already handled the other quote
         String.raw`//div[contains(text(),")")]`,
         String.raw`//div[@a="x'y"]`,
         // mixed quotes
         String.raw`//div[contains(text(),'x') and @a="y"]`,
-        // CSS-escaped quotes do not open a string
+        // CSS-escaped quotes do not open a literal
         String.raw`//div[contains(text(),\')]`,
         String.raw`//div[@a=\"x]`,
+        // XPath literals have no escape sequences, so a reverse solidus does not escape the closing quote
+        String.raw`//div[@a='C:\']`,
+        String.raw`//div[@a="C:\"]`,
         // an escaped reverse solidus before the quote does not escape the quote itself
         String.raw`//div[@a='C:\\']`,
         String.raw`//div[@a="C:\\"]`,
+        // an escaped reverse solidus before a parenthesis does not escape the parenthesis
+        String.raw`//a[contains(a\\)]`,
     ]),
 
     // complex XPath as string parameter
