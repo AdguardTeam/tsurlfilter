@@ -293,14 +293,14 @@ describe('Domain modifier', () => {
         it('rejects a slash-leading value without a closing slash', () => {
             // The list parser takes the leading slash as the start of a regexp
             // literal and swallows the separator when no closing delimiter
-            // follows, so the second item joins the first one
+            // follows, so the next item joins the slash-leading one
             expect(() => new DomainModifier(String.raw`~/a\/|example.org`, PIPE_SEPARATOR, true))
                 .toThrow('Invalid regular expression as domain pattern');
             expect(() => new DomainModifier('~/|example.org', PIPE_SEPARATOR, true))
                 .toThrow('Invalid regular expression as domain pattern');
             expect(() => new DomainModifier(String.raw`/a\/|example.org`, PIPE_SEPARATOR, true))
                 .toThrow('Invalid regular expression as domain pattern');
-            expect(() => new DomainModifier(String.raw`example.org|/a\/`, PIPE_SEPARATOR, true))
+            expect(() => new DomainModifier(String.raw`example.org|/a\/|example.com`, PIPE_SEPARATOR, true))
                 .toThrow('Invalid regular expression as domain pattern');
         });
     });
