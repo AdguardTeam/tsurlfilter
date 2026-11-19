@@ -352,6 +352,30 @@ describe('common parseListItems', () => {
                     },
                 ],
             },
+            {
+                actual: String.raw`/a(b|example.org`,
+                expected: [
+                    {
+                        type: ListItemNodeType.Unknown,
+                        start: 0,
+                        end: 16,
+                        value: String.raw`/a(b|example.org`,
+                        exception: false,
+                    },
+                ],
+            },
+            {
+                actual: String.raw`~/a\/|example.org|/b/`,
+                expected: [
+                    {
+                        type: ListItemNodeType.Unknown,
+                        start: 1,
+                        end: 21,
+                        value: String.raw`/a\/|example.org|/b/`,
+                        exception: true,
+                    },
+                ],
+            },
         ])('$actual', ({ actual, expected }) => {
             expect(ListItemsParser.parse(actual, defaultParserOptions, 0, PIPE)).toEqual(expected);
         });
@@ -386,6 +410,16 @@ describe('common parseListItems', () => {
                 actual: String.raw`/a\\|b`,
                 start: 0,
                 end: 6,
+            },
+            {
+                actual: String.raw`/a(b|c)|example.org`,
+                start: 0,
+                end: 19,
+            },
+            {
+                actual: String.raw`/a/x|example.org`,
+                start: 0,
+                end: 16,
             },
         ])('$actual should throw on an unclosed regexp literal', ({ actual, start, end }) => {
             const fn = vi.fn(() => ListItemsParser.parse(actual, defaultParserOptions, 0, PIPE));

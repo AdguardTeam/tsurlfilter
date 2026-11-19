@@ -709,6 +709,7 @@ describe('DomainListParser', () => {
             String.raw`/a\|b`,
             String.raw`/a[|]b`,
             String.raw`/a(b|c)`,
+            String.raw`/a(b|example.org`,
         ])('should keep a trailing regexp-like item opaque: $actual', (regexLikeValue) => {
             expect(DomainListParser.parse(regexLikeValue, defaultParserOptions, 0, '|')).toEqual<DomainList>({
                 type: ListNodeType.DomainList,
@@ -780,6 +781,26 @@ describe('DomainListParser', () => {
             });
         });
 
+        test('should keep a value opaque when a later closing delimiter ends it', () => {
+            const regexLikeValue = String.raw`/a\/|example.org|/b/`;
+            const list = `~${regexLikeValue}`;
+            expect(DomainListParser.parse(list, defaultParserOptions, 0, '|')).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: list.length,
+                separator: '|',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 1,
+                        end: list.length,
+                        value: regexLikeValue,
+                        exception: true,
+                    },
+                ],
+            });
+        });
+
         test.each([
             {
                 actual: String.raw`~/a\/|example.org`,
@@ -805,6 +826,16 @@ describe('DomainListParser', () => {
                 actual: String.raw`/a[|]b|example.org`,
                 start: 0,
                 end: 18,
+            },
+            {
+                actual: String.raw`/a(b|c)|example.org`,
+                start: 0,
+                end: 19,
+            },
+            {
+                actual: String.raw`/a/x|example.org`,
+                start: 0,
+                end: 16,
             },
         ])('should throw on an unclosed regexp literal: $actual', ({ actual, start, end }) => {
             let error: unknown;
