@@ -260,6 +260,30 @@ You MUST follow the following rules for EVERY task that you perform:
    **Rationale**: keeps function contracts greppable and consistent with our
    usual JSDoc style across both packages and tooling scripts.
 
+7. **Prefer named exports over `export *`.** List the re-exported names
+   explicitly (`export { a, type B } from './module'`), barrel files included.
+   Use `export *` only where a named list is impractical.
+
+   **Rationale**: the public surface of a module stays visible in one place,
+   and a new symbol never becomes public by accident.
+
+8. **Use enums instead of magic strings.** A fixed set of values (statuses,
+   types, operation names, keys) is a string `enum`, and code compares and
+   assigns its members, not string literals. A zod schema reads it with
+   `zod.nativeEnum()` or `zod.literal(Enum.Member)`.
+
+   **Rationale**: this is the project convention; a typo becomes a type
+   error, and every use of a value can be found by its member.
+
+9. **Group related functions in a class with static methods.** Do not export
+   loose module-level helper functions where the surrounding code uses a
+   class as a namespace. An exception is code bundled into pages, where size
+   matters: terser renames and drops unused module-level functions, but keeps
+   method names. Such a module says so in a comment.
+
+   **Rationale**: matches the existing code and keeps related helpers under
+   one name.
+
 ### III. Testing Discipline
 
 1. **Vitest** is the test runner for all packages. Each package has its own

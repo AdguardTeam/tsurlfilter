@@ -40,6 +40,19 @@ export interface IRulesetWithSourceMap extends IBaseRuleset {
     getRulesById(declarativeRuleId: number): Promise<SourceRuleAndFilterId[]>;
 
     /**
+     * Returns source rule indexes and their filter identifiers for a given
+     * declarative rule identifier.
+     *
+     * Unlike {@link getRulesById}, it does not read source rule texts, so it
+     * works even when the filter list content is not available.
+     *
+     * @param declarativeRuleId {@link DeclarativeRule|declarative rule} Id.
+     *
+     * @returns Promise with list of filter ids and source rule indexes.
+     */
+    getSourceRuleIndexes(declarativeRuleId: number): Promise<SourceRuleIdxAndFilterId[]>;
+
+    /**
      * Returns list of network rules with `$badfilter` option.
      *
      * @returns List of network rules with `$badfilter` option.
@@ -521,6 +534,15 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     }
 
     /** @inheritdoc */
+    public async getSourceRuleIndexes(
+        declarativeRuleId: number,
+    ): Promise<SourceRuleIdxAndFilterId[]> {
+        await this.loadContent();
+
+        return this.sourceMap?.getByDeclarativeRuleId(declarativeRuleId) ?? [];
+    }
+
+    /** @inheritdoc */
     public getBadFilterRules(): Rule[] {
         return this.badFilterRules;
     }
@@ -819,7 +841,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
             // and stored in the `unsafeRules` array (metadata).
             safeRulesCount: this.safeRulesCount,
             rulesetHashMapRaw: this.rulesHashMap.serialize(),
-            badFilterRulesRaw: this.badFilterRules.map((r) => r.getText()),
+            badFilterRulesRaw: this.badFilterRules.map((r) => r.originalText),
             unsafeRules,
         };
     }

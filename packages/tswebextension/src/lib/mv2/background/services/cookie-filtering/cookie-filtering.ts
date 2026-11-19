@@ -4,6 +4,7 @@ import { type CookieModifier, type NetworkRule, NetworkRuleOption } from '@adgua
 
 import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
 import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
+import { type CookieStoreScope, resolveCookieStoreScope } from '../../../../common/cookie-filtering/cookie-store-scope';
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
 import { FilteringEventType, type FilteringLogInterface } from '../../../../common/filtering-log';
 import { ContentType } from '../../../../common/request-type';
@@ -15,6 +16,7 @@ import { getRuleTexts } from '../../../../common/utils/rule-text-provider';
 import { type EngineApi } from '../../engine-api';
 import { type RequestContext, requestContextStorage } from '../../request/request-context-storage';
 import { type TabsApi } from '../../tabs/tabs-api';
+import { browserDetectorMV2 } from '../../utils/browser-detector';
 
 import CookieUtils from './utils';
 
@@ -370,8 +372,34 @@ export class CookieFiltering {
 
         const cookieRules = matchingResult.getCookieRules();
 
-        const promises = cookies.map(async (cookie) => {
-            await this.applyRulesToCookie(cookie, cookieRules, requestUrl, tabId);
+        // No cookie rule matched this request — nothing can be applied to the
+        // jar, so skip the store scope resolution and the cookies snapshot.
+        if (cookieRules.length === 0) {
+            return;
+        }
+
+        // Snapshot the cookies list before the first await: the synchronous
+        // header-rewriting path mutates `context.cookies` while the store
+        // scope resolution is in flight.
+        const cookiesSnapshot = [...cookies];
+
+        // Resolve the cookie store of the session the request originated from,
+        // so jar operations never fall back to the default (normal) store
+        // for private/container requests.
+        const scope = await resolveCookieStoreScope(
+            context,
+            browserDetectorMV2.isFirefox(),
+            (id) => this.tabsApi.getTabIncognitoState(id),
+        );
+
+        if (scope === null) {
+            // The jar gate is in BrowserCookieApi; keep applying the rules so
+            // allowlist events still reach the filtering log.
+            logger.debug('[tsweb.CookieFiltering.applyRules]: cookie store scope is unresolved, jar operations will be skipped: ', requestUrl, tabId);
+        }
+
+        const promises = cookiesSnapshot.map(async (cookie) => {
+            await this.applyRulesToCookie(cookie, cookieRules, requestUrl, tabId, scope);
         });
 
         await Promise.all(promises);
@@ -387,10 +415,14 @@ export class CookieFiltering {
      * which covered "children"-cookies by 'path' value.
      *
      * @param cookie Cookie, for which need to find the "parent" cookie.
+     * @param scope Target cookie store scope, `null` to skip the lookup.
      *
      * @returns Item of parent cookie {@link ParsedCookie} or null if not found.
      */
-    private async findParentCookie(cookie: ParsedCookie): Promise<ParsedCookie | null> {
+    private async findParentCookie(
+        cookie: ParsedCookie,
+        scope: CookieStoreScope | null,
+    ): Promise<ParsedCookie | null> {
         const pattern = {
             url: cookie.url,
             name: cookie.name,
@@ -398,7 +430,7 @@ export class CookieFiltering {
             secure: cookie.secure,
         };
 
-        const parentCookies = await this.browserCookieApi.findCookies(pattern);
+        const parentCookies = await this.browserCookieApi.findCookies(pattern, scope);
         const sortedParentCookies = parentCookies.sort((a, b) => a.path.length - b.path.length);
 
         for (let i = 0; i < sortedParentCookies.length; i += 1) {
@@ -419,19 +451,22 @@ export class CookieFiltering {
      * @param cookieRules Cookie rules.
      * @param requestUrl Request URL, needs to record filtering event.
      * @param tabId Tab id.
+     * @param scope Target cookie store scope, `null` to skip jar mutations.
      */
     private async applyRulesToCookie(
         cookie: ParsedCookie,
         cookieRules: NetworkRule[],
         requestUrl: string,
         tabId: number,
+        scope: CookieStoreScope | null,
     ): Promise<void> {
         const cookieName = cookie.name;
         const isThirdPartyCookie = cookie.thirdParty;
 
         const bRule = CookieRulesFinder.lookupNotModifyingRule(cookieName, cookieRules, isThirdPartyCookie);
         if (bRule) {
-            if (bRule.isAllowlist() || await this.browserCookieApi.removeCookie(cookie.name, cookie.url)) {
+            if (bRule.isAllowlist()
+                || await this.browserCookieApi.removeCookie(cookie.name, cookie.url, scope)) {
                 this.recordCookieEvent(tabId, cookie, requestUrl, bRule, false, isThirdPartyCookie);
             }
 
@@ -442,12 +477,12 @@ export class CookieFiltering {
         if (mRules.length > 0) {
             // Try to find "parent" cookie and modify it instead of creating
             // "child copy" cookie.
-            const parentCookie = await this.findParentCookie(cookie);
+            const parentCookie = await this.findParentCookie(cookie, scope);
             const cookieToModify = parentCookie || cookie;
 
             const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookieToModify, mRules);
             if (appliedRules.length > 0) {
-                if (await this.browserCookieApi.modifyCookie(cookieToModify)) {
+                if (await this.browserCookieApi.modifyCookie(cookieToModify, scope)) {
                     appliedRules.forEach((r) => {
                         this.recordCookieEvent(tabId, cookieToModify, requestUrl, r, true, isThirdPartyCookie);
                     });

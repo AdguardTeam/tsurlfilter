@@ -53,8 +53,10 @@ export abstract class Allowlist {
         this.enabled = allowlistEnabled;
         this.inverted = allowlistInverted;
 
+        // Hostnames are compared with the lowercase domains of documents.
         this.domains = allowlist.map((hostname: string) => {
-            return hostname.startsWith('www.') ? hostname.substring(4).trim() : hostname.trim();
+            const domain = hostname.trim().toLowerCase();
+            return domain.startsWith('www.') ? domain.substring(4) : domain;
         });
     }
 

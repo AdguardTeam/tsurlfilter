@@ -3,11 +3,15 @@
  * Needed for backward compatibility during internal API updates.
  * Will be removed in the future.
  */
+import { CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
 import { defaultFilteringLog } from '../../common/filtering-log';
 
 import { Allowlist } from './allowlist';
 import { TsWebExtension } from './app';
 import { appContext } from './app-context';
+import { ChromiumMv2CanvasDeliveryChannel } from './canvas-delivery-channel';
+import { ChromiumMv2CanvasInjection } from './canvas-injection';
+import { FirefoxCanvasRegistration } from './canvas-registration';
 import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
 import { DocumentApi } from './document-api';
 import { EngineApi } from './engine-api';
@@ -29,6 +33,7 @@ import { UrlTransformService } from './services/url-transform-service';
 import { StealthApi } from './stealth-api';
 import { TabsApi } from './tabs/tabs-api';
 import { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
+import { browserDetectorMV2 } from './utils/browser-detector';
 
 export const allowlist = new Allowlist();
 
@@ -80,6 +85,12 @@ export const removeParamInjectionService = new RemoveParamInjectionService(
     defaultFilteringLog,
 );
 
+// TODO: remove when Chromium MV2 is no longer supported.
+export const canvasInjection = new ChromiumMv2CanvasInjection();
+
+// TODO: remove when Chromium MV2 is no longer supported.
+export const canvasDeliveryChannel = new ChromiumMv2CanvasDeliveryChannel(canvasInjection, tabsApi);
+
 /**
  * Creates new instance of {@link TsWebExtension}.
  *
@@ -89,6 +100,11 @@ export const removeParamInjectionService = new RemoveParamInjectionService(
  */
 export function createTsWebExtension(webAccessibleResourcesPath: string): TsWebExtension {
     resourcesService.init(webAccessibleResourcesPath);
+
+    // TODO: remove when Chromium MV2 is no longer supported.
+    if (!browserDetectorMV2.isFirefox()) {
+        canvasDeliveryChannel.listen();
+    }
 
     const tabCosmeticInjector = new TabsCosmeticInjector(
         documentApi,
@@ -107,5 +123,10 @@ export function createTsWebExtension(webAccessibleResourcesPath: string): TsWebE
         documentBlockingService,
         defaultFilteringLog,
         extSessionStorage,
+        new CanvasProtectionRegistration(
+            // TODO: remove when Chromium MV2 is no longer supported.
+            browserDetectorMV2.isFirefox() ? new FirefoxCanvasRegistration() : canvasInjection,
+            appContext,
+        ),
     );
 }

@@ -2,6 +2,7 @@
  * @file Converter entry point.
  */
 export { FilterListConverter } from './filter-list';
+export { getModifierAliases } from './misc/network-rule-modifier';
 export { RawFilterListConverter, type FilterListConvertOptions } from './raw-filter-list';
 export { RuleConverter } from './rule';
 export { RawRuleConverter } from './raw-rule';

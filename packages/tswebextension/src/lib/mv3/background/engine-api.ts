@@ -15,11 +15,13 @@ import {
     setConfiguration,
 } from '@adguard/tsurlfilter';
 
+import { CanvasExceptionRules } from '../../common/canvas-protection/exception-rules';
 import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { logger } from '../../common/utils/logger';
 import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 
 import { type ConfigurationMV3 } from './configuration';
+import FiltersApi from './filters-api';
 import { type ITrustedFilter } from './trusted-filter';
 import { UserScriptsApi } from './user-scripts-api';
 
@@ -115,8 +117,13 @@ export class EngineApi {
         for (let i = 0; i < localFilters.length; i += 1) {
             try {
                 const filter = localFilters[i];
+                // Pass the filter list stored in IDB together with its
+                // conversion data, so the engine does not prepare it again.
+                // `filter.getContent()` returns the original spelling as a
+                // plain string, which the engine would re-convert line by line
+                // on every start.
                 // eslint-disable-next-line no-await-in-loop
-                const content = await filter.getContent();
+                const content = await FiltersApi.loadFilterContent(filter.getId());
 
                 lists.push({
                     id: filter.getId(),
@@ -163,7 +170,8 @@ export class EngineApi {
             // User rules can be empty (e.g. on a fresh install); in that case
             // the resolved content is simply empty and we skip adding it.
             if (userrules.length > 0) {
-                // Note: rules are already converted at the extension side
+                // Note: the content is the original spelling — the engine
+                // converts it itself, and `$badfilter` needs the written text.
                 lists.push({
                     id: USER_FILTER_ID,
                     content: userrules,
@@ -338,6 +346,15 @@ export class EngineApi {
      */
     public isUserRulesFilter(filterId: number): boolean {
         return filterId === this.userFilterId;
+    }
+
+    /**
+     * Gets stealth and document exception texts, excluding generated allowlist rules.
+     *
+     * @returns Exception texts, or an empty array if the engine is not started.
+     */
+    public getDocumentOrStealthExceptionRuleTexts(): string[] {
+        return this.engine ? CanvasExceptionRules.getRuleTexts(this.engine) : [];
     }
 
     /**

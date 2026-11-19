@@ -368,6 +368,11 @@ export class CosmeticRule implements IRule {
     private htmlSelectorList: HtmlSelectorList | null = null;
 
     /**
+     * Cached canonical content used as the allowlist lookup key.
+     */
+    private canonicalContent?: string;
+
+    /**
      * Gets rule index.
      *
      * @returns Rule index.
@@ -401,6 +406,44 @@ export class CosmeticRule implements IRule {
      */
     public getContent(): string {
         return this.content;
+    }
+
+    /**
+     * Returns the canonical rule content used as the allowlist lookup key.
+     *
+     * The key must be the same for equivalent rule bodies, so an exception rule
+     * cancels a blocking rule regardless of the spelling of its body. For HTML
+     * filtering rules, the key is serialized from the parsed selector list:
+     * attribute values always use double quotes, and all special pseudo-class
+     * aliases (`:contains()`, `:-abp-contains()`, `:has-text()`) map to
+     * `:contains()`. Other rules use their generated content as-is.
+     *
+     * @returns Canonical content of the rule.
+     */
+    public getCanonicalContent(): string {
+        if (this.canonicalContent !== undefined) {
+            return this.canonicalContent;
+        }
+
+        if (!this.htmlSelectorList) {
+            this.canonicalContent = this.content;
+            return this.canonicalContent;
+        }
+
+        this.canonicalContent = this.htmlSelectorList.selectors
+            .map((complexSelector) => complexSelector
+                .map((selector) => {
+                    const combinator = selector.combinator ? ` ${selector.combinator} ` : '';
+                    const specialSelectors = selector.specialSelectors
+                        .map((specialSelector) => `:${specialSelector.name}(${specialSelector.value})`)
+                        .join('');
+
+                    return `${combinator}${selector.nativeSelector}${specialSelectors}`;
+                })
+                .join(''))
+            .join(', ');
+
+        return this.canonicalContent;
     }
 
     /**
@@ -567,15 +610,12 @@ export class CosmeticRule implements IRule {
                         throw new SyntaxError(`'$${modifierName}' modifier is not allowed in a domain-specific rule`);
                     }
 
-                    result.domainModifier = new DomainModifier(modifierValue, PIPE_MODIFIER_SEPARATOR);
+                    result.domainModifier = new DomainModifier(modifierValue, PIPE_MODIFIER_SEPARATOR, true);
                     break;
 
                 case CosmeticRuleModifier.Path:
                     result.pathModifier = new Pattern(
-                        SimpleRegex.isRegexPattern(modifierValue)
-                            // eslint-disable-next-line max-len
-                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
-                            : modifierValue,
+                        SimpleRegex.unescapeModifierPatternValue(modifierValue),
                     );
                     break;
 
@@ -585,10 +625,7 @@ export class CosmeticRule implements IRule {
                     }
 
                     result.urlModifier = new Pattern(
-                        SimpleRegex.isRegexPattern(modifierValue)
-                            // eslint-disable-next-line max-len
-                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
-                            : modifierValue,
+                        SimpleRegex.unescapeModifierPatternValue(modifierValue),
                     );
                     break;
 

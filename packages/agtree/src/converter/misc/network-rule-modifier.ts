@@ -112,6 +112,26 @@ const ADG_CONVERSION_MAP = new Map<string, ModifierConversion[]>([
 ]);
 
 /**
+ * Returns raw modifier names which are converted to the given ADG modifier
+ * name, i.e. its aliases in the original filter syntax.
+ *
+ * @param adgModifierName ADG modifier name, e.g. `csp`.
+ *
+ * @returns Raw modifier names, empty array if there are no aliases.
+ */
+export function getModifierAliases(adgModifierName: string): string[] {
+    const aliases: string[] = [];
+
+    for (const [rawName, conversions] of ADG_CONVERSION_MAP) {
+        if (conversions.some((conversion) => conversion.name(rawName) === adgModifierName)) {
+            aliases.push(rawName);
+        }
+    }
+
+    return aliases;
+}
+
+/**
  * Helper class for converting network rule modifier lists.
  *
  * @todo Implement `convertToUbo` and `convertToAbp`.

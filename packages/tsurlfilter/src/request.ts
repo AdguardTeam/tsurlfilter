@@ -1,5 +1,4 @@
 import { parse } from 'tldts';
-import type { IResult } from 'tldts-core';
 
 import { type HTTPMethod } from './modifiers/method-modifier';
 import { type RequestType } from './request-type';
@@ -178,7 +177,7 @@ export class Request {
      *
      * @returns The parsed URL result.
      */
-    private static parse(url: string): IResult {
+    private static parse(url: string): ReturnType<typeof parse> {
         const tldResult = parse(url);
 
         /**
@@ -222,7 +221,7 @@ export class Request {
      *
      * @returns Array of subdomains.
      */
-    private static getSubdomains(tldResult: IResult): string[] {
+    private static getSubdomains(tldResult: ReturnType<typeof parse>): string[] {
         const {
             domain,
             hostname,

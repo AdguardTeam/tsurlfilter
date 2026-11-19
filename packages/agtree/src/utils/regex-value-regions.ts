@@ -312,3 +312,31 @@ export function collectRegexValueRegions(
 
     return regions ?? NO_REGEX_VALUE_REGIONS;
 }
+
+/**
+ * Finds the index of the network rule modifier separator (`$`) in a rule.
+ *
+ * A `$` that is escaped or followed by a regexp marker does not separate the
+ * pattern from the modifier list, e.g. the end anchor in
+ * `example.org^$removeparam=/regex$/`. The last such separator is returned.
+ *
+ * @param rule Network rule text.
+ * @param end Index one past the last character to scan. Defaults to the end of
+ * the rule.
+ *
+ * @returns Index of the separator, or `-1` if the rule has no modifier list.
+ */
+export function findNetworkRuleSeparatorIndex(rule: string, end: number = rule.length): number {
+    // As we are looking for the last separator, we start from the end of the string
+    for (let i = end - 1; i >= 0; i -= 1) {
+        if (
+            rule[i] === DOLLAR_SIGN
+            && rule[i + 1] !== REGEX_MARKER
+            && rule[i - 1] !== BACKSLASH
+        ) {
+            return i;
+        }
+    }
+
+    return -1;
+}

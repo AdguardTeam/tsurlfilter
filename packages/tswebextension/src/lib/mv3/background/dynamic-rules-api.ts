@@ -2,18 +2,26 @@ import browser from 'webextension-polyfill';
 
 import {
     type ConversionResult,
+    type DeclarativeRule,
     FilterConverter,
     type IFilter,
     type IRulesetWithSourceMap,
+    isCspDeclarativeRule,
+    isSafeRule,
+    TooManyRegexpRulesError,
+    TooManyRulesError,
+    TooManyUnsafeRulesError,
     type UpdateStaticRulesOptions,
 } from '@adguard/dnr-converter';
 
 import { logger } from '../../common/utils/logger';
 
+import { getSourceRuleIdsList } from './source-rule-ids';
+
 /**
  * Narrows {@link ConversionResult} for the dynamic ruleset use case:
  * `declarativeRulesToCancel` is always present (required, not optional) because
- * {@link DynamicRulesApi.updateDynamicFiltering} always computes it via
+ * {@link DynamicRulesApi.prepareDynamicFiltering} always computes it via
  * {@link FilterConverter.computeRulesToDisable}.
  */
 export type DynamicConversionResult = ConversionResult<IRulesetWithSourceMap> & {
@@ -23,11 +31,56 @@ export type DynamicConversionResult = ConversionResult<IRulesetWithSourceMap> & 
 export type { DynamicConversionResult as ConversionResult };
 
 /**
+ * Final counts of dynamic rules, rebuilt CSP rules included.
+ */
+export type DynamicRulesCounts = {
+    /**
+     * Total number of dynamic rules that fit the quotas.
+     */
+    total: number;
+
+    /**
+     * Number of unsafe dynamic rules that fit the quotas.
+     */
+    unsafe: number;
+
+    /**
+     * Number of regexp dynamic rules that fit the quotas.
+     */
+    regexp: number;
+};
+
+type LimitedCspRules = {
+    rules: DeclarativeRule[];
+    limitations: DynamicConversionResult['limitations'];
+    counts: DynamicRulesCounts;
+};
+
+export type DynamicRulesSnapshot = {
+    rules: browser.DeclarativeNetRequest.Rule[];
+    sourceMap: Map<number, [string, number]>;
+    disabledStaticRuleIds: Map<string, number[]>;
+};
+
+/**
  * DynamicRulesApi knows how to handle dynamic rules: apply a list of custom
  * filters along with user rules, allowlist and quick fixes rules and disable
  * all dynamic rules when the filtration is stopped.
  */
 export default class DynamicRulesApi {
+    /**
+     * Maps runtime dynamic CSP rule IDs to their source ruleset and rule IDs.
+     */
+    public static readonly sourceMapForCspRules = new Map<number, [string, number]>();
+
+    /**
+     * First ID tried when reassigning colliding IDs of rebuilt CSP rules.
+     *
+     * Any free positive ID is valid; reassignment starts low to stay clear of
+     * the hash-based IDs of converted rules.
+     */
+    private static readonly FIRST_REASSIGNED_RULE_ID = 2;
+
     /**
      * The maximum number of regular expression rules that an extension can add.
      * This limit is evaluated separately for the set of session rules,
@@ -67,33 +120,108 @@ export default class DynamicRulesApi {
     }
 
     /**
-     * Converts custom filters and user rules on the fly into a single merged
-     * rule set and applies it via the declarativeNetRequest API.
+     * Fits rebuilt CSP rules into quotas left after regular dynamic conversion.
      *
-     * Filters will combine into one in following order:
-     * - allowlistRules,
-     * - blockingPageTrustedFilter - created on the blocking page by user,
-     * - userRules,
-     * - customFilters.
+     * @param conversionResult Regular dynamic conversion result.
+     * @param rebuiltCspRules Rebuilt dynamic CSP rules.
+     * @param cspRuleset Source rule set of the rebuilt CSP rules, used to
+     * report source rule ids.
+     *
+     * @returns CSP rules that fit, limitations for omitted rules and the final
+     * counts of dynamic rules.
+     */
+    public static async limitRebuiltCspRules(
+        conversionResult: DynamicConversionResult,
+        rebuiltCspRules: DeclarativeRule[],
+        cspRuleset?: IRulesetWithSourceMap,
+    ): Promise<LimitedCspRules> {
+        const rules: DeclarativeRule[] = [];
+        let totalCount = conversionResult.ruleset.getSafeRulesCount()
+            + conversionResult.ruleset.getUnsafeRulesCount();
+        let unsafeCount = conversionResult.ruleset.getUnsafeRulesCount();
+        let regexpCount = conversionResult.ruleset.getRegexpRulesCount();
+        const excludedTotalIds: number[] = [];
+        const excludedUnsafeIds: number[] = [];
+        const excludedRegexpIds: number[] = [];
+
+        for (const rule of rebuiltCspRules) {
+            const isUnsafe = !isSafeRule(rule);
+            const isRegexp = rule.condition.regexFilter !== undefined;
+            const exceedsTotalLimit = totalCount >= DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_RULES;
+            const exceedsUnsafeLimit = isUnsafe
+                && unsafeCount >= DynamicRulesApi.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES;
+            const exceedsRegexpLimit = isRegexp
+                && regexpCount >= DynamicRulesApi.MAX_NUMBER_OF_REGEX_RULES;
+
+            if (exceedsTotalLimit || exceedsUnsafeLimit || exceedsRegexpLimit) {
+                if (exceedsTotalLimit) {
+                    excludedTotalIds.push(rule.id);
+                }
+                if (exceedsUnsafeLimit) {
+                    excludedUnsafeIds.push(rule.id);
+                }
+                if (exceedsRegexpLimit) {
+                    excludedRegexpIds.push(rule.id);
+                }
+                continue;
+            }
+
+            rules.push(rule);
+            totalCount += 1;
+            unsafeCount += Number(isUnsafe);
+            regexpCount += Number(isRegexp);
+        }
+
+        const limitations: DynamicConversionResult['limitations'] = [];
+        if (excludedTotalIds.length > 0) {
+            limitations.push(new TooManyRulesError(
+                `Rebuilt CSP rules exceed the dynamic rules limit: ${excludedTotalIds.length} rules were omitted`,
+                await getSourceRuleIdsList(cspRuleset, excludedTotalIds),
+                DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_RULES,
+                excludedTotalIds.length,
+            ));
+        }
+        if (excludedUnsafeIds.length > 0) {
+            limitations.push(new TooManyUnsafeRulesError(
+                `Rebuilt CSP rules exceed the unsafe dynamic limit: ${excludedUnsafeIds.length} rules were omitted`,
+                await getSourceRuleIdsList(cspRuleset, excludedUnsafeIds),
+                DynamicRulesApi.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES,
+                excludedUnsafeIds.length,
+            ));
+        }
+        if (excludedRegexpIds.length > 0) {
+            limitations.push(new TooManyRegexpRulesError(
+                `Rebuilt CSP rules exceed the dynamic regexp limit: ${excludedRegexpIds.length} rules were omitted`,
+                await getSourceRuleIdsList(cspRuleset, excludedRegexpIds),
+                DynamicRulesApi.MAX_NUMBER_OF_REGEX_RULES,
+                excludedRegexpIds.length,
+            ));
+        }
+
+        return {
+            rules,
+            limitations,
+            counts: {
+                total: totalCount,
+                unsafe: unsafeCount,
+                regexp: regexpCount,
+            },
+        };
+    }
+
+    /**
+     * Converts dynamic filters without changing browser DNR rules.
      *
      * @param allowlistRules Filter with allowlist rules.
-     * @param blockingPageTrustedFilter Filter with blocking page trusted domains rules (badfiltered rules).
+     * @param blockingPageTrustedFilter Filter with blocking page trusted domains rules.
      * @param userRules Filter with user rules.
      * @param customFilters List of custom filters.
-     * @param enabledStaticRulesets List of enabled static rule sets to apply
-     * $badfilter rules from dynamic rules to static.
-     * @param resourcesPath String path to web accessible resources,
-     * relative to the extension root dir. Should start with leading slash '/'.
+     * @param enabledStaticRulesets Enabled static rulesets used for `$badfilter`.
+     * @param resourcesPath Path to web-accessible resources.
      *
-     * @returns Converted dynamic rule set with rule set, errors and
-     * limitations. @see {@link ConversionResult}.
-     *
-     * @throws Error if the conversion produces no results (empty filter list).
-     * @throws Error if declarativeNetRequest.updateDynamicRules() receives invalid rules
-     * e.g. with non-ASCII `urlFilter` value.
-     * Details: {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-RuleCondition-urlFilter}.
+     * @returns Prepared dynamic conversion result.
      */
-    public static async updateDynamicFiltering(
+    public static async prepareDynamicFiltering(
         allowlistRules: IFilter,
         blockingPageTrustedFilter: IFilter,
         userRules: IFilter,
@@ -125,6 +253,9 @@ export default class DynamicRulesApi {
                 withSourceMap: true,
                 combine: true,
                 badFilterRules: staticBadFilterRules,
+                // CSP rules are rebuilt globally by `CspRulesManager`, so the
+                // regular conversion leaves them out.
+                excludeCspRules: true,
             },
         );
 
@@ -141,19 +272,65 @@ export default class DynamicRulesApi {
             enabledStaticRulesets,
         );
 
-        const declarativeRules = await ruleset.getDeclarativeRules();
+        return {
+            ...conversionResult,
+            declarativeRulesToCancel,
+        };
+    }
 
-        // Remove existing dynamic rules, in order their ids not interfere with new ones
-        await this.removeAllRules();
+    /**
+     * Applies a prepared dynamic conversion result.
+     *
+     * @param conversionResult Prepared dynamic rules.
+     * @param enabledStaticRulesets Enabled static rulesets used for `$badfilter`.
+     * @param rebuiltCspRules Globally rebuilt dynamic CSP rules that fit the
+     * quotas left after the regular conversion.
+     * @param cspRuleset Source ruleset for rebuilt CSP rules.
+     *
+     * @returns Snapshot that can restore the previous browser rules.
+     */
+    public static async applyDynamicFiltering(
+        conversionResult: DynamicConversionResult,
+        enabledStaticRulesets: IRulesetWithSourceMap[],
+        rebuiltCspRules: DeclarativeRule[],
+        cspRuleset: IRulesetWithSourceMap,
+    ): Promise<DynamicRulesSnapshot> {
+        const declarativeRules = await conversionResult.ruleset.getDeclarativeRules();
+        const rulesWithoutCsp = declarativeRules.filter((rule) => !isCspDeclarativeRule(rule));
+        const {
+            rules,
+            sourceMap,
+        } = DynamicRulesApi.mergeCspRules(rulesWithoutCsp, rebuiltCspRules, cspRuleset);
+        DynamicRulesApi.validateRuleLimits(rules);
+        const existingRules = await browser.declarativeNetRequest.getDynamicRules();
+        const disabledStaticRuleIds = new Map(await Promise.all(enabledStaticRulesets.map(async (ruleset) => (
+            [
+                ruleset.getId(),
+                await browser.declarativeNetRequest.getDisabledRuleIds({ rulesetId: ruleset.getId() }),
+            ] as const
+        ))));
+        const snapshot: DynamicRulesSnapshot = {
+            rules: existingRules,
+            sourceMap: new Map(DynamicRulesApi.sourceMapForCspRules),
+            disabledStaticRuleIds,
+        };
 
+        // Remove the previous rules and add the merged rules in one atomic
+        // browser update, so there is no window where dynamic rules are missing.
+        // All previous IDs are listed in removeRuleIds, and new IDs are made
+        // unique by mergeCspRules, so no collision can occur within the update.
         await browser.declarativeNetRequest.updateDynamicRules({
+            removeRuleIds: existingRules.map((rule) => rule.id),
             // TODO update rule types returned by getDeclarativeRules();
-            addRules: declarativeRules as browser.DeclarativeNetRequest.Rule[],
+            addRules: rules as browser.DeclarativeNetRequest.Rule[],
         });
 
-        if (declarativeRulesToCancel.length > 0) {
+        DynamicRulesApi.sourceMapForCspRules.clear();
+        sourceMap.forEach((source, id) => DynamicRulesApi.sourceMapForCspRules.set(id, source));
+
+        if (conversionResult.declarativeRulesToCancel.length > 0) {
             // Apply $badfilter rules from dynamic filters.
-            await this.applyBadFilterRules(declarativeRulesToCancel);
+            await this.applyBadFilterRules(conversionResult.declarativeRulesToCancel);
         } else {
             // TODO: (AG-34651) Check, if filter_1 has been enabled and we disable some
             // rules there - should we enable them back before disable filter?
@@ -163,10 +340,107 @@ export default class DynamicRulesApi {
             await this.cancelAllStaticRulesUpdates(enabledStaticRulesets);
         }
 
-        return {
-            ...conversionResult,
-            declarativeRulesToCancel,
-        };
+        return snapshot;
+    }
+
+    /**
+     * Restores dynamic rules after a later configuration step fails.
+     *
+     * @param snapshot Previous browser rules and CSP source map.
+     *
+     * @returns Promise resolved after the previous rules are restored.
+     */
+    public static async rollbackDynamicFiltering(snapshot: DynamicRulesSnapshot): Promise<void> {
+        const currentRules = await browser.declarativeNetRequest.getDynamicRules();
+        await browser.declarativeNetRequest.updateDynamicRules({
+            removeRuleIds: currentRules.map((rule) => rule.id),
+            addRules: snapshot.rules,
+        });
+
+        // Restore the source map together with the dynamic rules so filtering
+        // log lookups never resolve old rules through the failed mapping.
+        DynamicRulesApi.sourceMapForCspRules.clear();
+        snapshot.sourceMap.forEach((source, id) => DynamicRulesApi.sourceMapForCspRules.set(id, source));
+
+        // Restore disabled static rules best-effort: a single ruleset failure
+        // must not abort the remaining restores or the whole rollback.
+        const results = await Promise.allSettled(
+            Array.from(snapshot.disabledStaticRuleIds.entries()).map(async ([rulesetId, previousIds]) => {
+                const currentIds = await browser.declarativeNetRequest.getDisabledRuleIds({ rulesetId });
+                await browser.declarativeNetRequest.updateStaticRules({
+                    rulesetId,
+                    enableRuleIds: currentIds.filter((id) => !previousIds.includes(id)),
+                    disableRuleIds: previousIds.filter((id) => !currentIds.includes(id)),
+                });
+            }),
+        );
+
+        results.forEach((result) => {
+            if (result.status === 'rejected') {
+                logger.error('[tsweb.DynamicRulesApi.rollbackDynamicFiltering]: Cannot restore static rules:', result.reason);
+            }
+        });
+    }
+
+    /**
+     * Adds rebuilt CSP rules while preserving unique dynamic rule IDs.
+     *
+     * @param rules Existing non-CSP dynamic rules.
+     * @param rebuiltCspRules Rebuilt CSP rules.
+     * @param cspRuleset Source ruleset for rebuilt CSP rules.
+     *
+     * @returns Merged rules and runtime source mapping.
+     */
+    private static mergeCspRules(
+        rules: DeclarativeRule[],
+        rebuiltCspRules: DeclarativeRule[],
+        cspRuleset: IRulesetWithSourceMap,
+    ): { rules: DeclarativeRule[]; sourceMap: Map<number, [string, number]> } {
+        const result = [...rules];
+        const usedIds = new Set(result.map((rule) => rule.id));
+        const sourceMap = new Map<number, [string, number]>();
+        let nextId = DynamicRulesApi.FIRST_REASSIGNED_RULE_ID;
+
+        rebuiltCspRules.forEach((rule) => {
+            let { id } = rule;
+            // A collision moves the rule to the first free id; the ids of the
+            // following rules are assigned after it, so one lookup is enough.
+            if (usedIds.has(id)) {
+                while (usedIds.has(nextId)) {
+                    nextId += 1;
+                }
+                id = nextId;
+            }
+
+            usedIds.add(id);
+            result.push({ ...rule, id });
+            sourceMap.set(id, [cspRuleset.getId(), rule.id]);
+        });
+
+        return { rules: result, sourceMap };
+    }
+
+    /**
+     * Checks browser limits after rebuilt CSP rules are merged.
+     *
+     * @param rules Final dynamic rules.
+     *
+     * @throws If the final dynamic rules exceed a browser limit.
+     */
+    private static validateRuleLimits(rules: DeclarativeRule[]): void {
+        if (rules.length > DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_RULES) {
+            throw new Error(`Dynamic rules limit exceeded: ${rules.length}`);
+        }
+
+        const unsafeRulesCount = rules.filter((rule) => !isSafeRule(rule)).length;
+        if (unsafeRulesCount > DynamicRulesApi.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES) {
+            throw new Error(`Unsafe dynamic rules limit exceeded: ${unsafeRulesCount}`);
+        }
+
+        const regexpRulesCount = rules.filter((rule) => rule.condition.regexFilter !== undefined).length;
+        if (regexpRulesCount > DynamicRulesApi.MAX_NUMBER_OF_REGEX_RULES) {
+            throw new Error(`Dynamic regular expression rules limit exceeded: ${regexpRulesCount}`);
+        }
     }
 
     /**
@@ -243,5 +517,6 @@ export default class DynamicRulesApi {
 
         // Remove existing dynamic rules
         await browser.declarativeNetRequest.updateDynamicRules({ removeRuleIds: existingRulesIds });
+        DynamicRulesApi.sourceMapForCspRules.clear();
     }
 }

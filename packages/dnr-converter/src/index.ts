@@ -1,5 +1,7 @@
 export { DNR_CONVERTER_VERSION } from './version';
+export { isCspDeclarativeRule } from './rule-converters/csp-converter';
 export {
+    type ComputedWithSourceMapOptions,
     type ConverterOptions,
     FilterConverter,
 } from './filter-converter';
@@ -26,12 +28,14 @@ export { type ConversionResult } from './filter-converter/conversion-result';
 export { Filter } from './filter/filter';
 export { type IFilter } from './filter/types';
 export { type IRulesHashMap, RulesHashMap, type HashWithSource } from './ruleset/rules-hash-map';
-export { type ISourceMap } from './ruleset/source-map';
+export { type ISourceMap, type SourceRuleIdxAndFilterId } from './ruleset/source-map';
 export {
+    isUnavailableFilterSourceError,
     UnavailableFilterSourceError,
     UnavailableRulesetSourceError,
 } from './errors/unavailable-sources-errors';
 export { InvalidMetadataChunksError } from './errors/metadata-errors';
+export { RuleScanError, isRuleScanError } from './errors/scan-errors';
 export { type CompactRulesetContent, parseCompactRuleset } from './ruleset/compact-ruleset';
 export { MetadataRuleset, METADATA_RULESET_ID } from './ruleset/metadata-ruleset';
 export { type HttpHeaderMatcher, Rule } from './rule/rule';
@@ -44,6 +48,7 @@ export {
     UnsupportedModifierError,
     UnsupportedRegexpError,
     InvalidDeclarativeRuleError,
+    UnexpectedConversionError,
     isConversionError,
 } from './errors/conversion-errors';
 export {
@@ -56,6 +61,7 @@ export {
 export {
     type LimitationError,
     MaxScannedRulesError,
+    TooManyError,
     TooManyRegexpRulesError,
     TooManyUnsafeRulesError,
     TooManyRulesError,

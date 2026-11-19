@@ -1,10 +1,12 @@
 import browser from 'webextension-polyfill';
 
 import {
+    extractRulesetId,
     Filter,
     getRulesetId,
     type IFilter,
     type IRulesetWithSourceMap,
+    type LimitationError,
     METADATA_RULESET_ID,
     RULESET_NAME_PREFIX,
 } from '@adguard/dnr-converter';
@@ -12,7 +14,10 @@ import { LogLevel } from '@adguard/logger';
 import { FilterList } from '@adguard/tsurlfilter';
 
 import { type AppInterface, type MessageHandler } from '../../common/app';
-import { ALLOWLIST_FILTER_ID, BLOCKING_TRUSTED_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { type RegistrationResult } from '../../common/canvas-protection/contracts';
+import { CanvasProtectionController } from '../../common/canvas-protection/controller';
+import { CanvasProtectionRegistration } from '../../common/canvas-protection/registration';
+import { ALLOWLIST_FILTER_ID, BLOCKING_TRUSTED_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRulesetsError } from '../errors/failed-enable-rulesets-error';
@@ -22,12 +27,16 @@ import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 import { AllowlistApi, allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
 import { assistant, Assistant } from './assistant';
+import { ChromiumCanvasRegistration } from './canvas-registration';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
+import { CspRulesManager, type CspRulesResult } from './csp-rules-manager';
 import { declarativeFilteringLog } from './declarative-filtering-log';
-import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
+import DynamicRulesApi, { type ConversionResult, type DynamicRulesCounts } from './dynamic-rules-api';
+import { withDynamicRulesRollback } from './dynamic-rules-rollback';
 import { engineApi } from './engine-api';
 import { extSessionStorage } from './ext-session-storage';
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
+import { mergeLimitations } from './limitations';
 import { MessagesApi } from './messages-api';
 import { RequestEvents } from './request/events/request-events';
 import { RulesetsLoaderApi } from './rulesets-loader-api';
@@ -42,10 +51,110 @@ import { WebRequestApi } from './web-request-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult;
+
+    /**
+     * Static rule sets of the filters enabled in the browser.
+     */
     staticFilters: IRulesetWithSourceMap[];
-    dynamicRules?: ConversionResult;
+
+    /**
+     * Creates the static rule set of the filter that is not enabled in the
+     * browser, e.g. to read its rule counter for the rules limits checks.
+     *
+     * The rule set is created on demand, because creating a rule set for the
+     * first time requires runtime filter list preparation, which is too
+     * expensive for the startup path. Call it after the configuration is
+     * applied. Repeated calls for the same filter share the pending creation.
+     * A failed creation is not cached, so a later call retries it.
+     *
+     * @param filterId Filter id.
+     *
+     * @returns Promise resolved with the rule set, or `undefined` if the
+     * filter is enabled in the browser or its rule set failed to be created.
+     */
+    loadDisabledStaticFilter: (filterId: number) => Promise<IRulesetWithSourceMap | undefined>;
+
+    /**
+     * Creates the static rule sets of the filters that are not enabled in the
+     * browser, e.g. to read their rule counters for the rules limits checks.
+     *
+     * The rule sets are created on demand and one at a time, because creating
+     * a rule set for the first time requires runtime filter list preparation,
+     * which is too expensive for the startup path. Call it after the
+     * configuration is applied. Repeated calls return the same promise, and
+     * rule sets that fail to be created are logged and skipped.
+     */
+    loadDisabledStaticFilters: () => Promise<IRulesetWithSourceMap[]>;
+
+    /**
+     * Session rules result.
+     */
+    sessionRules?: {
+        /**
+         * Limitations of session rules omitted due to the browser quotas.
+         */
+        limitations: LimitationError[];
+    };
+
+    /**
+     * Rebuilt CSP rules result.
+     *
+     * `errors` collects conversion errors of CSP rules from built-in filters.
+     * Errors of user rules are reported in `dynamicRules.errors`, so the two
+     * channels stay disjoint.
+     */
+    cspRules?: Pick<CspRulesResult, 'errors'>;
+
+    /**
+     * Dynamic rules conversion result.
+     *
+     * `counts` are the final counts of dynamic rules that fit the quotas:
+     * rebuilt CSP rules are already included. `limitations` are the
+     * limitations of the dynamic scope only, session rules report theirs in
+     * `sessionRules.limitations`.
+     */
+    dynamicRules?: ConversionResult & {
+        counts: DynamicRulesCounts;
+    };
     stealthResult?: StealthConfigurationResult;
+    canvasProtection?: RegistrationResult;
 };
+
+/**
+ * Static rule sets split by their state in the browser.
+ */
+type StaticRulesets = {
+    /**
+     * Rule sets enabled in the browser, created immediately.
+     */
+    enabled: IRulesetWithSourceMap[];
+
+    /**
+     * Lazily creates the rule set of a filter not enabled in the browser.
+     */
+    loadDisabledFilter: (filterId: number) => Promise<IRulesetWithSourceMap | undefined>;
+
+    /**
+     * Lazily creates the rule sets not enabled in the browser.
+     */
+    loadDisabled: () => Promise<IRulesetWithSourceMap[]>;
+};
+
+/**
+ * Resolves with no rule set, used when filtering is disabled and no rule sets
+ * are created.
+ *
+ * @returns Promise resolved with `undefined`.
+ */
+const loadNoRuleset = async (): Promise<IRulesetWithSourceMap | undefined> => undefined;
+
+/**
+ * Resolves with no rule sets, used when filtering is disabled and no rule
+ * sets are created.
+ *
+ * @returns Promise resolved with an empty list.
+ */
+const loadNoRulesets = async (): Promise<IRulesetWithSourceMap[]> => [];
 
 type FiltersUpdateInfo = {
     staticFilters: IFilter[];
@@ -109,6 +218,15 @@ export class TsWebExtension implements AppInterface<
     isStarted = false;
 
     /**
+     * Owns browser registration acknowledgment and current-session code generation.
+     */
+    private readonly canvasProtection = new CanvasProtectionController(
+        new CanvasProtectionRegistration(new ChromiumCanvasRegistration(), appContext),
+        () => (appContext.isStorageInitialized ? this.configuration : undefined),
+        () => ({ ruleTexts: engineApi.getDocumentOrStealthExceptionRuleTexts(), allowlist: allowlistApi }),
+    );
+
+    /**
      * Stores the initialize promise to prevent multiple initialize calls when
      * a large number of messages are received when the service worker
      * starts or wakes up.
@@ -150,6 +268,7 @@ export class TsWebExtension implements AppInterface<
         }
 
         try {
+            this.canvasProtection.resume();
             const res = await this.configure(config);
 
             // Start listening for request events.
@@ -187,6 +306,9 @@ export class TsWebExtension implements AppInterface<
             this.startPromise = undefined;
 
             logger.error('[tsweb.TsWebExtension.innerStart]: failed: ', e);
+
+            // The app did not start, so later setters must not register the script.
+            await this.canvasProtection.stop();
 
             throw new Error('Cannot be started: ', { cause: e as Error });
         }
@@ -289,8 +411,9 @@ export class TsWebExtension implements AppInterface<
             logger.warn(`[tsweb.TsWebExtension.removeAllFilteringRules]: Found ${removedRules.length} session rule(s) not cleared by services. Rule IDs: [${removedRules.map((rule) => rule.id).join(', ')}]`);
         }
 
-        declarativeFilteringLog.startUpdate();
-        declarativeFilteringLog.finishUpdate([], false);
+        await declarativeFilteringLog.withUpdateLock(async () => {
+            declarativeFilteringLog.finishUpdate([], false);
+        });
 
         engineApi.stopEngine();
     }
@@ -317,6 +440,7 @@ export class TsWebExtension implements AppInterface<
 
         appContext.isAppStarted = false;
         this.isStarted = false;
+        await this.canvasProtection.stop();
     }
 
     /**
@@ -325,13 +449,18 @@ export class TsWebExtension implements AppInterface<
      * filters and user rules on the fly to a single merged rule set), starts
      * declarative filtering log and restarts the engine to reload cosmetic
      * rules.
+     * Canvas exclusions are compiled again from the updated rules and allowlist when protection is enabled.
      *
      * @param config A {@link ConfigurationMV3} to apply.
      *
      * @returns ConfigurationResult {@link ConfigurationResult} which contains:
      * - list of errors for static filters, if any of them has been thrown
-     * - converted dynamic rule set with rule set, errors and limitations.
+     * - converted dynamic rule set with rule set, errors, limitations and the
+     * final counts of dynamic rules, rebuilt CSP rules included.
      * Details: {@link ConversionResult}.
+     * - limitations of dynamic rules omitted due to the browser quotas and
+     * limitations of session rules in a separate field.
+     * - canvas protection registration state.
      *
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
@@ -359,16 +488,51 @@ export class TsWebExtension implements AppInterface<
                 errors: [],
             },
             staticFilters: [],
+            loadDisabledStaticFilter: loadNoRuleset,
+            loadDisabledStaticFilters: loadNoRulesets,
         };
 
         // Stop handle onRuleMatchedDebug event.
         // It should be stopped before declarative log update or removing filtering rules,
         // otherwise, it may try to log applying of removed rules. AG-44355.
-        declarativeFilteringLog.stop();
+        // Any failure of a step below restarts the listener, so the log does
+        // not stay silent until the next successful configuration.
+        await declarativeFilteringLog.withStoppedListener(async () => {
+            if (configuration.settings.filteringEnabled) {
+                await this.applyFilteringConfiguration(configuration, res);
+            } else {
+                await TsWebExtension.removeAllFilteringRules();
+            }
 
-        if (configuration.settings.filteringEnabled) {
-            declarativeFilteringLog.startUpdate();
+            this.configuration = TsWebExtension.createConfigurationContext(configuration);
+            res.canvasProtection = await this.canvasProtection.apply();
 
+            // Update previously opened tabs with new rules - find for each tab
+            // new main frame rule.
+            await tabsApi.updateCurrentTabsMainFrameRules();
+
+            // Reload request events listeners.
+            await WebRequestApi.flushMemoryCache();
+
+            documentBlockingService.configure(config);
+        });
+
+        logger.trace('[tsweb.TsWebExtension.configure]: end');
+
+        return res;
+    }
+
+    /**
+     * Applies a filtering configuration under the filtering-log update lock.
+     *
+     * @param configuration Configuration to apply.
+     * @param res Result object to fill with conversion details.
+     */
+    private async applyFilteringConfiguration(
+        configuration: ConfigurationMV3,
+        res: ConfigurationResult,
+    ): Promise<void> {
+        await declarativeFilteringLog.withUpdateLock(async () => {
             res.stealthResult = await StealthService.applySettings(configuration.settings);
 
             // Extract filters info from configuration and wrap them into IFilters.
@@ -385,32 +549,29 @@ export class TsWebExtension implements AppInterface<
                 filtersIdsToEnable,
             );
 
-            // Create static rulesets.
-            const staticRulesets = await TsWebExtension.loadStaticRulesets(
+            // Get static rule sets enabled in the browser. Requested after
+            // the filtering update, because the browser may decline enabling
+            // some of them.
+            const enabledRulesetsIds = await browser.declarativeNetRequest.getEnabledRulesets();
+
+            // Create static rule sets of enabled filters only, the rest are
+            // created on demand, see `ConfigurationResult.loadDisabledStaticFilters`.
+            const {
+                enabled: enabledStaticRulesets,
+                loadDisabledFilter: loadDisabledStaticFilter,
+                loadDisabled: loadDisabledStaticRulesets,
+            } = await TsWebExtension.loadStaticRulesets(
                 configuration.rulesetsPath,
                 staticFilters,
+                enabledRulesetsIds,
             );
-
-            // Get enabled static rule sets
-            const enabledRulesetsIds = await browser.declarativeNetRequest.getEnabledRulesets();
-            const enabledStaticRulesets = staticRulesets.filter((ruleset) => {
-                const rulesetId = ruleset.getId();
-                return enabledRulesetsIds.includes(rulesetId);
-            });
 
             // Update allowlist settings.
             allowlistApi.configure(configuration);
             // Combine all allowlist rules into one network rule.
             const combinedAllowlistRules = allowlistApi.combineAllowListRulesForDNR();
 
-            const userRulesFilter = new Filter(
-                USER_FILTER_ID,
-                async () => new FilterList(
-                    configuration.userrules.content,
-                    USER_FILTER_ID,
-                    configuration.userrules.conversionData,
-                ).getContent(),
-            );
+            const userRulesFilter = FiltersApi.createUserRulesFilter(configuration.userrules);
 
             const allowlistFilter = new Filter(
                 ALLOWLIST_FILTER_ID,
@@ -438,8 +599,8 @@ export class TsWebExtension implements AppInterface<
             );
 
             // Convert quick fixes rules, allowlist, custom filters and user
-            // rules into one rule set and apply it.
-            res.dynamicRules = await DynamicRulesApi.updateDynamicFiltering(
+            // rules without applying them. CSP rules are rebuilt globally below.
+            const dynamicRules = await DynamicRulesApi.prepareDynamicFiltering(
                 allowlistFilter,
                 blockingPageTrustedFilter,
                 userRulesFilter,
@@ -448,10 +609,76 @@ export class TsWebExtension implements AppInterface<
                 this.webAccessibleResourcesPath,
             );
 
-            await SessionRulesApi.updateSessionRules(
-                enabledStaticRulesets,
-                res.dynamicRules.declarativeRulesToCancel,
+            const enabledStaticRulesetIds = new Set(enabledStaticRulesets.map((ruleset) => ruleset.getId()));
+            const enabledStaticFilters = staticFilters.filter((filter) => (
+                enabledStaticRulesetIds.has(getRulesetId(filter.getId()))
+            ));
+            const cspRules = await CspRulesManager.build(
+                enabledStaticFilters,
+                [
+                    allowlistFilter,
+                    blockingPageTrustedFilter,
+                    userRulesFilter,
+                    ...customFilters,
+                ],
+                this.webAccessibleResourcesPath,
             );
+            res.cspRules = { errors: cspRules.staticErrors };
+
+            if (res.cspRules.errors.length > 0) {
+                // Built-in filters always hold a few `$csp` exceptions which
+                // DNR cannot express, so this would warn on every configure()
+                // for every user: keep the payload for diagnostics only.
+                logger.debug('[tsweb.TsWebExtension.applyFilteringConfiguration]: cannot convert some CSP rules of built-in filters:', res.cspRules.errors);
+            }
+
+            const limitedDynamicCspRules = await DynamicRulesApi.limitRebuiltCspRules(
+                dynamicRules,
+                cspRules.dynamicRules,
+                cspRules.ruleset,
+            );
+
+            res.dynamicRules = {
+                ...dynamicRules,
+                counts: limitedDynamicCspRules.counts,
+                limitations: mergeLimitations([
+                    ...dynamicRules.limitations,
+                    ...limitedDynamicCspRules.limitations,
+                ]),
+                errors: dynamicRules.errors.concat(cspRules.dynamicErrors),
+            };
+
+            const dynamicRulesSnapshot = await DynamicRulesApi.applyDynamicFiltering(
+                res.dynamicRules,
+                enabledStaticRulesets,
+                limitedDynamicCspRules.rules,
+                cspRules.ruleset,
+            );
+
+            const { declarativeRulesToCancel } = res.dynamicRules;
+            const sessionLimitations = await withDynamicRulesRollback(
+                dynamicRulesSnapshot,
+                () => SessionRulesApi.updateSessionRules(
+                    enabledStaticRulesets,
+                    declarativeRulesToCancel,
+                    cspRules.staticRules,
+                    cspRules.ruleset,
+                    cspRules.unreadableStaticFilterIds,
+                ),
+                (snapshot) => DynamicRulesApi.rollbackDynamicFiltering(snapshot),
+                (rollbackError) => logger.error(
+                    '[tsweb.TsWebExtension.applyFilteringConfiguration]: Cannot roll back dynamic rules:',
+                    rollbackError,
+                ),
+            );
+            res.sessionRules = { limitations: sessionLimitations };
+
+            if (sessionLimitations.length > 0) {
+                logger.warn(
+                    '[tsweb.TsWebExtension.applyFilteringConfiguration]: session rules were truncated:',
+                    sessionLimitations,
+                );
+            }
 
             await CspService.addCspReportBlockingRule();
 
@@ -468,11 +695,13 @@ export class TsWebExtension implements AppInterface<
                 verbose: configuration.verbose,
             });
             await engineApi.waitingForEngine;
+            this.canvasProtection.invalidatePolicy();
 
             // TODO: Recreate only dynamic ruleset, because static cannot be changed
             const rulesets = [
-                ...staticRulesets,
+                ...enabledStaticRulesets,
                 res.dynamicRules.ruleset,
+                cspRules.ruleset,
             ];
 
             // Update rulesets in declarative filtering log.
@@ -496,25 +725,35 @@ export class TsWebExtension implements AppInterface<
                 }
             }
 
-            res.staticFilters = staticRulesets;
-        } else {
-            await TsWebExtension.removeAllFilteringRules();
-        }
+            res.staticFilters = enabledStaticRulesets;
+            res.loadDisabledStaticFilter = loadDisabledStaticFilter;
+            res.loadDisabledStaticFilters = loadDisabledStaticRulesets;
+        });
+    }
 
-        this.configuration = TsWebExtension.createConfigurationContext(configuration);
+    /**
+     * Updates canvas opt-in and waits for the browser registration result.
+     *
+     * @param enabled Whether canvas protection is requested.
+     *
+     * @returns The acknowledged or unresolved registration state.
+     *
+     * @throws When the application has no configuration.
+     */
+    public async setCanvasProtectionEnabled(enabled: boolean): Promise<RegistrationResult> {
+        const result = await this.canvasProtection.setEnabled(enabled);
+        // The setting is changed in place, but the session storage saves only an assigned configuration.
+        this.configuration = this.configuration!;
+        return result;
+    }
 
-        // Update previously opened tabs with new rules - find for each tab
-        // new main frame rule.
-        await tabsApi.updateCurrentTabsMainFrameRules();
-
-        // Reload request events listeners.
-        await WebRequestApi.flushMemoryCache();
-
-        documentBlockingService.configure(config);
-
-        logger.trace('[tsweb.TsWebExtension.configure]: end');
-
-        return res;
+    /**
+     * Reports requested state separately from browser acknowledgment history.
+     *
+     * @returns The most recent registration lifecycle result.
+     */
+    public getCanvasProtectionState(): RegistrationResult {
+        return this.canvasProtection.getState();
     }
 
     /**
@@ -751,16 +990,25 @@ export class TsWebExtension implements AppInterface<
     /**
      * Wraps static filters into rule sets.
      *
+     * Only the rule sets enabled in the browser are created immediately. Rule
+     * sets of disabled filters are needed only for their rule counters, e.g.
+     * for the rules limits checks on the client, but creating a rule set for
+     * the first time requires runtime filter list preparation, so they are
+     * created on demand via the returned `loadDisabled`, off the startup path.
+     *
      * @param rulesetsPath Path to the rule set metadata.
      * @param staticFilters List of static {@link IFilter}.
+     * @param enabledRulesetsIds Ids of rule sets enabled in the browser.
      *
-     * @returns A list of static {@link IRulesetWithSourceMap}, or an empty list if an error
-     * occurred during the rule scanning step.
+     * @returns Enabled static {@link IRulesetWithSourceMap|rule sets} that
+     * were created successfully, a function to create the rule set of a
+     * single disabled filter, and a function to create all disabled rule sets.
      */
     private static async loadStaticRulesets(
         rulesetsPath: ConfigurationMV3['rulesetsPath'],
         staticFilters: IFilter[],
-    ): Promise<IRulesetWithSourceMap[]> {
+        enabledRulesetsIds: string[],
+    ): Promise<StaticRulesets> {
         // Wrap filters into rule sets
         const rulesetsLoaderApi = new RulesetsLoaderApi(rulesetsPath);
         const manifest = browser.runtime.getManifest();
@@ -768,27 +1016,114 @@ export class TsWebExtension implements AppInterface<
             throw new Error('Cannot find declarative_net_request in manifest');
         }
 
-        // Note: we cannot create rulesets only for enabled filters because we
-        // need to get all rulesets' counters for checking limits on the client.
         // Note: we skip metadata ruleset, because it is not a real ruleset.
-        const manifestRulesets = manifest.declarative_net_request.rule_resources
-            .filter(({ id }) => id !== getRulesetId(METADATA_RULESET_ID));
+        const manifestRulesetsIds = manifest.declarative_net_request.rule_resources
+            .map(({ id }) => id)
+            .filter((id) => id !== getRulesetId(METADATA_RULESET_ID));
 
-        const staticRulesetsTasks = manifestRulesets.map(({ id }) => {
-            return rulesetsLoaderApi.createRuleset(id, staticFilters);
-        });
+        const enabledIds = new Set(enabledRulesetsIds);
+        const disabledFilterIds = new Set(
+            manifestRulesetsIds
+                .filter((id) => !enabledIds.has(id))
+                .map((id) => extractRulesetId(id))
+                .filter((id): id is number => id !== null),
+        );
 
-        try {
-            const staticRulesets = await Promise.all(staticRulesetsTasks);
+        /**
+         * Cache of the on-demand disabled ruleset loading by filter id, so
+         * the batch and the per-filter callers share one creation per
+         * ruleset.
+         */
+        const disabledRulesetsPromises = new Map<number, Promise<IRulesetWithSourceMap | undefined>>();
 
-            return staticRulesets;
-        } catch (e) {
-            const filterListIds = staticFilters.map((f) => f.getId());
+        /**
+         * Serializes rule set creation, so the batch and the per-filter
+         * callers prepare one rule set at a time.
+         */
+        let creationQueue: Promise<unknown> = Promise.resolve();
 
-            logger.error(`[tsweb.TsWebExtension.loadStaticRulesets]: cannot scan rules of filter list with ids ${filterListIds} due to: `, e);
+        const loadDisabledFilter = (filterId: number): Promise<IRulesetWithSourceMap | undefined> => {
+            if (!disabledFilterIds.has(filterId)) {
+                return Promise.resolve(undefined);
+            }
 
-            return [];
+            let promise = disabledRulesetsPromises.get(filterId);
+            if (!promise) {
+                const rulesetId = getRulesetId(filterId);
+                promise = creationQueue
+                    .then(() => rulesetsLoaderApi.createRuleset(rulesetId, staticFilters))
+                    .catch((e) => {
+                        // Do not cache a failed creation, so a later call can
+                        // retry it.
+                        disabledRulesetsPromises.delete(filterId);
+                        logger.error(`[tsweb.TsWebExtension.loadStaticRulesets]: cannot create rule set ${rulesetId} due to: `, e);
+                        return undefined;
+                    });
+                disabledRulesetsPromises.set(filterId, promise);
+                creationQueue = promise;
+            }
+
+            return promise;
+        };
+
+        let disabledRulesetsPromise: Promise<IRulesetWithSourceMap[]> | null = null;
+
+        const loadDisabled = (): Promise<IRulesetWithSourceMap[]> => {
+            disabledRulesetsPromise ??= TsWebExtension.createRulesetsOneByOne(
+                [...disabledFilterIds],
+                loadDisabledFilter,
+            );
+
+            return disabledRulesetsPromise;
+        };
+
+        const staticRulesetsTasks = manifestRulesetsIds
+            .filter((id) => enabledIds.has(id))
+            .map((id) => rulesetsLoaderApi.createRuleset(id, staticFilters));
+
+        const enabledResults = await Promise.allSettled(staticRulesetsTasks);
+        const enabled: IRulesetWithSourceMap[] = [];
+
+        for (const result of enabledResults) {
+            if (result.status === 'fulfilled') {
+                enabled.push(result.value);
+            } else {
+                logger.error('[tsweb.TsWebExtension.loadStaticRulesets]: cannot create a rule set of an enabled filter due to: ', result.reason);
+            }
         }
+
+        return { enabled, loadDisabledFilter, loadDisabled };
+    }
+
+    /**
+     * Creates rule sets one at a time and skips the ones that fail.
+     *
+     * Rule sets are created sequentially because this runs in the background:
+     * it keeps the peak memory and the longest event loop block to those of a
+     * single rule set, instead of parsing all rule set files at once.
+     *
+     * @param filterIds Ids of filters to create the rule sets for.
+     * @param loadRuleset Loads the rule set of a filter, or resolves with
+     * `undefined` if it cannot be created.
+     *
+     * @returns Created rule sets in the order of `filterIds`.
+     */
+    private static async createRulesetsOneByOne(
+        filterIds: number[],
+        loadRuleset: (filterId: number) => Promise<IRulesetWithSourceMap | undefined>,
+    ): Promise<IRulesetWithSourceMap[]> {
+        const rulesets: IRulesetWithSourceMap[] = [];
+
+        for (const filterId of filterIds) {
+            // eslint-disable-next-line no-await-in-loop
+            const ruleset = await loadRuleset(filterId);
+
+            if (ruleset) {
+                rulesets.push(ruleset);
+            }
+        }
+
+        return rulesets;
     }
 
     /**
@@ -796,10 +1131,16 @@ export class TsWebExtension implements AppInterface<
      * This method called as soon as possible and allows access
      * to the actual context before the app is started.
      */
-    // eslint-disable-next-line class-methods-use-this
     public async initStorage(): Promise<void> {
         await extSessionStorage.init();
         appContext.isStorageInitialized = true;
+        // Chromium keeps the registered script across browser restarts, with the previous session's seed.
+        // The session storage is empty then, so this removes it until start() registers a new one.
+        // After a service worker restart the stored registration survives, so nothing is removed
+        // here and start() reconciles it.
+        if (!appContext.canvasProtectionRegistration) {
+            await this.canvasProtection.apply();
+        }
     }
 
     /**

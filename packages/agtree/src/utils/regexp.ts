@@ -595,8 +595,10 @@ export class RegExpUtils {
      * - the lookahead ensures the string length is between min and max;
      * - `.*` matches any character, including newlines, due to the `s` flag.
      *
-     * @param min Minimum length or `null` for no minimum (default to `0`).
-     * @param max Maximum length or `null` for no maximum (default to no maximum).
+     * A string value is interpolated verbatim, see {@link getLengthLookahead}.
+     *
+     * @param min Minimum length, or `null` for no minimum (default to `0`).
+     * @param max Maximum length, or `null` for no maximum (default to no maximum).
      *
      * @returns Length-matching regular expression string.
      */

@@ -69,6 +69,8 @@ export class RuleFactory {
      * the rule does not have source index.
      * @param parseHostRules Whether to parse host rules. Default is true.
      * @param parseHtmlFilteringRuleBodies Whether to parse HTML filtering rule bodies. Default is false.
+     * @param originalRuleText Rule text as written in the filter list. Pass it only when the rule was
+     * converted to another syntax — it is needed to compare `$badfilter` rules by their written text.
      *
      * @returns IRule object or null.
      */
@@ -78,6 +80,7 @@ export class RuleFactory {
         ruleIndex = RULE_INDEX_NONE,
         parseHostRules = true,
         parseHtmlFilteringRuleBodies = false,
+        originalRuleText?: string,
     ): IRule | null {
         try {
             const { kind, isHostCandidate, ctx } = RuleFactory.PARSER.parseStructural(
@@ -118,11 +121,17 @@ export class RuleFactory {
                             return new HostRule(ruleText, filterListId, ruleIndex, node);
                         }
 
-                        return new NetworkRule(ruleText, filterListId, ruleIndex, node);
+                        return new NetworkRule(ruleText, filterListId, ruleIndex, node, undefined, originalRuleText);
                     }
 
                     const nr = new NetworkRuleDataReader(ctx, 0);
-                    return NetworkRule.createFromReader(nr, ruleText, filterListId, ruleIndex);
+                    return NetworkRule.createFromReader(
+                        nr,
+                        ruleText,
+                        filterListId,
+                        ruleIndex,
+                        originalRuleText,
+                    );
                 }
 
                 case RuleKind.Cosmetic: {

@@ -21,6 +21,7 @@ export {
 export { AdblockSyntax } from './adblockers';
 export {
     collectRegexValueRegions,
+    findNetworkRuleSeparatorIndex,
     isModifierListStart,
     type RegexValueRegion,
 } from './regex-value-regions';

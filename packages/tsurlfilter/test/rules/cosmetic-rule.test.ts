@@ -316,6 +316,26 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest('https://example.net'))).toEqual(true);
     });
 
+    it('preserves regexp escapes in classic cosmetic domain lists', () => {
+        const rule = createCosmeticRule(String.raw`/\[ex\]ample/##.ad`, 0);
+        const request = new Request('https://xample.com/', 'https://xample.com/', RequestType.Document);
+
+        expect(rule.match(request)).toBeFalsy();
+        expect(createCosmeticRule(String.raw`/foo\\/##.ad`, 0)).toBeTruthy();
+    });
+
+    it.each([
+        String.raw`/FOO\.bar/##.ad`,
+        String.raw`/[A-Z]+\.bar/##.ad`,
+        String.raw`[$domain=/FOO\.bar/]##.ad`,
+        String.raw`[$domain=/\[A-Z\]+\.bar/]##.ad`,
+    ])('matches cosmetic regexp domains case-insensitively: %s', (text) => {
+        const rule = createCosmeticRule(text, 0);
+        const request = new Request('https://foo.bar/', 'https://foo.bar/', RequestType.Document);
+
+        expect(rule.match(request)).toBeTruthy();
+    });
+
     it('matches requests by regexp pattern of domain with multiple escaped pipes', () => {
         // AG-56856: all escaped separators inside the regexp should be unescaped,
         // not only the first one
@@ -327,6 +347,21 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest('https://sub.example.org'))).toEqual(true);
         expect(rule.match(createRequest('https://example.net'))).toEqual(false);
         expect(rule.match(createRequest('https://google.com'))).toEqual(false);
+    });
+
+    // AG-57204: doc-correct escaped [ ] must unescape in a cosmetic $domain regexp
+    // (https://github.com/AdguardTeam/tsurlfilter/issues/190)
+    it('matches requests by regexp domain with escaped brackets', () => {
+        const rule = createCosmeticRule(String.raw`[$domain=/mingky\[0-9\]+\.net/]##banner`, 0);
+        expect(rule.match(createRequest('https://mingky03.net'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com'))).toEqual(false);
+    });
+
+    // AG-57204: raw (unescaped-brackets) form keeps working as before the fix
+    it('matches requests by raw regexp domain without escaped brackets', () => {
+        const rule = createCosmeticRule(String.raw`[$domain=/mingky[0-9]+\.net/]##banner`, 0);
+        expect(rule.match(createRequest('https://mingky03.net'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com'))).toEqual(false);
     });
 
     it('matches by $domain modifier with mixed type values', () => {
@@ -611,6 +646,18 @@ describe('CosmeticRule.CSS', () => {
         cssRule = createCosmeticRule(ruleText, 0);
         expect(cssRule).toBeDefined();
         expect(cssRule.getContent()).toBe(selector);
+
+        selector = '.some-class:remove-attr(href)';
+        ruleText = `example.org##${selector}`;
+        cssRule = createCosmeticRule(ruleText, 0);
+        expect(cssRule).toBeDefined();
+        expect(cssRule.getContent()).toBe(selector);
+
+        selector = '.some-class:remove-class(ads)';
+        ruleText = `example.org##${selector}`;
+        cssRule = createCosmeticRule(ruleText, 0);
+        expect(cssRule).toBeDefined();
+        expect(cssRule.getContent()).toBe(selector);
     });
 
     it('throws error on invalid pseudo class', () => {
@@ -821,6 +868,19 @@ describe('Extended css rule', () => {
 
     expect(rule.isExtendedCss()).toBeTruthy();
     expect(rule.getContent()).toEqual('div { background-color: #333!important; }');
+
+    it.each([
+        ['example.org##a:remove-attr(href)', 'a:remove-attr(href)'],
+        ['example.org##a:remove-attr(/^data-[0-9]+$/)', 'a:remove-attr(/^data-[0-9]+$/)'],
+        ['example.org##a:remove-attr(/^data-.{2}$/)', 'a:remove-attr(/^data-.{2}$/)'],
+        ['example.org##div:remove-class(ads)', 'div:remove-class(ads)'],
+        ['example.org##div:remove-class(/^ad-[0-9]+$/)', 'div:remove-class(/^ad-[0-9]+$/)'],
+    ])('treats %s as an extended CSS rule', (text, expectedContent) => {
+        const extendedRule = createCosmeticRule(text, 0);
+
+        expect(extendedRule.isExtendedCss()).toBeTruthy();
+        expect(extendedRule.getContent()).toEqual(expectedContent);
+    });
 
     it('does not confuses extended css rules with script rules', () => {
         // eslint-disable-next-line max-len
@@ -1136,6 +1196,49 @@ describe('HTML filtering rules (content rules)', () => {
         });
     });
 
+    it('correctly parses html rules - contains keeps spaces around a quoted argument', () => {
+        // The argument is the raw text between the parentheses, spaces included
+        const rule = createCosmeticRule('example.org$$div:contains( "foo" )', 0);
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div',
+                specialSelectors: [{
+                    name: HtmlSpecialSelectorName.Contains,
+                    value: ' "foo" ',
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - contains keeps spaces around an unquoted argument', () => {
+        const rule = createCosmeticRule('example.org$$div:contains( foo )', 0);
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div',
+                specialSelectors: [{
+                    name: HtmlSpecialSelectorName.Contains,
+                    value: ' foo ',
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - has-text keeps spaces around the argument', () => {
+        const rule = createCosmeticRule('example.org$$div:has-text( foo )', 0);
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div',
+                specialSelectors: [{
+                    name: HtmlSpecialSelectorName.Contains,
+                    value: ' foo ',
+                }],
+            }]],
+        });
+    });
+
     it('correctly parses html rules - -abp-contains alias', () => {
         const rule = createCosmeticRule('example.org$$script:-abp-contains(foo)', 0);
 
@@ -1222,6 +1325,86 @@ describe('HTML filtering rules (content rules)', () => {
                 }],
             }]],
         });
+    });
+
+    it('correctly parses html rules - regexp-like [tag-content] value stays literal', () => {
+        // `[tag-content="/ads/"]` matches the literal substring `/ads/`, not
+        // the regexp /ads/. The converter escapes the value, so `:contains()`
+        // compiles an escaped regexp and the literal text is matched
+        // (CoreLibs parity).
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$div[tag-content="/ads/"]',
+        );
+
+        expect(convertedRuleText).toBe(String.raw`example.org$$div:contains(/\/ads\//)`);
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selectorList = rule.getHtmlSelectorList();
+        const { specialSelectors } = selectorList!.selectors[0][0];
+
+        expect(specialSelectors).toHaveLength(1);
+        expect(specialSelectors[0].name).toBe(HtmlSpecialSelectorName.Contains);
+
+        const { value } = specialSelectors[0];
+        expect(value).toBeInstanceOf(RegExp);
+
+        // The literal substring `/ads/` matches
+        expect((value as RegExp).test('text with /ads/ inside')).toBe(true);
+        // The bare word `ads` does not match
+        expect((value as RegExp).test('text with only ads inside')).toBe(false);
+    });
+
+    it('correctly parses html rules - PCRE2-only regexp-like [tag-content] value stays literal', () => {
+        // `/a++/` is valid PCRE2 but invalid JavaScript. CoreLibs compiles the
+        // `:contains()` argument with PCRE2, so the converter escapes the value
+        // even though JavaScript cannot compile it as a regexp.
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$div[tag-content="/a++/"]',
+        );
+
+        expect(convertedRuleText).toBe(String.raw`example.org$$div:contains(/\/a\+\+\//)`);
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selectorList = rule.getHtmlSelectorList();
+        const { specialSelectors } = selectorList!.selectors[0][0];
+
+        expect(specialSelectors).toHaveLength(1);
+        expect(specialSelectors[0].name).toBe(HtmlSpecialSelectorName.Contains);
+
+        const { value } = specialSelectors[0];
+        expect(value).toBeInstanceOf(RegExp);
+
+        // The literal substring `/a++/` matches
+        expect((value as RegExp).test('text with /a++/ inside')).toBe(true);
+        // A sequence of `a` characters does not match
+        expect((value as RegExp).test('text with aaa inside')).toBe(false);
+    });
+
+    it('correctly parses html rules - slashes-only [tag-content] value stays literal', () => {
+        // CoreLibs reads `///` as the regexp `/` and ignores escapes when it
+        // finds the delimiter, so a raw `:contains(///)` would match any text
+        // with a slash. The converter escapes the value instead, and the
+        // escaped regexp matches the literal `///`.
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$div[tag-content="///"]',
+        );
+
+        expect(convertedRuleText).toBe(String.raw`example.org$$div:contains(/\/\/\//)`);
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selectorList = rule.getHtmlSelectorList();
+        const { specialSelectors } = selectorList!.selectors[0][0];
+
+        expect(specialSelectors).toHaveLength(1);
+        expect(specialSelectors[0].name).toBe(HtmlSpecialSelectorName.Contains);
+
+        const { value } = specialSelectors[0];
+        expect(value).toBeInstanceOf(RegExp);
+
+        // The literal substring `///` matches
+        expect((value as RegExp).test('text with /// inside')).toBe(true);
+        // A single slash does not match
+        expect((value as RegExp).test('text with / inside')).toBe(false);
     });
 
     it('correctly parses html rules - contains with quoted regexp argument (literal)', () => {

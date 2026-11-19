@@ -61,6 +61,17 @@ describe('Stealth modifier api', () => {
         }).toThrowError('Invalid $stealth option in modifier value: "not-a-valid-option"');
     });
 
+    it('parses the fingerprinting value', () => {
+        for (const value of ['fingerprinting', 'referrer|fingerprinting']) {
+            const modifier = new StealthModifier(value);
+            expect(modifier.hasStealthOption(StealthOptionName.Fingerprinting)).toBeTruthy();
+            expect(modifier.hasValues()).toBeTruthy();
+        }
+
+        const modifier = new StealthModifier('referrer');
+        expect(modifier.hasStealthOption(StealthOptionName.Fingerprinting)).toBeFalsy();
+    });
+
     it('checks if given string is a valid stealth option', () => {
         // @ts-ignore
         const { isValidStealthOption } = StealthModifier;

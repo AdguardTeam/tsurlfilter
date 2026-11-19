@@ -79,10 +79,17 @@ export class DomainListParser implements StructuralParser {
             let braceDepth = 0;
             let inRegex = false;
 
-            // Check if this item starts with a slash (regex domain)
-            if (types[itemStartTi] === TokenType.Slash) {
+            // Check if this item is a regex domain. A negated regex domain
+            // starts with `~`, so skip the exception marker and whitespace
+            // before looking for the opening slash.
+            let regexStartTi = itemStartTi;
+            if (types[regexStartTi] === TokenType.Tilde) {
+                regexStartTi = skipWs(ctx, regexStartTi + 1);
+            }
+
+            if (types[regexStartTi] === TokenType.Slash) {
                 inRegex = true;
-                itemEndTi += 1;
+                itemEndTi = regexStartTi + 1;
             }
 
             // Scan forward to find item boundary

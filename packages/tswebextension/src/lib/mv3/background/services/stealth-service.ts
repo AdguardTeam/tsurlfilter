@@ -3,14 +3,17 @@ import { type WebRequest } from 'webextension-polyfill';
 import { type NetworkRule, NetworkRuleOption, StealthOptionName } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
+import { CanvasExceptionRules } from '../../../common/canvas-protection/exception-rules';
 import { type StealthConfig } from '../../../common/configuration';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { StealthActions } from '../../../common/stealth-actions';
 import { findHeaderByName, hasHeader, hasHeaderByName } from '../../../common/utils/headers';
 import { logger } from '../../../common/utils/logger';
+import { getRuleTexts } from '../../../common/utils/rule-text-provider';
 import { getDomain } from '../../../common/utils/url';
 import { appContext } from '../app-context';
 import { type SettingsConfigMV3 } from '../configuration';
+import { engineApi } from '../engine-api';
 import { type RequestContext, requestContextStorage } from '../request';
 import { SessionRuleId, SessionRulesApi } from '../session-rules-api';
 
@@ -174,6 +177,7 @@ export class StealthService {
             hideSearchQueries,
             blockChromeClientData,
             sendDoNotTrack,
+            protectCanvas,
         } = settings.stealth;
 
         const headersToRemove = new Set<string>();
@@ -182,6 +186,16 @@ export class StealthService {
         // Collect applied allowlist rules in a set to only publish
         // one filtering event per applied allowlist rule
         const appliedAllowlistRules = new Set<NetworkRule>();
+
+        // Canvas protection honors stealth exceptions on its own and decides in the page,
+        // so the log shows the exception that kept a document native.
+        const isDocument = requestType === RequestType.Document || requestType === RequestType.SubDocument;
+        if (protectCanvas && isDocument && matchingResult) {
+            const canvasExceptionRule = CanvasExceptionRules.findStealthException(matchingResult, engineApi);
+            if (canvasExceptionRule) {
+                appliedAllowlistRules.add(canvasExceptionRule);
+            }
+        }
 
         // Removes `Referrer` header if present
         if (StealthService.IS_REFERRER_CHECKBOX_PRESENT && hideReferrer) {
@@ -278,20 +292,21 @@ export class StealthService {
                 data: {
                     tabId,
                     eventId,
-                    rules: Array.from(appliedAllowlistRules).map((rule) => ({
-                        filterId: rule.getFilterListId(),
-                        ruleIndex: rule.getIndex(),
-                        // fallback should never happen during normal operation
-                        // eslint-disable-next-line max-len
-                        appliedRuleText: rule.getText() ?? `<dynamic rule text is not specified> (${rule.getFilterListId()}:${rule.getIndex()})`,
-                        originalRuleText: null,
-                        isAllowlist: rule.isAllowlist(),
-                        isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
-                        isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
-                        isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
-                        isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
-                        advancedModifier: rule.getAdvancedModifierValue(),
-                    })),
+                    rules: Array.from(appliedAllowlistRules).map((rule) => {
+                        const { appliedRuleText, originalRuleText } = getRuleTexts(rule, engineApi);
+                        return {
+                            filterId: rule.getFilterListId(),
+                            ruleIndex: rule.getIndex(),
+                            appliedRuleText,
+                            originalRuleText,
+                            isAllowlist: rule.isAllowlist(),
+                            isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                            isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                            isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                            isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                            advancedModifier: rule.getAdvancedModifierValue(),
+                        };
+                    }),
                     requestUrl,
                     frameUrl: referrerUrl,
                     requestType: contentType,

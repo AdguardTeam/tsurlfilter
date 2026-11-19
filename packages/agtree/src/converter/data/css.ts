@@ -73,6 +73,8 @@ export const EXT_CSS_PSEUDO_CLASSES_STRICT: ReadonlySet<string> = new Set([
     'matches-css-before',
     'matches-path',
     'min-text-length',
+    'remove-attr',
+    'remove-class',
     'watch-attr',
 
     // Adblock Plus

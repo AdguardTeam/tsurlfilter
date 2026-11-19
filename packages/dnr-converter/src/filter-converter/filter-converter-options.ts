@@ -74,7 +74,26 @@ export interface SourceMapConverterOptions extends BaseFilterConverterOptions {
      * Only valid in source-map mode (enforced by the discriminated union).
      */
     badFilterRules?: Rule[];
+
+    /**
+     * Excludes CSP rules from regular conversion when they are rebuilt globally.
+     *
+     * The caller must run `convertCspRules()` afterwards: this pass drops such
+     * rules together with their parse errors, because the CSP pass reports them.
+     *
+     * @default false
+     */
+    excludeCspRules?: boolean;
 }
+
+/**
+ * Options for callers that compute `withSourceMap` at runtime (e.g. from a
+ * config flag typed as `boolean`). Mirrors {@link SourceMapConverterOptions}
+ * with a widened flag, so source-map-only options stay in sync with it.
+ */
+export type ComputedWithSourceMapOptions = Omit<SourceMapConverterOptions, 'withSourceMap'> & {
+    withSourceMap: boolean;
+};
 
 /**
  * Interface that represents options for the converter.

@@ -1,4 +1,4 @@
-import { type IRulesetWithSourceMap } from '@adguard/dnr-converter';
+import { type DeclarativeRule, type IRulesetWithSourceMap } from '@adguard/dnr-converter';
 
 import { type DeclarativeRuleInfo, defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
@@ -6,6 +6,7 @@ import { nanoid } from '../../common/utils/nanoid';
 import { getDomain } from '../../common/utils/url';
 import { Mutex } from '../utils/mutex';
 
+import DynamicRulesApi from './dynamic-rules-api';
 import { requestContextStorage } from './request';
 import { SessionRulesApi } from './session-rules-api';
 
@@ -31,6 +32,14 @@ class DeclarativeFilteringLog {
     #isListening = false;
 
     /**
+     * Whether declarative logging was enabled by the last {@link finishUpdate}.
+     *
+     * Kept so that {@link restore} can bring the listener back to the previous
+     * state, whichever rule sets ended up live after a failed update.
+     */
+    #isEnabled = false;
+
+    /**
      * Mutex for managing concurrent access to rule set updates.
      */
     private readonly mutex: Mutex = new Mutex();
@@ -53,36 +62,86 @@ class DeclarativeFilteringLog {
     }
 
     /**
-     * Acquires the mutex lock within the specified timeout.
-     * Used to prevent getting rule info during rule set updates.
+     * Sets the new rule sets and enables or disables declarative logging.
      *
-     * @param timeoutMs The maximum time to wait (in milliseconds) to acquire the lock.
-     * Defaults to {@link DeclarativeFilteringLog.MAX_WAIT_TIME_MS}.
-     *
-     * @throws {TimeoutError} If the lock is not acquired within the specified time.
-     */
-    public async startUpdate(timeoutMs = this.MAX_WAIT_TIME_MS): Promise<void> {
-        await this.mutex.lock(timeoutMs);
-    }
-
-    /**
-     * Releases the mutex and sets the new rule sets.
-     * Used to prevent getting rule info during rule set updates.
-     * Also, you can specify whether to enable declarative logging after update.
+     * The update lock is not released here: it stays held until the operation
+     * passed to {@link withUpdateLock} finishes.
      *
      * @param rulesets List of {@link IRulesetWithSourceMap}.
      * @param enableLog Should we enable declarative logging after update.
-     *
-     * @throws Error if no update is in progress.
      */
     public finishUpdate(rulesets: IRulesetWithSourceMap[], enableLog: boolean): void {
         this.sourceRulesets = rulesets;
-        this.mutex.unlock();
+        this.#isEnabled = enableLog;
 
         if (enableLog) {
             this.start();
         } else {
             this.stop();
+        }
+    }
+
+    /**
+     * Restores the listener state of the previous {@link finishUpdate}.
+     *
+     * An update stops the listener before the browser rules are replaced, so
+     * a failure at any later step must bring it back: otherwise the log stays
+     * silent until the next successful update, whichever rules ended up live.
+     */
+    #restore(): void {
+        if (this.#isEnabled) {
+            this.start();
+        } else {
+            this.stop();
+        }
+    }
+
+    /**
+     * Runs an operation with the listener stopped, restarting it when the
+     * operation throws.
+     *
+     * `configure()` stops the listener before the browser rules are replaced,
+     * so a failure at any later step must restart it instead of leaving the
+     * log silent until the next successful update.
+     *
+     * @param operation Operation to run.
+     *
+     * @throws Whatever the operation throws.
+     */
+    public async withStoppedListener(operation: () => Promise<void>): Promise<void> {
+        this.stop();
+
+        try {
+            await operation();
+        } catch (error: unknown) {
+            this.#restore();
+
+            throw error;
+        }
+    }
+
+    /**
+     * Runs an operation while holding the update lock.
+     *
+     * The lock is released when the operation finishes, whether it succeeds or
+     * throws, so it is released exactly once per acquisition and never while
+     * another update is running. On success the operation calls
+     * {@link finishUpdate}; a throw before that keeps the previous rule sets,
+     * so a failed update cannot block the filtering log.
+     *
+     * @param operation Operation to run under the lock.
+     *
+     * @throws Whatever the operation throws.
+     */
+    public async withUpdateLock(operation: () => Promise<void>): Promise<void> {
+        // Acquire the lock before touching the rule sets, so rule info is not
+        // read while they are being replaced.
+        await this.mutex.lock(this.MAX_WAIT_TIME_MS);
+
+        try {
+            await operation();
+        } finally {
+            this.mutex.unlock();
         }
     }
 
@@ -128,8 +187,17 @@ class DeclarativeFilteringLog {
         }
 
         const sourceRules = await ruleset.getRulesById(sourceDnrRuleId);
+        // The rebuilt CSP ruleset keeps its rules in the full declarative list,
+        // so the unsafe lookup is simply empty for it and the fallback below
+        // finds the rule.
         const unsafeDeclarativeRules = await ruleset.getUnsafeRules();
-        const declarativeRule = unsafeDeclarativeRules.find((r) => r.id === sourceDnrRuleId);
+        let declarativeRule: DeclarativeRule | undefined = unsafeDeclarativeRules
+            .find((r) => r.id === sourceDnrRuleId);
+
+        if (!declarativeRule) {
+            const declarativeRules = await ruleset.getDeclarativeRules();
+            declarativeRule = declarativeRules.find((r) => r.id === sourceDnrRuleId);
+        }
 
         if (!declarativeRule) {
             throw new Error(`Cannot find rule with id ${sourceDnrRuleId} in ruleset ${sourceRulesetId}`);
@@ -165,17 +233,24 @@ class DeclarativeFilteringLog {
             throw new Error('No rulesets loaded yet');
         }
 
-        const ruleset = this.sourceRulesets.find((r) => r.getId() === rulesetId);
+        // A matched dynamic rule can be a rebuilt CSP rule applied under a new
+        // runtime ID, so resolve it through the dynamic CSP source map first.
+        const cspSource = rulesetId === chrome.declarativeNetRequest.DYNAMIC_RULESET_ID
+            ? DynamicRulesApi.sourceMapForCspRules.get(ruleId)
+            : undefined;
+        const sourceRulesetId = cspSource?.[0] ?? rulesetId;
+        const sourceRuleId = cspSource?.[1] ?? ruleId;
+        const ruleset = this.sourceRulesets.find((r) => r.getId() === sourceRulesetId);
         if (!ruleset) {
-            throw new Error(`Cannot find ruleset with id ${rulesetId}`);
+            throw new Error(`Cannot find ruleset with id ${sourceRulesetId}`);
         }
 
-        const sourceRules = await ruleset.getRulesById(ruleId);
+        const sourceRules = await ruleset.getRulesById(sourceRuleId);
         const declarativeRules = await ruleset.getDeclarativeRules();
-        const declarativeRule = declarativeRules.find((r) => r.id === ruleId);
+        const declarativeRule = declarativeRules.find((r) => r.id === sourceRuleId);
 
         if (!declarativeRule) {
-            throw new Error(`Cannot find rule with id ${ruleId} in ruleset ${rulesetId}`);
+            throw new Error(`Cannot find rule with id ${sourceRuleId} in ruleset ${sourceRulesetId}`);
         }
 
         return {
