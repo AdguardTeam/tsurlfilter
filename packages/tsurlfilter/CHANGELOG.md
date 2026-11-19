@@ -18,9 +18,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `$domain` and `$denyallow` values with an unclosed regexp literal are
-  now rejected during parsing, e.g. `$domain=~/a\/|example.org` and
-  `$domain=~/|example.org` (via [@adguard/agtree]). Previously the parser
-  kept the rest of the list in one value that could not match a host.
+  now rejected by the list parser with
+  `Unclosed regexp literal, no closing delimiter found`, e.g.
+  `$domain=~/a\/|example.org` and `$domain=~/|example.org` (via
+  [@adguard/agtree]); previously the parser kept the rest of the list in
+  one value, and `DomainModifier` rejected it with
+  `Invalid regular expression as domain pattern`.
+  `SimpleRegex.isRegexPattern()` now rejects a pattern whose closing slash
+  is escaped, e.g. `/a\/`, the same as `RegExpUtils.isRegexPattern()` in
+  [@adguard/agtree]. It counts the consecutive backslashes before the
+  closing slash: an odd count escapes the slash, an even count does not.
+  `DomainModifier` also rejects a single trailing slash-leading value that
+  is not a regexp literal, e.g. `$domain=/a\/` or `$domain=//`, with
+  `Invalid regular expression as domain pattern`. Before, such a value
+  could turn the rule on for every site: the bare delimiters `/` and `//`
+  matched every domain as empty regexps, and a value with an escaped
+  closing slash failed to compile as a regexp. A value that ends with an
+  escaped backslash, e.g. `/a\\/`, stays a regexp literal.
 - Bare `$removeparam` rules no longer treat a `?` inside a hash fragment as a
   query delimiter, so `https://example.com/page#route?param=1` stays unchanged.
   They also keep the hash fragment when they remove a real query string, e.g.
@@ -41,19 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   chain needs a case-sensitive match. In such a mixed chain, a
   case-insensitive regexp becomes case-sensitive, because the merged regexp has
   a single flag set.
-- `SimpleRegex.isRegexPattern()` now rejects a pattern whose closing slash
-  is escaped, e.g. `/a\/`, the same as `RegExpUtils.isRegexPattern()` in
-  [@adguard/agtree]. It counts the consecutive backslashes before the
-  closing slash: an odd count escapes the slash, an even count does not.
-  `DomainModifier` now rejects every `$domain` or `$denyallow` value that
-  starts with a slash and is not a regexp literal with `Invalid regular
-  expression as domain pattern`. Before, a value with an escaped closing
-  slash failed to compile as a regexp, while a value without a closing
-  slash became a plain domain that never matched a host, so a negated
-  value left an empty restriction and the rule applied on every site. The
-  bare delimiters `/` and `//` compiled to an empty regexp that matched
-  every domain. A value that ends with an escaped backslash, e.g.
-  `/a\\/`, stays a regexp literal.
 
 ### Security
 

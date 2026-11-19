@@ -18,10 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Rules with an unclosed regexp literal in a `$domain` or `$denyallow`
-  value are now rejected during parsing, e.g.
-  `$domain=~/a\/|example.org` and `$domain=~/|example.org` (via
-  [@adguard/tsurlfilter]). Previously the parser kept the rest of the list
-  in one value that could not match a host.
+  value are now rejected by the list parser with
+  `Unclosed regexp literal, no closing delimiter found`,
+  e.g. `$domain=~/a\/|example.org` and `$domain=~/|example.org` (via
+  [@adguard/tsurlfilter]). Previously the parser kept the rest of the list in
+  one value, and the rule was rejected later with
+  `Invalid regular expression as domain pattern`.
 - Bare `$removeparam` rules no longer duplicate the hash fragment when a
   History API URL has no query string but its fragment contains `?`, e.g.
   `/page#route?x=1` now stays unchanged instead of becoming
@@ -37,13 +39,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   chain needs a case-sensitive match. In such a mixed chain, a
   case-insensitive regexp becomes case-sensitive, because the merged regexp has
   a single flag set.
-- `$domain` and `$denyallow` values that start with a slash but are not
-  valid regexp literals are now rejected with `Invalid regular expression
-  as domain pattern`. Before, such a value could turn the rule on for
-  every site: `$domain=~/a\/|example.org` lost the rest of the list, and
-  a positive `$domain=//` matched every domain as an empty regexp. `/a\/`
-  was already rejected because its pattern did not compile (via
-  [@adguard/tsurlfilter]).
+- A single trailing `$domain` or `$denyallow` value that starts with a
+  slash but is not a valid regexp literal is rejected with
+  `Invalid regular expression as domain pattern`, e.g. a positive `$domain=//`
+  or `$domain=/a\/`. Before, such a value could turn the rule on for every
+  site: a positive `$domain=//` matched every domain as an empty regexp,
+  and `/a\/` was already rejected because its pattern did not compile
+  (via [@adguard/tsurlfilter]).
 
 ### Security
 

@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Rules with an unclosed regexp literal in a `$domain`, `$denyallow` or
+  `$to` value are now rejected during conversion instead of producing an
+  invalid DNR domain (via `@adguard/dnr-converter`).
+
 ### Security
 
 ## [6.1.1] - 2026-11-17
