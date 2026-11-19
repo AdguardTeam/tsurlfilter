@@ -390,4 +390,117 @@ describe('Allowlist Api', () => {
             expect(createMv3Engine(entries).matchFrame(url)).toBeNull();
         });
     });
+
+    describe('isDomainListed method', () => {
+        const cases = [
+            {
+                entries: ['*.example.com'],
+                domain: 'example.com',
+                expectedMv2: true,
+                expectedMv3: true,
+            },
+            {
+                entries: ['*.example.com'],
+                domain: 'b.example.com',
+                expectedMv2: true,
+                expectedMv3: true,
+            },
+            {
+                entries: ['*.example.com'],
+                domain: 'a.b.example.com',
+                expectedMv2: true,
+                expectedMv3: true,
+            },
+            {
+                entries: ['example.*'],
+                domain: 'example.com',
+                expectedMv2: true,
+                expectedMv3: true,
+            },
+            {
+                entries: ['example.*'],
+                domain: 'b.example.com',
+                expectedMv2: true,
+                expectedMv3: true,
+            },
+            {
+                entries: ['example.*'],
+                domain: 'a.b.example.com',
+                expectedMv2: true,
+                expectedMv3: true,
+            },
+            {
+                entries: ['example.com'],
+                domain: 'example.com',
+                expectedMv2: true,
+                expectedMv3: true,
+            },
+            {
+                entries: ['example.com'],
+                domain: 'www.example.com',
+                expectedMv2: true,
+                expectedMv3: true,
+            },
+            {
+                entries: ['example.com'],
+                domain: 'b.example.com',
+                expectedMv2: false,
+                expectedMv3: true,
+            },
+            {
+                entries: ['example.com'],
+                domain: 'a.b.example.com',
+                expectedMv2: false,
+                expectedMv3: true,
+            },
+            {
+                entries: ['other.org', 'example.*'],
+                domain: 'b.example.com',
+                expectedMv2: true,
+                expectedMv3: true,
+            },
+            {
+                entries: ['*.example.com'],
+                domain: 'example.com.evil.org',
+                expectedMv2: false,
+                expectedMv3: false,
+            },
+            {
+                entries: ['example.*'],
+                domain: 'other.org',
+                expectedMv2: false,
+                expectedMv3: false,
+            },
+            {
+                entries: [],
+                domain: 'example.com',
+                expectedMv2: false,
+                expectedMv3: false,
+            },
+        ];
+
+        it.each(cases)('matches $domain against $entries', ({
+            entries,
+            domain,
+            expectedMv2,
+            expectedMv3,
+        }) => {
+            const mv2Config = getConfigurationMv2Fixture();
+            mv2Config.allowlist = entries;
+            mv2Config.settings.allowlistEnabled = true;
+            mv2Config.settings.allowlistInverted = true;
+            allowlist.configure(mv2Config);
+
+            expect(allowlist.isDomainListed(domain)).toBe(expectedMv2);
+
+            const mv3Config = getConfigurationMv3Fixture();
+            mv3Config.allowlist = entries;
+            mv3Config.settings.allowlistEnabled = true;
+            mv3Config.settings.allowlistInverted = true;
+            const allowlistApi = new AllowlistApi();
+            allowlistApi.configure(mv3Config);
+
+            expect(allowlistApi.isDomainListed(domain)).toBe(expectedMv3);
+        });
+    });
 });

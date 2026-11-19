@@ -3,6 +3,8 @@ import {
     createAllowlistRuleNode,
     type NetworkRule,
     normalizeAllowlistDomain,
+    Request,
+    RequestType,
     RuleFactory,
 } from '@adguard/tsurlfilter';
 
@@ -59,6 +61,35 @@ export abstract class Allowlist {
         this.inverted = allowlistInverted;
 
         this.domains = Allowlist.prepareDomains(allowlist);
+    }
+
+    /**
+     * Checks whether a host is selected by any configured allowlist entry.
+     *
+     * @param domain Hostname to match.
+     *
+     * @returns True if at least one entry matches the host.
+     */
+    public isDomainListed(domain: string): boolean {
+        const request = new Request(`https://${domain}/`, null, RequestType.Document);
+
+        return this.domains.some((listedDomain) => {
+            const rule = Allowlist.createAllowlistRule(listedDomain);
+
+            if (rule?.match(request)) {
+                return true;
+            }
+
+            // A trailing-TLD wildcard also selects subdomains in inverted mode.
+            // Leading-subdomain wildcards already include the apex and every depth.
+            if (!listedDomain.endsWith('.*') || listedDomain.startsWith('*.')) {
+                return false;
+            }
+
+            const subdomainRule = Allowlist.createAllowlistRule(`*.${listedDomain}`);
+
+            return subdomainRule?.match(request) ?? false;
+        });
     }
 
     /**
