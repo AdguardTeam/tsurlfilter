@@ -359,8 +359,9 @@ export class DomainModifier {
             // restriction and turn the rule on for every site. The check
             // reads only the leading slash on purpose: the domain list parser
             // keeps a trailing slash-leading item opaque, e.g. `$domain=/a\/`,
-            // `$domain=//` or `$domain=/a/x`, and rejects a multi-item value
-            // with an unclosed regexp literal before it reaches this guard.
+            // `$domain=//` or `$domain=/a/x`, and rejects a value whose
+            // unclosed regexp literal is followed by another list item before
+            // it reaches this guard.
             if (unescaped.startsWith(SimpleRegex.MASK_REGEX_RULE)) {
                 throw new SyntaxError(`Invalid regular expression as domain pattern: "${unescaped}"`);
             }
