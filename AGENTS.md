@@ -147,10 +147,12 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   consumers migrate (`LATEST_LINE` in the workflow), 6.0 under `stable-6.0`
   and 6.1 under `stable-6.1`. A `resolve-lines` job holds the line list
   (`ALL_LINES`, asserted by `scripts/ci/check-package-lists.mjs` against this
-  file and `DEPLOYMENT.md`) and skips a line whose branch is not on the current
-  CI (root `Dockerfile` with `dnr-rulesets-auto-build-output`,
-  `scripts/inject-package-versions.mjs`, `.github/actions/docker-build`,
-  `scripts/ci` helpers); a manual dispatch with `line` publishes one line.
+  file and `DEPLOYMENT.md`) and skips a line whose branch is absent, or whose
+  tip lacks the probe files (root `Dockerfile` with
+  `dnr-rulesets-auto-build-output`, `scripts/inject-package-versions.mjs`,
+  `.github/actions/docker-build`, `scripts/ci` helpers). A branch that exists
+  but cannot be fetched fails the round. A manual dispatch with `line`
+  publishes one line.
   Each line runs `_publish-stable-dnr-rulesets-line.yml`: checks the branch
   out, stamps a `<line>.<timestamp>` version, builds the Docker target, and
   publishes the tarball to the internal Artifact Keeper npm registry (shared

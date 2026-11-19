@@ -130,9 +130,10 @@ section instead.
     `Dockerfile` with a `dnr-rulesets-auto-build-output` target,
     `scripts/inject-package-versions.mjs`, `.github/actions/docker-build`
     and the `scripts/ci` helpers in the branch tip). The `resolve-lines`
-    job skips a scheduled line whose branch is not ready, so the runs
-    neither fail nor spam Slack during a backport window; a manual
-    dispatch of such a line fails.
+    job skips a scheduled line whose branch is absent, or whose tip lacks
+    these files, so the runs neither fail nor spam Slack during a backport
+    window; a manual dispatch of such a line fails. A branch that exists
+    but cannot be fetched fails the round instead of being skipped.
   - **Adding a line**: create `stable/dnr-rulesets-<line>` from the
     release commit of that version, add the line to `ALL_LINES` in the
     workflow and to this list and `AGENTS.md`

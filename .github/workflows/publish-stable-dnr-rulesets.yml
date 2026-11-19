@@ -17,7 +17,8 @@ name: Publish stable DNR rulesets
 # deploy-to-ak-npm.yml workflow), which the extension auto-build installs
 # rulesets from. The npm leg is disabled again (AG-58867, npm 429) — the
 # one-off try re-enabled in AG-60418 still got HTTP 429; see the note in that
-# workflow. resolve-lines skips a line whose branch isn't on the current CI yet.
+# workflow. resolve-lines skips a line whose branch is absent or lacks these
+# files; a branch that exists but cannot be fetched fails the round.
 
 on:
   schedule:
