@@ -42,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a positive `$domain=//` matched every domain as an empty regexp. `/a\/`
   was already rejected because its pattern did not compile (via
   [@adguard/tsurlfilter]).
+- Path-relative URLs passed to `history.pushState()` and
+  `history.replaceState()` are now resolved against the base URI from
+  before the navigation, so `$removeparam` rules remove tracking
+  parameters synchronously instead of leaving them in the address bar.
 
 ### Security
 
