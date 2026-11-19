@@ -91,7 +91,8 @@ jobs:
             # tip; probed shallowly — no full clone, no gh dep.
             ref="refs/heads/stable/dnr-rulesets-${line}"
             FETCH_OK=false
-            if git fetch -q --depth=1 origin "${ref}" 2>/dev/null; then
+            FETCH_ERR=""
+            if FETCH_ERR="$(git fetch -q --depth=1 origin "${ref}" 2>&1)"; then
               FETCH_OK=true
             fi
             if [ "$FETCH_OK" = true ] \
@@ -114,13 +115,13 @@ jobs:
               # fail the round when the branch exists but the fetch failed.
               if [ "$FETCH_OK" = false ]; then
                 if git ls-remote --exit-code --heads origin "${ref}" >/dev/null 2>&1; then
-                  echo "::error::Could not fetch ${ref} although the branch exists on origin; a scheduled round must not skip it"
+                  echo "::error::Could not fetch ${ref} although the branch exists on origin; a scheduled round must not skip it: ${FETCH_ERR%%$'\n'*}"
                   exit 1
                 else
                   ls_exit=$?
                   # ls-remote exits 2 when no ref matches: the branch is absent.
                   if [ "$ls_exit" -ne 2 ]; then
-                    echo "::error::Could not check whether ${ref} exists on origin (git ls-remote exit ${ls_exit})"
+                    echo "::error::Could not check whether ${ref} exists on origin (git ls-remote exit ${ls_exit}): ${FETCH_ERR%%$'\n'*}"
                     exit 1
                   fi
                 fi
