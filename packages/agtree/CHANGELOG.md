@@ -14,10 +14,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Changed
 
 - uBO→ADG conversion now accepts `:contains()` in uBlock HTML filtering
-  rules and keeps it as-is, e.g. `##^div:contains(foo)` becomes
-  `$$div:contains(foo)`. uBlock Origin accepts this pseudo-class in `##^`
-  rules and normalizes it to `:has-text()`. Previously the converter threw
-  a mixed-syntax error.
+  rules and converts it like `:has-text()`, e.g. `##^div:contains(foo)`
+  becomes `$$div:contains(/foo/i)`. uBlock Origin accepts this pseudo-class
+  in `##^` rules and normalizes it to `:has-text()`. Previously the
+  converter threw a mixed-syntax error.
 
 ### Deprecated
 
@@ -25,6 +25,25 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
+  mirrors uBlock for plain text: one pair of outer quotes is removed and
+  the text is matched case-insensitively through an escaped `:contains()`
+  regexp with the `i` flag, e.g. `##^script:has-text("admc")` becomes
+  `$$script:contains(/admc/i)`. The `i` flag folds ASCII case only, because
+  CoreLibs compiles `:contains()` regexps with `PCRE2_NEVER_UTF`. The
+  argument is not trimmed, so `##^div:has-text( "foo" )` keeps its spaces
+  and quotes. A rule with characters after the closing quote, e.g.
+  `##^div:has-text("foo"bar)`, is rejected, as in uBlock.
+- Chained text constraints of one compound selector are merged into a single
+  `:contains()` regexp, because CoreLibs allows at most one regexp
+  `:contains()` per element selector: `##^div:has-text(a):has-text(/b/)`
+  becomes `$$div:contains(/^(?=[\s\S]*?[aA])(?=[\s\S]*?(?:b))/)`, and several
+  `:min-text-length()` collapse to the largest one. The lookaheads use a lazy
+  scan, so a long script is not rescanned from every position. A plain text
+  in a case-sensitive chain is emitted as ASCII case-fold classes, so it keeps
+  matching like uBlock's plain text; a regexp argument with the `i` flag
+  becomes case-sensitive in such a mixed chain, because a merged regexp has a
+  single flag set.
 - HTML filtering rules with a right parenthesis inside a regexp character
   class now parse and convert, e.g. `##^div:has-text(/a[)]b/)` and
   `##^div:contains(/a[)]b/)` become `$$div:contains(/a[)]b/)`. Previously
