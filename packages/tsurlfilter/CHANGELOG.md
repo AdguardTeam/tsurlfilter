@@ -17,9 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- HTML filtering and CSS injection rules can now contain a right parenthesis
-  or the other quote character inside a single-quoted `:xpath()` literal,
-  e.g. `##^div:xpath(//div[contains(text(),')')])` and
+- HTML filtering and CSS injection rules that contain a right parenthesis
+  or the other quote character inside a single-quoted `:xpath()` literal now
+  load and convert, e.g. `##^div:xpath(//div[contains(text(),')')])` and
   `#?#div:xpath(//div[contains(text(),')')]):style(color:red)` (via
   [@adguard/agtree]). Previously such rules failed to load with a conversion
   error.
