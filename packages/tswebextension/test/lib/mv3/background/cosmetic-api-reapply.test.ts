@@ -1167,6 +1167,50 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(data.extCssMarkersState).toBe(ExtCssMarkersState.NotRequired);
     });
 
+    it('does not record the main re-apply result against the next document', async () => {
+        const frameContext = makeExtCssFrameContext('doc-1');
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+
+        // The main re-apply injects the marked rules and stays in flight.
+        let resolveInjection: () => void = () => {};
+        executeExtCssMock.mockImplementationOnce(() => new Promise<void>((resolve) => {
+            resolveInjection = resolve;
+        }));
+
+        const reapplyPromise = CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+            'doc-1',
+        );
+
+        await vi.waitFor(() => {
+            expect(executeExtCssMock).toHaveBeenCalledTimes(1);
+        });
+
+        // A navigation mutates the live frame context in place while the
+        // doc-1 injection is still pending.
+        frameContext.documentId = 'doc-2';
+        frameContext.preparedCosmeticResult = {
+            cssText: 'doc-2 marked',
+            extCssRules: ['example.org#?#.banner:has(> .ad) { display: none !important; }'],
+            areHitsStatsCollected: true,
+        };
+
+        resolveInjection();
+        await reapplyPromise;
+
+        // The doc-1 outcome must not describe doc-2, which has not received
+        // its marked rules.
+        const data = CosmeticApi.getContentScriptData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.NotRequired);
+    });
+
     it('does not wait for an ExtendedCss injection of another document', async () => {
         const frameContext = makeExtCssFrameContext('doc-1');
         tabsApiMock.getFrameContext.mockReturnValue(frameContext);

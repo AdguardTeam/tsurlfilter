@@ -558,11 +558,20 @@ export class CosmeticApi extends CosmeticApiCommon {
                     );
 
                 // The records describe the injected document, so they are
-                // written only while the frame context still holds it.
-                if (injectedFrameContext) {
+                // written only while the frame context still holds it. The
+                // context is re-read after the await: a navigation mutates it
+                // in place, so the reference captured before the injection
+                // would record the captured document's outcome against the next
+                // one.
+                const recordedFrameContext = CosmeticApi.getRecordsFrameContext(
+                    frameContext,
+                    documentId,
+                );
+
+                if (recordedFrameContext) {
                     CosmeticApi.setExtCssMarkersApplied(
-                        injectedFrameContext,
-                        injectedFrameContext.preparedCosmeticResult,
+                        recordedFrameContext,
+                        recordedFrameContext.preparedCosmeticResult,
                         extCssApplied,
                     );
                 }
