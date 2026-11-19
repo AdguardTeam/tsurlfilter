@@ -22,10 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `/page#route?x=1` now stays unchanged instead of becoming
   `/page#route#route?x=1`.
 - `$domain` and `$denyallow` values that start with a slash but are not
-  valid regexp literals, such as `/a\/`, `//`, or `~/a\/|example.org`,
-  are now rejected with `Invalid regular expression as domain pattern`
-  instead of becoming empty restrictions that turn the rule on for every
-  site (via [@adguard/tsurlfilter]).
+  valid regexp literals are now rejected with `Invalid regular expression
+  as domain pattern`. Before, such a value could turn the rule on for
+  every site: `$domain=~/a\/|example.org` lost the rest of the list, and
+  a positive `$domain=//` matched every domain as an empty regexp. `/a\/`
+  was already rejected because its pattern did not compile (via
+  [@adguard/tsurlfilter]).
 
 ### Security
 
