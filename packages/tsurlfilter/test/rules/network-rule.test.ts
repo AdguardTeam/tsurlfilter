@@ -184,13 +184,13 @@ describe('NetworkRule constructor', () => {
 
     it('rejects slash-leading $domain and $denyallow values without a closing slash', () => {
         expect(() => createNetworkRule(String.raw`||example.org^$domain=~/a\/|example.com`, 0))
-            .toThrow('Invalid regular expression as domain pattern');
+            .toThrow('Unclosed regexp literal, no closing delimiter found');
         expect(() => createNetworkRule('||example.org^$domain=~/|example.com', 0))
-            .toThrow('Invalid regular expression as domain pattern');
+            .toThrow('Unclosed regexp literal, no closing delimiter found');
         expect(() => createNetworkRule(String.raw`||example.org^$domain=/a\/|example.com`, 0))
-            .toThrow('Invalid regular expression as domain pattern');
+            .toThrow('Unclosed regexp literal, no closing delimiter found');
         expect(() => createNetworkRule(String.raw`@@||example.org^$denyallow=/a\/|example.com`, 0))
-            .toThrow('Invalid regular expression as domain pattern');
+            .toThrow('Unclosed regexp literal, no closing delimiter found');
     });
 
     it('works when it handles empty $domain modifier', () => {
