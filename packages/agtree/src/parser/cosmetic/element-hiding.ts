@@ -203,6 +203,205 @@ function getRawQuoteMode(
 }
 
 /**
+ * Whether a `Letter` token is a uBO regexp flag suffix, i.e. a run of `i`,
+ * `m` and `u` letters.
+ *
+ * The uBO parser accepts a `:matches-path()` value as a regular expression
+ * only when it matches `/^\/(.+)\/([imu]*)$/` (see `regexFromString()` in
+ * uBO), so the suffix may contain these letters only.
+ *
+ * @param ctx Parser context.
+ * @param ti Token index of the `Letter` token. The caller must pass a token
+ * that is a `Letter`.
+ *
+ * @returns `true` if the token contains only `i`, `m` and `u` letters.
+ */
+function isUboRegexpFlags(ctx: ParserContext, ti: number): boolean {
+    const start = tokenStart(ctx, ti);
+    const end = ctx.ends[ti];
+    for (let i = start; i < end; i += 1) {
+        const ch = ctx.source.charCodeAt(i);
+        // `i`, `m`, `u`
+        if (ch !== 0x69 && ch !== 0x6D && ch !== 0x75) {
+            return false;
+        }
+    }
+
+    return start < end;
+}
+
+/**
+ * Whether the value that ends at `ti` is a complete uBO regexp literal.
+ *
+ * A value is complete when the pattern is closed by a `/` delimiter that is
+ * not the opening one, and only the optional uBO `[imu]` flags follow that
+ * delimiter. For example, `/[(]/` and `/[)]/i` are complete, while the plain
+ * values `/foo[` and `/foo/bar` are not.
+ *
+ * @param ctx Parser context.
+ * @param ti Token index of the argument's closing `)`.
+ * @param openParenTi Index of the opening `(` of the argument.
+ *
+ * @returns `true` if the value is a complete `/.../` or `/.../flags` literal.
+ */
+function endsRegexpLiteralAt(
+    ctx: ParserContext,
+    ti: number,
+    openParenTi: number,
+): boolean {
+    const { types } = ctx;
+
+    let start = openParenTi + 1;
+    while (start < ti && types[start] === TokenType.Whitespace) {
+        start += 1;
+    }
+
+    let prev = ti - 1;
+    while (prev > start && types[prev] === TokenType.Whitespace) {
+        prev -= 1;
+    }
+
+    if (types[prev] === TokenType.Letter) {
+        // Flags must follow the closing `/` directly.
+        if (!isUboRegexpFlags(ctx, prev)) {
+            return false;
+        }
+        prev -= 1;
+    }
+
+    // The closing `/` must be a different token than the opening one, and the
+    // pattern between them cannot be empty (uBO requires at least one
+    // character).
+    return prev > start + 1 && types[prev] === TokenType.Slash;
+}
+
+/**
+ * Whether a `)` inside a possible character class belongs to that class.
+ *
+ * A plain `:matches-path()` value can contain `[`, for example `/foo[` or
+ * `/[/`. Reading that `[` as a character class makes the class swallow the
+ * argument's own `)` and latch onto a later `/` + `)` in the rule. A `)` is
+ * therefore a class member only when the class closes at a `]` without
+ * swallowing a pseudo-class call such as `:has-text(`. That call belongs to
+ * the selector, not to a regexp. Parentheses alone do not make the class
+ * invalid, because a regexp character class can hold them, for example
+ * `[))]` or `[)(]`. Consequently, a real class that itself contains both a
+ * `)` and a `:name(` text, such as `[):has-text(]`, is read as a plain value.
+ * Such a class is not expected in a filter list.
+ *
+ * @param types Token type array.
+ * @param afterParenTi Token index right after the `)`.
+ * @param endTi Exclusive upper bound.
+ *
+ * @returns `true` if the class closes before a pseudo-class call.
+ */
+function classClosesBeforePseudoClass(
+    types: Uint8Array,
+    afterParenTi: number,
+    endTi: number,
+): boolean {
+    let ti = afterParenTi;
+    while (ti < endTi) {
+        const t = types[ti];
+        if (t === TokenType.CloseSquare) {
+            return true;
+        }
+        if (t === TokenType.Colon) {
+            const identEndTi = skipPseudoName(types, ti + 1, endTi);
+            if (identEndTi > ti + 1
+                && identEndTi < endTi
+                && types[identEndTi] === TokenType.OpenParen) {
+                return false;
+            }
+        }
+        ti += 1;
+    }
+    return false;
+}
+
+/**
+ * Find the closing `)` token of a `:matches-path()` argument whose value is a
+ * complete regexp literal (`/.../` or `/.../imu`).
+ *
+ * The scan stops at the argument's own closing `)`. An escaped character and
+ * any character inside a character class are plain text, so their parentheses
+ * are not counted. A `)` that closes a group inside the regexp does not end
+ * the argument either. A value is a regexp literal only when it ends with a
+ * `/` delimiter, optionally followed by uBO `[imu]` flags, before the closing
+ * `)`. A value that is not a complete literal (for example `/foo`, which some
+ * lists use as plain text) is not a regexp literal, and the caller keeps the
+ * balanced-parenthesis scan. The same applies to a plain value whose `[` is
+ * not a character class, such as `/foo[` or `/[/`; see
+ * {@link classClosesBeforePseudoClass}.
+ *
+ * @param ctx Parser context.
+ * @param openParenTi Index of the opening `(` of the argument.
+ * @param endTi Exclusive upper bound.
+ *
+ * @returns Index of the closing `)` token, or `-1` if the value is not a
+ * complete regexp literal.
+ */
+function findMatchesPathRegexpEnd(
+    ctx: ParserContext,
+    openParenTi: number,
+    endTi: number,
+): number {
+    const { types } = ctx;
+
+    let ti = openParenTi + 1;
+    while (ti < endTi && types[ti] === TokenType.Whitespace) {
+        ti += 1;
+    }
+
+    // A regexp literal starts with `/` as the first value character.
+    if (ti >= endTi || types[ti] !== TokenType.Slash) {
+        return -1;
+    }
+    ti += 1;
+
+    let inClass = false;
+    let parenDepth = 0;
+    while (ti < endTi) {
+        const t = types[ti];
+
+        // An `Escaped` token (e.g. `\]` or `\)`) matches none of the checks
+        // below, so it advances as plain text.
+        if (inClass) {
+            if (t === TokenType.CloseSquare) {
+                inClass = false;
+            } else if (t === TokenType.CloseParen
+                && parenDepth === 0
+                && !classClosesBeforePseudoClass(types, ti + 1, endTi)) {
+                // The `[` cannot be a class that closes before a
+                // pseudo-class call, so this `)` ends a plain value. It is a
+                // complete literal only if the value ends with `/` here.
+                return endsRegexpLiteralAt(ctx, ti, openParenTi) ? ti : -1;
+            }
+            ti += 1;
+            continue;
+        }
+
+        if (t === TokenType.OpenSquare) {
+            inClass = true;
+        } else if (t === TokenType.OpenParen) {
+            parenDepth += 1;
+        } else if (t === TokenType.CloseParen) {
+            if (parenDepth > 0) {
+                parenDepth -= 1;
+            } else {
+                // This is the argument boundary. The literal must end with
+                // `/` here, otherwise the value is plain text.
+                return endsRegexpLiteralAt(ctx, ti, openParenTi) ? ti : -1;
+            }
+        }
+
+        ti += 1;
+    }
+
+    return -1;
+}
+
+/**
  * Options accepted by {@link ElementHidingParser.parse}.
  */
 export interface ElementHidingParserOptions {
@@ -446,6 +645,9 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
         let rawOpenIsXpath = false;
         let rawQuoteMode = RawQuoteMode.None;
         let rawQuoteChar = 0;
+        // Closing `)` of a complete `/.../` :matches-path() regexp value
+        // (-1 = the value is not a regexp literal).
+        let rawRegexpEndTi = -1;
 
         // Current open modifier state (-1 = no modifier open)
         let curModBit = 0;
@@ -477,6 +679,13 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
             const insideRawArgument = rawDepth > 0;
 
             if (insideRawArgument) {
+                // A complete `/.../` regexp value is raw text: its parentheses
+                // and character classes do not change the depth. Skip to the
+                // pre-scanned closing `)`.
+                if (rawRegexpEndTi >= 0 && ti < rawRegexpEndTi) {
+                    continue;
+                }
+
                 if (rawQuoteMode === RawQuoteMode.Quoted
                     && (t === TokenType.Quote || t === TokenType.Apostrophe)) {
                     // The whole argument is a quoted string, so its content
@@ -625,6 +834,7 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                     rawDepth = 0;
                     rawQuoteMode = RawQuoteMode.None;
                     rawQuoteChar = 0;
+                    rawRegexpEndTi = -1;
                 }
 
                 continue;
@@ -753,10 +963,11 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
 
                             // :matches-path() / :matches-media() values are
                             // raw text, not CSS selector syntax.
-                            if (modBit === UBO_MOD_BIT_MATCHES_PATH || modBit === UBO_MOD_BIT_MATCHES_MEDIA) {
-                                rawDepth = depth;
-                                rawQuoteMode = getRawQuoteMode(types, identEndTi, endTi, false);
-                            }
+                            rawDepth = depth;
+                            rawQuoteMode = getRawQuoteMode(types, identEndTi, endTi, false);
+                            rawRegexpEndTi = modBit === UBO_MOD_BIT_MATCHES_PATH
+                                ? findMatchesPathRegexpEnd(ctx, identEndTi, endTi)
+                                : -1;
                         } else {
                             // FR-006: other modifiers cannot be nested
                             throw new Error(
@@ -785,6 +996,9 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                         if (modBit === UBO_MOD_BIT_MATCHES_PATH || modBit === UBO_MOD_BIT_MATCHES_MEDIA) {
                             rawDepth = depth;
                             rawQuoteMode = getRawQuoteMode(types, identEndTi, endTi, false);
+                            rawRegexpEndTi = modBit === UBO_MOD_BIT_MATCHES_PATH
+                                ? findMatchesPathRegexpEnd(ctx, identEndTi, endTi)
+                                : -1;
                         }
                     }
                 } else if (isExtendedCssPseudoClass(source, identStart, identEnd)) {

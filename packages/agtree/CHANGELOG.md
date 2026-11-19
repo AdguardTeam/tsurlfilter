@@ -74,6 +74,18 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- A complete `/…/` regexp value (with an optional uBO `[imu]` flag suffix) of
+  a uBO `:matches-path()` modifier is now taken as raw text, so a parenthesis
+  inside a character class no longer changes the modifier nesting, even when
+  the class contains several parentheses. For
+  example, `##div:matches-path(/[(]/):style(color:red)` now parses as a CSS
+  injection rule with the value `/[(]/` and the selector `div`. Previously the
+  whole body became the selector, and
+  `##div:matches-path(/[)]/):style(color:red)` silently got the value `/[`
+  and the selector `div]/)`. A plain value that contains `[`, e.g. `/foo[` or
+  `/[/`, keeps the argument's own closing parenthesis and is not read as a
+  literal that extends past it. A flag suffix, e.g. `/[)]/i`, is part of the
+  literal and does not change the boundary either.
 - ADG→uBO conversion now emits a `[tag-content]` value as a case-sensitive
   escaped `:has-text()` regular expression. Single and double quotes are
   emitted as `\x27` and `\x22`, so CSS-tree does not break the rule.

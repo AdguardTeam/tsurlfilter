@@ -611,6 +611,166 @@ describe('UboCssInjectionAstBuilder — absolute sub-parsed locations', () => {
         expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
     });
 
+    test(':matches-path() keeps an open parenthesis inside a regexp character class', () => {
+        const ast = parser.parse('##div:matches-path(/[(]/):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].name.value).toBe('matches-path');
+        expect(ast.modifiers?.children[0].value?.value).toBe('/[(]/');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test(':matches-path() keeps a close parenthesis inside a regexp character class', () => {
+        const ast = parser.parse('##div:matches-path(/[)]/):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].name.value).toBe('matches-path');
+        expect(ast.modifiers?.children[0].value?.value).toBe('/[)]/');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test.each(['i', 'im', 'imu'])(
+        ':matches-path() keeps a class parenthesis with the %s flag suffix',
+        (flags) => {
+            const ast = parser.parse(`##div:matches-path(/[)]/${flags}):style(color:red)`) as CssInjectionRule;
+
+            expect(ast.type).toBe('CssInjectionRule');
+            expect(ast.modifiers?.children).toHaveLength(1);
+            expect(ast.modifiers?.children[0].name.value).toBe('matches-path');
+            expect(ast.modifiers?.children[0].value?.value).toBe(`/[)]/${flags}`);
+            expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+            expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+        },
+    );
+
+    test(':not()-wrapped :matches-path() keeps a class parenthesis with a flag suffix', () => {
+        const ast = parser.parse('##div:not(:matches-path(/[(]/i)):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].name.value).toBe('matches-path');
+        expect(ast.modifiers?.children[0].value?.value).toBe('/[(]/i');
+        expect(ast.modifiers?.children[0].exception).toBe(true);
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test(':matches-path() keeps a close parenthesis before another class member', () => {
+        const ast = parser.parse('##div:matches-path(/[a)b]/):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children[0].value?.value).toBe('/[a)b]/');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test.each(['/[))]/', '/[)(]/', '/[a-z)(]/'])(
+        ':matches-path() keeps %s, a class with several parentheses',
+        (value) => {
+            const ast = parser.parse(`##div:matches-path(${value}):style(color:red)`) as CssInjectionRule;
+
+            expect(ast.type).toBe('CssInjectionRule');
+            expect(ast.modifiers?.children).toHaveLength(1);
+            expect(ast.modifiers?.children[0].value?.value).toBe(value);
+            expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+            expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+        },
+    );
+
+    test(':not()-wrapped :matches-path() keeps a class with several parentheses', () => {
+        const ast = parser.parse('##div:not(:matches-path(/[)(]/)):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].value?.value).toBe('/[)(]/');
+        expect(ast.modifiers?.children[0].exception).toBe(true);
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test(':matches-path() keeps a close parenthesis after a range in a regexp character class', () => {
+        const ast = parser.parse('##div:matches-path(/[a-z)]/):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children[0].value?.value).toBe('/[a-z)]/');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test(':matches-path() keeps an escaped class bracket inside a regexp character class', () => {
+        const ast = parser.parse(String.raw`##div:matches-path(/[\])]/):style(color:red)`) as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children[0].value?.value).toBe(String.raw`/[\])]/`);
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test(':matches-path() keeps an internal unescaped slash in a complete regexp literal', () => {
+        const ast = parser.parse('##div:matches-path(/^/[(]/):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children[0].value?.value).toBe('/^/[(]/');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test(':not()-wrapped :matches-path() keeps a class parenthesis', () => {
+        const ast = parser.parse('##div:not(:matches-path(/[)]/)):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].name.value).toBe('matches-path');
+        expect(ast.modifiers?.children[0].value?.value).toBe('/[)]/');
+        expect(ast.modifiers?.children[0].exception).toBe(true);
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test('a plain /foo value does not consume a later /) in the rule', () => {
+        const ast = parser.parse('##div:matches-path(/foo):style(background:url(/))') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].value?.value).toBe('/foo');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'background:url(/)' });
+    });
+
+    test('a plain value with [ keeps its own argument boundary', () => {
+        const ast = parser.parse('##div:matches-path(/foo[):has-text(/]/):style(color:red)') as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].value?.value).toBe('/foo[');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div:has-text(/]/)' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color:red' });
+    });
+
+    test('a plain /[/ value does not consume a later /) in a :style() value', () => {
+        const rule = 'example.com##div:matches-path(/[/):style(background:url(/x[abc]/))';
+        const ast = parser.parse(rule) as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.modifiers?.children).toHaveLength(1);
+        expect(ast.modifiers?.children[0].value?.value).toBe('/[/');
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'div' });
+        expect(ast.body.declarationList).toMatchObject({
+            type: 'Raw',
+            value: 'background:url(/x[abc]/)',
+        });
+    });
+
+    test(':style() nested inside another pseudo-class still throws', () => {
+        expect(() => {
+            parser.parse('##div:not(:style(color:red))');
+        }).toThrow(':style() cannot be nested inside a pseudo-class');
+    });
+
     test('a lone apostrophe in a :has-text() argument does not disable modifier detection', () => {
         const ast = parser.parse("##div:has-text(It's):style(color:red)") as CssInjectionRule;
 
