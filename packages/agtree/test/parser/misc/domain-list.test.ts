@@ -705,6 +705,28 @@ describe('DomainListParser', () => {
             });
         });
 
+        test.each([
+            String.raw`/a\|b`,
+            String.raw`/a[|]b`,
+            String.raw`/a(b|c)`,
+        ])('should keep a trailing regexp-like item opaque: $actual', (regexLikeValue) => {
+            expect(DomainListParser.parse(regexLikeValue, defaultParserOptions, 0, '|')).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: regexLikeValue.length,
+                separator: '|',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regexLikeValue.length,
+                        value: regexLikeValue,
+                        exception: false,
+                    },
+                ],
+            });
+        });
+
         test('should split a list with a closed regexp domain in the middle', () => {
             const regexDomain = String.raw`/a\\/`;
             const list = String.raw`example.org|/a\\/|example.com`;
@@ -773,6 +795,16 @@ describe('DomainListParser', () => {
                 actual: String.raw`~/|example.org`,
                 start: 1,
                 end: 14,
+            },
+            {
+                actual: String.raw`/a\|b|example.org`,
+                start: 0,
+                end: 17,
+            },
+            {
+                actual: String.raw`/a[|]b|example.org`,
+                start: 0,
+                end: 18,
             },
         ])('should throw on an unclosed regexp literal: $actual', ({ actual, start, end }) => {
             let error: unknown;

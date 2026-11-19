@@ -304,6 +304,54 @@ describe('common parseListItems', () => {
                     },
                 ],
             },
+            {
+                actual: String.raw`/a\|b`,
+                expected: [
+                    {
+                        type: ListItemNodeType.Unknown,
+                        start: 0,
+                        end: 5,
+                        value: String.raw`/a\|b`,
+                        exception: false,
+                    },
+                ],
+            },
+            {
+                actual: String.raw`/a[|]b`,
+                expected: [
+                    {
+                        type: ListItemNodeType.Unknown,
+                        start: 0,
+                        end: 6,
+                        value: String.raw`/a[|]b`,
+                        exception: false,
+                    },
+                ],
+            },
+            {
+                actual: String.raw`/a(b|c)`,
+                expected: [
+                    {
+                        type: ListItemNodeType.Unknown,
+                        start: 0,
+                        end: 7,
+                        value: String.raw`/a(b|c)`,
+                        exception: false,
+                    },
+                ],
+            },
+            {
+                actual: String.raw`/a\\\|b`,
+                expected: [
+                    {
+                        type: ListItemNodeType.Unknown,
+                        start: 0,
+                        end: 7,
+                        value: String.raw`/a\\\|b`,
+                        exception: false,
+                    },
+                ],
+            },
         ])('$actual', ({ actual, expected }) => {
             expect(ListItemsParser.parse(actual, defaultParserOptions, 0, PIPE)).toEqual(expected);
         });
@@ -323,6 +371,21 @@ describe('common parseListItems', () => {
                 actual: String.raw`~/|example.org`,
                 start: 1,
                 end: 14,
+            },
+            {
+                actual: String.raw`/a\|b|example.org`,
+                start: 0,
+                end: 17,
+            },
+            {
+                actual: String.raw`/a[|]b|example.org`,
+                start: 0,
+                end: 18,
+            },
+            {
+                actual: String.raw`/a\\|b`,
+                start: 0,
+                end: 6,
             },
         ])('$actual should throw on an unclosed regexp literal', ({ actual, start, end }) => {
             const fn = vi.fn(() => ListItemsParser.parse(actual, defaultParserOptions, 0, PIPE));

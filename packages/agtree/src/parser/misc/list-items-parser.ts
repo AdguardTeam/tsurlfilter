@@ -1,10 +1,12 @@
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { type ListItem, ListItemNodeType } from '../../nodes';
 import {
+    CLOSE_PARENTHESIS,
     CLOSE_SQUARE_BRACKET,
     COMMA,
     ESCAPE_CHARACTER,
     NEGATION_MARKER,
+    OPEN_PARENTHESIS,
     OPEN_SQUARE_BRACKET,
     REGEX_MARKER,
 } from '../../utils/constants';
@@ -103,7 +105,12 @@ export class ListItemsParser {
                 // try to find the next slash
                 let i = itemStart + 1;
                 let insideCharacterClass = false;
+                let groupDepth = 0;
                 let escaped = false;
+                // Track a real separator in the same scan: escaped separators
+                // and separators inside a character class or a group do not
+                // split the list.
+                let hasUnescapedSeparator = false;
 
                 while (i < raw.length) {
                     if (escaped) {
@@ -114,6 +121,22 @@ export class ListItemsParser {
                         insideCharacterClass = true;
                     } else if (raw[i] === CLOSE_SQUARE_BRACKET) {
                         insideCharacterClass = false;
+                    } else if (
+                        !insideCharacterClass
+                        && raw[i] === OPEN_PARENTHESIS
+                    ) {
+                        groupDepth += 1;
+                    } else if (
+                        !insideCharacterClass
+                        && raw[i] === CLOSE_PARENTHESIS
+                    ) {
+                        groupDepth = Math.max(0, groupDepth - 1);
+                    } else if (
+                        !insideCharacterClass
+                        && groupDepth === 0
+                        && raw[i] === separator
+                    ) {
+                        hasUnescapedSeparator = true;
                     } else if (
                         !insideCharacterClass
                         && raw[i] === REGEX_MARKER
@@ -138,10 +161,10 @@ export class ListItemsParser {
 
                 if (separatorStartIndex === -1) {
                     // A regexp literal without a closing delimiter is valid only
-                    // as the last item, e.g. `example.org|/a\/`. If a separator
-                    // follows the item, the parser would silently drop the rest
-                    // of the list, so the list is syntactically invalid.
-                    if (raw.indexOf(separator, itemStart + 1) !== -1) {
+                    // as the last item, e.g. `example.org|/a\/`. If a real
+                    // separator follows the item, the parser would silently drop
+                    // the rest of the list, so the list is syntactically invalid.
+                    if (hasUnescapedSeparator) {
                         throw new AdblockSyntaxError(
                             LIST_PARSE_ERROR_PREFIX.UNCLOSED_REGEXP_LITERAL,
                             baseOffset + itemStart,
