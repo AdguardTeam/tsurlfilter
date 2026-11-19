@@ -40,12 +40,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   case-insensitive regexp becomes case-sensitive, because the merged regexp has
   a single flag set.
 - A single trailing `$domain` or `$denyallow` value that starts with a
-  slash but is not a valid regexp literal is rejected with
+  slash but is not a regexp literal is rejected with
   `Invalid regular expression as domain pattern`, e.g. a positive `$domain=//`
-  or `$domain=/a\/`. Before, such a value could turn the rule on for every
-  site: a positive `$domain=//` matched every domain as an empty regexp,
-  and `/a\/` was already rejected because its pattern did not compile
-  (via [@adguard/tsurlfilter]).
+  or `$domain=/a\/` (via [@adguard/tsurlfilter]). Before, such a value could
+  turn the rule on for every site: a positive `$domain=//` matched every
+  domain as an empty regexp, and `/a\/` was already rejected because its
+  pattern did not compile.
+- Path-relative URLs passed to `history.pushState()` and
+  `history.replaceState()` are now resolved against the base URI from
+  before the navigation, so `$removeparam` rules remove tracking
+  parameters synchronously instead of leaving them in the address bar.
 
 ### Security
 
