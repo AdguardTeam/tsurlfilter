@@ -310,7 +310,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         }));
     });
 
-    it('does not reuse the marked CSS cache of another document', async () => {
+    it('does not answer a request for a document the frame context left', async () => {
         const frameContext = {
             documentId: 'doc-2',
             preparedCosmeticResult: {
@@ -333,18 +333,18 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
             'doc-1',
         );
 
-        // The cache hit must not answer the request, and the marked rules must
-        // be injected into the requesting document.
-        expect(executeExtCssMock).toHaveBeenCalledTimes(1);
-        expect(executeExtCssMock.mock.calls[0][0].documentId).toBe('doc-1');
-        expect(insertCSSMock).toHaveBeenCalledTimes(1);
-        expect(insertCSSMock.mock.calls[0][0].documentId).toBe('doc-1');
-        expect(data.areNativeHitsStatsCollected).toBe(true);
+        // Neither the cache hit of doc-2 nor an injection into the left
+        // document may answer the request: the document that replaced it owns
+        // the queue and the records.
+        expect(executeExtCssMock).not.toHaveBeenCalled();
+        expect(insertCSSMock).not.toHaveBeenCalled();
+        expect(data.areNativeHitsStatsCollected).toBe(false);
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.NotRequired);
     });
 
-    it('does not record the marked CSS state against another document', async () => {
+    it('does not record the marked CSS state of a document the frame context left', async () => {
         // No marked CSS was injected into the frame context's document, so the
-        // only source of a recorded state is the re-apply below.
+        // only source of a recorded state would be the re-apply below.
         tabsApiMock.getFrameContext.mockReturnValue({
             documentId: 'doc-2',
             preparedCosmeticResult: {
@@ -360,12 +360,11 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
             'doc-1',
         );
 
-        expect(insertCSSMock).toHaveBeenCalledTimes(1);
-        expect(insertCSSMock.mock.calls[0][0].documentId).toBe('doc-1');
-        expect(data.areNativeHitsStatsCollected).toBe(true);
+        expect(insertCSSMock).not.toHaveBeenCalled();
+        expect(data.areNativeHitsStatsCollected).toBe(false);
 
-        // The success describes doc-1, so the frame context of doc-2 keeps no
-        // record of it.
+        // The skipped request describes doc-1, so the frame context of doc-2
+        // keeps no record of it.
         const reported = CosmeticApi.getContentScriptData(
             'https://example.org/',
             TAB_ID,
@@ -878,6 +877,88 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(data.areHitsStatsCollected).toBe(true);
     });
 
+    it('reports a pending marked ExtendedCss injection from a cache hit only after it settles', async () => {
+        const frameContext = makeMarkedExtCssFrameContext('doc-1');
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+
+        // The marked native CSS is cached, but the marked ExtendedCss
+        // injection it was prepared with is still in flight.
+        await applyCss(TAB_ID, FRAME_ID, 'marked');
+        insertCSSMock.mockClear();
+
+        const { promise, resolve } = await startPendingExtCssInjection(frameContext);
+
+        let reapplySettled = false;
+        const reapply = CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        ).then((result) => {
+            reapplySettled = true;
+            return result;
+        });
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        // The cache hit must not report the markers as applied while the
+        // operation that carries them is still in flight.
+        expect(reapplySettled).toBe(false);
+        expect(executeExtCssMock).toHaveBeenCalledTimes(1);
+
+        resolve();
+        await promise;
+
+        const data = await reapply;
+
+        // The awaited operation applied the same prepared result, so the
+        // re-apply must not replace it with a second one.
+        expect(executeExtCssMock).toHaveBeenCalledTimes(1);
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.Applied);
+        expect(data.areNativeHitsStatsCollected).toBe(true);
+    });
+
+    it('injects the marked rules when the pending cache hit operation fails', async () => {
+        const frameContext = makeMarkedExtCssFrameContext('doc-1');
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+        vi.spyOn(logger, 'info').mockImplementation(() => {});
+
+        await applyCss(TAB_ID, FRAME_ID, 'marked');
+        insertCSSMock.mockClear();
+
+        let rejectInjection!: (error: Error) => void;
+        executeExtCssMock.mockImplementationOnce(() => new Promise<boolean>((_resolve, reject) => {
+            rejectInjection = reject;
+        }));
+        const injection = applyExtCssRules(frameContext);
+
+        const reapply = CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(executeExtCssMock).toHaveBeenCalledTimes(1);
+
+        rejectInjection(new Error('injection failed'));
+        await injection;
+
+        const data = await reapply;
+
+        // A failed operation leaves no success record, so the marked rules are
+        // injected and the real outcome is reported.
+        expect(executeExtCssMock).toHaveBeenCalledTimes(2);
+        expect(executeExtCssMock).toHaveBeenLastCalledWith(expect.objectContaining({
+            documentId: 'doc-1',
+            collectStats: true,
+        }));
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.Applied);
+        expect(data.areNativeHitsStatsCollected).toBe(true);
+    });
+
     it('does not inject marked ExtendedCss rules that the pending injection already applied', async () => {
         const frameContext = makeExtCssFrameContext('doc-1');
         tabsApiMock.getFrameContext.mockReturnValue(frameContext);
@@ -953,7 +1034,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(data.extCssMarkersState).toBe(ExtCssMarkersState.NotRequired);
     });
 
-    it('stops the re-apply when the frame moved on while waiting for the requesting document', async () => {
+    it('stops the re-apply when the frame context already moved on', async () => {
         const frameContext = makeExtCssFrameContext('doc-1');
         tabsApiMock.getFrameContext.mockReturnValue(frameContext);
 
@@ -990,7 +1071,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(data.extCssMarkersState).toBe(ExtCssMarkersState.NotRequired);
     });
 
-    it('does not report the marker state of another document when the wait stops the re-apply', async () => {
+    it('does not report the marker state of another document when the frame context moved on', async () => {
         const frameContext = makeMarkedExtCssFrameContext('doc-1');
         tabsApiMock.getFrameContext.mockReturnValue(frameContext);
 
@@ -1171,6 +1252,51 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         await d;
 
         // D carried the same prepared result as C, so it injects nothing.
+        expect(executeExtCssMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not replace the tail of the current document with a stale request', async () => {
+        const frameContext = makeExtCssFrameContext('doc-1');
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+
+        // A: the unmarked operation of doc-1 is in flight.
+        const a = await startPendingExtCssInjection(frameContext);
+
+        // The frame context advances to doc-2 and C occupies its queue tail.
+        frameContext.documentId = 'doc-2';
+        const c = await startPendingExtCssInjection(frameContext);
+
+        // A stale request for doc-1 arrives while C is still in flight.
+        const stale = await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+            'doc-1',
+        );
+
+        // It must neither inject into the document it left nor replace C's
+        // entry.
+        expect(executeExtCssMock).toHaveBeenCalledTimes(2);
+        expect(executeExtCssMock.mock.calls[1][0]).toEqual(expect.objectContaining({
+            documentId: 'doc-2',
+        }));
+        expect(stale.extCssMarkersState).toBe(ExtCssMarkersState.NotRequired);
+        expect(stale.areNativeHitsStatsCollected).toBe(false);
+
+        // A doc-2 caller must queue behind C instead of starting beside it.
+        const d = applyExtCssRules(frameContext);
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(executeExtCssMock).toHaveBeenCalledTimes(2);
+
+        a.resolve();
+        await a.promise;
+        c.resolve();
+        await c.promise;
+        await d;
+
         expect(executeExtCssMock).toHaveBeenCalledTimes(2);
     });
 

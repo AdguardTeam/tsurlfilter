@@ -380,10 +380,11 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
-        // The rules must reach the document the sender runs in, even when the
-        // frame context is already gone or has moved on to the next document.
-        // The id is captured once, because a navigation mutates the frame
-        // context in place while the injections below are awaited.
+        // The rules must reach the document the sender runs in. The id is
+        // captured once, because a navigation mutates the frame context in
+        // place while the injections below are awaited; an operation whose
+        // frame context already describes another document is rejected
+        // instead of injected into the wrong one.
         const documentId = targetDocumentId ?? frameContext?.documentId;
 
         // The seeded marker state describes the document the frame context
@@ -416,10 +417,13 @@ export class CosmeticApi extends CosmeticApiCommon {
             // The cache can be written by the initial marked CSS injection
             // before the floating ExtendedCss injection settles, so a cache
             // hit alone does not prove that the marked ExtendedCss rules were
-            // applied.
-            if (preparedCosmeticResult
-                && extCssState?.preparedCosmeticResult === preparedCosmeticResult
-                && !extCssState.applied) {
+            // applied. Only a success record for this prepared result does,
+            // while a missing record means the injection is still pending.
+            const areExtCssMarkersApplied = extCssState?.preparedCosmeticResult
+                === preparedCosmeticResult
+                && extCssState?.applied === true;
+
+            if (preparedCosmeticResult && !areExtCssMarkersApplied) {
                 // The unmarked instance may still be applying; the marked
                 // rules replace it, so the queue orders them instead of racing
                 // it.
@@ -429,28 +433,46 @@ export class CosmeticApi extends CosmeticApiCommon {
                     documentId,
                     preparedCosmeticResult,
                     operation: async () => {
+                        // A predecessor that applied the same prepared result
+                        // left a success record: replacing the instance would
+                        // only duplicate it.
+                        const injectedFrameContext = CosmeticApi.getRecordsFrameContext(
+                            frameContext,
+                            documentId,
+                        );
+                        const injectedExtCssState = injectedFrameContext
+                            ? CosmeticApi.extCssMarkersApplied.get(injectedFrameContext)
+                            : undefined;
+                        if (injectedFrameContext
+                            && injectedExtCssState?.preparedCosmeticResult
+                                === preparedCosmeticResult
+                            && injectedExtCssState.applied) {
+                            extCssApplied = true;
+                            return;
+                        }
+
                         extCssApplied = await CosmeticApi.injectExtCssRules(
                             { tabId, frameId, documentId },
                             preparedCosmeticResult.extCssRules,
                             preparedCosmeticResult.areHitsStatsCollected,
                         );
 
-                        const injectedFrameContext = CosmeticApi.getRecordsFrameContext(
+                        const recordedFrameContext = CosmeticApi.getRecordsFrameContext(
                             frameContext,
                             documentId,
                         );
-                        if (!injectedFrameContext) {
+                        if (!recordedFrameContext) {
                             return;
                         }
 
                         CosmeticApi.setExtCssMarkersApplied(
-                            injectedFrameContext,
+                            recordedFrameContext,
                             preparedCosmeticResult,
                             extCssApplied,
                         );
 
                         if (extCssApplied) {
-                            CosmeticApi.setMarkedCssInjected(injectedFrameContext);
+                            CosmeticApi.setMarkedCssInjected(recordedFrameContext);
                         }
                     },
                 });
@@ -1006,9 +1028,14 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * An entry of another document is never awaited: a navigation has moved
      * the frame context on, and the captured document's operation is bound to
-     * its own id. After every wait the captured document is checked again, so
-     * a stale waiter neither starts its operation nor replaces the queue entry
-     * of the document the frame context now holds.
+     * its own id. A live frame context that already describes another document
+     * rejects the request before the tail is read, and after every wait the
+     * captured document is checked again, so a stale waiter neither starts its
+     * operation nor replaces the queue entry of the document the frame context
+     * now holds.
+     *
+     * A frame context that is already gone (a pruned live subframe) has no
+     * queue to read, so its operation runs without one.
      *
      * @param params Operation parameters.
      * @param params.frameContext Frame context that keys the queue, when known.
@@ -1042,9 +1069,17 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         if (!frameContext) {
             // Without a frame context there is no queue key, so nothing can be
-            // in flight for this document.
+            // in flight for this document. This is a pruned live subframe, so
+            // its operation still runs.
             await operation();
             return true;
+        }
+
+        if (frameContext.documentId !== documentId) {
+            // The live frame context already describes another document, so
+            // this request belongs to a document it left. Reject it before
+            // reading or replacing the queue tail of the current document.
+            return false;
         }
 
         let pending = CosmeticApi.extCssInjectionInFlight.get(frameContext);
