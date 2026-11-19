@@ -33,6 +33,31 @@ describe('SimpleRegex.patternToRegexp', () => {
         expect(regex).toEqual(expected);
     });
 
+    it('treats a pattern with an escaped closing slash as a basic pattern', () => {
+        const regexText = SimpleRegex.patternToRegexp(String.raw`/a\/`);
+        const expected = String.raw`\/a\\\/`;
+        expect(regexText).toEqual(expected);
+
+        const regexp = new RegExp(regexText);
+        expect(regexp.test(String.raw`/a\/`)).toBe(true);
+    });
+
+    it('keeps an escaped backslash before the closing slash as a regexp delimiter', () => {
+        const regexText = SimpleRegex.patternToRegexp(String.raw`/a\\/`);
+        expect(regexText).toEqual(String.raw`a\\`);
+
+        const regexp = new RegExp(regexText);
+        expect(regexp.test('a\\')).toBe(true);
+    });
+
+    it('treats bare delimiters as basic patterns', () => {
+        expect(SimpleRegex.patternToRegexp('/')).toEqual('\\/');
+        expect(SimpleRegex.patternToRegexp('//')).toEqual('\\/\\/');
+
+        expect(new RegExp(SimpleRegex.patternToRegexp('/')).test('/')).toBe(true);
+        expect(new RegExp(SimpleRegex.patternToRegexp('//')).test('//')).toBe(true);
+    });
+
     it('works if detects "any character" patterns properly', () => {
         const regex = SimpleRegex.patternToRegexp('||');
         const expected = '.*';
@@ -50,6 +75,19 @@ describe('SimpleRegex.extractShortcut', () => {
 
         shortcut = SimpleRegex.extractShortcut('|https://*example.org/path');
         expect(shortcut).toEqual('example.org/path');
+    });
+
+    it('uses the basic path for a pattern with an escaped closing slash', () => {
+        expect(SimpleRegex.extractShortcut(String.raw`/a\/`)).toEqual(String.raw`/a\/`);
+    });
+
+    it('uses the regexp path for a pattern with an escaped backslash before the closing slash', () => {
+        expect(SimpleRegex.extractShortcut(String.raw`/a\\/`)).toEqual('a');
+    });
+
+    it('uses the basic path for bare delimiters', () => {
+        expect(SimpleRegex.extractShortcut('/')).toEqual('/');
+        expect(SimpleRegex.extractShortcut('//')).toEqual('//');
     });
 
     it('works if it is able to extract regex shortcuts', () => {
@@ -166,8 +204,10 @@ describe('SimpleRegex.extractShortcut', () => {
     });
 
     it('works if it discards incorrect patterns', () => {
+        // `//` is not a regexp literal anymore, so it is a basic pattern
+        // whose shortcut is the pattern text itself.
         let shortcut = SimpleRegex.extractShortcut('//');
-        expect(shortcut).toEqual('');
+        expect(shortcut).toEqual('//');
 
         shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/[a-z]?example.org/');
         expect(shortcut).toEqual('example');

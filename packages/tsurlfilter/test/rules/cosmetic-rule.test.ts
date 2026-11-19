@@ -538,6 +538,28 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest('http://example.com/'))).toEqual(true);
     });
 
+    it('matches a path modifier with an escaped closing slash as a plain pattern', () => {
+        // `/a\/` is not a regexp literal, so it stays a plain pattern.
+        const rule = createCosmeticRule(String.raw`[$path=/a\/]example.com##.foo`, 0);
+
+        expect(rule.match(createRequest(String.raw`https://example.com/a\/`))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com/a/'))).toEqual(false);
+        expect(rule.match(createRequest('https://example.com/a'))).toEqual(false);
+
+        // The modifier-value escape layer unescapes `\\` to `\`, so
+        // `[$path=/a\\/]` reaches `Pattern` as `/a\/` and is a plain
+        // pattern too.
+        const escapedRule = createCosmeticRule(String.raw`[$path=/a\\/]example.com##.foo`, 0);
+        expect(escapedRule.pathModifier?.pattern).toEqual(String.raw`/a\/`);
+
+        // To keep a regexp literal after the unescape, the rule escapes the
+        // backslash, so the value reaches `Pattern` as `/a\\/`.
+        const regexpRule = createCosmeticRule(String.raw`[$path=/a\\\\/]example.com##.foo`, 0);
+        expect(regexpRule.pathModifier?.pattern).toEqual(String.raw`/a\\/`);
+        expect(regexpRule.match(createRequest('https://example.com/a\\'))).toEqual(true);
+        expect(regexpRule.match(createRequest('https://example.com/a'))).toEqual(false);
+    });
+
     it('work if it matches path modifiers with regex included in the rule', () => {
         const testReString = String.raw`/\\/(sub1|sub2)\\/page\\.html/`;
         const rule = createCosmeticRule(`[$path=${testReString}]##.textad`, 0);

@@ -139,12 +139,16 @@ export class SimpleRegex {
      *
      * Please note, that the shortcut is always lower-case!
      *
+     * {@link SimpleRegex.isRegexPattern} is the single source of truth for the
+     * regexp literal check, so a pattern with an escaped closing slash, e.g.
+     * `/a\/`, is handled as a basic pattern here.
+     *
      * @param pattern Network rule's pattern.
      *
      * @returns The shortcut or the empty string if we could not extract any.
      */
     public static extractShortcut(pattern: string): string {
-        if (pattern.startsWith(this.MASK_REGEX_RULE) && pattern.endsWith(this.MASK_REGEX_RULE)) {
+        if (this.isRegexPattern(pattern)) {
             return this.extractRegexpShortcut(pattern);
         }
         return this.extractBasicShortcut(pattern);
@@ -443,6 +447,11 @@ export class SimpleRegex {
      * PatternToRegexp is a helper method for creating regular expressions from the simple
      * wildcard-based syntax which is used in basic filters.
      *
+     * {@link SimpleRegex.isRegexPattern} is the single source of truth for the
+     * regexp literal check. A pattern with an escaped closing slash, e.g.
+     * `/a\/`, is escaped as a basic pattern, so the produced regular
+     * expression compiles (AG-62243).
+     *
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
      *
      * @param pattern Basic rule pattern.
@@ -459,7 +468,7 @@ export class SimpleRegex {
             return this.REGEX_ANY_CHARACTER;
         }
 
-        if (pattern.startsWith(this.MASK_REGEX_RULE) && pattern.endsWith(this.MASK_REGEX_RULE)) {
+        if (this.isRegexPattern(pattern)) {
             // This is a regex rule, just remove the regex markers
             return pattern.substring(this.MASK_REGEX_RULE.length, pattern.length - this.MASK_REGEX_RULE.length);
         }

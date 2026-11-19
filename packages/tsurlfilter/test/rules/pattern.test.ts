@@ -100,11 +100,34 @@ describe('Pattern Tests', () => {
         )).toBeFalsy();
     });
 
-    it('detects invalid regexp', () => {
-        const pattern = new Pattern('/example\\/');
+    it('treats a pattern with an escaped closing slash as a basic pattern', () => {
+        // The `match-case` flag disables the shortcut branch, so this test
+        // checks the compiled regexp for the escaped basic pattern.
+        const pattern = new Pattern('/example\\/', true);
+
+        expect(pattern.matchPattern(
+            new Request('https://example.org/example\\/', null, RequestType.Document),
+            false,
+        )).toBeTruthy();
 
         expect(pattern.matchPattern(
             new Request('https://example.org', null, RequestType.Document),
+            false,
+        )).toBeFalsy();
+    });
+
+    it('keeps an escaped backslash before the closing slash as a regexp', () => {
+        // The `match-case` flag disables the shortcut branch, so this test
+        // checks the compiled regexp with the delimiters stripped.
+        const pattern = new Pattern(String.raw`/a\\/`, true);
+
+        expect(pattern.matchPattern(
+            new Request(String.raw`https://example.org/a\/`, null, RequestType.Document),
+            false,
+        )).toBeTruthy();
+
+        expect(pattern.matchPattern(
+            new Request('https://example.org/b', null, RequestType.Document),
             false,
         )).toBeFalsy();
     });
