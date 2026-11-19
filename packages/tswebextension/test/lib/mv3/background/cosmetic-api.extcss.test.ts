@@ -399,6 +399,78 @@ describe('CosmeticApi.applyCosmeticRules — ExtendedCss injection', () => {
         );
     });
 
+    it('runs the asset call inside the queued operation and keeps the tail on a stale request', async () => {
+        const rules = ['div:has(.ad) { display: none !important; }'];
+        const frameContext = makeFrameContext(makePrepared(rules), { documentId: 'document-1' });
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(frameContext);
+        vi.mocked(ScriptingApi.executeExtCss).mockRestore();
+
+        const { applyExtCssRules, runQueuedExtCssOperation, extCssInjectionInFlight } = CosmeticApi as unknown as {
+            applyExtCssRules: (context: FrameMV3) => Promise<void>;
+            runQueuedExtCssOperation: (params: {
+                frameContext: FrameMV3;
+                documentId: string | undefined;
+                operation: () => Promise<void>;
+            }) => Promise<boolean>;
+            extCssInjectionInFlight: WeakMap<object, {
+                documentId?: string;
+                preparedCosmeticResult?: unknown;
+            }>;
+        };
+
+        const executeScript = vi.mocked(chrome.scripting.executeScript) as unknown as Mock;
+        let resolveAsset!: () => void;
+        let entryAtAssetCall: { documentId?: string; preparedCosmeticResult?: unknown } | undefined;
+        executeScript
+            .mockReset()
+            .mockImplementationOnce(() => {
+                // The asset call runs inside the queued operation: the queue
+                // entry is already registered when the file is injected.
+                entryAtAssetCall = extCssInjectionInFlight.get(frameContext);
+
+                return new Promise<void>((resolve) => {
+                    resolveAsset = resolve;
+                });
+            })
+            .mockResolvedValue([{ result: true }]);
+
+        const first = applyExtCssRules(frameContext);
+
+        await vi.waitFor(() => {
+            expect(executeScript).toHaveBeenCalledTimes(1);
+        });
+
+        expect(entryAtAssetCall?.documentId).toBe('document-1');
+        expect(entryAtAssetCall?.preparedCosmeticResult).toBe(frameContext.preparedCosmeticResult);
+
+        const tail = extCssInjectionInFlight.get(frameContext);
+        expect(tail).toBeDefined();
+
+        // A navigation mutates the live context in place. A request that
+        // captured the previous document is rejected before it reads or
+        // replaces the tail of the current document.
+        frameContext.documentId = 'document-2';
+        let staleOperationRan = false;
+        const staleAccepted = await runQueuedExtCssOperation({
+            frameContext,
+            documentId: 'document-1',
+            operation: async () => {
+                staleOperationRan = true;
+            },
+        });
+
+        expect(staleAccepted).toBe(false);
+        expect(staleOperationRan).toBe(false);
+        expect(extCssInjectionInFlight.get(frameContext)).toBe(tail);
+        expect(executeScript).toHaveBeenCalledTimes(1);
+
+        resolveAsset();
+        await first;
+
+        // Only the first operation injected: the asset call and the apply call.
+        expect(executeScript).toHaveBeenCalledTimes(2);
+    });
+
     it('does not record Applied for a document that changed while the asset was injected', async () => {
         const rules = ['div:has(.ad) { display: none !important; }'];
         const frameContext = makeFrameContext(makePrepared(rules), { documentId: 'document-1' });

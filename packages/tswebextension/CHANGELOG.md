@@ -85,6 +85,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The content script now retries a cosmetic-data request that returns no
+  payload under the same app-start budget as an unstarted app, an ExtendedCss
+  restore keeps the hits callback of the retained marked instance, and MV3
+  serializes ExtendedCss operations per document so a marked re-apply cannot
+  race a pending injection, replace the queue entry of another document, or
+  report markers before they are applied.
 - ExtendedCss CSS hits are no longer reported twice after a failed apply
   dropped the retained instance: the per-node dedupe state is kept per
   document and cleared only when the document's filtering session ends.
