@@ -1034,6 +1034,88 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         await promise;
     });
 
+    it('does not start a second ExtendedCss injection for the same prepared result', async () => {
+        const frameContext = makeExtCssFrameContext('doc-1');
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+
+        const { promise, resolve } = await startPendingExtCssInjection(frameContext);
+
+        let secondSettled = false;
+        const second = applyExtCssRules(frameContext).then(() => {
+            secondSettled = true;
+        });
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        // The second operation waits instead of replacing the instance while
+        // the first one is still applying.
+        expect(secondSettled).toBe(false);
+        expect(executeExtCssMock).toHaveBeenCalledTimes(1);
+
+        resolve();
+        await promise;
+        await second;
+
+        // The awaited operation applied the same prepared result, so the
+        // second call injects nothing.
+        expect(executeExtCssMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('starts a different prepared result only after the pending injection settles', async () => {
+        const frameContext = makeExtCssFrameContext('doc-1');
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+
+        const { promise, resolve } = await startPendingExtCssInjection(frameContext);
+
+        // Collection is enabled while the unmarked injection is in flight, so
+        // the frame context now holds a marked prepared result and the marked
+        // rules must be injected after the pending one.
+        frameContext.preparedCosmeticResult = {
+            cssText: 'marked',
+            extCssRules: ['example.org#?#.banner:has(> .ad) { display: none !important; }'],
+            areHitsStatsCollected: true,
+        };
+
+        const second = applyExtCssRules(frameContext);
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(executeExtCssMock).toHaveBeenCalledTimes(1);
+
+        resolve();
+        await promise;
+        await second;
+
+        expect(executeExtCssMock).toHaveBeenCalledTimes(2);
+        expect(executeExtCssMock).toHaveBeenLastCalledWith(expect.objectContaining({
+            documentId: 'doc-1',
+            collectStats: true,
+        }));
+    });
+
+    it('does not wait for an ExtendedCss injection of another document on apply', async () => {
+        const frameContext = makeExtCssFrameContext('doc-1');
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+
+        const { promise, resolve } = await startPendingExtCssInjection(frameContext);
+
+        // The navigation replaced the document in the same frame context, so
+        // the pending injection of doc-1 must not block doc-2.
+        frameContext.documentId = 'doc-2';
+
+        await applyExtCssRules(frameContext);
+
+        expect(executeExtCssMock).toHaveBeenCalledTimes(2);
+        expect(executeExtCssMock).toHaveBeenLastCalledWith(expect.objectContaining({
+            documentId: 'doc-2',
+        }));
+
+        resolve();
+        await promise;
+    });
+
     it('waits for the pending native CSS injection of the requesting document', async () => {
         const frameContext = {
             documentId: 'doc-1',

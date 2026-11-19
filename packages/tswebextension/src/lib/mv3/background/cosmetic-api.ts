@@ -994,6 +994,12 @@ export class CosmeticApi extends CosmeticApiCommon {
      * injection settles, so a marked re-apply for the same document can wait
      * for it even though the caller does not await this injection.
      *
+     * An injection for the same document waits for the operation already
+     * registered there: both replace the document's ExtendedCss instance, so
+     * running them concurrently could let the older one finish last. When the
+     * awaited operation carried the same prepared result, its outcome is
+     * already recorded and no second injection is made.
+     *
      * @param frameContext Frame context with the prepared ExtendedCss rules.
      *
      * @returns A promise that resolves when the rules are injected.
@@ -1009,6 +1015,26 @@ export class CosmeticApi extends CosmeticApiCommon {
         // The rules are prepared for this document, so a navigation during the
         // injection must not move them to the next one.
         const { tabId, frameId, documentId } = frameContext;
+
+        // An ExtendedCss injection replaces the instance the document holds,
+        // so two injections for the same document must not run concurrently:
+        // the older one could finish last and leave its instance in the page.
+        // The loop re-reads the entry after every wait, because several callers
+        // can wait for the same operation and then race to register their own.
+        let pending = CosmeticApi.extCssInjectionInFlight.get(frameContext);
+        while (pending && pending.documentId === documentId) {
+            // eslint-disable-next-line no-await-in-loop -- injections are serialized on purpose
+            await pending.promise;
+
+            // The operation that was awaited applied this prepared result, or
+            // failed and recorded the outcome. Injecting it again would replace
+            // the instance with an identical one.
+            if (pending.preparedCosmeticResult === preparedCosmeticResult) {
+                return;
+            }
+
+            pending = CosmeticApi.extCssInjectionInFlight.get(frameContext);
+        }
 
         const promise = CosmeticApi.injectExtCssRules(
             { tabId, frameId, documentId },

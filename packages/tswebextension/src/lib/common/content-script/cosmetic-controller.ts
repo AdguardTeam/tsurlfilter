@@ -142,8 +142,23 @@ export class CosmeticControllerCommon {
                 this.applyCosmetic(res);
                 return;
             }
+
+            // The background answers without a payload until the app starts
+            // and the engine prepares the document. Retry under the same
+            // app-start budget that `applyCosmetic()` uses for a response
+            // whose `isAppStarted` is false.
+            if (this.tries < CosmeticControllerCommon.MAX_GET_COSMETIC_DATA_TRIES) {
+                this.tries += 1;
+                setTimeout(
+                    this.process,
+                    CosmeticControllerCommon.GET_COSMETIC_DATA_RETRY_TIMEOUT_MS,
+                );
+                return;
+            }
         } catch {
             // Keep collecting probes while a short retry can still succeed.
+            // The rejection budget is separate from the app-start budget, so
+            // a thrown request does not consume it.
             if (this.rejectionTries
                 < CosmeticControllerCommon.MAX_GET_COSMETIC_DATA_REJECTION_TRIES) {
                 this.rejectionTries += 1;
