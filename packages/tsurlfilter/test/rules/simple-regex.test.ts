@@ -88,6 +88,9 @@ describe('SimpleRegex.extractShortcut', () => {
     it('uses the basic path for bare delimiters', () => {
         expect(SimpleRegex.extractShortcut('/')).toEqual('/');
         expect(SimpleRegex.extractShortcut('//')).toEqual('//');
+
+        // The regexp shortcut path still discards patterns that are too short.
+        expect(SimpleRegex.extractRegexpShortcut('//')).toEqual('');
     });
 
     it('works if it is able to extract regex shortcuts', () => {
@@ -203,13 +206,8 @@ describe('SimpleRegex.extractShortcut', () => {
         expect(shortcut).toEqual('d');
     });
 
-    it('works if it discards incorrect patterns', () => {
-        // `//` is not a regexp literal anymore, so it is a basic pattern
-        // whose shortcut is the pattern text itself.
-        let shortcut = SimpleRegex.extractShortcut('//');
-        expect(shortcut).toEqual('//');
-
-        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/[a-z]?example.org/');
+    it('extracts shortcuts from edge-case regexp patterns', () => {
+        let shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/[a-z]?example.org/');
         expect(shortcut).toEqual('example');
 
         shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/(?<!test.)example.org/');

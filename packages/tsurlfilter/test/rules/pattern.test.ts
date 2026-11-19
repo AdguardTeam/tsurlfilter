@@ -132,6 +132,15 @@ describe('Pattern Tests', () => {
         )).toBeFalsy();
     });
 
+    it('does not match a pattern whose regexp fails to compile', () => {
+        const pattern = new Pattern('/a++/', true);
+
+        expect(pattern.matchPattern(
+            new Request('https://example.org/a', null, RequestType.Document),
+            false,
+        )).toBeFalsy();
+    });
+
     it('matches hostname with regexp', () => {
         const pattern = new Pattern('/path/');
 
