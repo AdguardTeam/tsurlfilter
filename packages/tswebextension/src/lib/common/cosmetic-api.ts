@@ -152,11 +152,21 @@ type CssInjectionInFlight = {
 };
 
 /**
- * In-flight ExtendedCss injection for a frame context.
+ * Queue tail of the ExtendedCss operations of a frame context.
+ *
+ * Every operation registers its entry before it starts and settles the
+ * promise after its record writes, so the next operation for the same document
+ * waits for it instead of replacing the document's instance concurrently.
  */
 type ExtCssInjectionInFlight = {
-    preparedCosmeticResult: PreparedCosmeticResultCommon;
+    /**
+     * Prepared result the operation applies, when it can be attributed to one.
+     */
+    preparedCosmeticResult: PreparedCosmeticResultCommon | undefined;
     documentId: string | undefined;
+    /**
+     * Settles when the operation and its record writes are done.
+     */
     promise: Promise<void>;
 };
 
@@ -304,10 +314,12 @@ export class CosmeticApiCommon {
     protected static cssInjectionInFlight = new WeakMap<object, CssInjectionInFlight>();
 
     /**
-     * ExtendedCss injections currently in progress, keyed by frame context.
+     * Tail of the ExtendedCss operation queue, keyed by frame context.
      *
-     * An ExtendedCss injection replaces the instance the document holds, so
-     * two injections for the same document must not run concurrently.
+     * An ExtendedCss operation replaces the instance the document holds, so
+     * two operations for the same document must not run concurrently. MV3
+     * registers every operation here before it starts and settles it after
+     * its record writes.
      */
     protected static extCssInjectionInFlight = new WeakMap<object, ExtCssInjectionInFlight>();
 
@@ -419,8 +431,8 @@ export class CosmeticApiCommon {
     /**
      * Waits for a marked native CSS injection that is still in progress.
      *
-     * ExtendedCss injections are not awaited here: see
-     * {@link waitForPendingExtCssInjectionForContext}.
+     * ExtendedCss operations are not awaited here: they are serialized by the
+     * per-document queue in the MV3 background.
      *
      * @param frameContext Frame context.
      * @param documentId Document to wait for. Defaults to the document the
@@ -439,38 +451,6 @@ export class CosmeticApiCommon {
         const pending = CosmeticApiCommon.cssInjectionInFlight.get(frameContext);
         if (!pending
             || !pending.areHitsStatsCollected
-            || pending.preparedCosmeticResult !== frameContext.preparedCosmeticResult
-            || pending.documentId !== documentId) {
-            return;
-        }
-
-        await pending.promise;
-    }
-
-    /**
-     * Waits for an ExtendedCss injection that is still in progress for the
-     * same document and prepared result.
-     *
-     * The pending injection is awaited regardless of its marker state: it
-     * replaces the document's ExtendedCss instance, so an injection started
-     * from the same prepared result would race it.
-     *
-     * @param frameContext Frame context.
-     * @param documentId Document to wait for. Defaults to the document the
-     * frame context holds; a caller that captured an earlier document id must
-     * pass it explicitly, because a navigation mutates the frame context in
-     * place.
-     */
-    protected static async waitForPendingExtCssInjectionForContext(
-        frameContext: MarkedCssFrameContext | undefined,
-        documentId: string | undefined = frameContext?.documentId,
-    ): Promise<void> {
-        if (!frameContext) {
-            return;
-        }
-
-        const pending = CosmeticApiCommon.extCssInjectionInFlight.get(frameContext);
-        if (!pending
             || pending.preparedCosmeticResult !== frameContext.preparedCosmeticResult
             || pending.documentId !== documentId) {
             return;

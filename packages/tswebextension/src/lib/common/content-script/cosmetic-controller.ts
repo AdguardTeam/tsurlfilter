@@ -26,7 +26,10 @@ export class CosmeticControllerCommon {
     private static GET_COSMETIC_DATA_RETRY_TIMEOUT_MS = 100;
 
     /**
-     * Max {@link MessageType.GetCosmeticData} request limit.
+     * Max number of {@link MessageType.GetCosmeticData} retries used by the
+     * app-start budget: while the background is not started, and while it
+     * answers without a payload. Every check uses the same strict comparison,
+     * so every budget allows exactly these many retries.
      */
     private static MAX_GET_COSMETIC_DATA_TRIES = 200;
 
@@ -191,7 +194,7 @@ export class CosmeticControllerCommon {
         } = cosmeticData;
 
         if (!isAppStarted
-            && this.tries <= CosmeticControllerCommon.MAX_GET_COSMETIC_DATA_TRIES
+            && this.tries < CosmeticControllerCommon.MAX_GET_COSMETIC_DATA_TRIES
         ) {
             this.tries += 1;
 
@@ -322,7 +325,7 @@ export class CosmeticControllerCommon {
             }
 
             if (!res.isAppStarted
-                && this.reapplyTries <= CosmeticControllerCommon.MAX_GET_COSMETIC_DATA_TRIES) {
+                && this.reapplyTries < CosmeticControllerCommon.MAX_GET_COSMETIC_DATA_TRIES) {
                 this.reapplyTries += 1;
                 setTimeout(
                     () => this.reapplyMarkedCosmeticData(),

@@ -139,6 +139,30 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         return { promise, resolve: resolveInjection };
     };
 
+    /**
+     * Makes every ExtendedCss injection take one macrotask and records the
+     * highest number of injections that ran at the same time.
+     *
+     * @returns A function that returns the highest observed concurrency.
+     */
+    const trackExtCssConcurrency = (): () => number => {
+        let active = 0;
+        let maxActive = 0;
+
+        executeExtCssMock.mockImplementation(async () => {
+            active += 1;
+            maxActive = Math.max(maxActive, active);
+
+            await new Promise<void>((resolve) => {
+                setTimeout(resolve, 0);
+            });
+
+            active -= 1;
+        });
+
+        return () => maxActive;
+    };
+
     beforeEach(() => {
         appContextMock.configuration.settings.collectStats = true;
         insertCSSMock.mockReset();
@@ -929,7 +953,7 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(data.extCssMarkersState).toBe(ExtCssMarkersState.NotRequired);
     });
 
-    it('waits for the pending ExtendedCss injection of the requesting document', async () => {
+    it('stops the re-apply when the frame moved on while waiting for the requesting document', async () => {
         const frameContext = makeExtCssFrameContext('doc-1');
         tabsApiMock.getFrameContext.mockReturnValue(frameContext);
 
@@ -946,8 +970,8 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
             'doc-1',
         );
 
-        // Let the re-apply reach its injection step: it must stay blocked on
-        // the injection of the requested document instead of racing it.
+        // Let the re-apply reach the queue: it must stay blocked on the
+        // operation of the requesting document instead of racing it.
         await Promise.resolve();
         await Promise.resolve();
 
@@ -958,12 +982,12 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
 
         const data = await reapplyPromise;
 
-        expect(executeExtCssMock).toHaveBeenCalledTimes(2);
-        expect(executeExtCssMock).toHaveBeenLastCalledWith(expect.objectContaining({
-            documentId: 'doc-1',
-            collectStats: true,
-        }));
-        expect(data.areHitsStatsCollected).toBe(true);
+        // The frame context no longer holds doc-1 after the wait, so the
+        // marked rules are not injected and the queue entry of doc-2 is not
+        // replaced by a stale operation.
+        expect(executeExtCssMock).toHaveBeenCalledTimes(1);
+        expect(data.areNativeHitsStatsCollected).toBe(false);
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.NotRequired);
     });
 
     it('does not report the marker state of another document when the wait stops the re-apply', async () => {
@@ -1092,6 +1116,163 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(executeExtCssMock).toHaveBeenLastCalledWith(expect.objectContaining({
             documentId: 'doc-1',
             collectStats: true,
+        }));
+    });
+
+    it('does not replace the queue entry of the next document after a stale wait', async () => {
+        const frameContext = makeExtCssFrameContext('doc-1');
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+
+        // A: the unmarked operation of doc-1 is in flight.
+        const a = await startPendingExtCssInjection(frameContext);
+
+        // B: a marked result arrives and queues behind A.
+        frameContext.preparedCosmeticResult = {
+            cssText: 'marked',
+            extCssRules: ['example.org#?#.banner:has(> .ad) { display: none !important; }'],
+            areHitsStatsCollected: true,
+        };
+        const b = applyExtCssRules(frameContext);
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(executeExtCssMock).toHaveBeenCalledTimes(1);
+
+        // A navigation mutates the frame context in place, so it now describes
+        // the next document.
+        frameContext.documentId = 'doc-2';
+
+        // C: doc-2 starts and occupies the queue entry.
+        const c = await startPendingExtCssInjection(frameContext);
+
+        // A settles: B must leave without starting for the stale doc-1 and
+        // without overwriting C's entry.
+        a.resolve();
+        await a.promise;
+        await b;
+
+        expect(executeExtCssMock).toHaveBeenCalledTimes(2);
+        expect(executeExtCssMock.mock.calls[1][0]).toEqual(expect.objectContaining({
+            documentId: 'doc-2',
+        }));
+
+        // A doc-2 caller while C is in flight queues behind it instead of
+        // starting a concurrent doc-2 operation.
+        const d = applyExtCssRules(frameContext);
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(executeExtCssMock).toHaveBeenCalledTimes(2);
+
+        c.resolve();
+        await c.promise;
+        await d;
+
+        // D carried the same prepared result as C, so it injects nothing.
+        expect(executeExtCssMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('serializes the re-apply behind an in-flight ordinary operation', async () => {
+        const getMaxConcurrency = trackExtCssConcurrency();
+        const frameContext = makeExtCssFrameContext('doc-1');
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+
+        const apply = applyExtCssRules(frameContext);
+        const reapply = CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        await Promise.all([apply, reapply]);
+
+        expect(getMaxConcurrency()).toBe(1);
+        expect(executeExtCssMock).toHaveBeenCalledTimes(2);
+        // The marked payload replaces the unmarked instance last.
+        expect(executeExtCssMock).toHaveBeenLastCalledWith(expect.objectContaining({
+            documentId: 'doc-1',
+            collectStats: true,
+        }));
+    });
+
+    it('serializes the re-apply behind an operation with another prepared result', async () => {
+        trackExtCssConcurrency();
+        const frameContext = makeExtCssFrameContext('doc-1');
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+
+        // An unmarked operation is in flight for the document.
+        const a = await startPendingExtCssInjection(frameContext);
+
+        // The frame context now holds a marked result, so the re-apply below
+        // no longer shares the prepared result of the operation in flight.
+        frameContext.preparedCosmeticResult = {
+            cssText: 'marked',
+            extCssRules: ['.reapply-marked { display: none !important; }'],
+            areHitsStatsCollected: true,
+        };
+
+        const reapply = CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        // The re-apply must wait even though the prepared result differs.
+        expect(executeExtCssMock).toHaveBeenCalledTimes(1);
+
+        a.resolve();
+        await a.promise;
+
+        const data = await reapply;
+
+        expect(executeExtCssMock).toHaveBeenCalledTimes(2);
+        expect(executeExtCssMock).toHaveBeenLastCalledWith(expect.objectContaining({
+            documentId: 'doc-1',
+            collectStats: true,
+        }));
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.Applied);
+    });
+
+    it('does not overlap the re-apply with an operation that registers after the awaited one settled', async () => {
+        const getMaxConcurrency = trackExtCssConcurrency();
+        const frameContext = makeExtCssFrameContext('doc-1');
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+
+        // A: the unmarked operation is in flight.
+        const a = await startPendingExtCssInjection(frameContext);
+
+        // The re-apply queues behind A with the unmarked prepared result.
+        const reapply = CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        // B: another prepared result queues behind A too. It registers its own
+        // entry only after A settles.
+        frameContext.preparedCosmeticResult = {
+            cssText: 'marked',
+            extCssRules: ['.b-marked { display: none !important; }'],
+            areHitsStatsCollected: true,
+        };
+        const b = applyExtCssRules(frameContext);
+
+        a.resolve();
+        await a.promise;
+        await b;
+        await reapply;
+
+        // The re-apply must queue behind B instead of running beside it.
+        expect(getMaxConcurrency()).toBe(1);
+        expect(executeExtCssMock).toHaveBeenCalledTimes(3);
+        expect(executeExtCssMock).toHaveBeenLastCalledWith(expect.objectContaining({
+            documentId: 'doc-1',
+            cssRules: ['.b-marked { display: none !important; }'],
         }));
     });
 

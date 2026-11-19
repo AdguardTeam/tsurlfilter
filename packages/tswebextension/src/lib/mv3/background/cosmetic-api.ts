@@ -386,10 +386,6 @@ export class CosmeticApi extends CosmeticApiCommon {
         // context in place while the injections below are awaited.
         const documentId = targetDocumentId ?? frameContext?.documentId;
 
-        // The frame context is a live object, so its document id is kept to
-        // detect a navigation that happens while an injection is awaited.
-        const frameContextDocumentId = frameContext?.documentId;
-
         // The seeded marker state describes the document the frame context
         // holds. A request from another document must report its own state, so
         // the context's state is cleared instead of passed through to the
@@ -425,43 +421,50 @@ export class CosmeticApi extends CosmeticApiCommon {
                 && extCssState?.preparedCosmeticResult === preparedCosmeticResult
                 && !extCssState.applied) {
                 // The unmarked instance may still be applying; the marked
-                // rules replace it, so wait for it instead of racing it. The
-                // captured document id is passed explicitly, because the frame
-                // context may already hold the next document.
-                await CosmeticApi.waitForPendingExtCssInjectionForContext(
-                    recordsFrameContext,
+                // rules replace it, so the queue orders them instead of racing
+                // it.
+                let extCssApplied = false;
+                const injected = await CosmeticApi.runQueuedExtCssOperation({
+                    frameContext: recordsFrameContext,
                     documentId,
-                );
+                    preparedCosmeticResult,
+                    operation: async () => {
+                        extCssApplied = await CosmeticApi.injectExtCssRules(
+                            { tabId, frameId, documentId },
+                            preparedCosmeticResult.extCssRules,
+                            preparedCosmeticResult.areHitsStatsCollected,
+                        );
 
-                // The frame context is a live object: a navigation mutates its
-                // document id in place. The marked rules replace the instance
-                // of the document they were prepared for.
-                if (frameContext && frameContext.documentId !== frameContextDocumentId) {
+                        const injectedFrameContext = CosmeticApi.getRecordsFrameContext(
+                            frameContext,
+                            documentId,
+                        );
+                        if (!injectedFrameContext) {
+                            return;
+                        }
+
+                        CosmeticApi.setExtCssMarkersApplied(
+                            injectedFrameContext,
+                            preparedCosmeticResult,
+                            extCssApplied,
+                        );
+
+                        if (extCssApplied) {
+                            CosmeticApi.setMarkedCssInjected(injectedFrameContext);
+                        }
+                    },
+                });
+
+                // The frame moved on to another document while the queue
+                // settled, so the request describes a document the frame
+                // context no longer holds.
+                if (!injected) {
                     return data;
                 }
-
-                const extCssApplied = await CosmeticApi.injectExtCssRules(
-                    { tabId, frameId, documentId },
-                    preparedCosmeticResult.extCssRules,
-                    preparedCosmeticResult.areHitsStatsCollected,
-                );
 
                 data.extCssMarkersState = extCssApplied
                     ? ExtCssMarkersState.Applied
                     : ExtCssMarkersState.Failed;
-
-                recordsFrameContext = CosmeticApi.getRecordsFrameContext(frameContext, documentId);
-                if (recordsFrameContext) {
-                    CosmeticApi.setExtCssMarkersApplied(
-                        recordsFrameContext,
-                        preparedCosmeticResult,
-                        extCssApplied,
-                    );
-
-                    if (extCssApplied) {
-                        CosmeticApi.setMarkedCssInjected(recordsFrameContext);
-                    }
-                }
 
                 return data;
             }
@@ -485,55 +488,75 @@ export class CosmeticApi extends CosmeticApiCommon {
             isNativeHasSupported: true,
         });
 
-        // The initial injection is left floating, so it may still be applying
+        // The initial operation is left floating, so it may still be applying
         // the unmarked rules to this document. The marked rules replace the
-        // document's ExtendedCss instance, so wait for it instead of racing it.
-        // The captured document id is passed explicitly, because the frame
-        // context may already hold the next document.
-        await CosmeticApi.waitForPendingExtCssInjectionForContext(frameContext, documentId);
+        // document's ExtendedCss instance, so the queue orders them instead of
+        // racing it, even when the prepared result differs.
+        //
+        // The rules matched above belong to the captured document, so the
+        // operation is bound to its id: a navigation during the queue makes it
+        // stop instead of applying the rules to the next document.
+        const queuedPreparedCosmeticResult = CosmeticApi.getRecordsFrameContext(
+            frameContext,
+            documentId,
+        )?.preparedCosmeticResult;
 
-        // The rules matched above belong to the captured document. A
-        // navigation during the wait mutates the frame context instead of
-        // replacing it, so inject nothing rather than into another document.
-        if (frameContext && frameContext.documentId !== frameContextDocumentId) {
+        let extCssApplied = false;
+        const injected = await CosmeticApi.runQueuedExtCssOperation({
+            frameContext,
+            documentId,
+            preparedCosmeticResult: queuedPreparedCosmeticResult,
+            operation: async () => {
+                // The queue only orders the operations. An operation that
+                // already carried markers for this prepared result applied the
+                // same rules, so injecting them again would replace an
+                // identical instance. An unmarked operation still needs the
+                // marked replacement.
+                const injectedFrameContext = CosmeticApi.getRecordsFrameContext(
+                    frameContext,
+                    documentId,
+                );
+                const extCssState = injectedFrameContext
+                    ? CosmeticApi.extCssMarkersApplied.get(injectedFrameContext)
+                    : undefined;
+                const areExtCssMarkersApplied = !!injectedFrameContext
+                    && extCssState?.applied === true
+                    && extCssState.preparedCosmeticResult
+                        === injectedFrameContext.preparedCosmeticResult
+                    && injectedFrameContext.preparedCosmeticResult?.areHitsStatsCollected
+                        === true;
+
+                extCssApplied = areExtCssMarkersApplied
+                    ? true
+                    : await CosmeticApi.injectExtCssRules(
+                        { tabId, frameId, documentId },
+                        extCssRules,
+                        true,
+                    );
+
+                // The records describe the injected document, so they are
+                // written only while the frame context still holds it.
+                if (injectedFrameContext) {
+                    CosmeticApi.setExtCssMarkersApplied(
+                        injectedFrameContext,
+                        injectedFrameContext.preparedCosmeticResult,
+                        extCssApplied,
+                    );
+                }
+            },
+        });
+
+        // The frame moved on to another document while the queue settled, so
+        // the rules matched for the captured document must not be injected.
+        if (!injected) {
             return data;
         }
-
-        // The wait only orders the injections. An injection that already
-        // carried markers for this prepared result applied the same rules, so
-        // injecting them again would replace an identical instance. An
-        // unmarked injection still needs the marked replacement.
-        recordsFrameContext = CosmeticApi.getRecordsFrameContext(frameContext, documentId);
-        const extCssState = recordsFrameContext
-            ? CosmeticApi.extCssMarkersApplied.get(recordsFrameContext)
-            : undefined;
-        const areExtCssMarkersApplied = !!recordsFrameContext
-            && extCssState?.applied === true
-            && extCssState.preparedCosmeticResult === recordsFrameContext.preparedCosmeticResult
-            && recordsFrameContext.preparedCosmeticResult?.areHitsStatsCollected === true;
-
-        const extCssApplied = areExtCssMarkersApplied
-            ? true
-            : await CosmeticApi.injectExtCssRules(
-                { tabId, frameId, documentId },
-                extCssRules,
-                true,
-            );
 
         data.extCssMarkersState = extCssApplied
             ? ExtCssMarkersState.Applied
             : ExtCssMarkersState.Failed;
 
-        // The records describe the injected document, so they are written only
-        // while the frame context still holds it.
         recordsFrameContext = CosmeticApi.getRecordsFrameContext(frameContext, documentId);
-        if (recordsFrameContext) {
-            CosmeticApi.setExtCssMarkersApplied(
-                recordsFrameContext,
-                recordsFrameContext.preparedCosmeticResult,
-                extCssApplied,
-            );
-        }
 
         const cssText = CosmeticApi.getCssText(cosmeticResult, {
             areHitsStatsCollected: true,
@@ -972,6 +995,115 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Runs an ExtendedCss operation through the per-document queue.
+     *
+     * Every ExtendedCss operation replaces the instance the document holds, so
+     * two operations for one document must not run concurrently: the older one
+     * could finish last and leave its instance in the page. The queue tail is
+     * `extCssInjectionInFlight`: an operation registers its entry before it
+     * starts and settles it after its record writes, so the next operation for
+     * the same document waits for it.
+     *
+     * An entry of another document is never awaited: a navigation has moved
+     * the frame context on, and the captured document's operation is bound to
+     * its own id. After every wait the captured document is checked again, so
+     * a stale waiter neither starts its operation nor replaces the queue entry
+     * of the document the frame context now holds.
+     *
+     * @param params Operation parameters.
+     * @param params.frameContext Frame context that keys the queue, when known.
+     * @param params.documentId Document the operation targets, captured before
+     * any wait.
+     * @param params.preparedCosmeticResult Prepared result the operation
+     * applies, when it can be attributed to one.
+     * @param params.skipIfSettledSameResult Whether to skip the operation when
+     * the awaited one settled the same prepared result.
+     * @param params.operation Operation to run after the queue settles. Its
+     * record writes must be part of it, so the next operation reads them.
+     *
+     * @returns True when the operation ran, false when it was skipped because
+     * the frame moved on to another document or the same prepared result was
+     * already handled.
+     */
+    private static async runQueuedExtCssOperation(params: {
+        frameContext: MarkedCssFrameContext | undefined;
+        documentId: string | undefined;
+        preparedCosmeticResult?: PreparedCosmeticResultMV3;
+        skipIfSettledSameResult?: boolean;
+        operation: () => Promise<void>;
+    }): Promise<boolean> {
+        const {
+            frameContext,
+            documentId,
+            preparedCosmeticResult,
+            skipIfSettledSameResult = false,
+            operation,
+        } = params;
+
+        if (!frameContext) {
+            // Without a frame context there is no queue key, so nothing can be
+            // in flight for this document.
+            await operation();
+            return true;
+        }
+
+        let pending = CosmeticApi.extCssInjectionInFlight.get(frameContext);
+        while (pending && pending.documentId === documentId) {
+            const settled = pending;
+
+            // eslint-disable-next-line no-await-in-loop -- operations are serialized on purpose
+            await settled.promise;
+
+            // A navigation mutates the live frame context in place, so the
+            // rules of the captured document must not be applied to the next
+            // one and must not replace the next document's queue entry.
+            if (frameContext.documentId !== documentId) {
+                return false;
+            }
+
+            if (skipIfSettledSameResult
+                && preparedCosmeticResult !== undefined
+                && settled.preparedCosmeticResult === preparedCosmeticResult) {
+                // The settled operation applied this prepared result, or failed
+                // and recorded the outcome, so a second injection would only
+                // replace an identical instance.
+                return false;
+            }
+
+            // Re-read the tail: another waiter may have registered after the
+            // operation awaited above settled.
+            pending = CosmeticApi.extCssInjectionInFlight.get(frameContext);
+        }
+
+        let settle!: () => void;
+        const entry = {
+            preparedCosmeticResult,
+            documentId,
+            promise: new Promise<void>((resolve) => {
+                settle = resolve;
+            }),
+        };
+
+        // Registered before the operation starts, so the next caller queues
+        // behind it.
+        CosmeticApi.extCssInjectionInFlight.set(frameContext, entry);
+
+        try {
+            await operation();
+        } finally {
+            settle();
+
+            // A caller of another document can replace the entry while this
+            // operation runs; only the current tail may be removed.
+            if (CosmeticApi.extCssInjectionInFlight.get(frameContext) === entry) {
+                CosmeticApi.extCssInjectionInFlight.delete(frameContext);
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Injects ExtendedCss rules into the specified tab and frame directly from
      * the background via the Scripting API.
      *
@@ -988,17 +1120,11 @@ export class CosmeticApi extends CosmeticApiCommon {
      * markers and the injected func registers a `beforeStyleApplied` callback
      * that reports hits back to the background.
      *
-     * This is the only place where an ExtendedCss injection is registered as
-     * pending: it owns the frame context key, the prepared result and the
-     * document id. The registration happens synchronously, before the
-     * injection settles, so a marked re-apply for the same document can wait
-     * for it even though the caller does not await this injection.
-     *
-     * An injection for the same document waits for the operation already
-     * registered there: both replace the document's ExtendedCss instance, so
-     * running them concurrently could let the older one finish last. When the
-     * awaited operation carried the same prepared result, its outcome is
-     * already recorded and no second injection is made.
+     * The injection runs through the per-document ExtendedCss queue: it
+     * registers its entry before it starts, so a marked re-apply for the same
+     * document can wait for it even though the caller does not await this
+     * injection. When the awaited operation carried the same prepared result,
+     * its outcome is already recorded and no second injection is made.
      *
      * @param frameContext Frame context with the prepared ExtendedCss rules.
      *
@@ -1016,57 +1142,36 @@ export class CosmeticApi extends CosmeticApiCommon {
         // injection must not move them to the next one.
         const { tabId, frameId, documentId } = frameContext;
 
-        // An ExtendedCss injection replaces the instance the document holds,
-        // so two injections for the same document must not run concurrently:
-        // the older one could finish last and leave its instance in the page.
-        // The loop re-reads the entry after every wait, because several callers
-        // can wait for the same operation and then race to register their own.
-        let pending = CosmeticApi.extCssInjectionInFlight.get(frameContext);
-        while (pending && pending.documentId === documentId) {
-            // eslint-disable-next-line no-await-in-loop -- injections are serialized on purpose
-            await pending.promise;
-
-            // The operation that was awaited applied this prepared result, or
-            // failed and recorded the outcome. Injecting it again would replace
-            // the instance with an identical one.
-            if (pending.preparedCosmeticResult === preparedCosmeticResult) {
-                return;
-            }
-
-            pending = CosmeticApi.extCssInjectionInFlight.get(frameContext);
-        }
-
-        const promise = CosmeticApi.injectExtCssRules(
-            { tabId, frameId, documentId },
-            extCssRules,
-            areHitsStatsCollected,
-        ).then((applied) => {
-            // The record describes the injected document, so it is written
-            // only while the frame context still holds it.
-            const recordsFrameContext = CosmeticApi.getRecordsFrameContext(
-                frameContext,
-                documentId,
-            );
-            if (recordsFrameContext) {
-                CosmeticApi.setExtCssMarkersApplied(
-                    recordsFrameContext,
-                    preparedCosmeticResult,
-                    applied,
-                );
-            }
-        }).finally(() => {
-            if (CosmeticApi.extCssInjectionInFlight.get(frameContext)?.promise === promise) {
-                CosmeticApi.extCssInjectionInFlight.delete(frameContext);
-            }
-        });
-
-        CosmeticApi.extCssInjectionInFlight.set(frameContext, {
-            preparedCosmeticResult,
+        await CosmeticApi.runQueuedExtCssOperation({
+            frameContext,
             documentId,
-            promise,
-        });
+            preparedCosmeticResult,
+            // An operation that already applied these rules recorded its
+            // outcome, so a second injection would replace an identical
+            // instance.
+            skipIfSettledSameResult: true,
+            operation: async () => {
+                const applied = await CosmeticApi.injectExtCssRules(
+                    { tabId, frameId, documentId },
+                    extCssRules,
+                    areHitsStatsCollected,
+                );
 
-        await promise;
+                // The record describes the injected document, so it is written
+                // only while the frame context still holds it.
+                const recordsFrameContext = CosmeticApi.getRecordsFrameContext(
+                    frameContext,
+                    documentId,
+                );
+                if (recordsFrameContext) {
+                    CosmeticApi.setExtCssMarkersApplied(
+                        recordsFrameContext,
+                        preparedCosmeticResult,
+                        applied,
+                    );
+                }
+            },
+        });
     }
 
     /**

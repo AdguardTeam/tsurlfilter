@@ -415,6 +415,46 @@ describe('extCssInjectedApply — CSS hits stats', () => {
         expect(msg.payload[0].element).toBe('<div id="restored" class="ad">');
     });
 
+    it('keeps the hits callback when the retained instance has no collect flag', async () => {
+        document.body.innerHTML = '<div id="first" class="ad"><span class="child">ad</span></div>';
+        const apply = createSerializedApply();
+
+        apply([MARKER_RULE], true, EXTCSS_PROTOCOL);
+
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
+        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+
+        // A retained instance left by a previous extension version has no
+        // `collectStats` flag, so the markers in its rule strings decide
+        // whether the restore registers the callback.
+        const retained = (window as unknown as Record<string, Record<string, unknown>>)[
+            EXTCSS_PROTOCOL.instanceKey
+        ];
+        delete retained.collectStats;
+
+        stubOneShotThrowingMutationObserver();
+
+        try {
+            expect(() => apply(
+                ['.never-matches { display: none !important; }'],
+                false,
+                EXTCSS_PROTOCOL,
+            )).toThrow('simulated apply failure');
+        } finally {
+            vi.unstubAllGlobals();
+        }
+
+        const added = document.createElement('div');
+        added.id = 'legacy';
+        added.className = 'ad';
+        added.innerHTML = '<span class="child">ad</span>';
+        document.body.appendChild(added);
+
+        await vi.waitFor(() => {
+            expect(sendMessageSpy).toHaveBeenCalledTimes(2);
+        }, { timeout: 1000, interval: 30 });
+    });
+
     it('swallows a rejected sendMessage so no unhandled rejection escapes beforeStyleApplied', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 

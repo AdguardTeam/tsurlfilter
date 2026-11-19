@@ -256,7 +256,13 @@ export const extCssInjectedApply = (
         // apply collected stats, while the current call may have arrived
         // without them (e.g. collection was disabled meanwhile). Registering
         // no callback would leave the restored marked rules uncounted.
-        const restoreCollectStats = previous?.collectStats ?? collectStats;
+        //
+        // A retained instance left by a previous extension version has no
+        // `collectStats` flag, so its marker state is read from the retained
+        // rule strings instead: a marker always embeds the protocol prefix.
+        const restoreCollectStats = previous?.collectStats
+            ?? previousRules?.some((rule) => rule.includes(protocol.markerPrefix))
+            ?? collectStats;
         if (previousRules && previousRules.length > 0) {
             try {
                 const restored: RetainedExtCss = restoreCollectStats
