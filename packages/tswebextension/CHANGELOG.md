@@ -21,6 +21,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   History API URL has no query string but its fragment contains `?`, e.g.
   `/page#route?x=1` now stays unchanged instead of becoming
   `/page#route#route?x=1`.
+- uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
+  unquotes the argument and matches it case-insensitively, e.g.
+  `##^script:has-text("admc")` becomes `$$script:contains(/admc/i)` (via
+  [@adguard/tsurlfilter]). The case-insensitive match folds ASCII case only.
+  Chained text constraints of one element selector are merged into a single
+  `:contains()` regexp, because CoreLibs rejects an element selector with more
+  than one regexp `:contains()`. A plain text stays case-insensitive in a
+  merged chain. The merged regexp keeps the `i` flag unless a constraint in the
+  chain needs a case-sensitive match. In such a mixed chain, a
+  case-insensitive regexp becomes case-sensitive, because the merged regexp has
+  a single flag set.
+- `$domain` and `$denyallow` values that start with a slash but are not
+  valid regexp literals are now rejected with `Invalid regular expression
+  as domain pattern`. Before, such a value could turn the rule on for
+  every site: `$domain=~/a\/|example.org` lost the rest of the list, and
+  a positive `$domain=//` matched every domain as an empty regexp. `/a\/`
+  was already rejected because its pattern did not compile (via
+  [@adguard/tsurlfilter]).
 - Path-relative URLs passed to `history.pushState()` and
   `history.replaceState()` are now resolved against the base URI from
   before the navigation, so `$removeparam` rules remove tracking
