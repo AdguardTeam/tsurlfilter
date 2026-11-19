@@ -60,35 +60,43 @@ export const handleXpathExtendedCssPseudo: TokenizerContextFunction = (context: 
     // XPath 1.0 literals can be single-quoted or double-quoted, so we store the quote that opened the string.
     let stringQuote: number | null = null;
 
+    // A reverse solidus escapes the next code point, so that code point must not be interpreted as a quote or a
+    // parenthesis. An escaped reverse solidus (`\\`) ends the escape, so the next code point is interpreted again.
+    let escaped = false;
+
     // Consume until we find the closing parenthesis or we reach the end of the source
     while (!context.isEof()) {
-        // If we find an unescaped quote mark, we open or close the string
-        // It is important, because we should omit parentheses inside strings.
-        if ((context.code === CodePoint.Apostrophe || context.code === CodePoint.QuotationMark)
-            && context.prevCode !== CodePoint.ReverseSolidus) {
-            if (stringQuote === null) {
-                stringQuote = context.code;
-            } else if (context.code === stringQuote) {
-                stringQuote = null;
+        if (!escaped) {
+            // If we find an unescaped quote mark, we open or close the string
+            // It is important, because we should omit parentheses inside strings.
+            if (context.code === CodePoint.Apostrophe || context.code === CodePoint.QuotationMark) {
+                if (stringQuote === null) {
+                    stringQuote = context.code;
+                } else if (context.code === stringQuote) {
+                    stringQuote = null;
+                }
             }
-        }
 
-        // If we are not inside a string, we should check parentheses balance
-        if (stringQuote === null) {
-            if (context.code === CodePoint.LeftParenthesis && context.prevCode !== CodePoint.ReverseSolidus) {
-                // If we find an unescaped opening parenthesis, we increase the balance
-                balance += 1;
-            } else if (context.code === CodePoint.RightParenthesis && context.prevCode !== CodePoint.ReverseSolidus) {
-                // If we find an unescaped closing parenthesis, we decrease the balance
-                balance -= 1;
+            // If we are not inside a string, we should check parentheses balance
+            if (stringQuote === null) {
+                if (context.code === CodePoint.LeftParenthesis) {
+                    // If we find an unescaped opening parenthesis, we increase the balance
+                    balance += 1;
+                } else if (context.code === CodePoint.RightParenthesis) {
+                    // If we find an unescaped closing parenthesis, we decrease the balance
+                    balance -= 1;
 
-                // If the balance is 0, it means that we found the closing parenthesis of the
-                // pseudo-class
-                if (balance === 0) {
-                    break;
+                    // If the balance is 0, it means that we found the closing parenthesis of the
+                    // pseudo-class
+                    if (balance === 0) {
+                        break;
+                    }
                 }
             }
         }
+
+        // Remember an escaped code point: two reverse solidi in a row cancel each other
+        escaped = !escaped && context.code === CodePoint.ReverseSolidus;
 
         // Consume the current character as a delim-token
         context.consumeTrivialToken(TokenType.Delim);

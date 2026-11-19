@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTML filtering and CSS injection rules can now contain a right parenthesis
+  or the other quote character inside a single-quoted `:xpath()` literal,
+  e.g. `##^div:xpath(//div[contains(text(),')')])` and
+  `#?#div:xpath(//div[contains(text(),')')]):style(color:red)` (via
+  [@adguard/agtree]). Previously such rules failed to load with a conversion
+  error.
 - Bare `$removeparam` rules no longer treat a `?` inside a hash fragment as a
   query delimiter, so `https://example.com/page#route?param=1` stays unchanged.
   They also keep the hash fragment when they remove a real query string, e.g.

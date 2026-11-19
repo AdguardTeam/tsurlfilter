@@ -25,6 +25,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- HTML filtering rules can now contain a right parenthesis or the other
+  quote character inside a single-quoted `:xpath()` literal, e.g.
+  `##^div:xpath(//div[contains(text(),')')])` and
+  `##^div:xpath(//div[@a='x"y'])`. Previously such rules failed to parse or
+  convert with a syntax error.
 - uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
   mirrors uBlock for plain text: one pair of outer quotes is removed and
   the text is matched case-insensitively through an escaped `:contains()`

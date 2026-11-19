@@ -92,6 +92,9 @@ const PSEUDO_VALUES: PseudoValues = {
         // CSS-escaped quotes do not open a string
         String.raw`//div[contains(text(),\')]`,
         String.raw`//div[@a=\"x]`,
+        // an escaped reverse solidus before the quote does not escape the quote itself
+        String.raw`//div[@a='C:\\']`,
+        String.raw`//div[@a="C:\\"]`,
     ]),
 
     // complex XPath as string parameter

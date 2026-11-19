@@ -24,7 +24,8 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
   literal no longer breaks the pseudo-class either. `:xpath()` now tracks
   both quote characters in XPath literals, e.g.
   `:xpath(//div[contains(text(),')')])` and
-  `:xpath(//div[@a='x"y'])`.
+  `:xpath(//div[@a='x"y'])`. A quote after an escaped reverse solidus (`\\`)
+  still closes the literal.
 - A right parenthesis inside a regexp character class no longer closes an
   extended CSS pseudo-class early. Regexp literals are recognized both as
   the whole raw argument, e.g. `:has-text(/a[)]b/)`, and as the
