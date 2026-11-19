@@ -28,8 +28,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - HTML filtering rules can now contain a right parenthesis or the other
   quote character inside a single-quoted `:xpath()` literal, e.g.
   `##^div:xpath(//div[contains(text(),')')])` and
-  `##^div:xpath(//div[@a='x"y'])`. Previously such rules failed to parse or
-  convert with a syntax error.
+  `##^div:xpath(//div[@a='x"y'])`. A reverse solidus inside a literal does
+  not escape the closing quote, because XPath literals have no escape
+  sequences, so `##^div:xpath(//div[@a='C:\'])` parses as well. Previously
+  such rules failed to parse or convert with a syntax error.
 - uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
   mirrors uBlock for plain text: one pair of outer quotes is removed and
   the text is matched case-insensitively through an escaped `:contains()`

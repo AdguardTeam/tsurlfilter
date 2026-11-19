@@ -74,6 +74,11 @@ describe('Converter integration tests', () => {
                     actual: String.raw`example.com##^div:xpath(//div[contains(text(),')')])`,
                     expected: [String.raw`example.com$$div:xpath(//div[contains(text(),')')])`],
                 },
+                {
+                    // XPath literals have no escapes, so a reverse solidus does not escape the closing quote
+                    actual: String.raw`example.com##^div:xpath(//div[@a='C:\'])`,
+                    expected: [String.raw`example.com$$div:xpath(//div[@a='C:\'])`],
+                },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
