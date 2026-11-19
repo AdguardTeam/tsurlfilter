@@ -20,9 +20,11 @@ import { type RemoveParamDescriptor } from '../utils/remove-param-rules';
  * pre-loaded rule descriptors.
  *
  * The patched methods work as follows:
- * 1. Call the original method immediately (SPA behaviour is preserved).
- * 2. If the URL contains query parameters, apply parameter removal synchronously.
- * 3. If the URL changed, call `replaceState` to update the address bar.
+ * 1. Capture `document.baseURI` before calling the original method, so a
+ * path-relative URL is resolved against the pre-navigation base.
+ * 2. Call the original method immediately (SPA behaviour is preserved).
+ * 3. If the URL contains query parameters, apply parameter removal synchronously.
+ * 4. If the URL changed, call `replaceState` to update the address bar.
  *
  * **Important**: every constant and helper referenced inside the function
  * body is declared as a local variable so that
@@ -371,6 +373,13 @@ export function patchHistoryForRemoveParam(
             title: string,
             url?: string | URL | null,
         ): void {
+            // Read the base URI before the native call: for a path-relative
+            // URL the call moves `document.baseURI` to the new document URL,
+            // so reading it after the call would resolve the URL twice. With
+            // a `<base href>` element the base URI comes from that element,
+            // which is still the base the browser uses for resolution.
+            const { baseURI } = document;
+
             // Always call the original method first to preserve SPA behaviour.
             originalMethod.call(this, state, title, url);
 
@@ -378,7 +387,7 @@ export function patchHistoryForRemoveParam(
                 return;
             }
 
-            const absoluteUrl = new URL(url.toString(), document.baseURI).href;
+            const absoluteUrl = new URL(url.toString(), baseURI).href;
 
             // Skip non-HTTP URLs and URLs without query parameters.
             if (!absoluteUrl.startsWith('http') || !absoluteUrl.includes('?')) {
