@@ -18,9 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `$path` and `$url` values with an escaped closing slash, e.g.
-  `[$path=/a\/]example.com##.foo`, are now matched as plain patterns and
-  match instead of compiling to an invalid regexp and never matching.
-  The bare delimiters `/` and `//` are matched as plain patterns too.
+  `[$path=/a\/]example.com##.foo`, are no longer regexps. The engine matches
+  them as plain patterns, so they match their literal text instead of
+  compiling to an invalid regexp and never matching. For `http` and `https`
+  URLs, the URL parser keeps a backslash only in the query or fragment, so
+  the example matches `https://example.com/?q=/a\/`, not a page path. The
+  bare delimiters `/` and `//` are no longer regexps either. `/` still
+  matches every path, but `[$path=//]` used to match every path and now
+  matches only relative URLs that contain `//`.
 - Bare `$removeparam` rules no longer treat a `?` inside a hash fragment as a
   query delimiter, so `https://example.com/page#route?param=1` stays unchanged.
   They also keep the hash fragment when they remove a real query string, e.g.
