@@ -107,9 +107,10 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   action, and runs the Docker `test-<package>-output` targets in a matrix.
   Also runs the `docs` job (verifies the regenerated DNR converter docs,
   gated on the dnr-converter closure) and a `workflows` validation job
-  (script/Node syntax checks, package-list drift guard, finalize-changelog
-  regression tests); a push-scoped failure-notify job alerts Slack on broken
-  master builds.
+  (script/Node syntax checks, package-list drift guard, finalize-changelog,
+  verify-tarball, check-pr-open and check-dependency-floors regression
+  tests); a push-scoped failure-notify job alerts Slack on broken master
+  builds.
 - `devex-bridge.yml` — on same-repository PRs touching any of the six packages
   consumed by the browser extension, publishes them to the dedicated internal
   Artifact Keeper dev registry (`npm-internal-dev`) as run-scoped
@@ -135,7 +136,10 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   429 throttling, AG-58865) and publish to the internal Artifact Keeper
   instead.
 - `_publish-release-monorepo.yml` — reusable monorepo publish engine
-  (Docker test/build → npm or Artifact Keeper (`publish_target` input; the AK
+  (Docker test/build → packed-tarball checks, including loading the package
+  against its `@adguard/*` dependency floors with
+  `scripts/ci/check-dependency-floors.mjs` → npm or Artifact Keeper
+  (`publish_target` input; the AK
   leg is ungated, like the stable line) → tag after publish → mirror → GitHub
   Release → Slack, with a failure-notify Slack job).
 - `publish-stable-dnr-rulesets.yml` — once-daily scheduled build/publish of

@@ -224,6 +224,17 @@ jobs:
           console.log(`All ${floors.length} @adguard/* dependency floors exist on npm`);
           NODE
 
+      - name: Verify the package loads against its dependency floors
+        # A floor can exist on npm and still predate an API the package
+        # imports (the workspace tests run against the workspace copy, not
+        # the floor). Install the tarball with each @adguard/* dependency at
+        # its exact floor and import every entry point; a name the floor does
+        # not export fails here instead of for the first user.
+        shell: bash
+        env:
+          PACKAGE: ${{ inputs.package }}
+        run: node scripts/ci/check-dependency-floors.mjs "build-output/artifacts/${PACKAGE}.tgz"
+
       - name: Upload npm package
         uses: actions/upload-artifact@v7
         with:

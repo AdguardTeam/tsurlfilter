@@ -159,6 +159,16 @@ logger, css-tokenizer, eslint-plugin-logger-context
           -> adguard-api, adguard-api-mv3
 ```
 
+The order is enforced at release time. A packed `workspace:^` dependency is
+rewritten to `^<its latest changelog version>`, the *floor* of the range, and
+the workspace tests never run against that floor. After the "versions exist on
+npm" check, the publish workflow therefore runs
+`scripts/ci/check-dependency-floors.mjs`: it installs the tarball with each
+`@adguard/*` dependency at its exact floor and imports every entry point, so a
+package that imports an API its dependency's last release does not have fails
+before it is published. Release the dependency first, then give the consumer
+a floor at or above that release (its changelog's latest released version).
+
 `@adguard/dnr-converter` also has a peer dependency on the external
 `@adguard/re2-wasm` (published from `ext-re2-wasm`, Wave 4A/4B) — consumed from
 the npm registry at install time, not built in this repo.
