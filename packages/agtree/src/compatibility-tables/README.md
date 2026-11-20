@@ -243,8 +243,19 @@ All tables extend `CompatibilityTableBase` and provide the same core methods:
 | `getAll(platform: Platform): Map<string, T[]>` | Get all features for platform |
 | `getAllVariants(name: string): T[]` | Get all platform variants of feature |
 | `groupByProduct(): Map<AdblockProduct, Map<string, T[]>>` | Group all features by product |
+| `translate(name: string, platform: Platform): T \| null` | Map a name or alias of any product onto the platform's entry |
 
 <!-- markdownlint-enable MD013 -->
+
+**Name lookups.** `supports`, `get`, `query`, `queryAll` and `getAll` match the name against the entry of the
+platform being asked: a name or alias that only another product declares is not found. For example,
+`rewrite` is an Adblock Plus modifier, so `modifiersCompatibilityTable.supports('rewrite', Platform.AdgExtChrome)`
+is `false`. Use `translate` to map a name of one product onto another, e.g.
+`scriptletsCompatibilityTable.translate('acs', Platform.AdgAny)` returns the AdGuard
+`abort-current-inline-script` entry.
+
+**Immutability.** The returned data objects, and the arrays returned by `getAllVariants`, are frozen: changing
+them throws in strict mode and never affects later queries.
 
 **Additional methods:**
 
@@ -348,7 +359,8 @@ import { modifiersCompatibilityTable, Platform } from '@adguard/agtree';
 const results = modifiersCompatibilityTable.queryAll('third-party', Platform.AdgExtAny);
 ```
 
-This returns an array of compatibility data for all matching platforms:
+This returns an array of the unique compatibility data that match. An entry that applies to several platforms
+(here all the AdGuard browser extensions) is returned once:
 
 ```js
 [
@@ -359,19 +371,7 @@ This returns an array of compatibility data for all matching platforms:
       'A third-party request is a request from a different domain.\n' +
       'For example, a request to `example.org` from `domain.com` is a third-party request.',
     docs: 'https://adguard.app/kb/general/ad-filtering/create-own-filters/#third-party-modifier',
-    // ... (AdGuard Chrome)
-  },
-  {
-    name: 'third-party',
-    // ... (AdGuard Opera)
-  },
-  {
-    name: 'third-party',
-    // ... (AdGuard Edge)
-  },
-  {
-    name: 'third-party',
-    // ... (AdGuard Firefox)
+    // ...
   }
 ]
 ```

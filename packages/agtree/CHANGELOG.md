@@ -370,6 +370,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   relied on the old behavior to map a name of one product onto another should
   call `translate()`.
 
+- The data returned by the compatibility tables is frozen again, as in 4.x:
+  the objects from `get()`, `query()` and `queryAll()`, their nested lists, and
+  the array from `getAllVariants()`. Mutating a result no longer changes every
+  later answer or the outcome of the validators.
+- `groupByProduct()` lists each entry once per product. An entry that applies
+  to many platforms (e.g. `third-party` on every AdGuard platform) used to be
+  repeated once per platform.
+
 ### Security
 
 ## [5.0.0-alpha.0] - 2026-10-12

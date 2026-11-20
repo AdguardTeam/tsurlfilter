@@ -88,10 +88,15 @@ const buildHybridRow = <T extends BaseCompatibilityDataSchema>(
         shared.push(data);
     }
 
+    // `deepFreeze` of the whole table does not reach the entries kept inside
+    // Maps and the trie, so freeze the data objects themselves: they are handed
+    // out by the table queries and shared by every later answer.
+    shared.forEach((data) => deepFreeze(data));
+
     return {
         trie,
         flatMap,
-        shared,
+        shared: Object.freeze(shared) as T[],
     };
 };
 

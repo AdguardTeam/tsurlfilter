@@ -116,6 +116,21 @@ import { TrieNode } from './trie';
 const PLATFORM_SEPARATOR = '_';
 
 /**
+ * Freezes an object and everything reachable through its properties.
+ *
+ * @param object Object to freeze.
+ * @returns The same object.
+ */
+function deepFreeze(object) {
+    for (const value of Object.values(object)) {
+        if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+            deepFreeze(value);
+        }
+    }
+    return Object.freeze(object);
+}
+
+/**
  * Builds a trie from flatMap entries by parsing platform strings into paths.
  *
  * Trie is not serialized into the compact format (it would duplicate all data).
@@ -161,11 +176,14 @@ function deserialize(json) {
         // the path segments expected by TrieNode, matching Platform.toPath().
         const trie = buildTrie(flatMap);
 
-        // Freeze the row container to preserve the immutability contract.
-        // Shallow freeze is sufficient: prevents property reassignment on the
-        // row object itself without the O(n) cost of recursively freezing all
-        // data objects (which is safe to skip since data is private and
-        // read-only through the public CompatibilityTableBase API).
+        // Freeze the data objects handed out by the table queries and the row
+        // container to preserve the immutability contract: a consumer that
+        // mutates a returned object would otherwise change every later answer.
+        // The data is deserialized lazily, once per table, so the cost is paid
+        // only by consumers that use the table.
+        shared.forEach(deepFreeze);
+        Object.freeze(shared);
+
         deserializedRows[i] = Object.freeze({ trie, flatMap, shared });
     }
 

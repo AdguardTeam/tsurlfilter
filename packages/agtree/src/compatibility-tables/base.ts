@@ -474,7 +474,13 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
                 if (!featureMap.has(canonicalName)) {
                     featureMap.set(canonicalName, []);
                 }
-                featureMap.get(canonicalName)!.push(data);
+
+                // An entry is stored once per concrete platform it expands to,
+                // so the same object shows up for each of them. List it once.
+                const variants = featureMap.get(canonicalName)!;
+                if (!variants.includes(data)) {
+                    variants.push(data);
+                }
             }
         }
 
