@@ -137,11 +137,18 @@ export class HintCommentParser implements StructuralParser {
                     ti += 1;
                 }
 
-                // Include closing paren
-                if (ti < endTi) {
-                    // skip CloseParen
-                    ti += 1;
+                // A parameter list without a closing parenthesis is a syntax
+                // error in 4.x; v5 used to close it implicitly (F-028).
+                if (ti >= endTi) {
+                    throw new AdblockSyntaxError(
+                        `Missing closing parenthesis for hint "${ctx.source.slice(nameStart, nameEnd)}"`,
+                        paramsStart,
+                        ruleEnd,
+                    );
                 }
+
+                // skip CloseParen
+                ti += 1;
 
                 paramsEnd = ti > 0 ? ends[ti - 1] : paramsStart;
             }

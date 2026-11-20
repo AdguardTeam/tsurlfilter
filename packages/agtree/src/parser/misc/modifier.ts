@@ -9,6 +9,7 @@
  * Delegates value parsing to {@link ValueParser}.
  */
 
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import {
@@ -211,6 +212,7 @@ export class ModifierParser implements RecordParser {
         if (ti >= tokenCount || types[ti] === TokenType.Comma) {
             // No value — modifier is complete
         } else if (types[ti] === TokenType.EqualsSign) {
+            const equalsTi = ti;
             ti += 1; // consume =
             ti = skipWs(ctx, ti);
 
@@ -230,7 +232,17 @@ export class ModifierParser implements RecordParser {
                 valEndTi = ValueParser.parseStandard(ctx, ti, tokenCount);
             }
 
-            valEnd = valEndTi > valTokenStart ? ctx.ends[valEndTi - 1] : valStart;
+            // `$name=` with an empty value: 4.x rejects every modifier this
+            // way, including the ones that take no value (`$script=`).
+            if (valEndTi <= valTokenStart) {
+                throw new AdblockSyntaxError(
+                    'Modifier value cannot be empty',
+                    valTokenStartTi < tokenCount ? tokenStart(ctx, valTokenStartTi) : ctx.ends[equalsTi],
+                    valTokenStartTi < tokenCount ? ctx.ends[valTokenStartTi] : ctx.ends[equalsTi],
+                );
+            }
+
+            valEnd = ctx.ends[valEndTi - 1];
             ti = valEndTi;
         } else {
             // Unexpected token after name — skip to next comma for robustness

@@ -54,6 +54,12 @@ export const AGENT_FIELD_END = 1;
 export const MAX_AGENT_COUNT = 480;
 
 /**
+ * A filter-list header naming the same agent twice, e.g.
+ * `[Adblock Plus 2.0 3.1]`.
+ */
+const DUPLICATED_VERSIONS_PATTERN = /^Adblock Plus\s+\S+\s+\S+$/;
+
+/**
  * Parser for adblock agent comment rules (`[Agent1; Agent2]`).
  */
 export class AgentCommentParser implements StructuralParser {
@@ -112,26 +118,48 @@ export class AgentCommentParser implements StructuralParser {
             const lastTi = lastNonWs(ctx, agentTi, ti);
             const agentEnd = lastTi >= 0 ? ctx.ends[lastTi] : agentStart;
 
-            // Record the agent if non-empty
-            if (agentEnd > agentStart) {
-                if (count >= maxRecords) {
-                    throw new AdblockSyntaxError(
-                        `Agent list exceeds the maximum of ${maxRecords} agents`,
-                        ruleStart,
-                        ruleEnd,
-                    );
-                }
-
-                const base = dataOffset + CM_AGENT_RECORDS_OFFSET + count * AGENT_RECORD_STRIDE;
-
-                data[base + AGENT_FIELD_START] = agentStart;
-                data[base + AGENT_FIELD_END] = agentEnd;
-                count += 1;
+            // An empty slot between `;` separators (and therefore an empty
+            // list, `[]`) is a syntax error in 4.x; v5 used to drop it and
+            // keep the remaining agents (F-028).
+            if (agentEnd <= agentStart) {
+                throw new AdblockSyntaxError('Agent name cannot be empty', agentStart, ruleEnd);
             }
+
+            if (count >= maxRecords) {
+                throw new AdblockSyntaxError(
+                    `Agent list exceeds the maximum of ${maxRecords} agents`,
+                    ruleStart,
+                    ruleEnd,
+                );
+            }
+
+            const base = dataOffset + CM_AGENT_RECORDS_OFFSET + count * AGENT_RECORD_STRIDE;
+
+            data[base + AGENT_FIELD_START] = agentStart;
+            data[base + AGENT_FIELD_END] = agentEnd;
+            count += 1;
 
             // Skip `;` separator
             if (ti < closeTi && ctx.types[ti] === TokenType.Semicolon) {
                 ti += 1;
+            }
+        }
+
+        // A list without any agent, e.g. `[]` or `[ ]`.
+        if (count === 0) {
+            throw new AdblockSyntaxError('Empty agent list', ruleStart, ruleEnd);
+        }
+
+        // `[Adblock Plus <version> <version>]` is a filter-list header with two
+        // versions: 4.x rejects it, while v5 kept only the last version and
+        // silently dropped the first one (F-028).
+        if (count === 1) {
+            const agent = ctx.source.slice(
+                data[dataOffset + CM_AGENT_RECORDS_OFFSET + AGENT_FIELD_START],
+                data[dataOffset + CM_AGENT_RECORDS_OFFSET + AGENT_FIELD_END],
+            );
+            if (DUPLICATED_VERSIONS_PATTERN.test(agent)) {
+                throw new AdblockSyntaxError('Duplicated versions are not allowed', ruleStart, ruleEnd);
             }
         }
 

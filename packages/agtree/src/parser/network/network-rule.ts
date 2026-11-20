@@ -24,6 +24,7 @@
  *   [+4] valueEnd       - Source index where value ends (exclusive), or NO_VALUE (-1).
  */
 
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { CHAR_BACKSLASH } from '../../tokenizer/char-codes';
 import { TokenType } from '../../tokenizer/token-types';
 import { collectRegexValueRegions, type RegexValueRegion } from '../../utils/regex-value-regions';
@@ -219,6 +220,44 @@ export class NetworkRuleParser implements StructuralParser {
             ModifierListParser.parse(ctx, sepTi + 1, dataOffset + NR_MODIFIER_RECORDS_OFFSET, dataOffset, endTi);
         } else {
             d[dataOffset + NR_MODIFIER_COUNT_OFFSET] = 0;
+
+            // No separator was found, but the rule can still end with a `$`
+            // that only pretends to start a modifier list (`||example.com^$`,
+            // `||example.com^$,`, `||example.com^$~`). 4.x rejects those as an
+            // empty modifier list; accepting them swallowed the `$` into the
+            // pattern (F-027).
+            for (let t = endTi - 1; t >= ti; t -= 1) {
+                if (types[t] !== TokenType.DollarSign) {
+                    continue;
+                }
+
+                const after = skipWs(ctx, t + 1);
+                if (after >= endTi) {
+                    throw new AdblockSyntaxError(
+                        'Empty modifiers are not allowed',
+                        tokenStart(ctx, t),
+                        ends[t],
+                    );
+                }
+                if (types[after] === TokenType.Comma || types[after] === TokenType.Tilde) {
+                    throw new AdblockSyntaxError(
+                        'Modifier name cannot be empty',
+                        tokenStart(ctx, after),
+                        ends[after],
+                    );
+                }
+
+                break;
+            }
+
+            // `@@` alone has neither a pattern nor modifiers.
+            if (patternEndIdx <= patternStartIdx) {
+                throw new AdblockSyntaxError(
+                    'Network rule must have a pattern or modifiers',
+                    tokenStart(ctx, Math.max(0, startTi)),
+                    ends[Math.max(0, endTi - 1)],
+                );
+            }
         }
     }
 

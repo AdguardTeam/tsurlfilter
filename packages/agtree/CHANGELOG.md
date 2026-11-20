@@ -83,6 +83,21 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   parsed as one exception item again. Regex-ness was decided before the `~`
   was consumed, so the pattern was split at its embedded separator and the
   exclusion became two permitted items, which inverted the rule scope.
+- Malformed modifier lists are rejected again instead of being accepted with
+  data loss: an empty slot (`$script,,domain=x.com`, `$script,`, `$~`) no
+  longer drops every later modifier — which turned
+  `||example.com^$script,,domain=x.com` into an unrestricted `$script` rule —
+  and `$name=` with an empty value, a bare `@@`, and a `$` with no modifiers
+  at the end of the rule are syntax errors with a range, as in 4.x.
+- A non-regexp `$replace` value keeps being the modifier value:
+  `$replace=important` is one `replace` modifier with the value `important`
+  again, not an empty `replace` plus a stray `important` modifier.
+- Malformed comments and directives are rejected with a range instead of being
+  accepted or rewritten: a hint whose argument list is never closed
+  (`!+ HINT(`), an empty agent list (`[]`, ` `), an empty agent slot
+  (`[;]`), a filter-list header naming two versions
+  (`[Adblock Plus 2.0 3.1]`, which used to keep only the last one), and
+  `!#if` / `!#include` without parameters.
 - Generating a cosmetic rule that carries an AdGuard `[$...]` modifier list
   now keeps the list on ABP snippet, uBO scriptlet and uBO HTML filtering
   bodies, so `[$path=/x]example.com##+js(aopr, a)` and

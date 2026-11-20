@@ -78,8 +78,13 @@ export class ValueParser implements CursorParser {
                 ti += 1;
             }
             ti = skipUntil(ctx, ti, end, TokenType.Comma);
+        } else {
+            // Not a `/pattern/replacement/` or a quoted value: the whole item
+            // up to the next comma is the value, as in 4.x, where
+            // `$replace=important` is one `replace` modifier rather than an
+            // empty `replace` plus a stray `important` modifier.
+            ti = skipUntil(ctx, ti, end, TokenType.Comma);
         }
-        // else: unexpected format, fall through (robustness)
 
         return ti;
     }

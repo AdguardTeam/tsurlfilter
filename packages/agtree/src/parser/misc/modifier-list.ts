@@ -7,10 +7,16 @@
  * individual modifier to {@link ModifierParser}.
  */
 
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { REGION_MODIFIERS } from '../../errors/capacity-overflow-error';
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
-import { CTX_STATUS_HARD_CAP, CTX_STATUS_OVERFLOW, growCtxRegion } from '../context';
+import {
+    CTX_STATUS_HARD_CAP,
+    CTX_STATUS_OVERFLOW,
+    growCtxRegion,
+    tokenStart,
+} from '../context';
 import { MODIFIER_RECORD_STRIDE, NR_MODIFIER_COUNT_OFFSET, NR_MODIFIER_RECORDS_OFFSET } from '../network/constants';
 import type { StructuralParser } from '../types';
 
@@ -96,6 +102,16 @@ export class ModifierListParser implements StructuralParser {
         let currentTi = startTi;
         let modCount = 0;
 
+        // `$` with nothing after it. 4.x rejects this, and accepting it turned
+        // `||example.com^$` into a rule with an empty modifier list.
+        if (currentTi >= tokenCount) {
+            throw new AdblockSyntaxError(
+                'Empty modifiers are not allowed',
+                tokenStart(ctx, Math.max(0, tokenCount - 1)),
+                ctx.ends[Math.max(0, tokenCount - 1)],
+            );
+        }
+
         while (currentTi < tokenCount) {
             // Grow if the buffer is full but there are still tokens to consume.
             if (modCount >= maxMods) {
@@ -117,17 +133,34 @@ export class ModifierListParser implements StructuralParser {
 
             const nextTi = ModifierParser.parse(ctx, currentTi, modCount, recordsOffset, tokenCount);
 
-            // ModifierParser.parse returns -1 if it can't start a modifier
+            // ModifierParser.parse returns -1 when no modifier name starts at
+            // `currentTi`. Inside a modifier list that is an empty slot
+            // (`$script,,domain=x.com`, `$script,`, `$~`, ...), which 4.x
+            // rejects; silently stopping there used to drop every later
+            // modifier, e.g. an unrestricted rule for `$script,,domain=x.com`.
             if (nextTi === -1) {
-                break;
+                const at = currentTi < tokenCount ? currentTi : Math.max(0, currentTi - 1);
+                throw new AdblockSyntaxError(
+                    'Modifier name cannot be empty',
+                    tokenStart(ctx, at),
+                    ctx.ends[at],
+                );
             }
 
             modCount += 1;
             currentTi = nextTi;
 
-            // Consume the separator comma (if present)
+            // Consume the separator comma (if present). A comma that ends the
+            // list introduces an empty slot, which 4.x rejects.
             if (currentTi < tokenCount && types[currentTi] === TokenType.Comma) {
                 currentTi += 1;
+                if (currentTi >= tokenCount) {
+                    throw new AdblockSyntaxError(
+                        'Modifier name cannot be empty',
+                        tokenStart(ctx, currentTi - 1),
+                        ctx.ends[currentTi - 1],
+                    );
+                }
             }
         }
 

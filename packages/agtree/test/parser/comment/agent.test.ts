@@ -59,14 +59,14 @@ describe('AgentCommentParser', () => {
             expect(CommentParser.kind(ctx)).toBe(CommentKind.Agent);
         });
 
-        test('[] — empty brackets', () => {
-            parse('[]');
-            expect(CommentParser.kind(ctx)).toBe(CommentKind.Agent);
+        test('[] — empty brackets are rejected like 4.x', () => {
+            // D-20: an empty agent list is a syntax error, not a comment with
+            // zero agents.
+            expect(() => parse('[]')).toThrow('Empty agent list');
         });
 
-        test('[ ] — whitespace only', () => {
-            parse('[ ]');
-            expect(CommentParser.kind(ctx)).toBe(CommentKind.Agent);
+        test('[ ] — whitespace only is rejected like 4.x', () => {
+            expect(() => parse('[ ]')).toThrow('Empty agent list');
         });
     });
 
@@ -96,28 +96,12 @@ describe('AgentCommentParser', () => {
             expect(AgentCommentParser.count(d)).toBe(3);
         });
 
-        test('[] → 0', () => {
-            expect(AgentCommentParser.count(parse('[]'))).toBe(0);
+        test.each(['[]', '[ ]'])('%s is rejected', (source) => {
+            expect(() => parse(source)).toThrow('Empty agent list');
         });
 
-        test('[ ] → 0', () => {
-            expect(AgentCommentParser.count(parse('[ ]'))).toBe(0);
-        });
-
-        test('[;] → 0', () => {
-            expect(AgentCommentParser.count(parse('[;]'))).toBe(0);
-        });
-
-        test('[ ; ] → 0', () => {
-            expect(AgentCommentParser.count(parse('[ ; ]'))).toBe(0);
-        });
-
-        test('[;;] → 0', () => {
-            expect(AgentCommentParser.count(parse('[;;]'))).toBe(0);
-        });
-
-        test('[ ; ; ] → 0', () => {
-            expect(AgentCommentParser.count(parse('[ ; ; ]'))).toBe(0);
+        test.each(['[;]', '[ ; ]', '[;;]', '[ ; ; ]'])('%s is rejected (empty slot)', (source) => {
+            expect(() => parse(source)).toThrow('Agent name cannot be empty');
         });
     });
 
@@ -205,24 +189,13 @@ describe('AgentCommentParser', () => {
             expect(AgentCommentParser.agentEnd(d, 2)).toBe(62);
         });
 
-        test('[;] — single semicolon produces no agents', () => {
-            expect(AgentCommentParser.count(parse('[;]'))).toBe(0);
-        });
-
-        test('[ ; ] — semicolon with spaces produces no agents', () => {
-            expect(AgentCommentParser.count(parse('[ ; ]'))).toBe(0);
-        });
-
-        test('[;;] — multiple semicolons produce no agents', () => {
-            expect(AgentCommentParser.count(parse('[;;]'))).toBe(0);
-        });
-
-        test('[ ;; ] — multiple semicolons with spaces produce no agents', () => {
-            expect(AgentCommentParser.count(parse('[ ;; ]'))).toBe(0);
-        });
-
-        test('[ ; ; ] — alternating spaces and semicolons produce no agents', () => {
-            expect(AgentCommentParser.count(parse('[ ; ; ]'))).toBe(0);
-        });
+        test.each(['[;]', '[ ; ]', '[;;]', '[ ;; ]', '[ ; ; ]'])(
+            '%s — a list of separators only is rejected',
+            (source) => {
+                // D-20: an empty slot is a syntax error, not a silently
+                // dropped agent.
+                expect(() => parse(source)).toThrow('Agent name cannot be empty');
+            },
+        );
     });
 });

@@ -435,48 +435,18 @@ describe('CommentAstBuilder — agent comments', () => {
             expect(() => parseCommentRule('[2.0]')).toThrowError('Agent name cannot be empty');
         });
 
-        test('[] — returns AgentCommentRule with 0 children (no throw)', () => {
-            const result = parseCommentRule('[]');
-            expect(result).toMatchObject({
-                type: 'AgentCommentRule',
-                children: [],
-            });
+        test.each(['[]', '[ ]'])('%s — empty agent list is rejected (D-20)', (source) => {
+            expect(() => parseCommentRule(source)).toThrowError('Empty agent list');
         });
 
-        test('[ ] — returns AgentCommentRule with 0 children (no throw)', () => {
-            const result = parseCommentRule('[ ]');
-            expect(result).toMatchObject({
-                type: 'AgentCommentRule',
-                children: [],
-            });
+        test('[;] — an empty slot is rejected (D-20)', () => {
+            expect(() => parseCommentRule('[;]')).toThrowError('Agent name cannot be empty');
         });
 
-        test('[;] — returns AgentCommentRule with 0 children', () => {
-            const result = parseCommentRule('[;]');
-            expect(result).toMatchObject({
-                type: 'AgentCommentRule',
-                children: [],
-            });
-        });
-
-        test('[Adblock Plus 2.0 3.1] — last version wins, no throw', () => {
-            const result = parseCommentRule('[Adblock Plus 2.0 3.1]', { isLocIncluded: true });
-            expect(result).toMatchObject({
-                type: 'AgentCommentRule',
-                children: [
-                    {
-                        type: 'Agent',
-                        adblock: {
-                            type: 'Value',
-                            value: 'Adblock Plus',
-                        },
-                        version: {
-                            type: 'Value',
-                            value: '3.1',
-                        },
-                    },
-                ],
-            });
+        test('[Adblock Plus 2.0 3.1] — duplicated versions are rejected', () => {
+            // 4.x rejects the header instead of keeping only the last version.
+            expect(() => parseCommentRule('[Adblock Plus 2.0 3.1]'))
+                .toThrowError('Duplicated versions are not allowed');
         });
     });
 });

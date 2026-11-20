@@ -17,6 +17,7 @@
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
  */
 
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import {
@@ -63,6 +64,7 @@ export const CM_PREP_LE_DATA_OFFSET = 5;
 export const CM_PREP_PL_DATA_OFFSET = CM_PREP_LE_DATA_OFFSET;
 
 const IF_DIRECTIVE = 'if';
+const INCLUDE_DIRECTIVE = 'include';
 const SAFARI_CB_AFFINITY_DIRECTIVE = 'safari_cb_affinity';
 
 /**
@@ -115,6 +117,18 @@ export class PreprocessorCommentParser implements StructuralParser {
         // Check for parameters (rest of the line after the name, trimmed)
         let paramsStart = -1;
         let paramsEnd = -1;
+
+        // `!#if` and `!#include` are meaningless without parameters. 4.x
+        // rejects them; v5 used to keep an empty directive (F-028).
+        if (ti >= endTi
+            && (regionEquals(ctx.source, nameStart, nameEnd, IF_DIRECTIVE)
+                || regionEquals(ctx.source, nameStart, nameEnd, INCLUDE_DIRECTIVE))) {
+            throw new AdblockSyntaxError(
+                `Directive "${ctx.source.slice(nameStart, nameEnd)}" requires parameters`,
+                nameStart,
+                nameEnd,
+            );
+        }
 
         if (ti < endTi) {
             paramsStart = tokenStart(ctx, ti);
