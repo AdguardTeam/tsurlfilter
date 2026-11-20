@@ -139,9 +139,9 @@ export class SimpleRegex {
      *
      * Please note, that the shortcut is always lower-case!
      *
-     * {@link SimpleRegex.isRegexPattern} is the single source of truth for the
-     * regexp literal check, so a pattern with an escaped closing slash, e.g.
-     * `/a\/`, is handled as a basic pattern here.
+     * {@link SimpleRegex.isRegexPattern} performs the regexp literal check, as
+     * it does in {@link SimpleRegex.patternToRegexp}, so a pattern with an
+     * escaped closing slash, e.g. `/a\/`, is handled as a basic pattern here.
      *
      * @param pattern Network rule's pattern.
      *
@@ -447,10 +447,10 @@ export class SimpleRegex {
      * PatternToRegexp is a helper method for creating regular expressions from the simple
      * wildcard-based syntax which is used in basic filters.
      *
-     * {@link SimpleRegex.isRegexPattern} is the single source of truth for the
-     * regexp literal check. A pattern with an escaped closing slash, e.g.
-     * `/a\/`, is escaped as a basic pattern, so the produced regular
-     * expression compiles (AG-62243).
+     * {@link SimpleRegex.isRegexPattern} performs the regexp literal check, as
+     * it does in {@link SimpleRegex.extractShortcut}. A pattern with an
+     * escaped closing slash, e.g. `/a\/`, is escaped as a basic pattern, so the
+     * produced regular expression compiles.
      *
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
      *

@@ -1081,9 +1081,10 @@ export class NetworkRule implements IRule {
     /**
      * Returns true if rule's pattern is a regular expression.
      *
-     * {@link SimpleRegex.isRegexPattern} is the single source of truth for the
-     * regexp literal check, so a pattern with an escaped closing slash, e.g.
-     * `/a\/`, is not a regex rule (AG-62243).
+     * Uses {@link SimpleRegex.isRegexPattern}, the same regexp literal check as
+     * {@link SimpleRegex.extractShortcut} and
+     * {@link SimpleRegex.patternToRegexp}, so a pattern with an escaped closing
+     * slash, e.g. `/a\/`, is not a regex rule.
      *
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#regexp-support}
      *
