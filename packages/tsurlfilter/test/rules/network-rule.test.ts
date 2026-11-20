@@ -1188,6 +1188,19 @@ describe('NetworkRule.match', () => {
             request = new Request('https://example.org/com', null, RequestType.Document);
             expect(rule.match(request)).toBeFalsy();
         });
+
+        it('matches target domain for a pattern with an escaped closing slash', () => {
+            // `/a\/` is a plain pattern, so the target hostname can satisfy
+            // `$domain` when the source hostname does not.
+            const rule = createNetworkRule(String.raw`/a\/$document,domain=example.org`, 0);
+            const request = new Request(
+                String.raw`https://example.org/x?q=/a\/`,
+                'https://source.org/',
+                RequestType.Document,
+            );
+
+            expect(rule.match(request)).toBeTruthy();
+        });
     });
 
     it('works $removeparam modifier with content types logic', () => {
