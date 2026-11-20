@@ -117,8 +117,9 @@ describe('Pattern Tests', () => {
     });
 
     it('keeps an escaped backslash before the closing slash as a regexp', () => {
-        // The `match-case` flag disables the shortcut branch, so this test
-        // checks the compiled regexp with the delimiters stripped.
+        // The shortcut of `/a\\/` is `a`, so `prepare()` compiles the regexp
+        // whether or not `match-case` is set. The flag only removes the `i`
+        // flag in this test.
         const pattern = new Pattern(String.raw`/a\\/`, true);
 
         expect(pattern.matchPattern(
