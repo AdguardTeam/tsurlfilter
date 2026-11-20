@@ -69,18 +69,26 @@ function parseParameterList(
     const innerStart = paramsStart + 1;
     const innerEnd = paramsEnd - 1;
 
-    plTokenizer.setSource(source, innerStart);
-    initParserContext(plCtx, source, plTokenizer, innerStart);
+    try {
+        plTokenizer.setSource(source, innerStart);
+        initParserContext(plCtx, source, plTokenizer, innerStart);
 
-    const { tokenCount } = plTokenizer;
-    let closeParenTi = 0;
-    while (closeParenTi < tokenCount && plTokenizer.ends[closeParenTi] < paramsEnd) {
-        closeParenTi += 1;
+        const { tokenCount } = plTokenizer;
+        let closeParenTi = 0;
+        while (closeParenTi < tokenCount && plTokenizer.ends[closeParenTi] < paramsEnd) {
+            closeParenTi += 1;
+        }
+
+        ParameterListStage2Parser.parse(plCtx, 0, closeParenTi, innerStart, innerEnd, plBuf);
+
+        return ParameterListAstBuilder.parse(source, plBuf, isLocIncluded);
+    } finally {
+        // `source` is the whole filter list when a list is parsed. This tokenizer and
+        // context live as long as the module does, so they must not keep it reachable
+        // (nor the token buffers it may have grown to fit a long list).
+        plTokenizer.reset();
+        plCtx.source = '';
     }
-
-    ParameterListStage2Parser.parse(plCtx, 0, closeParenTi, innerStart, innerEnd, plBuf);
-
-    return ParameterListAstBuilder.parse(source, plBuf, isLocIncluded);
 }
 
 /**

@@ -338,36 +338,48 @@ export function growCtxRegion(
 }
 
 /**
- * Shrink `ctx.data` back to the supplied default capacities.
+ * Shrink `ctx.data` back to the supplied default capacities and release what
+ * the context holds on to from the last parse.
  *
- * Called by pipeline-parser `reset()` methods. If the current capacities
- * already match the defaults, only counters are cleared (no reallocation).
+ * Called by pipeline-parser `reset()` methods. The source string is dropped:
+ * for a filter list it is the whole list, which would otherwise stay
+ * reachable for as long as the parser lives. If the current capacities
+ * already match the defaults, `ctx.data` is not reallocated.
  *
  * @param ctx Parser context to reset.
  * @param defaultMaxMods Default modifier capacity.
  * @param defaultMaxDomains Default domain capacity.
  * @param defaultMaxScriptlet Default scriptlet body capacity.
+ * @param tokenizer Tokenizer that feeds the context, already reset. When
+ * given, the context's token arrays are pointed at the tokenizer's current
+ * ones, so a grown pair left over from the last parse is released too.
  */
 export function resetCtxData(
     ctx: ParserContext,
     defaultMaxMods: number,
     defaultMaxDomains: number,
     defaultMaxScriptlet: number,
+    tokenizer?: Tokenizer,
 ): void {
     if (
-        ctx.maxMods === defaultMaxMods
-        && ctx.maxDomains === defaultMaxDomains
-        && ctx.maxScriptletBody === defaultMaxScriptlet
+        ctx.maxMods !== defaultMaxMods
+        || ctx.maxDomains !== defaultMaxDomains
+        || ctx.maxScriptletBody !== defaultMaxScriptlet
     ) {
-        // Nothing grew — just clear counters.
-        ctx.status = CTX_STATUS_OK;
-        ctx.tokenCount = 0;
-        return;
+        ctx.data = new Int32Array(computeDataLength(defaultMaxMods, defaultMaxDomains, defaultMaxScriptlet));
+        ctx.maxMods = defaultMaxMods;
+        ctx.maxDomains = defaultMaxDomains;
+        ctx.maxScriptletBody = defaultMaxScriptlet;
     }
-    ctx.data = new Int32Array(computeDataLength(defaultMaxMods, defaultMaxDomains, defaultMaxScriptlet));
-    ctx.maxMods = defaultMaxMods;
-    ctx.maxDomains = defaultMaxDomains;
-    ctx.maxScriptletBody = defaultMaxScriptlet;
+
+    if (tokenizer) {
+        ctx.types = tokenizer.types;
+        ctx.ends = tokenizer.ends;
+    }
+
+    ctx.source = '';
+    ctx.sourceStart = 0;
+    ctx.overflowRegion = undefined;
     ctx.status = CTX_STATUS_OK;
     ctx.tokenCount = 0;
 }

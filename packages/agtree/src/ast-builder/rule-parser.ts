@@ -252,12 +252,15 @@ export class RuleParserPipeline {
      * at filter-list boundaries to prevent unbounded memory growth when
      * processing rules with unusually large domain/modifier lists.
      *
+     * The last parsed source is released as well, so the parser does not keep
+     * a (possibly very large) string alive between filter lists.
+     *
      * It is safe to call this method at any time — including before the first
      * parse or multiple times in a row.
      */
     public reset(): void {
         this.tokenizer.reset();
-        resetCtxData(this.ctx, this.defaultItemCap, this.defaultDomainCap, this.defaultScriptletCap);
+        resetCtxData(this.ctx, this.defaultItemCap, this.defaultDomainCap, this.defaultScriptletCap, this.tokenizer);
     }
 
     /**

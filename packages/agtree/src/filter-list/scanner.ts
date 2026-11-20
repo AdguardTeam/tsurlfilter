@@ -460,7 +460,8 @@ export class FilterListScanner {
 
     /**
      * Release any extra memory grown during previous scans.
-     * Shrinks all buffers back to constructor-time defaults.
+     * Shrinks all buffers back to constructor-time defaults and drops the
+     * last scanned source, which is the whole filter list.
      */
     public reset(): void {
         this.tokenizer.reset();
@@ -472,6 +473,7 @@ export class FilterListScanner {
             this.defaultItemCap,
             this.defaultDomainCap,
             this.defaultScriptletCap,
+            this.tokenizer,
         );
     }
 }

@@ -394,6 +394,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   rejected as well, since the data stored under such a key would be silently
   dropped.
 
+- `reset()` of `RuleParserPipeline` and `FilterListPipeline` releases the
+  source they parsed last, as the documentation says. Before, the whole
+  filter list stayed reachable from the pipeline, and the token buffers grown
+  for one very long rule stayed referenced, until the next parse.
+- Parsing a `!+ PLATFORM(...)` hint no longer keeps the filter list alive: a
+  module-level tokenizer held the list it was last given for the lifetime of
+  the process, even after the pipeline was reset or dropped.
+
 ### Security
 
 ## [5.0.0-alpha.0] - 2026-10-12

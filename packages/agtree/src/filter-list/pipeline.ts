@@ -410,7 +410,9 @@ export class FilterListPipeline {
 
     /**
      * Release any extra memory grown during previous parses.
-     * Shrinks all buffers back to constructor-time defaults.
+     * Shrinks all buffers back to constructor-time defaults and drops the
+     * last parsed list, so the pipeline does not keep it alive. Call it when
+     * a list is done with, before the pipeline is used for the next one.
      */
     public reset(): void {
         this.scanner.reset();
