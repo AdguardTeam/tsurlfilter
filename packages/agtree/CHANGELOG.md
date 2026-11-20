@@ -83,6 +83,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   parsed as one exception item again. Regex-ness was decided before the `~`
   was consumed, so the pattern was split at its embedded separator and the
   exclusion became two permitted items, which inverted the rule scope.
+- Generating a cosmetic rule that carries an AdGuard `[$...]` modifier list
+  now keeps the list on ABP snippet, uBO scriptlet and uBO HTML filtering
+  bodies, so `[$path=/x]example.com##+js(aopr, a)` and
+  `[$path=/x]example.com##^div` generate their input text again. Previously
+  the list was either dropped (the rule silently lost its restrictions) or
+  emitted as `:path()`/`:domain()` pseudo-class modifiers.
 - Non-ASCII selectors are tokenized per CSS Syntax §4.2: a non-ASCII code
   point starts an identifier, so a class name like `.класс` or `.😀` is one
   `Ident` token in the converter cursor instead of a run of delimiters. CSS

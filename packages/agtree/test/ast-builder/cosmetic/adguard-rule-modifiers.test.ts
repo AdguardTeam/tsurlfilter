@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
+import { RuleGenerator } from '../../../src/generator/rule-generator';
 import { SYNTAX_ADG, SYNTAX_ALL } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();
@@ -390,6 +391,38 @@ describe('RuleParser — AdGuard rule modifiers', () => {
             expect(() => {
                 parser.parse('[$path=/page example.com##.ads');
             }).toThrow();
+        });
+    });
+
+    describe('generation keeps the `[$...]` list on non-AdGuard bodies (F-032)', () => {
+        // The list is AdGuard syntax, but the v5 parser accepts it on any
+        // cosmetic rule. Generation must not drop it (which silently broadened
+        // the rule) or turn it into `:path()`/`:domain()` pseudo-classes.
+        test.each([
+            '[$path=/page]example.com#@$#abort-on-property-read foo',
+            '[$domain=example.com]example.org##+js(foo)',
+            '[$path=/x]example.com##+js(aopr, a)',
+            '[$path=/x]example.com##^div',
+            '[$path=/x,domain=a.com]example.com##^responseheader(foo)',
+        ])('round-trips %s', (rule) => {
+            const ast = parser.parse(rule, { parseHtmlFilteringRuleBodies: true });
+
+            expect(RuleGenerator.generate(ast)).toBe(rule);
+        });
+
+        test('keeps uBO pseudo-class modifiers on element hiding rules', () => {
+            const rule = 'example.com##div:style(color: red)';
+
+            expect(RuleGenerator.generate(parser.parse(rule))).toBe(rule);
+        });
+
+        test('round-trips a `]` inside a regex in the modifier list (F-031)', () => {
+            // The knowledge base requires `]` inside a `[$...]` value to be
+            // escaped; a bare `]` inside a regex is accepted here as long as
+            // the list still closes at the matching bracket.
+            const rule = '[$path=/a]b/]example.com##.x';
+
+            expect(RuleGenerator.generate(parser.parse(rule))).toBe(rule);
         });
     });
 
