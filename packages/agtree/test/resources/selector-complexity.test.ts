@@ -25,28 +25,29 @@ function notChain(count: number): string {
 }
 
 /**
- * Returns the best (minimum) wall-clock time of `runs` measurements, each of
+ * Returns the best (minimum) consumed CPU time of `runs` measurements, each of
  * them `reps` consecutive parses of `rule`.
  *
- * Minimum-of-N is stable under background load: noise only adds time, so the
- * fastest measurement is the closest estimate of the real cost. Repeating the
- * parse inside a measurement keeps a single GC pause from dominating a
- * sub-millisecond shape.
+ * CPU time, unlike wall-clock time, is not inflated when the worker is
+ * descheduled while parallel test files run. Minimum-of-N filters the
+ * remaining noise, and repeating the parse inside a measurement keeps a single
+ * GC pause from dominating a sub-millisecond shape.
  *
  * @param rule Rule text to parse.
  * @param runs Number of measurements.
  * @param reps Number of parses per measurement.
  *
- * @returns Elapsed milliseconds of the fastest measurement.
+ * @returns Elapsed CPU milliseconds of the fastest measurement.
  */
 function bestOf(rule: string, runs = 3, reps = 1): number {
     let best = Number.POSITIVE_INFINITY;
     for (let i = 0; i < runs; i += 1) {
-        const started = performance.now();
+        const started = process.cpuUsage();
         for (let r = 0; r < reps; r += 1) {
             parser.parse(rule);
         }
-        best = Math.min(best, performance.now() - started);
+        const { user, system } = process.cpuUsage(started);
+        best = Math.min(best, (user + system) / 1_000);
     }
     return best;
 }
@@ -56,8 +57,8 @@ describe('selector complexity (F-008)', () => {
         // Warm up the parser and the JIT on the same shape.
         bestOf(notChain(500), 3);
 
-        const small = bestOf(notChain(4_000));
-        const large = bestOf(notChain(8_000));
+        const small = bestOf(notChain(4_000), 3, 100);
+        const large = bestOf(notChain(8_000), 3, 100);
 
         // Doubling the input must less than triple the time. The quadratic
         // scan measures ≈ 4× on the unfixed tree (A11 ratio 4.0).
@@ -70,8 +71,8 @@ describe('selector complexity (F-008)', () => {
         // minutes and a synchronous test cannot be interrupted (A11-6).
         bestOf(notChain(1_000), 2);
 
-        const small = bestOf(notChain(8_000), 2);
-        const large = bestOf(notChain(16_000), 2);
+        const small = bestOf(notChain(8_000), 3, 100);
+        const large = bestOf(notChain(16_000), 3, 100);
 
         expect(large / small).toBeLessThan(3);
     }, 120_000);
@@ -82,8 +83,8 @@ describe('selector complexity (F-008)', () => {
 
         // Many parses per measurement: a nested shape costs well under a
         // millisecond, so one pause in a measurement would distort the ratio.
-        const small = bestOf(nested(2_000), 3, 30);
-        const large = bestOf(nested(4_000), 3, 30);
+        const small = bestOf(nested(2_000), 3, 300);
+        const large = bestOf(nested(4_000), 3, 300);
 
         expect(large / small).toBeLessThan(3);
     }, 120_000);

@@ -439,27 +439,32 @@ describe('FilterListPipeline', () => {
         // `$` rules against plain rules keeps the assertion independent of the
         // machine's absolute speed and of the constant cost of parsing
         // modifiers.
-        const ruleCount = 100_000;
+        const ruleCount = 40_000;
         const modifierRules: string[] = [];
 
         for (let i = 0; i < ruleCount; i += 1) {
             modifierRules.push(`||example${i}.com^$script,third-party`);
         }
 
-        const halfRules = modifierRules.slice(0, ruleCount / 2);
+        const quarterRules = modifierRules.slice(0, ruleCount / 4);
 
         /**
-         * Parses the given rules and returns the elapsed time.
+         * Parses the given rules and returns the consumed CPU time.
+         *
+         * CPU time, unlike wall-clock time, is not inflated when the worker is
+         * descheduled while parallel test files run, so the ratio between two
+         * sizes reflects the parser work rather than the machine load.
          *
          * @param rules Rules to join and parse.
          *
-         * @returns Elapsed milliseconds.
+         * @returns Elapsed CPU milliseconds.
          */
         const parseTimed = (rules: string[]): number => {
             const source = rules.join('\n');
-            const started = performance.now();
+            const started = process.cpuUsage();
             const ast = pipeline.parse(source);
-            const elapsed = performance.now() - started;
+            const { user, system } = process.cpuUsage(started);
+            const elapsed = (user + system) / 1_000;
 
             expect(ast.children).toHaveLength(rules.length);
 
@@ -467,17 +472,23 @@ describe('FilterListPipeline', () => {
         };
 
         // Warm up the pipeline so buffer growth does not skew the comparison.
-        parseTimed(halfRules.slice(0, 1_000));
+        parseTimed(quarterRules.slice(0, 1_000));
 
-        // Take the fastest run at each size. A single run can be delayed by the
-        // scheduler or by parallel test workers, while the fastest run reflects
-        // the parser work itself.
-        const halfElapsed = Math.min(parseTimed(halfRules), parseTimed(halfRules));
-        const fullElapsed = Math.min(parseTimed(modifierRules), parseTimed(modifierRules));
+        // Take the fastest of three runs at each size. A single run can be
+        // delayed by the scheduler, by GC or by parallel test workers, while
+        // the fastest run reflects the parser work itself.
+        const bestOfThree = (rules: string[]): number => Math.min(
+            parseTimed(rules),
+            parseTimed(rules),
+            parseTimed(rules),
+        );
+        const quarterElapsed = bestOfThree(quarterRules);
+        const fullElapsed = bestOfThree(modifierRules);
 
-        // Linear parsing doubles with the rule count; a per-rule scan of the
-        // whole list quadruples. Allow a wide margin for noise. The bound is
-        // scale-invariant, so a slow machine does not weaken it.
-        expect(fullElapsed).toBeLessThan(halfElapsed * 3);
+        // Linear parsing quadruples with four times the rule count; a
+        // per-rule scan of the whole list grows sixteen-fold. The intermediate
+        // bound leaves room for allocation noise and GC on both sides, and it
+        // is scale-invariant, so a slow machine does not weaken it.
+        expect(fullElapsed).toBeLessThan(quarterElapsed * 8);
     }, 30_000);
 });
