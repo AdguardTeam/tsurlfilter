@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `$path` and `$url` values with an escaped closing slash, e.g.
+  `[$path=/a\/]example.com##.foo`, are no longer regexps and now match their
+  literal text instead of compiling to an invalid regexp and never matching
+  (via [@adguard/tsurlfilter]). For `http` and `https` URLs, the URL parser
+  keeps a backslash only in the query or fragment, so the example matches
+  `https://example.com/?q=/a\/`, not a page path.
 - Bare `$removeparam` rules no longer duplicate the hash fragment when a
   History API URL has no query string but its fragment contains `?`, e.g.
   `/page#route?x=1` now stays unchanged instead of becoming

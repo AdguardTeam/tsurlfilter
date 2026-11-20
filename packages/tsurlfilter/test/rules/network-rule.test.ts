@@ -76,6 +76,11 @@ describe('NetworkRule constructor', () => {
         expect(rule.isGeneric()).toEqual(true);
     });
 
+    it('detects regexp rules with an escaped closing slash properly', () => {
+        expect(createNetworkRule(String.raw`/a\/`, 0).isRegexRule()).toEqual(false);
+        expect(createNetworkRule(String.raw`/a\\/`, 0).isRegexRule()).toEqual(true);
+    });
+
     it('works when it creates rule with $all', () => {
         const rule = createNetworkRule('||example.org^$all', 0);
         expect(rule.getFilterListId()).toEqual(0);
@@ -1182,6 +1187,19 @@ describe('NetworkRule.match', () => {
 
             request = new Request('https://example.org/com', null, RequestType.Document);
             expect(rule.match(request)).toBeFalsy();
+        });
+
+        it('matches target domain for a pattern with an escaped closing slash', () => {
+            // `/a\/` is a plain pattern, so the target hostname can satisfy
+            // `$domain` when the source hostname does not.
+            const rule = createNetworkRule(String.raw`/a\/$document,domain=example.org`, 0);
+            const request = new Request(
+                String.raw`https://example.org/x?q=/a\/`,
+                'https://source.org/',
+                RequestType.Document,
+            );
+
+            expect(rule.match(request)).toBeTruthy();
         });
     });
 
