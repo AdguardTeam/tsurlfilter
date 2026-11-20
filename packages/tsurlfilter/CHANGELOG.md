@@ -20,7 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTML filtering and CSS injection rules that contain a right parenthesis
   or the other quote character inside a single-quoted `:xpath()` literal now
   load and convert, e.g. `##^div:xpath(//div[contains(text(),')')])` and
-  `#?#div:xpath(//div[contains(text(),')')]):style(color:red)` (via
+  `#?#div:xpath(//div[contains(text(),')')]):style(color:red)`. A
+  double-quoted literal that ends with a reverse solidus loads and converts
+  as well, e.g. `##^div:xpath(//div[@a="C:\"])` (via
   [@adguard/agtree]). Previously such rules failed to load with a conversion
   error.
 - `SimpleRegex.isRegexPattern()` now rejects a pattern whose closing slash

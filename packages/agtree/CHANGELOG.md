@@ -28,10 +28,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - HTML filtering rules can now contain a right parenthesis or the other
   quote character inside a single-quoted `:xpath()` literal, e.g.
   `##^div:xpath(//div[contains(text(),')')])` and
-  `##^div:xpath(//div[@a='x"y'])`. A reverse solidus inside a literal does
+  `##^div:xpath(//div[@a='x"y'])`. A double-quoted literal that ends with a
+  reverse solidus parses as well, e.g.
+  `##^div:xpath(//div[@a="C:\"])`. A reverse solidus inside a literal does
   not escape the closing quote, because XPath literals have no escape
-  sequences, so `##^div:xpath(//div[@a='C:\'])` parses as well. Previously
-  such rules failed to parse or convert with a syntax error.
+  sequences. Previously such rules failed to parse or convert with a syntax
+  error.
 - The list item parser now throws an `AdblockSyntaxError` with
   `Unclosed regexp literal, no closing delimiter found` when a list item
   starts with `/` and a real separator follows it, but no closing
