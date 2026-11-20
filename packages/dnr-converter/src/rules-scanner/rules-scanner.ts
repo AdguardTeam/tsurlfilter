@@ -200,19 +200,26 @@ export class RulesScanner {
             rules: [],
         };
 
-        for (const segment of segments) {
-            const isLimitReached = RulesScanner.parseSegment(
-                result,
-                filterId,
-                segment,
-                options.filterFn,
-                options.maxScannedRules,
-                options.skipErrorLineSelector,
-            );
+        try {
+            for (const segment of segments) {
+                const isLimitReached = RulesScanner.parseSegment(
+                    result,
+                    filterId,
+                    segment,
+                    options.filterFn,
+                    options.maxScannedRules,
+                    options.skipErrorLineSelector,
+                );
 
-            if (isLimitReached) {
-                break;
+                if (isLimitReached) {
+                    break;
+                }
             }
+        } finally {
+            // The pipeline is shared and lives as long as the process: without a reset it keeps
+            // the last parsed text (the whole filter content when there is no line selector) and
+            // the buffers grown by the largest rule, which would defeat unloading the content.
+            RulesScanner.pipeline.reset();
         }
 
         return result;

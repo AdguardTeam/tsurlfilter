@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Rule text for error reporting is derived from node `start`/`end` offsets
   instead of the removed `raws.text` property.
 
+### Fixed
+
+- `RulesScanner` resets its shared filter list pipeline after each scanned
+  filter. Before, it kept the text of the last filter and the buffers grown
+  for its largest rule alive, which defeated `IFilter.unloadContent()`.
+
 ## [2.1.1] - 2026-11-17
 
 ### Fixed

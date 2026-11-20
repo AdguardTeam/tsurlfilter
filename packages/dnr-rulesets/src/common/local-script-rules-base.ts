@@ -14,10 +14,16 @@ const pipeline = new FilterListPipeline();
  * @returns Parsed filter list node.
  */
 export const parseFilterList = (filterStr: string): FilterList => {
-    return pipeline.parse(filterStr, {
-        isLocIncluded: true,
-        tolerant: true,
-    });
+    try {
+        return pipeline.parse(filterStr, {
+            isLocIncluded: true,
+            tolerant: true,
+        });
+    } finally {
+        // The pipeline is shared and lives as long as the process: release the filter text and
+        // the buffers grown for the biggest rule instead of keeping them until the next call
+        pipeline.reset();
+    }
 };
 
 /**

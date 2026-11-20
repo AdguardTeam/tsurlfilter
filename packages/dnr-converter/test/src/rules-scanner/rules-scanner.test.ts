@@ -495,5 +495,32 @@ describe('RulesScanner', () => {
                 }],
             });
         });
+
+        it('should reset the shared pipeline after each filter so it does not keep the content', async () => {
+            const resetMock = vi.spyOn(
+                (RulesScanner as unknown as { pipeline: FilterListPipeline }).pipeline,
+                'reset',
+            );
+            parserMock.mockReturnValue({ children: [] } as any);
+
+            await RulesScanner.scanFilters([createFilter(['||example.com^'], 1), createFilter(['||example.org^'], 2)]);
+
+            expect(resetMock).toHaveBeenCalledTimes(2);
+        });
+
+        it('should reset the shared pipeline even when parsing throws', async () => {
+            const resetMock = vi.spyOn(
+                (RulesScanner as unknown as { pipeline: FilterListPipeline }).pipeline,
+                'reset',
+            );
+            parserMock.mockImplementation(() => {
+                throw new Error('parse failure');
+            });
+
+            await expect(RulesScanner.scanFilters([createFilter(['||example.com^'])]))
+                .rejects.toThrow('parse failure');
+
+            expect(resetMock).toHaveBeenCalledTimes(1);
+        });
     });
 });
