@@ -83,6 +83,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   parsed as one exception item again. Regex-ness was decided before the `~`
   was consumed, so the pattern was split at its embedded separator and the
   exclusion became two permitted items, which inverted the rule scope.
+- Non-ASCII selectors are tokenized per CSS Syntax §4.2: a non-ASCII code
+  point starts an identifier, so a class name like `.класс` or `.😀` is one
+  `Ident` token in the converter cursor instead of a run of delimiters. CSS
+  conversion and selector rewriting now treat such selectors the same way as
+  ASCII ones; the differential against `@adguard/css-tokenizer` over the
+  A04-C11 corpus reaches zero differences.
 - The domain-list pre-validator now treats a complete `/…/` (and `~/…/`) item
   as opaque, so a regexp item whose pattern contains the list separator no
   longer fails with `Empty value specified in the list`. An unterminated

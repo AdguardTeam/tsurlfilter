@@ -77,6 +77,26 @@ describe('CssCursor', () => {
             expect(cursor.kind).toBe(CssTokenKind.Delim);
             expect(cursor.value).toBe('=');
         });
+
+        test('non-ASCII ident-start characters (F-033)', () => {
+            // CSS Syntax §4.2: a non-ASCII code point starts an identifier, so
+            // a Cyrillic class name or an emoji name is an ident, not a run of
+            // delimiters (the A04-C11 differential missed this on 55 bodies).
+            for (const [source, expected] of [
+                ['.класс', 'класс'],
+                ['.😀', '😀'],
+                ['ид', 'ид'],
+                ['.класс-тест', 'класс-тест'],
+            ] as const) {
+                cursor.reset(source);
+                if (source.startsWith('.')) {
+                    expect(cursor.kind).toBe(CssTokenKind.Delim);
+                    cursor.advance();
+                }
+                expect(cursor.kind).toBe(CssTokenKind.Ident);
+                expect(cursor.value).toBe(expected);
+            }
+        });
     });
 
     describe('sequence iteration', () => {

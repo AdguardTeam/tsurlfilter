@@ -10,15 +10,17 @@ import {
 import { TokenType } from '../../../src/tokenizer/token-types';
 
 describe('isCssIdentStart', () => {
-    test('returns true for Letter and Underscore', () => {
+    test('returns true for Letter, Underscore and NonAscii', () => {
         expect(isCssIdentStart(TokenType.Letter)).toBe(true);
         expect(isCssIdentStart(TokenType.Underscore)).toBe(true);
+        // CSS Syntax §4.2: a non-ASCII code point is an ident-start code point,
+        // so `.класс` and `.😀` start an identifier.
+        expect(isCssIdentStart(TokenType.NonAscii)).toBe(true);
     });
 
     test('returns false for non-ident-start types', () => {
         expect(isCssIdentStart(TokenType.Hyphen)).toBe(false);
         expect(isCssIdentStart(TokenType.Digit)).toBe(false);
-        expect(isCssIdentStart(TokenType.NonAscii)).toBe(false);
         expect(isCssIdentStart(TokenType.Escaped)).toBe(false);
         expect(isCssIdentStart(TokenType.Whitespace)).toBe(false);
         expect(isCssIdentStart(TokenType.Dot)).toBe(false);

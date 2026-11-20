@@ -11,10 +11,16 @@
 import { IDENT_START_MASK, TokenType } from '../../tokenizer/token-types';
 
 /**
- * Whether `type` is a CSS `<ident-start-code-point>` token: `Letter` or
- * `Underscore`.
+ * Whether `type` is a CSS `<ident-start-code-point>` token: `Letter`,
+ * `Underscore`, or `NonAscii`.
  *
- * Uses the {@link IDENT_START_MASK} bitmask for a branchless check.
+ * CSS Syntax §4.2 defines `<ident-start-code-point>` as a letter, a
+ * non-ASCII ident code point (anything ≥ U+0080), or `_`, so a non-ASCII
+ * token starts an identifier just like a letter does.
+ *
+ * The `Letter`/`Underscore` part uses the {@link IDENT_START_MASK} bitmask for
+ * a branchless check; `NonAscii` is not part of that mask because other
+ * consumers of the mask only accept ASCII names.
  *
  * @param type Token type value.
  *
@@ -23,7 +29,7 @@ import { IDENT_START_MASK, TokenType } from '../../tokenizer/token-types';
 export function isCssIdentStart(type: number): boolean {
     // Guard against types ≥ 32 since JS bitwise ops work modulo 32
     // eslint-disable-next-line no-bitwise
-    return type < 32 && ((IDENT_START_MASK >>> type) & 1) !== 0;
+    return type === TokenType.NonAscii || (type < 32 && ((IDENT_START_MASK >>> type) & 1) !== 0);
 }
 
 /**
