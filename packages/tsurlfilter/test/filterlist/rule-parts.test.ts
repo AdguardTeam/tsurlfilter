@@ -196,6 +196,28 @@ describe('getRuleParts', () => {
         expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe('removeparam=/x\\$y/');
     });
 
+    test('keeps a regex anchor after an escaped $ out of cosmetic detection', () => {
+        // F-003: `\$` plus the `$` anchor form `$$`, which used to turn the
+        // rule into an HTML filtering rule, so the engine never applied it.
+        const rule = '||example.com^$removeparam=/^id\\$$/';
+        const parts = getRuleParts(rule) as NetworkRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Network);
+        expect(rule.slice(parts!.patternStart, parts!.patternEnd)).toBe('||example.com^');
+        expect(rule.slice(parts!.modifiersStart, parts!.modifiersEnd)).toBe('removeparam=/^id\\$$/');
+    });
+
+    test('keeps an unescaped $$ inside a regex value cosmetic', () => {
+        // Deliberate: the structural parser still reads an unescaped `$$` as
+        // the HTML filtering separator (F-019, D-18 pending), so the splitter
+        // must keep agreeing with it.
+        const rule = '||example.com^$removeparam=/^id$$/';
+        const parts = getRuleParts(rule);
+
+        expect(parts!.category).toBe(RuleCategory.Cosmetic);
+    });
+
     test('parses $replace with $ in the middle of a regex', () => {
         // The $ inside /a$b/ in the pattern part must not be mistaken for the separator.
         const rule = '||example.org^$replace=/a$b/good/';

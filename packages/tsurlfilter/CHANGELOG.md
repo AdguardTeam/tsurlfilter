@@ -47,6 +47,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A rule whose regexp modifier value contains an escaped `$` followed by the
+  `$` anchor, e.g. `||example.com^$removeparam=/^id\$$/`, is a network rule
+  again. The `\$` and the anchor formed a `$$` that the rule splitter read
+  as the HTML filtering separator, so the line was routed to the cosmetic
+  engine and the `removeparam` rule was never applied. An unescaped `$$`
+  inside a regexp value is still read as the separator, matching the parser.
 - `SimpleRegex.isRegexPattern()` now rejects a pattern whose closing slash
   is escaped, e.g. `/a\/`, the same as `RegExpUtils.isRegexPattern()` in
   [@adguard/agtree]. It counts the consecutive backslashes before the

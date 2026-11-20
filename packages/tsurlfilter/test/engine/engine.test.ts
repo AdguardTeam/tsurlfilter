@@ -1628,6 +1628,53 @@ describe('Unsafe rules can be ignored', () => {
     });
 });
 
+describe('TestEngineMatchRequest - removeparam regexp with an escaped $', () => {
+    it('applies a rule whose regexp value ends with an escaped $ (F-003)', () => {
+        const rule = '||example.com^$removeparam=/^id\\$$/';
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: rule,
+                },
+            ],
+        });
+
+        const result = engine.matchRequest(new Request(
+            'https://example.com/page?id=1&id2=2',
+            'https://example.com/',
+            RequestType.Document,
+        ));
+
+        const removeParamRules = result.getRemoveParamRules();
+        expect(removeParamRules).toHaveLength(1);
+        expect(
+            engine.retrieveRuleText(removeParamRules[0].getFilterListId(), removeParamRules[0].getIndex()),
+        ).toEqual(rule);
+    });
+
+    it('keeps an unescaped $$ regexp value cosmetic like the structural parser', () => {
+        // F-019 is undecided (D-18): both layers still read this `$$` as the
+        // HTML filtering separator, so no removeparam rule is produced.
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: '||example.com^$removeparam=/^id$$/',
+                },
+            ],
+        });
+
+        const result = engine.matchRequest(new Request(
+            'https://example.com/page?id=1',
+            'https://example.com/',
+            RequestType.Document,
+        ));
+
+        expect(result.getRemoveParamRules()).toHaveLength(0);
+    });
+});
+
 describe('Async engine creation', () => {
     it('should create engine and match rules same as sync', async () => {
         const rules = [

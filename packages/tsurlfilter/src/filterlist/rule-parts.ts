@@ -746,6 +746,16 @@ export function getRuleParts(rule: string, ignoreCosmetics = false, ignoreHosts 
         dollarCount += 1;
         lastDollarIndex = i;
 
+        // An escaped `$` is part of a regex value or the pattern, never a
+        // cosmetic separator: in `$removeparam=/^id\$$/` the `\$` plus the
+        // regex anchor form a `$$` that is not the HTML filtering separator
+        // (F-003). An unescaped `$$`/`$@$` is still read as the separator so
+        // this splitter keeps agreeing with the structural parser until
+        // F-019 (D-18) unifies the two.
+        if (i > realStart && rule[i - 1] === ESCAPE) {
+            continue;
+        }
+
         if (rule[i + 1] === '$') {
             // $$
             cosmeticSeparator = encodeSeparator(i, 2, CosmeticRuleType.HtmlFilteringRule, false);
