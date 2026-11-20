@@ -18,8 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   prerendered document whose frame id is not zero: a subframe's verdict
   depends on the main frame's rule and URL, which the page cannot read when
   the domains differ, so frames always keep the dynamic path. Registrations
-  follow the configured host expansion; a rule without a baked file stays on
-  the dynamic path.
+  follow the configured host expansion except the hosts whose exceptions the
+  browser cannot express (see below); a rule without a baked file stays on the
+  dynamic path.
 - Public utilities for hashing preregistered rules and resolving stable
   script filenames. They are exported from
   `@adguard/tswebextension/mv3/preregistered-scripts/build-contract`.
@@ -32,12 +33,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with, so a `$badfilter` of another filter and a user rule or a custom filter
   resolve against the rules the engine actually matches with. A host whose
   exceptions the browser cannot express keeps the dynamic injection path,
-  where the engine decides. Two gaps stay open: an uppercase spelling of an
+  where the engine decides. Four gaps stay open: an uppercase spelling of an
   excluded path is not excluded, because the browser matches the pattern
-  case-sensitively while the engine does not; and an exception that names no
-  host is applied only when it matches the host's own page or is pinned by
-  `$domain`, otherwise it is logged at debug level and its pages keep the
-  scriptlets.
+  case-sensitively while the engine does not; an exclusion matches every port of
+  the host, because a match pattern has no port field; an exception that names no host is
+  applied only when it matches the host's root page or its `$domain` list
+  allows the host, otherwise it is logged at debug level and its pages keep the
+  scriptlets; and a bare pattern of another site is ignored although the engine
+  matches its text inside the URL of a registered page.
 
 ### Changed
 

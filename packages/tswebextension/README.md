@@ -391,8 +391,8 @@ Known limitations:
   both paths rely on scriptlets being idempotent.
 - An exception that cannot be written as a match pattern (a wildcard inside
   the path, a query, a host-wide exception, an uppercase path without
-  `$match-case`, an uppercase spelling of the host, a higher-ranked exception
-  that keeps JS injection on) keeps its host on the dynamic path: the
+  `$match-case`, an uppercase spelling of the host, an exception ranked at
+  least as high that keeps JS injection on) keeps its host on the dynamic path: the
   registration cannot exclude the page, and
   running the script there would contradict the engine. Only the affected
   host falls back.
@@ -402,10 +402,23 @@ Known limitations:
   written in uppercase without `$match-case` keeps its host on the dynamic path
   instead.
 - An exception that names no host (`@@/ads/$document`, a regexp) cannot be
-  excluded from a registration. One that matches the host's own page, or that
-  `$domain` pins to the host, keeps the host on the dynamic path; any other is
-  only logged at debug level, so a page it happens to match still receives the
-  scriptlets while the engine injects nothing there.
+  excluded from a registration. One that matches the host's root page, or whose
+  `$domain` list allows the host, keeps the host on the dynamic path; any other
+  is only logged at debug level, so a page it happens to match still receives
+  the scriptlets while the engine injects nothing there.
+- The exclusion covers every port of the host: a match pattern has no port
+  field, so a URL with an explicit port (`https://youtube.com:8443/ads`) is
+  excluded too, while the engine's `||host/path` does not match a port and
+  injects there. Probed in Chromium: a pattern without a port matches any port,
+  a pattern with a port matches only that one, so "no explicit port" cannot be
+  expressed.
+- A bare pattern of another site (`@@example.org/ads$document`) is ignored,
+  although the engine matches its text anywhere in a URL: a registered page
+  whose path or query happens to contain that text still receives the
+  scriptlets while the engine injects nothing there. Treating every such pattern
+  as reaching every host would keep every registered host on the dynamic path —
+  the base filter alone carries six of them — so the fast path is kept and this
+  divergence is stated instead.
 - Subframes never take the fast path: they are injected dynamically, on
   `webRequest.onResponseStarted` or `webNavigation.onCommitted`, after the
   frame's document starts. A frame whose own inline script reads a property

@@ -47,7 +47,8 @@ describe('Domains Lookup Table Tests', () => {
         const table = new DomainsLookupTable(ruleStorage);
 
         // `|foo.com|bar.com` starts with a separator: `NetworkRule` refuses
-        // such a rule too, so the raw split would only file dead keys.
+        // such a rule too, so filing it under the raw pieces would only keep a
+        // dead rule in the table.
         expect(table.addRule(getRuleParts('path$domain=|foo.com|bar.com') as NetworkRuleParts, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
     });

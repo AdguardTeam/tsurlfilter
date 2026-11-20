@@ -27,6 +27,8 @@ import {
 } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
 import { collectExceptionLines } from '../../../../../src/lib/mv3/background/preregistered-scripts/js-exclusions';
 import { clearManifestCache } from '../../../../../src/lib/mv3/background/preregistered-scripts/manifest-reader';
+import type * as ManifestReaderModule
+    from '../../../../../src/lib/mv3/background/preregistered-scripts/manifest-reader';
 import {
     PreregisteredScriptsService,
 } from '../../../../../src/lib/mv3/background/preregistered-scripts/preregistered-scripts-service';
@@ -67,6 +69,66 @@ vi.mock('../../../../../src/lib/mv3/background/content-script-manager', () => ({
         }),
     },
 }));
+
+// One-shot gate that parks a `readManifest()` call mid-flight, so a test can
+// swap the engine while the sync is between the snapshot and the descriptors.
+const manifestGate = vi.hoisted(() => ({
+    current: null as null | {
+        entered: Promise<void>;
+        markEntered: () => void;
+        wait: Promise<void>;
+        release: () => void;
+    },
+}));
+
+vi.mock(
+    '../../../../../src/lib/mv3/background/preregistered-scripts/manifest-reader',
+    async (importOriginal) => {
+        const actual = await importOriginal<typeof ManifestReaderModule>();
+
+        return {
+            ...actual,
+            readManifest: vi.fn(async (scriptsPath: string) => {
+                const gate = manifestGate.current;
+                manifestGate.current = null;
+
+                if (gate) {
+                    gate.markEntered();
+                    await gate.wait;
+                }
+
+                return actual.readManifest(scriptsPath);
+            }),
+        };
+    },
+);
+
+/**
+ * Arms the one-shot manifest gate.
+ *
+ * @returns `entered` resolving once `readManifest()` is parked, and
+ * `release` resuming it.
+ */
+const installManifestGate = (): { entered: Promise<void>; release: () => void } => {
+    let markEntered = (): void => {};
+    let release = (): void => {};
+
+    const entered = new Promise<void>((resolve) => {
+        markEntered = resolve;
+    });
+    const wait = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+
+    manifestGate.current = {
+        entered,
+        markEntered,
+        wait,
+        release,
+    };
+
+    return { entered, release };
+};
 
 const SCRIPTS_PATH = 'filters/preregistered-scripts';
 
@@ -291,6 +353,7 @@ describe('PreregisteredScriptsService', () => {
         });
         vi.mocked(DocumentApi.matchFrame).mockReset().mockReturnValue(null);
         vi.mocked(engineApi.getExceptionSources).mockReturnValue([]);
+        manifestGate.current = null;
     });
 
     describe('sync — early exits', () => {
@@ -1038,6 +1101,53 @@ describe('PreregisteredScriptsService', () => {
 
             // Second sync must not start before the first one finished.
             expect(order).toEqual(['start', 'end', 'start', 'end']);
+        });
+
+        it('snapshots the rules before the manifest is read', async () => {
+            // `configure()` can replace the engine while the manifest is being
+            // read: rules and exclusions taken after that `await` would mix
+            // two rule sets within one sync.
+            const firstRule = mockScriptletRule('set-cookie', ['first']);
+            const secondRule = mockScriptletRule('set-cookie', ['second']);
+            const firstHash = await computeRuleHash(firstRule);
+            const secondHash = await computeRuleHash(secondRule);
+            setupEngine({ 'youtube.com': [firstRule] });
+            // Both hashes are in the manifest, so a late read would produce a
+            // descriptor the assertion can tell apart from the snapshot one.
+            setupManifest(
+                [firstHash, secondHash],
+                { 'set-cookie': scriptletFilename('set-cookie') },
+            );
+            setupExceptionSources([{
+                filterId: 1,
+                content: '@@||youtube.com/feed/trending$document\n',
+            }]);
+
+            const gate = installManifestGate();
+            const syncPromise = PreregisteredScriptsService.sync(
+                true,
+                ['youtube.com'],
+                SCRIPTS_PATH,
+            );
+
+            await gate.entered;
+
+            // The engine is replaced while the sync waits for the manifest.
+            setupEngine({ 'youtube.com': [secondRule] });
+            setupExceptionSources([{
+                filterId: 1,
+                content: '@@||youtube.com/watch$document\n',
+            }]);
+            gate.release();
+
+            const result = await syncPromise;
+
+            expect(result).toEqual(new Map([['youtube.com', new Set([firstHash])]]));
+            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(scripts).toHaveLength(1);
+            expect(scripts[0].excludeMatches).toEqual(['*://youtube.com/feed/trending*']);
+            expect(scripts[0].js).toContain(`${SCRIPTS_PATH}/${getRuleFilename(firstHash)}`);
+            expect(scripts[0].js).not.toContain(`${SCRIPTS_PATH}/${getRuleFilename(secondHash)}`);
         });
     });
 

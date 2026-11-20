@@ -15,8 +15,9 @@ import { type ILookupTable } from './lookup-table';
  * lowercased, so the table is filed under the keys a request produces.
  *
  * A value the parser rejects (`$domain=|host`, which `NetworkRule` refuses too)
- * is not filed at all: the raw split would store it under keys no request can
- * produce, i.e. hide a dead rule instead of letting it go to the sequence scan.
+ * is not filed at all: the raw split would keep the rule in the table under
+ * keys its pattern can never match, i.e. hide a dead rule instead of letting it
+ * go to the sequence scan.
  *
  * @param text Raw `$domain` value.
  *

@@ -452,11 +452,15 @@ export class PreregisteredScriptsService {
      * the browser does not inject the content script there at all.
      *
      * A host whose exceptions the browser cannot express keeps the dynamic
-     * path, where the engine decides. Two accepted divergences stay: a page
+     * path, where the engine decides. Four accepted divergences stay: a page
      * whose path differs from the excluded one in case only, because
-     * `excludeMatches` is matched case-sensitively by the browser, and a
-     * host-less exception that matches neither the host's page nor a `$domain`
-     * entry, which is only logged and left unapplied.
+     * `excludeMatches` is matched case-sensitively by the browser; an exclusion
+     * matches every port of the host, because a match pattern has no port
+     * field; a host-less
+     * exception that matches neither the host's root page nor a `$domain` list
+     * that allows it, which is only logged and left unapplied; and a bare
+     * pattern of another site, whose text the engine matches inside the URL of
+     * a registered page.
      *
      * @param hostnames Configured hostnames, expanded.
      * @param scriptsPath Extension-relative path to preregistered scripts.
@@ -467,13 +471,22 @@ export class PreregisteredScriptsService {
         hostnames: readonly string[],
         scriptsPath: string,
     ): Promise<RegistrationPlan> {
+        // Everything that reads the engine is snapshotted before the first
+        // `await`: a `configure()` that replaces the engine while the manifest
+        // is being read would otherwise mix two rule sets within one sync.
+        const exclusions = resolveHostExclusions(engineApi.getExceptionSources(), hostnames);
+        const staticHostnames = hostnames
+            .filter((hostname) => !exclusions.dynamicHosts.has(hostname));
+        const scriptRules = new Map(
+            staticHostnames.map((hostname) => [hostname, getHostnameScriptRules(hostname)]),
+        );
+
         const manifest = await readManifest(scriptsPath);
 
         // Rule files are named by hash. `buildDomainScripts` drops rules
         // missing from `manifest.hashes`, and coverage is read from the
         // descriptors that were built, so a host the generation does not list
         // is still registered for exactly the rules that have baked files.
-        const exclusions = resolveHostExclusions(engineApi.getExceptionSources(), hostnames);
 
         if (exclusions.dynamicHosts.size > 0) {
             logger.warn(
@@ -491,16 +504,14 @@ export class PreregisteredScriptsService {
             );
         }
 
-        const staticHostnames = hostnames
-            .filter((hostname) => !exclusions.dynamicHosts.has(hostname));
-
         return {
             registeredHostnames: staticHostnames,
             scripts: await PreregisteredScriptsService.buildDomainScripts(
-                [...staticHostnames],
+                staticHostnames,
                 scriptsPath,
                 manifest,
                 exclusions,
+                scriptRules,
             ),
         };
     }
@@ -522,6 +533,8 @@ export class PreregisteredScriptsService {
      * @param scriptsPath Extension-relative path to preregistered scripts.
      * @param manifest Build-time manifest.
      * @param exclusions URL exclusions resolved from the live rule set.
+     * @param scriptRules Rules of every registered host, snapshotted with the
+     * exclusions before the first `await` so one sync reads one rule set.
      *
      * @returns Content-script descriptors for the covered hostnames. The
      * actual coverage is read separately from the active registrations.
@@ -531,6 +544,7 @@ export class PreregisteredScriptsService {
         scriptsPath: string,
         manifest: PreregisteredScriptsManifest,
         exclusions: JsExclusions,
+        scriptRules: ReadonlyMap<string, ReturnType<typeof getHostnameScriptRules>>,
     ): Promise<ContentScriptDescriptor[]> {
         const manifestHashes = new Set(manifest.hashes);
         const sharedBundlePath = `${scriptsPath}/${SHARED_BUNDLE_FILENAME}`;
@@ -557,7 +571,7 @@ export class PreregisteredScriptsService {
             // eslint-disable-next-line no-await-in-loop
             const batchHashFailures = await Promise.all(
                 batch.map(async (hostname) => {
-                    const rules = getHostnameScriptRules(hostname);
+                    const rules = scriptRules.get(hostname) ?? [];
                     if (rules.length === 0) {
                         return 0;
                     }

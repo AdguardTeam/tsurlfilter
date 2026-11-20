@@ -41,7 +41,8 @@ export interface JsExclusions {
     /**
      * Hostnames that must keep the dynamic injection path, mapped to the
      * reason: a host-wide exception, an exception `excludeMatches` cannot
-     * express, or a higher-ranked exception that keeps JS injection on.
+     * express, or an exception ranked at least as high that keeps JS
+     * injection on.
      */
     dynamicHosts: Map<string, string>;
 
@@ -128,9 +129,18 @@ type PatternHost = {
     rest: string;
 
     /**
-     * Scheme of an anchored pattern, or {@link ANY_SCHEME}.
+     * Scheme of an anchored pattern, or {@link ANY_SCHEME}. A wildcard scheme
+     * (`|*://`, `|http*://`, `|h*ps://`) is narrowed to the document schemes
+     * it matches, so the exclusion carries no wildcard.
      */
     scheme: string;
+
+    /**
+     * Scheme as the pattern spells it, before narrowing: a `$match-case`
+     * pattern compares it case-sensitively, so the written spelling decides
+     * whether an exclusion may be baked at all.
+     */
+    rawScheme: string;
 
     /**
      * Whether the pattern anchors the host. A bare `host/path` pattern is a
@@ -159,13 +169,48 @@ type PatternParse =
     | { kind: 'unreachable' };
 
 /**
+ * Escapes a literal for a regular expression.
+ *
+ * @param text Literal text.
+ *
+ * @returns Escaped text.
+ */
+const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Narrows a `|`-anchored scheme to the document schemes it matches.
+ *
+ * The engine expands `*` in a scheme to `.*`, so `|*://`, `|http*://` and
+ * `|h*ps://` all reach a document, while a literal scheme reaches one only when
+ * it is http or https.
+ *
+ * @param rawScheme Scheme as written, possibly with `*`.
+ *
+ * @returns `*` when both document schemes match, the single scheme when only
+ * one does, `undefined` when none can.
+ */
+const narrowDocumentScheme = (rawScheme: string): string | undefined => {
+    const scheme = rawScheme.toLowerCase();
+    const glob = new RegExp(`^${scheme.split('*').map(escapeRegExp).join('.*')}$`);
+    const matched = [...DOCUMENT_SCHEMES].filter((candidate) => glob.test(candidate));
+
+    if (matched.length === 0) {
+        return undefined;
+    }
+
+    return matched.length === DOCUMENT_SCHEMES.size ? ANY_SCHEME : matched[0];
+};
+
+/**
  * Reads what a pattern can reach: `||host…`, `|scheme://host…`, `://host…` or a
  * bare `host/path` / `.host/path` name a host; a regexp, a bare path or a plain
  * substring name none.
  *
  * The scheme of a `|`-anchored pattern is decided here and nowhere else: a
  * document is loaded over http(s) only, so an anchor to another scheme, to a
- * protocol-relative prefix or to a path can never match one.
+ * protocol-relative prefix or to a path can never match one. A wildcard scheme
+ * is narrowed to the document schemes it matches, because the engine expands
+ * its `*` to `.*`.
  *
  * @param pattern Rule pattern.
  *
@@ -175,6 +220,7 @@ const parsePattern = (pattern: string): PatternParse => {
     let rest: string;
     let allowSubdomains = false;
     let scheme = ANY_SCHEME;
+    let rawScheme = ANY_SCHEME;
     let anchored = true;
 
     if (pattern.startsWith(SimpleRegex.MASK_START_URL)) {
@@ -196,10 +242,13 @@ const parsePattern = (pattern: string): PatternParse => {
             return { kind: 'hostless' };
         }
 
-        scheme = pipeAnchored.slice(0, schemeIndex).toLowerCase();
-        if (!DOCUMENT_SCHEMES.has(scheme)) {
+        rawScheme = pipeAnchored.slice(0, schemeIndex);
+
+        const narrowed = narrowDocumentScheme(rawScheme);
+        if (narrowed === undefined) {
             return { kind: 'unreachable' };
         }
+        scheme = narrowed;
 
         rest = pipeAnchored.slice(schemeIndex + SCHEME_SEPARATOR.length);
     } else if (pattern.startsWith(SCHEME_SEPARATOR) || /^[a-z][\w+.-]*:\/\//i.test(pattern)) {
@@ -207,6 +256,7 @@ const parsePattern = (pattern: string): PatternParse => {
         // engine tests the text against the whole URL, so it also matches the
         // same text inside the query of another page of the host.
         anchored = false;
+        rawScheme = pattern.slice(0, pattern.indexOf(SCHEME_SEPARATOR));
         rest = pattern.slice(pattern.indexOf(SCHEME_SEPARATOR) + SCHEME_SEPARATOR.length);
     } else {
         // A bare `host/path` or `.host/path` is a substring search, not a host
@@ -236,6 +286,7 @@ const parsePattern = (pattern: string): PatternParse => {
             allowSubdomains,
             rest: rest.slice(host.length),
             scheme,
+            rawScheme,
             anchored,
         },
     };
@@ -258,15 +309,6 @@ const reachesRootPage = (rule: NetworkRule, hostname: string): boolean => (
 );
 
 /**
- * Escapes a literal for a regular expression.
- *
- * @param text Literal text.
- *
- * @returns Escaped text.
- */
-const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-/**
  * Checks whether a host pattern with wildcards matches the hostname. The
  * engine's `*` spans dots, so the comparison is a glob, not a label match.
  *
@@ -279,6 +321,35 @@ const matchesWildcardHost = (host: string, hostname: string): boolean => {
     const source = host.split('*').map(escapeRegExp).join('.*');
 
     return new RegExp(`^${source}$`).test(hostname);
+};
+
+/**
+ * Checks whether a wildcard host reaches the hostname directly or through the
+ * subdomain prefix a `||` pattern allows: the engine compiles `||host` to
+ * `^(http|https)://([a-z0-9-_.]+\.)?<glob>`, so `||youtu*.com` matches
+ * `www.youtube.com` as well.
+ *
+ * @param host Host part of the pattern.
+ * @param hostname Hostname to check.
+ *
+ * @returns True when the glob matches the hostname or one of its parents.
+ */
+const matchesWildcardHostOrSubdomain = (host: string, hostname: string): boolean => {
+    if (matchesWildcardHost(host, hostname)) {
+        return true;
+    }
+
+    let parent = hostname;
+
+    while (parent.includes('.')) {
+        parent = parent.slice(parent.indexOf('.') + 1);
+
+        if (matchesWildcardHost(host, parent)) {
+            return true;
+        }
+    }
+
+    return false;
 };
 
 /**
@@ -321,9 +392,14 @@ const resolveScope = (
 
     // A wildcard host (`||*.youtube.com`) reaches the hostname in the engine,
     // but no exclusion can be anchored to it. The engine's `*` spans dots, so
-    // the comparison is a glob.
+    // the comparison is a glob — and a `||` pattern may also reach the hostname
+    // through its subdomain prefix (`||youtu*.com` on `www.youtube.com`).
     if (host.includes('*')) {
-        return matchesWildcardHost(host, hostname) ? 'unknown' : 'other';
+        const reaches = patternHost.allowSubdomains
+            ? matchesWildcardHostOrSubdomain(host, hostname)
+            : matchesWildcardHost(host, hostname);
+
+        return reaches ? 'unknown' : 'other';
     }
 
     // An unterminated host part is a prefix match: `||youtube` and `||youtube.`
@@ -361,6 +437,13 @@ const toExcludePattern = (
     // hostname of the registration, so it would exclude a page the engine
     // allows — the scriptlets would be lost.
     if (patternHost.host !== patternHost.host.toLowerCase()) {
+        return undefined;
+    }
+
+    // `$match-case` makes the engine compare the whole URL case-sensitively,
+    // the scheme included, and the exclusion always names a lowercased scheme:
+    // a differently spelled one would exclude a page the engine allows.
+    if (caseSensitive && patternHost.rawScheme !== patternHost.rawScheme.toLowerCase()) {
         return undefined;
     }
 
@@ -434,17 +517,31 @@ const collectCandidates = (sources: readonly ExceptionSource[]): Candidate[] => 
 };
 
 /**
- * Checks whether the rule's `$domain` list pins it to the hostname.
+ * Checks whether the rule carries a `$domain` list at all.
  *
  * @param rule Candidate rule.
- * @param hostname Hostname of the registration.
  *
- * @returns True when a permitted domain covers the hostname.
+ * @returns True when the rule has permitted or restricted domains.
  */
-const isPermittedOnHost = (rule: NetworkRule, hostname: string): boolean => (
-    rule.getPermittedDomains()?.some((domain) => (
-        hostname === domain || hostname.endsWith(`.${domain}`)
-    )) ?? false
+const hasDomainList = (rule: NetworkRule): boolean => (
+    rule.getPermittedDomains() !== null || rule.getRestrictedDomains() !== null
+);
+
+/**
+ * Checks whether the rule's `$domain` list applies to the page of the host.
+ *
+ * The question is answered by the engine's own reader, so a regexp domain, a
+ * wildcard domain and a restricted-only list are read exactly like the runtime
+ * reads them.
+ *
+ * @param rule Candidate rule.
+ * @param pageRequest Request of the host's page, used as its own source.
+ *
+ * @returns True when the rule carries a `$domain` list and that list allows
+ * this host.
+ */
+const isDomainScopedToHost = (rule: NetworkRule, pageRequest: Request): boolean => (
+    hasDomainList(rule) && rule.matchDomainModifier(pageRequest)
 );
 
 /**
@@ -560,14 +657,14 @@ const buildHostExclusions = (
                 };
             }
 
-            // `$domain` pins the rule to this host, but the pattern is still a
-            // substring: the same text can appear in the query of another page,
-            // so an exclusion would be narrower than the rule's reach. The
-            // whole host falls back, where the engine decides per page.
-            if (isPermittedOnHost(rule, hostname)) {
+            // `$domain` scopes the rule to some hosts, but the pattern is still
+            // a substring: the same text can appear in the query of another
+            // page, so an exclusion would be narrower than the rule's reach.
+            // The whole host falls back, where the engine decides per page.
+            if (isDomainScopedToHost(rule, cosmeticRequest)) {
                 return {
                     patterns: [],
-                    dynamic: `${text}: the exception names no host but is pinned by $domain`,
+                    dynamic: `${text}: the exception names no host but its $domain list allows this host`,
                 };
             }
 
@@ -622,7 +719,7 @@ const buildHostExclusions = (
     if (shield) {
         return {
             patterns: [],
-            dynamic: `${shield.writtenText}: a higher-ranked exception keeps JS injection on`,
+            dynamic: `${shield.writtenText}: an exception ranked at least as high keeps JS injection on`,
         };
     }
 
@@ -635,7 +732,6 @@ const buildHostExclusions = (
             return {
                 patterns: [],
                 dynamic: `${text}: the exception cannot be expressed as an excludeMatches pattern`,
-                unanchored,
             };
         }
 
