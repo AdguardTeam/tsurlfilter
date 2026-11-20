@@ -41,7 +41,7 @@ export const getResourceTypeModifier = (
         return null;
     }
 
-    const modifierData = modifiersCompatibilityTable.query(modifierName, platform);
+    const modifierData = modifiersCompatibilityTable.translate(modifierName, platform);
 
     if (!modifierData) {
         return null;

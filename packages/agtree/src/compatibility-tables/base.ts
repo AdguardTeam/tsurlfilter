@@ -214,7 +214,82 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
     }
 
     /**
+     * Checks whether the compatibility data declares the given name, i.e. the
+     * name is either its canonical name or one of its aliases.
+     *
+     * A row is shared by every name and alias of the feature across all
+     * products, so a name declared only for one product resolves to the whole
+     * row. This check pins the name to the entry of the platform being asked.
+     *
+     * @param data Compatibility data of a single platform entry.
+     * @param name Normalized feature name.
+     *
+     * @returns True if the entry declares the name.
+     */
+    private static declaresName(data: BaseCompatibilityDataSchema, name: string): boolean {
+        return data.name === name || (data.aliases?.includes(name) ?? false);
+    }
+
+    /**
+     * Collects the unique compatibility data of a row that match the platform
+     * query. Does not look at names.
+     *
+     * Handles specific platforms (flat map), the global wildcard
+     * {@link Platform.Any} (there is no `any` key in the data, so every
+     * product path is queried) and the other wildcards (trie).
+     *
+     * @param row Compatibility row.
+     * @param platform Platform query (can be wildcard).
+     *
+     * @returns Unique matching data in the order they are found.
+     */
+    private static collect<D>(row: HybridCompatibilityTableRow<D>, platform: Platform): D[] {
+        if (!platform.isWildcard) {
+            const data = row.flatMap.get(platform.toString());
+            return data ? [data] : [];
+        }
+
+        const matches: D[] = [];
+
+        if (platform.toString() === WILDCARD_ANY) {
+            for (const code of getValidProductCodes()) {
+                matches.push(...row.trie.query([code]));
+            }
+        } else {
+            matches.push(...row.trie.query(platform.toPath()));
+        }
+
+        // Deduplicate by object identity: one entry is stored once per
+        // concrete platform it expands to.
+        return Array.from(new Set(matches));
+    }
+
+    /**
+     * Collects the unique compatibility data of a row that match the platform
+     * query and declare the given name in their own entry.
+     *
+     * @param row Compatibility row.
+     * @param name Normalized feature name.
+     * @param platform Platform query (can be wildcard).
+     *
+     * @returns Unique matching data whose entry declares the name.
+     */
+    private static collectDeclared<D extends BaseCompatibilityDataSchema>(
+        row: HybridCompatibilityTableRow<D>,
+        name: string,
+        platform: Platform,
+    ): D[] {
+        return CompatibilityTableBase.collect(row, platform)
+            .filter((data) => CompatibilityTableBase.declaresName(data, name));
+    }
+
+    /**
      * Checks if a feature is supported on the specified platform.
+     *
+     * The name must be declared (as a name or an alias) by the entry of the
+     * platform itself: a name that exists only for another product is not
+     * supported here. Use {@link translate} to resolve a name of another
+     * product.
      *
      * @param name Feature name.
      * @param platform Platform to check.
@@ -227,17 +302,14 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
             return false;
         }
 
-        // For specific platforms, use flat map (O(1))
-        if (!platform.isWildcard) {
-            return row.flatMap.has(platform.toString());
-        }
-
-        // For wildcards, use trie
-        return row.trie.has(platform.toPath());
+        return CompatibilityTableBase.collectDeclared(row, this.normalizeName(name), platform).length > 0;
     }
 
     /**
      * Gets compatibility data for a specific platform.
+     *
+     * The name must be declared by the entry of the platform itself, see
+     * {@link supports}.
      *
      * @param name Feature name.
      * @param platform Platform (must be specific, not wildcard).
@@ -255,12 +327,15 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
             throw new Error('get() requires a specific platform. Use queryAll() for wildcards.');
         }
 
-        return row.flatMap.get(platform.toString()) || null;
+        return CompatibilityTableBase.collectDeclared(row, this.normalizeName(name), platform)[0] ?? null;
     }
 
     /**
      * Queries all compatibility data matching the platform query.
      * Supports wildcard platforms.
+     *
+     * The name must be declared by the entry of each returned platform, see
+     * {@link supports}.
      *
      * @param name Feature name.
      * @param platform Platform query (can be wildcard).
@@ -273,49 +348,14 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
             return [];
         }
 
-        // For specific platforms, return single result
-        if (!platform.isWildcard) {
-            const data = row.flatMap.get(platform.toString());
-            return data ? [data] : [];
-        }
-
-        // Special case: Platform.Any (global wildcard across all products)
-        // Query all product paths since there's no 'any' key in the data
-        if (platform.toString() === WILDCARD_ANY) {
-            const results: T[] = [];
-            const seen = new Set<T>();
-
-            // Query each known product path
-            for (const code of getValidProductCodes()) {
-                const productResults = row.trie.query([code]);
-                for (const item of productResults) {
-                    if (!seen.has(item)) {
-                        seen.add(item);
-                        results.push(item);
-                    }
-                }
-            }
-
-            return results;
-        }
-
-        // For other wildcards, use trie query and deduplicate by object identity
-        const results = row.trie.query(platform.toPath());
-        const seen = new Set<T>();
-        const deduplicated: T[] = [];
-
-        for (const item of results) {
-            if (!seen.has(item)) {
-                seen.add(item);
-                deduplicated.push(item);
-            }
-        }
-
-        return deduplicated;
+        return CompatibilityTableBase.collectDeclared(row, this.normalizeName(name), platform);
     }
 
     /**
      * Gets all features supported by the platform.
+     *
+     * A feature is listed under every name and alias that the entry of the
+     * platform declares.
      *
      * @param platform Platform query.
      *
@@ -325,50 +365,38 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
         const results = new Map<string, T[]>();
 
         for (const [name, row] of this.data.rows.entries()) {
-            // For specific platforms
-            if (!platform.isWildcard) {
-                const data = row.flatMap.get(platform.toString());
-                if (data) {
-                    results.set(name, [data]);
-                }
-            } else if (platform.toString() === WILDCARD_ANY) {
-                // Special case: Platform.Any (global wildcard across all products)
-                const deduplicated: T[] = [];
-                const seen = new Set<T>();
+            const matches = CompatibilityTableBase.collectDeclared(row, name, platform);
 
-                for (const code of getValidProductCodes()) {
-                    const productResults = row.trie.query([code]);
-                    for (const item of productResults) {
-                        if (!seen.has(item)) {
-                            seen.add(item);
-                            deduplicated.push(item);
-                        }
-                    }
-                }
-
-                if (deduplicated.length > 0) {
-                    results.set(name, deduplicated);
-                }
-            } else {
-                // For other wildcards, use trie query and deduplicate
-                const matches = row.trie.query(platform.toPath());
-                const seen = new Set<T>();
-                const deduplicated: T[] = [];
-
-                for (const item of matches) {
-                    if (!seen.has(item)) {
-                        seen.add(item);
-                        deduplicated.push(item);
-                    }
-                }
-
-                if (deduplicated.length > 0) {
-                    results.set(name, deduplicated);
-                }
+            if (matches.length > 0) {
+                results.set(name, matches);
             }
         }
 
         return results;
+    }
+
+    /**
+     * Translates a feature name that may belong to any product into the entry
+     * of the given platform.
+     *
+     * Unlike {@link query}, the name is not required to be declared by the
+     * platform's own entry: the row of the feature is found by any of its
+     * names or aliases (for example, an AdGuard scriptlet name or a uBO alias)
+     * and the data of the requested platform is returned. This is what
+     * converters need to map a name of one product onto another.
+     *
+     * @param name Feature name of any product.
+     * @param platform Platform whose entry is wanted (can be wildcard).
+     *
+     * @returns First matching data of the platform or null.
+     */
+    public translate(name: string, platform: Platform): T | null {
+        const row = this.getRow(name);
+        if (!row) {
+            return null;
+        }
+
+        return CompatibilityTableBase.collect(row, platform)[0] ?? null;
     }
 
     /**

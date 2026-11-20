@@ -33,6 +33,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   same list of special pseudo-class names as the parser and the converter.
 - `:has-text()` is now accepted as a synonym of `:contains()` in AdGuard
   HTML filtering rules during ADG→ADG conversion.
+- `translate(name, platform)` is added to the compatibility tables. It maps a
+  name or alias of any product onto the entry of the given platform, e.g.
+  `scriptletsCompatibilityTable.translate('acs', Platform.AdgAny)`. It keeps
+  the cross-product lookup that converters need, now that `supports()`,
+  `get()`, `query()` and `queryAll()` are pinned to the platform's own names
+  (see Fixed).
 
 ### Changed
 
@@ -352,6 +358,17 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   trimmed sub-text. In `example.com##div[title='ab']:style(color:red)`
   the attribute value `ab` now reports 24..26 and the declaration
   `color:red` 35..44.
+
+- Compatibility table lookups check the name against the entry of the platform
+  asked for, as 4.x did, instead of against the whole feature row shared by
+  all products. `supports()`, `get()`, `query()`, `queryAll()`, `getAll()` and
+  the legacy `exists()` no longer report a name the platform does not declare:
+  `exists('rewrite', GenericPlatform.AdgAny)` and
+  `exists('redirect', GenericPlatform.AbpAny)` are `false` again, and the
+  modifier validator rejects `$redirect=noopjs` for uBlock Origin (it calls the
+  resource `noop.js`) and `$rewrite=abp-resource:noopjs` for ABP. Code that
+  relied on the old behavior to map a name of one product onto another should
+  call `translate()`.
 
 ### Security
 

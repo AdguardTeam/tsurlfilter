@@ -71,8 +71,10 @@ const getFirstCompatibleEntity = <T extends BaseCompatibilityDataSchema>(
     featureName: string,
     platform: Platform,
 ): CompatibilityEntityData => {
-    // Use query() which supports both specific and wildcard platforms
-    const result = table.query(featureName, platform);
+    // The feature is named after the first product's entry, so the name has to be
+    // translated onto the other products' entries; translate() also supports
+    // wildcard platforms
+    const result = table.translate(featureName, platform);
 
     if (result) {
         return {

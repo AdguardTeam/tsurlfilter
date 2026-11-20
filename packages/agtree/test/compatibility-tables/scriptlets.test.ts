@@ -158,17 +158,17 @@ describe('Scriptlets Compatibility Table', () => {
                 parameters: ['methodPath*', 'signatureStr*', 'how', 'stack'],
             },
             {
-                name: 'set-cookie-reload',
+                name: 'set-cookie.js',
                 platform: Platform.UboExtChrome,
                 parameters: ['name*', 'value*', 'path'],
             },
             {
-                name: 'trusted-set-cookie-reload',
+                name: 'trusted-set-cookie.js',
                 platform: Platform.UboExtChrome,
                 parameters: ['name*', 'value*', 'offsetExpiresSec', 'path'],
             },
             {
-                name: 'trusted-suppress-native-method',
+                name: 'trusted-suppress-native-method.js',
                 platform: Platform.UboExtChrome,
                 parameters: ['methodPath*', 'signature', 'how', 'stack'],
             },

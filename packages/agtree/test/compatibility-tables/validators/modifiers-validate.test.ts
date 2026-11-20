@@ -83,7 +83,6 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
             test.each([
                 ['redirect=noopjs', Platform.AdgOsWindows],
                 ['redirect=noop.js', Platform.AdgOsWindows],
-                ['redirect=noopjs', Platform.UboExtChrome],
                 ['redirect=noop.js:99', Platform.UboExtChrome],
                 ['redirect-rule=noopjs', Platform.AdgOsWindows],
                 ['redirect-rule=noopmp4-1s', Platform.AdgOsWindows],
@@ -98,6 +97,12 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                 ['redirect=nonexistent', Platform.AdgOsWindows],
                 ['redirect=hd-main.js', Platform.AdgOsWindows],
                 ['redirect-rule=nonexistent', Platform.AdgOsWindows],
+                // A redirect name is checked against the entry of the platform itself:
+                // `noopjs` is the AdGuard name, uBO calls it `noop.js` (F-025).
+                ['redirect=noopjs', Platform.UboExtChrome],
+                ['redirect=blank-js', Platform.UboExtChrome],
+                // `blank-js` is the ABP name only.
+                ['rewrite=abp-resource:noopjs', Platform.AbpExtChrome],
             ] as const)('%s is invalid for platform', (raw, platform) => {
                 const ctx = validateModifier(raw, platform);
                 expect(ctx.valid).toBe(false);
