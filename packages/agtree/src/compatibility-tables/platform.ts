@@ -170,6 +170,11 @@ export class Platform {
     private static concretePlatformsCache: Platform[] | null = null;
 
     /**
+     * Cache for the string keys of the concrete platforms. Populated on first access.
+     */
+    private static concretePlatformKeysCache: Set<string> | null = null;
+
+    /**
      * Product identifier (short code).
      */
     public readonly product: ProductCode;
@@ -432,7 +437,8 @@ export class Platform {
      *
      * @returns Platform object.
      *
-     * @throws Error if platform string is invalid.
+     * @throws Error if platform string is invalid or names a platform that does not exist,
+     *   e.g. `ubo_os_windows` (uBO has no OS platforms) or `adg_os_chrome`.
      */
     public static parse(str: string): Platform {
         const platformStr = str.trim();
@@ -483,6 +489,11 @@ export class Platform {
             throw new Error(`Invalid platform specific: ${specific}`);
         }
 
+        // Each part is valid, but their combination may not exist
+        if (!Platform.getConcretePlatformKeys().has(platformStr)) {
+            throw new Error(`Platform does not exist: ${platformStr}`);
+        }
+
         return new Platform(product, type, specific);
     }
 
@@ -514,6 +525,21 @@ export class Platform {
         }
 
         return Platform.concretePlatformsCache;
+    }
+
+    /**
+     * Gets the string keys of all concrete platforms.
+     *
+     * @returns Set of keys such as `adg_os_windows`.
+     */
+    private static getConcretePlatformKeys(): Set<string> {
+        if (Platform.concretePlatformKeysCache === null) {
+            Platform.concretePlatformKeysCache = new Set(
+                Platform.getAllConcretePlatforms().map((platform) => platform.toString()),
+            );
+        }
+
+        return Platform.concretePlatformKeysCache;
     }
 
     /**

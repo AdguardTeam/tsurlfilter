@@ -378,6 +378,22 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   to many platforms (e.g. `third-party` on every AdGuard platform) used to be
   repeated once per platform.
 
+- Combined legacy platform bitmasks are accepted by `exists()` again, as the
+  changelog of 5.0.0-alpha.0 stated: `exists('third-party',
+  SpecificPlatform.AdgOsWindows | SpecificPlatform.AdgOsMac)` is `true`
+  instead of throwing `Unsupported legacy platform bitmask`. A feature exists
+  for a combination when it exists for any of its members; a mask that is
+  empty or has an unknown bit is still rejected.
+- `Platform.parse()` throws for a platform that does not exist, such as
+  `ubo_os_windows`, `abp_cb_ios` or `adg_os_chrome`, instead of building an
+  object that never matches anything.
+- A compatibility data key with a malformed platform expression is reported
+  as a schema issue, so `safeParse` returns `success: false` instead of
+  throwing a raw `Error`. An expression with an empty platform (`adg_any|`)
+  or one whose negations leave no platform (`adg_os_any|~adg_os_any`) is
+  rejected as well, since the data stored under such a key would be silently
+  dropped.
+
 ### Security
 
 ## [5.0.0-alpha.0] - 2026-10-12

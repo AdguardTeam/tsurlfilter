@@ -133,8 +133,9 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
      * @returns True if the feature exists for the platform.
      *
      * @throws Error when a numeric platform bitmask cannot be mapped to a v5
-     *   platform. Unmapped masks are rejected instead of being approximated by
-     *   name existence, so callers get an explicit signal during migration.
+     *   platform, i.e. it is empty or has a bit that is not a known platform.
+     *   Unmapped masks are rejected instead of being approximated by name
+     *   existence, so callers get an explicit signal during migration.
      */
     public exists(name: string, platform: Platform | number): boolean {
         if (typeof platform !== 'number') {
@@ -151,9 +152,11 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
 
     /**
      * Maps a legacy v4 platform bitmask onto equivalent v5 {@link Platform}
-     * queries. Combined masks without an exact v5 wildcard are expanded into
-     * their concrete members, so the platform restriction is preserved rather
-     * than approximated by name existence.
+     * queries. Combined masks without an exact v5 wildcard, such as
+     * `AdgOsWindows | AdgOsMac`, are expanded into their concrete members, so
+     * the platform restriction is preserved rather than approximated by name
+     * existence. A feature exists for a combined mask when it exists for any
+     * of its members, as in 4.x.
      *
      * @param bitmask Legacy `GenericPlatform` / `SpecificPlatform` value.
      *
@@ -209,8 +212,31 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
                 return [Platform.AdgAny, Platform.UboAny, Platform.AbpAny];
 
             default:
-                return [];
+                return CompatibilityTableBase.expandLegacyBitmask(bitmask);
         }
+    }
+
+    /**
+     * Expands a combination of legacy specific platform bits, e.g.
+     * `SpecificPlatform.AdgOsWindows | SpecificPlatform.AdgOsMac`, into the
+     * concrete platforms of the set bits. A bit that is not a known specific
+     * platform makes the whole mask unmappable.
+     *
+     * @param bitmask Legacy bitmask.
+     *
+     * @returns Concrete platforms of the set bits, or an empty array when the
+     *   mask is empty or has an unknown bit.
+     */
+    private static expandLegacyBitmask(bitmask: number): Platform[] {
+        // eslint-disable-next-line no-bitwise
+        if (!Number.isInteger(bitmask) || bitmask <= 0 || (bitmask & ~GenericPlatform.Any) !== 0) {
+            return [];
+        }
+
+        return Object.values(SpecificPlatform)
+            // eslint-disable-next-line no-bitwise
+            .filter((bit) => (bitmask & bit) !== 0)
+            .flatMap((bit) => CompatibilityTableBase.mapLegacyPlatform(bit));
     }
 
     /**

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { Platform, PlatformExpressionEvaluator } from '../../src/compatibility-tables';
-import { parseRawPlatforms } from '../../src/compatibility-tables/schemas/platform';
+import { parseRawPlatforms, platformSchema } from '../../src/compatibility-tables/schemas/platform';
 
 describe('PlatformExpressionEvaluator', () => {
     describe('evaluate', () => {
@@ -419,5 +419,30 @@ describe('parseRawPlatforms', () => {
         expect(() => parseRawPlatforms('ubo_os_any')).toThrow(
             "Invalid platform expression 'ubo_os_any': Platform 'ubo_os_any' does not match any concrete platform",
         );
+    });
+
+    it('should reject a non-existent platform', () => {
+        expect(() => parseRawPlatforms('ubo_os_windows')).toThrow("Invalid platform expression 'ubo_os_windows'");
+    });
+});
+
+describe('platformSchema', () => {
+    it('should accept a valid expression', () => {
+        expect(platformSchema.safeParse('adg_os_any|~adg_os_windows')).toMatchObject({
+            success: true,
+            data: 'adg_os_any|~adg_os_windows',
+        });
+    });
+
+    it.each([
+        'ubo_cb_any',
+        'ubo_os_windows',
+        'adg_os_any|~adg_os_any',
+        'adg_any|',
+    ])('should report %j as an issue instead of throwing', (value) => {
+        const result = platformSchema.safeParse(value);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0].message).toContain(`Invalid platform expression '${value}'`);
     });
 });

@@ -41,6 +41,23 @@ describe('Platform', () => {
         it('should throw on invalid platform type', () => {
             expect(() => Platform.parse('adg_foo_bar')).toThrow('Invalid platform type');
         });
+
+        it.each([
+            // every part is valid, but the platform does not exist
+            'ubo_os_windows',
+            'adg_safari_windows',
+            'abp_cb_ios',
+            'adg_os_chrome',
+            'adg_cb_chrome',
+        ])('should throw on the non-existent platform %s', (str) => {
+            expect(() => Platform.parse(str)).toThrow('Platform does not exist');
+        });
+
+        it('should parse every concrete platform back from its string', () => {
+            for (const platform of Platform.getAllConcretePlatforms()) {
+                expect(Platform.parse(platform.toString()).toString()).toBe(platform.toString());
+            }
+        });
     });
 
     describe('toString', () => {
