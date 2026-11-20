@@ -17,6 +17,7 @@ import {
     NegativeNumberOfRulesError,
     ResourcesPathError,
 } from '../../../src/errors/converter-options-errors';
+import { RuleScanError } from '../../../src/errors/scan-errors';
 import { UnavailableFilterSourceError } from '../../../src/errors/unavailable-sources-errors';
 import { Filter } from '../../../src/filter/filter';
 import { type IFilter } from '../../../src/filter/types';
@@ -117,6 +118,16 @@ describe('FilterConverter', () => {
             const [{ ruleset, errors }] = await converter.convert([filter]);
 
             expect(errors).toHaveLength(1);
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('reports an unclosed regexp literal in $domain and drops the rule', async () => {
+            const filter = createFilter([String.raw`||example.org^$domain=~/a\/|example.org`]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toBeInstanceOf(RuleScanError);
+            expect(errors[0].message).toContain('Unclosed regexp literal, no closing delimiter found');
             expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
         });
 
