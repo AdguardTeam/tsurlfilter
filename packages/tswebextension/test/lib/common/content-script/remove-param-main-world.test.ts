@@ -1,3 +1,5 @@
+// @vitest-environment-options { "url": "https://example.com/dir/start" }
+
 import {
     afterEach,
     beforeEach,
@@ -350,6 +352,32 @@ describe('patchHistoryForRemoveParam', () => {
         expect(calledUrl).not.toContain('?');
     });
 
+    it.each([
+        ['/page#route?x=1', null],
+        ['/page?a=1&b=2#section', '/page#section'],
+        ['/page#route', null],
+        ['/page?a=1#route?b=2', '/page#route?b=2'],
+    ])('applies bare removeparam to %s without corrupting the fragment', (url, expected) => {
+        const descriptors: RemoveParamDescriptor[] = [
+            descriptor(''),
+        ];
+
+        window.history.pushState({}, '', url);
+
+        patchHistoryForRemoveParam(descriptors, TEST_NONCE, TEST_SECRET);
+
+        if (expected === null) {
+            expect(mockReplaceState).not.toHaveBeenCalled();
+            return;
+        }
+
+        expect(mockReplaceState).toHaveBeenCalledWith(
+            {},
+            '',
+            new URL(expected, document.baseURI).href,
+        );
+    });
+
     it('removes value-less parameter not matching negated descriptor', () => {
         const descriptors: RemoveParamDescriptor[] = [
             descriptor('~safe'),
@@ -554,6 +582,38 @@ describe('patchHistoryForRemoveParam', () => {
             expect(calledUrl).not.toContain('initial_param');
             // injected_param should be kept (attacker's descriptor was rejected)
             expect(calledUrl).toContain('injected_param');
+        });
+    });
+
+    describe('path-relative History API URLs', () => {
+        beforeEach(() => {
+            // Keep the real `replaceState` so that the patched method updates
+            // `window.location.href`, which the assertions use.
+            History.prototype.replaceState = saveReplaceState;
+            window.history.pushState({}, '', '/dir/start');
+
+            patchHistoryForRemoveParam([descriptor('utm_source')], TEST_NONCE, TEST_SECRET);
+        });
+
+        it('removes a parameter from a path-relative pushState URL', () => {
+            window.history.pushState({}, '', 'sub/page?utm_source=g&safe=1');
+
+            expect(window.location.href).toBe('https://example.com/dir/sub/page?safe=1');
+        });
+
+        it('removes a parameter from a path-relative replaceState URL', () => {
+            window.history.replaceState({}, '', 'sub/page?utm_source=g&safe=1');
+
+            expect(window.location.href).toBe('https://example.com/dir/sub/page?safe=1');
+        });
+
+        it.each([
+            '/page?utm_source=g&safe=1',
+            'https://example.com/page?utm_source=g&safe=1',
+        ])('keeps removing parameters from the %s URL', (url) => {
+            window.history.pushState({}, '', url);
+
+            expect(window.location.href).toBe('https://example.com/page?safe=1');
         });
     });
 });

@@ -11,6 +11,59 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+### Changed
+
+- uBO→ADG conversion now accepts `:contains()` in uBlock HTML filtering
+  rules and converts it like `:has-text()`, e.g. `##^div:contains(foo)`
+  becomes `$$div:contains(/foo/i)`. uBlock Origin accepts this pseudo-class
+  in `##^` rules and normalizes it to `:has-text()`. Previously the
+  converter threw a mixed-syntax error.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
+  mirrors uBlock for plain text: one pair of outer quotes is removed and
+  the text is matched case-insensitively through an escaped `:contains()`
+  regexp with the `i` flag, e.g. `##^script:has-text("admc")` becomes
+  `$$script:contains(/admc/i)`. The `i` flag folds ASCII case only, because
+  CoreLibs compiles `:contains()` regexps with `PCRE2_NEVER_UTF`. The
+  argument is not trimmed, so `##^div:has-text( "foo" )` keeps its spaces
+  and quotes. A rule with characters after the closing quote, e.g.
+  `##^div:has-text("foo"bar)`, is rejected, as in uBlock.
+- Chained text constraints of one compound selector are merged into a single
+  `:contains()` regexp, because CoreLibs allows at most one regexp
+  `:contains()` per element selector: `##^div:has-text(a):has-text(/b/)`
+  becomes `$$div:contains(/^(?=[\s\S]*?[aA])(?=[\s\S]*?(?:b))/)`, and several
+  `:min-text-length()` collapse to the largest one. The lookaheads use a lazy
+  scan, so a long script is not rescanned from every position. A plain text
+  in a case-sensitive chain is emitted as ASCII case-fold classes, so it keeps
+  matching like uBlock's plain text; a regexp argument with the `i` flag
+  becomes case-sensitive in such a mixed chain, because a merged regexp has a
+  single flag set.
+- HTML filtering rules with a right parenthesis inside a regexp character
+  class now parse and convert, e.g. `##^div:has-text(/a[)]b/)` and
+  `##^div:contains(/a[)]b/)` become `$$div:contains(/a[)]b/)`. Previously
+  the `)` closed the pseudo-class argument early, and tokenization threw
+  `Expected '<unknown-token>', but got '<]-token>'`.
+- A value whose closing slash is escaped, e.g. `/a\/`, is no longer
+  treated as a RegExp literal. `RegExpUtils.isRegexPattern()` now checks
+  the consecutive backslashes before the closing slash: an odd count
+  escapes the slash, an even count does not. Previously the check always
+  passed. As a result, the uBO→ADG conversion of `:matches-path(/a\/)`
+  keeps the backslash, and its negated form produces a valid regexp
+  instead of `/^((?!a\).)*$/`. A value that ends with an escaped
+  backslash, e.g. `/a\\/`, stays a RegExp literal.
+
+### Security
+
+## [4.4.0] - 2026-11-12
+
+### Added
+
 - `RegExpUtils.parseCoreLibsRegexArgument()` and
   `RegExpUtils.isCoreLibsRegexArgument()` are now exported. The first splits
   the `:contains()` arguments that CoreLibs reads as normal regular
@@ -43,10 +96,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   only digits are accepted, preceded by optional whitespace and an optional
   `+`, matching CoreLibs' `strtoimax` parsing, so `"1e2"`, `"1.5"` and
   `"5 "` are no longer converted.
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 
@@ -100,9 +149,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   such as `/a++/`, `/a\/`, `///`, and `/ads` are escaped instead of becoming
   dead or over-broad rules.
 
-### Security
-
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
+[4.4.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.4.0
 
 ## [4.3.0] - 2026-10-14
 
