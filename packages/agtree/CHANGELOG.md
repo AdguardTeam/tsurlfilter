@@ -94,8 +94,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   again, not an empty `replace` plus a stray `important` modifier.
 - Malformed comments and directives are rejected with a range instead of being
   accepted or rewritten: a hint whose argument list is never closed
-  (`!+ HINT(`), an empty agent list (`[]`, ` `), an empty agent slot
-  (`[;]`), a filter-list header naming two versions
+  (`!+ HINT(`), an empty agent list (`[]`), an empty agent slot (`[;]`),
+  a filter-list header naming two versions
   (`[Adblock Plus 2.0 3.1]`, which used to keep only the last one), and
   `!#if` / `!#include` without parameters.
 - Generating a cosmetic rule that carries an AdGuard `[$...]` modifier list
