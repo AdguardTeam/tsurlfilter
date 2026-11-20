@@ -25,21 +25,27 @@ function notChain(count: number): string {
 }
 
 /**
- * Returns the best (minimum) wall-clock time of `runs` parses of `rule`.
+ * Returns the best (minimum) wall-clock time of `runs` measurements, each of
+ * them `reps` consecutive parses of `rule`.
  *
  * Minimum-of-N is stable under background load: noise only adds time, so the
- * fastest run is the closest estimate of the real cost.
+ * fastest measurement is the closest estimate of the real cost. Repeating the
+ * parse inside a measurement keeps a single GC pause from dominating a
+ * sub-millisecond shape.
  *
  * @param rule Rule text to parse.
- * @param runs Number of repetitions.
+ * @param runs Number of measurements.
+ * @param reps Number of parses per measurement.
  *
- * @returns Elapsed milliseconds of the fastest run.
+ * @returns Elapsed milliseconds of the fastest measurement.
  */
-function bestOf(rule: string, runs = 3): number {
+function bestOf(rule: string, runs = 3, reps = 1): number {
     let best = Number.POSITIVE_INFINITY;
     for (let i = 0; i < runs; i += 1) {
         const started = performance.now();
-        parser.parse(rule);
+        for (let r = 0; r < reps; r += 1) {
+            parser.parse(rule);
+        }
         best = Math.min(best, performance.now() - started);
     }
     return best;
@@ -74,8 +80,10 @@ describe('selector complexity (F-008)', () => {
         const nested = (count: number): string => `example.com##${':not('.repeat(count)}.a${')'.repeat(count)}`;
         bestOf(nested(250), 2);
 
-        const small = bestOf(nested(2_000), 2);
-        const large = bestOf(nested(4_000), 2);
+        // Many parses per measurement: a nested shape costs well under a
+        // millisecond, so one pause in a measurement would distort the ratio.
+        const small = bestOf(nested(2_000), 3, 30);
+        const large = bestOf(nested(4_000), 3, 30);
 
         expect(large / small).toBeLessThan(3);
     }, 120_000);

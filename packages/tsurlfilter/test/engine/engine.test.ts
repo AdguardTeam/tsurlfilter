@@ -109,6 +109,40 @@ describe('Engine Tests', () => {
         expect(result.stealthRules).toBeNull();
     });
 
+    it('applies a rule outside a negated regexp $domain (F-001)', () => {
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: '/ads/banner.js$domain=~/(^|\\.)example\\.com/',
+                },
+            ],
+        });
+
+        expect(engine.getRulesCount()).toBe(1);
+
+        const excepted = engine.matchRequest(new Request(
+            'https://example.com/ads/banner.js',
+            'https://example.com/',
+            RequestType.Script,
+        ));
+        expect(excepted.basicRule).toBeNull();
+
+        const subdomain = engine.matchRequest(new Request(
+            'https://sub.example.com/ads/banner.js',
+            'https://sub.example.com/',
+            RequestType.Script,
+        ));
+        expect(subdomain.basicRule).toBeNull();
+
+        const other = engine.matchRequest(new Request(
+            'https://example.org/ads/banner.js',
+            'https://example.org/',
+            RequestType.Script,
+        ));
+        expect(other.basicRule).not.toBeNull();
+    });
+
     it('keeps a regex rule with escaped $ and no modifiers', () => {
         // Regression: `getRuleParts` treated the `-1` separator index as an
         // invalid rule and dropped `/a\$b\$c/`, while `RuleFactory` parsed it.

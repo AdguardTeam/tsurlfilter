@@ -304,6 +304,16 @@ describe('Domain modifier', () => {
             expect(() => new DomainModifier(String.raw`example.org|/a\/|example.com`, PIPE_SEPARATOR, true))
                 .toThrow('Invalid regular expression as domain pattern');
         });
+
+        it('keeps a negated regexp domain as a restriction (F-001)', () => {
+            const modifier = new DomainModifier(String.raw`~/(^|\.)example\.com/`, PIPE_SEPARATOR, true);
+
+            expect(modifier.permittedDomains).toBeNull();
+            expect(modifier.restrictedDomains).toStrictEqual([String.raw`/(^|\.)example\.com/`]);
+            expect(modifier.matchDomain('example.com')).toBeFalsy();
+            expect(modifier.matchDomain('sub.example.com')).toBeFalsy();
+            expect(modifier.matchDomain('example.org')).toBeTruthy();
+        });
     });
 
     describe('DomainModifier.isDomainOrSubdomainOfAny', () => {

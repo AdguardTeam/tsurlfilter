@@ -79,6 +79,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- A negated regexp domain item, e.g. `$domain=~/(^|\.)example\.com/`, is
+  parsed as one exception item again. Regex-ness was decided before the `~`
+  was consumed, so the pattern was split at its embedded separator and the
+  exclusion became two permitted items, which inverted the rule scope.
+- The domain-list pre-validator now treats a complete `/…/` (and `~/…/`) item
+  as opaque, so a regexp item whose pattern contains the list separator no
+  longer fails with `Empty value specified in the list`. An unterminated
+  literal still reports the legacy list errors, and app, method and
+  stealth-option lists still reject regexp items.
 - A value whose closing slash is escaped, e.g. `/a\/`, is no longer
   treated as a RegExp literal. `RegExpUtils.isRegexPattern()` now checks
   the consecutive backslashes before the closing slash: an odd count

@@ -51,6 +51,49 @@ describe('parseDomainList', () => {
         expect(last.value).toBe('tail-exclusion.example.com');
         expect(last.exception).toBe(true);
     });
+
+    test('parses a negated regex domain as one exception item', () => {
+        // F-001: the regex was split at the embedded `|`, so the exclusion
+        // became two permitted literals.
+        const result = parseDomainList('~/(^|\\.)example\\.com/', 0, '|');
+
+        expect(result.children).toHaveLength(1);
+        expect(result.children[0].value).toBe('/(^|\\.)example\\.com/');
+        expect(result.children[0].exception).toBe(true);
+    });
+
+    test('keeps a negated regex item next to literal domains', () => {
+        const result = parseDomainList('example.com|~/(^|\\.)example\\.org/', 0, '|');
+
+        expect(result.children.map((c) => ({ value: c.value, exception: c.exception }))).toEqual([
+            { value: 'example.com', exception: false },
+            { value: '/(^|\\.)example\\.org/', exception: true },
+        ]);
+    });
+
+    describe('regex items in the list validator', () => {
+        test.each([
+            { value: '/(a||b)/', expected: ['/(a||b)/'] },
+            { value: '~/(a||b)/', expected: ['/(a||b)/'] },
+            { value: '/a~b/', expected: ['/a~b/'] },
+            { value: '/a\\/b/|example.com', expected: ['/a\\/b/', 'example.com'] },
+            { value: '/x/i|/y/m', expected: ['/x/i', '/y/m'] },
+            { value: 'example.com|/(x||y)/', expected: ['example.com', '/(x||y)/'] },
+        ])('does not split $value at separators inside the regex', ({ value, expected }) => {
+            expect(parseDomainList(value, 0, '|').children.map((c) => c.value)).toEqual(expected);
+        });
+
+        test('does not split a regex item at the comma separator', () => {
+            const result = parseDomainList('/(a,b)/', 0, ',');
+
+            expect(result.children.map((c) => c.value)).toEqual(['/(a,b)/']);
+        });
+
+        test('still rejects an unterminated regex with a separator inside', () => {
+            // No closing slash: the legacy validator sees the `||`.
+            expect(() => parseDomainList('/(a||b', 0, '|')).toThrow('Empty value specified in the list');
+        });
+    });
 });
 
 describe('parseAppList', () => {
@@ -63,6 +106,12 @@ describe('parseAppList', () => {
             { type: 'App', value: 'com.example.osx', exception: false },
             { type: 'App', value: 'Bad.exe', exception: true },
         ]);
+    });
+
+    test('does not apply the regex-list exception to app lists', () => {
+        // Apps never contain regexes, so the legacy list errors stay.
+        expect(() => parseAppList('a||b')).toThrow('Empty value specified in the list');
+        expect(() => parseAppList('/(a||b)/')).toThrow('Empty value specified in the list');
     });
 });
 

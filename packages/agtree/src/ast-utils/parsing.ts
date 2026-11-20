@@ -127,13 +127,67 @@ export const LIST_PARSE_ERROR_PREFIX = {
 };
 
 /**
+ * Returns the index just past the regex literal starting at `index`, or `-1`
+ * when the text there is not a complete literal.
+ *
+ * A literal is an optional exception marker followed by `/`, then the pattern
+ * up to the closing unescaped `/` (an escaped character is skipped as a
+ * whole, so `\\/` does not close the literal), and the flag letters that
+ * follow it, mirroring the token-level recognizer in `isRegexLiteral`.
+ *
+ * @param value Raw list string.
+ * @param index Index where the item starts.
+ *
+ * @returns Index just past the literal, or `-1` if there is no complete one.
+ */
+const skipRegexLiteral = (value: string, index: number): number => {
+    let i = index;
+    if (value[i] === NEGATION_MARKER) {
+        i += 1;
+    }
+
+    if (value[i] !== '/') {
+        return -1;
+    }
+    i += 1;
+
+    let closed = false;
+    while (i < value.length) {
+        const ch = value[i];
+        if (ch === ESCAPE_CHARACTER) {
+            i += 2;
+            continue;
+        }
+        if (ch === '/') {
+            closed = true;
+            i += 1;
+            break;
+        }
+        i += 1;
+    }
+
+    if (!closed) {
+        return -1;
+    }
+
+    // Flags (`/x/i`) belong to the literal and cannot separate items.
+    while (i < value.length && /[a-z]/.test(value[i] as string)) {
+        i += 1;
+    }
+
+    return i;
+};
+
+/**
  * Validates list syntax before structural parsing to match legacy
  * {@link ListItemsParser} error behavior for edge cases.
  *
  * @param value Raw list string.
  * @param separator Separator character.
+ * @param allowRegex Whether list items may be regex literals (`/…/`, `~/…/`).
+ * Domain lists may; app, method and stealth-option lists may not.
  */
-const validateListSyntax = (value: string, separator: string): void => {
+const validateListSyntax = (value: string, separator: string, allowRegex = false): void => {
     // Check for leading separator
     if (value.length > 0 && value[0] === separator) {
         throw new Error(LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING);
@@ -149,16 +203,33 @@ const validateListSyntax = (value: string, separator: string): void => {
     }
 
     let escaped = false;
+    let atItemStart = true;
+
     for (let i = 0; i < value.length; i += 1) {
         const ch = value[i];
 
+        // A complete regex literal is opaque to the list validator: its own
+        // separators, `~` and whitespace belong to the pattern, not to the
+        // list structure. An incomplete literal falls through to the checks
+        // below, so malformed input keeps the legacy errors.
+        if (allowRegex && atItemStart) {
+            const literalEnd = skipRegexLiteral(value, i);
+            if (literalEnd > 0) {
+                atItemStart = false;
+                i = literalEnd - 1;
+                continue;
+            }
+        }
+
         if (escaped) {
             escaped = false;
+            atItemStart = false;
             continue;
         }
 
         if (ch === ESCAPE_CHARACTER) {
             escaped = true;
+            atItemStart = false;
             continue;
         }
 
@@ -192,6 +263,12 @@ const validateListSyntax = (value: string, separator: string): void => {
                 throw new Error(LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION);
             }
         }
+
+        if (ch === separator) {
+            atItemStart = true;
+        } else if (ch !== ' ' && ch !== '\t') {
+            atItemStart = false;
+        }
     }
 };
 
@@ -202,14 +279,17 @@ const validateListSyntax = (value: string, separator: string): void => {
  *
  * @param value Raw list string.
  * @param separator Separator character (`'|'` or `','`).
+ * @param allowRegex Whether list items may be regex literals. Domain lists
+ * may; app, method and stealth-option lists may not.
  *
  * @returns Parsed context data plus item count and record offset.
  */
 const preparseListRecords = (
     value: string,
     separator: DomainListSeparator,
+    allowRegex = false,
 ): { data: Int32Array; count: number; recordsOffset: number } => {
-    validateListSyntax(value, separator);
+    validateListSyntax(value, separator, allowRegex);
     tokenizeFully(listTokenizer, value);
 
     const ctx = listCtx;
@@ -250,7 +330,7 @@ export const parseDomainList = (
     start = 0,
     separator: DomainListSeparator = PIPE_MODIFIER_SEPARATOR,
 ): DomainList => {
-    const { data, count, recordsOffset } = preparseListRecords(value, separator);
+    const { data, count, recordsOffset } = preparseListRecords(value, separator, true);
 
     const result = DomainListAstBuilder.parse(
         value,
