@@ -47,6 +47,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A network rule with an empty modifier value, e.g. `$domain=`, `$to=`,
+  `$method=`, `$csp=`, is now rejected by the parser with
+  `Modifier value cannot be empty` instead of the modifier-specific message
+  (`$to modifier value cannot be empty`, `Invalid $CSP rule: ...`,
+  `At least one domain must be specified`), matching 4.x. The rule is still
+  rejected, only the error text and its range change.
 - A rule whose regexp modifier value contains an escaped `$` followed by the
   `$` anchor, e.g. `||example.com^$removeparam=/^id\$$/`, is a network rule
   again. The `\$` and the anchor formed a `$$` that the rule splitter read

@@ -194,7 +194,9 @@ describe('NetworkRule constructor', () => {
     it('works when it handles empty $domain modifier', () => {
         expect(() => {
             createNetworkRule('||example.org^$domain=', 0);
-        }).toThrow(new SyntaxError('At least one domain must be specified'));
+        // F-027 / D-20: the parser rejects an empty modifier value before the
+        // modifier's own validation runs, as 4.x does.
+        }).toThrow('Modifier value cannot be empty');
     });
 
     it('works when it handles empty domain inside a $domain modifier', () => {
@@ -295,7 +297,7 @@ describe('NetworkRule constructor', () => {
 
         expect(() => {
             createNetworkRule('||baddomain.com^$method=', 0);
-        }).toThrow(new SyntaxError('$method modifier value cannot be empty'));
+        }).toThrow('Modifier value cannot be empty');
 
         expect(() => {
             createNetworkRule('||baddomain.com^$method=invalid', 0);
@@ -317,7 +319,7 @@ describe('NetworkRule constructor', () => {
 
         expect(() => {
             createNetworkRule('||baddomain.com^$to=', 0);
-        }).toThrow(new SyntaxError('$to modifier value cannot be empty'));
+        }).toThrow('Modifier value cannot be empty');
 
         expect(() => {
             createNetworkRule('||baddomain.com^$to=example.org|', 0);
@@ -364,7 +366,7 @@ describe('NetworkRule constructor', () => {
 
         expect(() => {
             createNetworkRule('|*/ads^$to=', 0);
-        }).toThrow(new SyntaxError('$to modifier value cannot be empty'));
+        }).toThrow('Modifier value cannot be empty');
 
         expect(() => {
             createNetworkRule('|*/ads^$to=evil.com|', 0);
