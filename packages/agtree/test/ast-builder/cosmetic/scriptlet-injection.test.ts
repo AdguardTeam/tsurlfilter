@@ -442,6 +442,83 @@ describe('RuleParser — ABP snippet injection rules', () => {
         });
     });
 
+    describe('braces inside snippet arguments (F-023)', () => {
+        test.each([
+            'example.com#$#log {}',
+            'example.com#$#x /a{1,2}/; y z',
+            'example.com#$#x /[a-z]{5,11}$/',
+            'example.com#$#abort-on-property-read a; json-prune {b} c',
+        ])('parses %s as an ABP snippet, not as CSS injection', (rule) => {
+            const ast = parser.parse(rule) as ScriptletInjectionRule;
+
+            expect(ast.type).toBe('ScriptletInjectionRule');
+            expect(ast.syntax).toBe(SYNTAX_ABP);
+        });
+
+        test('keeps `{}` as a plain argument', () => {
+            const ast = parser.parse('example.com#$#log {}') as ScriptletInjectionRule;
+
+            expect(ast.body.children).toHaveLength(1);
+            expect(ast.body.children[0].children.map((param) => param?.value)).toEqual(['log', '{}']);
+        });
+
+        test('keeps multiple calls when an argument contains a regex quantifier', () => {
+            const ast = parser.parse('example.com#$#x /a{1,2}/; y z') as ScriptletInjectionRule;
+
+            expect(ast.body.children.map((call) => call.children.map((param) => param?.value))).toEqual([
+                ['x', '/a{1,2}/'],
+                ['y', 'z'],
+            ]);
+        });
+
+        test('still parses a declaration block at the end of the body as CSS injection', () => {
+            expect(parser.parse('example.com#$#div { color: red }').type).toBe('CssInjectionRule');
+        });
+    });
+
+    describe('regex arguments containing an escaped slash (F-024)', () => {
+        test.each([
+            [String.raw`a.com#$#x /[^\\/]+/ '#'`, ['x', String.raw`/[^\\/]+/`, '#']],
+            [String.raw`a.com#$#x /a\\/b/ next`, ['x', String.raw`/a\\/b/`, 'next']],
+            [
+                // eslint-disable-next-line max-len
+                String.raw`pdftoshokan.com#$#replace-outbound-value atob /^https?:\/\/[^\\/]+\/v1\/link\.php\?.*idzone=.*$/ '#'`,
+                [
+                    'replace-outbound-value',
+                    'atob',
+                    String.raw`/^https?:\/\/[^\\/]+\/v1\/link\.php\?.*idzone=.*$/`,
+                    '#',
+                ],
+            ],
+            [
+                String.raw`open.spotify.com#$#replace-argument RegExp.prototype.test 0 /^data:audio\\/mpeg.*/ https://`,
+                ['replace-argument', 'RegExp.prototype.test', '0', String.raw`/^data:audio\\/mpeg.*/`, 'https://'],
+            ],
+        ])('does not absorb the next argument after %s', (rule, expected) => {
+            const ast = parser.parse(rule) as ScriptletInjectionRule;
+
+            expect(ast.body.children[0].children.map((param) => param?.value)).toEqual(expected);
+        });
+
+        test('an unterminated regex literal merges the rest of the call, as in 4.x', () => {
+            // `\\/` leaves the literal without a closing slash (4.x closes only
+            // at a slash that is not preceded by a backslash).
+            const ast = parser.parse(String.raw`a.com#$#x /\\/ next`) as ScriptletInjectionRule;
+
+            expect(ast.body.children[0].children.map((param) => param?.value)).toEqual([
+                'x',
+                String.raw`/\\/ next`,
+            ]);
+        });
+
+        test('a bare escaped backslash does not swallow the next argument', () => {
+            // v5 keeps splitting here where 4.x merged the arguments.
+            const ast = parser.parse(String.raw`a.com#$#x \\ next`) as ScriptletInjectionRule;
+
+            expect(ast.body.children[0].children.map((param) => param?.value)).toEqual(['x', String.raw`\\`, 'next']);
+        });
+    });
+
     describe('invalid ABP snippet rules', () => {
         test('parseAbpSpecificRules=false throws', () => {
             expect(() => {
@@ -518,5 +595,43 @@ describe('ScriptletBodyParser — buffer overflow protection', () => {
             const rule = `example.com#$#${Array(5).fill(call).join('; ')}`;
             expect(() => noGrowParser.parse(rule)).toThrow(/buffer overflow|too large for current capacity/i);
         });
+    });
+});
+
+describe('Scriptlet injection — escape right before the closing parenthesis (F-022)', () => {
+    // An escape consumes exactly one character, so `\x)` is an escaped `x`
+    // followed by a real closing parenthesis. v4.3.0 accepted these; v5 threw
+    // "no closing parentheses" whenever the token before `)` was an escape.
+    test.each([
+        {
+            rule: String.raw`a.com##+js(acs, Math, '\x)`,
+            expected: ['acs', 'Math', String.raw`'\x`],
+        },
+        {
+            rule: String.raw`lnk2.cc##+js(aeld, , '\')`,
+            expected: ['aeld', null, String.raw`'\'`],
+        },
+        {
+            rule: String.raw`ashemaletube.*##+js(rpnt, script, /vastURL:.*?'\,/, vastURL: ''\,)`,
+            expected: ['rpnt', 'script', String.raw`/vastURL:.*?'\,/`, String.raw`vastURL: ''\,`],
+        },
+        {
+            rule: String.raw`tribunnews.com##+js(acs, Math, ='\x)`,
+            expected: ['acs', 'Math', String.raw`='\x`],
+        },
+    ])('parses $rule', ({ rule, expected }) => {
+        const ast = parser.parse(rule) as ScriptletInjectionRule;
+
+        expect(ast.type).toBe('ScriptletInjectionRule');
+        expect(ast.body.children).toHaveLength(1);
+        expect(ast.body.children[0].children.map((param) => param?.value ?? null)).toEqual(expected);
+    });
+
+    test('ADG scriptlet with an unterminated quoted argument still reports the unclosed parameter', () => {
+        // 4.3.0 also rejects this input, but with the precise "unclosed
+        // parameter" error rather than the bogus "no closing parentheses".
+        expect(() => parser.parse(String.raw`example.com#%#//scriptlet('a', 'b\')`)).toThrow(
+            /unclosed parameter/i,
+        );
     });
 });

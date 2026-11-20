@@ -25,7 +25,7 @@ import type {
     SelectorList,
     Value,
 } from '../../nodes';
-import { MAX_MODIFIER_RECORD_STRIDE } from '../../parser/context';
+import { domainRecordsOffsetFor } from '../../parser/context';
 import {
     CR_BODY_END,
     CR_BODY_START,
@@ -97,7 +97,7 @@ export class HtmlFilteringAstBuilder {
 
         // Read domain count and parse domains
         const domainCount = data[dataOffset + CR_DOMAIN_COUNT];
-        const domainRecordsOffset = dataOffset + 5 + maxMods * MAX_MODIFIER_RECORD_STRIDE;
+        const domainRecordsOffset = domainRecordsOffsetFor(dataOffset, maxMods);
         const domains: DomainList = DomainListAstBuilder.parse(
             source,
             data,
@@ -272,10 +272,13 @@ export class HtmlFilteringAstBuilder {
         bodyEnd: number,
         isLocIncluded: boolean,
     ): HtmlFilteringRuleBody {
-        const fnNameStart = data[dataOffset + HF_FN_NAME_START];
-        const fnNameEnd = data[dataOffset + HF_FN_NAME_END];
-        const argStart = data[dataOffset + HF_ARG_START];
-        const argEnd = data[dataOffset + HF_ARG_END];
+        // A responseheader body has no selector list, so its fields are
+        // stored at the selector-list base.
+        const hfBase = dataOffset + slDataOffset(data, dataOffset);
+        const fnNameStart = data[hfBase + HF_FN_NAME_START];
+        const fnNameEnd = data[hfBase + HF_FN_NAME_END];
+        const argStart = data[hfBase + HF_ARG_START];
+        const argEnd = data[hfBase + HF_ARG_END];
 
         const nameNode: Value = {
             type: NodeType.Value,

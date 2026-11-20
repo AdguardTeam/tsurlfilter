@@ -15,6 +15,33 @@ const parser = new RuleParserPipeline();
 describe('Scriptlet conversion', () => {
     describe('ABP to ADG', () => {
         test.each([
+            // braces in snippet arguments are argument text, not CSS (F-023)
+            {
+                actual: 'example.com#$#log {}',
+                expected: [
+                    "example.com#%#//scriptlet('abp-log', '{}')",
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: 'example.com#$#x /a{1,2}/; y z',
+                expected: [
+                    "example.com#%#//scriptlet('abp-x', '/a{1,2}/')",
+                    "example.com#%#//scriptlet('abp-y', 'z')",
+                ],
+                shouldConvert: true,
+            },
+            // an escaped slash inside a regex argument does not eat the next
+            // argument (F-024)
+            {
+                // eslint-disable-next-line max-len
+                actual: String.raw`pdftoshokan.com#$#replace-outbound-value atob /^https?:\\/\\/[^\\\\/]+\\/v1\\/link\\.php\\?.*idzone=.*$/ '#'`,
+                expected: [
+                    // eslint-disable-next-line max-len
+                    String.raw`pdftoshokan.com#%#//scriptlet('abp-replace-outbound-value', 'atob', '/^https?:\\/\\/[^\\\\/]+\\/v1\\/link\\.php\\?.*idzone=.*$/', '#')`,
+                ],
+                shouldConvert: true,
+            },
             // single scriptlet
             {
                 actual: '#$#abort-current-inline-script',
@@ -80,6 +107,30 @@ describe('Scriptlet conversion', () => {
 
     describe('uBO to ADG', () => {
         test.each([
+            // an escape before the closing parenthesis is one escaped
+            // character, not an escaped `)` (F-022)
+            {
+                actual: String.raw`a.com##+js(acs, Math, '\x)`,
+                expected: [
+                    String.raw`a.com#%#//scriptlet('ubo-acs', 'Math', '\'\x')`,
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: String.raw`tribunnews.com##+js(acs, Math, ='\x)`,
+                expected: [
+                    String.raw`tribunnews.com#%#//scriptlet('ubo-acs', 'Math', '=\'\x')`,
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: String.raw`ashemaletube.*##+js(rpnt, script, /vastURL:.*?'\,/, vastURL: ''\,)`,
+                expected: [
+                    // eslint-disable-next-line max-len
+                    String.raw`ashemaletube.*#%#//scriptlet('ubo-rpnt', 'script', '/vastURL:.*?\',/', 'vastURL: \'\',')`,
+                ],
+                shouldConvert: true,
+            },
             // empty scriptlet
             {
                 actual: 'example.org#@#+js()',

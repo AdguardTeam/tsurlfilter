@@ -22,7 +22,7 @@ import type {
     Raw,
     Value,
 } from '../../nodes';
-import { MAX_MODIFIER_RECORD_STRIDE } from '../../parser/context';
+import { domainRecordsOffsetFor } from '../../parser/context';
 import {
     CR_BODY_END,
     CR_BODY_START,
@@ -100,7 +100,7 @@ export class ElementHidingAstBuilder {
 
         // Read domain count and parse domains
         const domainCount = data[dataOffset + CR_DOMAIN_COUNT];
-        const domainRecordsOffset = dataOffset + 5 + maxMods * MAX_MODIFIER_RECORD_STRIDE;
+        const domainRecordsOffset = domainRecordsOffsetFor(dataOffset, maxMods);
         const domains = DomainListAstBuilder.parse(
             source,
             data,
@@ -139,7 +139,7 @@ export class ElementHidingAstBuilder {
             const uboModCount = data[dataOffset + CR_MODIFIER_COUNT_OFFSET];
 
             // Defensive bounds check: ensure uBO records fit within the modifier region
-            const uboEnd = CR_UBO_MODS_OFFSET + uboModCount * UBO_MODIFIER_RECORD_STRIDE;
+            const uboEnd = dataOffset + CR_UBO_MODS_OFFSET + uboModCount * UBO_MODIFIER_RECORD_STRIDE;
             if (uboEnd > domainRecordsOffset) {
                 // eslint-disable-next-line max-len
                 throw new Error(`uBO modifier records overflow into domain region (${uboEnd} > ${domainRecordsOffset})`);

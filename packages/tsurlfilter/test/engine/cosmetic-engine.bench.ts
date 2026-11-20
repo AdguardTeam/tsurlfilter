@@ -4,14 +4,30 @@ import { readFileSync } from 'node:fs';
 import * as TsUrlFilterOld from 'tsurlfilter-v3';
 import { test } from 'vitest';
 
-import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
-import { RuleStorage } from '../../src/filterlist/rule-storage';
-import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
-import { StringRuleList } from '../../src/filterlist/string-rule-list';
-import { type IndexedStorageCosmeticRuleParts } from '../../src/rules/rule';
+import { type IndexedStorageCosmeticRuleParts } from '@adguard/tsurlfilter';
+import { ScannerType } from '@adguard/tsurlfilter/es/scanner-type';
 
 import { ENGINE_BENCH_OPTIONS } from './engine-bench-options';
-import { collectRuleParts } from './rule-parts';
+
+// `current` is imported from the BUILT `@adguard/tsurlfilter` package
+// (its `exports` map resolves to `dist/`), NOT from `src/`. Vite serves
+// `src/` module-by-module and deoptimizes cross-module calls, which
+// inflates the current leg 1.7–11×; the published baselines are optimized
+// bundles, so the current code must be measured as its bundle too. Build
+// the package before running this benchmark (see
+// `packages/benchmarks/DEVELOPMENT.md`). The dynamic import turns a
+// missing/stale build into a clear error instead of a cryptic
+// module-resolution failure.
+const TSURLFILTER = await import('@adguard/tsurlfilter').catch((error: unknown) => {
+    throw new Error(
+        'Failed to resolve the built `@adguard/tsurlfilter` bundle. '
+        + 'Build it first (inject a temporary version, then `pnpm build`) — '
+        + 'see packages/benchmarks/DEVELOPMENT.md.',
+        { cause: error },
+    );
+});
+
+const { CosmeticEngine, RuleStorage, StringRuleList } = TSURLFILTER;
 
 // Keep the timed work observable: each bench accumulates a cheap checksum here
 // so the engine can't eliminate the closure, and we guard it after the run.
@@ -44,7 +60,14 @@ test('build cosmetic engine: current vs v3', async ({ bench }) => {
             false,
         );
         const storage = new RuleStorage([list]);
-        const rulesParts = collectRuleParts<IndexedStorageCosmeticRuleParts>(storage, ScannerType.CosmeticRules);
+        // Scan inline instead of using the shared test helper: the helper is
+        // typed against `src/`, while the classes above come from the built
+        // bundle, and mixing the two declaration sets does not type-check.
+        const scanner = storage.createRuleStorageScanner(ScannerType.CosmeticRules);
+        const rulesParts: IndexedStorageCosmeticRuleParts[] = [];
+        while (scanner.scan()) {
+            rulesParts.push(scanner.getRuleParts()! as IndexedStorageCosmeticRuleParts);
+        }
 
         const engine = CosmeticEngine.createSync(rulesParts, storage);
         return engine;

@@ -32,7 +32,7 @@ import type {
     SelectorList,
     Value,
 } from '../../nodes';
-import { createParserContext, initParserContext, MAX_MODIFIER_RECORD_STRIDE } from '../../parser/context';
+import { createParserContext, domainRecordsOffsetFor, initParserContext } from '../../parser/context';
 import type { ParserContext } from '../../parser/context';
 import {
     CR_BODY_END,
@@ -428,7 +428,7 @@ export class UboCssInjectionAstBuilder {
         const uboModCount = data[dataOffset + CR_MODIFIER_COUNT_OFFSET];
 
         const domainCount = data[dataOffset + CR_DOMAIN_COUNT];
-        const domainRecordsOffset = dataOffset + 5 + maxMods * MAX_MODIFIER_RECORD_STRIDE;
+        const domainRecordsOffset = domainRecordsOffsetFor(dataOffset, maxMods);
         const domains: DomainList = DomainListAstBuilder.parse(
             source,
             data,

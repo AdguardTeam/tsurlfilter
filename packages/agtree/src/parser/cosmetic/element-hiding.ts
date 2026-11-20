@@ -583,28 +583,6 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
             ) {
                 return true;
             }
-
-            // Also check for :not( wrapping :matches-path() or :matches-media()
-            if (regionEquals(source, identStart, identEnd, 'not')) {
-                // Look ahead inside :not() for a uBO modifier candidate.
-                // Kept as a cheap early exit; the outer loop would reach the
-                // same inner colon anyway (see AG-61882).
-                for (let j = identEndTi + 1; j < endTi; j += 1) {
-                    if (types[j] === TokenType.Colon) {
-                        const innerEndTi = skipPseudoName(types, j + 1, endTi);
-                        if (innerEndTi > j + 1 && innerEndTi < endTi && types[innerEndTi] === TokenType.OpenParen) {
-                            const iStart = ends[j];
-                            const iEnd = ends[innerEndTi - 1];
-                            if (
-                                regionEquals(source, iStart, iEnd, UboPseudoName.MatchesPath)
-                                || regionEquals(source, iStart, iEnd, UboPseudoName.MatchesMedia)
-                            ) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         return false;

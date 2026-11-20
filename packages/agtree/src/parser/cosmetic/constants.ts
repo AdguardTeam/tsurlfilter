@@ -1,7 +1,6 @@
 /* eslint-disable no-bitwise, jsdoc/require-description-complete-sentence */
 
 import { SL_MIN_DATA_SLOTS } from '../css/selector-list/constants';
-import { MODIFIER_RECORD_STRIDE } from '../network/constants';
 
 /**
  * @file Cosmetic rule parser data layout constants.
@@ -251,10 +250,12 @@ export const CR_UBO_MODS_OFFSET = CR_MODIFIER_RECORDS_OFFSET;
 /**
  * Compute the selector-list data offset within a parsed cosmetic-rule buffer.
  *
- * When the rule carries an AdGuard `[$…]` modifier list (indicated by
- * {@link CR_FLAG_HAS_ADG_MODS}), the selector-list region starts after the
- * modifier records (at `CR_MODIFIER_RECORDS_OFFSET + modCount * stride`).
- * Otherwise it starts at {@link CR_MODIFIER_RECORDS_OFFSET}.
+ * The selector-list region is stored at the end of `ctx.data`, after the
+ * header, modifier, domain and scriptlet-body regions. It must not overlap
+ * the modifier or domain records: HTML filtering and element-hiding rules can
+ * carry both domains and a selector list, and placing the selector list after
+ * the header (as an earlier layout did) let long selectors overwrite the
+ * domain records.
  *
  * Shared between the structural parser and the AST builder so the layout
  * rule is defined in one place.
@@ -265,12 +266,7 @@ export const CR_UBO_MODS_OFFSET = CR_MODIFIER_RECORDS_OFFSET;
  * @returns Selector-list data offset relative to `dataOffset`.
  */
 export function slDataOffset(data: Int32Array, dataOffset = 0): number {
-    if ((data[dataOffset + CR_FLAGS_OFFSET] & CR_FLAG_HAS_ADG_MODS) === 0) {
-        return CR_MODIFIER_RECORDS_OFFSET;
-    }
-
-    const modCount = data[dataOffset + CR_MODIFIER_COUNT_OFFSET];
-    return CR_MODIFIER_RECORDS_OFFSET + modCount * MODIFIER_RECORD_STRIDE;
+    return data.length - SL_MIN_DATA_SLOTS - dataOffset;
 }
 
 // ---------------------------------------------------------------------------
@@ -359,36 +355,41 @@ export const CR_FLAG_BODY_ABP_CSS_INJECTION = 1 << 14;
 // (relative to dataOffset) store function name and argument boundaries.
 
 /**
- * Buffer offset: responseheader function name start.
+ * Buffer offset from the selector-list base: responseheader function name
+ * start.
  */
-export const HF_FN_NAME_START = 7;
+export const HF_FN_NAME_START = 0;
 
 /**
- * Buffer offset: responseheader function name end (exclusive).
+ * Buffer offset from the selector-list base: responseheader function name end
+ * (exclusive).
  */
-export const HF_FN_NAME_END = 8;
+export const HF_FN_NAME_END = 1;
 
 /**
- * Buffer offset: responseheader argument start (trimmed).
+ * Buffer offset from the selector-list base: responseheader argument start
+ * (trimmed).
  */
-export const HF_ARG_START = 9;
+export const HF_ARG_START = 2;
 
 /**
- * Buffer offset: responseheader argument end (trimmed, exclusive).
+ * Buffer offset from the selector-list base: responseheader argument end
+ * (trimmed, exclusive).
  */
-export const HF_ARG_END = 10;
+export const HF_ARG_END = 3;
 
 /**
- * Number of reserved slots for responseheader data (after CR header).
+ * Number of reserved slots for responseheader data.
  */
 export const HF_RESPONSEHEADER_SLOTS = 4;
 
 /**
- * Minimum `ctx.data` slots required by {@link HtmlFilteringParser}.
- * Layout: CR header ({@link CR_MODIFIER_RECORDS_OFFSET}) + {@link SL_MIN_DATA_SLOTS}.
- * Also covers responseheader case: CR header (7) + 4 = 11 (fits within the total).
+ * Minimum free slots at the selector-list base required by
+ * {@link HtmlFilteringParser}. A selector list needs {@link SL_MIN_DATA_SLOTS};
+ * the responseheader fields need only four slots, so the selector-list size
+ * covers both.
  */
-export const HF_MIN_DATA_SLOTS = CR_MODIFIER_RECORDS_OFFSET + SL_MIN_DATA_SLOTS;
+export const HF_MIN_DATA_SLOTS = SL_MIN_DATA_SLOTS;
 
 // ---------------------------------------------------------------------------
 // AdGuard CSS injection sub-kind

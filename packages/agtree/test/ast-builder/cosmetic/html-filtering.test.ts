@@ -847,3 +847,76 @@ describe('RuleParser — HTML filtering rules', () => {
         });
     });
 });
+
+describe('RuleParser — HTML filtering selector-region layout (F-005, F-007)', () => {
+    /**
+     * Builds a space-separated selector of `count` descendant compounds.
+     *
+     * @param count Number of compounds.
+     *
+     * @returns Selector text.
+     */
+    const compounds = (count: number): string => Array.from({ length: count }, (_, i) => `div.c${i}`).join(' ');
+
+    test('a long selector does not overwrite the domain records', () => {
+        const ast = parser.parse(`example.com,example.org##^${compounds(20)}`, {
+            parseHtmlFilteringRuleBodies: true,
+        }) as HtmlFilteringRule;
+
+        expect(ast.domains.children.map((domain) => domain.value)).toEqual([
+            'example.com',
+            'example.org',
+        ]);
+        expect(ast.body.type).toBe('HtmlFilteringRuleBody');
+    });
+
+    test('many `[$...]` modifiers plus a long selector keep both regions', () => {
+        const modifiers = Array.from({ length: 50 }, (_, i) => `m${i}=v${i}`).join(',');
+        const ast = parser.parse(`[$${modifiers}]example.com##^${compounds(20)}`, {
+            parseHtmlFilteringRuleBodies: true,
+        }) as HtmlFilteringRule;
+
+        expect(ast.modifiers?.children).toHaveLength(50);
+        expect(ast.domains.children.map((domain) => domain.value)).toEqual(['example.com']);
+        expect(ast.body.type).toBe('HtmlFilteringRuleBody');
+    });
+
+    test('responseheader fields do not overwrite a `[$...]` modifier list', () => {
+        const ast = parser.parse('[$path=/x]example.com##^responseheader(foo)', {
+            parseHtmlFilteringRuleBodies: true,
+        }) as HtmlFilteringRule;
+
+        expect(ast.modifiers).toMatchObject({
+            children: [{
+                name: { value: 'path' },
+                value: { value: '/x' },
+                exception: false,
+            }],
+        });
+        expect(ast.body).toMatchObject({
+            type: 'HtmlFilteringRuleBody',
+            selectorList: {
+                children: [{
+                    children: [{
+                        type: 'PseudoClassSelector',
+                        name: { value: 'responseheader' },
+                        argument: { value: 'foo' },
+                    }],
+                }],
+            },
+        });
+    });
+
+    test('a long `$$` selector with 38 attributes keeps both domains', () => {
+        const attr = '[tag-content="a"]';
+        const ast = parser.parse(`example.com,example.org$$div${attr.repeat(38)}`, {
+            parseHtmlFilteringRuleBodies: true,
+        }) as HtmlFilteringRule;
+
+        expect(ast.domains.children.map((domain) => domain.value)).toEqual([
+            'example.com',
+            'example.org',
+        ]);
+        expect(ast.body.type).toBe('HtmlFilteringRuleBody');
+    });
+});

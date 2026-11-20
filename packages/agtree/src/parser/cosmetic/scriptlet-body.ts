@@ -25,6 +25,7 @@ import { sprintf } from 'sprintf-js';
 import { AbpSnippetInjectionBodyCommon } from '../../common/abp-snippet-injection-body-common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { REGION_SCRIPTLET_BODY } from '../../errors/capacity-overflow-error';
+import { CHAR_BACKSLASH } from '../../tokenizer/char-codes';
 import { TokenType } from '../../tokenizer/token-types';
 import {
     ADG_SCRIPTLET_MASK,
@@ -196,14 +197,6 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
         // Find closing paren — scan backward from end, skip trailing whitespace
         const closeParenTi = skipWsBack(ctx, bodyEndTi - 1, openParenTi + 1);
         if (types[closeParenTi] !== TokenType.CloseParen) {
-            throw new AdblockSyntaxError(
-                ADG_ERRORS.NO_CLOSING_PARENTHESIS,
-                tokenStart(ctx, openParenTi),
-                bodyEnd,
-            );
-        }
-        // Check not escaped
-        if (closeParenTi > 0 && types[closeParenTi - 1] === TokenType.Escaped) {
             throw new AdblockSyntaxError(
                 ADG_ERRORS.NO_CLOSING_PARENTHESIS,
                 tokenStart(ctx, openParenTi),
@@ -387,14 +380,6 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
         // Find closing paren — scan backward from end, skip trailing whitespace
         const closeParenTi = skipWsBack(ctx, bodyEndTi - 1, openParenTi + 1);
         if (types[closeParenTi] !== TokenType.CloseParen) {
-            throw new AdblockSyntaxError(
-                UBO_ERRORS.NO_CLOSING_PARENTHESIS,
-                tokenStart(ctx, openParenTi),
-                bodyEnd,
-            );
-        }
-        // Check not escaped
-        if (closeParenTi > 0 && types[closeParenTi - 1] === TokenType.Escaped) {
             throw new AdblockSyntaxError(
                 UBO_ERRORS.NO_CLOSING_PARENTHESIS,
                 tokenStart(ctx, openParenTi),
@@ -733,7 +718,7 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
                         ti += 1;
                         continue;
                     }
-                    if (types[ti] === TokenType.Slash) {
+                    if (types[ti] === TokenType.Slash && !ScriptletBodyParser.isEscapedSlash(ctx, ti)) {
                         break;
                     }
                     ti += 1;
@@ -855,6 +840,26 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
     }
 
     /**
+     * Whether the `/` token is preceded by a backslash character.
+     *
+     * ABP snippet arguments are split at whitespace, so a `/…/` argument must
+     * stay together. Version 4 ended the literal only at a `/` that is not
+     * immediately preceded by `\`, regardless of backslash parity: that keeps
+     * the `/` in `[^\\/]` (and in `\\/`) inside the argument, matching how
+     * these lists are written. Applying the same rule here keeps the argument
+     * list identical to 4.x.
+     *
+     * @param ctx Parser context.
+     * @param ti Token index of a `Slash` token.
+     *
+     * @returns `true` when the slash is immediately preceded by `\`.
+     */
+    private static isEscapedSlash(ctx: ParserContext, ti: number): boolean {
+        const slashStart = ctx.ends[ti] - 1;
+        return slashStart > 0 && ctx.source.charCodeAt(slashStart - 1) === CHAR_BACKSLASH;
+    }
+
+    /**
      * Find next unescaped whitespace token that is not inside a string or
      * regex literal, using token types.
      *
@@ -908,7 +913,7 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
                         ti += 1;
                         continue;
                     }
-                    if (types[ti] === TokenType.Slash) {
+                    if (types[ti] === TokenType.Slash && !ScriptletBodyParser.isEscapedSlash(ctx, ti)) {
                         break;
                     }
                     ti += 1;

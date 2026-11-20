@@ -64,13 +64,14 @@ Results are printed to the console and written as JSON under `.vitest/bench/`.
 
 ### Build Before Benchmarking
 
-Benchmarks that compare the **current** package against a published baseline —
-`packages/agtree/test/parse-fixture.bench.ts` and
-`packages/agtree/test/converter-fixture.bench.ts` (vs `agtree-v4`), and
-`packages/tsurlfilter/test/engine/engine-init.bench.ts` (vs `tsurlfilter-v6`) —
-import the current package through its built `dist/` bundle via the package
-`exports` map, so they measure the built code and not the TypeScript sources.
-Build the package under test before running those benchmarks:
+Every comparative benchmark imports the **current** package through its built
+`dist/` bundle via the package `exports` map, so it measures the built code and
+not the TypeScript sources (Vite serves `src/` module-by-module, which
+deoptimizes cross-module calls and inflates the current leg 1.7–11×). This
+applies to `agtree`'s `parser.bench.ts`, `converter.bench.ts`,
+`parse-fixture.bench.ts` and `converter-fixture.bench.ts`, and to all
+`tsurlfilter` engine benches. Build the package under test before running
+those benchmarks:
 
 ```bash
 cd packages/<package>
@@ -166,14 +167,15 @@ compare against.
   `"@adguard/tsurlfilter@3>@adguard/agtree"`), not the workspace agtree v5, so
   its `./serializer`/`./deserializer` imports keep working.
 
-- **Source vs built-package imports.** The legacy inline benches import the
-  current implementation from source (`../src/...`) while comparators run as
-  prebuilt dist, so Node runs print Vitest's module-runner export-getter
-  warning; browser benches already run native ESM. The full-list A/B benches
-  (`parse-fixture.bench.ts`, `converter-fixture.bench.ts`,
-  `engine-init.bench.ts`) import the current package from its **built** `dist/`
-  bundle via the package `exports` map so it competes as an optimized bundle —
-  build first (see "Build Before Benchmarking").
+- **Built-package imports only.** Every bench imports the current package from
+  its **built** `dist/` bundle via the package `exports` map, so both legs of a
+  comparison run as optimized bundles — build first (see "Build Before
+  Benchmarking"). Type-only imports may still point at `src/`; they are erased
+  at runtime and keep declaration identity with the shared test helpers.
+  Baseline v4 options must be spread over the v4 defaults
+  (`{ ...defaultParserOptions, ...overrides }`): `RuleParser.parse` replaces
+  the defaults instead of merging with them, so passing only `includeRaws` and
+  `isLocIncluded` silently disables uBO/ABP parsing in the v4 leg.
 
 - **Node-only benches and the browser project.** `tsurlfilter` has no browser
   project (its benches import `node:fs`); `agtree` excludes

@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
+import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
+import type { AgentCommentRule } from '../../../src/nodes';
 import {
     SYNTAX_ABP,
     SYNTAX_ADG,
@@ -476,5 +478,41 @@ describe('CommentAstBuilder — agent comments', () => {
                 ],
             });
         });
+    });
+});
+
+describe('CommentAstBuilder — agent capacity (F-013)', () => {
+    // Production pipeline: the capacity constants are sized for its default
+    // context, not for the smaller context of `parseCommentRule`.
+    const pipeline = new RuleParserPipeline();
+
+    /**
+     * Builds an agent comment with `count` `AdGuard` agents.
+     *
+     * @param count Number of agents.
+     *
+     * @returns Agent comment source.
+     */
+    const buildAgents = (count: number): string => `[${'AdGuard; '.repeat(count)}]`;
+
+    test('a 400-agent comment parses', () => {
+        const ast = pipeline.parse(buildAgents(400)) as AgentCommentRule;
+
+        expect(ast.children).toHaveLength(400);
+    });
+
+    test('a 480-agent comment parses (at capacity)', () => {
+        const ast = pipeline.parse(buildAgents(480)) as AgentCommentRule;
+
+        expect(ast.children).toHaveLength(480);
+    });
+
+    test('a 481-agent comment throws a capacity error, not "Agent name cannot be empty"', () => {
+        expect(() => pipeline.parse(buildAgents(481))).toThrow(/maximum of 480 agents/i);
+        expect(() => pipeline.parse(buildAgents(481))).not.toThrow(/Agent name cannot be empty/i);
+    });
+
+    test('a 600-agent comment throws a capacity error, not "Agent name cannot be empty"', () => {
+        expect(() => pipeline.parse(buildAgents(600))).toThrow(/maximum of 480 agents/i);
     });
 });

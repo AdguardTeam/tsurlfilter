@@ -104,7 +104,7 @@ export class ModifierListParser implements StructuralParser {
                     break;
                 }
                 const requested = Math.max(modCount + 1, maxMods * 2);
-                if (!growCtxRegion(ctx, REGION_MODIFIERS, requested)) {
+                if (!growCtxRegion(ctx, REGION_MODIFIERS, requested, headerOffset)) {
                     ctx.overflowRegion = REGION_MODIFIERS;
                     ctx.status = CTX_STATUS_HARD_CAP;
                     break;

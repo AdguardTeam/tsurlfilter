@@ -26,7 +26,7 @@ import type {
     ScriptletInjectionRuleBody,
     Value,
 } from '../../nodes';
-import { MAX_MODIFIER_RECORD_STRIDE } from '../../parser/context';
+import { domainRecordsOffsetFor } from '../../parser/context';
 import {
     CR_BODY_END,
     CR_BODY_START,
@@ -43,6 +43,7 @@ import {
 } from '../../parser/cosmetic/constants';
 import { NO_VALUE } from '../../parser/network/constants';
 import { QuoteType, QuoteUtils } from '../../utils';
+import { ESCAPE_CHARACTER } from '../../utils/constants';
 import {
     SYNTAX_ABP,
     SYNTAX_ADG,
@@ -52,6 +53,34 @@ import {
 import { DomainListAstBuilder } from '../misc/domain-list';
 import { ModifierListAstBuilder } from '../misc/modifier-list';
 import type { ParseOptions } from '../options';
+
+/**
+ * Determines the quote type of a raw scriptlet parameter.
+ *
+ * `QuoteUtils.getStringQuoteType()` only looks at the first and last
+ * character, so it reports an unterminated quoted argument such as `'\'` as a
+ * single-quoted value and the surrounding quotes are then stripped from the
+ * value. Version 4 treated such an argument as unquoted text; a closing quote
+ * preceded by an odd number of backslashes is escaped and does not close the
+ * quote.
+ *
+ * @param raw Raw parameter text.
+ *
+ * @returns Quote type, or `QuoteType.None` when the closing quote is escaped.
+ */
+function getParameterQuoteType(raw: string): QuoteType {
+    const quoteType = QuoteUtils.getStringQuoteType(raw);
+    if (quoteType === QuoteType.None) {
+        return QuoteType.None;
+    }
+
+    let backslashes = 0;
+    for (let i = raw.length - 2; i >= 0 && raw[i] === ESCAPE_CHARACTER; i -= 1) {
+        backslashes += 1;
+    }
+
+    return backslashes % 2 === 0 ? quoteType : QuoteType.None;
+}
 
 /**
  * Scriptlet injection cosmetic rule AST parser.
@@ -94,7 +123,7 @@ export class ScriptletInjectionAstBuilder {
 
         // Read domain count and parse domains
         const domainCount = data[dataOffset + CR_DOMAIN_COUNT];
-        const domainRecordsOffset = dataOffset + 5 + maxMods * MAX_MODIFIER_RECORD_STRIDE;
+        const domainRecordsOffset = domainRecordsOffsetFor(dataOffset, maxMods);
         const domains: DomainList = DomainListAstBuilder.parse(
             source,
             data,
@@ -243,7 +272,7 @@ export class ScriptletInjectionAstBuilder {
                 parameterList.children.push(null);
             } else {
                 const raw = source.slice(pStart, pEnd);
-                const quoteType = QuoteUtils.getStringQuoteType(raw);
+                const quoteType = getParameterQuoteType(raw);
                 const param: Parameter = {
                     type: NodeType.Parameter,
                     value: quoteType !== QuoteType.None ? QuoteUtils.removeQuotesAndUnescape(raw) : raw,
@@ -332,7 +361,7 @@ export class ScriptletInjectionAstBuilder {
                     parameterList.children.push(null);
                 } else {
                     const raw = source.slice(pStart, pEnd);
-                    const quoteType = QuoteUtils.getStringQuoteType(raw);
+                    const quoteType = getParameterQuoteType(raw);
                     const param: Parameter = {
                         type: NodeType.Parameter,
                         value: quoteType !== QuoteType.None ? QuoteUtils.removeQuotesAndUnescape(raw) : raw,

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The `ScannerType` enum is now importable from
+  `@adguard/tsurlfilter/es/scanner-type`, matching the other `./es/*`
+  subpath entry points.
 - Added public `NetworkRule.createFromReader` and `CosmeticRule.createFromReader`
   entry points plus `CosmeticRule.supportsBinaryPath` to materialize rules from
   a structural reader without building an AST node. These accept a reader bound
@@ -57,6 +60,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bare delimiters `/` and `//` compiled to an empty regexp that matched
   every domain. A value that ends with an escaped backslash, e.g.
   `/a\\/`, stays a regexp literal.
+- HTML filtering rules with a long selector (`example.com,example.org$$div` +
+  many attributes, `##^` with many compounds) keep their permitted domains, so
+  the engine no longer drops them as unrestricted rules.
+- Cosmetic rules whose scriptlet argument ends with an escape right before the
+  closing parenthesis, e.g. `a.com##+js(acs, Math, '\\x)`, are no longer
+  dropped: an escape consumes exactly one character, so the `)` after it
+  closes the scriptlet call.
 - Rule splitting no longer scans the whole rule once per `$` character. Regex
   value regions (`$replace=/…/`, `$removeparam=/…/`) are collected in a single
   pass, so a long rule with many `$` characters inside a regex no longer makes

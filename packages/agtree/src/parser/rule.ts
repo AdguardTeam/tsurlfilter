@@ -13,6 +13,7 @@ import { RuleClassifier, RuleKind } from './classifier';
 import { CommentParser } from './comment/classifier';
 import type { ParserContext } from './context';
 import {
+    lastNonWs,
     regionEquals,
     scriptletBodyDataOffset,
     skipWs,
@@ -41,7 +42,7 @@ import {
     UBO_MODIFIER_RECORD_STRIDE,
 } from './cosmetic/constants';
 import { parseCommonCosmeticHeader } from './cosmetic/cosmetic-common';
-import { AdgCssInjectionParser } from './cosmetic/css-injection';
+import { AdgCssInjectionParser, EMPTY_DECLARATION_LIST_MESSAGE } from './cosmetic/css-injection';
 import { ElementHidingParser } from './cosmetic/element-hiding';
 import { AdgHtmlFilteringParser, UboHtmlFilteringParser } from './cosmetic/html-filtering';
 import { ScriptletBodyParser } from './cosmetic/scriptlet-body';
@@ -358,18 +359,42 @@ export class StructuralRuleParser implements RootParser<RuleParserOptions> {
                     }
 
                     case CR_SEP_KIND_ABP_SNIPPET: {
-                        // #$# / #@$# — ambiguous: CSS injection if body has braces, else ABP snippet.
+                        // #$# / #@$# — ambiguous: CSS injection when the body ends
+                        // with a declaration block, ABP snippet otherwise (4.x rule).
+                        // Snippet arguments routinely contain `{`/`}` (regex
+                        // quantifiers such as `{5,11}` and `{}` literals), so a brace
+                        // anywhere in the body is not enough to commit to CSS.
                         parseCommonCosmeticHeader(ctx, classified, 'CSS injection rule', startTi, endTi);
 
                         const bodyStartTi = ctx.data[CR_BODY_START_TI];
+                        const lastBodyTi = lastNonWs(ctx, bodyStartTi, endTi);
+                        const endsWithDeclarationBlock = lastBodyTi >= bodyStartTi
+                            && ctx.types[lastBodyTi] === TokenType.CloseBrace;
 
-                        const parsed = AdgCssInjectionParser.parse(
-                            ctx,
-                            bodyStartTi,
-                            endTi,
-                            scriptletBodyDataOffset(ctx),
-                            false, // not required — fall back to ABP if no brace found
-                        );
+                        let parsed = false;
+                        if (endsWithDeclarationBlock) {
+                            try {
+                                parsed = AdgCssInjectionParser.parse(
+                                    ctx,
+                                    bodyStartTi,
+                                    endTi,
+                                    scriptletBodyDataOffset(ctx),
+                                    false, // not required — fall back to ABP if no brace found
+                                );
+                            } catch (error) {
+                                // `{}` is snippet argument text, not an empty
+                                // declaration block: 4.x falls back to the snippet
+                                // parser. Any other CSS error (e.g. `remove: false`)
+                                // is a real CSS-injection problem and propagates.
+                                if (!(
+                                    error instanceof AdblockSyntaxError
+                                    && error.message === EMPTY_DECLARATION_LIST_MESSAGE
+                                )) {
+                                    throw error;
+                                }
+                                parsed = false;
+                            }
+                        }
 
                         if (parsed) {
                             // CSS injection block found
@@ -378,7 +403,7 @@ export class StructuralRuleParser implements RootParser<RuleParserOptions> {
                             return RuleKind.Cosmetic;
                         }
 
-                        // No brace found: treat as ABP snippet.
+                        // Not a declaration block: treat as ABP snippet.
                         // Throw an ABP-specific disablement error rather than a CSS-injection
                         // syntax error — the rule is a genuine ABP snippet, not malformed CSS.
                         if (!parseAbpSpecificRules) {

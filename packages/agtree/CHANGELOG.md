@@ -36,6 +36,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- The minimum `ParserContext` data buffer grows by the selector-list region
+  (`SL_MIN_DATA_SLOTS`, 730 Int32 slots ≈ 2.9 KB) because the selector list is
+  stored at the end of the buffer. Code that pre-sizes buffers from
+  `ParserContext` capacities sees a larger minimum; `HF_MIN_DATA_SLOTS` now
+  equals `SL_MIN_DATA_SLOTS`.
 - `CommentKind` is a regular `enum` instead of a `const enum`, so consumers
   compiling with `isolatedModules` can use it in a value position.
 - AdGuard HTML filtering rule bodies with an unbalanced or unterminated
@@ -142,6 +147,44 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   The check mirrors CoreLibs' `:contains()` argument scanner, so values
   such as `/a++/`, `/a\/`, `///`, and `/ads` are escaped instead of becoming
   dead or over-broad rules.
+- HTML filtering and element-hiding rules with a long selector no longer
+  overwrite their own domain records: the selector-list region now lives at
+  the end of the parser buffer instead of after the rule header. Rules such
+  as `example.com,example.org##^div.c0 div.c1 …` keep both domains.
+- `[$...]` modifier records are no longer overwritten by `##^responseheader()`
+  fields: the responseheader name and argument are stored in the free
+  selector-list region, so `[$path=/x]example.com##^responseheader(foo)` keeps
+  `path=/x`. The header-removal converter refuses such rules instead of
+  emitting a broadened `$removeheader` rule.
+- Growing the modifier or domain region preserves every region, including the
+  selector-list tail and anything before a non-zero `dataOffset`, and domain
+  records no longer overlap the last modifier record when a small capacity
+  makes the regions adjacent.
+- The uBO modifier candidate scan for cosmetic selectors is linear again: a
+  selector with many `:not()` wrappers no longer makes rule parsing
+  quadratic (an 8,000-wrapper selector took ~285 ms; a cap-size selector
+  took 8–17 s).
+- A hint comment with more than 240 hints and an agent comment with more than
+  480 agents now throw an `AdblockSyntaxError` naming the capacity instead of
+  writing past the parser buffer. Before, the extra hints made every hint name
+  alias the whole rule text (memory amplification) and a long agent list failed
+  with the misleading "Agent name cannot be empty". The limits are fixed
+  constants, so they no longer depend on what the pipeline parsed before.
+- ABP snippets (`#$#`) whose arguments contain `{`/`}` — regex quantifiers
+  such as `/a{1,2}/`, `{}` literals, `;`-separated calls — are parsed as
+  snippets again instead of being routed to the CSS-injection parser and
+  rejected. As in 4.x, a body is CSS injection only when it ends with a
+  declaration block; an empty `{}` stays snippet argument text.
+- An ABP snippet regex argument containing a slash after a backslash, e.g.
+  `/^https?:\/\/[^\/]+…$/`, no longer absorbs the following argument:
+  the argument list matches 4.x again, so the converter emits the intended
+  scriptlet call.
+- A scriptlet argument ending with an escape right before the closing
+  parenthesis, e.g. `a.com##+js(acs, Math, '\\x)`, is parsed again: an escape
+  consumes exactly one character, so the `)` after it closes the call instead
+  of making the rule fail with "no closing parentheses found". An argument
+  whose quote is left unterminated by such an escape keeps its raw text
+  (`'\'` is not treated as a quoted value), matching 4.x.
 - `RuleParserPipeline.parseRange` now rejects a non-zero `dataOffset` for
   cosmetic rules. Their structural parsers write at fixed offsets, so a
   non-zero offset previously produced a rule with an empty selector and no

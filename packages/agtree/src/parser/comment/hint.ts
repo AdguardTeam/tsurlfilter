@@ -13,6 +13,7 @@
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints}
  */
 
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { skipWs, tokenStart } from '../context';
@@ -56,6 +57,17 @@ export const HINT_FIELD_PARAMS_START = 2;
 export const HINT_FIELD_PARAMS_END = 3;
 
 /**
+ * Maximum number of hints in one comment rule.
+ *
+ * Fixed so the limit does not depend on the buffer size left by a previous
+ * parse (A06 S-6) and cannot be reached by a list line that would make every
+ * hint name alias the whole source (F-006). 240 records occupy
+ * `2 + 240 * 4 = 962` slots, which fits the minimum default `ctx.data`
+ * (965 slots).
+ */
+export const MAX_HINT_COUNT = 240;
+
+/**
  * Parser for hint comment rules (`!+ HINT_NAME[(params)] ...`).
  */
 export class HintCommentParser implements StructuralParser {
@@ -71,6 +83,13 @@ export class HintCommentParser implements StructuralParser {
      */
     public static parse(ctx: ParserContext, startTi = 0, endTi = ctx.tokenCount, dataOffset = 0): void {
         const { data, ends } = ctx;
+
+        const ruleStart = startTi > 0 ? ends[startTi - 1] : ctx.sourceStart;
+        const ruleEnd = endTi > 0 && endTi <= ctx.tokenCount ? ends[endTi - 1] : ruleStart;
+        const maxRecords = Math.min(
+            MAX_HINT_COUNT,
+            Math.floor((data.length - dataOffset - CM_HINT_RECORDS_OFFSET) / HINT_RECORD_STRIDE),
+        );
 
         // Skip leading whitespace, then `!` and `+`
         let ti = skipWs(ctx, startTi);
@@ -125,6 +144,14 @@ export class HintCommentParser implements StructuralParser {
                 }
 
                 paramsEnd = ti > 0 ? ends[ti - 1] : paramsStart;
+            }
+
+            if (count >= maxRecords) {
+                throw new AdblockSyntaxError(
+                    `Hint list exceeds the maximum of ${maxRecords} hints`,
+                    ruleStart,
+                    ruleEnd,
+                );
             }
 
             // Write hint record
