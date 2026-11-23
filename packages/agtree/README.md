@@ -33,6 +33,8 @@ AGTree is a tool set for working with adblock filter lists. It contains the foll
 - [Compatibility tables][compatibility-tables-url] — re-exported through the package root (`@adguard/agtree`)
 - [Utils][utils-url] — importable via the `@adguard/agtree/utils` subpath
 - [AST walker][walker-url] — importable via the `@adguard/agtree/walker` subpath
+- v4 compatibility shim (`RuleParser`, `defaultParserOptions`) — importable via
+  the `@adguard/agtree/compat` subpath; also deprecated from the package root
 
 > [!NOTE]
 > Modules whose source lives in `src/` directories — such as `ast-utils/`
@@ -167,8 +169,11 @@ short version:
 
 - `RuleParser` / `FilterListParser` → `RuleParserPipeline` /
   `FilterListPipeline`. `RuleParser` and `defaultParserOptions` are still
-  exported from the package root and `@adguard/agtree/parser` as a thin
-  compatibility shim, but they return v5 nodes.
+  exported from the package root (deprecated) and from the
+  `@adguard/agtree/compat` subpath as a thin compatibility shim, but they
+  return v5 nodes. They are no longer part of `@adguard/agtree/parser`, which
+  is the light structural layer; if you import them from `./parser`, switch to
+  `@adguard/agtree/compat`.
 - `ParserOptions` → `ParseOptions`. `isLocIncluded` now defaults to `false`
   in the pipeline; pass it explicitly if you need `start`/`end`.
 - `RawFilterListConverter.convertToAdg(list, tolerant)` →

@@ -72,6 +72,7 @@ const main = {
         'src/converter/index.ts',
         'src/utils/index.ts',
         'src/walker/index.ts',
+        'src/compat/index.ts',
     ],
     output: [
         {

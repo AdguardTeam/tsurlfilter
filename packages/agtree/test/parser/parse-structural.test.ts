@@ -29,8 +29,14 @@ describe('RuleParserPipeline.parseStructural', () => {
         expect(parserApi.NetworkRuleDataReader).toBeTypeOf('function');
         expect(parserApi.CosmeticRuleDataReader).toBeTypeOf('function');
         expect(parserApi.isHostRuleCandidate).toBeTypeOf('function');
-        expect(parserApi.RuleParser).toBeTypeOf('function');
-        expect(parserApi.defaultParserOptions).toBeTypeOf('object');
+    });
+
+    test('barrel does not carry the v4 compat shim', () => {
+        // The shim lives on `@adguard/agtree/compat` (F-015); exporting it here
+        // pulled the AST builders, the node barrel and the walker into the
+        // light structural subpath.
+        expect(parserApi).not.toHaveProperty('RuleParser');
+        expect(parserApi).not.toHaveProperty('defaultParserOptions');
     });
 
     test('parseFromCurrentCtx builds the same AST as parse without re-parsing', () => {

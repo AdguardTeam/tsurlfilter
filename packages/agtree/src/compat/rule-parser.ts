@@ -2,9 +2,13 @@
  * @file Backwards-compatible `RuleParser` entry point.
  *
  * `@adguard/scriptlets` (v2.x) still imports `RuleParser` and
- * `defaultParserOptions` from `@adguard/agtree/parser`. AGTree v5 replaced the
- * parser with `RuleParserPipeline`, so this module keeps the legacy static API
+ * `defaultParserOptions` from the package root. AGTree v5 replaced the parser
+ * with `RuleParserPipeline`, so this module keeps the legacy static API
  * working by delegating to the new pipeline.
+ *
+ * The module is exposed through the `@adguard/agtree/compat` subpath and,
+ * marked deprecated, from the package root. It is deliberately not part of
+ * `./parser`: that subpath stays the light structural layer.
  */
 
 import type { ParseOptions } from '../ast-builder/options';

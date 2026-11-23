@@ -33,6 +33,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   same list of special pseudo-class names as the parser and the converter.
 - `:has-text()` is now accepted as a synonym of `:contains()` in AdGuard
   HTML filtering rules during ADG→ADG conversion.
+- The `@adguard/agtree/compat` subpath for the v4-compatible `RuleParser` shim.
 - `translate(name, platform)` is added to the compatibility tables. It maps a
   name or alias of any product onto the entry of the given platform, e.g.
   `scriptletsCompatibilityTable.translate('acs', Platform.AdgAny)`. It keeps
@@ -87,6 +88,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Deprecated
 
 ### Removed
+
+- `RuleParser` and `defaultParserOptions` are no longer exported from the
+  `@adguard/agtree/parser` subpath. Import them from the new
+  `@adguard/agtree/compat` subpath instead; the package root still re-exports
+  them, marked `@deprecated`, until `@adguard/scriptlets` ships a v5 build.
+  `./parser` is the light structural layer again: it no longer pulls the AST
+  builders, the node barrel and the walker into the module graph.
 
 ### Fixed
 

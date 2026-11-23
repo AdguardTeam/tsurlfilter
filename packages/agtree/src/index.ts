@@ -14,8 +14,18 @@ export type { ParserCapacity } from './ast-builder/capacity';
 
 // Backwards-compatible parser API (consumed by @adguard/scriptlets v2.x).
 // AGTree v4 exported these from the package root; re-export them here for
-// drop-in import compatibility in addition to the `/parser` subpath.
+// drop-in import compatibility. The `./parser` subpath no longer carries the
+// shim: use `@adguard/agtree/compat` for a subpath import that does not pull
+// the whole root surface (D-14).
+/**
+ * @deprecated Use {@link RuleParserPipeline} from `@adguard/agtree`, or the
+ * `@adguard/agtree/compat` subpath. Kept for the v4 import shape until
+ * `@adguard/scriptlets` ships a v5 build.
+ */
 export { RuleParser, defaultParserOptions } from './compat/rule-parser';
+/**
+ * @deprecated Use {@link ParseOptions} from `@adguard/agtree`.
+ */
 export type { LegacyParserOptions, OnParseError } from './compat/rule-parser';
 
 // Structural parser surface (encapsulated readers + classification)

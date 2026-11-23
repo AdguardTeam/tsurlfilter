@@ -26,7 +26,8 @@ and a rule converter for translating rules between syntaxes.
 - **Target Platform**: Node.js and browser environments
 - **Project Type**: Package inside the `tsurlfilter` pnpm monorepo
 - **Multiple export paths**: `.` (main), `./parser`, `./generator`,
-  `./converter`, `./utils`
+  `./converter`, `./utils`, `./walker`, `./compat` (the deprecated v4 shim;
+  it is deliberately not part of `./parser`)
 
 ## Project Structure
 
@@ -94,8 +95,11 @@ You MUST follow the following rules for EVERY task that you perform:
 ### I. Architecture
 
 1. **Multiple export paths.** The package exposes subpath exports for `parser`,
-   `generator`, `converter`, and `utils` in addition to the main entry point.
-   New public API MUST be exported through the appropriate barrel file.
+   `generator`, `converter`, `utils`, `walker`, and `compat` in addition to the
+   main entry point. `./parser` is the light structural layer: it must not
+   re-export the v4 compat shim, which lives on `./compat` only (and, marked
+   deprecated, on the package root). New public API MUST be exported through
+   the appropriate barrel file.
 
    **Rationale**: Allows consumers to import only the functionality they need,
    enabling tree-shaking.
