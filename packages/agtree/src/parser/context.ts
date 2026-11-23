@@ -177,6 +177,18 @@ export interface ParserContext {
      * {@link AdblockSyntaxError}s.
      */
     status: 0 | 1 | 2;
+
+    /**
+     * Parse generation.
+     *
+     * Incremented every time the context starts or ends a parse
+     * ({@link initParserContext}, {@link resetCtxData}). Data readers capture
+     * the value they were created with and refuse to read afterwards, because
+     * the next parse overwrites `data`, `types` and `source` in place — a
+     * reader kept across a parse would silently return another rule's data
+     * (F-042).
+     */
+    generation: number;
 }
 
 /**
@@ -233,6 +245,7 @@ export function createParserContext(
         maxScriptletBody: scriptletBodyCapacity,
         grow,
         status: CTX_STATUS_OK,
+        generation: 0,
     };
 }
 
@@ -382,6 +395,7 @@ export function resetCtxData(
     ctx.overflowRegion = undefined;
     ctx.status = CTX_STATUS_OK;
     ctx.tokenCount = 0;
+    ctx.generation += 1;
 }
 
 /**
@@ -404,6 +418,7 @@ export function initParserContext(
     ctx.ends = tokens.ends;
     ctx.tokenCount = tokens.tokenCount;
     ctx.status = CTX_STATUS_OK;
+    ctx.generation += 1;
 }
 
 /**

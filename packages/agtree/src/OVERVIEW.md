@@ -211,7 +211,10 @@ reader.getDomains();    // [{ value: 'example.org', exception: false }]
 ```
 
 Readers borrow the pipeline's buffers: consume all fields and discard the
-reader before reusing the pipeline (see the class documentation).
+reader before reusing the pipeline (see the class documentation). This is
+enforced, not advisory — every getter compares the context's `generation` with
+the one captured at construction and throws once the context has been reused
+by another parse (or by `reset()`).
 
 All structural parser methods accept `(ctx, startTi?, endTi?, dataOffset?)`
 with sensible defaults so existing call sites continue to work unchanged.

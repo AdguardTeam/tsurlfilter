@@ -43,6 +43,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- Data readers (`NetworkRuleDataReader`, `CosmeticRuleDataReader`) refuse to
+  read once the parser context has been reused by another parse: every getter
+  compares the context generation captured at construction. They borrow
+  `ctx.data` and `ctx.source` instead of copying them, so before this change a
+  reader kept across a parse silently returned another rule's data. Read the
+  fields before parsing the next rule, or copy them.
 - Syntax rejections of cosmetic headers, uBO modifiers and domain lists are
   `AdblockSyntaxError`s with a range instead of plain `Error`s, so tolerant
   consumers such as AGLint can report where the rule is wrong: an unclosed or

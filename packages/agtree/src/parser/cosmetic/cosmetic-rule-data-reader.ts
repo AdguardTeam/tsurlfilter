@@ -99,9 +99,10 @@ export type CosmeticRuleSeparatorKind = typeof CosmeticRuleSeparatorKind[keyof t
  * string and aliases the pipeline's mutable `ctx.data` buffer. It is valid
  * only until the pipeline that produced it parses another rule or its context
  * is otherwise invalidated (`reset`, a subsequent `parse`/`parseStructural`).
- * After that point, getters may return slices unrelated to the original rule.
- * Consumers must read all fields and discard the reader before reusing the
- * pipeline.
+ * Every getter checks the context generation and throws once the context has
+ * been reused, instead of silently returning slices of another rule.
+ * Consumers must still read all fields and discard the reader before reusing
+ * the pipeline.
  */
 export class CosmeticRuleDataReader {
     /**
@@ -130,6 +131,16 @@ export class CosmeticRuleDataReader {
     private readonly scriptletOffset: number;
 
     /**
+     * Context the reader borrows its buffers from.
+     */
+    private readonly ctx: ParserContext;
+
+    /**
+     * Parse generation captured at construction time.
+     */
+    private readonly generation: number;
+
+    /**
      * Creates a cosmetic-rule reader bound to a populated parser context.
      *
      * @param ctx Parser context whose structural data is populated.
@@ -141,6 +152,26 @@ export class CosmeticRuleDataReader {
         this.base = dataOffset;
         this.domainOffset = dataOffset + domainRecordsOffset(ctx);
         this.scriptletOffset = dataOffset + scriptletBodyDataOffset(ctx);
+        this.ctx = ctx;
+        this.generation = ctx.generation;
+    }
+
+    /**
+     * Rejects access once the context has been reused by another parse.
+     *
+     * The reader borrows `ctx.data` and `ctx.source` instead of copying them,
+     * so after the next parse every getter would read the next rule's data.
+     * Readers are therefore valid only synchronously, before the next parse.
+     *
+     * @throws {Error} If the context has been reused.
+     */
+    private ensureValid(): void {
+        if (this.ctx.generation !== this.generation) {
+            throw new Error(
+                'Rule data reader is stale: the parser context was reused by a later parse. '
+                + 'Read the rule data before parsing the next rule, or copy it first.',
+            );
+        }
     }
 
     /**
@@ -158,6 +189,7 @@ export class CosmeticRuleDataReader {
      * @returns True for exception separators (`#@#`, `#@$#`, …).
      */
     public get exception(): boolean {
+        this.ensureValid();
         return (this.flags & CR_FLAG_EXCEPTION) !== 0;
     }
 
@@ -168,6 +200,7 @@ export class CosmeticRuleDataReader {
      *   {@link CosmeticRuleSeparatorKind} value.
      */
     public get separatorKind(): CosmeticRuleSeparatorKind {
+        this.ensureValid();
         // eslint-disable-next-line no-bitwise
         return ((this.flags >>> CR_SEP_KIND_SHIFT) & CR_SEP_KIND_MASK) as CosmeticRuleSeparatorKind;
     }
@@ -178,6 +211,7 @@ export class CosmeticRuleDataReader {
      * @returns True when the rule carries ADG `[$...]` or uBO modifiers.
      */
     public get hasModifiers(): boolean {
+        this.ensureValid();
         // eslint-disable-next-line no-bitwise
         return (this.flags & (CR_FLAG_HAS_ADG_MODS | CR_FLAG_HAS_UBO_MODS)) !== 0;
     }
@@ -188,6 +222,7 @@ export class CosmeticRuleDataReader {
      * @returns True when the rule body is a scriptlet (ADG, uBO, or ABP snippet).
      */
     public get isScriptlet(): boolean {
+        this.ensureValid();
         // eslint-disable-next-line no-bitwise
         return (this.flags & (CR_FLAG_BODY_ADG_SCRIPTLET | CR_FLAG_BODY_UBO_SCRIPTLET)) !== 0
             || this.separatorKind === CR_SEP_KIND_ABP_SNIPPET;
@@ -199,6 +234,7 @@ export class CosmeticRuleDataReader {
      * @returns Rule body (trimmed), sliced from source.
      */
     public getBody(): string {
+        this.ensureValid();
         return this.source.slice(
             this.data[this.base + CR_BODY_START],
             this.data[this.base + CR_BODY_END],
@@ -211,6 +247,7 @@ export class CosmeticRuleDataReader {
      * @returns The cosmetic separator string.
      */
     public getSeparator(): string {
+        this.ensureValid();
         const start = this.data[this.base + CR_SEP_SOURCE_START];
         // eslint-disable-next-line no-bitwise
         const sepLen = (this.flags >>> CR_SEP_LEN_SHIFT) & CR_SEP_LEN_MASK;
@@ -223,6 +260,7 @@ export class CosmeticRuleDataReader {
      * @returns Number of domain items.
      */
     public get domainCount(): number {
+        this.ensureValid();
         return this.data[this.base + CR_DOMAIN_COUNT];
     }
 
@@ -232,6 +270,7 @@ export class CosmeticRuleDataReader {
      * @returns Ordered domain items with exception flags.
      */
     public getDomains(): DomainItem[] {
+        this.ensureValid();
         const count = this.domainCount;
         const out: DomainItem[] = [];
         for (let i = 0; i < count; i += 1) {
@@ -259,6 +298,7 @@ export class CosmeticRuleDataReader {
      *   a scriptlet, has no parameters, or uses a multi-call body.
      */
     public getScriptletParams(): string[] {
+        this.ensureValid();
         if (!this.isScriptlet) {
             return [];
         }

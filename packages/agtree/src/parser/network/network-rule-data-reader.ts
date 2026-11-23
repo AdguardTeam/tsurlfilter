@@ -30,9 +30,10 @@ import {
  * string and aliases the pipeline's mutable `ctx.data` buffer. It is valid
  * only until the pipeline that produced it parses another rule or its context
  * is otherwise invalidated (`reset`, a subsequent `parse`/`parseStructural`).
- * After that point, getters may return slices unrelated to the original rule.
- * Consumers must read all fields and discard the reader before reusing the
- * pipeline.
+ * Every getter checks the context generation and throws once the context has
+ * been reused, instead of returning slices of another rule.
+ * Consumers must still read all fields and discard the reader before reusing
+ * the pipeline.
  */
 export class NetworkRuleDataReader {
     /**
@@ -51,6 +52,16 @@ export class NetworkRuleDataReader {
     private readonly base: number;
 
     /**
+     * Context the reader borrows its buffers from.
+     */
+    private readonly ctx: ParserContext;
+
+    /**
+     * Parse generation captured at construction time.
+     */
+    private readonly generation: number;
+
+    /**
      * Creates a network-rule reader bound to a populated parser context.
      *
      * @param ctx Parser context whose structural data is populated.
@@ -60,6 +71,26 @@ export class NetworkRuleDataReader {
         this.source = ctx.source;
         this.data = ctx.data;
         this.base = dataOffset;
+        this.ctx = ctx;
+        this.generation = ctx.generation;
+    }
+
+    /**
+     * Rejects access once the context has been reused by another parse.
+     *
+     * The reader borrows `ctx.data` and `ctx.source` instead of copying them,
+     * so after the next parse every getter would read the next rule's data.
+     * Readers are therefore valid only synchronously, before the next parse.
+     *
+     * @throws {Error} If the context has been reused.
+     */
+    private ensureValid(): void {
+        if (this.ctx.generation !== this.generation) {
+            throw new Error(
+                'Rule data reader is stale: the parser context was reused by a later parse. '
+                + 'Read the rule data before parsing the next rule, or copy it first.',
+            );
+        }
     }
 
     /**
@@ -68,6 +99,7 @@ export class NetworkRuleDataReader {
      * @returns True for exception (`@@`) rules.
      */
     public get exception(): boolean {
+        this.ensureValid();
         return (this.data[this.base + NR_FLAGS_OFFSET] & NR_FLAG_EXCEPTION) !== 0;
     }
 
@@ -77,6 +109,7 @@ export class NetworkRuleDataReader {
      * @returns The rule pattern (may be empty).
      */
     public getPattern(): string {
+        this.ensureValid();
         const start = this.data[this.base + NR_PATTERN_START_OFFSET];
         const end = this.data[this.base + NR_PATTERN_END_OFFSET];
         return start < 0 || end < 0 ? '' : this.source.slice(start, end);
@@ -88,6 +121,7 @@ export class NetworkRuleDataReader {
      * @returns Number of modifiers.
      */
     public get modifierCount(): number {
+        this.ensureValid();
         return this.data[this.base + NR_MODIFIER_COUNT_OFFSET];
     }
 
@@ -110,6 +144,7 @@ export class NetworkRuleDataReader {
      * @returns Modifier name.
      */
     public getModifierName(i: number): string {
+        this.ensureValid();
         const rb = this.recordBase(i);
         return this.source.slice(
             this.data[rb + MODIFIER_FIELD_NAME_START],
@@ -125,6 +160,7 @@ export class NetworkRuleDataReader {
      * @returns Modifier value or null when absent.
      */
     public getModifierValue(i: number): string | null {
+        this.ensureValid();
         const rb = this.recordBase(i);
         const start = this.data[rb + MODIFIER_FIELD_VALUE_START];
         const end = this.data[rb + MODIFIER_FIELD_VALUE_END];
@@ -142,6 +178,7 @@ export class NetworkRuleDataReader {
      * @returns True when the modifier is negated (`~`).
      */
     public isModifierNegated(i: number): boolean {
+        this.ensureValid();
         const rb = this.recordBase(i);
         return (this.data[rb + MODIFIER_FIELD_FLAGS] & MODIFIER_FLAG_NEGATED) !== 0;
     }
