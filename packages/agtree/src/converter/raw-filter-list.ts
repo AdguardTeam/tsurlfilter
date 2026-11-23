@@ -17,6 +17,10 @@ import { RuleParserPipeline, type StructuralParseResult } from '../ast-builder/r
 import { ProductCode } from '../compatibility-tables';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import { RuleGenerator } from '../generator';
+import {
+    isSelectorListCapacityError,
+    SELECTOR_LIST_MAX_COMPLEX_MESSAGE,
+} from '../parser/css/selector-list/selector-list';
 import { LF } from '../utils/constants';
 import { getErrorMessage } from '../utils/error';
 import { findNextLineBreak } from '../utils/line-break';
@@ -117,6 +121,11 @@ export class RawFilterListConverter extends BaseConverter {
                 continue;
             }
 
+            // Set when the first parse failed only because a selector list of
+            // an HTML filtering body does not fit the parser's fixed region.
+            // The rule is then kept as-is and recorded as a degradation.
+            let selectorListOverflow = false;
+
             try {
                 // ONE structural parse per line (tokenize + structural, no AST).
                 let parseOptions: Readonly<ParseOptions> = CONVERTER_PARSE_OPTIONS;
@@ -135,6 +144,7 @@ export class RawFilterListConverter extends BaseConverter {
                         throw error;
                     }
 
+                    selectorListOverflow = isSelectorListCapacityError(error);
                     parseOptions = CONVERTER_PARSE_OPTIONS_RAW_HTML_BODIES;
 
                     try {
@@ -159,6 +169,17 @@ export class RawFilterListConverter extends BaseConverter {
                 const conversion = RuleConverter.convertToAdg(ast);
 
                 if (!conversion.isConverted) {
+                    // A selector list over the parser's capacity is a
+                    // degradation, not a conversion error: the rule stays as
+                    // it was, but callers should be able to report it (D-16).
+                    if (selectorListOverflow && tolerant) {
+                        errors.push({
+                            rule: line,
+                            offset,
+                            message: `${SELECTOR_LIST_MAX_COMPLEX_MESSAGE} — the rule was kept unchanged`,
+                        });
+                    }
+
                     append(line + lineBreak);
                     offset = nextOffset;
                     continue;

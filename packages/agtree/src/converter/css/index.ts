@@ -104,6 +104,19 @@ export interface AdgConversionResult extends ConversionResult<string> {
 }
 
 /**
+ * Module-shared cursor for {@link CssSelectorConverter.convertToAdg}: reused
+ * across conversions, so converting a filter list does not allocate a
+ * tokenizer and its mapping buffers per selector.
+ */
+const sharedCursor = new CssCursor();
+
+/**
+ * Current conversion nesting depth. A non-zero depth means a conversion is in
+ * progress on {@link sharedCursor}, so a nested call must allocate its own.
+ */
+let conversionDepth = 0;
+
+/**
  * CSS selector converter.
  *
  * @todo Implement `convertToAbp`.
@@ -137,7 +150,34 @@ export class CssSelectorConverter extends BaseConverter {
      */
     public static convertToAdg(node: SelectorList | Raw): AdgConversionResult {
         const selectorList = CssSelectorConverter.selectorListNodeToString(node);
-        const cursor = new CssCursor();
+
+        // Reuse one cursor per conversion so converting a filter list does not
+        // allocate a tokenizer and its mapping buffers per selector. A
+        // recursive conversion (an extended pseudo-class argument that is
+        // itself a selector list) gets its own cursor, because it would
+        // otherwise overwrite the state the outer loop iterates.
+        const cursor = conversionDepth === 0 ? sharedCursor : new CssCursor();
+        conversionDepth += 1;
+
+        try {
+            return CssSelectorConverter.convertSelectorList(selectorList, cursor);
+        } finally {
+            conversionDepth -= 1;
+        }
+    }
+
+    /**
+     * Converts one selector list with the given cursor.
+     *
+     * Split out of {@link CssSelectorConverter.convertToAdg} so the public
+     * entry point can manage the shared cursor and its recursion depth.
+     *
+     * @param selectorList Raw selector list text.
+     * @param cursor Cursor to iterate the selector list with.
+     *
+     * @returns Conversion result.
+     */
+    private static convertSelectorList(selectorList: string, cursor: CssCursor): AdgConversionResult {
         cursor.reset(selectorList);
 
         const converted: string[] = [];

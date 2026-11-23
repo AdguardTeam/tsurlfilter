@@ -28,6 +28,7 @@ import {
     type SelectorCombinator,
     type SimpleSelector,
 } from '../../nodes';
+import { isSelectorListCapacityError } from '../../parser/css/selector-list/selector-list';
 import {
     ASTERISK,
     BACKSLASH,
@@ -341,7 +342,14 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     rule.body.type === 'Raw' ? rule.body.value : '',
                 );
 
-            if (!isAdgWithSpecialSelectorsWithError) {
+            // A selector list with more complex selectors than the parser can
+            // record (more than `DEFAULT_MAX_COMPLEX`) cannot be converted,
+            // but the rule is still valid: keep it as-is instead of failing
+            // the whole conversion (D-16). This applies to AdGuard and uBO
+            // bodies alike: the raw body is reused, so nothing is lost.
+            const isSelectorListOverflow = isSelectorListCapacityError(error);
+
+            if (!isAdgWithSpecialSelectorsWithError && !isSelectorListOverflow) {
                 throw error;
             }
 
@@ -441,12 +449,23 @@ export class HtmlRuleConverter extends RuleConverterBase {
         };
 
         // Convert body
-        const convertedBody = HtmlRuleConverter.convertBody(
-            rule.body,
-            UboHtmlFilteringBodyGenerator,
-            onSpecialAttributeSelector,
-            HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToUbo,
-        );
+        let convertedBody: Raw | HtmlFilteringRuleBody;
+        try {
+            convertedBody = HtmlRuleConverter.convertBody(
+                rule.body,
+                UboHtmlFilteringBodyGenerator,
+                onSpecialAttributeSelector,
+                HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToUbo,
+            );
+        } catch (error) {
+            // Same degradation as in `convertToAdg`: a selector list that does
+            // not fit the parser's fixed region keeps the rule as-is.
+            if (!isSelectorListCapacityError(error)) {
+                throw error;
+            }
+
+            return createNodeConversionResult([rule], false);
+        }
 
         if (isUnconvertible) {
             // A selector list is a union of complex selectors, and special

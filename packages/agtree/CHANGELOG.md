@@ -89,6 +89,18 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   parsed as one exception item again. Regex-ness was decided before the `~`
   was consumed, so the pattern was split at its embedded separator and the
   exclusion became two permitted items, which inverted the rule scope.
+- Converting an HTML filtering rule whose selector list is longer than the
+  parser's fixed region (more than eight comma-separated selectors) no longer
+  throws: the rule is kept as-is, and a tolerant filter-list conversion records
+  a non-fatal entry describing the degradation. Before,
+  `RawRuleConverter.convertToAdg` threw `Selector list exceeds maximum complex
+  selector capacity`, so consumers that convert rule by rule dropped the rule.
+  An AdGuard `$$` and a uBlock `##^` body behave the same way; rules within the
+  limit are still converted.
+- Converting rules in bulk no longer allocates a CSS cursor per extended-CSS
+  selector list, nor a parser pipeline per HTML filtering body; both are
+  reused. A nested conversion of a legacy `[-ext-has="…"]` attribute value
+  still gets its own cursor.
 - Malformed modifier lists are rejected again instead of being accepted with
   data loss: an empty slot (`$script,,domain=x.com`, `$script,`, `$~`) no
   longer drops every later modifier — which turned

@@ -64,6 +64,13 @@ const modifierTokenizer = new Tokenizer(TOKEN_CAPACITY);
 const modifierCtx = createParserContext(TOKEN_CAPACITY, 1, 0);
 
 /**
+ * Module-shared pipeline for HTML filtering body parsing ({@link
+ * parseHtmlFilteringBody}). Reused so converting a filter list does not
+ * allocate a tokenizer and parser context per candidate rule.
+ */
+const htmlBodyParser = new RuleParserPipeline();
+
+/**
  * Tokenizes `value` fully into `tokenizer`, growing the token buffer on
  * overflow until the entire source is consumed. Shared by the list and
  * modifier parsers, which both drive a reused tokenizer to completion.
@@ -506,13 +513,12 @@ export const parseHtmlFilteringBody = (
     body: Raw,
     options?: { isLocIncluded?: boolean; parseHtmlFilteringRuleBodies?: boolean },
 ): HtmlFilteringRuleBody => {
-    const pipeline = new RuleParserPipeline();
     // Wrap body value in a dummy rule so the pipeline can parse it
     // NOTE: Triple dollar signs are intentional — the first `$$` is the literal
     // AdGuard HTML filtering rule separator (`example.com$$<body>`), and the
     // `${body.value}` template expression injects the body content.
     const dummyRule = `$$${body.value}`;
-    const rule = pipeline.parse(dummyRule, {
+    const rule = htmlBodyParser.parse(dummyRule, {
         isLocIncluded: options?.isLocIncluded ?? false,
         parseHtmlFilteringRuleBodies: options?.parseHtmlFilteringRuleBodies ?? true,
     }) as HtmlFilteringRule;

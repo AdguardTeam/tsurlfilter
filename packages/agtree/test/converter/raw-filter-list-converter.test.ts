@@ -226,3 +226,40 @@ describe('RawFilterListConverter round trip', () => {
         expect(r.getOriginalContent()).toBe(input);
     });
 });
+
+describe('RawFilterListConverter selector-list capacity degradation (D-16)', () => {
+    /**
+     * Builds a selector list with `count` comma-separated complex selectors.
+     *
+     * @param count Number of complex selectors.
+     *
+     * @returns Selector list text.
+     */
+    const selectors = (count: number): string => Array.from(
+        { length: count },
+        (_, i) => `div.c${i}`,
+    ).join(', ');
+
+    test('keeps the rule verbatim and records a non-fatal degradation entry', () => {
+        const rule = `example.com,example.org$$${selectors(9)}`;
+        const input = ['||example.org^', rule].join('\n');
+
+        const r = RawFilterListConverter.convertToAdg(input);
+
+        // Tolerant conversion never throws, and the rule stays in the list.
+        expect(r.converted).toBe(input);
+        expect(r.errors).toHaveLength(1);
+        expect(r.errors[0]).toMatchObject({ rule, offset: '||example.org^'.length + 1 });
+        expect(r.errors[0].message).toContain('Selector list exceeds maximum complex selector capacity');
+        expect(r.errors[0].message).toContain('kept unchanged');
+    });
+
+    test('does not record the degradation for a converter-level fallback of a valid rule', () => {
+        // A rule kept as-is for another reason (special selectors that cannot
+        // be converted) is not a capacity degradation.
+        const input = `example.com,example.org$$${selectors(8)}[tag-content="a"]`;
+        const r = RawFilterListConverter.convertToAdg(input);
+
+        expect(r.errors).toHaveLength(0);
+    });
+});

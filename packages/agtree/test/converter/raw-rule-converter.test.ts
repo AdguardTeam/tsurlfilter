@@ -168,3 +168,37 @@ describe('RawRuleConverter shared pipeline', () => {
         expect(r.result).toEqual(['||example.org^']);
     });
 });
+
+describe('RawRuleConverter selector-list capacity degradation (D-16)', () => {
+    /**
+     * Builds a selector list with `count` comma-separated complex selectors.
+     *
+     * @param count Number of complex selectors.
+     *
+     * @returns Selector list text.
+     */
+    const selectors = (count: number): string => Array.from(
+        { length: count },
+        (_, i) => `div.c${i}`,
+    ).join(', ');
+
+    // `DEFAULT_MAX_COMPLEX` is 8, so nine entries overflow the fixed region.
+    test.each([
+        ['AdGuard HTML filtering', (s: string) => `example.com,example.org$$${s}`],
+        ['uBO HTML filtering', (s: string) => `example.com,example.org##^${s}`],
+    ])('%s keeps the rule as-is instead of throwing', (_name, build) => {
+        const rule = build(selectors(9));
+        const result = RawRuleConverter.convertToAdg(rule);
+
+        expect(result.isConverted).toBe(false);
+        expect(result.result).toEqual([rule]);
+    });
+
+    test('a rule within the limit is still converted', () => {
+        const rule = `example.com,example.org##^${selectors(8)}:has-text(a)`;
+        const result = RawRuleConverter.convertToAdg(rule);
+
+        expect(result.isConverted).toBe(true);
+        expect(result.result).toEqual([`example.com,example.org$$${selectors(8)}:contains(a)`]);
+    });
+});

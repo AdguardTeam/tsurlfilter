@@ -52,6 +52,36 @@ import { handlePseudoClassSelector } from './pseudo-class-selector';
 import { handleTypeSelector } from './type-selector';
 
 /**
+ * Message of the error thrown when a selector list has more complex selectors
+ * (comma-separated entries) than the parser can record.
+ */
+export const SELECTOR_LIST_MAX_COMPLEX_MESSAGE = 'Selector list exceeds maximum complex selector capacity';
+
+/**
+ * Message of the error thrown when the simple-selector records of a selector
+ * list do not fit the fixed region.
+ */
+export const SELECTOR_LIST_MAX_CHILD_MESSAGE = 'Selector list exceeds maximum child record capacity';
+
+/**
+ * Whether `error` reports a selector-list capacity overflow.
+ *
+ * Selector lists are stored in a fixed region (no growth), so a CSS selector
+ * list with too many entries cannot be parsed at all. Converters use this
+ * predicate to keep such HTML filtering rules as-is instead of failing the
+ * whole conversion.
+ *
+ * @param error Value caught from a parse or conversion call.
+ *
+ * @returns `true` for a selector-list capacity overflow.
+ */
+export function isSelectorListCapacityError(error: unknown): boolean {
+    return error instanceof AdblockSyntaxError
+        && (error.message === SELECTOR_LIST_MAX_COMPLEX_MESSAGE
+            || error.message === SELECTOR_LIST_MAX_CHILD_MESSAGE);
+}
+
+/**
  * CSS selector list parser.
  *
  * Performs a single-pass structural analysis of a CSS selector list encoded
@@ -172,7 +202,7 @@ export class SelectorListParser implements StructuralParser {
                 // Descendant combinator
                 if (totalChildCount >= maxChildren) {
                     throw new AdblockSyntaxError(
-                        'Selector list exceeds maximum child record capacity',
+                        SELECTOR_LIST_MAX_CHILD_MESSAGE,
                         wsSrcStart,
                         wsSrcEnd,
                     );
@@ -216,7 +246,7 @@ export class SelectorListParser implements StructuralParser {
                 // Capacity guard before writing to avoid overwriting child-record region
                 if (complexCount >= maxComplex) {
                     throw new AdblockSyntaxError(
-                        'Selector list exceeds maximum complex selector capacity',
+                        SELECTOR_LIST_MAX_COMPLEX_MESSAGE,
                         tokenStart(ctx, ti),
                         ends[ti],
                     );
@@ -262,7 +292,7 @@ export class SelectorListParser implements StructuralParser {
             // Capacity guard
             if (totalChildCount >= maxChildren) {
                 throw new AdblockSyntaxError(
-                    'Selector list exceeds maximum child record capacity',
+                    SELECTOR_LIST_MAX_CHILD_MESSAGE,
                     tokenStart(ctx, ti),
                     ends[ti],
                 );
@@ -438,7 +468,7 @@ export class SelectorListParser implements StructuralParser {
         // Capacity guard before writing to avoid overwriting child-record region
         if (complexCount >= maxComplex) {
             throw new AdblockSyntaxError(
-                'Selector list exceeds maximum complex selector capacity',
+                SELECTOR_LIST_MAX_COMPLEX_MESSAGE,
                 complexSourceStart,
                 complexSourceEnd,
             );

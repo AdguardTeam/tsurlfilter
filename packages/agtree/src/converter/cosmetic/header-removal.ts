@@ -32,6 +32,13 @@ export const ERROR_MESSAGES = {
 };
 
 /**
+ * Module-shared pipeline for re-parsing raw HTML filtering bodies. Reused so
+ * converting a filter list does not allocate a tokenizer and parser context
+ * per candidate rule.
+ */
+const sharedRuleParser = new RuleParserPipeline();
+
+/**
  * Converter for request header removal rules.
  *
  * @todo Implement `convertToUbo` (ABP currently doesn't support header removal rules).
@@ -70,9 +77,8 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
         let body: HtmlFilteringRuleBody | null = null;
         if (rule.body.type === 'Raw') {
             // Re-parse the full rule to get the parsed body
-            const pipeline = new RuleParserPipeline();
             try {
-                const parsedRule = pipeline.parse(
+                const parsedRule = sharedRuleParser.parse(
                     `##^${rule.body.value}`,
                     { parseHtmlFilteringRuleBodies: true },
                 ) as HtmlFilteringRule;

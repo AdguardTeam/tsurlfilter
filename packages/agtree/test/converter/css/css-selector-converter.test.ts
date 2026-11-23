@@ -570,3 +570,27 @@ describe('CssSelectorConverter', () => {
         });
     });
 });
+
+describe('CssSelectorConverter shared cursor', () => {
+    test('a recursive conversion does not corrupt the outer cursor', () => {
+        // `[-ext-has="…"]` is converted by a nested `convertToAdg` call. The
+        // shared cursor must not be reused there, and the outer loop must
+        // still see the tokens that follow the attribute selector.
+        const nested = CssSelectorConverter.convertToAdg(
+            raw('div[-ext-has=".banner:contains(ad)"]:after'),
+        );
+        expect(nested.result).toBe('div:has(.banner:contains(ad))::after');
+
+        // The next conversion starts from a clean cursor state.
+        const after = CssSelectorConverter.convertToAdg(raw('div:after, section:after'));
+        expect(after.result).toBe('div::after, section::after');
+    });
+
+    test('deeply nested extended selectors convert', () => {
+        const result = CssSelectorConverter.convertToAdg(
+            raw('div[-ext-has=".a[-ext-has=\'.b\']"]'),
+        );
+
+        expect(result.result).toBe('div:has(.a:has(.b))');
+    });
+});
