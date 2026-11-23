@@ -9,6 +9,7 @@ import {
 import { ExtCssMarkersState } from '../../../../src/lib/common/cosmetic-api';
 import { FilteringEventType } from '../../../../src/lib/common/filtering-log';
 import { MESSAGE_HANDLER_NAME, MessageType } from '../../../../src/lib/common/message-constants';
+import { appContext } from '../../../../src/lib/mv3/background/app-context';
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 import { MessagesApi } from '../../../../src/lib/mv3/background/messages-api';
 
@@ -375,6 +376,24 @@ describe('MessagesApi', () => {
                     frameDomain: 'example.com',
                 }),
             }));
+        });
+
+        it('drops hits after collection is disabled', async () => {
+            // The marked ExtendedCss rules stay in the page, so the injected
+            // function keeps reporting after the setting changes.
+            appContext.configuration!.settings.collectStats = false;
+
+            try {
+                const result = await messagesApi.handleMessage(
+                    createMessage() as any,
+                    createSender(0),
+                );
+
+                expect(result).toBe(false);
+                expect(publishEvent).not.toHaveBeenCalled();
+            } finally {
+                appContext.configuration!.settings.collectStats = true;
+            }
         });
     });
 });

@@ -341,6 +341,15 @@ export class MessagesApi {
             return false;
         }
 
+        // The marked ExtendedCss rules stay in the page after collection is
+        // disabled: the injected function has no pause channel, so it keeps
+        // reporting. Drop its hits here instead of publishing them.
+        const collectStats = appContext.configuration?.settings.collectStats;
+
+        if (!isCollectStatsEnabledForDocument(collectStats, tabContext.mainFrameRule)) {
+            return false;
+        }
+
         const frameId = sender.frameId ?? MAIN_FRAME_ID;
 
         let { url } = tabContext.info;
