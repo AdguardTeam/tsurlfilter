@@ -22,6 +22,11 @@ export { EXTENDED_CSS_VERSION };
  */
 export const stealthConfigValidator = zod.object({
     /**
+     * Enables canvas readout protection when all feature gates allow it.
+     */
+    protectCanvas: zod.boolean().optional(),
+
+    /**
      * Should the application set a fixed lifetime from
      * {@link StealthConfig.selfDestructFirstPartyCookiesTime} for first-party
      * cookies.
@@ -122,7 +127,10 @@ export const settingsConfigValidator = zod.object({
     allowlistEnabled: zod.boolean(),
 
     /**
-     * Enables css hits counter if true.
+     * Enables the CSS hits counter if true.
+     *
+     * Collection stays disabled on documents where filtering is disabled by
+     * the allowlist.
      */
     collectStats: zod.boolean(),
 

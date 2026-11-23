@@ -17,6 +17,7 @@ import {
     RequestType,
 } from '@adguard/tsurlfilter';
 
+import { POPULAR_TLDS } from '../../src/constants/popular-tlds';
 import { ResourceType } from '../../src/declarative-rule/rule-condition';
 import { OPTION_NAMES } from '../../src/rule/option-names';
 import { Rule } from '../../src/rule/rule';
@@ -281,6 +282,13 @@ describe('pattern / allowlist / priority / advanced-value parity', () => {
         const [dnrRule] = Rule.createFromText(1, 0, ruleText);
         const tsRule = new NetworkRule(ruleText, 1);
 
+        if (dnrRule.isModifierEnabled(OPTION_NAMES.CSP)) {
+            // `$csp` keeps its directive in a dedicated field, because the
+            // shared advanced value is overwritten by any following modifier.
+            expect(dnrRule.cspDirective).toBe(tsRule.getAdvancedModifierValue() || null);
+            return;
+        }
+
         if (dnrRule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
             // For `$removeparam` an empty value is meaningful ("remove all
             // query parameters"), so both sides must agree exactly — `''`
@@ -376,9 +384,9 @@ describe('$badfilter detection and negation parity', () => {
         ['||example.com^$domain=/foo\\.bar/', '||example.com^$domain=/foo\\.bar/,badfilter', true],
         ['||example.com^$domain=/FOO\\.bar/', '||example.com^$domain=/foo\\.bar/,badfilter', false],
         ['||example.com^$domain=example.*', '||example.com^$domain=example.*,badfilter', true],
-        // A wildcard TLD entry overlaps only an identically written entry: matching
-        // it against the domains it stands for needs the public suffix list, which
-        // the Manifest V3 converter does not have.
+        // A wildcard TLD entry intersects only an identically written entry:
+        // MV2 requires an exact entry match before it negates the rule, even
+        // when the wildcard covers the concrete entry.
         ['||example.com^$domain=example.*', '||example.com^$domain=example.com|example.org,badfilter', false],
         // In the domain-scoped case the position of $domain is not compared,
         // unlike the position of every other modifier.
@@ -609,6 +617,118 @@ const ENGINE_DOMAIN_BADFILTER_CASES: [
         'https://example.com/',
         false,
     ],
+    // A `$domain` entry covers its subdomains.
+    [
+        '||example.com^$domain=example.org|example.net',
+        '||example.com^$domain=example.net,badfilter',
+        'https://sub.example.org/',
+        false,
+    ],
+    // A badfilter entry cancels the target subdomains that it covers.
+    [
+        '||example.com^$domain=foo.com|sub.foo.com',
+        '||example.com^$domain=foo.com,badfilter',
+        'https://sub.foo.com/',
+        true,
+    ],
+    // A badfilter entry that is a subdomain of a kept target entry excludes it.
+    [
+        '||example.com^$domain=foo.com|bar.com',
+        '||example.com^$domain=foo.com|sub.bar.com,badfilter',
+        'https://sub.bar.com/',
+        true,
+    ],
+    [
+        '||example.com^$domain=foo.com|bar.com',
+        '||example.com^$domain=foo.com|sub.bar.com,badfilter',
+        'https://bar.com/',
+        false,
+    ],
+    // A badfilter subdomain cancels only that subdomain.
+    [
+        '||example.com^$domain=foo.com|sub.foo.com',
+        '||example.com^$domain=sub.foo.com,badfilter',
+        'https://foo.com/',
+        false,
+    ],
+    [
+        '||example.com^$domain=foo.com|sub.foo.com',
+        '||example.com^$domain=sub.foo.com,badfilter',
+        'https://sub.foo.com/',
+        true,
+    ],
+    // A wildcard-TLD badfilter covers the concrete entries that it expands to.
+    [
+        '||example.com^$domain=example.*|example.com',
+        '||example.com^$domain=example.com,badfilter',
+        'https://example.com/',
+        true,
+    ],
+    [
+        '||example.com^$domain=example.*|example.com',
+        '||example.com^$domain=example.com,badfilter',
+        'https://example.org/',
+        false,
+    ],
+    [
+        '||example.com^$domain=example.*|example.com',
+        '||example.com^$domain=example.*,badfilter',
+        'https://example.com/',
+        true,
+    ],
+    // A wildcard-TLD badfilter entry excludes a kept plain entry that it only
+    // overlaps.
+    [
+        '||example.com^$domain=foo.com|example.com',
+        '||example.com^$domain=foo.com|sub.example.*,badfilter',
+        'https://sub.example.com/',
+        true,
+    ],
+    // A plain badfilter entry excludes a kept wildcard-TLD entry that it only
+    // overlaps.
+    [
+        '||example.com^$domain=foo.com|sub.example.*',
+        '||example.com^$domain=foo.com|example.com,badfilter',
+        'https://sub.example.com/',
+        true,
+    ],
+    // A literal regexp that only matches a domain the narrowed rule already
+    // excludes does not drop the rule.
+    [
+        '||example.com^$domain=bar.com|baz.com',
+        '||example.com^$domain=baz.com|sub.bar.com|/^sub\\.bar\\.com$/,badfilter',
+        'https://bar.com/',
+        false,
+    ],
+    [
+        '||example.com^$domain=bar.com|baz.com',
+        '||example.com^$domain=baz.com|sub.bar.com|/^sub\\.bar\\.com$/,badfilter',
+        'https://x.bar.com/',
+        false,
+    ],
+    [
+        '||example.com^$domain=bar.com|baz.com',
+        '||example.com^$domain=baz.com|sub.bar.com|/^sub\\.bar\\.com$/,badfilter',
+        'https://sub.bar.com/',
+        true,
+    ],
+    // A negated domain makes the cancellation complete, so the whole text is
+    // compared and a matching text cancels the rule.
+    [
+        '||example.com^$domain=example.org|~example.net',
+        '||example.com^$domain=example.org|~example.net,badfilter',
+        'https://example.org/',
+        true,
+    ],
+    // DNR cannot exclude a regexp entry, so a regexp badfilter cancels the rule
+    // completely instead of narrowing it. The kept `example.com` entry would
+    // otherwise apply on `foo.example.com`, where the regexp cancels the rule.
+    [
+        '||example.com^$domain=example.com|/foo/',
+        '||example.com^$domain=/foo/,badfilter',
+        'https://foo.example.com/',
+        true,
+    ],
 ];
 
 describe('$domain badfilter negation through the MV2 engine', () => {
@@ -622,6 +742,242 @@ describe('$domain badfilter negation through the MV2 engine', () => {
                 .toBe(!negated);
         },
     );
+});
+
+/**
+ * Checks whether a domain is covered by a `$domain` list the way DNR matches
+ * `initiatorDomains`: an entry covers the domain itself and its subdomains, and
+ * a wildcard TLD entry is expanded with `POPULAR_TLDS`.
+ *
+ * @param domain Source domain.
+ * @param list Permitted or restricted `$domain` entries.
+ *
+ * @returns True when the list covers the domain.
+ */
+const isDomainInList = (domain: string, list: readonly string[]): boolean => list.some((entry) => {
+    if (entry.endsWith('.*')) {
+        const prefix = entry.slice(0, -2);
+
+        return POPULAR_TLDS.some((tld) => {
+            const expanded = `${prefix}.${tld}`;
+
+            return domain === expanded || domain.endsWith(`.${expanded}`);
+        });
+    }
+
+    return domain === entry || domain.endsWith(`.${entry}`);
+});
+
+describe('$domain badfilter narrowing through the MV3 converter', () => {
+    it.each(ENGINE_DOMAIN_BADFILTER_CASES)(
+        'target %s vs badfilter %s keeps the MV2 domain scope on %s',
+        (targetText, badfilterText, sourceUrl) => {
+            const sourceDomain = new URL(sourceUrl).hostname;
+
+            const [targetRule] = Rule.createFromText(1, 0, targetText);
+            const [badfilterRule] = Rule.createFromText(1, 0, badfilterText);
+
+            const narrowed = Rule.applyBadfilters(targetRule, [badfilterRule]);
+
+            // A narrowed rule applies when its permitted list covers the source
+            // domain and its restricted list does not.
+            const mv3Applies = narrowed !== null
+                && (narrowed.permittedDomains === null
+                    || isDomainInList(sourceDomain, narrowed.permittedDomains))
+                && (narrowed.restrictedDomains === null
+                    || !isDomainInList(sourceDomain, narrowed.restrictedDomains));
+
+            expect(mv3Applies)
+                .toBe(matchesThroughEngine([targetText, badfilterText], 'https://example.com/', sourceUrl));
+        },
+    );
+
+    it('narrows the rule to the domains that the badfilter does not cover', () => {
+        const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com');
+        const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+
+        const narrowed = Rule.applyBadfilters(targetRule, [badfilterRule]);
+
+        expect(narrowed?.permittedDomains).toEqual(['bar.com']);
+    });
+
+    it('keeps the MV2 priority after narrowing', () => {
+        const targetText = '||example.com^$domain=foo.com|bar.com';
+        const [targetRule] = Rule.createFromText(1, 0, targetText);
+        const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+        const tsRule = new NetworkRule(targetText, 1);
+
+        const narrowed = Rule.applyBadfilters(targetRule, [badfilterRule]);
+
+        // MV2 removes the rule from the matched array but keeps its weight, so
+        // the narrowed rule must keep the weight of the original rule.
+        expect(narrowed?.priority).toBe(tsRule.getPriorityWeight());
+    });
+
+    it('cancels the rule completely when the badfilter covers every target domain', () => {
+        const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com');
+        const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com|bar.com,badfilter');
+
+        expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
+    });
+
+    it('documents the limitation for a target rule without $domain', () => {
+        // The converter narrows only an existing permitted `$domain` list, so a
+        // rule without one is still cancelled completely. MV2 keeps it on the
+        // domains that the badfilter does not name.
+        const [targetRule] = Rule.createFromText(1, 0, '||example.com^');
+        const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=foo.com,badfilter');
+
+        expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
+        expect(matchesThroughEngine(
+            ['||example.com^', '||example.com^$domain=foo.com,badfilter'],
+            'https://example.com/',
+            'https://bar.com/',
+        )).toBe(true);
+    });
+
+    it('documents the limitation for a regexp badfilter entry', () => {
+        // DNR cannot express an exclusion that matches a regexp, so the rule is
+        // cancelled completely. MV2 keeps it on the domains that the badfilter
+        // does not match.
+        const [targetRule] = Rule.createFromText(1, 0, '||example.com^$domain=example.com|/foo/');
+        const [badfilterRule] = Rule.createFromText(1, 0, '||example.com^$domain=/foo/,badfilter');
+
+        expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
+        expect(matchesThroughEngine(
+            ['||example.com^$domain=example.com|/foo/', '||example.com^$domain=/foo/,badfilter'],
+            'https://example.com/',
+            'https://example.com/',
+        )).toBe(true);
+    });
+
+    it('cancels a rule completely when a later regexp badfilter covers a kept domain', () => {
+        const targetText = '||example.com^$domain=a.com|b.com';
+        const firstText = '||example.com^$domain=a.com,badfilter';
+        const secondText = '||example.com^$domain=a.com|/b/,badfilter';
+
+        const [targetRule] = Rule.createFromText(1, 0, targetText);
+        const [firstBadfilter] = Rule.createFromText(1, 0, firstText);
+        const [secondBadfilter] = Rule.createFromText(1, 0, secondText);
+
+        // The first badfilter removes `a.com`; the second one no longer changes
+        // the current list, but its regexp still matches the kept `b.com`, which
+        // DNR cannot exclude.
+        expect(Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter])).toBeNull();
+        expect(matchesThroughEngine(
+            [targetText, firstText, secondText],
+            'https://example.com/',
+            'https://b.com/',
+        )).toBe(false);
+    });
+
+    it('keeps a rule when a later regexp badfilter matches only a removed domain', () => {
+        const targetText = '||example.com^$domain=a.com|b.com';
+        const firstText = '||example.com^$domain=a.com,badfilter';
+        const secondText = '||example.com^$domain=a.com|/^a\\.com$/,badfilter';
+
+        const [targetRule] = Rule.createFromText(1, 0, targetText);
+        const [firstBadfilter] = Rule.createFromText(1, 0, firstText);
+        const [secondBadfilter] = Rule.createFromText(1, 0, secondText);
+
+        const narrowed = Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter]);
+
+        // The anchored regexp matches only the removed `a.com`, so `b.com`
+        // keeps applying, as it does in MV2.
+        expect(narrowed?.permittedDomains).toEqual(['b.com']);
+        expect(matchesThroughEngine(
+            [targetText, firstText, secondText],
+            'https://example.com/',
+            'https://b.com/',
+        )).toBe(true);
+    });
+
+    it('cancels a rule completely when a regexp badfilter with a character class covers a kept domain', () => {
+        const targetText = '||example.com^$domain=a.com|b.com';
+        const firstText = '||example.com^$domain=a.com,badfilter';
+        const secondText = '||example.com^$domain=a.com|/^b\\.\\w\\w\\w$/,badfilter';
+
+        const [targetRule] = Rule.createFromText(1, 0, targetText);
+        const [firstBadfilter] = Rule.createFromText(1, 0, firstText);
+        const [secondBadfilter] = Rule.createFromText(1, 0, secondText);
+
+        // `\w\w\w` matches `com`, so the regexp covers the kept `b.com`; DNR
+        // cannot exclude it, and the rule is cancelled completely.
+        expect(Rule.applyBadfilters(targetRule, [firstBadfilter, secondBadfilter])).toBeNull();
+        expect(matchesThroughEngine(
+            [targetText, firstText, secondText],
+            'https://example.com/',
+            'https://b.com/',
+        )).toBe(false);
+    });
+
+    it('checks regexp coverage against the final list regardless of badfilter order', () => {
+        const targetText = '||example.com^$domain=a.com|b.com|c.com';
+        const regexpText = '||example.com^$domain=a.com|/^x\\.c\\.com$/,badfilter';
+        const plainText = '||example.com^$domain=c.com,badfilter';
+
+        const [targetRule] = Rule.createFromText(1, 0, targetText);
+        const [regexpBadfilter] = Rule.createFromText(1, 0, regexpText);
+        const [plainBadfilter] = Rule.createFromText(1, 0, plainText);
+
+        // The regexp matches only `x.c.com`, and the other badfilter removes
+        // `c.com`, so `b.com` keeps applying as it does in MV2.
+        expect(Rule.applyBadfilters(targetRule, [regexpBadfilter, plainBadfilter])?.permittedDomains)
+            .toEqual(['b.com']);
+        expect(Rule.applyBadfilters(targetRule, [plainBadfilter, regexpBadfilter])?.permittedDomains)
+            .toEqual(['b.com']);
+        expect(matchesThroughEngine(
+            [targetText, regexpText, plainText],
+            'https://example.com/',
+            'https://b.com/',
+        )).toBe(true);
+        expect(matchesThroughEngine(
+            [targetText, regexpText, plainText],
+            'https://example.com/',
+            'https://x.c.com/',
+        )).toBe(false);
+    });
+
+    it('keeps an exception rule narrowed when a regexp badfilter covers a kept domain', () => {
+        const blockText = '||example.com^';
+        const targetText = '@@||example.com^$domain=a.com|b.com|/foo/';
+        const badfilterText = '@@||example.com^$domain=a.com|/foo/,badfilter';
+
+        const [targetRule] = Rule.createFromText(1, 0, targetText);
+        const [badfilterRule] = Rule.createFromText(1, 0, badfilterText);
+
+        // MV2 keeps allowing `example.com` on `b.com` through the exception, so
+        // the exception stays narrowed instead of being dropped.
+        const narrowed = Rule.applyBadfilters(targetRule, [badfilterRule]);
+
+        expect(narrowed?.permittedDomains).toEqual(['b.com']);
+
+        const engine = Engine.createSync({
+            filters: [{ id: 1, content: [blockText, targetText, badfilterText].join('\n') }],
+        });
+        const result = engine.matchRequest(
+            new Request('https://example.com/', 'https://b.com/', RequestType.Document),
+        );
+
+        expect(result.basicRule?.isAllowlist()).toBe(true);
+    });
+
+    it('treats an escaped list separator in a regexp as alternation', () => {
+        const targetText = '||example.com^$domain=a.com|b.com';
+        const badfilterText = '||example.com^$domain=a.com|/^x\\.com\\|b\\.com$/,badfilter';
+
+        const [targetRule] = Rule.createFromText(1, 0, targetText);
+        const [badfilterRule] = Rule.createFromText(1, 0, badfilterText);
+
+        // MV2 removes the escape before compiling the regexp, so the pattern
+        // matches `b.com` and cancels the rule.
+        expect(Rule.applyBadfilters(targetRule, [badfilterRule])).toBeNull();
+        expect(matchesThroughEngine(
+            [targetText, badfilterText],
+            'https://example.com/',
+            'https://b.com/',
+        )).toBe(false);
+    });
 });
 
 // ---------------------------------------------------------------------------

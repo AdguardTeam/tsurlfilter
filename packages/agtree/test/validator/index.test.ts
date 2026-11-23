@@ -483,6 +483,14 @@ describe('ModifierValidator', () => {
                             expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
                         },
                         {
+                            actual: String.raw`domain=~/a\/|example.org`,
+                            expected: LIST_PARSE_ERROR_PREFIX.UNCLOSED_REGEXP_LITERAL,
+                        },
+                        {
+                            actual: String.raw`domain=~/|example.org`,
+                            expected: LIST_PARSE_ERROR_PREFIX.UNCLOSED_REGEXP_LITERAL,
+                        },
+                        {
                             actual: 'domain=example.com|example..org',
                             expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'domain': 'example..org'`,
                         },
@@ -727,6 +735,8 @@ describe('ModifierValidator', () => {
                     test.each([
                         'stealth',
                         'stealth=searchqueries',
+                        'stealth=fingerprinting',
+                        'stealth=referrer|fingerprinting',
                         'stealth=donottrack|3p-cookie|1p-cookie|3p-cache|3p-auth',
                         'stealth=webrtc|push|location|flash|java|referrer',
                         'stealth=useragent|ip|xclientdata|dpi',

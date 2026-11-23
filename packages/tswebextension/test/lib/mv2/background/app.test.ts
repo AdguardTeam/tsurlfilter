@@ -1,3 +1,5 @@
+import { webcrypto } from 'node:crypto';
+
 import {
     afterEach,
     beforeEach,
@@ -6,6 +8,7 @@ import {
     it,
     vi,
 } from 'vitest';
+import browser from 'webextension-polyfill';
 import { type Runtime } from 'webextension-polyfill';
 
 import {
@@ -13,10 +16,20 @@ import {
     createTsWebExtension,
     engineApi,
     messagesApi,
+    type RegistrationResult,
     TsWebExtension,
 } from '../../../../src/lib';
+import {
+    CanvasAvailabilityStatus,
+    CanvasRegistrationStatus,
+} from '../../../../src/lib/common/canvas-protection/constants';
+import { CollectHitStatsNotifier } from '../../../../src/lib/common/collect-hit-stats';
 import { type Message } from '../../../../src/lib/common/message';
+import { canvasDeliveryChannel, tabsApi } from '../../../../src/lib/mv2/background/api';
+import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { assistant, Assistant } from '../../../../src/lib/mv2/background/assistant';
+import { configurationMV2Validator } from '../../../../src/lib/mv2/background/configuration';
+import { browserDetectorMV2 } from '../../../../src/lib/mv2/background/utils/browser-detector';
 
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
 import { MockAppContext } from './mocks/mock-app-context';
@@ -48,9 +61,12 @@ describe('TsWebExtension', () => {
     let config: ConfigurationMV2;
 
     beforeEach(async () => {
+        vi.stubGlobal('crypto', webcrypto);
         instance = createTsWebExtension('test');
         config = getConfigurationMv2Fixture();
+        vi.mocked(configurationMV2Validator.parse).mockImplementation((value) => value as ConfigurationMV2);
         vi.spyOn(engineApi, 'startEngine').mockResolvedValue({ conversionErrors: [] });
+        vi.spyOn(engineApi, 'getDocumentOrStealthExceptionRuleTexts').mockReturnValue([]);
     });
 
     afterEach(() => {
@@ -59,6 +75,19 @@ describe('TsWebExtension', () => {
 
     it('should be created correctly', () => {
         expect(instance).toBeInstanceOf(TsWebExtension);
+    });
+
+    it('listens to the canvas delivery host on creation in Chromium', () => {
+        const listen = vi.spyOn(canvasDeliveryChannel, 'listen').mockImplementation(() => {});
+
+        vi.spyOn(browserDetectorMV2, 'isFirefox').mockReturnValue(false);
+        createTsWebExtension('test');
+        expect(listen).toHaveBeenCalledTimes(1);
+
+        listen.mockClear();
+        vi.spyOn(browserDetectorMV2, 'isFirefox').mockReturnValue(true);
+        createTsWebExtension('test');
+        expect(listen).not.toHaveBeenCalled();
     });
 
     describe('start, configure and update methods', () => {
@@ -81,7 +110,24 @@ describe('TsWebExtension', () => {
             const result = await instance.start(config);
 
             expect(instance.isStarted).toBe(true);
-            expect(result).toEqual({ conversionErrors: mockErrors });
+            expect(result.conversionErrors).toEqual(mockErrors);
+        });
+
+        it('should notify content scripts when configure changes collectStats', async () => {
+            await instance.initStorage();
+            await instance.start(config);
+            const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+            await instance.configure({
+                ...config,
+                settings: {
+                    ...config.settings,
+                    collectStats: false,
+                },
+            });
+
+            expect(notifySpy).toHaveBeenCalledWith(false, expect.any(Function));
+            notifySpy.mockRestore();
         });
 
         it('should be updated correctly and return conversion errors', async () => {
@@ -93,7 +139,7 @@ describe('TsWebExtension', () => {
             const result = await instance.configure(config);
 
             expect(instance.configuration.settings.filteringEnabled).toBe(false);
-            expect(result).toEqual({ conversionErrors: mockErrors });
+            expect(result.conversionErrors).toEqual(mockErrors);
         });
 
         it('Should be stopped correctly', async () => {
@@ -158,6 +204,48 @@ describe('TsWebExtension', () => {
             instance.setCollectHitStats(expected);
 
             expect(instance.configuration.settings.collectStats).toBe(expected);
+        });
+
+        it('should notify content scripts when collectStats changes', () => {
+            const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+            instance.setCollectHitStats(false);
+
+            expect(notifySpy).toHaveBeenCalledWith(false, expect.any(Function));
+            notifySpy.mockRestore();
+        });
+
+        it('should not notify content scripts when collectStats does not change', () => {
+            const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+            instance.setCollectHitStats(true);
+
+            expect(notifySpy).not.toHaveBeenCalled();
+            notifySpy.mockRestore();
+        });
+
+        it('resolves collect stats per tab when collection is enabled', () => {
+            const allowlistedTabId = 1;
+            const regularTabId = 2;
+            vi.spyOn(tabsApi, 'getTabContext').mockImplementation(((tabId: number) => (
+                tabId === allowlistedTabId
+                    ? { mainFrameRule: { isFilteringDisabled: (): boolean => true } }
+                    : { mainFrameRule: { isFilteringDisabled: (): boolean => false } }
+            )) as never);
+
+            // Ensure the next call is a real change and notifies.
+            instance.configuration.settings.collectStats = false;
+            const updateMainFrameRuleSpy = vi.spyOn(tabsApi, 'updateTabMainFrameRule');
+            const notifySpy = vi.spyOn(CollectHitStatsNotifier, 'notify').mockResolvedValue();
+
+            instance.setCollectHitStats(true);
+
+            const resolver = notifySpy.mock.calls[0][1] as (tabId: number) => boolean;
+            expect(resolver(allowlistedTabId)).toBe(false);
+            expect(resolver(regularTabId)).toBe(true);
+            // The navigation handler owns mainFrameRule. Rematching it from
+            // the tab URL can restore a stale allowlist rule.
+            expect(updateMainFrameRuleSpy).not.toHaveBeenCalled();
         });
 
         it('should update stealthModeEnabled correctly', async () => {
@@ -238,6 +326,232 @@ describe('TsWebExtension', () => {
             instance.setBlockWebRTC(expected);
 
             expect(instance.configuration.settings.stealth.blockWebRTC).toBe(expected);
+        });
+    });
+    describe('canvas protection consumer integration', () => {
+        let unregister: ReturnType<typeof vi.fn>;
+
+        beforeEach(async () => {
+            appContext.canvasProtectionSession = undefined;
+            appContext.canvasProtectionRegistration = undefined;
+            unregister = vi.fn().mockResolvedValue(undefined);
+            Object.defineProperty(browser, 'contentScripts', {
+                configurable: true,
+                value: { register: vi.fn().mockResolvedValue({ unregister }) },
+            });
+            Object.defineProperty(browser.runtime, 'getBrowserInfo', {
+                configurable: true,
+                value: vi.fn().mockResolvedValue({ version: '128.0' }),
+            });
+            vi.spyOn(browserDetectorMV2, 'isFirefox').mockReturnValue(true);
+            instance = createTsWebExtension('test');
+        });
+
+        /**
+         * Builds the test configuration with canvas protection enabled.
+         *
+         * @returns Configuration with `protectCanvas` set.
+         */
+        const canvasConfig = (): ConfigurationMV2 => ({
+            ...config,
+            settings: { ...config.settings, stealth: { ...config.settings.stealth, protectCanvas: true } },
+        });
+
+        /**
+         * Starts the app and enables canvas protection.
+         *
+         * @returns The registration result of enabling.
+         */
+        const enable = async (): Promise<RegistrationResult> => {
+            await instance.initStorage();
+            await instance.start(config);
+            return instance.setCanvasProtectionEnabled(true);
+        };
+
+        it('keeps old consumer configuration native', async () => {
+            await instance.initStorage();
+            await instance.start(config);
+            await instance.configure(config);
+            await instance.stop();
+            expect(browser.contentScripts.register).not.toHaveBeenCalled();
+            expect(unregister).not.toHaveBeenCalled();
+            expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
+        });
+
+        it('reads exceptions only once protection is enabled', async () => {
+            vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts)
+                .mockClear()
+                .mockReturnValue(['@@||example.org^$stealth']);
+            await instance.initStorage();
+            await instance.start(config);
+            await instance.configure(config);
+            expect(engineApi.getDocumentOrStealthExceptionRuleTexts).not.toHaveBeenCalled();
+            expect(await instance.setCanvasProtectionEnabled(true)).toMatchObject({
+                status: CanvasRegistrationStatus.Installed,
+            });
+            expect(engineApi.getDocumentOrStealthExceptionRuleTexts).toHaveBeenCalledOnce();
+            expect(browser.contentScripts.register).toHaveBeenLastCalledWith(expect.objectContaining({
+                excludeMatches: ['*://*.example.org/*'],
+            }));
+        });
+
+        it('reports a missing policy before the first start', async () => {
+            await instance.initStorage();
+            appContext.configuration = {
+                ...canvasConfig(),
+                filters: config.filters.map(({ filterId }) => filterId),
+            };
+            const result = await instance.setCanvasProtectionEnabled(true);
+            expect(result).toMatchObject({
+                status: CanvasRegistrationStatus.Unavailable,
+                reason: 'Canvas protection exceptions have not been compiled yet',
+                requiredUserAction: 'Start the application or apply its configuration',
+            });
+            expect(browser.contentScripts.register).not.toHaveBeenCalled();
+        });
+
+        it('applies every gate and prepared replacement to new documents', async () => {
+            const initial = await enable();
+            expect(initial.status).toBe(CanvasRegistrationStatus.Installed);
+            const captured = vi.mocked(browser.contentScripts.register).mock.calls.at(-1)![0];
+            await instance.setFilteringEnabled(false);
+            expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
+            await instance.setFilteringEnabled(true);
+            await instance.setStealthModeEnabled(false);
+            expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
+            await instance.setStealthModeEnabled(true);
+            vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
+            await instance.configure(canvasConfig());
+            const replacement = instance.getCanvasProtectionState();
+            expect(replacement).toMatchObject({
+                status: CanvasRegistrationStatus.Installed,
+                installed: {
+                    status: CanvasAvailabilityStatus.Available,
+                    value: {
+                        revision: replacement.requested.revision,
+                        generation: initial.installed.status === CanvasAvailabilityStatus.Available
+                            ? initial.installed.value.generation : undefined,
+                    },
+                },
+            });
+            expect(captured.js).not.toEqual(vi.mocked(browser.contentScripts.register).mock.calls.at(-1)![0].js);
+            await instance.stop();
+            expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
+        });
+
+        it('compiles exceptions of the engine into the registration', async () => {
+            vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts)
+                .mockReturnValue(['@@||example.org^$stealth=fingerprinting']);
+            await instance.initStorage();
+            await instance.start(canvasConfig());
+            expect(browser.contentScripts.register).toHaveBeenLastCalledWith(expect.objectContaining({
+                excludeMatches: ['*://*.example.org/*'],
+            }));
+        });
+
+        it('keeps the registration for the same rules on configure', async () => {
+            vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
+            const initial = await enable();
+            vi.mocked(browser.contentScripts.register).mockClear();
+            await instance.configure(canvasConfig());
+            expect(instance.getCanvasProtectionState().requested.revision).toBe(initial.requested.revision);
+            expect(browser.contentScripts.register).not.toHaveBeenCalled();
+        });
+
+        it('updates the registration when configure brings new rules', async () => {
+            const initial = await enable();
+            vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
+            await instance.configure(canvasConfig());
+            expect(instance.getCanvasProtectionState().requested.revision).not.toBe(initial.requested.revision);
+            expect(browser.contentScripts.register).toHaveBeenLastCalledWith(expect.objectContaining({
+                excludeMatches: ['*://*.example.org/*'],
+            }));
+        });
+
+        it('keeps the compiled policy for setters', async () => {
+            const initial = await enable();
+            vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts).mockClear();
+            await instance.setFilteringEnabled(false);
+            await instance.setFilteringEnabled(true);
+            await instance.setStealthModeEnabled(false);
+            await instance.setStealthModeEnabled(true);
+            await instance.setCanvasProtectionEnabled(false);
+            await instance.setCanvasProtectionEnabled(true);
+            expect(engineApi.getDocumentOrStealthExceptionRuleTexts).not.toHaveBeenCalled();
+            expect(instance.getCanvasProtectionState().requested.revision).toBe(initial.requested.revision);
+        });
+
+        it('reports failed removal and retries it on the next request', async () => {
+            await enable();
+            unregister.mockRejectedValueOnce(new Error('removal rejected'));
+            expect(await instance.setCanvasProtectionEnabled(false)).toMatchObject({
+                status: CanvasRegistrationStatus.Failed, installed: { status: CanvasAvailabilityStatus.Unavailable },
+            });
+            expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Failed);
+            expect(
+                await instance.setCanvasProtectionEnabled(false),
+            ).toMatchObject({ status: CanvasRegistrationStatus.Disabled });
+        });
+
+        it('reports missing registration access and removes the script once access returns', async () => {
+            const initial = await enable();
+            const { register } = browser.contentScripts;
+            Object.defineProperty(browser, 'contentScripts', { configurable: true, value: undefined });
+            const pending = await instance.setCanvasProtectionEnabled(false);
+            expect(pending).toMatchObject({
+                status: CanvasRegistrationStatus.Unavailable,
+                installed: initial.installed,
+                requiredUserAction: expect.any(String),
+            });
+            Object.defineProperty(browser, 'contentScripts', { configurable: true, value: { register } });
+            expect((await instance.setCanvasProtectionEnabled(false)).status).toBe(CanvasRegistrationStatus.Disabled);
+            expect(unregister).toHaveBeenCalledOnce();
+        });
+
+        it('installs again after a restart that lost the registration', async () => {
+            const initial = await enable();
+            const restarted = createTsWebExtension('test');
+            await restarted.initStorage();
+            vi.mocked(browser.contentScripts.register).mockRejectedValueOnce(new Error('reinstallation rejected'));
+            const enabled = canvasConfig();
+            expect(await restarted.start(enabled)).toMatchObject({
+                canvasProtection: {
+                    status: CanvasRegistrationStatus.Failed,
+                    installed: { status: CanvasAvailabilityStatus.Unavailable },
+                },
+            });
+            expect(await restarted.setCanvasProtectionEnabled(true)).toMatchObject({
+                status: CanvasRegistrationStatus.Installed, installed: initial.installed,
+            });
+        });
+
+        it('uses the transformed validated configuration', async () => {
+            const parsed = { ...config, settings: { ...config.settings, debugScriptlets: true } };
+            vi.mocked(configurationMV2Validator.parse).mockReturnValueOnce(parsed);
+            await instance.start(config);
+            expect(instance.configuration.settings.debugScriptlets).toBe(true);
+        });
+        it('keeps canvas registration off after a failed start', async () => {
+            await instance.initStorage();
+            vi.mocked(engineApi.startEngine).mockRejectedValueOnce(new Error('engine failed'));
+            const enabled = canvasConfig();
+            await expect(instance.start(enabled)).rejects.toThrow('engine failed');
+            await instance.setCanvasProtectionEnabled(true);
+            expect(browser.contentScripts.register).not.toHaveBeenCalled();
+            expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
+        });
+
+        it('does not restart canvas registration through setters after stop', async () => {
+            await enable();
+            vi.mocked(engineApi.getDocumentOrStealthExceptionRuleTexts).mockReturnValue(['@@||example.org^$stealth']);
+            await instance.configure(canvasConfig());
+            await instance.stop();
+            vi.mocked(browser.contentScripts.register).mockClear();
+            await instance.setFilteringEnabled(true);
+            await instance.setStealthModeEnabled(true);
+            await instance.setCanvasProtectionEnabled(true);
+            expect(browser.contentScripts.register).not.toHaveBeenCalled();
+            expect(instance.getCanvasProtectionState().status).toBe(CanvasRegistrationStatus.Disabled);
         });
     });
 });

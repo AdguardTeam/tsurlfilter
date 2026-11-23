@@ -12,6 +12,7 @@ import { RuleCategory } from '@adguard/agtree';
 import { FilterListParser } from '@adguard/agtree/parser';
 
 import { MaxScannedRulesError } from '../../../src/errors/limitation-errors/max-scanned-rules-error';
+import { RuleScanError } from '../../../src/errors/scan-errors';
 import { type IFilter } from '../../../src/filter/types';
 import { OPTION_NAMES } from '../../../src/rule/option-names';
 import { Rule } from '../../../src/rule/rule';
@@ -133,7 +134,7 @@ describe('RulesScanner', () => {
             parseFromNodeMock.mockReturnValueOnce([mockRule2]);
 
             const filterFn = vi.fn((rule: any) => rule.pattern === '||example.com^');
-            const result = await RulesScanner.scanFilters([filter], filterFn);
+            const result = await RulesScanner.scanFilters([filter], { filterFn });
 
             expect(filterFn).toHaveBeenCalledTimes(2);
             expect(result).toEqual({
@@ -209,16 +210,18 @@ describe('RulesScanner', () => {
 
             const result = await RulesScanner.scanFilters([filter]);
 
-            expect(result).toEqual({
-                errors: [new Error(
-                    `[ParseError] Invalid rule syntax: filter id - 1, line index - 0, line - ${filterRule}`,
-                )],
-                filters: [{
-                    id: 1,
-                    rules: [],
-                    badFilterRules: [],
-                }],
-            });
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors[0]).toBeInstanceOf(RuleScanError);
+            expect(result.errors[0].message).toBe(
+                `[ParseError] Invalid rule syntax: filter id - 1, line index - 0, line - ${filterRule}`,
+            );
+            expect((result.errors[0] as RuleScanError).filterId).toBe(1);
+            expect((result.errors[0] as RuleScanError).offset).toBe(0);
+            expect(result.filters).toEqual([{
+                id: 1,
+                rules: [],
+                badFilterRules: [],
+            }]);
         });
 
         it('should handle Rule creation errors', async () => {
@@ -237,14 +240,84 @@ describe('RulesScanner', () => {
             });
 
             const result = await RulesScanner.scanFilters([filter]);
-            expect(result).toEqual({
-                errors: [new Error('Rule creation failed')],
-                filters: [{
-                    id: 1,
-                    rules: [],
-                    badFilterRules: [],
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors[0]).toBeInstanceOf(RuleScanError);
+            expect(result.errors[0].message).toBe('Rule creation failed');
+            expect((result.errors[0] as RuleScanError).filterId).toBe(1);
+            expect(result.filters).toEqual([{
+                id: 1,
+                rules: [],
+                badFilterRules: [],
+            }]);
+        });
+
+        it('should skip errors of lines matched by the error line selector', async () => {
+            const filterRule = '||example.com^';
+            const filter = createFilter([filterRule]);
+            const mockAst = {
+                children: [{
+                    category: RuleCategory.Network,
+                    start: 0,
+                    raws: { text: filterRule },
                 }],
+            };
+            parserMock.mockReturnValue(mockAst as any);
+            parseFromNodeMock.mockImplementation(() => {
+                throw new Error('Rule creation failed');
             });
+
+            const result = await RulesScanner.scanFilters([filter], {
+                skipErrorLineSelector: (line) => line === filterRule,
+            });
+
+            expect(result.errors).toEqual([]);
+            expect(result.filters[0].rules).toEqual([]);
+        });
+
+        it('should skip errors of invalid lines matched by the error line selector', async () => {
+            const filterRule = 'invalid rule';
+            const filter = createFilter([filterRule]);
+            const mockAst = {
+                children: [{
+                    category: RuleCategory.Invalid,
+                    start: 0,
+                    raws: { text: filterRule },
+                    error: {
+                        name: 'ParseError',
+                        message: 'Invalid rule syntax',
+                    },
+                }],
+            };
+            parserMock.mockReturnValue(mockAst as any);
+
+            const result = await RulesScanner.scanFilters([filter], {
+                skipErrorLineSelector: (line) => line === filterRule,
+            });
+
+            expect(result.errors).toEqual([]);
+        });
+
+        it('should report errors of lines not matched by the error line selector', async () => {
+            const filterRule = '||example.com^';
+            const filter = createFilter([filterRule]);
+            const mockAst = {
+                children: [{
+                    category: RuleCategory.Network,
+                    start: 0,
+                    raws: { text: filterRule },
+                }],
+            };
+            parserMock.mockReturnValue(mockAst as any);
+            parseFromNodeMock.mockImplementation(() => {
+                throw new Error('Rule creation failed');
+            });
+
+            const result = await RulesScanner.scanFilters([filter], {
+                skipErrorLineSelector: (line) => line !== filterRule,
+            });
+
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors[0].message).toBe('Rule creation failed');
         });
 
         it('should handle unknown errors during Rule creation', async () => {
@@ -265,17 +338,17 @@ describe('RulesScanner', () => {
 
             const result = await RulesScanner.scanFilters([filter]);
 
-            expect(result).toEqual({
-                errors: [new Error(
-                    // eslint-disable-next-line max-len
-                    `Unknown error during creating network rule from raw string: filter id - 1, line index - 0, line - ${filterRule}`,
-                )],
-                filters: [{
-                    id: 1,
-                    rules: [],
-                    badFilterRules: [],
-                }],
-            });
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors[0]).toBeInstanceOf(RuleScanError);
+            expect(result.errors[0].message).toBe(
+                // eslint-disable-next-line max-len
+                `Unknown error during creating network rule from raw string: filter id - 1, line index - 0, line - ${filterRule}`,
+            );
+            expect(result.filters).toEqual([{
+                id: 1,
+                rules: [],
+                badFilterRules: [],
+            }]);
         });
 
         it('should respect maximum number of scanned rules limit', async () => {
@@ -322,7 +395,7 @@ describe('RulesScanner', () => {
             });
             parseFromNodeMock.mockReturnValueOnce([mockRule3]);
 
-            const result = await RulesScanner.scanFilters([filter], undefined, 2);
+            const result = await RulesScanner.scanFilters([filter], { maxScannedRules: 2 });
             expect(result).toEqual({
                 errors: [new MaxScannedRulesError(
                     'Maximum number of scanned network rules reached at line index 15.',
@@ -342,6 +415,75 @@ describe('RulesScanner', () => {
             expect(result).toEqual({
                 errors: [],
                 filters: [],
+            });
+        });
+
+        it('should scan a segment with more rules than can be passed as arguments', async () => {
+            const rulesCount = 340_000;
+            const filterRule = '||example.com^';
+            const filter = createFilter([filterRule]);
+            const children = Array.from({ length: rulesCount }, (_, index) => ({
+                category: RuleCategory.Network,
+                start: index,
+                raws: { text: filterRule },
+            }));
+            parserMock.mockReturnValueOnce({ children } as any);
+            const mockRule = createRuleMock({
+                filterListId: 1,
+                pattern: filterRule,
+                index: 0,
+            });
+            parseFromNodeMock.mockReturnValue([mockRule]);
+
+            const result = await RulesScanner.scanFilters([filter]);
+
+            expect(result.filters[0].rules).toHaveLength(rulesCount);
+        });
+
+        it('should respect maximum number of scanned rules limit across segments', async () => {
+            const filterRule1 = '||example1.com^';
+            const filterRule2 = '||example2.com^';
+            const filter = createFilter([filterRule1, '||skipped.com^', filterRule2]);
+            const lineSelector = (line: string): boolean => line !== '||skipped.com^';
+            parserMock.mockReturnValueOnce({
+                children: [{
+                    category: RuleCategory.Network,
+                    start: 0,
+                    raws: { text: filterRule1 },
+                }],
+            } as any);
+            parserMock.mockReturnValueOnce({
+                children: [{
+                    category: RuleCategory.Network,
+                    start: 0,
+                    raws: { text: filterRule2 },
+                }],
+            } as any);
+            const mockRule1 = createRuleMock({
+                filterListId: 1,
+                pattern: filterRule1,
+                index: 0,
+            });
+            parseFromNodeMock.mockReturnValueOnce([mockRule1]);
+            const mockRule2 = createRuleMock({
+                filterListId: 1,
+                pattern: filterRule2,
+                index: 30,
+            });
+            parseFromNodeMock.mockReturnValueOnce([mockRule2]);
+
+            const result = await RulesScanner.scanFilters([filter], { maxScannedRules: 2, lineSelector });
+
+            expect(result).toEqual({
+                errors: [new MaxScannedRulesError(
+                    'Maximum number of scanned network rules reached at line index 30.',
+                    30,
+                )],
+                filters: [{
+                    id: 1,
+                    rules: [mockRule1, mockRule2],
+                    badFilterRules: [],
+                }],
             });
         });
 

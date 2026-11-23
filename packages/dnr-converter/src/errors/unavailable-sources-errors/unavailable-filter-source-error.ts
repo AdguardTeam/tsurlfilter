@@ -28,3 +28,16 @@ export class UnavailableFilterSourceError extends Error {
         Object.setPrototypeOf(this, UnavailableFilterSourceError.prototype);
     }
 }
+
+/**
+ * Type guard for {@link UnavailableFilterSourceError}.
+ *
+ * @param error The error to check.
+ *
+ * @returns `true` if the error is a {@link UnavailableFilterSourceError}.
+ */
+export function isUnavailableFilterSourceError(
+    error: unknown,
+): error is UnavailableFilterSourceError {
+    return error instanceof UnavailableFilterSourceError;
+}

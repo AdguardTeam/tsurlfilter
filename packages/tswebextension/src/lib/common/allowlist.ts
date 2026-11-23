@@ -1,5 +1,10 @@
 import { RuleGenerator } from '@adguard/agtree';
-import { createAllowlistRuleNode, type NetworkRule, RuleFactory } from '@adguard/tsurlfilter';
+import {
+    createAllowlistRuleNode,
+    type NetworkRule,
+    normalizeAllowlistDomain,
+    RuleFactory,
+} from '@adguard/tsurlfilter';
 
 import { type Configuration } from './configuration';
 import { ALLOWLIST_FILTER_ID } from './constants';
@@ -53,9 +58,22 @@ export abstract class Allowlist {
         this.enabled = allowlistEnabled;
         this.inverted = allowlistInverted;
 
-        this.domains = allowlist.map((hostname: string) => {
-            return hostname.startsWith('www.') ? hostname.substring(4).trim() : hostname.trim();
-        });
+        this.domains = Allowlist.prepareDomains(allowlist);
+    }
+
+    /**
+     * Normalizes the configured entries and keeps the ones the allowlist can match, so every
+     * consumer of {@link domains} — the generated rules, the canvas protection policy and the MV3
+     * twins — sees the same list.
+     *
+     * @param allowlist Allowlist entries from the configuration.
+     *
+     * @returns Normalized entries that produce an allowlist rule.
+     */
+    protected static prepareDomains(allowlist: string[]): string[] {
+        return allowlist
+            .map((hostname) => normalizeAllowlistDomain(hostname))
+            .filter((domain) => createAllowlistRuleNode(domain) !== null);
     }
 
     /**

@@ -36,7 +36,7 @@ export { HTTPMethod } from './modifiers/method-modifier';
 export { StealthOptionName, STEALTH_MODE_FILTER_ID } from './modifiers/stealth-modifier';
 export { NETWORK_RULE_OPTIONS, OPTIONS_DELIMITER } from './rules/network-rule-options';
 export { StringRuleList } from './filterlist/string-rule-list';
-export { createAllowlistRuleNode } from './rules/allowlist';
+export { createAllowlistRuleNode, normalizeAllowlistDomain } from './rules/allowlist';
 export {
     FilterList,
     type ConversionData,

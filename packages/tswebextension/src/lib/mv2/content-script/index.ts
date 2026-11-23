@@ -4,7 +4,11 @@ import { CookieController, type CookieRule } from '../../common/content-script/c
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import { MessageType } from '../../common/message-constants';
 
+import { CanvasProtectionDelivery } from './canvas-protection-delivery';
 import { CosmeticController } from './cosmetic-controller';
+
+// Must run before anything else in the document: page scripts may read canvases right away.
+CanvasProtectionDelivery.run();
 
 // TODO: check where it is used and why re-exported
 export { StealthHelper } from '../../common/stealth-helper';
