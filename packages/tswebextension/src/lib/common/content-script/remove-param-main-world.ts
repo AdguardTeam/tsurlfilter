@@ -273,23 +273,18 @@ export function patchHistoryForRemoveParam(
     }
 
     /**
-     * Applies all loaded descriptors to a URL, returning the cleaned URL
-     * and the list of descriptors that actually modified it.
+     * Applies all loaded descriptors to a URL.
      *
      * @param url The URL to process.
      *
-     * @returns Object with cleaned URL and applied descriptors, or null if
-     * no changes were made.
+     * @returns The cleaned URL, or null if no changes were made.
      */
-    function applyDescriptors(
-        url: string,
-    ): { cleanedUrl: string; applied: Descriptor[] } | null {
+    function applyDescriptors(url: string): string | null {
         if (!descriptors || descriptors.length === 0) {
             return null;
         }
 
         let purgedUrl = url;
-        const applied: Descriptor[] = [];
 
         for (const desc of descriptors) {
             if (desc.isAllowlist) {
@@ -314,7 +309,6 @@ export function patchHistoryForRemoveParam(
                 if (queryIndex >= 0) {
                     const newUrl = urlWithoutHash.substring(0, queryIndex) + hashSuffix;
                     if (newUrl !== purgedUrl) {
-                        applied.push(desc);
                         purgedUrl = newUrl;
                     }
                 }
@@ -323,7 +317,6 @@ export function patchHistoryForRemoveParam(
 
             const modifiedUrl = cleanUrlParams(purgedUrl, desc.valueRegExp, desc.isNegated);
             if (modifiedUrl !== purgedUrl) {
-                applied.push(desc);
                 purgedUrl = modifiedUrl;
             }
         }
@@ -332,7 +325,7 @@ export function patchHistoryForRemoveParam(
             return null;
         }
 
-        return { cleanedUrl: purgedUrl, applied };
+        return purgedUrl;
     }
 
     /**
@@ -343,13 +336,13 @@ export function patchHistoryForRemoveParam(
      * @param absoluteUrl Absolute URL to process.
      */
     function processUrl(state: unknown, title: string, absoluteUrl: string): void {
-        const result = applyDescriptors(absoluteUrl);
-        if (!result) {
+        const cleanedUrl = applyDescriptors(absoluteUrl);
+        if (!cleanedUrl) {
             return;
         }
 
-        if (result.cleanedUrl !== absoluteUrl && window.location.href === absoluteUrl) {
-            originalReplaceState.call(window.history, state, title, result.cleanedUrl);
+        if (cleanedUrl !== absoluteUrl && window.location.href === absoluteUrl) {
+            originalReplaceState.call(window.history, state, title, cleanedUrl);
         }
     }
 
