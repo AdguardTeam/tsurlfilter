@@ -276,19 +276,29 @@ describe('RuleFactory selector complexity (F-008)', () => {
     const notChain = (count: number): string => `example.com##div${':not(.a)'.repeat(count)} .z`;
 
     /**
-     * Best-of-N time of `createRule` on the given rule.
+     * Returns the best (minimum) consumed CPU time of `runs` measurements,
+     * each of them `reps` consecutive `RuleFactory.createRule` calls.
      *
-     * @param rule Rule text.
-     * @param runs Repetitions.
+     * CPU time, unlike wall-clock time, is not inflated when the worker is
+     * descheduled while parallel test files run. Minimum-of-N filters the
+     * remaining noise, and repeating the call inside a measurement keeps a
+     * single GC pause from dominating a sub-millisecond shape.
      *
-     * @returns Elapsed milliseconds of the fastest run.
+     * @param rule Rule text to create.
+     * @param runs Number of measurements.
+     * @param reps Number of calls per measurement.
+     *
+     * @returns Elapsed CPU milliseconds of the fastest measurement.
      */
-    const bestOf = (rule: string, runs = 2): number => {
+    const bestOf = (rule: string, runs = 2, reps = 1): number => {
         let best = Number.POSITIVE_INFINITY;
         for (let i = 0; i < runs; i += 1) {
-            const started = performance.now();
-            RuleFactory.createRule(rule, 1);
-            best = Math.min(best, performance.now() - started);
+            const started = process.cpuUsage();
+            for (let r = 0; r < reps; r += 1) {
+                RuleFactory.createRule(rule, 1);
+            }
+            const { user, system } = process.cpuUsage(started);
+            best = Math.min(best, (user + system) / 1_000);
         }
         return best;
     };
@@ -296,8 +306,8 @@ describe('RuleFactory selector complexity (F-008)', () => {
     it('scales linearly with the number of `:not()` wrappers', () => {
         bestOf(notChain(500), 1);
 
-        const small = bestOf(notChain(4_000));
-        const large = bestOf(notChain(8_000));
+        const small = bestOf(notChain(4_000), 3, 10);
+        const large = bestOf(notChain(8_000), 3, 10);
 
         // Quadratic scanning in agtree measured ≈ 4× here; linear ≈ 2×.
         expect(large / small).toBeLessThan(3);
@@ -307,8 +317,8 @@ describe('RuleFactory selector complexity (F-008)', () => {
         // Same-process ratio against the 8k shape: the cap (43k) shape is
         // ~5.4× larger, so linear scanning stays far below the quadratic
         // version's ~30× (and its 8+ seconds).
-        const baseline = bestOf(notChain(8_000), 1);
-        const cap = bestOf(notChain(43_000), 1);
+        const baseline = bestOf(notChain(8_000), 3, 10);
+        const cap = bestOf(notChain(43_000), 3, 1);
 
         expect(cap / baseline).toBeLessThan(15);
     }, 120_000);
