@@ -98,6 +98,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `FilterListPipeline.parse()` honours `parseHostRules`: a host-shaped line such
+  as `127.0.0.1 example.com` becomes a `HostRule` when the option is enabled,
+  the same AST `RuleParserPipeline.parse()` builds for it, instead of always a
+  `NetworkRule`. The host check now looks at the rule's own tokens; the
+  filter-list scanner tokenizes a whole chunk, so the previous whole-context
+  check could never match inside a multi-rule list. Locations of the resulting
+  host rule are shifted to the rule's position in the list.
 - A negated regexp domain item, e.g. `$domain=~/(^|\.)example\.com/`, is
   parsed as one exception item again. Regex-ness was decided before the `~`
   was consumed, so the pattern was split at its embedded separator and the

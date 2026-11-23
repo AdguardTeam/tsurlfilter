@@ -13,6 +13,7 @@ import { HtmlFilteringAstBuilder } from '../ast-builder/cosmetic/html-filtering'
 import { JsInjectionAstBuilder } from '../ast-builder/cosmetic/js-injection';
 import { ScriptletInjectionAstBuilder } from '../ast-builder/cosmetic/scriptlet-injection';
 import { UboCssInjectionAstBuilder } from '../ast-builder/cosmetic/ubo-css-injection';
+import { HostRuleAstBuilder } from '../ast-builder/network/host-rule';
 import { NetworkRuleAstBuilder } from '../ast-builder/network/network-rule';
 import { ProductCode } from '../compatibility-tables/platform';
 import {
@@ -39,9 +40,11 @@ import {
     CR_SEP_KIND_SHIFT,
     CR_SEP_KIND_UBO_HTML_FILTERING,
 } from '../parser/cosmetic/constants';
+import { isHostRuleCandidate } from '../parser/host-candidate';
 import { RuleKind } from '../parser/rule';
 import { asError } from '../utils/error';
 import { SYNTAX_ALL, SYNTAX_UNKNOWN } from '../utils/syntax-flags';
+import { walk } from '../walker';
 
 import { FilterListScanner } from './scanner';
 import type { FilterListParseOptions } from './types';
@@ -130,6 +133,35 @@ export class FilterListPipeline {
     }
 
     /**
+     * Index of the first token that ends after `sourceOffset`.
+     *
+     * The scanner tokenizes a whole chunk, so a rule's tokens are a sub-range
+     * of the chunk's token array. `ctx.ends` is ascending, so a binary search
+     * finds the rule's first token.
+     *
+     * @param ctx Parser context of the scanned chunk.
+     * @param sourceOffset Source offset where the rule starts.
+     *
+     * @returns Token index, or `ctx.tokenCount` when the rule has no tokens.
+     */
+    private static tokenIndexAt(ctx: ParserContext, sourceOffset: number): number {
+        const { ends, tokenCount } = ctx;
+        let lo = 0;
+        let hi = tokenCount;
+
+        while (lo < hi) {
+            const mid = (lo + hi) >>> 1;
+            if (ends[mid] <= sourceOffset) {
+                lo = mid + 1;
+            } else {
+                hi = mid;
+            }
+        }
+
+        return lo;
+    }
+
+    /**
      * Build an AST node from a scanned rule's ctx.data.
      *
      * @param kind Structural classification of the rule.
@@ -180,6 +212,35 @@ export class FilterListPipeline {
             }
 
             case RuleKind.Network: {
+                // Honour `parseHostRules` exactly like `RuleParserPipeline`,
+                // so the two pipelines produce the same AST for a host-shaped
+                // line (F-010): `127.0.0.1 example.com` is a `HostRule` with
+                // the option enabled and a `NetworkRule` otherwise.
+                const hostCandidate = options?.parseHostRules
+                    && isHostRuleCandidate(ctx, FilterListPipeline.tokenIndexAt(ctx, ruleStart));
+                if (hostCandidate) {
+                    const ruleText = source.slice(ruleStart, ruleEnd);
+                    const hostRule = HostRuleAstBuilder.parse(ruleText, options);
+                    if (hostRule) {
+                        if (options.isLocIncluded) {
+                            // The host builder sees only the rule text, so its
+                            // locations are relative to the rule start.
+                            walk(hostRule, {
+                                enter(node) {
+                                    const located = node as { start?: number; end?: number };
+                                    if (typeof located.start === 'number') {
+                                        located.start += ruleStart;
+                                    }
+                                    if (typeof located.end === 'number') {
+                                        located.end += ruleStart;
+                                    }
+                                },
+                            });
+                        }
+                        return hostRule;
+                    }
+                }
+
                 const result = NetworkRuleAstBuilder.parse(source, ctx.data, 0, options);
                 if (options?.isLocIncluded) {
                     result.start = ruleStart;

@@ -45,13 +45,17 @@ const HOST_LEGAL_TOKEN = ((): Uint8Array => {
  * source string. Only genuine host candidates scan to the end.
  *
  * @param ctx Parser context whose tokenizer output is loaded.
+ * @param startTi First token index of the rule. The filter-list scanner
+ *   tokenizes a whole chunk at once, so its rules are token sub-ranges of one
+ *   context; pass the rule's first token index to scan only that rule.
+ *   Defaults to `0`, the single-rule context.
  *
  * @returns True if the rule may be a host rule.
  */
-export function isHostRuleCandidate(ctx: ParserContext): boolean {
+export function isHostRuleCandidate(ctx: ParserContext, startTi = 0): boolean {
     const { types, tokenCount } = ctx;
 
-    for (let i = 0; i < tokenCount; i += 1) {
+    for (let i = startTi; i < tokenCount; i += 1) {
         const type = types[i];
         // The rest of the line is a `#comment` — host-legal; stop scanning.
         if (type === TokenType.HashMark) {

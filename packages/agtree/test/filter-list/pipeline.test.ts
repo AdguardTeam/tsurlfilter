@@ -1,11 +1,13 @@
 import { describe, expect, test } from 'vitest';
 
+import { RuleParserPipeline } from '../../src/ast-builder/rule-parser';
 import { FilterListPipeline } from '../../src/filter-list/pipeline';
 import type { FilterListParseOptions } from '../../src/filter-list/types';
 import { MAX_TOKEN_CAPACITY } from '../../src/limits';
 import {
     CommentRuleType,
     CosmeticRuleType,
+    type FilterList,
     type NetworkRule,
     NetworkRuleType,
     NodeType,
@@ -491,4 +493,60 @@ describe('FilterListPipeline', () => {
         // is scale-invariant, so a slow machine does not weaken it.
         expect(fullElapsed).toBeLessThan(quarterElapsed * 8);
     }, 30_000);
+});
+
+describe('FilterListPipeline parseHostRules parity (F-010)', () => {
+    const pipeline = new FilterListPipeline();
+    const ruleParser = new RuleParserPipeline();
+
+    /**
+     * Rule texts covering both host-shaped and regular network lines.
+     */
+    const rules = [
+        '127.0.0.1 example.com',
+        'example.com ## comment',
+        '||example.com^',
+        '||example.com^$third-party',
+        'example.com##.ad',
+    ];
+
+    test.each(rules)('produces the same AST kind as RuleParserPipeline for %s', (rule) => {
+        const listAst = pipeline.parse(rule, { parseHostRules: true }) as FilterList;
+        const ruleAst = ruleParser.parse(rule, { parseHostRules: true });
+
+        expect(listAst.children).toHaveLength(1);
+        expect(listAst.children[0].type).toBe(ruleAst.type);
+    });
+
+    test('returns a HostRule for a host-shaped line with parseHostRules', () => {
+        const ast = pipeline.parse('127.0.0.1 example.com', { parseHostRules: true }) as FilterList;
+
+        expect(ast.children[0].type).toBe('HostRule');
+    });
+
+    test('returns a NetworkRule for a host-shaped line without parseHostRules', () => {
+        const ast = pipeline.parse('127.0.0.1 example.com') as FilterList;
+
+        expect(ast.children[0].type).toBe('NetworkRule');
+    });
+
+    test('finds the host candidate in a multi-line list', () => {
+        const source = ['||example.com^', '127.0.0.1 example.com', 'example.com##.ad'].join('\n');
+        const ast = pipeline.parse(source, { parseHostRules: true }) as FilterList;
+
+        expect(ast.children.map((child) => child.type)).toEqual([
+            'NetworkRule',
+            'HostRule',
+            'ElementHidingRule',
+        ]);
+    });
+
+    test('shifts host-rule locations to the rule position in the list', () => {
+        const source = '||example.com^\n127.0.0.1 example.com';
+        const ast = pipeline.parse(source, { parseHostRules: true, isLocIncluded: true }) as FilterList;
+        const hostRule = ast.children[1] as { start?: number; end?: number };
+
+        expect(hostRule.start).toBe(source.indexOf('127.0.0.1'));
+        expect(hostRule.end).toBe(source.length);
+    });
 });
