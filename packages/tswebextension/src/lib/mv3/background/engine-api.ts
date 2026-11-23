@@ -16,11 +16,13 @@ import {
     setConfiguration,
 } from '@adguard/tsurlfilter';
 
+import { CanvasExceptionRules } from '../../common/canvas-protection/exception-rules';
 import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { logger } from '../../common/utils/logger';
 import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 
 import { type ConfigurationMV3 } from './configuration';
+import FiltersApi from './filters-api';
 import { collectExceptionLines, type ExceptionSource } from './preregistered-scripts/js-exclusions';
 import { createPreregisteredRootRequest } from './preregistered-scripts/root-request';
 import { type ITrustedFilter } from './trusted-filter';
@@ -128,8 +130,13 @@ export class EngineApi {
         for (let i = 0; i < localFilters.length; i += 1) {
             try {
                 const filter = localFilters[i];
+                // Pass the filter list stored in IDB together with its
+                // conversion data, so the engine does not prepare it again.
+                // `filter.getContent()` returns the original spelling as a
+                // plain string, which the engine would re-convert line by line
+                // on every start.
                 // eslint-disable-next-line no-await-in-loop
-                const content = await filter.getContent();
+                const content = await FiltersApi.loadFilterContent(filter.getId());
 
                 lists.push({
                     id: filter.getId(),
@@ -138,7 +145,7 @@ export class EngineApi {
                     ignoreJS: false,
                     ignoreUnsafe: false,
                 });
-                exceptionSources.push({ filterId: filter.getId(), lines: collectExceptionLines(content) });
+                exceptionSources.push({ filterId: filter.getId(), lines: collectExceptionLines(content.getContent()) });
             } catch (e) {
                 const filterId = localFilters[i].getId();
                 logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for filter ${filterId} due to: `, e);
@@ -424,6 +431,15 @@ export class EngineApi {
      */
     public getExceptionSources(): readonly ExceptionSource[] {
         return this.exceptionSources;
+    }
+
+    /**
+     * Gets stealth and document exception texts, excluding generated allowlist rules.
+     *
+     * @returns Exception texts, or an empty array if the engine is not started.
+     */
+    public getDocumentOrStealthExceptionRuleTexts(): string[] {
+        return this.engine ? CanvasExceptionRules.getRuleTexts(this.engine) : [];
     }
 
     /**

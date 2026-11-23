@@ -11,13 +11,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
-- Support for uBlock Origin `:remove-attr()` and `:remove-class()` pseudo-classes
-  in element hiding and CSS injection rule conversion. Like `:remove()`, they
-  are validated as actions during parsing: anything other than whitespace or
-  the CSS injection declaration block after them makes the rule invalid
-  [AdguardBrowserExtension#3538].
-
 ### Changed
+
+- uBO→ADG conversion now accepts `:contains()` in uBlock HTML filtering
+  rules and converts it like `:has-text()`, e.g. `##^div:contains(foo)`
+  becomes `$$div:contains(/foo/i)`. uBlock Origin accepts this pseudo-class
+  in `##^` rules and normalizes it to `:has-text()`. Previously the
+  converter threw a mixed-syntax error.
 
 ### Deprecated
 
@@ -25,12 +25,142 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
-- Hostnames with labels ending in an underscore are now accepted by domain validation,
-  while domains with a leading dot remain invalid.
+- The list item parser now throws an `AdblockSyntaxError` with
+  `Unclosed regexp literal, no closing delimiter found` when a list item
+  starts with `/` and a real separator follows it, but no closing
+  delimiter is followed by that separator or ends the value, e.g.
+  `$domain=~/a\/|example.org`, `$domain=~/|example.org` or
+  `$domain=/a/x|example.org`. Previously every separator inside such a
+  value was lost. An escaped separator and a separator inside a character
+  class or a regexp group do not count, so `$domain=/a\|b`,
+  `$domain=/a[|]b` and `$domain=/a(b|c)` stay one item. A trailing item
+  with no separator after it stays opaque too, e.g. `example.org|/a\/`.
+- uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
+  mirrors uBlock for plain text: one pair of outer quotes is removed and
+  the text is matched case-insensitively through an escaped `:contains()`
+  regexp with the `i` flag, e.g. `##^script:has-text("admc")` becomes
+  `$$script:contains(/admc/i)`. The `i` flag folds ASCII case only, because
+  CoreLibs compiles `:contains()` regexps with `PCRE2_NEVER_UTF`. The
+  argument is not trimmed, so `##^div:has-text( "foo" )` keeps its spaces
+  and quotes. A rule with characters after the closing quote, e.g.
+  `##^div:has-text("foo"bar)`, is rejected, as in uBlock.
+- Chained text constraints of one compound selector are merged into a single
+  `:contains()` regexp, because CoreLibs allows at most one regexp
+  `:contains()` per element selector: `##^div:has-text(a):has-text(/b/)`
+  becomes `$$div:contains(/^(?=[\s\S]*?[aA])(?=[\s\S]*?(?:b))/)`, and several
+  `:min-text-length()` collapse to the largest one. The lookaheads use a lazy
+  scan, so a long script is not rescanned from every position. A plain text
+  in a case-sensitive chain is emitted as ASCII case-fold classes, so it keeps
+  matching like uBlock's plain text; a regexp argument with the `i` flag
+  becomes case-sensitive in such a mixed chain, because a merged regexp has a
+  single flag set.
+- HTML filtering rules with a right parenthesis inside a regexp character
+  class now parse and convert, e.g. `##^div:has-text(/a[)]b/)` and
+  `##^div:contains(/a[)]b/)` become `$$div:contains(/a[)]b/)`. Previously
+  the `)` closed the pseudo-class argument early, and tokenization threw
+  `Expected '<unknown-token>', but got '<]-token>'`.
+- A value whose closing slash is escaped, e.g. `/a\/`, is no longer
+  treated as a RegExp literal. `RegExpUtils.isRegexPattern()` now checks
+  the consecutive backslashes before the closing slash: an odd count
+  escapes the slash, an even count does not. Previously the check always
+  passed. As a result, the uBO→ADG conversion of `:matches-path(/a\/)`
+  keeps the backslash, and its negated form produces a valid regexp
+  instead of `/^((?!a\).)*$/`. A value that ends with an escaped
+  backslash, e.g. `/a\\/`, stays a RegExp literal.
 
 ### Security
 
+## [4.4.0] - 2026-11-12
+
+### Added
+
+- `RegExpUtils.parseCoreLibsRegexArgument()` and
+  `RegExpUtils.isCoreLibsRegexArgument()` are now exported. The first splits
+  the `:contains()` arguments that CoreLibs reads as normal regular
+  expressions; the second also covers the underflow class, e.g. `/ads`.
+- `SPECIAL_PSEUDO_CLASS_NAMES` is now exported, so consumers can use the
+  same list of special pseudo-class names as the parser and the converter.
+- Added the `fingerprinting` value for the `$stealth` modifier.
+- Support for uBlock Origin `:remove-attr()` and `:remove-class()` pseudo-classes
+  in element hiding and CSS injection rule conversion. Like `:remove()`, they
+  are validated as actions during parsing: anything other than whitespace or
+  the CSS injection declaration block after them makes the rule invalid
+  [AdguardBrowserExtension#3538].
+- `RegExpUtils.globToUboRegExp()` is now exported. It converts a glob to a
+  uBlock-compatible regexp, which uses `[\s\S]` instead of the unsupported
+  dot-all `s` flag.
+- `RegExpUtils.escapeRegexSpecials()` now accepts an optional `escapeQuotes`
+  argument. When it is `true`, single and double quotes are emitted as
+  `\x27` and `\x22`, which is required for a uBlock `:has-text()` argument,
+  because CSS-tree parses it before uBlock reads the regexp. The default is
+  `false`, so the existing behavior is unchanged.
+- `getModifierAliases()` helper which returns raw modifier names converted to
+  a given ADG modifier name.
+
+### Changed
+
+- `:min-text-length()` now accepts only plain decimal digits, matching uBlock:
+  rules such as `##^div:min-text-length( 5 )` and
+  `##^div:min-text-length(1e2)` are no longer converted.
+- `[min-length]` and `[max-length]` values are validated the same way now:
+  only digits are accepted, preceded by optional whitespace and an optional
+  `+`, matching CoreLibs' `strtoimax` parsing, so `"1e2"`, `"1.5"` and
+  `"5 "` are no longer converted.
+
+### Fixed
+
+- Hostnames with labels ending in an underscore are now accepted by domain validation,
+  while domains with a leading dot remain invalid.
+- ADG→uBO conversion of HTML filtering `[tag-content]` and `[wildcard]`
+  attribute selectors now produces rules closer to the AdGuard behavior:
+  `[tag-content]` becomes a case-sensitive escaped `:has-text()` regexp,
+  and `[wildcard]` becomes a uBlock-compatible regexp that uses `[\s\S]`
+  instead of the unsupported dot-all `s` flag. Rules whose values contain
+  HTML markup or an HTML character reference (e.g. `&lt;`, or `&copy 2024`
+  without the trailing semicolon) are kept as-is for elements other than
+  `script` and `style`, because uBlock matches `textContent`. Limitation: a
+  value without markup or character references still matches an element
+  whose `textContent` equals it even when its `innerHTML` differs.
+- `[min-length]` and `[max-length]` values are now emitted as plain decimal
+  digits during ADG→ADG conversion, so large values are neither rounded nor
+  switched to exponent notation. For example,
+  `[min-length="1000000000000000000000"]` used to become `.{1e+21,}`.
+- Pseudo-class selector arguments are no longer trimmed: the argument is the
+  raw text between the pseudo-class parentheses, e.g. `$$div:contains( "foo" )`
+  keeps the spaces around the quoted text, and `:not( .a )` keeps the spaces
+  around the inner selector. This matches CoreLibs.
+- ADG→uBO conversion no longer emits a `:contains()` rule that uBlock Origin
+  drops when characters follow the closing quote: e.g.
+  `$$div:contains("foo" )` now throws a conversion error instead of becoming
+  `##^div:has-text("foo" )`.
+- The HTML filtering rule converter now rejects `:-abp-contains()` with a
+  missing or empty argument, the same as `:contains()`.
+- ADG→uBO conversion now validates `[max-length]` values before dropping them:
+  e.g. `$$div[max-length="1e2"]` and `$$div[max-length="abc"]` now throw a
+  conversion error instead of silently becoming `##^div`. A dropped
+  `[max-length]` that is the whole compound selector is replaced with `*`, so
+  `$$div > [max-length="100"]` becomes `##^div > *` instead of an invalid
+  rule with a dangling combinator. A complex selector that a drop leaves
+  without any constraint throws `Complex selector cannot be empty`, e.g.
+  `$$[max-length="100"]`, `$$*[max-length="100"]` and
+  `$$[max-length="1"] > [max-length="2"]`, because the resulting all-`*`
+  selector matches almost every element.
+- ADG→uBO conversion now maps the `:-abp-contains()` alias to
+  `:has-text()`, the same as `:contains()`, e.g. `$$div:-abp-contains(foo)`
+  becomes `##^div:has-text(foo)`. Previously the alias was kept as-is, and
+  uBlock Origin rejected the converted rule.
+- uBO→ADG conversion now rejects `:-abp-contains()` in uBlock HTML filtering
+  rules as mixed AdGuard and uBlock syntax, the same as `:contains()`.
+  Previously the alias was carried over into the converted AdGuard rule.
+- `[tag-content]` values that CoreLibs reads as regular expressions, e.g.
+  `/ads/`, are now escaped when converted to a standalone `:contains()`
+  argument during ADG→ADG conversion, so they still match the literal text.
+  The check mirrors CoreLibs' `:contains()` argument scanner, so values
+  such as `/a++/`, `/a\/`, `///`, and `/ads` are escaped instead of becoming
+  dead or over-broad rules.
+
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
+[4.4.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.4.0
 
 ## [4.3.0] - 2026-10-14
 
@@ -85,7 +215,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   chain, so e.g.
   `aces.gg$$script[tag-content="$('#alert').on('click'"][max-length="250"]`
   now converts to
-  `aces.gg$$script:contains(/^(?=.{0,250}$)(?=.*\$\('#alert'\)\.on\('click').*/s)`
+  `aces.gg$$script:contains(/^(?=.{0,250}$)(?=.*\$\(#alert\'\)\.on\('click).*/s)`
   instead of the CoreLibs-rejected
   `aces.gg$$script:contains($('#alert').on('click'):contains(/^(?=.{0,250}$).*/s)`.
   Multiple `[tag-content]` values and multiple `[wildcard]` globs are

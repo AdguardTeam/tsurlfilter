@@ -404,8 +404,28 @@ export const resolveOwnWrittenText: WrittenRuleTextResolver = (
  * Separates the entries of a written modifier list.
  *
  * A separator escaped with a backslash belongs to the value, not to the list.
+ * The list is scanned character by character, because a lookbehind regexp
+ * literal does not parse in older Safari versions.
+ *
+ * @param writtenModifiers Written modifier list, without the `$` separator.
+ *
+ * @returns Modifier entries as written, empty entries included.
  */
-const WRITTEN_MODIFIER_SEPARATOR_REGEXP = /(?<!\\),/;
+const splitWrittenModifiers = (writtenModifiers: string): string[] => {
+    const entries: string[] = [];
+    let start = 0;
+
+    for (let i = 0; i < writtenModifiers.length; i += 1) {
+        if (writtenModifiers.charAt(i) === ',' && writtenModifiers.charAt(i - 1) !== '\\') {
+            entries.push(writtenModifiers.slice(start, i));
+            start = i + 1;
+        }
+    }
+
+    entries.push(writtenModifiers.slice(start));
+
+    return entries;
+};
 
 /**
  * Returns the name of a written modifier entry, without the negation mark.
@@ -440,9 +460,7 @@ const stripWrittenModifiers = (text: string, shouldStrip: (name: string) => bool
     }
 
     const pattern = text.slice(0, delimiterIndex);
-    const kept = text
-        .slice(delimiterIndex + 1)
-        .split(WRITTEN_MODIFIER_SEPARATOR_REGEXP)
+    const kept = splitWrittenModifiers(text.slice(delimiterIndex + 1))
         .filter((entry) => !shouldStrip(getWrittenModifierName(entry)));
 
     return kept.length === 0 ? pattern : `${pattern}${OPTIONS_DELIMITER}${kept.join(',')}`;
@@ -1076,15 +1094,17 @@ export class NetworkRule implements IRule {
     /**
      * Returns true if rule's pattern is a regular expression.
      *
+     * Uses {@link SimpleRegex.isRegexPattern}, the same regexp literal check as
+     * {@link SimpleRegex.extractShortcut} and
+     * {@link SimpleRegex.patternToRegexp}, so a pattern with an escaped closing
+     * slash, e.g. `/a\/`, is not a regex rule.
+     *
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#regexp-support}
      *
      * @returns True if the rule pattern is a regular expression.
      */
     public isRegexRule(): boolean {
-        return (
-            this.getPattern().startsWith(SimpleRegex.MASK_REGEX_RULE)
-            && this.getPattern().endsWith(SimpleRegex.MASK_REGEX_RULE)
-        );
+        return SimpleRegex.isRegexPattern(this.getPattern());
     }
 
     /**

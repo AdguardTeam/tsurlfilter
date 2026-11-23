@@ -66,15 +66,36 @@ export interface SourceMapConverterOptions extends BaseFilterConverterOptions {
      * Flat array of `$badfilter` network rules collected from pre-built static
      * rulesets (via {@link IRulesetWithSourceMap.getBadFilterRules}).
      *
-     * When provided, `convert()` builds an internal hash map from these rules
-     * and skips any dynamic rules that are negated by them **before** conversion
-     * (scan-time skip). This avoids the N-to-1 grouping problem that would
-     * arise if the skip were applied post-conversion.
+     * When provided, `convert()` applies them, together with the filter's own
+     * `$badfilter` rules, before the grouped conversion: a dynamic rule that
+     * they cancel completely is dropped, and a partly cancelled rule keeps the
+     * remaining `$domain` list with the needed exclusions. This avoids the
+     * N-to-1 grouping problem that would arise if the option were applied
+     * post-conversion.
      *
      * Only valid in source-map mode (enforced by the discriminated union).
      */
     badFilterRules?: Rule[];
+
+    /**
+     * Excludes CSP rules from regular conversion when they are rebuilt globally.
+     *
+     * The caller must run `convertCspRules()` afterwards: this pass drops such
+     * rules together with their parse errors, because the CSP pass reports them.
+     *
+     * @default false
+     */
+    excludeCspRules?: boolean;
 }
+
+/**
+ * Options for callers that compute `withSourceMap` at runtime (e.g. from a
+ * config flag typed as `boolean`). Mirrors {@link SourceMapConverterOptions}
+ * with a widened flag, so source-map-only options stay in sync with it.
+ */
+export type ComputedWithSourceMapOptions = Omit<SourceMapConverterOptions, 'withSourceMap'> & {
+    withSourceMap: boolean;
+};
 
 /**
  * Interface that represents options for the converter.

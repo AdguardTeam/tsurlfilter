@@ -8,6 +8,7 @@ import {
 
 import * as errorUtilsModule from '../../../src/utils/error';
 import {
+    encodeNonAscii,
     fastHash,
     fastHash31,
     hasSpaces,
@@ -174,6 +175,28 @@ describe('String utils', () => {
                 'encoded(ascii(Привет))',
                 'encoded(ascii(你好))',
             ]);
+        });
+    });
+
+    describe('encodeNonAscii', () => {
+        it('returns the same ASCII string', () => {
+            expect(encodeNonAscii('example.com/path?query=1')).toBe('example.com/path?query=1');
+        });
+
+        it('percent-encodes non-ASCII characters', () => {
+            expect(encodeNonAscii('/путь')).toBe('/%D0%BF%D1%83%D1%82%D1%8C');
+        });
+
+        it('keeps urlFilter special characters as is', () => {
+            expect(encodeNonAscii('/путь^|*')).toBe('/%D0%BF%D1%83%D1%82%D1%8C^|*');
+        });
+
+        it('percent-encodes characters outside the basic plane', () => {
+            expect(encodeNonAscii('/😀')).toBe('/%F0%9F%98%80');
+        });
+
+        it('does not double-encode already encoded characters', () => {
+            expect(encodeNonAscii('/%D0%BF')).toBe('/%D0%BF');
         });
     });
 

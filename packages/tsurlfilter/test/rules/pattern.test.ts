@@ -100,8 +100,15 @@ describe('Pattern Tests', () => {
         )).toBeFalsy();
     });
 
-    it('detects invalid regexp', () => {
-        const pattern = new Pattern('/example\\/');
+    it('treats a pattern with an escaped closing slash as a basic pattern', () => {
+        // The `match-case` flag disables the shortcut branch, so this test
+        // checks the compiled regexp for the escaped basic pattern.
+        const pattern = new Pattern('/example\\/', true);
+
+        expect(pattern.matchPattern(
+            new Request('https://example.org/example\\/', null, RequestType.Document),
+            false,
+        )).toBeTruthy();
 
         expect(pattern.matchPattern(
             new Request('https://example.org', null, RequestType.Document),
@@ -135,6 +142,32 @@ describe('Pattern Tests', () => {
         // must not match there.
         expect(pattern.matchPattern(
             new Request(`https://example.org/${tail}.js&more=1`, null, RequestType.Document),
+            false,
+        )).toBeFalsy();
+    });
+
+    it('keeps an escaped backslash before the closing slash as a regexp', () => {
+        // The shortcut of `/a\\/` is `a`, so `prepare()` compiles the regexp
+        // whether or not `match-case` is set. The flag only removes the `i`
+        // flag in this test.
+        const pattern = new Pattern(String.raw`/a\\/`, true);
+
+        expect(pattern.matchPattern(
+            new Request(String.raw`https://example.org/a\/`, null, RequestType.Document),
+            false,
+        )).toBeTruthy();
+
+        expect(pattern.matchPattern(
+            new Request('https://example.org/b', null, RequestType.Document),
+            false,
+        )).toBeFalsy();
+    });
+
+    it('does not match a pattern whose regexp fails to compile', () => {
+        const pattern = new Pattern('/a++/', true);
+
+        expect(pattern.matchPattern(
+            new Request('https://example.org/a', null, RequestType.Document),
             false,
         )).toBeFalsy();
     });

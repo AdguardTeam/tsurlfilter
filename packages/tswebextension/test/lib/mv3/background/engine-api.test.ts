@@ -6,11 +6,13 @@ import {
     vi,
 } from 'vitest';
 
-import { type IFilter } from '@adguard/dnr-converter';
-import { Engine } from '@adguard/tsurlfilter';
+import { Filter, type IFilter } from '@adguard/dnr-converter';
+import { Engine, FilterList } from '@adguard/tsurlfilter';
 
-import { ALLOWLIST_FILTER_ID } from '../../../../src/lib/common/constants';
+import { CanvasExceptionRules } from '../../../../src/lib/common/canvas-protection/exception-rules';
+import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../../../src/lib/common/constants';
 import { EngineApi } from '../../../../src/lib/mv3/background/engine-api';
+import FiltersApi from '../../../../src/lib/mv3/background/filters-api';
 
 /**
  * Builds a minimal filter stub.
@@ -26,6 +28,23 @@ const makeFilter = (id: number, content: string): IFilter => ({
     unloadContent: async (): Promise<void> => undefined,
 });
 
+/**
+ * Stubs the stored-filter lookup `startEngine()` reads the local filter
+ * content from: the engine takes the prepared `FilterList` and the scan reads
+ * its text.
+ *
+ * @param lists Filter id → filter text.
+ */
+const setupStoredFilters = (lists: Record<number, string>): void => {
+    vi.spyOn(FiltersApi, 'loadFilterContent').mockImplementation(async (filterId: number) => {
+        const content = lists[filterId];
+        if (content === undefined) {
+            throw new Error(`Filter with id ${filterId} not found`);
+        }
+        return new FilterList(content, filterId, FilterList.createEmptyConversionData());
+    });
+};
+
 describe('EngineApi.startEngine — exception sources', () => {
     afterEach(() => {
         vi.restoreAllMocks();
@@ -36,15 +55,18 @@ describe('EngineApi.startEngine — exception sources', () => {
         // registration from these lines, so a filter missing here silently
         // disables the exclusion it carries.
         vi.spyOn(Engine, 'createAsync').mockResolvedValue(undefined as never);
+        setupStoredFilters({
+            2: [
+                '||youtube.com^$script',
+                '! a comment',
+                '@@||youtube.com/my_video_ad$document',
+            ].join('\n'),
+        });
 
         const api = new EngineApi();
         await api.startEngine({
             verbose: false,
-            localFilters: [makeFilter(2, [
-                '||youtube.com^$script',
-                '! a comment',
-                '@@||youtube.com/my_video_ad$document',
-            ].join('\n'))],
+            localFilters: [makeFilter(2, '')],
             remoteFilters: [],
             userRulesFilter: makeFilter(0, '@@||youtube.com/watch$document'),
             allowlistRulesList: null,
@@ -83,15 +105,14 @@ describe('EngineApi.startEngine — exception sources', () => {
         // must miss its lines too — and the engine start must survive.
         vi.spyOn(Engine, 'createAsync').mockResolvedValue(undefined as never);
 
-        const broken = makeFilter(3, '');
-        broken.getContent = async (): Promise<string> => {
-            throw new Error('cannot read');
-        };
+        // Filter 3 has no stored content, so loading it throws; filter 2 is
+        // readable.
+        setupStoredFilters({ 2: '@@||youtube.com/ads$document' });
 
         const api = new EngineApi();
         await api.startEngine({
             verbose: false,
-            localFilters: [broken, makeFilter(2, '@@||youtube.com/ads$document')],
+            localFilters: [makeFilter(3, ''), makeFilter(2, '')],
             remoteFilters: [],
             userRulesFilter: makeFilter(0, ''),
             allowlistRulesList: null,
@@ -106,5 +127,62 @@ describe('EngineApi.startEngine — exception sources', () => {
         const api = new EngineApi();
 
         expect(api.getExceptionSources()).toEqual([]);
+    });
+});
+
+describe('getDocumentOrStealthExceptionRuleTexts method', () => {
+    it('delegates to the common extractor when the engine is started', async () => {
+        const engineApi = new EngineApi();
+        expect(engineApi.getDocumentOrStealthExceptionRuleTexts()).toEqual([]);
+        const extract = vi.spyOn(CanvasExceptionRules, 'getRuleTexts')
+            .mockReturnValueOnce(['@@||example.org^$stealth=fingerprinting']);
+
+        await engineApi.startEngine({
+            localFilters: [],
+            remoteFilters: [],
+            userRulesFilter: new Filter(
+                USER_FILTER_ID,
+                async () => new FilterList('', USER_FILTER_ID).getContent(),
+            ),
+            allowlistRulesList: null,
+            verbose: false,
+        });
+
+        expect(engineApi.getDocumentOrStealthExceptionRuleTexts()).toEqual(['@@||example.org^$stealth=fingerprinting']);
+        expect(extract).toHaveBeenCalledWith(expect.any(Engine));
+        extract.mockRestore();
+    });
+});
+
+describe('startEngine method', () => {
+    it('passes stored filter lists of local filters to the engine without preparing them again', async () => {
+        const filterId = 2;
+        const storedFilterList = new FilterList(
+            '||example.org^',
+            filterId,
+            FilterList.createEmptyConversionData(),
+        );
+        const loadFilterContent = vi.spyOn(FiltersApi, 'loadFilterContent').mockResolvedValue(storedFilterList);
+        const getContent = vi.fn(async () => '||example.org^');
+        const createAsync = vi.spyOn(Engine, 'createAsync');
+
+        const engineApi = new EngineApi();
+        await engineApi.startEngine({
+            localFilters: [new Filter(filterId, getContent)],
+            remoteFilters: [],
+            userRulesFilter: new Filter(USER_FILTER_ID, async () => ''),
+            allowlistRulesList: null,
+            verbose: false,
+        });
+
+        expect(loadFilterContent).toHaveBeenCalledWith(filterId);
+        // The original spelling is needed only by the DNR converter.
+        expect(getContent).not.toHaveBeenCalled();
+        expect(createAsync).toHaveBeenCalledWith({
+            filters: [expect.objectContaining({ id: filterId, content: storedFilterList })],
+        });
+
+        loadFilterContent.mockRestore();
+        createAsync.mockRestore();
     });
 });

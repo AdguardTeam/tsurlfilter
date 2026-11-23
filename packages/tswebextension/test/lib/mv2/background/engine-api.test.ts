@@ -13,6 +13,7 @@ import {
 
 import { type CosmeticOption, CosmeticResult, Engine } from '@adguard/tsurlfilter';
 
+import { CanvasExceptionRules } from '../../../../src/lib/common/canvas-protection/exception-rules';
 import { type MatchQuery } from '../../../../src/lib/common/interfaces';
 import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
 import { stealthApi } from '../../../../src/lib/mv2/background/api';
@@ -212,6 +213,22 @@ describe('Engine Api', () => {
         it('should return 0 when engine is not started', () => {
             expect(engineApi.getRulesCount()).toBe(0);
             expect(Engine.prototype.getRulesCount).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('getDocumentOrStealthExceptionRuleTexts method', () => {
+        it('delegates to the common extractor when the engine is started', async () => {
+            const configuration = getConfigurationMv2Fixture();
+            expect(engineApi.getDocumentOrStealthExceptionRuleTexts()).toEqual([]);
+            const extract = vi.spyOn(CanvasExceptionRules, 'getRuleTexts')
+                .mockReturnValueOnce(['@@||example.org^$stealth=fingerprinting']);
+
+            await engineApi.startEngine(configuration);
+
+            expect(engineApi.getDocumentOrStealthExceptionRuleTexts())
+                .toEqual(['@@||example.org^$stealth=fingerprinting']);
+            expect(extract).toHaveBeenCalledWith(expect.any(Engine));
+            extract.mockRestore();
         });
     });
 });

@@ -1,5 +1,6 @@
 import { type Events, type WebRequest } from 'webextension-polyfill';
 
+import { CanvasDeliveryUrl } from '../../../common/canvas-delivery';
 import { type RequestContext } from '../request-context-storage';
 
 /**
@@ -51,7 +52,7 @@ export interface BrowserRequestEvent<Details, Options>
 /**
  * Generic wrapper for browser.webRequest with custom event implementation.
  */
-export class RequestEvent<Details, Options> {
+export class RequestEvent<Details extends { url: string }, Options> {
     public listeners: EventCallback<Details>[] = [];
 
     /**
@@ -69,6 +70,11 @@ export class RequestEvent<Details, Options> {
         extraInfoSpec?: Options[],
     ): void {
         const handleBrowserEvent = (details: Details): WebRequest.BlockingResponseOrPromiseOrVoid => {
+            // The reserved host belongs to the canvas delivery channel, which has its own listener.
+            if (CanvasDeliveryUrl.isReserved(details.url)) {
+                return undefined;
+            }
+
             const data = handler(details);
 
             /**

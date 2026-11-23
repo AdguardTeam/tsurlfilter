@@ -1,7 +1,13 @@
 import { type CosmeticRule, type ScriptletData } from '@adguard/tsurlfilter';
 
+import { isCollectStatsEnabledForDocument } from '../../common/collect-hit-stats';
 import { BACKGROUND_TAB_ID } from '../../common/constants';
-import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParams } from '../../common/cosmetic-api';
+import {
+    type ContentScriptCosmeticData,
+    CosmeticApiCommon,
+    type LogJsRulesParams,
+    type MarkedCssFrameContext,
+} from '../../common/cosmetic-api';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl } from '../../common/utils/url';
@@ -73,6 +79,30 @@ interface ApplyCosmeticRulesParams {
  * Used to prepare and inject javascript and css into pages.
  */
 export class CosmeticApi extends CosmeticApiCommon {
+    /**
+     * Timeout for cosmetic injection retry on failure.
+     */
+    private static readonly INJECTION_RETRY_TIMEOUT_MS = 10;
+
+    /**
+     * Max number of tries to inject a marked stylesheet.
+     */
+    private static readonly INJECTION_MAX_TRIES = 100;
+
+    /**
+     * Waits for a marked CSS injection that is still in progress.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     *
+     * @returns A promise that resolves when the pending injection settles.
+     */
+    public static waitForPendingCssInjection(tabId: number, frameId: number): Promise<void> {
+        return CosmeticApiCommon.waitForPendingCssInjectionForContext(
+            tabsApi.getFrameContext(tabId, frameId),
+        );
+    }
+
     /**
      * This is STEP 3: All previously matched script rules are processed and filtered:
      * Scriptlet and JS rules from pre-built filters (previously collected, pre-built and passed to the engine)
@@ -225,6 +255,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         const data: ContentScriptCosmeticData = {
             isAppStarted: false,
             areHitsStatsCollected: false,
+            areNativeHitsStatsCollected: false,
             extCssRules: null,
             nativeCssSelectors: null,
         };
@@ -247,10 +278,18 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         // Do not collect hits stats if website is allowlisted
-        const isDocumentAllowlisted = !!tabContext.mainFrameRule
-            && tabContext.mainFrameRule.isFilteringDisabled();
+        const effectiveCollectStats = isCollectStatsEnabledForDocument(
+            areHitsStatsCollected,
+            tabContext.mainFrameRule,
+        );
 
-        data.areHitsStatsCollected = data.areHitsStatsCollected && !isDocumentAllowlisted;
+        data.areHitsStatsCollected = effectiveCollectStats;
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+        const nativeHitsState = frameContext
+            ? CosmeticApi.nativeHitsMarkersApplied.get(frameContext)
+            : undefined;
+        data.areNativeHitsStatsCollected = !!nativeHitsState?.applied
+            && nativeHitsState.preparedCosmeticResult === frameContext?.preparedCosmeticResult;
 
         const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
@@ -259,7 +298,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         data.extCssRules = CosmeticApi.getExtCssRules(
             cosmeticResult,
             {
-                areHitsStatsCollected,
+                areHitsStatsCollected: effectiveCollectStats,
                 // always true for MV3
                 // since minimum version of mv3 browser already supports :has()
                 isNativeHasSupported: true,
@@ -270,6 +309,104 @@ export class CosmeticApi extends CosmeticApiCommon {
             cosmeticResult,
             { isNativeHasSupported: true },
         );
+
+        return data;
+    }
+
+    /**
+     * Re-applies marked native CSS after collection is enabled on an open page.
+     *
+     * The original stylesheet was injected without markers when the page was
+     * loaded with collection disabled. The marked copy is added, so filtering
+     * behavior is unchanged.
+     *
+     * @param frameUrl Frame url.
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     *
+     * @returns Content script data with marked ExtendedCss rules.
+     */
+    public static async reapplyMarkedCosmeticData(
+        frameUrl: string,
+        tabId: number,
+        frameId: number,
+    ): Promise<ContentScriptCosmeticData> {
+        const data = CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+
+        if (!data.areHitsStatsCollected) {
+            return data;
+        }
+
+        const tabContext = tabsApi.getTabContext(tabId);
+        if (!tabContext?.info.url) {
+            data.areNativeHitsStatsCollected = false;
+            return data;
+        }
+
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+
+        // The frame context is only an injection cache key. Old subframes no
+        // longer have one, so match from the frame URL and tab context.
+        if (frameContext && CosmeticApi.hasMarkedCssInjected(frameContext)) {
+            data.areNativeHitsStatsCollected = true;
+            CosmeticApi.setNativeHitsMarkersApplied(
+                frameContext,
+                frameContext.preparedCosmeticResult,
+                true,
+            );
+            return data;
+        }
+
+        const cosmeticResult = engineApi.matchCosmetic(
+            createFrameMatchQuery(frameUrl, frameId, tabContext),
+        );
+        const cssText = CosmeticApi.getCssText(cosmeticResult, {
+            areHitsStatsCollected: true,
+            isNativeHasSupported: true,
+        });
+
+        if (!cssText) {
+            // There is no native CSS to inject, so no native hit can be lost.
+            data.areNativeHitsStatsCollected = true;
+            if (frameContext) {
+                CosmeticApi.setNativeHitsMarkersApplied(
+                    frameContext,
+                    frameContext.preparedCosmeticResult,
+                    true,
+                );
+            }
+            return data;
+        }
+
+        try {
+            await CosmeticApi.injectMarkedCssWithRetries(
+                tabId,
+                frameId,
+                cssText,
+                frameContext,
+            );
+            data.areNativeHitsStatsCollected = true;
+            if (frameContext) {
+                CosmeticApi.setNativeHitsMarkersApplied(
+                    frameContext,
+                    frameContext.preparedCosmeticResult,
+                    true,
+                );
+                CosmeticApi.setMarkedCssInjected(frameContext);
+            }
+        } catch (e) {
+            // Marked ExtendedCss rules are still applied by the content
+            // script, but native hits cannot be counted without this CSS.
+            data.areNativeHitsStatsCollected = false;
+            if (frameContext) {
+                CosmeticApi.setNativeHitsMarkersApplied(
+                    frameContext,
+                    frameContext.preparedCosmeticResult,
+                    false,
+                );
+            }
+            logger.info(`[tsweb.CosmeticApi.reapplyMarkedCosmeticData]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
+        }
 
         return data;
     }
@@ -426,6 +563,87 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Injects marked CSS with a bounded retry policy.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @param cssText Marked CSS text.
+     * @param frameContext Frame context that was matched for {@link cssText}.
+     * @param tries Number of tries already made.
+     *
+     * @returns Promise that resolves when the CSS is injected.
+     */
+    private static async injectMarkedCssWithRetries(
+        tabId: number,
+        frameId: number,
+        cssText: string,
+        frameContext: object | undefined,
+        tries = 0,
+    ): Promise<void> {
+        try {
+            await ScriptingApi.insertCSS({ cssText, tabId, frameId });
+        } catch (e) {
+            if (tries >= CosmeticApi.INJECTION_MAX_TRIES) {
+                throw e;
+            }
+
+            await new Promise<void>((resolve) => {
+                setTimeout(resolve, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
+            });
+
+            if (tabsApi.getFrameContext(tabId, frameId) !== frameContext) {
+                // The frame navigated while waiting. Do not inject the old
+                // document's CSS into the new document.
+                throw e;
+            }
+
+            await CosmeticApi.injectMarkedCssWithRetries(
+                tabId,
+                frameId,
+                cssText,
+                frameContext,
+                tries + 1,
+            );
+        }
+    }
+
+    /**
+     * Injects prepared CSS.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @param frameContext Frame context that was matched for {@link cssText}.
+     * @param preparedCosmeticResult Prepared cosmetic result.
+     * @param cssText CSS text to inject.
+     */
+    private static async injectPreparedCss(
+        tabId: number,
+        frameId: number,
+        frameContext: MarkedCssFrameContext,
+        preparedCosmeticResult: PreparedCosmeticResultMV3,
+        cssText: string,
+    ): Promise<void> {
+        try {
+            await ScriptingApi.insertCSS({
+                cssText,
+                tabId,
+                frameId,
+            });
+            CosmeticApi.setNativeHitsMarkersApplied(
+                frameContext,
+                preparedCosmeticResult,
+                preparedCosmeticResult.areHitsStatsCollected,
+            );
+            if (preparedCosmeticResult.areHitsStatsCollected) {
+                CosmeticApi.setMarkedCssInjected(frameContext);
+            }
+        } catch (e) {
+            CosmeticApi.setNativeHitsMarkersApplied(frameContext, preparedCosmeticResult, false);
+            logger.info(`[tsweb.CosmeticApi.injectPreparedCss]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
+        }
+    }
+
+    /**
      * Injects css to specified tab id and frame id.
      *
      * @param tabId Tab id.
@@ -434,24 +652,30 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * @returns A promise that resolves when the CSS is injected.
      */
-    private static async applyCss(
+    private static applyCss(
         tabId: number,
         frameId: number,
         cssText: string | undefined,
     ): Promise<void> {
-        if (!cssText) {
-            return;
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+        const preparedCosmeticResult = frameContext?.preparedCosmeticResult;
+
+        if (!frameContext || !preparedCosmeticResult) {
+            return Promise.resolve();
         }
 
-        try {
-            await ScriptingApi.insertCSS({
-                cssText,
+        return CosmeticApiCommon.applyCssWithCache({
+            frameContext,
+            preparedCosmeticResult,
+            cssText,
+            inject: () => CosmeticApi.injectPreparedCss(
                 tabId,
                 frameId,
-            });
-        } catch (e) {
-            logger.info(`[tsweb.CosmeticApi.applyCss]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
-        }
+                frameContext,
+                preparedCosmeticResult,
+                cssText as string,
+            ),
+        });
     }
 
     /**

@@ -19,6 +19,8 @@ import {
 import { defaultFilteringLog, FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
 import { DocumentLifecycle } from '../../../../../../src/lib/common/interfaces';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
+import { logger } from '../../../../../../src/lib/common/utils/logger';
+import { CanvasDeliveryUrl } from '../../../../../../src/lib/mv2/common/canvas-delivery';
 
 describe('Request Events', () => {
     const commonRequestData = {
@@ -289,6 +291,42 @@ describe('Request Events', () => {
 
     test('onBeforeRedirect', () => {
         expect(browser.webRequest.onBeforeRedirect.addListener.calledOnce);
+    });
+
+    test('creates no context and logs nothing for the reserved canvas delivery host', () => {
+        RequestEvents.init();
+
+        const publishEventSpy = vi.spyOn(defaultFilteringLog, 'publishEvent');
+        const errorSpy = vi.spyOn(logger, 'error');
+        const requestId = 'canvas-delivery-1';
+
+        browser.webRequest.onBeforeRequest.dispatch({
+            ...commonRequestData,
+            requestId,
+            type: 'xmlhttprequest',
+            url: CanvasDeliveryUrl.getUrl('extensionid'),
+            initiator: 'https://example.com',
+            timeStamp: Date.now(),
+        });
+
+        browser.webRequest.onBeforeRedirect.dispatch({
+            ...commonRequestData,
+            requestId,
+            type: 'xmlhttprequest',
+            url: CanvasDeliveryUrl.getUrl('extensionid'),
+            redirectUrl: 'data:text/javascript;charset=utf-8,',
+            fromCache: false,
+            statusCode: 307,
+            statusLine: 'HTTP/1.1 307 Internal Redirect',
+            timeStamp: Date.now(),
+        });
+
+        expect(requestContextStorage.has(requestId)).toBe(false);
+        expect(publishEventSpy).not.toHaveBeenCalled();
+        expect(errorSpy).not.toHaveBeenCalled();
+
+        publishEventSpy.mockRestore();
+        errorSpy.mockRestore();
     });
 
     describe('prefetch request handling', () => {
