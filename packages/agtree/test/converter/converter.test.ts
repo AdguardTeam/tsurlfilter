@@ -84,6 +84,20 @@ describe('Converter integration tests', () => {
             });
         });
 
+        describe('should throw error on an unterminated :xpath() literal', () => {
+            test.each([
+                {
+                    // A plain quotation mark that never closes is a typo, not a literal.
+                    // The argument stays unterminated, so the rule must not load silently.
+                    actual: String.raw`example.com##^div:xpath(//div[@a="x])`,
+                    expected: "Expected '<)-token>', but got 'end of input'",
+                },
+            ])("should throw error '$expected' on '$actual'", ({ actual, expected }) => {
+                expect(() => RuleConverter.convertToAdg(RuleParser.parse(actual)))
+                    .toThrowError(expected);
+            });
+        });
+
         describe('should throw error on invalid uBO HTML filtering rules', () => {
             test.each([
                 {

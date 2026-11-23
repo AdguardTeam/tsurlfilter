@@ -3,6 +3,7 @@ import { describe, test } from 'vitest';
 import { ExtendedCssPseudo } from '../../src/common/enums/extended-css-pseudos';
 import { TokenType } from '../../src/common/enums/token-types';
 import { tokenizeExtended } from '../../src/extended-css-tokenizer';
+import { type TokenData } from '../helpers/test-interfaces';
 import { testTokenization } from '../helpers/test-utils';
 
 import { generateDelimStream } from './helpers/delim-generator';
@@ -84,6 +85,8 @@ const PSEUDO_VALUES: PseudoValues = {
         String.raw`//div[contains(text(),')')]`,
         // a quotation mark inside a single-quoted literal
         String.raw`//div[@a='x"y']`,
+        // only the matching quotation mark closes a literal
+        String.raw`//div[@a='x")y']`,
         // double-quoted forms already handled the other quote
         String.raw`//div[contains(text(),")")]`,
         String.raw`//div[@a="x'y"]`,
@@ -100,6 +103,8 @@ const PSEUDO_VALUES: PseudoValues = {
         String.raw`//div[@a="C:\\"]`,
         // an escaped opening quote is paired with the closing quote
         String.raw`//div[@a=\'x']`,
+        // an escaped opening quote is paired with the closing quote, and a parenthesis inside stays literal
+        String.raw`//div[contains(text(),\')')]`,
         // an escaped reverse solidus before a parenthesis does not escape the parenthesis
         String.raw`//a[contains(a\\)]`,
         // a single escaped parenthesis does not change the balance
@@ -137,4 +142,23 @@ describe(`Extended CSS's :${PSEUDO_NAMES.join(', :')}`, () => {
     test.each(
         createTests(PSEUDO_NAMES, PSEUDO_VALUES),
     )("should tokenize '$actual' as $as", (testData) => testTokenization(testData, tokenizeExtended));
+
+    test('should not close the pseudo-class when a literal is not closed', () => {
+        const actual = String.raw`:xpath(//div[@a="x])`;
+
+        const expected: TokenData[] = [
+            // :xpath(
+            [TokenType.Colon, 0, 1],
+            [TokenType.Function, 1, 7],
+            // The unclosed literal hides the closing parenthesis, so the rest of the source
+            // is tokenized as delim-tokens and the parser reports the missing parenthesis
+            ...actual.slice(7).split('').map((_, index): TokenData => [
+                TokenType.Delim,
+                7 + index,
+                8 + index,
+            ]),
+        ];
+
+        testTokenization({ actual, expected }, tokenizeExtended);
+    });
 });
