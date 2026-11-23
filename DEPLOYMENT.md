@@ -38,7 +38,9 @@ derived from the package changelog and injected temporarily by
    `version` input — a release version **with** the `v` prefix, e.g. `v5.0.4`
    (matching the org-wide `create-release-pr` schema; a bare `5.0.4` is also
    accepted). It finalizes the package's `CHANGELOG.md`, pushes
-   `release-bump/<package>-v<version>` and opens the release PR.
+   `release-bump/<package>-v<version>` and opens the release PR. The Actions
+   run list shows the requested package and version, for example
+   `Prepare release tsurlfilter v4.2.0`.
 2. **Merge**: review and merge the release PR into `master`.
 3. **Publish**: `publish-release.yml` auto-fires on the merged
    `release-bump/<package>-v<version>` PR — Docker test + build → npm publish
@@ -97,22 +99,25 @@ section instead.
    Octopass `protected-push` (the commit avoids `[skip ci]` so `mirror.yml`
    still syncs the update to the public repo). Failures are reported to Slack.
 - `publish-stable-dnr-rulesets.yml` builds and publishes `@adguard/dnr-rulesets`
-   once daily (00:17 UTC) from the `stable/dnr-rulesets-5.0` and
-   `stable/dnr-rulesets-6.0` branches; the older stable lines are no longer
-   published. The two lines carry incompatible ruleset formats: 6.0 is built
-   with `@adguard/dnr-converter` 2.x (metadata split into `metadata.chunk`
-   rules), 5.0 with 1.x, and neither reader loads the other format. Each line
-   therefore has its own dist-tag:
+   once daily (00:17 UTC) from the `stable/dnr-rulesets-5.0`,
+   `stable/dnr-rulesets-6.0` and `stable/dnr-rulesets-6.1` branches; the older
+   stable lines are no longer published. The lines carry incompatible ruleset
+   formats: 6.0 and 6.1 are built with `@adguard/dnr-converter` 2.x (metadata
+   split into `metadata.chunk` rules), 5.0 with 1.x, and neither reader loads
+   the other format. Each line therefore has its own dist-tag:
 
    | Line | Branch | Dist-tag |
    | --- | --- | --- |
    | 5.0 | `stable/dnr-rulesets-5.0` | `latest` |
    | 6.0 | `stable/dnr-rulesets-6.0` | `stable-6.0` |
+   | 6.1 | `stable/dnr-rulesets-6.1` | `stable-6.1` |
 
    `latest` stays on 5.0 until consumers read the 6.0 format; to move it,
    change `LATEST_LINE` in the workflow, this table and `AGENTS.md`
-   (`scripts/ci/check-package-lists.mjs` fails on a mismatch). Versions use
-   `<major>.<minor>.<UTC timestamp>` and are injected only for that build.
+   (`scripts/ci/check-package-lists.mjs` fails on a mismatch). 6.0 stays in
+   the list while `stable/v5.5`, which pins a 6.0 version, is still supported.
+   Versions use `<major>.<minor>.<UTC timestamp>` and are injected only for
+   that build.
    Each line runs `_publish-stable-dnr-rulesets-line.yml` and publishes its
    tarball to the internal Artifact Keeper npm registry (shared
    `deploy-to-ak-npm.yml`), where the browser-extension auto-build installs
@@ -132,10 +137,10 @@ section instead.
     (`https://registry.npmjs.org/@adguard%2Fdnr-rulesets`) is ~79 MB of the
     registry's 100 MB limit, from 22 000+ versions at ~4 KB each, and it only
     grows — published versions cannot be removed. The weekly `latest` line adds
-    ~0.2 MB a year; daily publishing of both lines adds ~3 MB a year and hits
-    the limit in about 7 years, after which npm rejects every publish with
-    `E406 ... metadata is too large`. Check the size before raising the
-    cadence:
+    ~0.2 MB a year; daily publishing of every line (three today) adds ~4.6 MB a
+    year and hits the limit in under 5 years, after which npm rejects every
+    publish with `E406 ... metadata is too large`. Check the size before raising
+    the cadence:
 
     ```bash
     curl -sS -o /dev/null -w '%{size_download} bytes\n' \
@@ -149,9 +154,10 @@ section instead.
     `Dockerfile` with a `dnr-rulesets-auto-build-output` target,
     `scripts/inject-package-versions.mjs`, `.github/actions/docker-build`
     and the `scripts/ci` helpers in the branch tip). The `resolve-lines`
-    job skips a scheduled line whose branch is not ready, so the runs
-    neither fail nor spam Slack during a backport window; a manual
-    dispatch of such a line fails.
+    job skips a scheduled line whose branch is absent, or whose tip lacks
+    these files, so the runs neither fail nor spam Slack during a backport
+    window; a manual dispatch of such a line fails. A branch that exists
+    but cannot be fetched fails the round instead of being skipped.
   - **Adding a line**: create `stable/dnr-rulesets-<line>` from the
     release commit of that version, add the line to `ALL_LINES` in the
     workflow and to this list and `AGENTS.md`

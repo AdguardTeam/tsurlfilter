@@ -123,6 +123,18 @@ export class AdguardApi {
             }
         }
 
+        // Log CSP rules errors of built-in filters
+        if (result.cspRules && result.cspRules.errors.length > 0) {
+            // eslint-disable-next-line no-console
+            console.debug('CSP rules conversion errors:', result.cspRules.errors);
+        }
+
+        // Log session rules limitations
+        if (result.sessionRules && result.sessionRules.limitations.length > 0) {
+            // eslint-disable-next-line no-console
+            console.debug('Session rules were truncated:', result.sessionRules.limitations);
+        }
+
         return this.configuration;
     }
 
@@ -166,6 +178,18 @@ export class AdguardApi {
                 // eslint-disable-next-line no-console
                 console.debug('Dynamic rules were truncated:', result.dynamicRules.limitations);
             }
+        }
+
+        // Log CSP rules errors of built-in filters
+        if (result.cspRules && result.cspRules.errors.length > 0) {
+            // eslint-disable-next-line no-console
+            console.debug('CSP rules conversion errors:', result.cspRules.errors);
+        }
+
+        // Log session rules limitations
+        if (result.sessionRules && result.sessionRules.limitations.length > 0) {
+            // eslint-disable-next-line no-console
+            console.debug('Session rules were truncated:', result.sessionRules.limitations);
         }
 
         return this.configuration;

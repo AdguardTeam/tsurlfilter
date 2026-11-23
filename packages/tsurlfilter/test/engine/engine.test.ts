@@ -22,6 +22,58 @@ const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
 };
 
 describe('Engine Tests', () => {
+    describe('getDocumentOrStealthExceptionRules', () => {
+        it.each(['createSync', 'createAsync'] as const)(
+            '%s returns stealth and document exceptions with badfilter applied',
+            async (factory) => {
+                const engine = await Engine[factory]({
+                    filters: [{
+                        id: 1,
+                        content: [
+                            '@@||a.org^$stealth',
+                            '@@||b.org^$stealth=fingerprinting',
+                            '@@||c.org^$stealth=referrer',
+                            '@@||d.org^$document',
+                            '@@||e.org^$stealth',
+                            '@@||e.org^$stealth,badfilter',
+                            '@@||f.org^$subdocument',
+                            '||g.org^$document',
+                            '||h.org^',
+                            '@@||i.org^$doc',
+                            '@@||explicit.org^$elemhide,content,urlblock,jsinject',
+                            '@@||j.org^$stealth=fingerprinting',
+                            '@@||j.org^$stealth=referrer,badfilter',
+                        ].join('\n'),
+                    }],
+                });
+
+                const texts = engine.getDocumentOrStealthExceptionRules().map((rule) => {
+                    return engine.retrieveRuleText(rule.getFilterListId(), rule.getIndex());
+                });
+
+                expect(texts).toStrictEqual([
+                    '@@||a.org^$stealth',
+                    '@@||b.org^$stealth=fingerprinting',
+                    '@@||c.org^$stealth=referrer',
+                    '@@||d.org^$document',
+                    '@@||i.org^$document',
+                    '@@||j.org^$stealth=fingerprinting',
+                ]);
+            },
+        );
+
+        it.each(['createSync', 'createAsync'] as const)(
+            '%s returns no rules without candidates',
+            async (factory) => {
+                const engine = await Engine[factory]({
+                    filters: [{ id: 1, content: ['||example.org^', 'example.org##.ad'].join('\n') }],
+                });
+
+                expect(engine.getDocumentOrStealthExceptionRules()).toStrictEqual([]);
+            },
+        );
+    });
+
     it('works if request matches rule', () => {
         const rules = ['||example.org^$third-party'];
         const text = rules.join('\n');
@@ -1083,6 +1135,27 @@ describe('$badfilter modifier', () => {
         result = engine.matchRequest(request);
         expect(result.basicRule).not.toBeNull();
     });
+
+    it('does not negate a rule with a different value-bearing modifier value', () => {
+        const rules = [
+            '||example.org^$removeparam=foo',
+            '||example.org^$removeparam=bar,badfilter',
+        ];
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: rules.join('\n'),
+                },
+            ],
+        });
+
+        const request = new Request('https://example.org', 'https://example.org', RequestType.Document);
+        const result = engine.matchRequest(request);
+
+        expect(result.getRemoveParamRules()).toHaveLength(1);
+        expect(result.getRemoveParamRules()[0].getAdvancedModifierValue()).toBe('foo');
+    });
 });
 
 describe('$genericblock modifier', () => {
@@ -1562,4 +1635,43 @@ it('should return empty conversion errors when all rules are valid', () => {
 
     const errors = engine.getConversionErrors();
     expect(errors).toHaveLength(0);
+});
+
+describe('Domain-scoped rules on trailing underscore labels', () => {
+    it.each([
+        ['https://lorenne_.wehype.app/', true],
+        ['https://a.lorenne_.wehype.app/', true],
+        ['https://athenawarqueen.wehype.app/?game=battlefield-6', true],
+        ['https://bobajenny.wehype.app/guild-wars-2', true],
+        ['https://lorenne_.example.org/', false],
+        ['https://example.org/', false],
+    ])('matches the intended rules on %s', (url, matches) => {
+        const css = [
+            'div[aria-label="Your Privacy Matters"] { display: none !important; }',
+            'body { padding-right: 0 !important; overflow: auto !important; }',
+        ];
+        const js = 'window.__underscoreRule = true;';
+        const scriptlet = "//scriptlet('set-constant', '__underscoreScriptlet', 'true')";
+        const genericJs = 'window.__genericRule = true;';
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: [
+                    ...css.map((content) => `wehype.app#$#${content}`),
+                    `wehype.app#%#${js}`,
+                    `wehype.app#%#${scriptlet}`,
+                    `#%#${genericJs}`,
+                ].join('\n'),
+            }],
+        });
+        const result = engine.getCosmeticResult(
+            createRequest(url),
+            CosmeticOption.CosmeticOptionAll,
+        );
+        expect(result.CSS.specific.map((rule) => rule.getContent()).sort())
+            .toEqual(matches ? [...css].sort() : []);
+        expect(result.JS.specific.map((rule) => rule.getContent()).sort())
+            .toEqual(matches ? [js, scriptlet].sort() : []);
+        expect(result.JS.generic.map((rule) => rule.getContent())).toEqual([genericJs]);
+    });
 });

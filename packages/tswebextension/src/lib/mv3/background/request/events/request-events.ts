@@ -208,6 +208,8 @@ export class RequestEvents {
             documentLifecycle,
             parentDocumentId,
             frameAncestors,
+            cookieStoreId,
+            incognito,
         } = details;
 
         let { url, frameId } = details;
@@ -319,6 +321,11 @@ export class RequestEvents {
             referrerUrl,
             contentType,
             method: method as HTTPMethod,
+            // Firefox webRequest details used to target the originating
+            // session's cookie store when filtering cookies
+            // (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3553).
+            cookieStoreId,
+            incognito,
         };
 
         requestContextStorage.set(requestId, context);

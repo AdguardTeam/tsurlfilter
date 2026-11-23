@@ -2,11 +2,33 @@ import browser from 'webextension-polyfill';
 
 import {
     type DeclarativeRule,
+    getRulesetId,
     type IRulesetWithSourceMap,
+    isCspDeclarativeRule,
+    type LimitationError,
+    TooManyRegexpRulesError,
+    TooManyUnsafeRulesError,
     type UpdateStaticRulesOptions,
 } from '@adguard/dnr-converter';
 
 import { logger } from '../../common/utils/logger';
+
+import { getSourceRuleIds } from './source-rule-ids';
+
+/**
+ * Declarative rule omitted due to the browser quotas.
+ */
+type ExcludedRule = {
+    /**
+     * Rule set the rule belongs to.
+     */
+    ruleset: IRulesetWithSourceMap;
+
+    /**
+     * Declarative rule id.
+     */
+    ruleId: number;
+};
 
 /**
  * Reserved stealth rule ids for the DNR.
@@ -83,6 +105,21 @@ export class SessionRulesApi {
     }
 
     /**
+     * How many unsafe session rules can actually be applied: the quota minus
+     * the ids reserved for stealth rules, because the first unsafe rule gets
+     * `MIN_DECLARATIVE_RULE_ID + 1` and ids stop at
+     * `MAX_NUMBER_OF_UNSAFE_SESSION_RULES`.
+     *
+     * Reported in the limitation error, so the counters of the warning
+     * describe the reachable count rather than an id which cannot be taken.
+     *
+     * @returns Maximum number of unsafe session rules which can be applied.
+     */
+    private static get MAX_APPLICABLE_UNSAFE_SESSION_RULES(): number {
+        return SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES - SessionRulesApi.MIN_DECLARATIVE_RULE_ID;
+    }
+
+    /**
      * Set the stealth rule to the ruleset.
      * If the rule with the same id already exists, it will be replaced.
      *
@@ -115,42 +152,83 @@ export class SessionRulesApi {
     }
 
     /**
-     * Update session rules with unsafe rules from static filters. If we overflow
-     * the limit of session rules, some rules will be ignored.
+     * Update session rules with unsafe rules from static filters. Rules that
+     * do not fit into the browser quotas are omitted and reported as
+     * limitations.
+     *
+     * Rebuilt CSP rules replace only the CSP rules stored in the rule set
+     * metadata, so rule sets must be built with `exclude-unsafe-rules`:
+     * otherwise the static copy of a CSP rule stays in the rule set and a
+     * `$csp` exception has no effect.
      *
      * @param enabledStaticRulesets List of enabled static rule sets.
      * @param declarativeRulesToCancel List of declarative rules to cancel
      * (collected from dynamic rules).
+     * @param rebuiltCspRules Globally rebuilt CSP rules from static filters.
+     * @param cspRuleset Source ruleset for rebuilt CSP rules.
+     * @param unreadableCspFilterIds Ids of the source filters whose content
+     * could not be read during the CSP pass; the rebuilt list has none of
+     * their rules, so the rules of such a filter are kept from its own ruleset.
      *
-     * @returns Resolved promise when the session rules are updated.
+     * @returns Limitations for session rules omitted due to the browser quotas.
      */
     public static async updateSessionRules(
         enabledStaticRulesets: IRulesetWithSourceMap[],
         declarativeRulesToCancel?: UpdateStaticRulesOptions[] | undefined,
-    ): Promise<void> {
+        rebuiltCspRules?: DeclarativeRule[],
+        cspRuleset?: IRulesetWithSourceMap,
+        unreadableCspFilterIds?: number[],
+    ): Promise<LimitationError[]> {
         const rulesToCancel = new Map<string, number[]>(
             declarativeRulesToCancel
                 ? declarativeRulesToCancel.map(({ rulesetId, disableRuleIds }) => [rulesetId, disableRuleIds])
                 : [],
         );
 
+        if (rebuiltCspRules !== undefined && !cspRuleset) {
+            throw new Error('CSP source ruleset is required for rebuilt session CSP rules');
+        }
+
+        // Rebuilt static CSP rules replace the stale CSP rules from the static
+        // rulesets, so they are applied first and keep quota priority.
+        const unsafeRulesFromStaticFilters: {
+            ruleset: IRulesetWithSourceMap;
+            rules: DeclarativeRule[];
+        }[] = [];
+        if (rebuiltCspRules !== undefined && cspRuleset) {
+            unsafeRulesFromStaticFilters.push({
+                ruleset: cspRuleset,
+                rules: rebuiltCspRules,
+            });
+        }
+
+        // A filter whose content could not be read has no rules in the rebuilt
+        // list, so the metadata CSP rules of its own ruleset are kept: dropping
+        // them would silently lose the whole filter's policies, while taking
+        // them from the shared ruleset would duplicate the readable ones.
+        const unreadableCspRulesetIds = new Set((unreadableCspFilterIds ?? []).map(getRulesetId));
+
         // Apply $badfilter rules from dynamic rules to static rules.
-        const unsafeRulesFromStaticFilters = await Promise.all(
+        unsafeRulesFromStaticFilters.push(...await Promise.all(
             enabledStaticRulesets.map(async (r) => {
                 const rules = await r.getUnsafeRules();
 
                 const rulesToRemove = rulesToCancel.get(r.getId()) || [];
+                const activeRules = rules.filter((rule) => !rulesToRemove.includes(rule.id));
+                const isStaleCspRuleset = rebuiltCspRules !== undefined
+                    && !unreadableCspRulesetIds.has(r.getId());
 
                 return {
-                    rulesetId: r.getId(),
-                    rules: rules.filter((rule) => !rulesToRemove.includes(rule.id)),
+                    ruleset: r,
+                    rules: isStaleCspRuleset
+                        ? activeRules.filter((rule) => !isCspDeclarativeRule(rule))
+                        : activeRules,
                 };
             }),
-        );
+        ));
 
-        // Before collect rules to enable, record which rules should be removed
-        // from browser session rules and also remove them from in-memory source
-        // map.
+        // Before collecting rules to enable, record which browser session
+        // rules should be removed.
         const currentSessionRules = await chrome.declarativeNetRequest.getSessionRules();
 
         const removeRuleIds = currentSessionRules
@@ -158,26 +236,27 @@ export class SessionRulesApi {
             // Ignore removing stealth rules.
             .filter((id) => id > SessionRulesApi.MIN_DECLARATIVE_RULE_ID);
 
-        // Clear them from in-memory source map.
-        removeRuleIds.forEach((id) => {
-            SessionRulesApi.sourceMapForUnsafeRules.delete(id);
-        });
-
         // Collect rules to enable.
         const unsafeRulesFromEnabledRulesets: DeclarativeRule[] = [];
+        const nextSourceMap = new Map<number, [string, number]>();
 
         // TODO: Add separated counters for these in ruleset.
         let regexpRulesCounter = 0;
         const ignoredRules = new Map<string, number[]>(
-            enabledStaticRulesets.map((r) => [r.getId(), []]),
+            unsafeRulesFromStaticFilters.map(({ ruleset }) => [ruleset.getId(), []]),
         );
 
         let availableId = SessionRulesApi.MIN_DECLARATIVE_RULE_ID + 1;
+        const excludedByUnsafeLimitRules: ExcludedRule[] = [];
+        const excludedByRegexpLimitRules: ExcludedRule[] = [];
 
-        // Reset id for each rule via saving it's source and check the limits.
-        unsafeRulesFromStaticFilters.forEach(({ rulesetId, rules }) => {
+        // Reset id for each rule via saving its source and check the limits.
+        unsafeRulesFromStaticFilters.forEach(({ ruleset, rules }) => {
+            const rulesetId = ruleset.getId();
+
             rules.forEach((rule) => {
                 if (availableId > SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES) {
+                    excludedByUnsafeLimitRules.push({ ruleset, ruleId: rule.id });
                     ignoredRules.get(rulesetId)?.push(rule.id);
 
                     return;
@@ -188,13 +267,14 @@ export class SessionRulesApi {
                     regexpRulesCounter += 1;
 
                     if (regexpRulesCounter > SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES) {
+                        excludedByRegexpLimitRules.push({ ruleset, ruleId: rule.id });
                         ignoredRules.get(rulesetId)?.push(rule.id);
 
                         return;
                     }
                 }
 
-                SessionRulesApi.sourceMapForUnsafeRules.set(
+                nextSourceMap.set(
                     availableId,
                     [rulesetId, rule.id],
                 );
@@ -214,18 +294,58 @@ export class SessionRulesApi {
                 })
                 .join(';\n');
 
-            logger.debug(`[tsweb.SessionRulesApi.updateSessionRules]: Some session rules were ignored due to the limit of ${SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES} (current count of unsafe rules: ${unsafeRulesFromEnabledRulesets}) or limit of ${SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES} regex rules (current count of regex rules: ${regexpRulesCounter}): \n`, stringifiedIgnoredRules);
+            logger.debug(`[tsweb.SessionRulesApi.updateSessionRules]: Some session rules were ignored due to the limit of ${SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES} (current count of unsafe rules: ${unsafeRulesFromEnabledRulesets.length}) or limit of ${SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES} regex rules (current count of regex rules: ${regexpRulesCounter}): \n`, stringifiedIgnoredRules);
+        }
+
+        /**
+         * Maps omitted declarative rules to source rule ids.
+         *
+         * @param rules Omitted rules with their rule sets.
+         *
+         * @returns Source rule ids.
+         */
+        const toSourceRuleIds = async (rules: ExcludedRule[]): Promise<number[]> => {
+            const ids = await Promise.all(rules.map(({ ruleset, ruleId }) => (
+                getSourceRuleIds(ruleset, ruleId)
+            )));
+
+            return ids.flat();
+        };
+
+        const limitations: LimitationError[] = [];
+        if (excludedByUnsafeLimitRules.length > 0) {
+            limitations.push(new TooManyUnsafeRulesError(
+                `Session rules exceed the unsafe rules limit: ${excludedByUnsafeLimitRules.length} rules were omitted`,
+                await toSourceRuleIds(excludedByUnsafeLimitRules),
+                SessionRulesApi.MAX_APPLICABLE_UNSAFE_SESSION_RULES,
+                excludedByUnsafeLimitRules.length,
+            ));
+        }
+        if (excludedByRegexpLimitRules.length > 0) {
+            limitations.push(new TooManyRegexpRulesError(
+                `Session rules exceed the regexp rules limit: ${excludedByRegexpLimitRules.length} rules were omitted`,
+                await toSourceRuleIds(excludedByRegexpLimitRules),
+                SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES,
+                excludedByRegexpLimitRules.length,
+            ));
         }
 
         // The rules with IDs listed in options.removeRuleIds are first removed,
         // and then the rules given in options.addRules are added
-        return chrome.declarativeNetRequest.updateSessionRules({
+        await chrome.declarativeNetRequest.updateSessionRules({
             // dnr-converter uses PascalCase enum member names (Block, Redirect, …)
             // while @types/chrome uses UPPER_SNAKE_CASE (BLOCK, REDIRECT, …).
             // Runtime values are identical, so the cast is safe.
             addRules: unsafeRulesFromEnabledRulesets as unknown as chrome.declarativeNetRequest.Rule[],
             removeRuleIds,
         });
+
+        // Publish the source map only after the browser update succeeds so a
+        // failed update never leaves stale mappings behind.
+        SessionRulesApi.sourceMapForUnsafeRules.clear();
+        nextSourceMap.forEach((source, id) => SessionRulesApi.sourceMapForUnsafeRules.set(id, source));
+
+        return limitations;
     }
 
     /**

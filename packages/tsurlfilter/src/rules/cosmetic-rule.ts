@@ -12,6 +12,7 @@ import {
     QuoteUtils,
     RegExpUtils,
     type SelectorCombinatorValue,
+    SPECIAL_PSEUDO_CLASS_NAMES,
 } from '@adguard/agtree';
 import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
 import { CosmeticRuleParser, defaultParserOptions, type ParserOptions } from '@adguard/agtree/parser';
@@ -76,6 +77,17 @@ export enum HtmlSpecialSelectorName {
      */
     Contains = 'contains',
 }
+
+/**
+ * Pseudo-class names that are treated as aliases of
+ * {@link HtmlSpecialSelectorName.Contains} in HTML filtering rules.
+ *
+ * The list comes from AGTree, which uses it to parse the raw-text argument of
+ * these pseudo-classes. Reusing it keeps both lists in sync: a name added to
+ * AGTree is handled here as well instead of silently staying in the native
+ * selector.
+ */
+const HTML_CONTAINS_SELECTOR_NAMES: ReadonlySet<string> = new Set(SPECIAL_PSEUDO_CLASS_NAMES);
 
 /**
  * Represents processed special selector used in HTML filtering rules.
@@ -304,6 +316,11 @@ export class CosmeticRule implements IRule {
     private htmlSelectorList: HtmlSelectorList | null = null;
 
     /**
+     * Cached canonical content used as the allowlist lookup key.
+     */
+    private canonicalContent?: string;
+
+    /**
      * Gets rule index.
      *
      * @returns Rule index.
@@ -337,6 +354,44 @@ export class CosmeticRule implements IRule {
      */
     public getContent(): string {
         return this.content;
+    }
+
+    /**
+     * Returns the canonical rule content used as the allowlist lookup key.
+     *
+     * The key must be the same for equivalent rule bodies, so an exception rule
+     * cancels a blocking rule regardless of the spelling of its body. For HTML
+     * filtering rules, the key is serialized from the parsed selector list:
+     * attribute values always use double quotes, and all special pseudo-class
+     * aliases (`:contains()`, `:-abp-contains()`, `:has-text()`) map to
+     * `:contains()`. Other rules use their generated content as-is.
+     *
+     * @returns Canonical content of the rule.
+     */
+    public getCanonicalContent(): string {
+        if (this.canonicalContent !== undefined) {
+            return this.canonicalContent;
+        }
+
+        if (!this.htmlSelectorList) {
+            this.canonicalContent = this.content;
+            return this.canonicalContent;
+        }
+
+        this.canonicalContent = this.htmlSelectorList.selectors
+            .map((complexSelector) => complexSelector
+                .map((selector) => {
+                    const combinator = selector.combinator ? ` ${selector.combinator} ` : '';
+                    const specialSelectors = selector.specialSelectors
+                        .map((specialSelector) => `:${specialSelector.name}(${specialSelector.value})`)
+                        .join('');
+
+                    return `${combinator}${selector.nativeSelector}${specialSelectors}`;
+                })
+                .join(''))
+            .join(', ');
+
+        return this.canonicalContent;
     }
 
     /**
@@ -502,15 +557,12 @@ export class CosmeticRule implements IRule {
                         throw new SyntaxError(`'$${modifierName}' modifier is not allowed in a domain-specific rule`);
                     }
 
-                    result.domainModifier = new DomainModifier(modifierValue, PIPE_MODIFIER_SEPARATOR);
+                    result.domainModifier = new DomainModifier(modifierValue, PIPE_MODIFIER_SEPARATOR, true);
                     break;
 
                 case CosmeticRuleModifier.Path:
                     result.pathModifier = new Pattern(
-                        SimpleRegex.isRegexPattern(modifierValue)
-                            // eslint-disable-next-line max-len
-                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
-                            : modifierValue,
+                        SimpleRegex.unescapeModifierPatternValue(modifierValue),
                     );
                     break;
 
@@ -520,10 +572,7 @@ export class CosmeticRule implements IRule {
                     }
 
                     result.urlModifier = new Pattern(
-                        SimpleRegex.isRegexPattern(modifierValue)
-                            // eslint-disable-next-line max-len
-                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
-                            : modifierValue,
+                        SimpleRegex.unescapeModifierPatternValue(modifierValue),
                     );
                     break;
 
@@ -547,10 +596,10 @@ export class CosmeticRule implements IRule {
      *
      * @param ruleNode Cosmetic rule node to process.
      *
-     * @returns Processed {@link HtmlSelectorList} or `null` if the rule is not an HTML filtering rule.
+     * @returns Processed {@link HtmlSelectorList}, or `null` if the rule is not an HTML
+     * filtering rule or its body is not parsed into AST nodes.
      *
-     * @throws Error if the rule body is not parsed into AST nodes.
-     * @throws Error if special selector is missing a value.
+     * @throws Error if a special selector argument is missing or empty.
      * @throws Error if an unsupported simple selector type is encountered.
      */
     private static processHtmlSelectorList(ruleNode: AnyCosmeticRule): HtmlSelectorList | null {
@@ -631,25 +680,48 @@ export class CosmeticRule implements IRule {
 
                     // if it's a pseudo-class selector, we need to check if it's a special one
                     // if yes, we add it to the special selectors list, otherwise we add it to the native selector
-                    case 'PseudoClassSelector':
-                        if (simpleSelectorNode.name.value === HtmlSpecialSelectorName.Contains) {
-                            if (!simpleSelectorNode.argument) {
+                    case 'PseudoClassSelector': {
+                        const { name, argument } = simpleSelectorNode;
+
+                        if (HTML_CONTAINS_SELECTOR_NAMES.has(name.value)) {
+                            if (!argument) {
                                 throw new Error(
-                                    `'${HtmlSpecialSelectorName.Contains}' pseudo-class requires an argument`,
+                                    `'${name.value}' pseudo-class requires an argument`,
+                                );
+                            }
+
+                            if (argument.value.length === 0) {
+                                throw new Error(
+                                    `'${name.value}' pseudo-class requires a non-empty argument`,
                                 );
                             }
 
                             currentSpecialSelectors.push({
                                 name: HtmlSpecialSelectorName.Contains,
-                                value: SimpleRegex.fromLiteral(simpleSelectorNode.argument.value),
+                                // The argument is used as-is, mirroring CoreLibs:
+                                // it is the raw text between the parentheses of
+                                // the pseudo-class, so wrapping quotes (of any
+                                // kind) are literal characters of the matched
+                                // text — e.g. `:contains('advert')` matches text
+                                // containing the apostrophes, and
+                                // `:contains("(function(p,a,c)")` matches text
+                                // containing the double quotes. An unbalanced
+                                // argument, e.g. `:contains((function(g,b,a,c,e,d)`,
+                                // is possible as well: AGTree parses such rules
+                                // leniently. A regexp-looking argument
+                                // (`/.../flags`) is compiled to a RegExp by
+                                // `SimpleRegex.fromLiteral`, anything else is
+                                // matched as a literal substring.
+                                value: SimpleRegex.fromLiteral(argument.value),
                             });
                         } else {
-                            currentNativeSelector += `:${simpleSelectorNode.name.value}`;
-                            if (simpleSelectorNode.argument) {
-                                currentNativeSelector += `(${simpleSelectorNode.argument.value})`;
+                            currentNativeSelector += `:${name.value}`;
+                            if (argument) {
+                                currentNativeSelector += `(${argument.value})`;
                             }
                         }
                         break;
+                    }
 
                     // This case is handled after the switch
                     case 'SelectorCombinator':

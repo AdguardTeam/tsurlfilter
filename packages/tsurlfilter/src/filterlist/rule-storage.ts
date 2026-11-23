@@ -2,7 +2,7 @@ import { getErrorMessage } from '@adguard/logger';
 
 import { CosmeticRule } from '../rules/cosmetic-rule';
 import { HostRule } from '../rules/host-rule';
-import { NetworkRule } from '../rules/network-rule';
+import { NetworkRule, type WrittenRuleTextResolver } from '../rules/network-rule';
 import { type IRule } from '../rules/rule';
 import { RuleFactory } from '../rules/rule-factory';
 import { logger } from '../utils/logger';
@@ -109,6 +109,31 @@ export class RuleStorage {
     }
 
     /**
+     * Creates a resolver of the rule text as written in the filter list.
+     *
+     * A `$badfilter` comparison needs the text as written, before the conversion
+     * to AG syntax, and indexed rules do not keep it in memory — so it is read
+     * from the filter list on demand instead of being stored on every rule.
+     *
+     * @returns Resolver of written rule texts.
+     */
+    public createWrittenTextResolver(): WrittenRuleTextResolver {
+        return (rule: NetworkRule): string | null => {
+            const ownText = rule.getWrittenText();
+
+            if (ownText !== null) {
+                return ownText;
+            }
+
+            const filterListId = rule.getFilterListId();
+            const ruleIndex = rule.getIndex();
+
+            return this.retrieveOriginalRuleText(filterListId, ruleIndex)
+                ?? this.retrieveRuleText(filterListId, ruleIndex);
+        };
+    }
+
+    /**
      * Creates a new instance of RuleStorageScanner.
      * It can be used to read and parse all the storage contents.
      *
@@ -181,6 +206,10 @@ export class RuleStorage {
                 ruleId,
                 !ignoreHost,
                 !ignoreHtmlFilteringBodies,
+                // `$badfilter` compares rules by the text as written, so the
+                // original is needed when the rule was converted to another
+                // syntax. Returns `null` for rules that were not converted.
+                this.retrieveOriginalRuleText(listId, ruleId) ?? undefined,
             );
         } catch (e) {
             logger.debug(`[tsurl.RuleStorage.retrieveRule]: error: "${getErrorMessage(e)}" in the rule: "${ruleText}"`);

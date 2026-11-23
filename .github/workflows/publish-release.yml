@@ -1,5 +1,11 @@
 name: Publish release
 
+# A workflow_dispatch run would otherwise be titled with the workflow name
+# only, so a manual publish gives no clue which package it released. For
+# pull_request events `inputs` is empty and the title falls back to the
+# release PR title ("Release <package> v<version>").
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Publish {0}', inputs.package) || github.event.pull_request.title }}
+
 # Publishes one monorepo package to npm: Docker test/build -> npm publish ->
 # tag (created only after a successful publish) -> mirror + GitHub Release ->
 # Slack. Fires automatically when a release-bump/<package>-v<version> PR is

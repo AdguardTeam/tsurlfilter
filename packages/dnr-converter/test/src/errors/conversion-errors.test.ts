@@ -6,6 +6,7 @@ import {
     EmptyResourcesError,
     InvalidDeclarativeRuleError,
     isConversionError,
+    UnexpectedConversionError,
     UnsupportedModifierError,
     UnsupportedRegexpError,
 } from '../../../src/errors/conversion-errors';
@@ -82,11 +83,27 @@ describe('Conversion Errors', () => {
         });
     });
 
+    describe('UnexpectedConversionError', () => {
+        it('should create an instance correctly', () => {
+            const cause = new Error('Original error');
+            const error = new UnexpectedConversionError(message, rule, cause);
+
+            expect(error).toBeInstanceOf(UnexpectedConversionError);
+            expect(error).toBeInstanceOf(Error); // inherited
+            expect(error.name).toBe('UnexpectedConversionError');
+            expect(error.message).toBe(message);
+            expect(error.rule).toBe(rule);
+            expect(error.cause).toBe(cause);
+            expect(error.stack).toBeDefined();
+        });
+    });
+
     describe('isConversionError', () => {
         it('returns true for ConversionError instances', () => {
             const errors = [
                 new EmptyDomainsError(message, rule, declarativeRule),
                 new EmptyResourcesError(message, rule, declarativeRule),
+                new UnexpectedConversionError(message, rule, new Error(message)),
                 new UnsupportedModifierError(message, rule),
                 new UnsupportedRegexpError(message, rule, declarativeRule, reason),
             ];

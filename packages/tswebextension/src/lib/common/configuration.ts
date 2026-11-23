@@ -22,6 +22,11 @@ export { EXTENDED_CSS_VERSION };
  */
 export const stealthConfigValidator = zod.object({
     /**
+     * Enables canvas readout protection when all feature gates allow it.
+     */
+    protectCanvas: zod.boolean().optional(),
+
+    /**
      * Should the application set a fixed lifetime from
      * {@link StealthConfig.selfDestructFirstPartyCookiesTime} for first-party
      * cookies.

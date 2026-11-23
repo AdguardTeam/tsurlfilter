@@ -119,6 +119,7 @@ export {
     ADBLOCK_URL_SEPARATOR_REGEX,
     ADBLOCK_WILDCARD,
     ADBLOCK_WILDCARD_REGEX,
+    type RegexLiteralParts,
     SPECIAL_REGEX_SYMBOLS,
     RegExpUtils,
 } from './utils/regexp';
@@ -128,6 +129,7 @@ export {
 } from './utils/quotes';
 export { type Position, PositionProvider } from './utils/position-provider';
 export { RuleCategorizer } from './utils/categorizer';
+export { SPECIAL_PSEUDO_CLASS_NAMES } from './utils/special-pseudo-classes';
 
 // Constants
 export {

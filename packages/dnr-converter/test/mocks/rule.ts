@@ -114,6 +114,11 @@ interface CreateRuleMockOptions {
     advancedModifierValue?: string | null;
 
     /**
+     * Mocks the `$csp` directive of the rule. Defaults to `null`.
+     */
+    cspDirective?: string | null;
+
+    /**
      * Mocks header modifier matcher for the rule. Defaults to `null`.
      */
     headerModifierMatcher?: HttpHeaderMatcher | null;
@@ -188,6 +193,7 @@ export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
         permittedMethods = [],
         restrictedMethods = [],
         advancedModifierValue = null,
+        cspDirective = null,
         headerModifierMatcher = null,
         responseHeaderNameToRemove = null,
         requestHeaderNameToRemove = null,
@@ -231,6 +237,7 @@ export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
         restrictedMethods: restrictedMethods ?? null,
         advancedModifierName: null as string | null,
         advancedModifierValue,
+        cspDirective,
         headerMatcher: headerModifierMatcher,
         removeHeaderName,
         removeHeaderIsRequestType,

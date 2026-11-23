@@ -51,23 +51,23 @@ describe('Converter integration tests', () => {
             test.each([
                 {
                     actual: 'example.com##^script:has-text(12313)',
-                    expected: ['example.com$$script:contains(12313)'],
+                    expected: ['example.com$$script:contains(/12313/i)'],
                 },
                 {
                     actual: 'example.com##^script:has-text(console.log("doubles"))',
-                    expected: ['example.com$$script:contains(console.log("doubles"))'],
+                    expected: ['example.com$$script:contains(/console\\.log\\("doubles"\\)/i)'],
                 },
                 {
                     actual: 'example.com##^script[data-test]:has-text(12313)',
-                    expected: ['example.com$$script[data-test]:contains(12313)'],
+                    expected: ['example.com$$script[data-test]:contains(/12313/i)'],
                 },
                 {
                     actual: 'example.com##^script[data-test="1"][data-test2="2"]:has-text(12313)',
-                    expected: ['example.com$$script[data-test="1"][data-test2="2"]:contains(12313)'],
+                    expected: ['example.com$$script[data-test="1"][data-test2="2"]:contains(/12313/i)'],
                 },
                 {
                     actual: "example.com##^script:has-text(d.createElement('script'))",
-                    expected: ["example.com$$script:contains(d.createElement('script'))"],
+                    expected: ["example.com$$script:contains(/d\\.createElement\\('script'\\)/i)"],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
@@ -84,6 +84,11 @@ describe('Converter integration tests', () => {
                     actual: '##^:min-text-length(abc)',
                     // eslint-disable-next-line max-len
                     expected: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got 'abc'",
+                },
+                {
+                    actual: '##^:min-text-length( )',
+                    // eslint-disable-next-line max-len
+                    expected: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got ' '",
                 },
                 {
                     actual: '##^:min-text-length(-1)',
@@ -811,6 +816,47 @@ describe('Converter integration tests', () => {
                     expected: ['##div[foo="yay{"][href="yay}"]'],
                     shouldConvert: false,
                 },
+                {
+                    actual: 'example.com##a:remove-attr(href)',
+                    expected: ['example.com#?#a:remove-attr(href)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com##div:remove-class(ads)',
+                    expected: ['example.com#?#div:remove-class(ads)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#@#a:remove-attr(href)',
+                    expected: ['example.com#@?#a:remove-attr(href)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com##a:remove-attr(/^on[a-z]+/)',
+                    expected: ['example.com#?#a:remove-attr(/^on[a-z]+/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com##a:remove-attr(/^data-[0-9]+$/)',
+                    expected: ['example.com#?#a:remove-attr(/^data-[0-9]+$/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com##div:remove-class(/^ad-[0-9]+$/)',
+                    expected: ['example.com#?#div:remove-class(/^ad-[0-9]+$/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com##a:remove-attr(/^data-.{2}$/)',
+                    expected: ['example.com#?#a:remove-attr(/^data-.{2}$/)'],
+                    shouldConvert: true,
+                },
+                // CSS injection rules with these pseudo-classes also get the extended CSS separator
+                {
+                    actual: 'example.com#$#a:remove-attr(href) { color: red }',
+                    expected: ['example.com#$?#a:remove-attr(href) { color: red }'],
+                    shouldConvert: true,
+                },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
@@ -943,6 +989,41 @@ describe('Converter integration tests', () => {
                     ],
                     shouldConvert: true,
                 },
+                {
+                    actual: 'example.com#?#a:remove-attr(href)',
+                    expected: ['example.com##a:remove-attr(href)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#div:remove-class(ads)',
+                    expected: ['example.com##div:remove-class(ads)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#@?#a:remove-attr(href)',
+                    expected: ['example.com#@#a:remove-attr(href)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#a:remove-attr(/^on[a-z]+/)',
+                    expected: ['example.com##a:remove-attr(/^on[a-z]+/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#a:remove-attr(/^data-[0-9]+$/)',
+                    expected: ['example.com##a:remove-attr(/^data-[0-9]+$/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#div:remove-class(/^ad-[0-9]+$/)',
+                    expected: ['example.com##div:remove-class(/^ad-[0-9]+$/)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com#?#a:remove-attr(/^data-.{2}$/)',
+                    expected: ['example.com##a:remove-attr(/^data-.{2}$/)'],
+                    shouldConvert: true,
+                },
             ])("should convert '$actual' to '$expected'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToUbo');
             });
@@ -953,7 +1034,7 @@ describe('Converter integration tests', () => {
                 {
                     actual: 'example.com$$script[tag-content="12313"][max-length="262144"]',
                     expected: [
-                        'example.com##^script:has-text(12313)',
+                        'example.com##^script:has-text(/12313/)',
                     ],
                     shouldConvert: true,
                 },
@@ -975,7 +1056,7 @@ describe('Converter integration tests', () => {
                     // eslint-disable-next-line max-len
                     actual: 'example.com,~example.net$@$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
                     expected: [
-                        'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)',
+                        'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(/12313/)',
                     ],
                     shouldConvert: true,
                 },
@@ -983,7 +1064,7 @@ describe('Converter integration tests', () => {
                     // eslint-disable-next-line max-len
                     actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
                     expected: [
-                        "example.com,~example.net#@#^script:has-text(d.createElement('script'))",
+                        'example.com,~example.net#@#^script:has-text(/d\\.createElement\\(\\x27script\\x27\\)/)',
                     ],
                     shouldConvert: true,
                 },
@@ -992,7 +1073,7 @@ describe('Converter integration tests', () => {
                     actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
                     expected: [
                         // eslint-disable-next-line max-len
-                        "example.com,~example.net#@#^script:has-text(d.createElement('script')):min-text-length(1234)",
+                        'example.com,~example.net#@#^script:has-text(/d\\.createElement\\(\\x27script\\x27\\)/):min-text-length(1234)',
                     ],
                     shouldConvert: true,
                 },
@@ -1000,14 +1081,14 @@ describe('Converter integration tests', () => {
                 // eslint-disable-next-line max-len
                     actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
                     expected: [
-                        'example.com,~example.net#@#^script:has-text(console.log("doubles"))',
+                        'example.com,~example.net#@#^script:has-text(/console\\.log\\(\\x22doubles\\x22\\)/)',
                     ],
                     shouldConvert: true,
                 },
                 {
                     actual: 'example.com,~example.net$@$script[data-test][tag-content="12313"][max-length="262144"]',
                     expected: [
-                        'example.com,~example.net#@#^script[data-test]:has-text(12313)',
+                        'example.com,~example.net#@#^script[data-test]:has-text(/12313/)',
                     ],
                     shouldConvert: true,
                 },
@@ -1037,7 +1118,7 @@ describe('Converter integration tests', () => {
                     // eslint-disable-next-line max-len
                     actual: 'example.com,~example.net$@$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
                     expected: [
-                        'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)',
+                        'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(/12313/)',
                     ],
                     shouldConvert: true,
                 },
@@ -1045,7 +1126,7 @@ describe('Converter integration tests', () => {
                     // eslint-disable-next-line max-len
                     actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
                     expected: [
-                        "example.com,~example.net#@#^script:has-text(d.createElement('script'))",
+                        'example.com,~example.net#@#^script:has-text(/d\\.createElement\\(\\x27script\\x27\\)/)',
                     ],
                     shouldConvert: true,
                 },
@@ -1054,7 +1135,7 @@ describe('Converter integration tests', () => {
                     actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
                     expected: [
                         // eslint-disable-next-line max-len
-                        "example.com,~example.net#@#^script:has-text(d.createElement('script')):min-text-length(1234)",
+                        'example.com,~example.net#@#^script:has-text(/d\\.createElement\\(\\x27script\\x27\\)/):min-text-length(1234)',
                     ],
                     shouldConvert: true,
                 },
@@ -1062,14 +1143,14 @@ describe('Converter integration tests', () => {
                 // eslint-disable-next-line max-len
                     actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
                     expected: [
-                        'example.com,~example.net#@#^script:has-text(console.log("doubles"))',
+                        'example.com,~example.net#@#^script:has-text(/console\\.log\\(\\x22doubles\\x22\\)/)',
                     ],
                     shouldConvert: true,
                 },
                 {
                     actual: 'example.com,~example.net$@$script[data-test][tag-content="12313"][max-length="262144"]',
                     expected: [
-                        'example.com,~example.net#@#^script[data-test]:has-text(12313)',
+                        'example.com,~example.net#@#^script[data-test]:has-text(/12313/)',
                     ],
                     shouldConvert: true,
                 },

@@ -139,17 +139,20 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   leg is ungated, like the stable line) → tag after publish → mirror → GitHub
   Release → Slack, with a failure-notify Slack job).
 - `publish-stable-dnr-rulesets.yml` — once-daily scheduled build/publish of
-  `@adguard/dnr-rulesets` from the `stable/dnr-rulesets-5.0` and
-  `stable/dnr-rulesets-6.0` branches; older stable lines are no longer
-  published. The lines carry incompatible ruleset formats (6.0 is built with
-  `@adguard/dnr-converter` 2.x, 5.0 with 1.x), so each has its own dist-tag:
-  5.0 publishes under `latest` until consumers migrate (`LATEST_LINE` in the
-  workflow), 6.0 under `stable-6.0`. A `resolve-lines` job holds the line list
+  `@adguard/dnr-rulesets` from the `stable/dnr-rulesets-5.0`,
+  `stable/dnr-rulesets-6.0` and `stable/dnr-rulesets-6.1` branches; older
+  stable lines are no longer published. The lines carry incompatible ruleset
+  formats (6.0 and 6.1 are built with `@adguard/dnr-converter` 2.x, 5.0 with
+  1.x), so each has its own dist-tag: 5.0 publishes under `latest` until
+  consumers migrate (`LATEST_LINE` in the workflow), 6.0 under `stable-6.0`
+  and 6.1 under `stable-6.1`. A `resolve-lines` job holds the line list
   (`ALL_LINES`, asserted by `scripts/ci/check-package-lists.mjs` against this
-  file and `DEPLOYMENT.md`) and skips a line whose branch is not on the current
-  CI (root `Dockerfile` with `dnr-rulesets-auto-build-output`,
-  `scripts/inject-package-versions.mjs`, `.github/actions/docker-build`,
-  `scripts/ci` helpers); a manual dispatch with `line` publishes one line.
+  file and `DEPLOYMENT.md`) and skips a line whose branch is absent, or whose
+  tip lacks the probe files (root `Dockerfile` with
+  `dnr-rulesets-auto-build-output`, `scripts/inject-package-versions.mjs`,
+  `.github/actions/docker-build`, `scripts/ci` helpers). A branch that exists
+  but cannot be fetched fails the round. A manual dispatch with `line`
+  publishes one line.
   Each line runs `_publish-stable-dnr-rulesets-line.yml`: checks the branch
   out, stamps a `<line>.<timestamp>` version, builds the Docker target, and
   publishes the tarball to the internal Artifact Keeper npm registry (shared
@@ -263,6 +266,30 @@ You MUST follow the following rules for EVERY task that you perform:
 
    **Rationale**: keeps function contracts greppable and consistent with our
    usual JSDoc style across both packages and tooling scripts.
+
+7. **Prefer named exports over `export *`.** List the re-exported names
+   explicitly (`export { a, type B } from './module'`), barrel files included.
+   Use `export *` only where a named list is impractical.
+
+   **Rationale**: the public surface of a module stays visible in one place,
+   and a new symbol never becomes public by accident.
+
+8. **Use enums instead of magic strings.** A fixed set of values (statuses,
+   types, operation names, keys) is a string `enum`, and code compares and
+   assigns its members, not string literals. A zod schema reads it with
+   `zod.nativeEnum()` or `zod.literal(Enum.Member)`.
+
+   **Rationale**: this is the project convention; a typo becomes a type
+   error, and every use of a value can be found by its member.
+
+9. **Group related functions in a class with static methods.** Do not export
+   loose module-level helper functions where the surrounding code uses a
+   class as a namespace. An exception is code bundled into pages, where size
+   matters: terser renames and drops unused module-level functions, but keeps
+   method names. Such a module says so in a comment.
+
+   **Rationale**: matches the existing code and keeps related helpers under
+   one name.
 
 ### III. Testing Discipline
 

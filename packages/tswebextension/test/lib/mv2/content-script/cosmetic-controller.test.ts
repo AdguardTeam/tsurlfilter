@@ -15,8 +15,10 @@ import { CosmeticResult } from '@adguard/tsurlfilter';
 
 import * as SendMessageModule from '../../../../src/lib/common/content-script/send-app-message';
 import { type ContentScriptCosmeticData } from '../../../../src/lib/common/cosmetic-api';
+import { MessageType } from '../../../../src/lib/common/message-constants';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { CosmeticController } from '../../../../src/lib/mv2/content-script/cosmetic-controller';
+import { mockMutationObserver, MutationObserverMock } from '../../../helpers/mutation-observer';
 import { createCosmeticRule } from '../../../helpers/rule-creator';
 
 vi.mock('../../../../src/lib/common/content-script/send-app-message', () => {
@@ -196,5 +198,156 @@ describe('some extended css rules are invalid', () => {
 
         const headerDisplayStyleValue = headerElement.style.getPropertyValue('display');
         expect(headerDisplayStyleValue).toEqual('none');
+    });
+});
+
+describe('uBO action pseudo-classes are applied by the content script', () => {
+    beforeEach(() => {
+        document.body.innerHTML = `
+            <a id="link" href="https://example.org/" onclick="void 0" class="ads ad-1 other">link</a>
+        `;
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    it('remove-attr and remove-class are applied, styles of action rules are ignored', async () => {
+        const rules = [
+            'example.org##a:remove-attr(href)',
+            'example.org##a:remove-attr(/^on[a-z]+$/)',
+            'example.org##a:remove-class(ads)',
+            'example.org##a:remove-class(/^ad-[0-9]+$/)',
+        ];
+
+        // Mocking the sendAppMessage function
+        vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(getCosmeticData(rules, false));
+
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
+
+        expect(cosmeticController).toBeDefined();
+
+        // Wait for the cosmetic controller to process (using a delay)
+        await new Promise((resolve) => {
+            setTimeout(resolve, 20);
+        });
+
+        const linkElement = document.getElementById('link');
+        if (!linkElement) {
+            throw new Error('#link element is required');
+        }
+
+        expect(linkElement.hasAttribute('href')).toBe(false);
+        expect(linkElement.hasAttribute('onclick')).toBe(false);
+        expect(linkElement.classList.contains('ads')).toBe(false);
+        expect(linkElement.classList.contains('ad-1')).toBe(false);
+        // Unrelated classes and the element itself are kept
+        expect(linkElement.classList.contains('other')).toBe(true);
+        expect(linkElement.style.getPropertyValue('display')).toEqual('');
+    });
+});
+
+describe('short-lived probes', () => {
+    it('starts collecting probes before the cosmetic data request and reports them', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+
+        const style = document.createElement('style');
+        style.textContent = [
+            "@property --adguard-hit { syntax: '*'; inherits: false; initial-value: ''; }",
+            "div.loading-bait { display: none !important; --adguard-hit: 'adguard0%3B42' !important; }",
+        ].join('\n');
+        document.head.appendChild(style);
+
+        try {
+            const cosmeticData: ContentScriptCosmeticData = {
+                isAppStarted: true,
+                areHitsStatsCollected: true,
+                extCssRules: [],
+                nativeCssSelectors: null,
+            };
+
+            const sendAppMessageSpy = vi.spyOn(SendMessageModule, 'sendAppMessage')
+                .mockResolvedValue(cosmeticData);
+
+            const cosmeticController = new CosmeticController();
+            cosmeticController.init();
+
+            // The collector must observe the DOM before the response is
+            // processed, so the observer is already created at this point.
+            const collectorObserver = MutationObserverMock.last!;
+
+            const bait = document.createElement('div');
+            bait.className = 'loading-bait';
+            collectorObserver.trigger([{
+                addedNodes: [bait],
+                removedNodes: [],
+                type: 'childList',
+                target: document.body,
+            } as unknown as MutationRecord]);
+
+            // Wait for the cosmetic controller to process the response.
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            const stats = sendAppMessageSpy.mock.calls
+                .map(([message]) => message)
+                .filter((message) => message.type === MessageType.SaveCssHitsStats)
+                .flatMap((message) => message.payload as Array<{ filterId: number; ruleIndex: number }>);
+
+            expect(stats).toContainEqual(expect.objectContaining({ filterId: 0, ruleIndex: 42 }));
+            expect(bait.parentNode).toBeNull();
+        } finally {
+            style.remove();
+            restoreMutationObserver();
+        }
+    });
+
+    it('stops the collector when the background does not respond', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+
+        try {
+            vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(null);
+
+            const cosmeticController = new CosmeticController();
+            cosmeticController.init();
+
+            const collectorObserver = MutationObserverMock.last!;
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            expect(collectorObserver.isDisconnected).toBe(true);
+        } finally {
+            restoreMutationObserver();
+        }
+    });
+
+    it('stops the collector when hits stats are not collected', async () => {
+        const restoreMutationObserver = mockMutationObserver();
+
+        try {
+            vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue({
+                isAppStarted: true,
+                areHitsStatsCollected: false,
+                extCssRules: [],
+                nativeCssSelectors: null,
+            });
+
+            const cosmeticController = new CosmeticController();
+            cosmeticController.init();
+
+            const collectorObserver = MutationObserverMock.last!;
+
+            await new Promise((resolve) => {
+                setTimeout(resolve, 20);
+            });
+
+            expect(collectorObserver.isDisconnected).toBe(true);
+        } finally {
+            restoreMutationObserver();
+        }
     });
 });

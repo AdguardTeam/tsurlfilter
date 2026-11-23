@@ -31,6 +31,7 @@ export {
     ADBLOCK_URL_SEPARATOR_REGEX,
     ADBLOCK_WILDCARD,
     ADBLOCK_WILDCARD_REGEX,
+    type RegexLiteralParts,
     SPECIAL_REGEX_SYMBOLS,
     RegExpUtils,
 } from './regexp';
@@ -40,3 +41,4 @@ export {
 } from './quotes';
 export { type Position, PositionProvider } from './position-provider';
 export { RuleCategorizer } from './categorizer';
+export { SPECIAL_PSEUDO_CLASS_NAMES } from './special-pseudo-classes';
