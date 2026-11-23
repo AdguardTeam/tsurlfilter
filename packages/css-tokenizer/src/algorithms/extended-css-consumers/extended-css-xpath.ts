@@ -19,10 +19,12 @@ import { type TokenizerContextFunction } from '../../common/types/function-proto
  * the next code point, except a quotation mark: a quotation mark starts a literal
  * even after a reverse solidus, because after CSS unescaping it delimits a literal.
  *
- * A quotation mark that does not close before the end of the source cannot start a
- * literal. This is the case for a dangling CSS-escaped quote or for a literal that
- * is not closed. The scan is repeated with such a quotation mark treated as plain
- * text.
+ * A CSS-escaped quotation mark may be a plain character of a malformed argument
+ * instead of the start of a literal, e.g. in `:xpath(//div[contains(text(),\')])`.
+ * If the literal it opens does not close before the end of the source, the scan is
+ * repeated with this quotation mark treated as plain text. Any other quotation mark
+ * must close its literal: a literal that is not closed leaves the argument
+ * unterminated, so the missing parenthesis is reported instead of being hidden.
  *
  * @param context Reference to the tokenizer context instance, positioned at the start
  * of the argument.
@@ -34,8 +36,8 @@ import { type TokenizerContextFunction } from '../../common/types/function-proto
 const findArgumentEnd = (context: TokenizerContext): number => {
     const length = context.length - context.offset;
 
-    // Positions of quotation marks which must stay plain text, because the scan reached
-    // the end of the source inside the literal they started
+    // Positions of CSS-escaped quotation marks which must stay plain text, because the
+    // scan reached the end of the source inside the literal they started
     const plainQuotes = new Set<number>();
 
     for (;;) {
@@ -49,6 +51,9 @@ const findArgumentEnd = (context: TokenizerContext): number => {
 
         // The position of the quotation mark which opened the currently open literal
         let openingQuote = -1;
+
+        // Whether the quotation mark which opened the currently open literal is CSS-escaped
+        let openingQuoteEscaped = false;
 
         // XPath literals have no escape sequences, so escapes are tracked only outside
         // literals. Two reverse solidi in a row cancel each other.
@@ -67,11 +72,13 @@ const findArgumentEnd = (context: TokenizerContext): number => {
                 // A quotation mark starts a literal even after a reverse solidus, because
                 // XPath literals have no escape sequences. The reverse solidus is consumed
                 // and must not escape the code point after the quotation mark.
+                const quoteEscaped = escaped;
                 escaped = false;
 
                 if (!plainQuotes.has(index)) {
                     stringQuote = code;
                     openingQuote = index;
+                    openingQuoteEscaped = quoteEscaped;
                 }
             } else if (escaped) {
                 // The escaped code point is plain text, so it must not change the balance
@@ -98,7 +105,14 @@ const findArgumentEnd = (context: TokenizerContext): number => {
             return length;
         }
 
-        // The literal is not closed, so its opening quotation mark is plain text
+        // A plain quotation mark that never closes is a typo, not a literal. The argument
+        // stays unterminated, so the closing parenthesis inside the literal is not
+        // tokenized and the parser reports the error.
+        if (!openingQuoteEscaped) {
+            return length;
+        }
+
+        // The escaped quotation mark is plain text, so the scan is repeated without it
         plainQuotes.add(openingQuote);
     }
 };
