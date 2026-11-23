@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { DomainListGenerator } from '../../../src/generator/misc/domain-list-generator';
 import {
     type DomainList,
@@ -647,6 +648,209 @@ describe('DomainListParser', () => {
                         exception: false,
                     },
                 ],
+            });
+        });
+
+        test('should split a regexp domain with an even backslash run before the closing delimiter', () => {
+            const regexDomain = String.raw`/a\\/`;
+            const list = String.raw`/a\\/|example.org`;
+            expect(DomainListParser.parse(list, defaultParserOptions, 0, '|')).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: list.length,
+                separator: '|',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regexDomain.length,
+                        value: regexDomain,
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: regexDomain.length + 1,
+                        end: list.length,
+                        value: 'example.org',
+                        exception: false,
+                    },
+                ],
+            });
+        });
+
+        test('should keep a trailing regexp-like item with no closing delimiter opaque', () => {
+            const regexLikeValue = String.raw`/a\/`;
+            const list = String.raw`example.org|/a\/`;
+            expect(DomainListParser.parse(list, defaultParserOptions, 0, '|')).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: list.length,
+                separator: '|',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: 11,
+                        value: 'example.org',
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 12,
+                        end: list.length,
+                        value: regexLikeValue,
+                        exception: false,
+                    },
+                ],
+            });
+        });
+
+        test.each([
+            String.raw`/a\|b`,
+            String.raw`/a[|]b`,
+            String.raw`/a(b|c)`,
+            String.raw`/a(b|example.org`,
+        ])('should keep a trailing regexp-like item opaque: $actual', (regexLikeValue) => {
+            expect(DomainListParser.parse(regexLikeValue, defaultParserOptions, 0, '|')).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: regexLikeValue.length,
+                separator: '|',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regexLikeValue.length,
+                        value: regexLikeValue,
+                        exception: false,
+                    },
+                ],
+            });
+        });
+
+        test('should split a list with a closed regexp domain in the middle', () => {
+            const regexDomain = String.raw`/a\\/`;
+            const list = String.raw`example.org|/a\\/|example.com`;
+            expect(DomainListParser.parse(list, defaultParserOptions, 0, '|')).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: list.length,
+                separator: '|',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: 11,
+                        value: 'example.org',
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 12,
+                        end: 12 + regexDomain.length,
+                        value: regexDomain,
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 13 + regexDomain.length,
+                        end: list.length,
+                        value: 'example.com',
+                        exception: false,
+                    },
+                ],
+            });
+        });
+
+        test('should keep a valid regexp domain with the separator inside a group as one item', () => {
+            const regexDomain = String.raw`/examp[lp]e\.(com|org)/`;
+            expect(DomainListParser.parse(regexDomain, defaultParserOptions, 0, '|')).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: regexDomain.length,
+                separator: '|',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regexDomain.length,
+                        value: regexDomain,
+                        exception: false,
+                    },
+                ],
+            });
+        });
+
+        test('should keep a value opaque when a later closing delimiter ends it', () => {
+            const regexLikeValue = String.raw`/a\/|example.org|/b/`;
+            const list = `~${regexLikeValue}`;
+            expect(DomainListParser.parse(list, defaultParserOptions, 0, '|')).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: list.length,
+                separator: '|',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 1,
+                        end: list.length,
+                        value: regexLikeValue,
+                        exception: true,
+                    },
+                ],
+            });
+        });
+
+        test.each([
+            {
+                actual: String.raw`~/a\/|example.org`,
+                start: 1,
+                end: 17,
+            },
+            {
+                actual: String.raw`/a\/|example.org`,
+                start: 0,
+                end: 16,
+            },
+            {
+                actual: String.raw`~/|example.org`,
+                start: 1,
+                end: 14,
+            },
+            {
+                actual: String.raw`/a\|b|example.org`,
+                start: 0,
+                end: 17,
+            },
+            {
+                actual: String.raw`/a[|]b|example.org`,
+                start: 0,
+                end: 18,
+            },
+            {
+                actual: String.raw`/a(b|c)|example.org`,
+                start: 0,
+                end: 19,
+            },
+            {
+                actual: String.raw`/a/x|example.org`,
+                start: 0,
+                end: 16,
+            },
+        ])('should throw on an unclosed regexp literal: $actual', ({ actual, start, end }) => {
+            let error: unknown;
+
+            try {
+                DomainListParser.parse(actual, defaultParserOptions, 0, '|');
+            } catch (e) {
+                error = e;
+            }
+
+            expect(error).toBeInstanceOf(AdblockSyntaxError);
+            expect(error).toMatchObject({
+                message: 'Unclosed regexp literal, no closing delimiter found',
+                start,
+                end,
             });
         });
     });

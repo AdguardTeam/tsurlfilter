@@ -17,6 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `$path` and `$url` values with an escaped closing slash, e.g.
+  `[$path=/a\/]example.com##.foo`, are no longer regexps and now match their
+  literal text instead of compiling to an invalid regexp and never matching
+  (via [@adguard/tsurlfilter]). For `http` and `https` URLs, the URL parser
+  keeps a backslash only in the query or fragment, so the example matches
+  `https://example.com/?q=/a\/`, not a page path.
+- Rules whose `$domain` or `$denyallow` value has an unclosed regexp
+  literal followed by another list item, e.g.
+  `$domain=~/a\/|example.org` and `$domain=~/|example.org`, are now
+  rejected by the list parser with
+  `Unclosed regexp literal, no closing delimiter found` (via
+  [@adguard/tsurlfilter]). Previously the parser kept the rest of the list
+  in one value that could not match a host, so a negated value turned the
+  rule on for every site.
 - Bare `$removeparam` rules no longer duplicate the hash fragment when a
   History API URL has no query string but its fragment contains `?`, e.g.
   `/page#route?x=1` now stays unchanged instead of becoming
@@ -32,13 +46,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   chain needs a case-sensitive match. In such a mixed chain, a
   case-insensitive regexp becomes case-sensitive, because the merged regexp has
   a single flag set.
-- `$domain` and `$denyallow` values that start with a slash but are not
-  valid regexp literals are now rejected with `Invalid regular expression
-  as domain pattern`. Before, such a value could turn the rule on for
-  every site: `$domain=~/a\/|example.org` lost the rest of the list, and
-  a positive `$domain=//` matched every domain as an empty regexp. `/a\/`
-  was already rejected because its pattern did not compile (via
-  [@adguard/tsurlfilter]).
+- A single trailing `$domain` or `$denyallow` value that starts with a
+  slash but is not a regexp literal is now rejected with
+  `Invalid regular expression as domain pattern`, e.g. `$domain=//` or
+  `$domain=/a/x` (via [@adguard/tsurlfilter]). Before, the bare delimiters
+  `/` and `//` compiled to an empty regexp that matched every domain, and
+  a slash-leading value without a closing slash became a plain domain that
+  never matched a host, so a negated value left an empty restriction and
+  the rule applied on every site. `$domain=/a\/` was already rejected
+  because its pattern did not compile.
 - Path-relative URLs passed to `history.pushState()` and
   `history.replaceState()` are now resolved against the base URI from
   before the navigation, so `$removeparam` rules remove tracking

@@ -25,6 +25,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- The list item parser now throws an `AdblockSyntaxError` with
+  `Unclosed regexp literal, no closing delimiter found` when a list item
+  starts with `/` and a real separator follows it, but no closing
+  delimiter is followed by that separator or ends the value, e.g.
+  `$domain=~/a\/|example.org`, `$domain=~/|example.org` or
+  `$domain=/a/x|example.org`. Previously every separator inside such a
+  value was lost. An escaped separator and a separator inside a character
+  class or a regexp group do not count, so `$domain=/a\|b`,
+  `$domain=/a[|]b` and `$domain=/a(b|c)` stay one item. A trailing item
+  with no separator after it stays opaque too, e.g. `example.org|/a\/`.
 - uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
   mirrors uBlock for plain text: one pair of outer quotes is removed and
   the text is matched case-insensitively through an escaped `:contains()`
