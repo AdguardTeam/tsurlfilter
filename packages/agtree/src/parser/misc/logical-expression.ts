@@ -82,6 +82,16 @@ export const LE_RIGHT = 4;
 export const LE_MAX_NODES = 32;
 
 /**
+ * Maximum nesting depth of a logical expression.
+ *
+ * Each nesting level allocates at least one node, so a valid expression can
+ * never be deeper than {@link LE_MAX_NODES}; the limit exists so that a
+ * pathological input such as 5,000 nested parentheses fails with a syntax
+ * error instead of a stack overflow.
+ */
+export const LE_MAX_DEPTH = LE_MAX_NODES;
+
+/**
  * Minimum required `Int32Array` length for the output buffer.
  *
  * `LE_HEADER + LE_MAX_NODES * LE_STRIDE` = 2 + 32 × 5 = 162.
@@ -188,7 +198,7 @@ export class LogicalExpressionParser implements BufferedParser {
             return;
         }
 
-        const root = LogicalExpressionParser.parseExpr(ctx, endTi, buf, cursor, 0);
+        const root = LogicalExpressionParser.parseExpr(ctx, endTi, buf, cursor, 0, 0);
 
         buf[LE_ROOT] = root;
         buf[LE_COUNT] = cursor.count;
@@ -329,6 +339,34 @@ export class LogicalExpressionParser implements BufferedParser {
     }
 
     /**
+     * Rejects an expression that is nested deeper than {@link LE_MAX_DEPTH}.
+     *
+     * @param ctx Parser context.
+     * @param endTi Exclusive end token index.
+     * @param cursor Mutable parse cursor.
+     * @param depth Current nesting depth.
+     *
+     * @throws {AdblockSyntaxError} When the depth limit is exceeded.
+     */
+    private static checkDepth(
+        ctx: ParserContext,
+        endTi: number,
+        cursor: ParseCursor,
+        depth: number,
+    ): void {
+        if (depth <= LE_MAX_DEPTH) {
+            return;
+        }
+
+        const ti = Math.min(cursor.ti, Math.max(0, endTi - 1));
+        throw new AdblockSyntaxError(
+            `Logical expression is nested deeper than ${LE_MAX_DEPTH} levels`,
+            tokenStart(ctx, ti),
+            ctx.ends[ti],
+        );
+    }
+
+    /**
      * Parses an expression using precedence climbing.
      *
      * @param ctx Parser context.
@@ -336,6 +374,7 @@ export class LogicalExpressionParser implements BufferedParser {
      * @param buf Output buffer.
      * @param cursor Mutable parse cursor.
      * @param minPrec Minimum operator precedence to consume.
+     * @param depth Current nesting depth.
      *
      * @returns Node index of the parsed expression.
      */
@@ -345,8 +384,11 @@ export class LogicalExpressionParser implements BufferedParser {
         buf: Int32Array,
         cursor: ParseCursor,
         minPrec: number,
+        depth: number,
     ): number {
-        let node = LogicalExpressionParser.parsePrimary(ctx, endTi, buf, cursor);
+        LogicalExpressionParser.checkDepth(ctx, endTi, cursor, depth);
+
+        let node = LogicalExpressionParser.parsePrimary(ctx, endTi, buf, cursor, depth);
 
         // Skip whitespace before the first binary-operator check
         cursor.ti = skipWs(ctx, cursor.ti);
@@ -383,7 +425,7 @@ export class LogicalExpressionParser implements BufferedParser {
             // Consume the two-token operator
             cursor.ti += 2;
 
-            const right = LogicalExpressionParser.parseExpr(ctx, endTi, buf, cursor, prec + 1);
+            const right = LogicalExpressionParser.parseExpr(ctx, endTi, buf, cursor, prec + 1, depth + 1);
 
             const leftStart = buf[LE_HEADER + node * LE_STRIDE + LE_SRC_START];
             const rightEnd = buf[LE_HEADER + right * LE_STRIDE + LE_SRC_END];
@@ -403,6 +445,7 @@ export class LogicalExpressionParser implements BufferedParser {
      * @param endTi Exclusive end token index.
      * @param buf Output buffer.
      * @param cursor Mutable parse cursor.
+     * @param depth Current nesting depth.
      *
      * @returns Node index of the parsed primary.
      *
@@ -413,6 +456,7 @@ export class LogicalExpressionParser implements BufferedParser {
         endTi: number,
         buf: Int32Array,
         cursor: ParseCursor,
+        depth: number,
     ): number {
         cursor.ti = skipWs(ctx, cursor.ti);
 
@@ -428,7 +472,7 @@ export class LogicalExpressionParser implements BufferedParser {
         if (types[ti] === TokenType.ExclamationMark) {
             const opStart = tokenStart(ctx, ti);
             cursor.ti += 1;
-            const child = LogicalExpressionParser.parseExpr(ctx, endTi, buf, cursor, PREC_NOT);
+            const child = LogicalExpressionParser.parseExpr(ctx, endTi, buf, cursor, PREC_NOT, depth + 1);
             const childEnd = buf[LE_HEADER + child * LE_STRIDE + LE_SRC_END];
             return LogicalExpressionParser.alloc(buf, cursor, LE_KIND_NOT, opStart, childEnd, child, -1);
         }
@@ -437,7 +481,7 @@ export class LogicalExpressionParser implements BufferedParser {
         if (types[ti] === TokenType.OpenParen) {
             // skip `(`
             cursor.ti += 1;
-            const inner = LogicalExpressionParser.parseExpr(ctx, endTi, buf, cursor, 0);
+            const inner = LogicalExpressionParser.parseExpr(ctx, endTi, buf, cursor, 0, depth + 1);
 
             cursor.ti = skipWs(ctx, cursor.ti);
             if (cursor.ti >= endTi || types[cursor.ti] !== TokenType.CloseParen) {

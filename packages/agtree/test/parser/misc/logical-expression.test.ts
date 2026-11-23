@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
 
 import { LogicalExpressionAstBuilder } from '../../../src/ast-builder/misc/logical-expression';
+import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { LogicalExpressionGenerator } from '../../../src/generator/misc/logical-expression-generator';
 import type { AnyExpressionNode } from '../../../src/nodes';
 import { createParserContext, initParserContext, LogicalExpressionParser } from '../../../src/parser';
@@ -637,5 +639,33 @@ describe('LogicalExpressionParser', () => {
             const expr = vars.join(' || ');
             expect(() => parse(expr)).toThrow(/maximum number of nodes/);
         });
+    });
+});
+
+describe('nesting depth limit (T-070, F-040)', () => {
+    const parser = new RuleParserPipeline();
+
+    test.each([
+        { name: 'parentheses', expression: `${'('.repeat(5_000)}a${')'.repeat(5_000)}` },
+        { name: 'negations', expression: `${'!'.repeat(5_000)}a` },
+    ])('a pathologically deep $name expression is a syntax error, not a stack overflow', ({ expression }) => {
+        // Before the depth guard, the recursive parser blew the call stack
+        // (`RangeError: Maximum call stack size exceeded`), which a consumer
+        // cannot distinguish from a bug in its own code.
+        let error: unknown;
+        try {
+            parser.parse(`!#if ${expression}`);
+        } catch (e) {
+            error = e;
+        }
+
+        expect(error).toBeInstanceOf(AdblockSyntaxError);
+        expect((error as AdblockSyntaxError).message).toContain('nested deeper than');
+    });
+
+    test('a reasonable expression still parses', () => {
+        const expression = `${'('.repeat(8)}(adguard && !windows)${')'.repeat(8)}`;
+
+        expect(() => parser.parse(`!#if ${expression}`)).not.toThrow();
     });
 });

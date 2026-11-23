@@ -107,6 +107,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- A pathologically nested preprocessor expression, e.g. `!#if` with 5,000
+  parentheses, is rejected with `AdblockSyntaxError` ("nested deeper than 32
+  levels") instead of overflowing the call stack with a `RangeError`. A valid
+  expression can never exceed that depth: each level allocates a node and the
+  node limit is 32.
 - A comment that starts with a metadata header name but has no colon after it,
   e.g. `! Title of the list` or `! Version 1.0`, is a plain comment again, as
   in 4.x. It used to be parsed as a metadata comment, and the generator then
