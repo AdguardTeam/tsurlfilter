@@ -3,12 +3,13 @@
  */
 export enum ExtCssMarkersState {
     /**
-     * The background did not report the marker state.
+     * The background did not report the marker state in this response.
      *
-     * No manifest applies ExtendedCss in the page: the background injects it
-     * on both MV2 and MV3. On MV3 the background reports the state; on MV2 the
-     * content script gets this value, which means "marker state not reported by
-     * the background".
+     * Both manifest versions apply ExtendedCss in the page from the
+     * background, so the background is the only side that reports the state.
+     * It carries this value in the initial `GetCosmeticData` response, before
+     * it has an outcome to report; a reapply response carries the confirmed
+     * state on both manifest versions.
      */
     ContentScript = 'contentScript',
 

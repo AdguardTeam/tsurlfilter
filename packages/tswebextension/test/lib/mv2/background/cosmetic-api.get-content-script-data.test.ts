@@ -7,12 +7,14 @@ import {
     vi,
 } from 'vitest';
 
+import { ExtCssMarkersState } from '../../../../src/lib/common/cosmetic-api';
 import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/extcss-protocol';
 import { tabsApi } from '../../../../src/lib/mv2/background/api';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { type ConfigurationMV2Context } from '../../../../src/lib/mv2/background/configuration';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { serializeExtCssForCode } from '../../../../src/lib/mv2/background/extcss-code';
+import { FrameMV2 } from '../../../../src/lib/mv2/background/tabs/frame';
 import { TabsApi } from '../../../../src/lib/mv2/background/tabs/tabs-api';
 
 vi.mock('../../../../src/lib/mv2/background/api', () => ({
@@ -41,6 +43,26 @@ describe('CosmeticApi.getContentScriptData', () => {
     const frameUrl = 'https://example.com/';
     const tabId = 1;
     const frameId = 0;
+
+    /**
+     * Creates a frame context whose ExtendedCSS data was resolved on demand.
+     *
+     * @param extCssRules ExtendedCSS rule strings of the document.
+     *
+     * @returns The frame context.
+     */
+    const makeExtCssFrameContext = (extCssRules: string[]): FrameMV2 => {
+        const frameContext = new FrameMV2({
+            url: frameUrl,
+            tabId,
+            frameId,
+            parentFrameId: -1,
+            timeStamp: Date.now(),
+        });
+        frameContext.extCssData = { extCssRules, areHitsStatsCollected: false };
+
+        return frameContext;
+    };
 
     beforeEach(() => {
         vi.restoreAllMocks();
@@ -183,5 +205,40 @@ describe('CosmeticApi.getContentScriptData', () => {
 
         expect(data.nativeCssSelectors).toBeNull();
         expect(getNativeCssSelectorsSpy).not.toHaveBeenCalled();
+    });
+
+    it('reports a failed ExtendedCSS apply to the content script', async () => {
+        vi.useFakeTimers();
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeExtCssFrameContext(rules));
+        vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
+        vi.spyOn(TabsApi, 'injectScript').mockRejectedValue(new Error('Missing host permission'));
+
+        const injection = CosmeticApi.applyExtCss(tabId, frameId);
+        await vi.runAllTimersAsync();
+        await injection;
+
+        // The response asks the content script for a reapply instead of
+        // leaving the document without ExtendedCSS.
+        const applySpy = vi.spyOn(CosmeticApi, 'applyExtCss').mockResolvedValue(true);
+        const data = CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+        applySpy.mockRestore();
+
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.Failed);
+    });
+
+    it('reports an applied ExtendedCSS rule set to the content script', async () => {
+        const rules = ['.ad:has(.child) { display: none !important; }'];
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue(makeExtCssFrameContext(rules));
+        vi.spyOn(CosmeticApi, 'getExtCssRules').mockReturnValue(rules);
+        vi.spyOn(TabsApi, 'injectScript').mockResolvedValue();
+
+        await CosmeticApi.applyExtCss(tabId, frameId);
+
+        const applySpy = vi.spyOn(CosmeticApi, 'applyExtCss').mockResolvedValue(true);
+        const data = CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
+        applySpy.mockRestore();
+
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.Applied);
     });
 });

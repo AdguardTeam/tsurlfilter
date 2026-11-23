@@ -47,11 +47,27 @@ type LogJsRulesParamsMv2 = LogJsRulesParams & {
 
 /**
  * Result of the marked native CSS injection.
- *
- * `stale` means the captured document is no longer displayed, so nothing was
- * injected and the response must not describe the new document.
  */
-type MarkedCssInjectionResult = 'injected' | 'stale';
+enum MarkedCssInjectionResult {
+    /**
+     * The CSS reached the captured document.
+     */
+    Injected = 'injected',
+
+    /**
+     * The captured document is no longer displayed, so nothing was injected
+     * and the response must not describe the new document.
+     */
+    Stale = 'stale',
+
+    /**
+     * The last allowed attempt threw an error.
+     *
+     * {@link CosmeticApi.injectMarkedCssWithRetries} reports this outcome by
+     * throwing, so only the caller that catches the error assigns it.
+     */
+    Failed = 'failed',
+}
 
 /**
  * Options for {@link CosmeticApi.applyExtCss}.
@@ -70,6 +86,26 @@ type ApplyExtCssOptions = {
      * holds it.
      */
     force?: boolean;
+};
+
+/**
+ * Outcome of the last ExtendedCSS apply of a frame document.
+ */
+type ExtCssApplyOutcome = {
+    /**
+     * Document version the attempt belongs to.
+     */
+    documentVersion: number;
+
+    /**
+     * Rule strings the attempt injected.
+     */
+    extCssRules: string[];
+
+    /**
+     * Whether the attempt reached the document.
+     */
+    applied: boolean;
 };
 
 /**
@@ -98,6 +134,16 @@ export class CosmeticApi extends CosmeticApiCommon {
      * keep the queue on. The entry is dropped when its last operation settles.
      */
     private static readonly contextFreeExtCssQueue = new Map<string, ExtCssInjectionChain>();
+
+    /**
+     * Outcome of the last ExtendedCSS apply of each frame document.
+     *
+     * The context survives a same-URL reload, so the record keeps the document
+     * version and the rule set it describes. MV2 injects ExtendedCss from the
+     * background only, so this is the record the content script learns the
+     * outcome from.
+     */
+    private static readonly extCssApplyOutcome = new WeakMap<FrameMV2, ExtCssApplyOutcome>();
 
     /**
      * Waits for a marked CSS injection that is still in progress.
@@ -333,6 +379,23 @@ export class CosmeticApi extends CosmeticApiCommon {
             }
         }
 
+        // The background is the only side that applies ExtendedCss on MV2, so
+        // it reports the outcome of the last attempt for the rule set of this
+        // document. A failed apply is then retried by the content script.
+        if (frameContext) {
+            const outcome = CosmeticApi.extCssApplyOutcome.get(frameContext);
+            const currentExtCssRules = CosmeticApi.getExtCssData(frameContext)?.extCssRules;
+
+            if (outcome
+                && currentExtCssRules?.length
+                && outcome.documentVersion === frameContext.extCssDocumentVersion
+                && CosmeticApi.areSameExtCssRules(outcome.extCssRules, currentExtCssRules)) {
+                data.extCssMarkersState = outcome.applied
+                    ? ExtCssMarkersState.Applied
+                    : ExtCssMarkersState.Failed;
+            }
+        }
+
         // The content script can ask after the frame's injection events have
         // already passed, e.g. for a page loaded while the app was stopped.
         // `applyExtCss` skips a document that already holds this rule set.
@@ -341,6 +404,45 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         return data;
+    }
+
+    /**
+     * Builds the reapply response for a frame whose context describes a
+     * navigation that has not committed.
+     *
+     * The document that asked is still displayed, but nothing is injected for
+     * it: the context already describes the incoming document. Only the state
+     * the content script needs to pause and resume its counter is reported,
+     * and the ExtendedCSS state says nothing is expected for this response.
+     *
+     * @param tabId Tab id.
+     *
+     * @returns Content script data for the document that sent the request.
+     */
+    private static getAwaitingCommitData(tabId: number): ContentScriptCosmeticData {
+        const { isStorageInitialized, isAppStarted, configuration } = appContext;
+
+        const areHitsStatsCollected = isStorageInitialized
+            && (configuration?.settings.collectStats || false);
+
+        const tabContext = tabsApi.getTabContext(tabId);
+
+        let effectiveCollectStats = areHitsStatsCollected;
+        if (isStorageInitialized && tabContext?.info.url) {
+            effectiveCollectStats = isCollectStatsEnabledForDocument(
+                areHitsStatsCollected,
+                tabContext.mainFrameRule,
+            );
+        }
+
+        return {
+            isAppStarted: isStorageInitialized && isAppStarted,
+            areHitsStatsCollected: effectiveCollectStats,
+            areNativeHitsStatsCollected: false,
+            extCssMarkersState: ExtCssMarkersState.NotRequired,
+            extCssRules: null,
+            nativeCssSelectors: null,
+        };
     }
 
     /**
@@ -355,6 +457,10 @@ export class CosmeticApi extends CosmeticApiCommon {
      * script gets the response: the counter resumes only when the markers are
      * already in the document.
      *
+     * A frame whose context describes a navigation that has not committed is
+     * skipped entirely: its context holds the incoming document's data, which
+     * must not reach the page that is still displayed.
+     *
      * @param frameUrl Frame url.
      * @param tabId Tab id.
      * @param frameId Frame id.
@@ -366,6 +472,20 @@ export class CosmeticApi extends CosmeticApiCommon {
         tabId: number,
         frameId: number,
     ): Promise<ContentScriptCosmeticData> {
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+
+        // A context that describes a navigation that has not committed belongs
+        // to the incoming document, and `applyExtCss` skips it for that reason.
+        // Injecting here would put the incoming document's rules into the page
+        // that is still displayed, and would record the marked CSS against the
+        // incoming document, so the committed page would skip its own native
+        // CSS. The data is built without `getContentScriptData`, which would
+        // match the requesting document's rules on demand and keep them on the
+        // awaiting context.
+        if (frameContext?.extCssAwaitingCommit) {
+            return CosmeticApi.getAwaitingCommitData(tabId);
+        }
+
         const data = CosmeticApi.getContentScriptData(frameUrl, tabId, frameId);
 
         if (!data.areHitsStatsCollected) {
@@ -377,8 +497,6 @@ export class CosmeticApi extends CosmeticApiCommon {
             data.areNativeHitsStatsCollected = false;
             return data;
         }
-
-        const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         // The response belongs to the document the request came from. Every
         // await below can be overtaken by a navigation, which replaces the
@@ -442,7 +560,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             return data;
         }
 
-        let nativeResult: MarkedCssInjectionResult | 'failed';
+        let nativeResult: MarkedCssInjectionResult;
 
         try {
             nativeResult = await CosmeticApi.injectMarkedCssWithRetries(
@@ -453,14 +571,14 @@ export class CosmeticApi extends CosmeticApiCommon {
                 documentVersion,
             );
         } catch (e) {
-            nativeResult = 'failed';
+            nativeResult = MarkedCssInjectionResult.Failed;
             logger.info(`[tsweb.CosmeticApi.reapplyMarkedCosmeticData]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
         }
 
         // Both exits normalize a navigation the same way: the response belongs
         // to the document that sent the request, so a navigation during the
         // retries must not describe the new document.
-        if (nativeResult === 'stale'
+        if (nativeResult === MarkedCssInjectionResult.Stale
             || CosmeticApi.hasFrameDocumentChanged(tabId, frameId, frameContext, documentVersion)
         ) {
             data.areNativeHitsStatsCollected = false;
@@ -469,7 +587,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             return data;
         }
 
-        if (nativeResult === 'failed') {
+        if (nativeResult === MarkedCssInjectionResult.Failed) {
             // Marked ExtendedCss rules are still applied, but native hits
             // cannot be counted without this CSS.
             data.areNativeHitsStatsCollected = false;
@@ -774,8 +892,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * to.
      * @param tries Number of tries already made.
      *
-     * @returns `injected` when the CSS reached the document, `stale` when the
-     * captured document is no longer displayed.
+     * @returns The outcome of the last attempt: `Injected` when the CSS
+     * reached the document, `Stale` when the captured document is no longer
+     * displayed.
      *
      * @throws The error of the last allowed attempt.
      */
@@ -791,13 +910,13 @@ export class CosmeticApi extends CosmeticApiCommon {
         // replaces the frame context, and a same-URL reload keeps it and bumps
         // its version, so both are checked before every attempt.
         if (CosmeticApi.hasFrameDocumentChanged(tabId, frameId, frameContext, documentVersion)) {
-            return 'stale';
+            return MarkedCssInjectionResult.Stale;
         }
 
         try {
             await CosmeticApi.injectCss(tabId, frameId, cssText);
 
-            return 'injected';
+            return MarkedCssInjectionResult.Injected;
         } catch (e) {
             if (tries >= CosmeticApi.INJECTION_MAX_TRIES) {
                 throw e;
@@ -1082,7 +1201,16 @@ export class CosmeticApi extends CosmeticApiCommon {
         // later change of the rule set is not skipped.
         if (isSameDocument) {
             if (extCssRules?.length) {
-                // A failed apply records nothing, so a later event retries it.
+                // The content script learns the outcome of this attempt from
+                // the recorded data, so a failure is not silent.
+                CosmeticApi.extCssApplyOutcome.set(frameContext, {
+                    documentVersion,
+                    extCssRules,
+                    applied: isInjected,
+                });
+
+                // A failed apply records only the outcome, so a later event
+                // retries it.
                 if (isInjected) {
                     frameContext.extCssAppliedData = extCssRules;
                     frameContext.extCssHitsMarkersApplied = extCssData.areHitsStatsCollected;
@@ -1198,8 +1326,24 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @returns True if the document holds this rule set, otherwise false.
      */
     private static isExtCssApplied(frameContext: FrameMV2, extCssRules: string[]): boolean {
-        const appliedRules = frameContext.extCssAppliedData;
+        return CosmeticApi.areSameExtCssRules(frameContext.extCssAppliedData, extCssRules);
+    }
 
+    /**
+     * Compares two ExtendedCSS rule sets by value.
+     *
+     * The on-demand path rebuilds the rule strings on every request, so the
+     * same rules can arrive in a new array.
+     *
+     * @param appliedRules Rule strings recorded for the document, if any.
+     * @param extCssRules Rule strings resolved for the frame now.
+     *
+     * @returns True if both sets hold the same rules in the same order.
+     */
+    private static areSameExtCssRules(
+        appliedRules: string[] | undefined,
+        extCssRules: string[],
+    ): boolean {
         if (!appliedRules || appliedRules.length !== extCssRules.length) {
             return false;
         }
