@@ -5,7 +5,6 @@ import {
     NetworkRuleType,
     RuleCategory,
     RuleKind,
-    RuleParserPipeline,
 } from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
 import { getErrorMessage } from '@adguard/logger';
@@ -17,15 +16,17 @@ import { CosmeticRule } from './cosmetic-rule';
 import { HostRule } from './host-rule';
 import { NetworkRule } from './network-rule';
 import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
+import { sharedRuleParser } from './shared-parser';
 
 /**
  * Rule builder class.
  */
 export class RuleFactory {
     /**
-     * Shared AGTree parser pipeline instance.
+     * Shared AGTree parser pipeline instance (one per package, reset at list
+     * boundaries).
      */
-    private static readonly PARSER = new RuleParserPipeline();
+    private static readonly PARSER = sharedRuleParser;
 
     /**
      * Pre-allocated, immutable option variants (host × htmlBodies).

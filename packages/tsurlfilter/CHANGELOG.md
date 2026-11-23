@@ -47,6 +47,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The parser buffers grown for the longest rule of a filter list are released
+  when the engine is created, instead of being kept for the lifetime of the
+  process. `RuleFactory` and the AST fallbacks of `NetworkRule`,
+  `CosmeticRule` and `HostRule` now share one parser pipeline instead of
+  keeping four grown copies (about 1.3 MB per grown pipeline).
 - A network rule with an empty modifier value, e.g. `$domain=`, `$to=`,
   `$method=`, `$csp=`, is now rejected by the parser with
   `Modifier value cannot be empty` instead of the modifier-specific message

@@ -15,6 +15,7 @@ import {
     type IndexedStorageNetworkRuleParts,
     type IndexedStorageRuleParts,
 } from '../rules/rule';
+import { sharedRuleParser } from '../rules/shared-parser';
 
 import { CHUNK_SIZE } from './constants';
 import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
@@ -146,6 +147,10 @@ export class Engine {
             lists.push(ruleList);
         }
 
+        // The list has been converted and wrapped: the parser's buffers, grown
+        // for the longest rule of the list, are not needed any more.
+        sharedRuleParser.reset();
+
         const storage = new RuleStorage(lists);
         const scanner = storage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);
 
@@ -214,6 +219,10 @@ export class Engine {
 
             lists.push(ruleList);
         }
+
+        // Same as in `createSync`: release the parser buffers grown while the
+        // lists were loaded, before scanning starts.
+        sharedRuleParser.reset();
 
         const storage = new RuleStorage(lists);
         const scanner = storage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);

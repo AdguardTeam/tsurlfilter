@@ -3,7 +3,6 @@ import {
     type NetworkRuleDataReader,
     type NetworkRule as NetworkRuleNode,
     type ParseOptions,
-    RuleParserPipeline,
 } from '@adguard/agtree';
 import { findNetworkRuleSeparatorIndex } from '@adguard/agtree/utils';
 
@@ -44,6 +43,7 @@ import { type NetworkRuleOption as NetworkRuleOptionType, OptionFlags } from './
 import { Pattern } from './pattern';
 import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
 import { isNetworkRuleNode } from './rule-predicates';
+import { sharedRuleParser } from './shared-parser';
 import { SimpleRegex } from './simple-regex';
 
 export { OptionFlags };
@@ -513,9 +513,10 @@ export class NetworkRule implements IRule {
     };
 
     /**
-     * Shared AGTree parser pipeline instance.
+     * Shared AGTree parser pipeline instance (one per package, reset at list
+     * boundaries).
      */
-    private static readonly PARSER = new RuleParserPipeline();
+    private static readonly PARSER = sharedRuleParser;
 
     /**
      * Rule index.

@@ -3,10 +3,10 @@ import {
     NetworkRuleType,
     type ParseOptions,
     RuleCategory,
-    RuleParserPipeline,
 } from '@adguard/agtree';
 
 import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
+import { sharedRuleParser } from './shared-parser';
 
 /**
  * Implements a host rule.
@@ -38,9 +38,10 @@ export class HostRule implements IRule {
     };
 
     /**
-     * Shared AGTree parser pipeline instance.
+     * Shared AGTree parser pipeline instance (one per package, reset at list
+     * boundaries).
      */
-    private static readonly PARSER = new RuleParserPipeline();
+    private static readonly PARSER = sharedRuleParser;
 
     /**
      * Rule index.

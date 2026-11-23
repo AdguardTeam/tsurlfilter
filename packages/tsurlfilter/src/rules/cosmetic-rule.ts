@@ -15,7 +15,6 @@ import {
     PIPE_MODIFIER_SEPARATOR,
     QuoteUtils,
     RegExpUtils,
-    RuleParserPipeline,
     type SelectorCombinatorValue,
     SPECIAL_PSEUDO_CLASS_NAMES,
 } from '@adguard/agtree';
@@ -36,6 +35,7 @@ import { Pattern } from './pattern';
 import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
 import { isAnyCosmeticRule } from './rule-predicates';
 import { ScriptletParams } from './scriptlet-params';
+import { sharedRuleParser } from './shared-parser';
 import { SimpleRegex } from './simple-regex';
 
 export type { ScriptletsProps } from './scriptlet-params';
@@ -276,9 +276,10 @@ export class CosmeticRule implements IRule {
     };
 
     /**
-     * Shared AGTree parser pipeline instance.
+     * Shared AGTree parser pipeline instance (one per package, reset at list
+     * boundaries).
      */
-    private static readonly PARSER = new RuleParserPipeline();
+    private static readonly PARSER = sharedRuleParser;
 
     /**
      * Rule index.
