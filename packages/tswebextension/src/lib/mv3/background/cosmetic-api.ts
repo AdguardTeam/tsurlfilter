@@ -64,6 +64,12 @@ export class CosmeticApi extends CosmeticApiCommon {
     protected static extCssMarkersApplied = new WeakMap<object, {
         preparedCosmeticResult: PreparedCosmeticResultMV3 | undefined;
         applied: boolean;
+        /**
+         * Whether the applied instance was built with hit markers. An instance
+         * without them reports no hits, so a marked one must not be replaced
+         * while the document is unchanged.
+         */
+        marked: boolean;
     }>();
 
     /**
@@ -98,16 +104,19 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * @param frameContext Frame context.
      * @param preparedCosmeticResult Prepared result used for the frame.
-     * @param applied Whether the marked ExtendedCss rules are applied.
+     * @param applied Whether the ExtendedCss rules are applied.
+     * @param marked Whether the applied rules carry hit markers.
      */
     protected static setExtCssMarkersApplied(
         frameContext: object,
         preparedCosmeticResult: PreparedCosmeticResultMV3 | undefined,
         applied: boolean,
+        marked: boolean,
     ): void {
         CosmeticApi.extCssMarkersApplied.set(frameContext, {
             preparedCosmeticResult,
             applied,
+            marked,
         });
     }
 
@@ -469,6 +478,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                             recordedFrameContext,
                             preparedCosmeticResult,
                             extCssApplied,
+                            preparedCosmeticResult.areHitsStatsCollected,
                         );
 
                         if (extCssApplied) {
@@ -563,6 +573,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                         injectedFrameContext,
                         injectedFrameContext.preparedCosmeticResult,
                         extCssApplied,
+                        true,
                     );
                 }
             },
@@ -642,8 +653,9 @@ export class CosmeticApi extends CosmeticApiCommon {
                 }
             }
         } catch (e) {
-            // Marked ExtendedCss rules are still applied by the content
-            // script, but native hits cannot be counted without this CSS.
+            // Marked native CSS could not be injected, so native hits cannot be
+            // counted for this document. ExtendedCss is injected separately by
+            // `applyExtCssRules`, so its hits are not affected by this failure.
             data.areNativeHitsStatsCollected = false;
             recordsFrameContext = CosmeticApi.getRecordsFrameContext(frameContext, documentId);
             if (recordsFrameContext) {
@@ -1159,7 +1171,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * registers its entry before it starts, so a marked re-apply for the same
      * document can wait for it even though the caller does not await this
      * injection. When the awaited operation carried the same prepared result,
-     * its outcome is already recorded and no second injection is made.
+     * its outcome is already recorded and no second injection is made. An
+     * applied marked instance for the same prepared result is kept, because
+     * these rules carry no markers.
      *
      * @param frameContext Frame context with the prepared ExtendedCss rules.
      *
@@ -1176,6 +1190,20 @@ export class CosmeticApi extends CosmeticApiCommon {
         // The rules are prepared for this document, so a navigation during the
         // injection must not move them to the next one.
         const { tabId, frameId, documentId } = frameContext;
+
+        // A marked instance for the same prepared result already holds these
+        // rules with hit markers: enabling the collection re-applied it, while
+        // the prepared result still carries the unmarked strings. Injecting
+        // them here would dispose the marked instance, so ExtendedCss hits
+        // would stop being counted until the next document.
+        const extCssState = CosmeticApi.extCssMarkersApplied.get(frameContext);
+
+        if (!areHitsStatsCollected
+            && extCssState?.applied
+            && extCssState.marked
+            && extCssState.preparedCosmeticResult === preparedCosmeticResult) {
+            return;
+        }
 
         await CosmeticApi.runQueuedExtCssOperation({
             frameContext,
@@ -1203,6 +1231,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                         recordsFrameContext,
                         preparedCosmeticResult,
                         applied,
+                        areHitsStatsCollected,
                     );
                 }
             },

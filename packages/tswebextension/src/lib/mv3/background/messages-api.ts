@@ -343,8 +343,11 @@ export class MessagesApi {
 
         // The ExtendedCss payload reports hits straight from the page, so a
         // paused content-script counter cannot stop it: a live disable or an
-        // allowlisted document is filtered out here. An unknown configuration
-        // keeps the hits, so the hits of a startup are not lost.
+        // allowlisted document is filtered out here. The marked rules stay in
+        // the page after collection is disabled, because the injected function
+        // has no pause channel and keeps reporting, so their hits are dropped
+        // here too. An unknown configuration keeps the hits, so the hits of a
+        // startup are not lost.
         const collectStats = appContext.configuration?.settings.collectStats;
 
         if (collectStats !== undefined
