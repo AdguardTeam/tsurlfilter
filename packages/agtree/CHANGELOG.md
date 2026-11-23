@@ -43,6 +43,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- Syntax rejections of cosmetic headers, uBO modifiers and domain lists are
+  `AdblockSyntaxError`s with a range instead of plain `Error`s, so tolerant
+  consumers such as AGLint can report where the rule is wrong: an unclosed or
+  empty `[$...]` list, an empty cosmetic body, `:style()`/`:remove()` not at
+  the end or nested in a pseudo-class, a duplicate or misplaced uBO modifier,
+  a mixed AdGuard/uBO rule, and the list pre-validator errors
+  (`Value list cannot end with a separator`, `Empty value specified in the
+  list`, …). The messages are unchanged, and the errors still satisfy
+  `instanceof Error`.
 - `@adguard/css-tokenizer` is no longer a runtime dependency: the package uses
   its own zero-allocation CSS tokenizer, so consumers no longer install the
   extra package. It stays a devDependency for the differential tests.

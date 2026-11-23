@@ -10,6 +10,7 @@ import { DomainListAstBuilder } from '../ast-builder/misc/domain-list';
 import { ListAstBuilder } from '../ast-builder/misc/list';
 import { ModifierAstBuilder } from '../ast-builder/misc/modifier';
 import { RuleParserPipeline } from '../ast-builder/rule-parser';
+import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import { CapacityOverflowError, REGION_DOMAINS, REGION_TOKENS } from '../errors/capacity-overflow-error';
 import { MAX_DOMAIN_CAPACITY, MAX_TOKEN_CAPACITY } from '../limits';
 import {
@@ -189,6 +190,10 @@ const skipRegexLiteral = (value: string, index: number): number => {
  * Validates list syntax before structural parsing to match legacy
  * {@link ListItemsParser} error behavior for edge cases.
  *
+ * Every rejection is an {@link AdblockSyntaxError} with the offending range,
+ * so tolerant consumers (AGLint) can locate it; the messages are unchanged
+ * from the legacy parser.
+ *
  * @param value Raw list string.
  * @param separator Separator character.
  * @param allowRegex Whether list items may be regex literals (`/…/`, `~/…/`).
@@ -197,7 +202,7 @@ const skipRegexLiteral = (value: string, index: number): number => {
 const validateListSyntax = (value: string, separator: string, allowRegex = false): void => {
     // Check for leading separator
     if (value.length > 0 && value[0] === separator) {
-        throw new Error(LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING);
+        throw new AdblockSyntaxError(LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING, 0, 1);
     }
 
     // Check for trailing separator (after trimming trailing whitespace)
@@ -206,7 +211,7 @@ const validateListSyntax = (value: string, separator: string, allowRegex = false
         end -= 1;
     }
     if (end >= 0 && value[end] === separator) {
-        throw new Error(LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END);
+        throw new AdblockSyntaxError(LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END, end, end + 1);
     }
 
     let escaped = false;
@@ -249,11 +254,11 @@ const validateListSyntax = (value: string, separator: string, allowRegex = false
             }
             if (next < value.length && value[next] === separator) {
                 // Was `||` or `| |`
-                throw new Error(LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM);
+                throw new AdblockSyntaxError(LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM, i, next + 1);
             }
             // Check for whitespace followed by nothing or separator (empty item)
             if (next > i + 1 && (next >= value.length || value[next] === separator)) {
-                throw new Error(LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM);
+                throw new AdblockSyntaxError(LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM, i, next);
             }
         }
 
@@ -261,13 +266,13 @@ const validateListSyntax = (value: string, separator: string, allowRegex = false
         if (ch === NEGATION_MARKER && i + 1 < value.length) {
             const next = value[i + 1];
             if (next === NEGATION_MARKER) {
-                throw new Error(LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION);
+                throw new AdblockSyntaxError(LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION, i, i + 2);
             }
             if (next === separator) {
-                throw new Error(LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION);
+                throw new AdblockSyntaxError(LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION, i, i + 2);
             }
             if (next === ' ' || next === '\t') {
-                throw new Error(LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION);
+                throw new AdblockSyntaxError(LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION, i, i + 2);
             }
         }
 

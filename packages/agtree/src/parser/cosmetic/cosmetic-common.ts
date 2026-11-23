@@ -207,12 +207,20 @@ export function parseCommonCosmeticHeader(
         const closeBracketTi = findClosingBracket(ctx, headerStartTi + 1, sepTokenIndex);
 
         if (closeBracketTi < 0) {
-            throw new Error('Unclosed AdGuard modifier list: missing ]');
+            throw new AdblockSyntaxError(
+                'Unclosed AdGuard modifier list: missing ]',
+                tokenStart(ctx, headerStartTi),
+                sepSourceEnd,
+            );
         }
 
         // Preparse modifier list (up to closeBracketTi, exclusive)
         if (closeBracketTi === headerStartTi + 2) {
-            throw new Error('AdGuard modifier list [$...] is empty');
+            throw new AdblockSyntaxError(
+                'AdGuard modifier list [$...] is empty',
+                tokenStart(ctx, headerStartTi),
+                ctx.ends[closeBracketTi],
+            );
         }
 
         const savedTokenCount = ctx.tokenCount;
@@ -252,7 +260,11 @@ export function parseCommonCosmeticHeader(
 
     // Validate body is non-empty
     if (bodyStartTi >= endTi) {
-        throw new Error(`${ruleTypeName} has empty body`);
+        throw new AdblockSyntaxError(
+            `${ruleTypeName} has empty body`,
+            sepSourceStart,
+            endTi > 0 ? ctx.ends[endTi - 1] : sepSourceEnd,
+        );
     }
 
     const bodyStart = tokenStart(ctx, bodyStartTi);
@@ -266,7 +278,11 @@ export function parseCommonCosmeticHeader(
     }
 
     if (trimmedEnd <= bodyStart) {
-        throw new Error(`${ruleTypeName} has empty body`);
+        throw new AdblockSyntaxError(
+            `${ruleTypeName} has empty body`,
+            sepSourceStart,
+            endTi > 0 ? ctx.ends[endTi - 1] : sepSourceEnd,
+        );
     }
 
     // Pack flags — determine exception from the separator containing '@'.

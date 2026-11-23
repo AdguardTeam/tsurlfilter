@@ -9,6 +9,7 @@
 
 import { UboPseudoName } from '../../common/ubo-selector-common';
 import { cssStringLength, isCssStringUnterminated } from '../../css/tokenizer/css-token-mapping';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { TokenType } from '../../tokenizer/token-types';
 import { isExtendedCssPseudoClass } from '../../utils/extended-css-pseudo-classes';
 import type { ParserContext } from '../context';
@@ -17,6 +18,8 @@ import { MODIFIER_FLAG_NEGATED, NO_VALUE } from '../network/constants';
 import type { CosmeticBodyParser } from '../types';
 
 import {
+    CR_BODY_END,
+    CR_BODY_START,
     CR_BODY_START_TI,
     CR_FLAG_BODY_ABP_CSS_INJECTION,
     CR_FLAG_HAS_ADG_MODS,
@@ -478,7 +481,11 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
         // eslint-disable-next-line no-bitwise
         const hasAdgMods = (ctx.data[CR_FLAGS_OFFSET] & CR_FLAG_HAS_ADG_MODS) !== 0;
         if (hasAdgMods && uboModCount > 0) {
-            throw new Error('Cannot mix AdGuard modifier list [$...] with uBO pseudo-class modifiers');
+            throw new AdblockSyntaxError(
+                'Cannot mix AdGuard modifier list [$...] with uBO pseudo-class modifiers',
+                ctx.data[CR_BODY_START],
+                ctx.data[CR_BODY_END],
+            );
         }
 
         // Update modifier count if uBO modifiers were found
@@ -646,7 +653,11 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
 
             // FR-015: after :style()/:remove() closes, only whitespace allowed
             if (terminalClosed && t !== TokenType.Whitespace) {
-                throw new Error(':style() and :remove() can only be used at the end of the selector');
+                throw new AdblockSyntaxError(
+                    ':style() and :remove() can only be used at the end of the selector',
+                    tokenStart(ctx, ti),
+                    ends[ti],
+                );
             }
 
             // Inside a raw extended-CSS argument every character is plain
@@ -786,8 +797,10 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                                 j += 1;
                             } else {
                                 // Non-whitespace, non-close-paren after negated modifier
-                                throw new Error(
+                                throw new AdblockSyntaxError(
                                     'Negated :matches-path() cannot be followed by other tokens inside :not()',
+                                    tokenStart(ctx, j),
+                                    ends[j],
                                 );
                             }
                         }
@@ -849,8 +862,10 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                 if (modBit !== 0) {
                     // FR-007: reject duplicates
                     if (seenMask & modBit) {
-                        throw new Error(
+                        throw new AdblockSyntaxError(
                             `Duplicate uBO modifier: :${source.slice(identStart, identEnd)}()`,
+                            tokenStart(ctx, ti),
+                            identEnd,
                         );
                     }
 
@@ -877,16 +892,20 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                                 // Expect OpenParen
                                 if (jt !== TokenType.OpenParen) {
                                     const modName = source.slice(identStart, identEnd);
-                                    throw new Error(
+                                    throw new AdblockSyntaxError(
                                         `Negated :${modName}() cannot be preceded by other tokens inside :not()`,
+                                        tokenStart(ctx, j),
+                                        ends[j],
                                     );
                                 }
 
                                 // Before OpenParen should be Letter token for 'not'
                                 if (j < 2 || types[j - 1] !== TokenType.Letter) {
                                     const modName = source.slice(identStart, identEnd);
-                                    throw new Error(
+                                    throw new AdblockSyntaxError(
                                         `:${modName}() can only be nested inside :not()`,
+                                        tokenStart(ctx, ti),
+                                        identEnd,
                                     );
                                 }
 
@@ -896,16 +915,20 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                                 if (!regionEquals(source, wrapNameStart, wrapNameEnd, 'not')) {
                                     const fn = source.slice(wrapNameStart, wrapNameEnd);
                                     const modName = source.slice(identStart, identEnd);
-                                    throw new Error(
+                                    throw new AdblockSyntaxError(
                                         `:${modName}() can only be nested inside :not(), found :${fn}()`,
+                                        tokenStart(ctx, ti),
+                                        identEnd,
                                     );
                                 }
 
                                 // Before Ident should be Colon
                                 if (j < 3 || types[j - 2] !== TokenType.Colon) {
                                     const modName = source.slice(identStart, identEnd);
-                                    throw new Error(
+                                    throw new AdblockSyntaxError(
                                         `Expected colon before :not() wrapping :${modName}()`,
+                                        tokenStart(ctx, ti),
+                                        identEnd,
                                     );
                                 }
 
@@ -919,8 +942,10 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                             // Another modifier already open is not allowed
                             if (curModOpen) {
                                 const modName = source.slice(identStart, identEnd);
-                                throw new Error(
+                                throw new AdblockSyntaxError(
                                     `:${modName}() cannot be nested inside another uBO modifier`,
+                                    tokenStart(ctx, ti),
+                                    identEnd,
                                 );
                             }
 
@@ -948,8 +973,10 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                                 : -1;
                         } else {
                             // FR-006: other modifiers cannot be nested
-                            throw new Error(
+                            throw new AdblockSyntaxError(
                                 `:${source.slice(identStart, identEnd)}() cannot be nested inside a pseudo-class`,
+                                tokenStart(ctx, ti),
+                                identEnd,
                             );
                         }
                     } else {

@@ -9,6 +9,7 @@
  * Zero allocations: only writes integer offsets into ctx.data.
  */
 
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { REGION_DOMAINS } from '../../errors/capacity-overflow-error';
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
@@ -141,7 +142,11 @@ export class DomainListParser implements StructuralParser {
             const lastNonWsTi = skipWsBack(ctx, itemEndTi - 1, itemStartTi);
 
             if (lastNonWsTi < itemStartTi) {
-                throw new Error('Domain list contains empty item');
+                throw new AdblockSyntaxError(
+                    'Domain list contains empty item',
+                    tokenStart(ctx, itemStartTi),
+                    ctx.ends[itemStartTi],
+                );
             }
 
             // Check for exception flag (~)
@@ -151,7 +156,11 @@ export class DomainListParser implements StructuralParser {
                 isException = true;
                 valueStartTi = skipWs(ctx, itemStartTi + 1);
                 if (valueStartTi > lastNonWsTi) {
-                    throw new Error('Domain list contains empty item after ~');
+                    throw new AdblockSyntaxError(
+                        'Domain list contains empty item after ~',
+                        tokenStart(ctx, itemStartTi),
+                        ctx.ends[itemStartTi],
+                    );
                 }
             }
 
@@ -160,7 +169,11 @@ export class DomainListParser implements StructuralParser {
             const valueEnd = ctx.ends[lastNonWsTi];
 
             if (valueEnd <= valueStart) {
-                throw new Error('Domain list contains empty item');
+                throw new AdblockSyntaxError(
+                    'Domain list contains empty item',
+                    tokenStart(ctx, itemStartTi),
+                    ctx.ends[lastNonWsTi],
+                );
             }
 
             // Check capacity
@@ -196,7 +209,11 @@ export class DomainListParser implements StructuralParser {
                 itemStartTi = skipWs(ctx, itemEndTi + 1);
                 // Check for trailing separator
                 if (itemStartTi >= endTi) {
-                    throw new Error('Domain list has trailing separator');
+                    throw new AdblockSyntaxError(
+                        'Domain list has trailing separator',
+                        ctx.ends[itemEndTi],
+                        ctx.ends[itemEndTi],
+                    );
                 }
             } else {
                 itemStartTi = itemEndTi;
