@@ -533,9 +533,9 @@ export class CssHitsCounter {
 
     /**
      * ExtendedCss callback: collects the `content:` markers of the affected
-     * element's rules, reports the hits, and clears the markers on the copy of
-     * the rules applied to that element, so they never reach the DOM while the
-     * other elements matched by the same rule are still counted.
+     * element's rules, reports the hits, and blanks the marker on the shared
+     * parsed rule, whose parsed `{filterId, ruleIndex}` stays cached per rule
+     * style, so the later elements matched by that rule are still counted.
      *
      * The marker is read from the parsed rule because ExtendedCss calls this
      * callback before `setStyleToElement` writes to the node.

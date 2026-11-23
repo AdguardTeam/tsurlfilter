@@ -585,6 +585,27 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(insertCSSMock).toHaveBeenCalledTimes(1);
     });
 
+    it('does not inject unmarked ExtendedCss rules after reapply', async () => {
+        const frameContext = makeExtCssFrameContext('doc-1');
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+
+        // Collection is enabled on the open page: the marked rules replace the
+        // unmarked instance of the same prepared result.
+        await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        expect(executeExtCssMock).toHaveBeenCalledTimes(1);
+
+        // A later commit of the same document applies the prepared result
+        // again, and its unmarked copy must not dispose the marked instance.
+        await applyExtCssRules(frameContext);
+
+        expect(executeExtCssMock).toHaveBeenCalledTimes(1);
+    });
+
     it('does not inject marked CSS again when applyCss runs after reapply', async () => {
         tabsApiMock.getFrameContext.mockReturnValue({
             documentId: 'doc-1',

@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   point for your bundler, not a file to copy: build it with your extension
   and ship the result as `adguard-extcss.js`. Without that file ExtendedCSS
   rules do not apply.
+- The content script no longer bundles the ExtendedCSS engine; ExtendedCSS
+  rules are applied by the `@adguard/tswebextension` background.
 
 ### Deprecated
 

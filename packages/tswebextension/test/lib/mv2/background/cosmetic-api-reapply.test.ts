@@ -212,6 +212,30 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(data.areNativeHitsStatsCollected).toBe(false);
     });
 
+    it('does not inject while a navigation has not committed', async () => {
+        const frameContext = makeFrameContext(makePrepared('unmarked', false));
+        frameContext.extCssAwaitingCommit = true;
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+        const injectSpy = vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
+
+        const data = await CosmeticApi.reapplyMarkedCosmeticData(
+            'https://example.org/',
+            TAB_ID,
+            FRAME_ID,
+        );
+
+        // The context holds the incoming document's data, so neither the
+        // native CSS nor the ExtendedCSS payload may be injected into the page
+        // that is still displayed, and the requesting document's rules must not
+        // be matched into the awaiting context.
+        expect(injectSpy).not.toHaveBeenCalled();
+        expect(TabsApi.injectScript).not.toHaveBeenCalled();
+        expect(tabsApiMock.updateFrameContext).not.toHaveBeenCalled();
+        expect(data.areHitsStatsCollected).toBe(true);
+        expect(data.areNativeHitsStatsCollected).toBe(false);
+        expect(data.extCssMarkersState).toBe(ExtCssMarkersState.NotRequired);
+    });
+
     it('injects the marked native CSS and the marked ExtendedCss rules', async () => {
         const injectSpy = vi.spyOn(CosmeticApi, 'injectCss').mockResolvedValue();
 

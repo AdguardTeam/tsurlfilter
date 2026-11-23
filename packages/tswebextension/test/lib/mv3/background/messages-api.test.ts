@@ -394,7 +394,9 @@ describe('MessagesApi', () => {
 
             // The ExtendedCss payload reports hits straight from the page, so
             // the content-script pause cannot stop them: they must be dropped
-            // here, or a live disable still fills the filtering log.
+            // here, or a live disable still fills the filtering log. The marked
+            // rules stay in the page, because the injected function has no
+            // pause channel and keeps reporting.
             expect(result).toBe(false);
             expect(publishEvent).not.toHaveBeenCalled();
         });

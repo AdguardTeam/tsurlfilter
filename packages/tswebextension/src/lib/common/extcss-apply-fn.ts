@@ -37,9 +37,10 @@ import { type ExtCssApplySuccess, type ExtCssInjectionResult, type ExtCssProtoco
  * @param cssRules ExtendedCSS rule strings to apply to the current document.
  * @param collectStats When true, register a CSS-hits `beforeStyleApplied`
  * callback (else nothing is registered and no overhead is incurred). The
- * callback is registered on every apply; the per-node dedupe state is
- * retained across applies, so a re-apply reports only the hits that were
- * not reported before.
+ * callback is registered for every injection that carries markers, and for the
+ * restore of a retained marked instance; the per-node dedupe state is retained
+ * across injections, so a re-apply reports only the hits that were not
+ * reported before.
  * @param protocol Serialized protocol values (see `EXTCSS_PROTOCOL`). A
  * required argument (not a module-scope default) so the serialized body has
  * zero free identifiers.

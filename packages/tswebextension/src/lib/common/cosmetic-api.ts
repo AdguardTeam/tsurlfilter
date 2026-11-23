@@ -70,10 +70,10 @@ export type ContentScriptCosmeticData = {
      * Marker state of the ExtendedCss path.
      *
      * The background applies ExtendedCss, so it is the only side that can
-     * report whether the marked rules reached the document. On MV2 the
-     * ExtendedCss instance is injected from the background too, but the
-     * content script never gets a confirmed marker state back, so the value
-     * means "marker state not reported by the background".
+     * report whether the marked rules reached the document. A reapply response
+     * carries that confirmed state on both manifest versions; the initial
+     * `GetCosmeticData` response carries `ContentScript` instead, because the
+     * background has no outcome to report at that point.
      */
     extCssMarkersState: ExtCssMarkersState;
 
