@@ -28,7 +28,7 @@ export const canvasIntrinsics = Object.freeze({
     typedSet: typedArrayPrototype.set as Uint8Array['set'],
     setUint32: DataView.prototype.setUint32,
     weakGet: WeakMap.prototype.get,
-    weakSet: WeakMap.prototype.set,
+    weakMapSet: WeakMap.prototype.set,
     weakHas: WeakSet.prototype.has,
     weakAdd: WeakSet.prototype.add,
     setPrototypeOf: Object.setPrototypeOf,

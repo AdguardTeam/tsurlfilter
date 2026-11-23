@@ -278,6 +278,30 @@ describe('Domain modifier', () => {
             expect(() => new DomainModifier(String.raw`/foo\[bar/`, PIPE_SEPARATOR, true))
                 .toThrow('Invalid regular expression as domain pattern');
         });
+
+        it('rejects slash-delimited values that are not regexp literals', () => {
+            expect(() => new DomainModifier(String.raw`~/a\/`, PIPE_SEPARATOR, true))
+                .toThrow('Invalid regular expression as domain pattern');
+            expect(() => new DomainModifier(String.raw`/a\/`, PIPE_SEPARATOR, true))
+                .toThrow('Invalid regular expression as domain pattern');
+            expect(() => new DomainModifier('~//', PIPE_SEPARATOR, true))
+                .toThrow('Invalid regular expression as domain pattern');
+            expect(() => new DomainModifier('~/', PIPE_SEPARATOR, true))
+                .toThrow('Invalid regular expression as domain pattern');
+        });
+
+        it('rejects a slash-leading value without a closing slash', () => {
+            // The list parser rejects an unclosed regexp literal when another
+            // item follows it, so the rest of the list is never lost
+            expect(() => new DomainModifier(String.raw`~/a\/|example.org`, PIPE_SEPARATOR, true))
+                .toThrow('Unclosed regexp literal, no closing delimiter found');
+            expect(() => new DomainModifier('~/|example.org', PIPE_SEPARATOR, true))
+                .toThrow('Unclosed regexp literal, no closing delimiter found');
+            expect(() => new DomainModifier(String.raw`/a\/|example.org`, PIPE_SEPARATOR, true))
+                .toThrow('Unclosed regexp literal, no closing delimiter found');
+            expect(() => new DomainModifier(String.raw`example.org|/a\/|example.com`, PIPE_SEPARATOR, true))
+                .toThrow('Unclosed regexp literal, no closing delimiter found');
+        });
     });
 
     describe('DomainModifier.isDomainOrSubdomainOfAny', () => {

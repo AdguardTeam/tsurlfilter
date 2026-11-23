@@ -9,54 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Partial support for `$csp` exceptions in Manifest V3 across built-in, custom,
-  and user filters [AdguardBrowserExtension#2965]: rebuilt CSP rules replace the
-  previous ones atomically within each DNR scope, are fitted into the quotas left
-  after the regular conversion, and the dynamic scope is rolled back when the
-  session update fails. Rule sets must be built with `exclude-unsafe-rules`,
-  otherwise the static copy of a CSP rule stays in the rule set and a `$csp`
-  exception has no effect.
-- `ConfigurationResult` reports what was dropped or failed: `cspRules.errors`
-  for built-in filters (user rules stay in `dynamicRules.errors`),
-  `dynamicRules.limitations` and `sessionRules.limitations` for the two separate
-  quotas, so the session overflow never reaches the dynamic counters, and
-  `dynamicRules.counts` with the final counts, rebuilt CSP rules included.
-  `configure()` logs the errors of built-in CSP rules at the debug level, since
-  built-in filters always hold a few `$csp` exceptions which DNR cannot
-  express, and the session limitations; `dynamicRules.errors` and
-  `dynamicRules.limitations` are left to the consumer.
-- `UnexpectedConversionError`, `RuleScanError`, `isRuleScanError` and
-  `DynamicRulesCounts` are now re-exported, so consumers can check errors with
-  `instanceof` and use the counters type.
-- Added opt-in canvas protection for Chromium MV3, Chromium MV2 and Firefox
-  MV2 with `stealth.protectCanvas` and methods to update protection.
-  Exceptions are compiled from filter rules and the allowlist, including
-  `$stealth=fingerprinting` and `$document`, with host boundaries preserved
-  and inverted wildcard entries covering one level below the domain, as frame
-  matching does. The filtering log shows the `$stealth` exception that keeps
-  a document native [AdguardBrowserExtension#3475].
-- MV3: `ConfigurationResult.loadDisabledStaticFilter()` and
-  `loadDisabledStaticFilters()` create the static rulesets of the filters not
-  enabled in the browser on demand, so the caller can read their rule counters
-  off the startup path. The per-filter loader lets callers wait only for the
-  counter they need; the batch loader creates the rest one at a time.
-
 ### Changed
-
-- Updated `@types/webextension-polyfill` to `0.12.6`, which adds Firefox 153+
-  `documentId`/`parentDocumentId` support to webNavigation types and renames
-  `WebRequest.BlockingResponseOrPromise` to `BlockingResponseOrPromiseOrVoid`;
-  documentation now reflects that document tracking works the same in Firefox 153+
-  as in Chromium. Consumers compiling against the published declarations must use
-  `@types/webextension-polyfill` >= 0.12.6, since the previous alias is gone.
-- Updated [@adguard/extended-css] to `v2.3.0`, which adds support for uBlock Origin
-  `:remove-attr()` and `:remove-class()` pseudo-classes [AdguardBrowserExtension#3538].
-- **BREAKING:** MV3: `start()` and `configure()` create only the static
-  rulesets enabled in the browser, so `ConfigurationResult.staticFilters` no
-  longer contains the rulesets of disabled filters. Creating a ruleset for the
-  first time prepares its filter list at runtime, which took over a second for
-  all bundled rulesets on a clean install. Call
-  `ConfigurationResult.loadDisabledStaticFilters()` to get the rest.
 
 ### Deprecated
 
@@ -117,6 +70,127 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   mode a list that ends up without expressible entries becomes such a rule too, so
   network filtering matches frame matching. A disabled allowlist now adds no rule
   at all: in the inverted mode it used to add one that allowed every document.
+- `$path` and `$url` values with an escaped closing slash, e.g.
+  `[$path=/a\/]example.com##.foo`, are no longer regexps and now match their
+  literal text instead of compiling to an invalid regexp and never matching
+  (via [@adguard/tsurlfilter]). For `http` and `https` URLs, the URL parser
+  keeps a backslash only in the query or fragment, so the example matches
+  `https://example.com/?q=/a\/`, not a page path.
+- Rules whose `$domain` or `$denyallow` value has an unclosed regexp
+  literal followed by another list item, e.g.
+  `$domain=~/a\/|example.org` and `$domain=~/|example.org`, are now
+  rejected by the list parser with
+  `Unclosed regexp literal, no closing delimiter found` (via
+  [@adguard/tsurlfilter]). Previously the parser kept the rest of the list
+  in one value that could not match a host, so a negated value turned the
+  rule on for every site.
+- Bare `$removeparam` rules no longer duplicate the hash fragment when a
+  History API URL has no query string but its fragment contains `?`, e.g.
+  `/page#route?x=1` now stays unchanged instead of becoming
+  `/page#route#route?x=1`.
+- uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
+  unquotes the argument and matches it case-insensitively, e.g.
+  `##^script:has-text("admc")` becomes `$$script:contains(/admc/i)` (via
+  [@adguard/tsurlfilter]). The case-insensitive match folds ASCII case only.
+  Chained text constraints of one element selector are merged into a single
+  `:contains()` regexp, because CoreLibs rejects an element selector with more
+  than one regexp `:contains()`. A plain text stays case-insensitive in a
+  merged chain. The merged regexp keeps the `i` flag unless a constraint in the
+  chain needs a case-sensitive match. In such a mixed chain, a
+  case-insensitive regexp becomes case-sensitive, because the merged regexp has
+  a single flag set.
+- A single trailing `$domain` or `$denyallow` value that starts with a
+  slash but is not a regexp literal is now rejected by the rule engine with
+  `Invalid regular expression as domain pattern`, e.g. `$domain=//` or
+  `$domain=/a/x` (via [@adguard/tsurlfilter]). Before, the bare delimiters
+  `/` and `//` compiled to an empty regexp that matched every domain, and
+  a slash-leading value without a closing slash became a plain domain that
+  never matched a host, so a negated value left an empty restriction and
+  the rule applied on every site. `$domain=/a\/` was already rejected
+  because its pattern did not compile. In MV3 the rule is converted by
+  `@adguard/dnr-converter`, which does not reject such a value: it drops an
+  excluded domain that it takes for a regexp and keeps a slash-leading value
+  that is not one as a plain excluded domain, so the exclusion has no effect
+  there.
+- Path-relative URLs passed to `history.pushState()` and
+  `history.replaceState()` are now resolved against the base URI from
+  before the navigation, so `$removeparam` rules remove tracking
+  parameters synchronously instead of leaving them in the address bar.
+- CSS injection rules with mixed-case forbidden functions such as `URL(...)` or
+  `Image-Set(...)` are now rejected and can no longer load external resources
+  (via [@adguard/tsurlfilter]).
+
+### Security
+
+## [7.0.1] - 2026-11-17
+
+### Fixed
+
+- HTML filtering rules with a right parenthesis inside a regexp character
+  class now load, e.g. `$$div:contains(/a[)]b/)` and
+  `##^div:has-text(/a[)]b/)` (via [@adguard/tsurlfilter]). uBO `:contains()`
+  rules such as `##^div:contains(foo)` are no longer a conversion error.
+
+[7.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v7.0.1
+
+## [7.0.0] - 2026-11-12
+
+### Added
+
+- Partial support for `$csp` exceptions in Manifest V3 across built-in, custom,
+  and user filters [AdguardBrowserExtension#2965]: rebuilt CSP rules replace the
+  previous ones atomically within each DNR scope, are fitted into the quotas left
+  after the regular conversion, and the dynamic scope is rolled back when the
+  session update fails. Rule sets must be built with `exclude-unsafe-rules`,
+  otherwise the static copy of a CSP rule stays in the rule set and a `$csp`
+  exception has no effect.
+- `ConfigurationResult` reports what was dropped or failed: `cspRules.errors`
+  for built-in filters (user rules stay in `dynamicRules.errors`),
+  `dynamicRules.limitations` and `sessionRules.limitations` for the two separate
+  quotas, so the session overflow never reaches the dynamic counters, and
+  `dynamicRules.counts` with the final counts, rebuilt CSP rules included.
+  `configure()` logs the errors of built-in CSP rules at the debug level, since
+  built-in filters always hold a few `$csp` exceptions which DNR cannot
+  express, and the session limitations; `dynamicRules.errors` and
+  `dynamicRules.limitations` are left to the consumer.
+- `UnexpectedConversionError`, `RuleScanError`, `isRuleScanError` and
+  `DynamicRulesCounts` are now re-exported, so consumers can check errors with
+  `instanceof` and use the counters type.
+- Added opt-in canvas protection for Chromium MV3, Chromium MV2 and Firefox
+  MV2 with `stealth.protectCanvas` and methods to update protection.
+  Exceptions are compiled from filter rules and the allowlist, including
+  `$stealth=fingerprinting` and `$document`, with host boundaries preserved
+  and inverted wildcard entries covering one level below the domain, as frame
+  matching does. The filtering log shows the `$stealth` exception that keeps
+  a document native [AdguardBrowserExtension#3475].
+- MV3: `ConfigurationResult.loadDisabledStaticFilter()` and
+  `loadDisabledStaticFilters()` create the static rulesets of the filters not
+  enabled in the browser on demand, so the caller can read their rule counters
+  off the startup path. The per-filter loader lets callers wait only for the
+  counter they need; the batch loader creates the rest one at a time.
+
+### Changed
+
+- Updated `@types/webextension-polyfill` to `0.12.6`, which adds Firefox 153+
+  `documentId`/`parentDocumentId` support to webNavigation types and renames
+  `WebRequest.BlockingResponseOrPromise` to `BlockingResponseOrPromiseOrVoid`;
+  documentation now reflects that document tracking works the same in Firefox 153+
+  as in Chromium. Consumers compiling against the published declarations must use
+  `@types/webextension-polyfill` >= 0.12.6, since the previous alias is gone.
+- Updated [@adguard/extended-css] to `v2.3.0`, which adds support for uBlock Origin
+  `:remove-attr()` and `:remove-class()` pseudo-classes [AdguardBrowserExtension#3538].
+- **BREAKING:** MV3: `start()` and `configure()` create only the static
+  rulesets enabled in the browser, so `ConfigurationResult.staticFilters` no
+  longer contains the rulesets of disabled filters. Creating a ruleset for the
+  first time prepares its filter list at runtime, which took over a second for
+  all bundled rulesets on a clean install. Call
+  `ConfigurationResult.loadDisabledStaticFilters()` to get the rest.
+
+### Fixed
+
+- Canvas protection keeps the script that the browser acknowledged across
+  service worker restarts, instead of removing it and registering it again on
+  every start.
 - MV3: the engine no longer prepares the enabled static filter lists again on
   every start; it gets them from IndexedDB with their conversion data. Cached
   filter lists are prepared again when the versions of the libraries that
@@ -187,17 +261,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$removeparam` regexp values with the `g` or `y` flag are now matched
   statelessly: matching no longer depends on the previously tested URL
   parameter, so all matching parameters are removed.
-- CSS injection rules with mixed-case forbidden functions such as `URL(...)` or
-  `Image-Set(...)` are now rejected and can no longer load external resources
-  (via [@adguard/tsurlfilter]).
 
 [AdguardBrowserExtension#2965]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2965
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
 [AdguardBrowserExtension#3475]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3475
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
 [AdguardBrowserExtension#3553]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3553
-
-### Security
+[7.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v7.0.0
 
 ## [6.0.1] - 2026-10-15
 
@@ -277,8 +347,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Conversion metadata (`badFilterRules`, `rulesHashMap`) is now kept in
   memory after `configure()` instead of being freed via the previous
   `unloadMetadata()` call. Keeping it avoids stale cached rulesets
-  returning empty metadata on subsequent `configure()` calls; a lazy
-  reload from IDB is tracked in AG-53262.
+  returning empty metadata on subsequent `configure()` calls.
 - Updated [@adguard/extended-css] to `v2.2.0`.
 - WebRTC IP handling policy changed from `disable_non_proxied_udp` to
   `default_public_interface_only` to reduce VoIP breakage while still

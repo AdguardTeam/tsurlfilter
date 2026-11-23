@@ -67,6 +67,12 @@ describe('Rule', () => {
                 Rule.createFromText(1, 0, 'test$_whatever,domain=example.org');
             }).toThrow('Unknown modifier: _whatever');
         });
+
+        it('rejects an unclosed regexp literal followed by another list item in $domain', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, String.raw`||example.org^$domain=~/a\/|example.org`);
+            }).toThrow('Unclosed regexp literal, no closing delimiter found');
+        });
     });
 
     describe('getText', () => {
