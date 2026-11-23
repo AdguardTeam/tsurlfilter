@@ -81,7 +81,11 @@ export class RuleClassifier {
             if (types[ti] === TokenType.HashMark) {
                 const afterTi = cosmeticSepStartIndex(sep) + cosmeticSepTokenCount(sep);
 
-                const invalidSelector = afterTi >= endTi
+                // A space right after the leading `#` makes the whole line a
+                // comment: `# START HOSTS LIST ###` is not an element hiding
+                // rule whose domain is `# START HOSTS LIST ` (F-078).
+                const invalidSelector = (ti + 1 < endTi && types[ti + 1] === TokenType.Whitespace)
+                    || afterTi >= endTi
                     || types[afterTi] === TokenType.Whitespace
                     || (types[afterTi] === TokenType.HashMark
                         && afterTi + 1 < endTi

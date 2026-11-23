@@ -107,6 +107,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- A comment that starts with a metadata header name but has no colon after it,
+  e.g. `! Title of the list` or `! Version 1.0`, is a plain comment again, as
+  in 4.x. It used to be parsed as a metadata comment, and the generator then
+  inserted a colon, changing the list text.
+- A `#` line with a space after the marker, e.g. `# START HOSTS LIST ###`, is a
+  plain comment again. It used to be parsed as an element hiding rule whose
+  domain was the text before the trailing `###`.
 - `FilterListPipeline.parse()` honours `parseHostRules`: a host-shaped line such
   as `127.0.0.1 example.com` becomes a `HostRule` when the option is enabled,
   the same AST `RuleParserPipeline.parse()` builds for it, instead of always a

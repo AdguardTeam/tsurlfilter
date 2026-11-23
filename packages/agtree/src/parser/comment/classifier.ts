@@ -20,7 +20,7 @@ import type { StructuralParser } from '../types';
 
 import { AgentCommentParser } from './agent';
 import { HintCommentParser } from './hint';
-import { matchMetadataHeader, MetadataCommentParser } from './metadata';
+import { isMetadataComment, MetadataCommentParser } from './metadata';
 import { CM_PREP_LE_DATA_OFFSET, PreprocessorCommentParser } from './preprocessor';
 import { SimpleCommentParser } from './simple';
 import { CommentKind } from './types';
@@ -115,7 +115,7 @@ export class CommentParser implements StructuralParser {
                 const textOff = tokenStart(ctx, textTi);
 
                 // Metadata: `! Header: value`
-                if (matchMetadataHeader(ctx.source, textOff) !== null) {
+                if (isMetadataComment(ctx.source, textOff)) {
                     MetadataCommentParser.parse(ctx, startTi, endTi, dataOffset);
                     return;
                 }
@@ -129,7 +129,7 @@ export class CommentParser implements StructuralParser {
             if (textTi < endTi) {
                 const textOff = tokenStart(ctx, textTi);
 
-                if (matchMetadataHeader(ctx.source, textOff) !== null) {
+                if (isMetadataComment(ctx.source, textOff)) {
                     MetadataCommentParser.parse(ctx, startTi, endTi, dataOffset);
                     return;
                 }

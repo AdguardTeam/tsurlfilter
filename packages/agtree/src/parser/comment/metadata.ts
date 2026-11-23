@@ -117,6 +117,35 @@ export function matchMetadataHeader(source: string, start: number): string | nul
 }
 
 /**
+ * Whether the comment at `start` is a metadata comment (`! Header: value`).
+ *
+ * The header name alone is not enough: `! Title of the list` is a plain
+ * comment in 4.x, and the generator used to add a colon to it, changing the
+ * list text (F-077). A metadata comment needs a `:` after the header name,
+ * with optional spaces or tabs in between.
+ *
+ * @param source Source string holding the comment.
+ * @param start Offset of the first character after the `!`/`#` marker and
+ *   its whitespace.
+ *
+ * @returns `true` if the comment is a metadata comment.
+ */
+export function isMetadataComment(source: string, start: number): boolean {
+    const header = matchMetadataHeader(source, start);
+
+    if (header === null) {
+        return false;
+    }
+
+    let i = start + header.length;
+    while (i < source.length && (source[i] === ' ' || source[i] === '\t')) {
+        i += 1;
+    }
+
+    return source[i] === ':';
+}
+
+/**
  * Parser for metadata comment rules (`! Header: value`).
  */
 export class MetadataCommentParser implements StructuralParser {
