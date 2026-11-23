@@ -227,24 +227,17 @@ describe('String utils', () => {
     });
 
     describe('isRegexPattern', () => {
-        it('returns true for leading and trailing slashes', () => {
-            expect(isRegexPattern('/pattern/')).toBe(true);
-        });
-
-        it('returns true for single slash', () => {
-            expect(isRegexPattern('/')).toBe(true);
-        });
-
-        it('returns false for missing leading slash', () => {
-            expect(isRegexPattern('pattern/')).toBe(false);
-        });
-
-        it('returns false for missing trailing slash', () => {
-            expect(isRegexPattern('/pattern')).toBe(false);
-        });
-
-        it('returns false for no slashes', () => {
-            expect(isRegexPattern('pattern')).toBe(false);
+        it.each([
+            ['/a/', true],
+            ['//', false],
+            ['/', false],
+            [String.raw`/a\/`, false],
+            [String.raw`/a\\/`, true],
+            [String.raw`/a\\\/`, false],
+            ['abc', false],
+            ['/abc', false],
+        ])('returns %s for %j', (pattern, expected) => {
+            expect(isRegexPattern(pattern)).toBe(expected);
         });
     });
 

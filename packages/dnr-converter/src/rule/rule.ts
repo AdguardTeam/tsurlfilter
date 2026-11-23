@@ -19,7 +19,12 @@ import { RuleGenerator } from '@adguard/agtree/generator';
 import { MASK_REGEX_RULE } from '../constants';
 import { type RequestMethod, ResourceType } from '../declarative-rule/rule-condition';
 import { getErrorMessage } from '../utils/error';
-import { fastHash, fastHash31, hasSpaces } from '../utils/string';
+import {
+    fastHash,
+    fastHash31,
+    hasSpaces,
+    isRegexPattern,
+} from '../utils/string';
 
 import { OPTION_NAMES } from './option-names';
 import { RuleBadfilter } from './rule-badfilter';
@@ -935,8 +940,7 @@ export class Rule {
      * @returns `true` if the rule pattern is a regex.
      */
     public isRegexRule(): boolean {
-        return this.pattern.startsWith(MASK_REGEX_RULE)
-            && this.pattern.endsWith(MASK_REGEX_RULE);
+        return isRegexPattern(this.pattern);
     }
 
     /**
@@ -1046,6 +1050,26 @@ export class Rule {
             if (!domain) {
                 continue;
             }
+
+            if (!isRegexPattern(domain)) {
+                // A value that starts with a slash is not a plain domain
+                // either, since a domain name never starts with a slash.
+                // Reject it: a negated value would otherwise become an empty
+                // restriction and turn the rule on for every site.
+                if (domain.startsWith(MASK_REGEX_RULE)) {
+                    throw new SyntaxError(`Invalid regular expression as domain pattern: "${domain}"`);
+                }
+            } else {
+                try {
+                    // Validate compilability once at parse time, the same way
+                    // the pattern is compiled at match time.
+                    // eslint-disable-next-line no-new
+                    new RegExp(domain.slice(1, -1), 'i');
+                } catch {
+                    throw new SyntaxError(`Invalid regular expression as domain pattern: "${domain}"`);
+                }
+            }
+
             if (exception) {
                 restricted.push(domain);
             } else {

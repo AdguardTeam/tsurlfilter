@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   item in a `$domain`, `$denyallow` or `$to` value are now rejected during
   parsing instead of producing an invalid DNR domain, e.g.
   `$domain=~/a\/|example.org` (via `@adguard/agtree`).
+- A `$domain`, `$to` or `$denyallow` value that starts with a slash but is not
+  a regexp literal, e.g. `$domain=~/a\/` or `$denyallow=/`, is now a conversion
+  error instead of being dropped from the domain condition. The
+  regexp-literal check is now escape-aware, so a pattern with an escaped
+  closing slash, e.g. `/a\/$script`, is a basic pattern and does not produce an
+  unsupported `regexFilter`.
 
 ### Security
 
