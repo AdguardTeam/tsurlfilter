@@ -42,6 +42,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- `@adguard/css-tokenizer` is no longer a runtime dependency: the package uses
+  its own zero-allocation CSS tokenizer, so consumers no longer install the
+  extra package. It stays a devDependency for the differential tests.
+- `valibot` is declared through the workspace catalog (`catalog:`), like the
+  other shared dependencies, instead of pinning its own range.
 - The minimum `ParserContext` data buffer grows by the selector-list region
   (`SL_MIN_DATA_SLOTS`, 730 Int32 slots ≈ 2.9 KB) because the selector list is
   stored at the end of the buffer. Code that pre-sizes buffers from

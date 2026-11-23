@@ -83,7 +83,6 @@
         "verify-compat": "tsx scripts/compatibility-data-extractor/extractor.ts --scriptlets && tsx scripts/compatibility-data-extractor/validate.ts"
     },
     "dependencies": {
-        "@adguard/css-tokenizer": "workspace:^",
         "camelcase-keys": "^7.0.2",
         "clone-deep": "^4.0.1",
         "glob-to-regexp": "^0.4.1",
@@ -94,6 +93,7 @@
         "zod": "catalog:"
     },
     "devDependencies": {
+        "@adguard/css-tokenizer": "workspace:^",
         "@adguard/scriptlets": "catalog:",
         "@rollup/plugin-commonjs": "catalog:",
         "@rollup/plugin-json": "catalog:",
@@ -143,7 +143,7 @@
         "tsx": "catalog:",
         "type-fest": "^4.18.0",
         "typescript": "catalog:",
-        "valibot": "^1.2.0",
+        "valibot": "catalog:",
         "vitest": "catalog:",
         "xregexp": "^5.1.2"
     }

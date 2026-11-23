@@ -11,9 +11,11 @@ and a rule converter for translating rules between syntaxes.
 ## Technical Context
 
 - **Language/Version**: TypeScript (ESM-only output), Node.js ≥ 22
-- **Primary Dependencies**: `@adguard/css-tokenizer` (CSS selector parsing),
-  `zod` (schema validation), `tldts` (domain parsing), `is-ip`, `json5`,
-  `sprintf-js`
+- **Primary Dependencies**: `zod` (schema validation), `tldts` (domain
+  parsing), `is-ip`, `json5`, `sprintf-js`, `camelcase-keys`, `clone-deep`,
+  `glob-to-regexp`. `@adguard/css-tokenizer` is a devDependency only: the
+  package ships its own zero-allocation CSS tokenizer, and the external one is
+  used by the differential tests in the planning tooling.
 - **Build Toolchain**: Rollup (with `@rollup/plugin-swc`), `tsc` + custom
   `transform-dts.ts` script for type declarations
 - **Testing**: Vitest (with `@vitest/coverage-v8`)

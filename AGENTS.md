@@ -55,7 +55,6 @@ high-level extension APIs (`adguard-api`, `adguard-api-mv3`).
 
 ```mermaid
 graph TD
-    css-tokenizer --> agtree
     css-tokenizer --> tsurlfilter
     agtree --> tsurlfilter
     agtree --> tswebextension
