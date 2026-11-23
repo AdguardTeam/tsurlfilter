@@ -7,7 +7,6 @@ import {
     CosmeticApiCommon,
     ExtCssMarkersState,
     type LogJsRulesParams,
-    type MarkedCssFrameContext,
 } from '../../common/cosmetic-api';
 import { ExtCssGuardError } from '../../common/extcss-guard-error';
 import { EXTCSS_PROTOCOL, type ExtCssApplyResult } from '../../common/extcss-protocol';
@@ -861,12 +860,12 @@ export class CosmeticApi extends CosmeticApiCommon {
     private static async injectPreparedCssWithRetries(
         tabId: number,
         frameId: number,
-        frameContext: MarkedCssFrameContext,
+        frameContext: FrameMV2,
         preparedCosmeticResult: PreparedCosmeticResultCommon,
         cssText: string,
         tries: number,
     ): Promise<void> {
-        const { documentId } = frameContext;
+        const documentVersion = frameContext.extCssDocumentVersion;
 
         try {
             await CosmeticApi.injectCss(tabId, frameId, cssText);
@@ -885,9 +884,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                     setTimeout(resolve, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
                 });
 
-                const currentFrameContext = tabsApi.getFrameContext(tabId, frameId);
-                if (currentFrameContext !== frameContext
-                    || currentFrameContext.documentId !== documentId) {
+                if (CosmeticApi.hasFrameDocumentChanged(tabId, frameId, frameContext, documentVersion)) {
                     // The frame navigated while waiting. Do not inject the
                     // old document's CSS into the new document.
                     return;

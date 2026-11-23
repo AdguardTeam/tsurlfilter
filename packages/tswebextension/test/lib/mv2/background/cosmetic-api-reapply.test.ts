@@ -448,6 +448,32 @@ describe('CosmeticApi.reapplyMarkedCosmeticData', () => {
         expect(injectSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('stops initial CSS retries when the document version changes in place', async () => {
+        vi.useFakeTimers();
+
+        // A browser without a per-document id keeps the generated
+        // `${tabId}-${frameId}` id across a same-URL reload, and a commit
+        // mutates the context in place, so only the document version tells
+        // the two documents apart.
+        const frameContext = makeFrameContext(
+            makePrepared('marked', true),
+            `${TAB_ID}-${FRAME_ID}`,
+        );
+        markExtCssInjected(frameContext);
+        tabsApiMock.getFrameContext.mockReturnValue(frameContext);
+        const injectSpy = vi.spyOn(CosmeticApi, 'injectCss')
+            .mockRejectedValue(new Error('injection failed'));
+
+        const injection = CosmeticApi.applyCss(TAB_ID, FRAME_ID);
+
+        await vi.advanceTimersByTimeAsync(0);
+        frameContext.extCssDocumentVersion += 1;
+        await vi.advanceTimersByTimeAsync(10);
+        await injection;
+
+        expect(injectSpy).toHaveBeenCalledTimes(1);
+    });
+
     it('stops retrying when the frame navigates during the retry delay', async () => {
         vi.useFakeTimers();
 
