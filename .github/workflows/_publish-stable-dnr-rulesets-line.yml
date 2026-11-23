@@ -3,24 +3,26 @@ name: Publish stable DNR rulesets line
 # Builds @adguard/dnr-rulesets from one stable/dnr-rulesets-<line> branch and
 # publishes the tarball under the given dist-tag. Called once per line by
 # publish-stable-dnr-rulesets.yml, which owns the schedule, the list of lines,
-# the dist-tag of each line, the concurrency group and the Slack alert.
+# the dist-tag of each line, the npm publish flag, the concurrency group and
+# the Slack alert.
 #
 # Each line gets its own artifact (dnr-rulesets-<line>) and BuildKit cache
 # suffix (-<line>), and its jobs gate only on its own build, so a broken line
 # fails alone.
 #
-# npm leg — DISABLED (AG-58867): the try re-enabled in AG-60418 was a one-off
-# to give npm support a fresh 429 example from the Trusted Publishing/OIDC
-# flow, and the 2026-10-13 round still got HTTP 429 Too Many Requests on the
-# publish (PUT https://registry.npmjs.org/@adguard%2fdnr-rulesets). The four
-# npm jobs are disabled again (check-npm / publish-npm / retry-npm /
-# retry-publish-npm), so no npm request is made at all and the package stays
-# quiet for npm support. Building and the Artifact Keeper publish (publish-ak)
-# keep running. To re-enable, drop `if: false` and restore the commented
-# conditions on all four npm jobs together; the caller's once-daily schedule
-# then makes one npm publish per line per round — if the throttle budget turns
-# out to be a single publish, serialize the lines with `max-parallel: 1` in
-# the caller. Moving off registry.npmjs.org is tracked in AG-59859.
+# npm leg — WEEKLY, `latest` line only (AG-59859). npm lifted the registry-side
+# throttle on 2026-11-19 and asked us to publish less often, so the caller
+# sets publish_npm=true only on the Monday round of the line that owns
+# `latest`; every other line stays Artifact-Keeper-only (its npm tag never
+# existed, so nothing can depend on it). The cadence is a metadata budget, not
+# a freshness knob: the packument is ~79 MB of the registry's 100 MB limit
+# (22 000+ versions at ~4 KB each) and only grows, while the extension
+# auto-build reads AK daily anyway. There is no automatic retry — a retry
+# spends more of the throttle window and re-uploads a ~70 MB tarball, so a
+# failed publish waits for the next weekly round. scripts/ci/check-npm-version.sh
+# fails closed: a 429/5xx/timeout on the idempotency check skips the publish
+# instead of pushing blindly. History: AG-58865/AG-58867 (429, leg disabled),
+# AG-60418 (re-enable attempt with the retry pass).
 
 on:
   workflow_call:
@@ -33,6 +35,11 @@ on:
         description: 'Dist-tag to publish under (e.g. latest, stable-6.0)'
         type: string
         required: true
+      publish_npm:
+        description: 'Publish this build to the public npm registry under `tag`. The caller sets it for the weekly round of the `latest` line only.'
+        type: boolean
+        required: false
+        default: false
 
 # No `concurrency` block on purpose: the caller's group serializes rounds.
 
@@ -90,7 +97,7 @@ jobs:
         with:
           name: dnr-rulesets-${{ inputs.line }}
           path: build-output/artifacts/dnr-rulesets.tgz
-          # Publish/retry jobs in the same run only; 1-day retention is plenty.
+          # Publish jobs in the same run only; 1-day retention is plenty.
           retention-days: 1
           if-no-files-found: error
 
@@ -117,12 +124,12 @@ jobs:
     permissions:
       contents: read
 
-  # DISABLED (AG-58867): see the npm leg note in the header.
+  # The npm leg runs only when the caller asks for it (weekly Monday round of
+  # the `latest` line, or an explicit dispatch) — see the header.
   check-npm:
     name: Check version not on npm yet
     needs: build
-    # if: ${{ !cancelled() && needs.build.result == 'success' }}
-    if: false
+    if: ${{ inputs.publish_npm && !cancelled() && needs.build.result == 'success' }}
     runs-on: team-extensions
     timeout-minutes: 10
     outputs:
@@ -146,67 +153,17 @@ jobs:
         shell: bash
         run: bash scripts/ci/check-npm-version.sh artifact/dnr-rulesets.tgz
 
-  # DISABLED (AG-58867): see the npm leg note in the header.
+  # A failed or inconclusive version check (429/5xx/timeout) skips the publish:
+  # the script exits non-zero instead of publishing blindly.
   publish-npm:
     name: Publish to npm
     needs: [build, check-npm]
-    # if: ${{ !cancelled() && needs.check-npm.result == 'success' && needs.check-npm.outputs.exists == 'false' }}
-    if: false
+    if: ${{ inputs.publish_npm && !cancelled() && needs.check-npm.result == 'success' && needs.check-npm.outputs.exists == 'false' }}
     uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
     with:
       artifact-name: dnr-rulesets-${{ inputs.line }}
       package-file: dnr-rulesets.tgz
       # No environment so unattended runs don't wait on approval.
-      tag: ${{ inputs.tag }}
-      environment: ''
-    permissions:
-      contents: read
-      id-token: write
-
-  # DISABLED (AG-58867): part of the npm leg — it re-checks npm after the
-  # backoff, so it is disabled with the rest.
-  retry-npm:
-    name: Retry npm
-    needs: [build, publish-npm]
-    # if: ${{ !cancelled() && needs.publish-npm.result == 'failure' }}
-    if: false
-    runs-on: team-extensions
-    timeout-minutes: 20
-    outputs:
-      exists: ${{ steps.version-check.outputs.exists }}
-    steps:
-      - name: Back off
-        # Outlast the npm throttle window; npm's own retry (~70s) doesn't.
-        shell: bash
-        run: sleep 600
-
-      - name: Checkout version-check script
-        uses: actions/checkout@v6
-        with:
-          sparse-checkout: scripts/ci
-          fetch-depth: 1
-
-      - name: Download built package
-        uses: actions/download-artifact@v8
-        with:
-          name: dnr-rulesets-${{ inputs.line }}
-          path: artifact
-
-      - name: Re-check target version on npm
-        id: version-check
-        shell: bash
-        run: bash scripts/ci/check-npm-version.sh artifact/dnr-rulesets.tgz
-
-  # DISABLED (AG-58867): same as publish-npm, do not upload to npm.
-  retry-publish-npm:
-    name: Publish to npm (retry)
-    needs: [retry-npm]
-    # if: ${{ !cancelled() && needs.retry-npm.result == 'success' && needs.retry-npm.outputs.exists == 'false' }}
-    if: false
-    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
-    with:
-      artifact-name: dnr-rulesets-${{ inputs.line }}
-      package-file: dnr-rulesets.tgz
       tag: ${{ inputs.tag }}
       environment: ''
     permissions:

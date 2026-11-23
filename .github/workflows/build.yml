@@ -155,6 +155,7 @@ jobs:
           bash -n tests/finalize-changelog.sh
           bash -n scripts/ci/resolve-release-inputs.sh
           bash -n scripts/ci/verify-tarball.sh
+          bash -n scripts/ci/check-npm-version.sh
           bash -n tests/verify-tarball.test.sh
           bash -n tests/check-pr-open.test.sh
           node --check scripts/ci/check-pr-open.mjs

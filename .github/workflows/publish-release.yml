@@ -5,10 +5,10 @@ name: Publish release
 # Slack. Fires automatically when a release-bump/<package>-v<version> PR is
 # merged; can be re-run manually.
 #
-# dnr-rulesets is the exception: while npm throttles the shared GitHub egress
-# IP (HTTP 429, AG-58865), its releases skip npm and publish to the internal
-# Artifact Keeper instead — the same arrangement as the stable
-# publish-stable-dnr-rulesets.yml line. Re-enable npm for it in AG-58867.
+# dnr-rulesets is the exception: its releases skip npm and publish to the
+# internal Artifact Keeper instead — the same arrangement as the stable
+# publish-stable-dnr-rulesets.yml line. Its public npm package is fed by that
+# workflow's weekly `latest`-line snapshot instead (AG-59859).
 
 on:
   pull_request:
@@ -103,9 +103,10 @@ jobs:
       target_repo: AdguardTeam/tsurlfilter
       ref: ${{ needs.resolve.outputs.ref }}
       dry_run: ${{ fromJSON(needs.resolve.outputs.dry_run) }}
-      # npm 429 throttling (AG-58865): dnr-rulesets publishes to the internal
-      # Artifact Keeper only, like the stable line; every other package keeps
-      # publishing to npm. Re-enable npm for dnr-rulesets in AG-58867.
+      # dnr-rulesets releases publish to the internal Artifact Keeper only, like
+      # the stable line; its public npm package is fed by that workflow's weekly
+      # `latest`-line snapshot instead (AG-59859). Every other package keeps
+      # publishing to npm.
       publish_target: ${{ needs.resolve.outputs.package == 'dnr-rulesets' && 'ak' || 'npm' }}
     secrets: inherit
     permissions:
