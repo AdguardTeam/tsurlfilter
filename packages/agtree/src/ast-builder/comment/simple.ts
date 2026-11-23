@@ -13,10 +13,10 @@ import {
 } from '../../parser/comment/simple';
 import { SPACE } from '../../utils/constants';
 import {
+    combineSyntax,
     SYNTAX_ADG,
     SYNTAX_ALL,
     SYNTAX_UBO,
-    type SyntaxFlags,
 } from '../../utils/syntax-flags';
 import { ValueAstBuilder } from '../misc/value';
 import type { ParseOptions } from '../options';
@@ -52,7 +52,7 @@ export class SimpleCommentAstBuilder {
         const result: CommentRule = {
             type: CommentRuleType.CommentRule,
             category: RuleCategory.Comment,
-            syntax: isHash ? (SYNTAX_ADG | SYNTAX_UBO) as SyntaxFlags : SYNTAX_ALL,
+            syntax: isHash ? combineSyntax(SYNTAX_ADG, SYNTAX_UBO) : SYNTAX_ALL,
             marker,
             text,
         };

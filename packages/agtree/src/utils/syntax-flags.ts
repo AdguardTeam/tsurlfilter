@@ -45,6 +45,31 @@ export const SYNTAX_ABP = (1 << 2) as SyntaxFlags;
 export const SYNTAX_ALL = (SYNTAX_ADG | SYNTAX_UBO | SYNTAX_ABP) as SyntaxFlags;
 
 /**
+ * Combines product bits into one `SyntaxFlags` value.
+ *
+ * The branded type does not survive a bitwise OR (TypeScript widens the
+ * result to `number`), so `SYNTAX_ADG | SYNTAX_UBO` needed an `as SyntaxFlags`
+ * cast at every call site (F-055). Use this helper instead.
+ *
+ * @param flags Product bits to combine.
+ *
+ * @returns The combined flags.
+ *
+ * @example
+ * ```ts
+ * combineSyntax(SYNTAX_ADG, SYNTAX_UBO); // SYNTAX_ADG | SYNTAX_UBO
+ * ```
+ */
+export function combineSyntax(...flags: readonly SyntaxFlags[]): SyntaxFlags {
+    let combined = 0;
+    for (let i = 0; i < flags.length; i += 1) {
+        // eslint-disable-next-line no-bitwise
+        combined |= flags[i] as number;
+    }
+    return combined as SyntaxFlags;
+}
+
+/**
  * Check whether syntax is unknown (no bits set).
  *
  * @param flags Syntax bitflag value.

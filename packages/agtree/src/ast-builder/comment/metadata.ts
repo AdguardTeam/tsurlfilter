@@ -14,10 +14,10 @@ import {
     CM_META_VALUE_START_OFFSET,
 } from '../../parser/comment/metadata';
 import {
+    combineSyntax,
     SYNTAX_ADG,
     SYNTAX_ALL,
     SYNTAX_UBO,
-    type SyntaxFlags,
 } from '../../utils/syntax-flags';
 import { ValueAstBuilder } from '../misc/value';
 import type { ParseOptions } from '../options';
@@ -57,7 +57,7 @@ export class MetadataCommentAstBuilder {
         const result: MetadataCommentRule = {
             type: CommentRuleType.MetadataCommentRule,
             category: RuleCategory.Comment,
-            syntax: isHash ? (SYNTAX_ADG | SYNTAX_UBO) as SyntaxFlags : SYNTAX_ALL,
+            syntax: isHash ? combineSyntax(SYNTAX_ADG, SYNTAX_UBO) : SYNTAX_ALL,
             marker,
             header,
             value,

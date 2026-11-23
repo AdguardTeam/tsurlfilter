@@ -14,7 +14,12 @@ import {
     CM_PREP_PL_DATA_OFFSET,
 } from '../../parser/comment/preprocessor';
 import { regionEquals } from '../../parser/context';
-import { SYNTAX_ADG, SYNTAX_UBO, type SyntaxFlags } from '../../utils/syntax-flags';
+import {
+    combineSyntax,
+    SYNTAX_ADG,
+    SYNTAX_UBO,
+    type SyntaxFlags,
+} from '../../utils/syntax-flags';
 import { LogicalExpressionAstBuilder } from '../misc/logical-expression';
 import { ParameterListAstBuilder } from '../misc/parameter-list';
 import { ValueAstBuilder } from '../misc/value';
@@ -35,12 +40,12 @@ const SAFARI_CB_AFFINITY_DIRECTIVE = 'safari_cb_affinity';
  */
 const DIRECTIVE_SYNTAX: ReadonlyMap<string, SyntaxFlags> = new Map([
     // Conditional compilation — both ADG and UBO
-    ['if', (SYNTAX_ADG | SYNTAX_UBO) as SyntaxFlags],
-    ['else', (SYNTAX_ADG | SYNTAX_UBO) as SyntaxFlags],
-    ['endif', (SYNTAX_ADG | SYNTAX_UBO) as SyntaxFlags],
+    ['if', combineSyntax(SYNTAX_ADG, SYNTAX_UBO)],
+    ['else', combineSyntax(SYNTAX_ADG, SYNTAX_UBO)],
+    ['endif', combineSyntax(SYNTAX_ADG, SYNTAX_UBO)],
 
     // File inclusion — both ADG and UBO
-    ['include', (SYNTAX_ADG | SYNTAX_UBO) as SyntaxFlags],
+    ['include', combineSyntax(SYNTAX_ADG, SYNTAX_UBO)],
 
     // AdGuard-only directives
     ['safari_cb_affinity', SYNTAX_ADG],
@@ -84,7 +89,7 @@ export class PreprocessorCommentAstBuilder {
         // `!#` prefix itself is only recognized by AdGuard and uBlock Origin.
         const directiveName = source.slice(nameStart, nameEnd);
         const syntax: SyntaxFlags = DIRECTIVE_SYNTAX.get(directiveName)
-            ?? (SYNTAX_ADG | SYNTAX_UBO) as SyntaxFlags;
+            ?? combineSyntax(SYNTAX_ADG, SYNTAX_UBO);
 
         const result: PreProcessorCommentRule = {
             type: CommentRuleType.PreProcessorCommentRule,

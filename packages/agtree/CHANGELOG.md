@@ -33,6 +33,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   same list of special pseudo-class names as the parser and the converter.
 - `:has-text()` is now accepted as a synonym of `:contains()` in AdGuard
   HTML filtering rules during ADG→ADG conversion.
+- `combineSyntax(...flags)` builds a `SyntaxFlags` value from product bits, so
+  `SYNTAX_ADG | SYNTAX_UBO` no longer needs an `as SyntaxFlags` cast at every
+  call site.
+- The walker `find()`, `findLast()` and `findAll()` utilities accept a type
+  guard and narrow their result, e.g. `find(root, isNetworkRule)` is
+  `NetworkRule | undefined` instead of `AnyWalkNode | undefined`.
 - The `@adguard/agtree/compat` subpath for the v4-compatible `RuleParser` shim.
 - `translate(name, platform)` is added to the compatibility tables. It maps a
   name or alias of any product onto the entry of the given platform, e.g.

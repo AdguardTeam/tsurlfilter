@@ -201,6 +201,7 @@ export {
 } from './utils/constants';
 export { AdblockSyntax, AdblockProduct, getHumanReadableProductName } from './utils/adblockers';
 export {
+    combineSyntax,
     hasAllProducts,
     hasProduct,
     isUnknown,
