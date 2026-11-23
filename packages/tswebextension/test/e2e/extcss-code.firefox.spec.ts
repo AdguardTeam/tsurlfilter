@@ -8,9 +8,9 @@ import {
 } from 'vitest';
 
 import { EXTCSS_PROTOCOL } from '../../src/lib/common/extcss-protocol';
-// Installs the engine on the page the way the background does: the prebuilt
-// script asset is injected before the rule strings, and the code string reads
-// the engine back from it.
+// Installs the engine from the source entry the prebuilt `extcss-inject.js`
+// asset is built from. The background injects that asset before the rule
+// strings, and the code string reads the engine back from it.
 import '../../src/lib/common/extcss-engine';
 import { serializeExtCssDisposeForCode, serializeExtCssForCode } from '../../src/lib/mv2/background/extcss-code';
 

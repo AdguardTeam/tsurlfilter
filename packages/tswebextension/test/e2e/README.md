@@ -12,11 +12,12 @@ host element and not on its descendants — are only meaningful in a real
 browser with a real CSS cascade. They cannot be verified in jsdom.
 
 The MV2 ExtCSS code string is also checked in real Gecko. The spec installs
-the prebuilt engine asset (as the background does) and evaluates the string
-with indirect `eval` in a regular page with a stubbed `chrome`. Indirect `eval`
-returns the program completion value, matching `tabs.executeScript` semantics.
-The spec covers Gecko parsing and the resulting DOM changes. It does not cover
-`tabs.executeScript` itself, the isolated world, or the asset file injection.
+the engine from the source entry the prebuilt `extcss-inject.js` asset is
+built from and evaluates the string with indirect `eval` in a regular page
+with a stubbed `chrome`. Indirect `eval` returns the program completion value,
+matching `tabs.executeScript` semantics. The spec covers Gecko parsing and the
+resulting DOM changes. It does not cover `tabs.executeScript` itself, the
+isolated world, or the asset file injection.
 
 ## Layout
 

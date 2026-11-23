@@ -79,11 +79,12 @@ You MUST follow the following rules for EVERY task that you perform:
 
 1. **Four export paths.** The package exposes four entry points: main API
    (`.`), content script (`./content-script`), assistant (`./assistant`), and
-   the ExtendedCss engine asset (`./extcss`). The asset entry is for the
-   consumer's bundler: it emits `dist/adguard-extcss.js`, which the extension
-   ships and passes as `settings.extCssScriptUrl`; the background injects that
-   file into a page before the ExtendedCss rules. New public API MUST be
-   exported through the appropriate barrel file.
+   the ExtendedCss engine asset (`./extcss`). The asset entry is an input for
+   the consumer's bundler: it emits `dist/adguard-extcss.js`, an ESM wrapper
+   with a bare import, which the consumer's build bundles into the file the
+   extension ships and passes as `settings.extCssScriptUrl`. The background
+   injects that bundled file into a page before the ExtendedCss rules. New
+   public API MUST be exported through the appropriate barrel file.
 
    **Rationale**: Separates background and content script contexts, which run
    in different browser environments.

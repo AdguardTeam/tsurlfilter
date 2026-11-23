@@ -139,15 +139,16 @@ You MUST follow the following rules for EVERY task that you perform:
    `common/` to avoid duplication.
 
 2. **Multiple export paths.** The package exposes subpath exports for MV2,
-   MV3, content scripts, CLI, assistant inject, CSS hits counter, and filters
-   storage. New public API MUST be exported through the appropriate barrel.
+   MV3, content scripts, CLI, assistant inject, ExtendedCss inject asset, CSS
+   hits counter, and filters storage. New public API MUST be exported through
+   the appropriate barrel.
 
    **Rationale**: Consumers import only what they need; content scripts are
    side-effectful and must be separate entry points.
 
 3. **Content scripts are side-effectful.** Files like `content-script.js`,
-   `assistant-inject.js`, and `gpc.mv3.js` are marked as `sideEffects` in
-   `package.json` and execute on injection.
+   `assistant-inject.js`, `extcss-inject.js`, and `gpc.mv3.js` are marked as
+   `sideEffects` in `package.json` and execute on injection.
 
    **Rationale**: These scripts run in the page context and must not be
    tree-shaken.
