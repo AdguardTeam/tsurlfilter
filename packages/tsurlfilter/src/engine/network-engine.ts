@@ -8,6 +8,7 @@ import { CHUNK_SIZE } from './constants';
 import { DomainsLookupTable } from './lookup-tables/domains-lookup-table';
 import { HostnameLookupTable } from './lookup-tables/hostname-lookup-table';
 import { type ILookupTable } from './lookup-tables/lookup-table';
+import { RULE_TABLE_ORDER, RuleTable } from './lookup-tables/rule-table';
 import { SeqScanLookupTable } from './lookup-tables/seq-scan-lookup-table';
 import { TrieLookupTable } from './lookup-tables/trie-lookup-table';
 import { MatchingResult } from './matching-result';
@@ -27,24 +28,13 @@ export class NetworkEngine {
     private readonly resolveWrittenText: WrittenRuleTextResolver;
 
     /**
-     * Domain lookup table.
+     * Lookup tables by the kind of rule they hold.
+     *
+     * The engine walks them in {@link RULE_TABLE_ORDER} — the same order
+     * `getRuleTable()` reports — so a rule is added to, matched from and
+     * reported in one and the same table.
      */
-    private readonly domainsLookupTable: ILookupTable;
-
-    /**
-     * Lookup table that relies on the rule shortcuts to speed up the search.
-     */
-    private readonly shortcutsLookupTable: ILookupTable;
-
-    /**
-     * Lookup table for rules like `||hostname^` or `||hostname/path`.
-     */
-    private readonly hostnameLookupTable: ILookupTable;
-
-    /**
-     * Rules for which we could not find a shortcut and could not place it to the shortcuts lookup table.
-     */
-    private readonly seqScanLookupTable: ILookupTable;
+    private readonly lookupTables: Record<RuleTable, ILookupTable>;
 
     /**
      * Creates an instance of the network engine in sync mode.
@@ -110,10 +100,12 @@ export class NetworkEngine {
         this.ruleStorage = storage;
         this.resolveWrittenText = storage.createWrittenTextResolver();
 
-        this.domainsLookupTable = new DomainsLookupTable(storage);
-        this.hostnameLookupTable = new HostnameLookupTable(storage);
-        this.shortcutsLookupTable = new TrieLookupTable(storage);
-        this.seqScanLookupTable = new SeqScanLookupTable(storage);
+        this.lookupTables = {
+            [RuleTable.Hostname]: new HostnameLookupTable(storage),
+            [RuleTable.Shortcut]: new TrieLookupTable(storage),
+            [RuleTable.Domains]: new DomainsLookupTable(storage),
+            [RuleTable.Seqscan]: new SeqScanLookupTable(storage),
+        };
     }
 
     /**
@@ -144,11 +136,13 @@ export class NetworkEngine {
      * @returns Array of matching rules.
      */
     public matchAll(request: Request): NetworkRule[] {
-        // First check by shortcuts
-        const result = this.hostnameLookupTable.matchAll(request);
-        result.push(...(this.shortcutsLookupTable.matchAll(request)));
-        result.push(...(this.domainsLookupTable.matchAll(request)));
-        result.push(...(this.seqScanLookupTable.matchAll(request)));
+        // The tables are walked in `RULE_TABLE_ORDER`, which is also the order
+        // `NetworkEngine.addRule()` stores into and `getRuleTable()` reports.
+        const result: NetworkRule[] = [];
+
+        for (const table of RULE_TABLE_ORDER) {
+            result.push(...this.lookupTables[table].matchAll(request));
+        }
 
         return result;
     }
@@ -160,19 +154,11 @@ export class NetworkEngine {
      * @param storageIdx Storage index of the rule.
      */
     private addRule(ruleParts: NetworkRuleParts, storageIdx: number): void {
-        if (this.hostnameLookupTable.addRule(ruleParts, storageIdx)) {
-            return;
+        for (const table of RULE_TABLE_ORDER) {
+            if (this.lookupTables[table].addRule(ruleParts, storageIdx)) {
+                return;
+            }
         }
-
-        if (this.shortcutsLookupTable.addRule(ruleParts, storageIdx)) {
-            return;
-        }
-
-        if (this.domainsLookupTable.addRule(ruleParts, storageIdx)) {
-            return;
-        }
-
-        this.seqScanLookupTable.addRule(ruleParts, storageIdx);
     }
 
     /**
@@ -181,9 +167,12 @@ export class NetworkEngine {
      * @returns The total number of rules.
      */
     public get rulesCount(): number {
-        return this.domainsLookupTable.getRulesCount()
-            + this.hostnameLookupTable.getRulesCount()
-            + this.shortcutsLookupTable.getRulesCount()
-            + this.seqScanLookupTable.getRulesCount();
+        let count = 0;
+
+        for (const table of RULE_TABLE_ORDER) {
+            count += this.lookupTables[table].getRulesCount();
+        }
+
+        return count;
     }
 }

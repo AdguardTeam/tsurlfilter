@@ -490,16 +490,14 @@ export class PreregisteredScriptsService {
 
         if (exclusions.dynamicHosts.size > 0) {
             logger.warn(
-                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: Keeping hostnames on the'
-                + ' dynamic path: an exception disables JS there and the browser cannot exclude the pages',
+                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: Keeping hosts on the dynamic path',
                 [...exclusions.dynamicHosts.entries()],
             );
         }
 
         if (exclusions.unanchoredExceptions.length > 0) {
             logger.debug(
-                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: Exceptions that name no host'
-                + ' stay unapplied on preregistered pages; the host keeps its registration',
+                '[tsweb.PreregisteredScriptsService.resolveRegistrationPlan]: Host-less exceptions stay unapplied',
                 exclusions.unanchoredExceptions,
             );
         }

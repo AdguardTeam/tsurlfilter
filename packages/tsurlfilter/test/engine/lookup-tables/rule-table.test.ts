@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { DomainsLookupTable } from '../../../src/engine/lookup-tables/domains-lookup-table';
 import { HostnameLookupTable } from '../../../src/engine/lookup-tables/hostname-lookup-table';
-import { getRuleTable, RuleTable } from '../../../src/engine/lookup-tables/rule-table';
+import { getRuleTable, RULE_TABLE_ORDER, RuleTable } from '../../../src/engine/lookup-tables/rule-table';
 import { TrieLookupTable } from '../../../src/engine/lookup-tables/trie-lookup-table';
 import { getRuleParts, type NetworkRuleParts } from '../../../src/filterlist/rule-parts';
 import { NetworkRule } from '../../../src/rules/network-rule';
@@ -10,6 +10,15 @@ import { NetworkRule } from '../../../src/rules/network-rule';
 import { createRuleStorage } from './lookup-table';
 
 describe('getRuleTable', () => {
+    it('walks every table exactly once, in the order the engine uses', () => {
+        // The engine adds, matches and counts through this array; a table left
+        // out of it would never be filled, and a duplicate would be visited
+        // twice.
+        const everyTable = Object.values(RuleTable)
+            .filter((value): value is RuleTable => typeof value === 'number');
+
+        expect([...RULE_TABLE_ORDER].sort()).toEqual(everyTable.sort());
+    });
     it.each([
         // `||host^` and `||host/path` are keyed by hostname.
         ['||example.org^', RuleTable.Hostname],

@@ -436,7 +436,7 @@ describe('PreregisteredScriptsService', () => {
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
             expect(scripts.map((script) => script.id)).toEqual(['example.org']);
             expect(warn.mock.calls.map(([message]) => String(message))
-                .some((message) => message.includes('Keeping hostnames on the dynamic path'))).toBe(true);
+                .some((message) => message.includes('Keeping hosts on the dynamic path'))).toBe(true);
             warn.mockRestore();
         });
 
