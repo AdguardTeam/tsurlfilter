@@ -9,8 +9,10 @@
  * Zero allocations: only writes integer offsets into ctx.data.
  */
 
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { REGION_DOMAINS } from '../../errors/capacity-overflow-error';
 import { TokenType } from '../../tokenizer/token-types';
+import { UNCLOSED_REGEXP_LITERAL_ERROR } from '../../utils/constants';
 import type { ParserContext } from '../context';
 import {
     CTX_STATUS_HARD_CAP,
@@ -78,6 +80,10 @@ export class DomainListParser implements StructuralParser {
             let parenDepth = 0;
             let braceDepth = 0;
             let inRegex = false;
+            // A real separator seen while the item is still inside its regexp
+            // literal means that the literal is unclosed if no closing
+            // delimiter is found before the end of the value.
+            let hasUnescapedSeparator = false;
 
             // Check if this item is a regex domain. A negated regex domain
             // starts with `~`, so skip the exception marker and whitespace
@@ -116,11 +122,21 @@ export class DomainListParser implements StructuralParser {
                         braceDepth += 1;
                     } else if (t === TokenType.CloseBrace) {
                         braceDepth -= 1;
+                    } else if (t === separatorType && bracketDepth === 0 && parenDepth === 0 && braceDepth === 0) {
+                        // A real separator inside the literal. If no closing
+                        // delimiter follows, the list is invalid rather than
+                        // silently losing the rest of the items.
+                        hasUnescapedSeparator = true;
                     } else if (t === TokenType.Slash && bracketDepth === 0 && parenDepth === 0 && braceDepth === 0) {
-                        // Closing slash at depth 0 - end of regex
-                        itemEndTi += 1;
-                        inRegex = false;
-                        continue;
+                        // The closing delimiter is valid only when the
+                        // separator or the end of the value follows it.
+                        const afterSlashTi = skipWs(ctx, itemEndTi + 1, endTi);
+
+                        if (afterSlashTi >= endTi || types[afterSlashTi] === separatorType) {
+                            itemEndTi = afterSlashTi;
+                            inRegex = false;
+                            continue;
+                        }
                     }
 
                     // Inside regex at depth > 0, skip separator tokens
@@ -135,6 +151,18 @@ export class DomainListParser implements StructuralParser {
                 }
 
                 itemEndTi += 1;
+            }
+
+            // A regexp literal without a closing delimiter is valid only as
+            // the last item, e.g. `example.org|/a\/`. If a real separator
+            // follows the item, the parser would silently drop the rest of
+            // the list, so the list is syntactically invalid.
+            if (inRegex && hasUnescapedSeparator) {
+                throw new AdblockSyntaxError(
+                    UNCLOSED_REGEXP_LITERAL_ERROR,
+                    tokenStart(ctx, regexStartTi),
+                    ctx.ends[endTi - 1],
+                );
             }
 
             // Trim trailing whitespace from item

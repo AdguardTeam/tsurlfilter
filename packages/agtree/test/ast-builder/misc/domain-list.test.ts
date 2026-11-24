@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { DomainListAstBuilder } from '../../../src/ast-builder/misc/domain-list';
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { createParserContext, domainRecordsOffset, initParserContext } from '../../../src/parser/context';
 import { CR_DOMAIN_COUNT } from '../../../src/parser/cosmetic/constants';
 import { DomainListParser } from '../../../src/parser/misc/domain-list';
@@ -450,6 +451,108 @@ describe('DomainListParser', () => {
             expect(domainList!.children[2]).toMatchObject({
                 value: 'foo.net',
                 exception: true,
+            });
+        });
+    });
+
+    describe('regexp literals', () => {
+        const parseList = (source: string, separator: '|' | ',') => {
+            const { ctx } = createTokensAndContext(source);
+
+            DomainListParser.parse(
+                ctx,
+                0,
+                ctx.tokenCount,
+                separator === '|' ? TokenType.Pipe : TokenType.Comma,
+            );
+
+            return DomainListAstBuilder.parse(
+                source,
+                ctx.data,
+                ctx.data[CR_DOMAIN_COUNT],
+                domainRecordsOffset(ctx),
+                separator,
+                true,
+            );
+        };
+
+        const getItems = (source: string) => parseList(source, '|')!.children.map((item) => ({
+            value: item.value,
+            exception: item.exception,
+        }));
+
+        test('splits a regexp domain with an even backslash run before the closing delimiter', () => {
+            const regexDomain = String.raw`/a\\/`;
+            expect(getItems(String.raw`/a\\/|example.org`)).toEqual([
+                { value: regexDomain, exception: false },
+                { value: 'example.org', exception: false },
+            ]);
+        });
+
+        test('keeps a trailing regexp-like item with no closing delimiter opaque', () => {
+            expect(getItems(String.raw`example.org|/a\/`)).toEqual([
+                { value: 'example.org', exception: false },
+                { value: String.raw`/a\/`, exception: false },
+            ]);
+        });
+
+        test.each([
+            String.raw`/a\|b`,
+            String.raw`/a[|]b`,
+            String.raw`/a(b|c)`,
+            String.raw`/a(b|example.org`,
+        ])('keeps a trailing regexp-like item opaque: %s', (regexLikeValue) => {
+            expect(getItems(regexLikeValue)).toEqual([
+                { value: regexLikeValue, exception: false },
+            ]);
+        });
+
+        test('splits a list with a closed regexp domain in the middle', () => {
+            const regexDomain = String.raw`/a\\/`;
+            expect(getItems(String.raw`example.org|/a\\/|example.com`)).toEqual([
+                { value: 'example.org', exception: false },
+                { value: regexDomain, exception: false },
+                { value: 'example.com', exception: false },
+            ]);
+        });
+
+        test('keeps a valid regexp domain with the separator inside a group as one item', () => {
+            const regexDomain = String.raw`/examp[lp]e\.(com|org)/`;
+            expect(getItems(regexDomain)).toEqual([
+                { value: regexDomain, exception: false },
+            ]);
+        });
+
+        test('keeps a value opaque when a later closing delimiter ends it', () => {
+            const regexLikeValue = String.raw`/a\/|example.org|/b/`;
+            expect(getItems(`~${regexLikeValue}`)).toEqual([
+                { value: regexLikeValue, exception: true },
+            ]);
+        });
+
+        test.each([
+            { source: String.raw`~/a\/|example.org`, start: 1 },
+            { source: String.raw`/a\/|example.org`, start: 0 },
+            { source: String.raw`~/|example.org`, start: 1 },
+            { source: String.raw`/a\|b|example.org`, start: 0 },
+            { source: String.raw`/a[|]b|example.org`, start: 0 },
+            { source: String.raw`/a(b|c)|example.org`, start: 0 },
+            { source: String.raw`/a/x|example.org`, start: 0 },
+        ])('throws on an unclosed regexp literal: $source', ({ source, start }) => {
+            const { ctx } = createTokensAndContext(source);
+            let error: unknown;
+
+            try {
+                DomainListParser.parse(ctx, 0, ctx.tokenCount, TokenType.Pipe);
+            } catch (e) {
+                error = e;
+            }
+
+            expect(error).toBeInstanceOf(AdblockSyntaxError);
+            expect(error).toMatchObject({
+                message: 'Unclosed regexp literal, no closing delimiter found',
+                start,
+                end: source.length,
             });
         });
     });

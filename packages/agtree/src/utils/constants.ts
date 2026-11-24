@@ -308,3 +308,9 @@ export const NULL = 0;
 export const UINT8_MAX = 255;
 export const UINT16_MAX = 65535;
 export const UINT32_MAX = 4294967295;
+
+/**
+ * Error message for a regexp literal without a closing delimiter that is
+ * followed by another list item.
+ */
+export const UNCLOSED_REGEXP_LITERAL_ERROR = 'Unclosed regexp literal, no closing delimiter found';

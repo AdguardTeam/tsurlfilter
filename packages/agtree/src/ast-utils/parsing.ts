@@ -40,7 +40,7 @@ import { ModifierParser } from '../parser/misc/modifier';
 import { NR_MODIFIER_RECORDS_OFFSET } from '../parser/network/constants';
 import { TokenType } from '../tokenizer/token-types';
 import { Tokenizer } from '../tokenizer/tokenizer';
-import { PIPE_MODIFIER_SEPARATOR } from '../utils/constants';
+import { PIPE_MODIFIER_SEPARATOR, UNCLOSED_REGEXP_LITERAL_ERROR } from '../utils/constants';
 import { isValidNoopModifier } from '../utils/noop-modifier';
 
 const TOKEN_CAPACITY = 1024;
@@ -124,6 +124,7 @@ export const LIST_PARSE_ERROR_PREFIX = {
     NO_SEPARATOR_AT_THE_BEGINNING: 'Value list cannot start with a separator',
     NO_SEPARATOR_AT_THE_END: 'Value list cannot end with a separator',
     NO_WHITESPACE_AFTER_NEGATION: 'Exception marker cannot be followed by whitespace',
+    UNCLOSED_REGEXP_LITERAL: UNCLOSED_REGEXP_LITERAL_ERROR,
 };
 
 /**
