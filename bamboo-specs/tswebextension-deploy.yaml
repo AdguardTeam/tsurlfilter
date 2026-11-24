@@ -15,7 +15,7 @@ npmjs • 4.x: &npmjs
   variables: &npmjs-variables
     publishArgs: --access public
   docker:
-    image: adguard/node-ssh:22.22--0
+    image: adguard/node-ssh:22.23--0
     volumes:
       ${system.PNPM_DIR}: ${bamboo.cachePnpm}
   triggers: []
