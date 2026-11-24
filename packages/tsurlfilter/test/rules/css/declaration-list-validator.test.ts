@@ -12,6 +12,10 @@ describe('Declaration list validator', () => {
             // complex cases
             ['{ padding: 0 !important; background: white; height: calc(1px + 2px); }', false],
 
+            // CSS function names are case-insensitive, but the allowed ones must not be rejected
+            ['{ padding: 0; content: "URL(x)"; --URL: 1; height: CALC(1px + 2px) }', false],
+            ['{ background: none; color: VAR(--x) }', false],
+
             // extended CSS
             ['{ remove: true; }', true],
             ['{ padding: 0; remove: true; }', true],
@@ -50,6 +54,16 @@ describe('Declaration list validator', () => {
             ['{ \\75rl(http://example.com) }', false, "Using 'url()' is not allowed"],
             ['{ \\075\\072\\06C(http://example.com) }', false, "Using 'url()' is not allowed"],
             ['{ \\00075\\00072\\0006C(http://example.com) }', false, "Using 'url()' is not allowed"],
+
+            // CSS function names are case-insensitive
+            ['{ background: URL("http://example.com") }', false, "Using 'url()' is not allowed"],
+            ['{ background: Url("http://example.com") }', false, "Using 'url()' is not allowed"],
+            ['{ background: \\55 RL("http://example.com") }', false, "Using 'url()' is not allowed"],
+            ['{ background: IMAGE-SET("http://example.com" 1x) }', false, "Using 'image-set()' is not allowed"],
+            ['{ background: -WEBKIT-IMAGE-SET("http://example.com" 1x) }', false, "Using '-webkit-image-set()' is not allowed"],
+            ['{ background: CROSS-FADE("http://example.com") }', false, "Using 'cross-fade()' is not allowed"],
+            ['{ background: -WEBKIT-CROSS-FADE("http://example.com") }', false, "Using '-webkit-cross-fade()' is not allowed"],
+            ['{ background: IMAGE("http://example.com") }', false, "Using 'image()' is not allowed"],
 
             // complicated cases
             ['{ color: red; height: calc(1px + 2px); background-image: url(http://example.net) }', false, "Using 'url()' is not allowed"],

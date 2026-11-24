@@ -15,37 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with a different `$domain` list, and `Rule.originalPermittedDomains` and
   `Rule.originalRestrictedDomains` keep the `$domain` entries as written in the
   rule text.
-- Partial `$csp` exception support for exact conditions, exceptions which are
-  wider than the blocker, and clean domain exclusions, including a standalone
-  CSP conversion API which resolves exceptions across all filters at once. It
-  parses only candidate lines instead of the whole filter list; the regular
-  `convert()` still rejects an allowlist `$csp` rule and owns `$badfilter`
-  lines.
-- `TooManyError`, `isCspDeclarativeRule`, `UnexpectedConversionError`,
-  `RuleScanError`, `isRuleScanError` and `isUnavailableFilterSourceError` are now
-  exported, so an error can be checked with `instanceof`.
-  `IRulesetWithSourceMap` gained a required `getSourceRuleIndexes()`, which maps
-  a declarative rule id to source rule indexes without reading the rule text, and
-  `ComputedWithSourceMapOptions` describes the source-map-only options.
-- `excludeCspRules` conversion option leaves CSP rules to the standalone CSP
-  conversion.
-- `Rule.cspDirective` keeps the `$csp` directive in a dedicated field.
 
 ### Changed
-
-- A blocking `$csp` rule without a directive is a parse error instead of a
-  plain block rule, and so are a `$csp` directive which contains `report-`
-  (as in tsurlfilter), a value-less `$permissions` or `$removeheader`, and `$csp`
-  combined with `$cookie`: such rules used to degrade into a plain blocking
-  rule, to send violation reports to a third-party host, or to produce no rule
-  at all, because one declarative rule carries one action.
-- `$csp` rules with the same condition in one filter are no longer combined
-  into one policy: CSP applies only the first copy of a repeated directive, so a merge
-  either dropped the second policy or changed what is blocked through the
-  `default-src` fallback. Only identical policies are deduplicated now,
-  everything else stays in its own header, where a browser enforces both.
-- `Rule.writtenKeys` is gone: `$badfilter` compares the rule text as written
-  (`Rule.originalText`), so a rule no longer keeps a comparison key.
 
 ### Deprecated
 
@@ -68,15 +39,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a declarative rule merged from several source rules adds several ids. The
   unsafe list does not include unsafe rules that the regexp limit drops, so its
   length can differ from the number of excluded unsafe rules.
-- Non-ASCII values no longer break the conversion: a hostname in a URL filter is
-  converted to punycode, also after a `*` or `*.` wildcard and in unanchored or
-  scheme-prefixed patterns, the rest of the pattern is percent-encoded, and
-  `$domain`, `$to` and `$denyallow` values are lowercased before the punycode
-  conversion, so `ПРИМЕР.рф` and `пример.рф` give the same domain. A `*` inside
-  an anchored hostname is converted label by label, so `||пример.рф*/x` keeps
-  the wildcard a separator instead of folding it into a label, and the hostname
-  of the pattern is lowercased, so `||ПРИМЕР.рф^` matches the host
-  `xn--e1afmkfd.xn--p1ai`.
+- `$badfilter` with `$domain` cancelled the whole target rule in MV3 instead of
+  only the domains that the badfilter covers, so
+  `||example.com^$domain=foo.com|bar.com` stopped applying on `bar.com` after
+  `||example.com^$domain=foo.com,badfilter`. The converter now narrows the
+  `$domain` list of the target rule, as MV2 and CoreLibs do: it removes a target
+  entry that the badfilter covers and excludes a badfilter entry that overlaps a
+  kept target entry. Regular expression domains keep their case in the
+  comparison, so `$domain=/A/` no longer cancels `$domain=/a/`, and this
+  exception applies only while neither rule has a negated `~domain`; otherwise
+  the whole text is compared. A target rule without `$domain` is still cancelled
+  completely, because the converter narrows only an existing permitted list. A
+  blocking target rule whose kept entries a regexp badfilter entry may cover is
+  also cancelled completely unless the entry is an anchored literal domain that
+  cannot match a kept domain, because DNR cannot express an exclusion that
+  matches a regexp; an exception rule is narrowed instead. A `$badfilter` from a
+  dynamic ruleset still disables a whole rule from an already-built static
+  ruleset, because such a rule can only be disabled as a whole. Wildcard-TLD
+  entries are expanded with a popular TLD list, so an entry outside that list is
+  not covered.
+- Rules with an unclosed regexp literal that is followed by another list
+  item in a `$domain`, `$denyallow` or `$to` value are now rejected during
+  parsing instead of producing an invalid DNR domain, e.g.
+  `$domain=~/a\/|example.org` (via `@adguard/agtree`).
+
+### Security
+
+## [2.1.1] - 2026-11-17
+
+### Fixed
+
+- Fixed named `$removeparam` rules with an anchored pattern without a path,
+  e.g. `||example.com^$removeparam=foo`, being converted to regexp rules: a
+  filter list with thousands of them exceeded the DNR limit of 1000 regexp
+  rules. Such rules use `urlFilter` again, and only patterns with a path, e.g.
+  `||example.com/path^$removeparam=foo`, generate a regexp.
+
+[2.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-converter-v2.1.1
+
+## [2.1.0] - 2026-11-12
+
+### Added
+
+- Partial `$csp` exception support for exact conditions, exceptions which are
+  wider than the blocker, and clean domain exclusions, including a standalone
+  CSP conversion API, `FilterConverter.convertCspRules()`, which resolves
+  exceptions across all filters at once. It parses only candidate lines instead
+  of the whole filter list; the regular `convert()` still rejects an allowlist
+  `$csp` rule and owns `$badfilter` lines.
+- `TooManyError`, `UnexpectedConversionError` and `RuleScanError` are now
+  exported, so an error can be checked with `instanceof`;
+  `isCspDeclarativeRule`, `isRuleScanError` and `isUnavailableFilterSourceError`
+  are exported too. `IRulesetWithSourceMap` gained a required
+  `getSourceRuleIndexes()`, which returns `SourceRuleIdxAndFilterId[]` and maps a
+  declarative rule id to source rule indexes without reading the rule text, and
+  `ComputedWithSourceMapOptions` describes the source-map-only options.
+- `excludeCspRules` conversion option leaves CSP rules to the standalone CSP
+  conversion. It is available only in source-map mode (`withSourceMap: true`),
+  and `convertCspRules()` has to run afterwards, otherwise the CSP rules are not
+  converted at all.
+- `Rule.cspDirective` keeps the `$csp` directive in a dedicated field.
+- `Rule.originalText` keeps the rule text as written, and `$badfilter` compares
+  it, so a rule no longer needs a separate comparison key.
 - A `$csp` exception is applied only when it really covers the blocking rule:
   the URL identity is compared field by field, and an exception which would
   lose a part of its condition is rejected and reported instead of matching
@@ -89,23 +113,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `main_frame` rule is rejected only when the excluded domain overlaps the
   target domains: `*$csp=x,domain=a.com` + `@@||cdn.example.net^$csp,domain=a.com`
   is resolvable, while an exception for `sub.a.com` stays rejected.
-- A `$csp` exception does not cancel a blocking rule with a higher priority, so
-  `$important` wins over a value-less exception
-  (`@@||example.com^$csp` keeps `||example.com^$csp=...,important`) and over a
-  valued one, while MV2 cancels the blocking rule: `$important` keeps its
-  documented priority over exceptions.
-- A filter whose content cannot be read no longer fails the whole conversion:
-  the standalone CSP pass skips it and reports an `UnavailableFilterSourceError`.
-- The `$csp` directive is no longer replaced by a following value-bearing
-  advanced modifier: `$csp=script-src 'none',urltransform=/a/b/` used to emit a
-  CSP header with `/a/b/`, and `$redirect=noopjs,csp=x` redirected to the wrong
-  resource.
+- A `$csp` exception applies only when it outranks the blocking rule, so
+  `$important` keeps its policy: `@@||example.com^$csp` does not cancel
+  `||example.com^$csp=...,important`, and neither does a valued exception. In
+  MV2 only a value-less exception cancels the blocking rule; a valued one goes
+  through the same priority check.
+- A filter whose content cannot be read does not fail the standalone CSP pass:
+  the pass skips it and reports an `UnavailableFilterSourceError`.
 - A `$csp` exception is recognized when its pattern ends right after the domain
   (`@@||example.com$csp`), and a url filter is compared case-insensitively when
   the exception is not marked with `$match-case`, like DNR matches it. A pattern
   which ends right after the domain is a host prefix, so it is never called
-  disjoint from another domain: `||example.com$csp` with `@@||example.company^`
-  excludes `example.company` instead of dropping the exception.
+  disjoint from another domain: `||example.com$csp=script-src 'none'` with
+  `@@||example.company^$csp` excludes `example.company` instead of dropping the
+  exception.
+
+### Changed
+
+- A blocking `$csp` rule without a directive is a parse error instead of a
+  plain block rule, and so are a `$csp` directive which contains `report-`
+  (as in tsurlfilter), a value-less `$permissions` or `$removeheader`, and `$csp`
+  combined with `$cookie`: such rules used to degrade into a plain blocking
+  rule, to send violation reports to a third-party host, or to produce no rule
+  at all, because one declarative rule carries one action.
+- `$csp` rules with the same condition in one filter are no longer combined
+  into one policy: CSP applies only the first copy of a repeated directive, so a merge
+  either dropped the second policy or changed what is blocked through the
+  `default-src` fallback. Only identical policies are deduplicated now,
+  everything else stays in its own header, where a browser enforces both.
+
+### Fixed
+
+- Non-ASCII values no longer break the conversion: a hostname in a URL filter is
+  converted to punycode, also after a `*` or `*.` wildcard and in unanchored or
+  scheme-prefixed patterns, the rest of the pattern is percent-encoded, and
+  `$domain`, `$to` and `$denyallow` values are lowercased before the punycode
+  conversion, so `ПРИМЕР.рф` and `пример.рф` give the same domain. A `*` inside
+  an anchored hostname is converted label by label, so `||пример.рф*/x` keeps
+  the wildcard a separator instead of folding it into a label, and the hostname
+  of the pattern is lowercased, so `||ПРИМЕР.рф^` matches the host
+  `xn--e1afmkfd.xn--p1ai`.
+- The `$csp` directive is no longer replaced by a following value-bearing
+  advanced modifier: `$csp=script-src 'none',urltransform=/a/b/` used to emit a
+  CSP header with `/a/b/`, and `$redirect=noopjs,csp=x` redirected to the wrong
+  resource.
 - `$domain` did not match the target hostname of a document request. Chrome
   matches `initiatorDomains` against the request initiator only, and a document
   request started by the browser (new tab page, address bar, bookmark, reload)
@@ -131,25 +182,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and repeats, `$permissions` included — so `$redirect-rule` is no longer treated
   as `$redirect`, and spellings that are equivalent after parsing (e.g.
   `Set-Cookie` and `set-cookie`) do not negate each other.
-- `$badfilter` with `$domain` cancelled the whole target rule in MV3 instead of
-  only the domains that the badfilter covers, so
-  `||example.com^$domain=foo.com|bar.com` stopped applying on `bar.com` after
-  `||example.com^$domain=foo.com,badfilter`. The converter now narrows the
-  `$domain` list of the target rule, as MV2 and CoreLibs do: it removes a target
-  entry that the badfilter covers and excludes a badfilter entry that overlaps a
-  kept target entry. Regular expression domains keep their case in the
-  comparison, so `$domain=/A/` no longer cancels `$domain=/a/`, and this
-  exception applies only while neither rule has a negated `~domain`; otherwise
-  the whole text is compared. A target rule without `$domain` is still cancelled
-  completely, because the converter narrows only an existing permitted list. A
-  blocking target rule whose kept entries a regexp badfilter entry may cover is
-  also cancelled completely unless the entry is an anchored literal domain that
-  cannot match a kept domain, because DNR cannot express an exclusion that
-  matches a regexp; an exception rule is narrowed instead. A `$badfilter` from a
-  dynamic ruleset still disables a whole rule from an already-built static
-  ruleset, because such a rule can only be disabled as a whole. Wildcard-TLD
-  entries are expanded with a popular TLD list, so an entry outside that list is
-  not covered.
+- `$badfilter` with `$domain` still disables the rule it refers to for the
+  domains present in both lists, and plain domains are now compared
+  case-insensitively, so `$domain=foo.com,badfilter` also disables
+  `$domain=FOO.com`, which 2.0.0 left alone. Regular expression domains keep
+  their case, as before. This exception applies only while neither rule has a
+  negated `~domain`; otherwise the whole text is compared. As before, the whole
+  declarative rule is disabled rather than only the domains named in both lists.
 - `$badfilter` rules that also carried a convertible modifier (e.g.
   `||example.com^$csp=script-src 'none',badfilter`) were converted into
   declarative rules instead of disabling the rule they refer to.
@@ -159,8 +198,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [AdguardBrowserExtension#3615].
 
 [AdguardBrowserExtension#3615]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3615
-
-### Security
+[2.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-converter-v2.1.0
 
 ## [2.0.0] - 2026-09-29
 

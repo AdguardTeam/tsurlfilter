@@ -139,12 +139,16 @@ export class SimpleRegex {
      *
      * Please note, that the shortcut is always lower-case!
      *
+     * {@link SimpleRegex.isRegexPattern} performs the regexp literal check, as
+     * it does in {@link SimpleRegex.patternToRegexp}, so a pattern with an
+     * escaped closing slash, e.g. `/a\/`, is handled as a basic pattern here.
+     *
      * @param pattern Network rule's pattern.
      *
      * @returns The shortcut or the empty string if we could not extract any.
      */
     public static extractShortcut(pattern: string): string {
-        if (pattern.startsWith(this.MASK_REGEX_RULE) && pattern.endsWith(this.MASK_REGEX_RULE)) {
+        if (this.isRegexPattern(pattern)) {
             return this.extractRegexpShortcut(pattern);
         }
         return this.extractBasicShortcut(pattern);
@@ -443,6 +447,11 @@ export class SimpleRegex {
      * PatternToRegexp is a helper method for creating regular expressions from the simple
      * wildcard-based syntax which is used in basic filters.
      *
+     * {@link SimpleRegex.isRegexPattern} performs the regexp literal check, as
+     * it does in {@link SimpleRegex.extractShortcut}. A pattern with an
+     * escaped closing slash, e.g. `/a\/`, is escaped as a basic pattern, so the
+     * produced regular expression compiles.
+     *
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
      *
      * @param pattern Basic rule pattern.
@@ -459,7 +468,7 @@ export class SimpleRegex {
             return this.REGEX_ANY_CHARACTER;
         }
 
-        if (pattern.startsWith(this.MASK_REGEX_RULE) && pattern.endsWith(this.MASK_REGEX_RULE)) {
+        if (this.isRegexPattern(pattern)) {
             // This is a regex rule, just remove the regex markers
             return pattern.substring(this.MASK_REGEX_RULE.length, pattern.length - this.MASK_REGEX_RULE.length);
         }
@@ -633,12 +642,37 @@ export class SimpleRegex {
     /**
      * Check if pattern is Regex.
      *
+     * A pattern whose closing slash is escaped is not a regexp literal: in
+     * `/a\/` the backslash escapes the slash, so the literal is not
+     * terminated. The check counts the consecutive backslashes before the
+     * closing slash. An odd count escapes the slash and rejects the pattern.
+     * An even count leaves the slash as the delimiter, so `/a\\/` stays a
+     * regexp literal. This escape check matches
+     * `RegExpUtils.isRegexPattern()` in `@adguard/agtree`, so both packages
+     * agree about the same value. The other checks stay simpler here: this
+     * method does not trim the value. The bare delimiters `/` and `//` are
+     * rejected, because they are not regexp literals.
+     *
      * @param str The string to check.
      *
      * @returns True if the string is a regex pattern, false otherwise.
      */
     public static isRegexPattern(str: string): boolean {
-        return str.startsWith('/') && str.endsWith('/');
+        if (str.length <= this.MASK_REGEX_RULE.length * 2
+            || !str.startsWith(this.MASK_REGEX_RULE)
+            || !str.endsWith(this.MASK_REGEX_RULE)) {
+            return false;
+        }
+
+        const closingMarkerIndex = str.length - this.MASK_REGEX_RULE.length;
+
+        // Count the consecutive backslashes before the closing slash
+        let backslashes = 0;
+        for (let i = closingMarkerIndex - 1; i >= 0 && str[i] === '\\'; i -= 1) {
+            backslashes += 1;
+        }
+
+        return backslashes % 2 === 0;
     }
 
     /**

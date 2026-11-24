@@ -40,6 +40,9 @@ Key files:
 - `packages/tsurlfilter/test/engine/*.bench.ts` — engine startup (vs
   `tsurlfilter-v3`) and request matching over the committed request corpus
   (Node only)
+- `packages/tswebextension/test/lib/mv3/background/extcss-apply-fn.bench.ts` —
+  re-apply latency of the MV3 ExtendedCss injection payload for a 100-rule set
+  (jsdom)
 
 See `DEVELOPMENT.md` for how to run them and the full workflow.
 

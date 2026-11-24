@@ -538,6 +538,50 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest('http://example.com/'))).toEqual(true);
     });
 
+    it('matches a path modifier with an escaped closing slash as a plain pattern', () => {
+        // `/a\/` is not a regexp literal, so it stays a plain pattern.
+        const rule = createCosmeticRule(String.raw`[$path=/a\/]example.com##.foo`, 0);
+
+        // A browser never sends a backslash in the path: the URL parser turns
+        // it into `/`. The backslash survives in the query, so the test uses a
+        // query string.
+        expect(rule.match(createRequest(String.raw`https://example.com/x?q=/a\/`))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com/x?q=/a/'))).toEqual(false);
+        expect(rule.match(createRequest('https://example.com/a//'))).toEqual(false);
+
+        // The modifier-value escape layer unescapes `\\` to `\`, so
+        // `[$path=/a\\/]` reaches `Pattern` as `/a\/` and is a plain
+        // pattern too.
+        const escapedRule = createCosmeticRule(String.raw`[$path=/a\\/]example.com##.foo`, 0);
+        expect(escapedRule.pathModifier?.pattern).toEqual(String.raw`/a\/`);
+
+        // To keep a regexp literal after the unescape, the rule escapes the
+        // backslash, so the value reaches `Pattern` as `/a\\/`.
+        const regexpRule = createCosmeticRule(String.raw`[$path=/a\\\\/]example.com##.foo`, 0);
+        expect(regexpRule.pathModifier?.pattern).toEqual(String.raw`/a\\/`);
+        expect(regexpRule.match(createRequest('https://example.com/x?q=a\\'))).toEqual(true);
+        expect(regexpRule.match(createRequest('https://example.com/x?q=a'))).toEqual(false);
+    });
+
+    it('matches a url modifier with an escaped closing slash as a plain pattern', () => {
+        // `$url` is matched against the whole URL, not the relative path.
+        const rule = createCosmeticRule(String.raw`[$url=/a\/]##.foo`, 0);
+
+        expect(rule.match(createRequest(String.raw`https://example.com/x?q=/a\/`))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com/a//'))).toEqual(false);
+    });
+
+    it('matches a bare // path modifier only in a relative URL that contains //', () => {
+        // `//` is not a regexp literal. Before, it compiled to an empty regexp
+        // and matched every path.
+        const rule = createCosmeticRule('[$path=//]example.com##.foo', 0);
+
+        expect(rule.match(createRequest('https://example.com/'))).toEqual(false);
+        expect(rule.match(createRequest('https://example.com/a'))).toEqual(false);
+        expect(rule.match(createRequest('https://example.com//a'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com/x?q=//'))).toEqual(true);
+    });
+
     it('work if it matches path modifiers with regex included in the rule', () => {
         const testReString = String.raw`/\\/(sub1|sub2)\\/page\\.html/`;
         const rule = createCosmeticRule(`[$path=${testReString}]##.textad`, 0);
@@ -739,6 +783,26 @@ describe('CosmeticRule.CSS', () => {
             () => createCosmeticRule('*#$#* { background:cross-fade(\'https://hackvertor.co.uk/images/logo.gif\' 1x) }', 0),
         ).toThrowError(
             "Using 'cross-fade()' is not allowed",
+        );
+    });
+
+    it('throws error when cosmetic rule contains mixed-case unsafe functions', () => {
+        expect(
+            () => createCosmeticRule('example.org#$#body { background: URL("https://tracker.example/4.gif") }', 0),
+        ).toThrowError(
+            "Using 'url()' is not allowed",
+        );
+
+        expect(
+            () => createCosmeticRule('example.org#$#body { background: Image-Set("https://tracker.example/6.gif" 1x) }', 0),
+        ).toThrowError(
+            "Using 'image-set()' is not allowed",
+        );
+
+        expect(
+            () => createCosmeticRule('example.org#$#body { background: \\55 RL("https://tracker.example/11.gif") }', 0),
+        ).toThrowError(
+            "Using 'url()' is not allowed",
         );
     });
 
