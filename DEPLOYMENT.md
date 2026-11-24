@@ -163,16 +163,18 @@ section instead.
     release commit of that version, add the line to `ALL_LINES` in the
     workflow and to this list and `AGENTS.md`
     (`scripts/ci/check-package-lists.mjs` fails on a mismatch).
-  - **Branch protection required**: the pipeline runs without a GitHub
-    environment and publishes straight from the tip of each stable
-    branch, so push access to `stable/dnr-rulesets-*` is effectively
-    publish access (bypassing the `npm` environment review that gates
-    normal releases). These branches are covered only by the
-    organization-wide rulesets (no force push, committer email, no bare
-    issue references); the terraform-github repository rulesets
-    (`strict-master`, `require-ci-before-merge`) protect only `master` and
-    `release/**`. Provision a ruleset for `stable/dnr-rulesets-*` in
-    terraform-github to restrict pushes and deletion.
+  - **Branch protection required**: the pipeline publishes straight from
+    the tip of each stable branch, and its only environment,
+    `npm-stable-dnr-rulesets`, restricts the workflow ref (limited to
+    `master`), not the stable branch it builds, so push access to
+    `stable/dnr-rulesets-*` is effectively publish access (bypassing the
+    `npm` environment review that gates normal releases). These branches
+    are covered only by the organization-wide rulesets (no force push,
+    committer email, no bare issue references); the terraform-github
+    repository rulesets (`strict-master`, `require-ci-before-merge`)
+    protect only `master` and `release/**`. Provision a ruleset for
+    `stable/dnr-rulesets-*` in terraform-github to restrict pushes and
+    deletion.
 
 ## Publishing order
 

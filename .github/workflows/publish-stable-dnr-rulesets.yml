@@ -114,8 +114,21 @@ jobs:
             # The cron string of this round, not the wall clock: a re-run keeps
             # `github.event.schedule`, so a re-run of the Monday round still
             # publishes to npm on a Tuesday, and a re-run of a midweek round on
-            # a Monday stays AK-only. Must match the Monday `cron:` entry above.
-            if [ "$EVENT_SCHEDULE" = "17 0 * * 1" ]; then NPM_ROUND=true; else NPM_ROUND=false; fi
+            # a Monday stays AK-only. Both `cron:` entries are named here, and
+            # an unknown one fails the round instead of dropping the weekly npm
+            # publish silently.
+            case "$EVENT_SCHEDULE" in
+              '17 0 * * 1')
+                NPM_ROUND=true
+                ;;
+              '17 0 * * 0,2-6')
+                NPM_ROUND=false
+                ;;
+              *)
+                echo "::error::Unknown schedule '$EVENT_SCHEDULE'; the npm cadence knows only '17 0 * * 1' (Monday, npm) and '17 0 * * 0,2-6' (other days, AK only); update this case together with the cron entries"
+                exit 1
+                ;;
+            esac
           elif [ "$REQUESTED_PUBLISH_NPM" = "true" ]; then
             NPM_ROUND=true
           else
