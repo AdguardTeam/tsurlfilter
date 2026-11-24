@@ -19,12 +19,15 @@ import { type TokenizerContextFunction } from '../../common/types/function-proto
  * the next code point, except a quotation mark: a quotation mark starts a literal
  * even after a reverse solidus, because after CSS unescaping it delimits a literal.
  *
- * A CSS-escaped quotation mark may be a plain character of a malformed argument
- * instead of the start of a literal, e.g. in `:xpath(//div[contains(text(),\')])`.
- * If the literal it opens does not close before the end of the source, the scan is
- * repeated with this quotation mark treated as plain text. Any other quotation mark
- * must close its literal: a literal that is not closed leaves the argument
- * unterminated, so the missing parenthesis is reported instead of being hidden.
+ * If a literal does not close before the end of the source, the scan is repeated with
+ * its opening quotation mark treated as plain text when that quotation mark is
+ * CSS-escaped or an apostrophe. A CSS-escaped quotation mark may be a plain character
+ * of a malformed argument instead of the start of a literal, e.g. in
+ * `:xpath(//div[contains(text(),\')])`. An apostrophe may be plain too: the previous
+ * handler ignored apostrophes, so such arguments loaded before. A plain double
+ * quotation mark that never closes leaves the argument unterminated instead, because
+ * the previous handler already rejected such arguments, so the missing parenthesis is
+ * reported rather than hidden.
  *
  * @param context Reference to the tokenizer context instance, positioned at the start
  * of the argument.
@@ -105,14 +108,16 @@ const findArgumentEnd = (context: TokenizerContext): number => {
             return length;
         }
 
-        // A plain quotation mark that never closes is a typo, not a literal. The argument
-        // stays unterminated, so the closing parenthesis inside the literal is not
-        // tokenized and the parser reports the error.
-        if (!openingQuoteEscaped) {
+        // A plain double quotation mark that never closes is a typo, not a literal. The
+        // argument stays unterminated, so the closing parenthesis inside the literal is
+        // not tokenized and the parser reports the error. An apostrophe is retried
+        // instead, because the previous handler ignored apostrophes, so such rules
+        // loaded before.
+        if (!openingQuoteEscaped && stringQuote !== CodePoint.Apostrophe) {
             return length;
         }
 
-        // The escaped quotation mark is plain text, so the scan is repeated without it
+        // The quotation mark is plain text, so the scan is repeated without it
         plainQuotes.add(openingQuote);
     }
 };
