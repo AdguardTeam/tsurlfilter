@@ -40,6 +40,9 @@
         "url": "git+https://github.com/AdGuardSoftwareLimited/ext-tsurlfilter.git",
         "directory": "packages/adguard-api"
     },
+    "engines": {
+        "node": ">=22.23.5"
+    },
     "bugs": {
         "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
     },

@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING:** `engines.node` now requires Node.js `22.23.5` or newer, so
+  the package no longer installs on older Node.js versions.
+
 ### Deprecated
 
 ### Removed

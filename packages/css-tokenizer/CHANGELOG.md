@@ -13,6 +13,9 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 ### Changed
 
+- **BREAKING:** `engines.node` now requires Node.js `22.23.5` or newer, so
+  the package no longer installs on older Node.js versions.
+
 ### Deprecated
 
 ### Removed
