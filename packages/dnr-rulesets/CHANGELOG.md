@@ -15,6 +15,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+### Fixed
+
+- `$badfilter` rules with `$domain` now cancel a target rule only for the
+  domains that the badfilter covers, so the built MV3 rulesets keep rules that
+  were previously removed for every domain. A target rule without `$domain` is
+  still cancelled completely.
+- Rules with an unclosed regexp literal that is followed by another list
+  item in a `$domain`, `$denyallow` or `$to` value are now rejected during
+  conversion instead of producing an invalid DNR domain (via
+  `@adguard/dnr-converter`).
+
+### Security
+
+## [6.1.1] - 2026-11-17
+
+[6.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v6.1.1
+
+## [6.1.0] - 2026-11-13
+
+### Added
+
+- AdGuard Italian filter (ID 26) and AdGuard Polish filter (ID 27) to the MV3
+  rulesets (`chromium-mv3`, `edge-mv3`, `opera-mv3`). Updated
+  `tasks/validator-data.json` accordingly.
+
+### Changed
+
+- Inherited the updated `@adguard/dnr-converter` behavior: `$badfilter` compares
+  the whole modifier list as written, different `$csp` policies are no longer
+  merged into one header, and `$csp` rules with an empty or `report-` directive
+  or combined with `$cookie` are parse errors. Note that this package builds rule sets
+  through `convert()`, which still rejects allowlist `$csp` rules: `$csp`
+  exceptions are resolved by `tswebextension` at runtime, not here. Rebuilt CSP
+  rules replace only the CSP rules stored in the metadata, so rule sets must be
+  built with `exclude-unsafe-rules`; otherwise the static copy of a CSP rule
+  stays in the rule set and a `$csp` exception has no effect.
+
+### Removed
+
 - Removed Polish Anti Adblock Filters (ID 238) from the MV3 rulesets
   (`chromium-mv3`, `edge-mv3`, `opera-mv3`), because the filter is no longer
   present in the filters metadata on `filters.adtidy.org`.
@@ -32,6 +71,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   successful exit status after copy errors.
 
 ### Security
+
+[6.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v6.1.0
 
 ## [6.0.0] - 2026-09-29
 

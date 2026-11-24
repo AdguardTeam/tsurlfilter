@@ -33,6 +33,31 @@ describe('SimpleRegex.patternToRegexp', () => {
         expect(regex).toEqual(expected);
     });
 
+    it('treats a pattern with an escaped closing slash as a basic pattern', () => {
+        const regexText = SimpleRegex.patternToRegexp(String.raw`/a\/`);
+        const expected = String.raw`\/a\\\/`;
+        expect(regexText).toEqual(expected);
+
+        const regexp = new RegExp(regexText);
+        expect(regexp.test(String.raw`/a\/`)).toBe(true);
+    });
+
+    it('keeps an escaped backslash before the closing slash as a regexp delimiter', () => {
+        const regexText = SimpleRegex.patternToRegexp(String.raw`/a\\/`);
+        expect(regexText).toEqual(String.raw`a\\`);
+
+        const regexp = new RegExp(regexText);
+        expect(regexp.test('a\\')).toBe(true);
+    });
+
+    it('treats bare delimiters as basic patterns', () => {
+        expect(SimpleRegex.patternToRegexp('/')).toEqual('\\/');
+        expect(SimpleRegex.patternToRegexp('//')).toEqual('\\/\\/');
+
+        expect(new RegExp(SimpleRegex.patternToRegexp('/')).test('/')).toBe(true);
+        expect(new RegExp(SimpleRegex.patternToRegexp('//')).test('//')).toBe(true);
+    });
+
     it('works if detects "any character" patterns properly', () => {
         const regex = SimpleRegex.patternToRegexp('||');
         const expected = '.*';
@@ -50,6 +75,22 @@ describe('SimpleRegex.extractShortcut', () => {
 
         shortcut = SimpleRegex.extractShortcut('|https://*example.org/path');
         expect(shortcut).toEqual('example.org/path');
+    });
+
+    it('uses the basic path for a pattern with an escaped closing slash', () => {
+        expect(SimpleRegex.extractShortcut(String.raw`/a\/`)).toEqual(String.raw`/a\/`);
+    });
+
+    it('uses the regexp path for a pattern with an escaped backslash before the closing slash', () => {
+        expect(SimpleRegex.extractShortcut(String.raw`/a\\/`)).toEqual('a');
+    });
+
+    it('uses the basic path for bare delimiters', () => {
+        expect(SimpleRegex.extractShortcut('/')).toEqual('/');
+        expect(SimpleRegex.extractShortcut('//')).toEqual('//');
+
+        // The regexp shortcut path still discards patterns that are too short.
+        expect(SimpleRegex.extractRegexpShortcut('//')).toEqual('');
     });
 
     it('works if it is able to extract regex shortcuts', () => {
@@ -165,11 +206,8 @@ describe('SimpleRegex.extractShortcut', () => {
         expect(shortcut).toEqual('d');
     });
 
-    it('works if it discards incorrect patterns', () => {
-        let shortcut = SimpleRegex.extractShortcut('//');
-        expect(shortcut).toEqual('');
-
-        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/[a-z]?example.org/');
+    it('extracts shortcuts from edge-case regexp patterns', () => {
+        let shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/[a-z]?example.org/');
         expect(shortcut).toEqual('example');
 
         shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/(?<!test.)example.org/');
@@ -190,13 +228,54 @@ describe('SimpleRegex.patternFromString', () => {
 describe('SimpleRegex.fromLiteral', () => {
     test.each([
         { input: '/test/', output: /test/ },
-        { input: '/test/gi', output: /test/gi },
+        { input: '/test/gi', output: /test/i },
         { input: 'plain string', output: 'plain string' },
         { input: '/unclosed', output: '/unclosed' },
         { input: '/invalid/xyz', output: '/invalid/xyz' },
         { input: '/[a-z]+/i', output: /[a-z]+/i },
         { input: '/(unclosed/i', output: '/(unclosed/i' },
         { input: '/[/]/', output: /[/]/ },
+        { input: '/a\\/b/', output: /a\/b/ },
+        // A slash after an escaped backslash is not escaped, so the literal is
+        // parsed and compiled
+        { input: String.raw`/a\\/`, output: /a\\/ },
+        // The `]` after an escaped backslash closes the character class
+        { input: String.raw`/a[\\]b/`, output: /a[\\]b/ },
+        // An escaped backslash before the delimiter, with flags after it
+        { input: String.raw`/foo\\/i`, output: /foo\\/i },
+        // An empty pattern is not treated as a regular expression literal
+        { input: '//', output: '//' },
+        // Valid PCRE2 but invalid JavaScript: the engine cannot compile it
+        { input: '/a++/', output: '/a++/' },
+        // The last slash is the delimiter, so the slash after the escaped
+        // backslash stays in the pattern (AG-61628)
+        // eslint-disable-next-line prefer-regex-literals
+        { input: String.raw`/a\\/b/`, output: new RegExp(String.raw`a\\/b`) },
+        {
+            input: String.raw`/a\\/b/i`,
+            // eslint-disable-next-line prefer-regex-literals
+            output: new RegExp(String.raw`a\\/b`, 'i'),
+        },
+        // eslint-disable-next-line prefer-regex-literals
+        { input: String.raw`/\\//`, output: new RegExp(String.raw`\\/`) },
+        // An uppercase flag is not stripped, so the value stays a string
+        { input: '/ads/I', output: '/ads/I' },
+        // CoreLibs takes the last slash as the delimiter, so `///` is the
+        // regexp `/`.
+        { input: '///', output: /\// },
+        // Same last-slash rule: the pattern is `/a`, not an empty string.
+        { input: '//a/', output: /\/a/ },
+        { input: '//abc/', output: /\/abc/ },
+        // The split produces an invalid JavaScript pattern, so the value
+        // stays a string
+        { input: String.raw`/a\/`, output: String.raw`/a\/` },
+        { input: String.raw`/foo\\/`, output: /foo\\/ },
+        { input: String.raw`/[\\]/`, output: /[\\]/ },
+        { input: String.raw`/[\\]/i`, output: /[\\]/i },
+        { input: String.raw`/foo\/bar/`, output: /foo\/bar/ },
+        // The last-slash split keeps the escaped slashes in the pattern, so
+        // the expected RegExp spells them out.
+        { input: String.raw`/https:\\/\\/ads/`, output: /https:\\\/\\\/ads/ },
     ])("returns '$output' for '$input'", ({ input, output }) => {
         const result = SimpleRegex.fromLiteral(input);
         if (typeof result === 'string') {
@@ -204,6 +283,37 @@ describe('SimpleRegex.fromLiteral', () => {
         } else {
             expect(result).toEqual(output);
         }
+    });
+
+    test.each([
+        { input: '/foo/g', expectedFlags: '' },
+        { input: '/foo/y', expectedFlags: '' },
+        { input: '/foo/gi', expectedFlags: 'i' },
+        { input: '/foo/is', expectedFlags: 'is' },
+        { input: '/foo/gims', expectedFlags: 'is' },
+        { input: '/foo/mu', expectedFlags: 'u' },
+        { input: '/foo/gu', expectedFlags: 'u' },
+        { input: '/foo/v', expectedFlags: 'v' },
+    ])("keeps only the 'i', 's', 'u', and 'v' flags for '$input'", ({ input, expectedFlags }) => {
+        const result = SimpleRegex.fromLiteral(input);
+
+        expect(result).toBeInstanceOf(RegExp);
+        expect((result as RegExp).flags).toBe(expectedFlags);
+    });
+
+    it('keeps the `u` flag so that Unicode properties are parsed', () => {
+        const result = SimpleRegex.fromLiteral('/\\p{L}+/u') as RegExp;
+
+        expect(result.flags).toBe('u');
+        expect(result.test('абв')).toBe(true);
+    });
+
+    it('does not advance lastIndex on repeated test() calls', () => {
+        const result = SimpleRegex.fromLiteral('/foo/g') as RegExp;
+
+        expect(result.test('foo')).toBe(true);
+        expect(result.test('foo')).toBe(true);
+        expect(result.test('foo')).toBe(true);
     });
 });
 
@@ -234,5 +344,13 @@ describe('SimpleRegex.isRegexPattern', () => {
         expect(SimpleRegex.isRegexPattern('/path.html/')).toBe(true);
         expect(SimpleRegex.isRegexPattern('/path.html')).toBe(false);
         expect(SimpleRegex.isRegexPattern('path.html')).toBe(false);
+        // The closing slash is escaped, so this is not a regexp literal
+        expect(SimpleRegex.isRegexPattern('/a\\/')).toBe(false);
+        // The two backslashes are an escaped backslash, so the closing slash
+        // is a delimiter
+        expect(SimpleRegex.isRegexPattern('/a\\\\/')).toBe(true);
+        // The bare delimiters are not regexp literals
+        expect(SimpleRegex.isRegexPattern('/')).toBe(false);
+        expect(SimpleRegex.isRegexPattern('//')).toBe(false);
     });
 });

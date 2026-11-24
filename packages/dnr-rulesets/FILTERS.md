@@ -35,6 +35,8 @@
         - [AdGuard Turkish filter](#chromium-mv3-filters-language-specific-adguard-turkish-filter)
         - [AdGuard French filter](#chromium-mv3-filters-language-specific-adguard-french-filter)
         - [AdGuard Ukrainian filter](#chromium-mv3-filters-language-specific-adguard-ukrainian-filter)
+        - [AdGuard Italian filter](#chromium-mv3-filters-language-specific-adguard-italian-filter)
+        - [AdGuard Polish filter](#chromium-mv3-filters-language-specific-adguard-polish-filter)
         - [Bulgarian list](#chromium-mv3-filters-language-specific-bulgarian-list)
         - [EasyList Czech and Slovak](#chromium-mv3-filters-language-specific-easylist-czech-and-slovak)
         - [EasyList Hebrew](#chromium-mv3-filters-language-specific-easylist-hebrew)
@@ -94,6 +96,8 @@
         - [AdGuard Turkish filter](#edge-mv3-filters-language-specific-adguard-turkish-filter)
         - [AdGuard French filter](#edge-mv3-filters-language-specific-adguard-french-filter)
         - [AdGuard Ukrainian filter](#edge-mv3-filters-language-specific-adguard-ukrainian-filter)
+        - [AdGuard Italian filter](#edge-mv3-filters-language-specific-adguard-italian-filter)
+        - [AdGuard Polish filter](#edge-mv3-filters-language-specific-adguard-polish-filter)
         - [Bulgarian list](#edge-mv3-filters-language-specific-bulgarian-list)
         - [EasyList Czech and Slovak](#edge-mv3-filters-language-specific-easylist-czech-and-slovak)
         - [EasyList Hebrew](#edge-mv3-filters-language-specific-easylist-hebrew)
@@ -153,6 +157,8 @@
         - [AdGuard Turkish filter](#opera-mv3-filters-language-specific-adguard-turkish-filter)
         - [AdGuard French filter](#opera-mv3-filters-language-specific-adguard-french-filter)
         - [AdGuard Ukrainian filter](#opera-mv3-filters-language-specific-adguard-ukrainian-filter)
+        - [AdGuard Italian filter](#opera-mv3-filters-language-specific-adguard-italian-filter)
+        - [AdGuard Polish filter](#opera-mv3-filters-language-specific-adguard-polish-filter)
         - [Bulgarian list](#opera-mv3-filters-language-specific-bulgarian-list)
         - [EasyList Czech and Slovak](#opera-mv3-filters-language-specific-easylist-czech-and-slovak)
         - [EasyList Hebrew](#opera-mv3-filters-language-specific-easylist-hebrew)
@@ -385,6 +391,20 @@ Filter that enables ad blocking on websites in Ukrainian language.
 
 - Filter ID: **23**
 - Path: `dist/filters/chromium-mv3/declarative/ruleset_23/ruleset_23.json`
+
+#### <a id="chromium-mv3-filters-language-specific-adguard-italian-filter"></a> AdGuard Italian filter
+
+EasyList Italy + AdGuard Italian filter. Filter list that specifically removes ads on websites in the Italian language.
+
+- Filter ID: **26**
+- Path: `dist/filters/chromium-mv3/declarative/ruleset_26/ruleset_26.json`
+
+#### <a id="chromium-mv3-filters-language-specific-adguard-polish-filter"></a> AdGuard Polish filter
+
+Official Polish filters for AdBlock, uBlock Origin & AdGuard + AdGuard Polish filter. Filter list that specifically removes ads on websites in the Polish language.
+
+- Filter ID: **27**
+- Path: `dist/filters/chromium-mv3/declarative/ruleset_27/ruleset_27.json`
 
 #### <a id="chromium-mv3-filters-language-specific-bulgarian-list"></a> Bulgarian list
 
@@ -761,6 +781,20 @@ Filter that enables ad blocking on websites in Ukrainian language.
 - Filter ID: **23**
 - Path: `dist/filters/edge-mv3/declarative/ruleset_23/ruleset_23.json`
 
+#### <a id="edge-mv3-filters-language-specific-adguard-italian-filter"></a> AdGuard Italian filter
+
+EasyList Italy + AdGuard Italian filter. Filter list that specifically removes ads on websites in the Italian language.
+
+- Filter ID: **26**
+- Path: `dist/filters/edge-mv3/declarative/ruleset_26/ruleset_26.json`
+
+#### <a id="edge-mv3-filters-language-specific-adguard-polish-filter"></a> AdGuard Polish filter
+
+Official Polish filters for AdBlock, uBlock Origin & AdGuard + AdGuard Polish filter. Filter list that specifically removes ads on websites in the Polish language.
+
+- Filter ID: **27**
+- Path: `dist/filters/edge-mv3/declarative/ruleset_27/ruleset_27.json`
+
 #### <a id="edge-mv3-filters-language-specific-bulgarian-list"></a> Bulgarian list
 
 Additional filter list for websites in Bulgarian.
@@ -1135,6 +1169,20 @@ Filter that enables ad blocking on websites in Ukrainian language.
 
 - Filter ID: **23**
 - Path: `dist/filters/opera-mv3/declarative/ruleset_23/ruleset_23.json`
+
+#### <a id="opera-mv3-filters-language-specific-adguard-italian-filter"></a> AdGuard Italian filter
+
+EasyList Italy + AdGuard Italian filter. Filter list that specifically removes ads on websites in the Italian language.
+
+- Filter ID: **26**
+- Path: `dist/filters/opera-mv3/declarative/ruleset_26/ruleset_26.json`
+
+#### <a id="opera-mv3-filters-language-specific-adguard-polish-filter"></a> AdGuard Polish filter
+
+Official Polish filters for AdBlock, uBlock Origin & AdGuard + AdGuard Polish filter. Filter list that specifically removes ads on websites in the Polish language.
+
+- Filter ID: **27**
+- Path: `dist/filters/opera-mv3/declarative/ruleset_27/ruleset_27.json`
 
 #### <a id="opera-mv3-filters-language-specific-bulgarian-list"></a> Bulgarian list
 

@@ -53,12 +53,17 @@ export class HtmlRuleSelector {
              * starting from document for the first selector and filtering the matched elements on each step.
              */
             let currentContainers: Set<Element> = new Set([doc.documentElement]);
-            for (const selector of complexSelector) {
+            for (const [index, selector] of complexSelector.entries()) {
                 const nextContainers: Set<Element> = new Set();
 
                 for (const container of currentContainers) {
+                    // Query the first selector from the document itself,
+                    // because `Element.querySelectorAll()` searches descendants only
+                    // and thus never returns the document element for `html` or `:root`.
+                    const queryRoot: Document | Element = index === 0 ? doc : container;
+
                     const matchedElements = HtmlRuleSelector
-                        .queryContainer(container, selector)
+                        .queryContainer(queryRoot, selector)
                         .filter((element) => HtmlRuleSelector.matchesSelector(element, selector));
                     matchedElements.forEach((element) => nextContainers.add(element));
                 }
@@ -82,7 +87,7 @@ export class HtmlRuleSelector {
      * @returns Array of matched elements.
      */
     private static queryContainer(
-        container: Element,
+        container: Document | Element,
         selector: HtmlSelector,
     ): Element[] {
         // Special case: If we are in the first selector and nativeSelector is empty,
@@ -90,6 +95,10 @@ export class HtmlRuleSelector {
         // because AGTree wouldn't allow creation of empty selectors.
         // This can happen with rules like `example.org$$:contains(...)`
         if (!selector.combinator && !selector.nativeSelector) {
+            if (container instanceof Document) {
+                return container.documentElement ? [container.documentElement] : [];
+            }
+
             return [container];
         }
 
@@ -114,18 +123,29 @@ export class HtmlRuleSelector {
             }
         }
 
-        // child combinator needs special handling with :scope
+        // Child combinator means that the matched elements are direct children of the container
         if (selector.combinator === '>') {
+            if (!(container instanceof Element)) {
+                return [];
+            }
+
             try {
-                return Array.from(container.querySelectorAll(`:scope > ${nativeSelector}`));
+                return Array.from(container.children)
+                    .filter((child) => child.matches(nativeSelector));
             } catch (e) {
-                logger.debug(`[tsweb.HtmlRuleSelector.queryContainer]: querySelectorAll failed for selector ":scope > ${nativeSelector}":`, e);
+                logger.debug(`[tsweb.HtmlRuleSelector.queryContainer]: matches failed for selector "${nativeSelector}":`, e);
                 return [];
             }
         }
 
         // Unknown combinator
         if (selector.combinator !== '+' && selector.combinator !== '~') {
+            return [];
+        }
+
+        // Sibling combinators are only possible for element containers,
+        // because the document has no siblings
+        if (!(container instanceof Element)) {
             return [];
         }
 

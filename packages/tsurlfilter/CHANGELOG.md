@@ -9,6 +9,101 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added `normalizeAllowlistDomain()` — it turns an allowlist entry into the domain
+  it describes: lower case, without the scheme, the credentials, the port, the path,
+  the query or the fragment that an imported or an old entry may carry, and without
+  the `www.` prefix and the root label dot the generated rule covers anyway.
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- Allowlist rules generated for a domain are now anchored to the URL host, so an
+  entry for `example.com` no longer disables filtering on hosts that only start
+  with it, e.g. `example.community` or `example.com.evil.org`, and no longer
+  matches a URL that merely contains `//example.com` in its path or query. A
+  `*.example.com` entry keeps the same host boundary, so it no longer covers such
+  hosts either.
+- Allowlist entries are lowercased and their regexp metacharacters are escaped, a
+  URL with credentials or a root label dot (`https://user:pass@example.com/`,
+  `https://example.com./`) is matched by its host, and entries without a domain — a
+  bare `*.`, `*` or `**` — are rejected instead of producing a rule that matched
+  every URL (`*.`) or only URLs containing `www.` (`*`).
+- An entry that carries a URL is reduced to the domain it names, so
+  `example.com/path`, `example.com?x=1`, `example.com:8080`,
+  `https://user@example.com./` and `example.com\path` all cover `example.com`,
+  while `www.*` keeps its prefix and covers the hosts under `www.`.
+- A `*` inside an allowlist entry now matches within the host only, so `example.*`
+  no longer allowlists `https://example.com@evil.org/` and `*example.com` no longer
+  matches `https://evil.org//example.com/`. The `*.` form is anchored the same way,
+  so `*.example.*` and the MV3 `*.` twin of `*example.com` keep their host boundary
+  too.
+- `SimpleRegex.isRegexPattern()` now rejects a pattern whose closing slash
+  is escaped, e.g. `/a\/`, and the bare delimiters `/` and `//`. It counts
+  the consecutive backslashes before the closing slash: an odd count
+  escapes the slash, an even count does not. `$path` and `$url` values
+  with an escaped closing slash, e.g. `[$path=/a\/]example.com##.foo`, are
+  no longer regexps. The engine matches them as plain patterns, so they
+  match their literal text instead of compiling to an invalid regexp and
+  never matching. For `http` and `https` URLs, the URL parser keeps a
+  backslash only in the query or fragment, so the example matches
+  `https://example.com/?q=/a\/`, not a page path. `/` still matches every
+  path as a plain pattern, while `[$path=//]` used to match every path and
+  now matches only relative URLs that contain `//`.
+- `$domain` and `$denyallow` values whose unclosed regexp literal is
+  followed by another list item, e.g. `$domain=~/a\/|example.org` and
+  `$domain=~/|example.org`, are now rejected by the list parser with
+  `Unclosed regexp literal, no closing delimiter found` (via
+  [@adguard/agtree]). Previously the parser kept the rest of the list in
+  one value that could not match a host, so a negated value left an empty
+  restriction and the rule applied on every site.
+  `DomainModifier` now rejects a single trailing `$domain` or `$denyallow`
+  value that starts with a slash and is not a regexp literal with
+  `Invalid regular expression as domain pattern`. Before, the bare
+  delimiters `/` and `//` compiled to an empty regexp that matched every
+  domain, a value with an escaped closing slash failed to compile and was
+  rejected with the same message, and a slash-leading value without a
+  closing slash became a plain domain that never matched a host, so a
+  negated value left an empty restriction and the rule applied on every
+  site. A value that ends with an escaped backslash, e.g. `/a\\/`, stays a
+  regexp literal.
+- Bare `$removeparam` rules no longer treat a `?` inside a hash fragment as a
+  query delimiter, so `https://example.com/page#route?param=1` stays unchanged.
+  They also keep the hash fragment when they remove a real query string, e.g.
+  `https://example.com/page?a=1#section` becomes
+  `https://example.com/page#section` instead of `https://example.com/page`.
+- HTML filtering rules with a right parenthesis inside a regexp character
+  class now load, e.g. `$$div:contains(/a[)]b/)` and
+  `##^div:has-text(/a[)]b/)` (via [@adguard/agtree]). uBO `:contains()` rules
+  such as `##^div:contains(foo)` are no longer reported as a conversion error.
+- uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
+  unquotes the argument and matches it case-insensitively, e.g.
+  `##^script:has-text("admc")` becomes `$$script:contains(/admc/i)` (via
+  [@adguard/agtree]). The case-insensitive match folds ASCII case only.
+  Chained text constraints of one element selector are merged into a single
+  `:contains()` regexp, because CoreLibs rejects an element selector with more
+  than one regexp `:contains()`. A plain text stays case-insensitive in a
+  merged chain. The merged regexp keeps the `i` flag unless a constraint in the
+  chain needs a case-sensitive match. In such a mixed chain, a
+  case-insensitive regexp becomes case-sensitive, because the merged regexp has
+  a single flag set.
+- CSS injection rules: forbidden CSS functions (`url()`, `image-set()`,
+  `image()`, `cross-fade()` and their `-webkit-*` variants) now match
+  case-insensitively, so mixed-case function names such as `URL("...")` or
+  `Image-Set("..." 1x)` can no longer be used to load external resources.
+
+### Security
+
+[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.1.0...HEAD
+
+## [6.1.0] - 2026-11-12
+
+### Added
+
 - Added the `fingerprinting` value for `$stealth`
   (`StealthOptionName.Fingerprinting`).
 - Added `Engine.getDocumentOrStealthExceptionRules()` to retrieve `$stealth`
@@ -24,10 +119,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   their regexp escapes [#190].
 - Regexp domains now match case-insensitively without changing escape tokens
   such as `\D` into `\d`.
-
-### Deprecated
-
-### Removed
+- Updated [@adguard/agtree] to `v4.4.0`.
+- Updated [@adguard/css-tokenizer] to `v1.3.0`.
+- Updated `tldts` to `v7.0.32`.
 
 ### Fixed
 
@@ -42,16 +136,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   domains present in both lists, but regular expression domains now keep their
   case, so `$domain=/A/` no longer cancels `$domain=/a/`. This exception applies
   only while neither rule has a negated `~domain`; otherwise the whole text is
-  compared.
+  compared. In this case the position of `$domain` is not compared, unlike the
+  position of every other modifier, so
+  `||example.com^$domain=example.com,script,badfilter` cancels
+  `||example.com^$script,domain=example.com`.
 - Fixed cosmetic rules with multiple domains in the `$domain` modifier not
   applying on permitted domains [AdguardBrowserExtension#3605].
 - Fixed duplicate cosmetic rule matches for overlapping domain restrictions
   [AdguardBrowserExtension#3605].
 - Domain-scoped cosmetic and JavaScript rules not matching hosts with labels
-  ending in an underscore.
+  ending in an underscore. With `tldts` 5 such hosts had no domain, so
+  `thirdParty` was `null` for their requests: `$third-party` rules did not
+  apply and `$~third-party` rules did.
+- `:contains()` regexp arguments in HTML filtering rules that end with an
+  escaped backslash (`/foo\\/`) or have one in a character class (`/[\\]/`)
+  are now compiled as regexps instead of being matched as text. The last slash
+  is the delimiter now, so `:contains(/foo/bar/)` is also read as a regexp,
+  while 6.0.4 matched it as text.
+- `[tag-content]` values that CoreLibs reads as a regular expression, e.g.
+  `/ads/`, now match the literal text in HTML filtering rules (via
+  [@adguard/agtree]): `FilterList` converts raw rules with
+  `RawRuleConverter.convertToAdg()` on load, so
+  `$$div[tag-content="/ads/"]` no longer matches a plain `ads` substring.
+- `:contains()` regexp arguments in HTML filtering rules now ignore all
+  flags except `i`, `s`, and the Unicode flags `u` and `v`. Matching is
+  stateless and does not depend on the previously matched element.
 - Empty `:contains()` arguments in HTML filtering rules are now rejected.
 - `:-abp-contains()` and `:has-text()` are now treated as aliases of
   `:contains()` in HTML filtering rules.
+- HTML filtering exception rules now cancel blocking rules with an equivalent
+  body, regardless of attribute value quoting and of the `:contains()`,
+  `:-abp-contains()`, and `:has-text()` aliases.
+- Spaces around a quoted HTML filtering `:contains()` argument are no longer
+  trimmed (via [@adguard/agtree]): the argument is the raw text between the
+  pseudo-class parentheses, so `$$div:contains( "foo" )` now matches the text
+  `"foo"` with a space on each side.
 - A cosmetic exception rule (`$elemhide`, `$generichide`, `$specifichide`,
   `$jsinject`) no longer affects network filtering: it no longer allows a
   request blocked by a rule matched for the same request, and no longer
@@ -63,13 +182,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   applied when `@@||seznam.cz^$generichide` matches
   [AdguardBrowserExtension#3006].
 
-### Security
-
-[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.4...HEAD
 [#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
 [AdguardBrowserExtension#3006]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3006
 [AdguardBrowserExtension#3605]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3605
+[6.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v6.1.0
 
 ## [6.0.4] - 2026-10-15
 

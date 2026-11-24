@@ -35,7 +35,7 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
     constructor(
         readonly documentApi: DocumentApi,
     ) {
-        super(documentApi);
+        super();
     }
 
     /**

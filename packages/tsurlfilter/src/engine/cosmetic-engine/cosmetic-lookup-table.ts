@@ -99,8 +99,19 @@ export class CosmeticLookupTable {
     public addRule(ruleParts: CosmeticRuleParts, storageIdx: number): void {
         if (ruleParts.allowlist) {
             if (!CosmeticLookupTable.isScriptletRule(ruleParts)) {
-                // Store all non-scriptlet rules by their content.
-                this.addAllowlistRule(ruleParts.text.slice(ruleParts.contentStart, ruleParts.contentEnd), storageIdx);
+                /*
+                 * Store non-scriptlet rules by their canonical content, not by the raw
+                 * text slice. The canonical content is the same value the blocking side
+                 * uses in isAllowlisted(), so equivalent bodies cancel each other
+                 * regardless of attribute quoting or special pseudo-class aliases.
+                 * Fall back to the raw content if the rule cannot be retrieved or parsed.
+                 */
+                const cosmeticRule = this.ruleStorage.retrieveCosmeticRule(storageIdx);
+                this.addAllowlistRule(
+                    cosmeticRule?.getCanonicalContent()
+                        ?? ruleParts.text.slice(ruleParts.contentStart, ruleParts.contentEnd),
+                    storageIdx,
+                );
                 return;
             }
 
@@ -307,7 +318,7 @@ export class CosmeticLookupTable {
             }
         }
 
-        const rulesIndexes = this.allowlist.get(rule.getContent());
+        const rulesIndexes = this.allowlist.get(rule.getCanonicalContent());
         if (!rulesIndexes) {
             return false;
         }

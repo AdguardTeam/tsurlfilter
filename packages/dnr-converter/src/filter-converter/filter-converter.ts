@@ -31,10 +31,9 @@
  *                               │     │ Parse filter text into Rules. │
  *                               │     │ When withSourceMap is true and       │
  *                               │     │ options.badFilterRules is provided,  │
- *                               │     │ builds a skipNegatedRulesFn to skip  │
- *                               │     │ rules negated by $badfilter during   │
- *                               │     │ scanning. For simple mode            │
- *                               │     │ no pre-filtering is applied.         │
+ *                               │     │ they are applied during conversion   │
+ *                               │     │ together with the in-list badfilters.│
+ *                               │     │ For simple mode they are not applied.│
  *                               │     │┌────────────────────────────────┐    │
  *                               │     └┤                                │    │
  *                               │      │   RulesScanner.scanFilters()   │    │
@@ -99,14 +98,21 @@
  */
 /* eslint-enable jsdoc/require-description-complete-sentence */
 
+import { getModifierAliases } from '@adguard/agtree';
+import { RegExpUtils } from '@adguard/agtree/utils';
+
 import {
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRulesError,
     ResourcesPathError,
 } from '../errors/converter-options-errors';
+import { UnavailableFilterSourceError } from '../errors/unavailable-sources-errors';
 import { type IFilter } from '../filter/types';
+import { OPTION_NAMES } from '../rule/option-names';
 import { type Rule } from '../rule/rule';
+import { RuleBadfilter } from '../rule/rule-badfilter';
 import { type ConvertedRules } from '../rule-converters';
+import { isCspRule } from '../rule-converters/action-kind';
 import { RulesConverter } from '../rule-converters/rules-converter';
 import { RulesScanner, type ScannedFilter } from '../rules-scanner';
 import { RulesHashMap } from '../ruleset/rules-hash-map';
@@ -124,7 +130,7 @@ import { getRulesetId } from '../utils/ruleset-utils';
 
 import { type ConversionResult } from './conversion-result';
 import {
-    type BaseFilterConverterOptions,
+    type ComputedWithSourceMapOptions,
     type FilterConverterOptions,
     type SimpleConverterOptions,
     type SourceMapConverterOptions,
@@ -150,6 +156,36 @@ export class FilterConverter {
      * Used as the combined ruleset ID when `combine: true`.
      */
     public static readonly COMBINED_RULESET_ID = '_dynamic';
+
+    /**
+     * Runtime ruleset ID used for CSP rules.
+     */
+    public static readonly CSP_RULESET_ID = '_csp';
+
+    /**
+     * Raw modifier names which may affect CSP conversion.
+     *
+     * Aliases of `$csp` are taken from the AGTree conversion map, so they
+     * cannot drift from it.
+     */
+    private static readonly CSP_RAW_MODIFIER_NAMES = [
+        OPTION_NAMES.CSP,
+        ...getModifierAliases(OPTION_NAMES.CSP),
+    ];
+
+    /**
+     * Matches a CSP-related modifier anywhere in a modifier list.
+     *
+     * A modifier name is looked up right after `$` or `,`, spaces are allowed
+     * after the separator, and the name must be complete: `$csp` and `,csp=`
+     * match, while `$cspreport` does not. The first modifier of a list follows
+     * `$`, so a rule where `csp` is not the first modifier is found as well.
+     */
+    private static readonly CSP_RELATED_MODIFIER_REGEXP = new RegExp(
+        `(?:^|[$,])[ \\t]*(?:${FilterConverter.CSP_RAW_MODIFIER_NAMES
+            .map((name) => RegExpUtils.escapeRegexSpecials(name))
+            .join('|')})(?![\\w-])`,
+    );
 
     /**
      * Returns the rule set ID for a given filter ID.
@@ -205,6 +241,8 @@ export class FilterConverter {
      * `ruleset`'s methods. Use a literal `true`/`false` to select a specific
      * overload and get a precise return type.
      *
+     * @see {@link ComputedWithSourceMapOptions} for details.
+     *
      * @param filters List of {@link IFilter} to convert.
      * @param options Converter options with a computed `withSourceMap` flag.
      *
@@ -212,7 +250,7 @@ export class FilterConverter {
      */
     public convert(
         filters: IFilter[],
-        options: BaseFilterConverterOptions & { withSourceMap: boolean; badFilterRules?: Rule[] },
+        options: ComputedWithSourceMapOptions,
     ): Promise<ConversionResult<IRuleset | IRulesetWithSourceMap>[]>;
 
     /**
@@ -246,6 +284,116 @@ export class FilterConverter {
         }
 
         return FilterConverter.convertSimple(filters, options);
+    }
+
+    /**
+     * Converts CSP rules from all provided filters into one ruleset.
+     *
+     * Only candidate lines are parsed: a line must contain `csp` or a `csp`
+     * alias as a modifier. `$badfilter` lines are not candidates: the regular
+     * pass owns them. The whole text is still split into lines, so the cost
+     * grows with the list size, while parsing stays proportional to the number
+     * of candidate lines.
+     *
+     * Allowlist `$csp` rules are resolved here only: the regular `convert()`
+     * rejects them, because an exception can only be applied when all filters
+     * are seen at once.
+     *
+     * @param filters Source filters.
+     * @param resourcesPath Path to web-accessible resources.
+     *
+     * @returns Combined CSP conversion result with source-map support.
+     *
+     * @throws An {@link ResourcesPathError} if the resources path does not
+     * start with a slash or ends with a slash.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    public async convertCspRules(
+        filters: IFilter[],
+        resourcesPath?: string,
+    ): Promise<ConversionResult<IRulesetWithSourceMap>> {
+        const options: SourceMapConverterOptions = {
+            combine: true,
+            withSourceMap: true,
+        };
+        if (resourcesPath !== undefined) {
+            options.resourcesPath = resourcesPath;
+        }
+
+        FilterConverter.checkConverterOptions(options);
+
+        const relevantFilters = await FilterConverter.filterCspFilters(filters);
+        const {
+            errors: scanErrors,
+            filters: scannedFilters,
+        } = await RulesScanner.scanFilters(relevantFilters.filters, {
+            filterFn: (rule) => (
+                isCspRule(rule)
+                || rule.isModifierEnabled(OPTION_NAMES.BADFILTER)
+            ),
+            lineSelector: FilterConverter.isCspRelatedText,
+        });
+
+        const convertedRules = await RulesConverter.convertCspRules(scannedFilters, options);
+        const badFilterRules = scannedFilters.flatMap(({ badFilterRules: rules }) => rules);
+        const result = FilterConverter.collectConvertedResult(
+            FilterConverter.CSP_RULESET_ID,
+            filters,
+            scannedFilters,
+            convertedRules,
+            badFilterRules,
+        );
+        result.errors = [...relevantFilters.errors, ...scanErrors, ...result.errors];
+
+        return result;
+    }
+
+    /**
+     * Filters out filters whose content cannot contain CSP rules.
+     *
+     * A filter whose content cannot be read is skipped and reported, so one
+     * broken source does not fail the whole configuration.
+     *
+     * @param filters Source filters.
+     *
+     * @returns Filters whose content mentions a CSP-related modifier and
+     * errors of unreadable filters.
+     */
+    private static async filterCspFilters(
+        filters: IFilter[],
+    ): Promise<{ filters: IFilter[]; errors: UnavailableFilterSourceError[] }> {
+        const errors: UnavailableFilterSourceError[] = [];
+        const filtersWithContent = await Promise.all(filters.map(async (filter) => {
+            try {
+                return { filter, content: await filter.getContent() };
+            } catch (error: unknown) {
+                errors.push(new UnavailableFilterSourceError(
+                    `Cannot read the content of the filter ${filter.getId()}, the CSP pass skipped it`,
+                    filter.getId(),
+                    error instanceof Error ? error : undefined,
+                ));
+
+                return { filter, content: null };
+            }
+        }));
+
+        return {
+            filters: filtersWithContent
+                .filter(({ content }) => content !== null && FilterConverter.isCspRelatedText(content))
+                .map(({ filter }) => filter),
+            errors,
+        };
+    }
+
+    /**
+     * Checks whether raw filter text may contain a CSP-related rule.
+     *
+     * @param text Filter content or a single line of it.
+     *
+     * @returns `true` if the text should be parsed by the CSP pass.
+     */
+    private static isCspRelatedText(text: string): boolean {
+        return FilterConverter.CSP_RELATED_MODIFIER_REGEXP.test(text);
     }
 
     /**
@@ -336,11 +484,7 @@ export class FilterConverter {
         const {
             errors: scanErrors,
             filters: scannedFilters,
-        } = await RulesScanner.scanFilters(
-            filters,
-            undefined,
-            scannedLimit,
-        );
+        } = await RulesScanner.scanFilters(filters, { maxScannedRules: scannedLimit });
 
         const convertedRules = await RulesConverter.convert(scannedFilters, options);
 
@@ -360,8 +504,36 @@ export class FilterConverter {
     }
 
     /**
-     * Runs the advanced conversion flow: scans with optional `$badfilter`
-     * pre-filtering, converts, wraps in {@link RulesetWithSourceMap}.
+     * Creates a predicate to filter out rules which must not be converted.
+     *
+     * When CSP rules are rebuilt globally, the regular conversion must not
+     * convert them again, while `$badfilter` rules are kept because they can
+     * still disable other rules.
+     *
+     * @param skipNegatedRulesFn Predicate to skip rules fully negated by
+     *   `$badfilter`, if any.
+     * @param excludeCspRules Whether CSP rules are rebuilt separately.
+     *
+     * @returns Predicate to filter out rules.
+     */
+    private static createRuleFilterFn(
+        skipNegatedRulesFn?: (r: Rule) => boolean,
+        excludeCspRules?: boolean,
+    ): (rule: Rule) => boolean {
+        return (rule: Rule): boolean => {
+            if (skipNegatedRulesFn && !skipNegatedRulesFn(rule)) {
+                return false;
+            }
+
+            return !excludeCspRules
+                || !isCspRule(rule)
+                || rule.isModifierEnabled(OPTION_NAMES.BADFILTER);
+        };
+    }
+
+    /**
+     * Runs the advanced conversion flow: scans, converts, wraps in
+     * {@link RulesetWithSourceMap}.
      *
      * @param filters Filters to convert.
      * @param options Converter options.
@@ -375,9 +547,7 @@ export class FilterConverter {
         let skipNegatedRulesFn: ((r: Rule) => boolean) | undefined;
 
         if (options?.badFilterRules && options.badFilterRules.length > 0) {
-            const badFilterHashMap = FilterConverter.buildRulesBadFilterHashMap(
-                options.badFilterRules,
-            );
+            const badFilterHashMap = RuleBadfilter.groupByHash(options.badFilterRules);
 
             skipNegatedRulesFn = (r: Rule): boolean => {
                 const fastMatched = badFilterHashMap.get(r.hash);
@@ -386,15 +556,19 @@ export class FilterConverter {
                     return true;
                 }
 
-                for (let i = 0; i < fastMatched.length; i += 1) {
-                    if (fastMatched[i].negatesBadfilter(r)) {
-                        return false;
-                    }
-                }
-
-                return true;
+                // Only a plain full cancellation can be skipped here. A regexp
+                // that covers a kept entry is not safe to skip before the
+                // in-list badfilters are applied.
+                return !fastMatched.some(
+                    (badfilter) => RuleBadfilter.negatesFully(badfilter, r),
+                );
             };
         }
+
+        const filterRule = FilterConverter.createRuleFilterFn(
+            skipNegatedRulesFn,
+            options.excludeCspRules,
+        );
 
         const scannedLimit = options?.maxNumberOfRules
             ? Math.ceil(
@@ -403,15 +577,21 @@ export class FilterConverter {
             )
             : undefined;
 
+        // CSP rules are dropped here and reported by the CSP pass, so their
+        // parse errors must not be duplicated in the regular result.
+        const skipErrorLineSelector = options.excludeCspRules
+            ? FilterConverter.isCspRelatedText
+            : undefined;
+
         if (options?.combine) {
             const {
                 errors: scanErrors,
                 filters: scannedFilters,
-            } = await RulesScanner.scanFilters(
-                filters,
-                skipNegatedRulesFn,
-                scannedLimit,
-            );
+            } = await RulesScanner.scanFilters(filters, {
+                filterFn: filterRule,
+                maxScannedRules: scannedLimit,
+                skipErrorLineSelector,
+            });
             const convertedRules = await RulesConverter.convert(scannedFilters, options);
             const badFilterRules = scannedFilters.flatMap(({ badFilterRules: rules }) => rules);
             const result = FilterConverter.collectConvertedResult(
@@ -429,11 +609,11 @@ export class FilterConverter {
             const {
                 errors: scanErrors,
                 filters: [scannedFilter],
-            } = await RulesScanner.scanFilters(
-                [filter],
-                skipNegatedRulesFn,
-                scannedLimit,
-            );
+            } = await RulesScanner.scanFilters([filter], {
+                filterFn: filterRule,
+                maxScannedRules: scannedLimit,
+                skipErrorLineSelector,
+            });
             const convertedRules = await RulesConverter.convert([scannedFilter], options);
             const result = FilterConverter.collectConvertedResult(
                 FilterConverter.getRulesetId(scannedFilter.id),
@@ -454,6 +634,9 @@ export class FilterConverter {
      * scanned filters, converted rules and bad filter rules.
      * Creates new {@link RulesetWithSourceMap} and wraps all data for
      * {@link RulesetContentProvider}.
+     *
+     * Freshly converted rulesets have no metadata-stored unsafe rules yet:
+     * unsafe rules are excluded later by the `serializeCompact()` caller.
      *
      * @param rulesetId Rule set id.
      * @param filterList List of raw filters.
@@ -509,8 +692,6 @@ export class FilterConverter {
             rulesetContent,
             badFilterRules,
             rulesHashMap,
-            // Freshly-converted rulesets have no metadata-stored unsafe rules yet;
-            // unsafe-rule exclusion is performed later by the serializeCompact() caller.
             [],
         );
 
@@ -519,32 +700,6 @@ export class FilterConverter {
             errors,
             limitations,
         };
-    }
-
-    /**
-     * Creates dictionary where key is hash of network rule and value is array
-     * of rules with this hash.
-     *
-     * @param badFilterRules A flat list of `$badfilter` network rules.
-     *
-     * @returns Dictionary with all $badfilter rules indexed by hash.
-     */
-    private static buildRulesBadFilterHashMap(
-        badFilterRules: Rule[],
-    ): Map<number, Rule[]> {
-        const result: Map<number, Rule[]> = new Map();
-
-        badFilterRules.forEach((r) => {
-            const { hash } = r;
-            const existing = result.get(hash);
-            if (existing) {
-                existing.push(r);
-            } else {
-                result.set(hash, [r]);
-            }
-        });
-
-        return result;
     }
 
     /**
@@ -599,6 +754,11 @@ export class FilterConverter {
 
             // NOTE: Here we use .some but not .every to simplify first
             // version of applying $badfilter rules.
+            // A partly cancelled rule is disabled completely: an already-built
+            // declarative rule can only be disabled as a whole, not narrowed.
+            // The source rule is re-parsed from the filter text, so a narrowing
+            // that `Rule.applyBadfilters` applied during conversion is not
+            // visible here.
             const someRulesMatched = rules
                 .flat()
                 .some((rule) => badFilterRule.negatesBadfilter(rule));

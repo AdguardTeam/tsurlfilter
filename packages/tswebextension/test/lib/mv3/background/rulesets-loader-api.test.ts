@@ -9,12 +9,15 @@ import {
 } from 'vitest';
 import browser from 'webextension-polyfill';
 
+import { AGTREE_VERSION } from '@adguard/agtree';
+import { CSS_TOKENIZER_VERSION } from '@adguard/css-tokenizer';
 import {
     type CompactRulesetContent,
     Filter,
     FilterConverter,
     getRulesetId,
     getRulesetPath,
+    type IFilter,
     InvalidMetadataChunksError,
     type IRulesetWithSourceMap,
     isSafeRule,
@@ -23,7 +26,7 @@ import {
     parseCompactRuleset,
     RulesetWithSourceMap,
 } from '@adguard/dnr-converter';
-import { fetchExtensionResourceText, FilterList } from '@adguard/tsurlfilter';
+import { fetchExtensionResourceText, FilterList, TSURLFILTER_VERSION } from '@adguard/tsurlfilter';
 
 import { IdbSingleton } from '../../../../src/lib/common/idb-singleton';
 import { FiltersStorage } from '../../../../src/lib/common/storage/filters';
@@ -48,10 +51,22 @@ const LARGE_RULESET_ID = getRulesetId(LARGE_FILTER_ID);
 const METADATA_RULESET = getRulesetId(METADATA_RULESET_ID);
 
 /**
+ * Version of the libraries that prepared a cached filter list, as stored by
+ * the loader.
+ */
+const FILTER_LIST_VERSION = `${TSURLFILTER_VERSION}/${AGTREE_VERSION}/${CSS_TOKENIZER_VERSION}`;
+
+/**
  * Prefixes of the keys the loader writes to the rulesets store. They are
  * spelled out here on purpose: they are the persisted format.
  */
-type RulesetKeyPrefix = 'checksum' | 'metadata' | 'lazyMetadata' | 'declarativeRules' | 'metadataRulesCount';
+type RulesetKeyPrefix =
+    | 'checksum'
+    | 'metadata'
+    | 'lazyMetadata'
+    | 'declarativeRules'
+    | 'metadataRulesCount'
+    | 'filterListVersion';
 
 /**
  * Ruleset files served by the mocked `fetchExtensionResourceText`, by their
@@ -246,6 +261,7 @@ const expectCachedRuleset = async (checksum: string): Promise<void> => {
     expect(await readRulesetJson('lazyMetadata')).toEqual(content.lazyMetadata);
     expect(await readIdb(RULESETS_STORE, rulesetKey('metadataRulesCount'))).toBe(content.metadataRulesCount);
     expect(await readIdb(RULESETS_STORE, rulesetKey('checksum'))).toBe(checksum);
+    expect(await readIdb(RULESETS_STORE, rulesetKey('filterListVersion'))).toBe(FILTER_LIST_VERSION);
 
     const filterList = new FilterList(content.filterContent);
     expect(await FiltersStorage.get(FILTER_ID)).toEqual({
@@ -371,6 +387,44 @@ describe('RulesetsLoaderApi', () => {
 
             await new RulesetsLoaderApi(rulesetsPath).syncRulesetWithIdb(RULESET_ID);
 
+            await expectCachedRuleset(checksums[RULESET_ID]);
+        });
+
+        it('re-prepares the cached filter list when its library version changes', async () => {
+            const checksums = serveRulesets({
+                [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES),
+            });
+            await new RulesetsLoaderApi(rulesetsPath).syncRulesetWithIdb(RULESET_ID);
+            // Keep the checksum but mark the cached filter list as prepared by
+            // another version, as after an extension update.
+            await writeIdb(RULESETS_STORE, rulesetKey('filterListVersion'), 'old-version');
+            await FiltersStorage.setMultiple({
+                [FILTER_ID]: {
+                    rawFilterList: '||stale.example^',
+                    conversionData: FilterList.createEmptyConversionData(),
+                    checksum: checksums[RULESET_ID],
+                },
+            });
+            useNewRulesetsPath();
+
+            await new RulesetsLoaderApi(rulesetsPath).syncRulesetWithIdb(RULESET_ID);
+
+            expect(countFetches(RULESET_ID)).toBe(1);
+            await expectCachedRuleset(checksums[RULESET_ID]);
+        });
+
+        it('re-prepares a cached filter list stored without a library version', async () => {
+            const checksums = serveRulesets({
+                [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES),
+            });
+            await new RulesetsLoaderApi(rulesetsPath).syncRulesetWithIdb(RULESET_ID);
+            const db = await IdbSingleton.getOpenedDb(RULESETS_STORE);
+            await db.delete(RULESETS_STORE, rulesetKey('filterListVersion'));
+            useNewRulesetsPath();
+
+            await new RulesetsLoaderApi(rulesetsPath).syncRulesetWithIdb(RULESET_ID);
+
+            expect(countFetches(RULESET_ID)).toBe(1);
             await expectCachedRuleset(checksums[RULESET_ID]);
         });
 
@@ -521,35 +575,188 @@ describe('RulesetsLoaderApi', () => {
 
 // Tested here because it reuses the ruleset files and IndexedDB setup above.
 describe('TsWebExtension.loadStaticRulesets', () => {
-    it('reports the number of metadata rules of every manifest ruleset, enabled or not', async () => {
-        const largeRules = getLargeFilterRules(3000);
-        serveRulesets({
-            [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES),
-            [LARGE_RULESET_ID]: await buildRulesetFile(LARGE_FILTER_ID, largeRules),
-        });
+    /**
+     * Mocks a manifest with the metadata ruleset and the given rulesets.
+     *
+     * @param rulesetsIds Ids of rulesets to add to the manifest.
+     */
+    const mockManifest = (rulesetsIds: string[]): void => {
         vi.mocked(browser.runtime.getManifest).mockReturnValueOnce({
             manifest_version: 3,
             name: 'test',
             version: '1.0.0',
             declarative_net_request: {
-                rule_resources: [METADATA_RULESET, RULESET_ID, LARGE_RULESET_ID].map((id) => ({
+                rule_resources: [METADATA_RULESET, ...rulesetsIds].map((id) => ({
                     id,
                     enabled: false,
                     path: getRulesetPath(id, rulesetsPath),
                 })),
             },
         });
+    };
 
-        // Only filter 1 is enabled; the large ruleset is still created for its
-        // counters. `loadStaticRulesets` is private: `configure()` would need
-        // the whole MV3 runtime just to reach it.
+    /**
+     * Calls the private `loadStaticRulesets` with the small filter.
+     *
+     * @param enabledRulesetsIds Ids of rulesets enabled in the browser.
+     *
+     * @returns Created enabled rulesets, a loader of a single disabled
+     * ruleset, and a loader of all disabled rulesets.
+     */
+    const loadStaticRulesets = (enabledRulesetsIds: string[]): Promise<{
+        enabled: IRulesetWithSourceMap[];
+        loadDisabledFilter: (filterId: number) => Promise<IRulesetWithSourceMap | undefined>;
+        loadDisabled: () => Promise<IRulesetWithSourceMap[]>;
+    }> => {
+        // `loadStaticRulesets` is private: `configure()` would need the whole
+        // MV3 runtime just to reach it.
         // eslint-disable-next-line @typescript-eslint/dot-notation
-        const staticRulesets = await TsWebExtension['loadStaticRulesets'](rulesetsPath, [createSmallFilter()]);
+        return TsWebExtension['loadStaticRulesets'](rulesetsPath, [createSmallFilter()], enabledRulesetsIds);
+    };
 
-        expect(staticRulesets.map((ruleset) => [ruleset.getId(), ruleset.getMetadataRulesCount()])).toEqual([
-            [RULESET_ID, 1],
-            [LARGE_RULESET_ID, readServedRuleset(LARGE_RULESET_ID).metadataRulesCount],
+    it('creates only enabled rulesets and creates the disabled ones on demand', async () => {
+        const largeRules = getLargeFilterRules(3000);
+        serveRulesets({
+            [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES),
+            [LARGE_RULESET_ID]: await buildRulesetFile(LARGE_FILTER_ID, largeRules),
+        });
+        mockManifest([RULESET_ID, LARGE_RULESET_ID]);
+
+        // Only filter 1 is enabled; the large ruleset is not created until
+        // requested to keep the runtime filter list preparation off the
+        // startup path.
+        const { enabled, loadDisabledFilter, loadDisabled } = await loadStaticRulesets([RULESET_ID]);
+
+        expect(enabled.map((ruleset) => ruleset.getId())).toEqual([RULESET_ID]);
+        expect(countFetches(LARGE_RULESET_ID)).toBe(0);
+
+        // Start the batch while the per-filter creation is still in flight, so
+        // the test pins that both share the same pending creation.
+        const perFilterPromise = loadDisabledFilter(LARGE_FILTER_ID);
+        const batchPromise = loadDisabled();
+
+        const deferredRuleset = await perFilterPromise;
+
+        expect(deferredRuleset?.getId()).toBe(LARGE_RULESET_ID);
+        expect(deferredRuleset?.getMetadataRulesCount())
+            .toBe(readServedRuleset(LARGE_RULESET_ID).metadataRulesCount);
+        expect(deferredRuleset?.getSafeRulesCount()).toBe(largeRules.length);
+        expect(countFetches(LARGE_RULESET_ID)).toBe(1);
+
+        // The batch reuses the per-filter promise instead of creating the
+        // ruleset again.
+        const deferredRulesets = await batchPromise;
+
+        expect(deferredRulesets).toHaveLength(1);
+        expect(deferredRulesets[0]).toBe(deferredRuleset);
+        expect(countFetches(LARGE_RULESET_ID)).toBe(1);
+
+        // Repeated calls share the result instead of creating rulesets again.
+        expect(loadDisabled()).toBe(loadDisabled());
+        expect(await loadDisabled()).toBe(deferredRulesets);
+
+        // An enabled filter has no disabled ruleset.
+        expect(await loadDisabledFilter(FILTER_ID)).toBeUndefined();
+    });
+
+    it('returns nothing when there are no disabled rulesets', async () => {
+        serveRulesets({
+            [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES),
+        });
+        mockManifest([RULESET_ID]);
+
+        const { enabled, loadDisabledFilter, loadDisabled } = await loadStaticRulesets([RULESET_ID]);
+
+        expect(enabled.map((ruleset) => ruleset.getId())).toEqual([RULESET_ID]);
+        expect(await loadDisabledFilter(FILTER_ID)).toBeUndefined();
+        expect(await loadDisabled()).toEqual([]);
+    });
+
+    it('skips a disabled ruleset that failed to sync and returns the rest', async () => {
+        serveRulesets({
+            [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES),
+            [LARGE_RULESET_ID]: await buildRulesetFile(LARGE_FILTER_ID, getLargeFilterRules(10)),
+        });
+        // Replace the large ruleset with a file in the old format, which the
+        // loader rejects.
+        serveRulesets({
+            [RULESET_ID]: files.get(getRulesetPath(RULESET_ID))!,
+            [LARGE_RULESET_ID]: toLegacyRulesetFile(readServedRuleset(LARGE_RULESET_ID)),
+        });
+        mockManifest([RULESET_ID, LARGE_RULESET_ID]);
+
+        // Nothing is enabled, so both rulesets are created on demand.
+        const { enabled, loadDisabledFilter, loadDisabled } = await loadStaticRulesets([]);
+
+        expect(enabled).toEqual([]);
+
+        // The failed ruleset resolves with undefined, while the rest are
+        // created.
+        expect(await loadDisabledFilter(LARGE_FILTER_ID)).toBeUndefined();
+        expect((await loadDisabledFilter(FILTER_ID))?.getId()).toBe(RULESET_ID);
+
+        const deferredRulesets = await loadDisabled();
+
+        expect(deferredRulesets.map((ruleset) => ruleset.getId())).toEqual([RULESET_ID]);
+    });
+
+    it('retries a disabled ruleset after a failed creation', async () => {
+        serveRulesets({
+            [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES),
+            [LARGE_RULESET_ID]: await buildRulesetFile(LARGE_FILTER_ID, getLargeFilterRules(10)),
+        });
+        serveRulesets({
+            [RULESET_ID]: files.get(getRulesetPath(RULESET_ID))!,
+            [LARGE_RULESET_ID]: toLegacyRulesetFile(readServedRuleset(LARGE_RULESET_ID)),
+        });
+        mockManifest([RULESET_ID, LARGE_RULESET_ID]);
+
+        const { loadDisabledFilter } = await loadStaticRulesets([]);
+
+        expect(await loadDisabledFilter(LARGE_FILTER_ID)).toBeUndefined();
+
+        // Replace the failed ruleset with a valid one and retry the same
+        // filter: the failed creation must not be cached.
+        serveRulesets({
+            [RULESET_ID]: files.get(getRulesetPath(RULESET_ID))!,
+            [LARGE_RULESET_ID]: await buildRulesetFile(LARGE_FILTER_ID, getLargeFilterRules(10)),
+        });
+
+        expect((await loadDisabledFilter(LARGE_FILTER_ID))?.getId()).toBe(LARGE_RULESET_ID);
+    });
+
+    it('creates per-filter rulesets one at a time', async () => {
+        serveRulesets({
+            [RULESET_ID]: await buildRulesetFile(FILTER_ID, SMALL_FILTER_RULES),
+            [LARGE_RULESET_ID]: await buildRulesetFile(LARGE_FILTER_ID, getLargeFilterRules(10)),
+        });
+        mockManifest([RULESET_ID, LARGE_RULESET_ID]);
+
+        const { loadDisabledFilter } = await loadStaticRulesets([]);
+        const originalCreateRuleset = RulesetsLoaderApi.prototype.createRuleset;
+        let active = 0;
+        let maxActive = 0;
+        const createRulesetSpy = vi.spyOn(RulesetsLoaderApi.prototype, 'createRuleset')
+            .mockImplementation(function createRuleset(
+                this: RulesetsLoaderApi,
+                rulesetId: string,
+                filterList: IFilter[],
+            ) {
+                active += 1;
+                maxActive = Math.max(maxActive, active);
+
+                return originalCreateRuleset.call(this, rulesetId, filterList)
+                    .finally(() => {
+                        active -= 1;
+                    });
+            });
+
+        await Promise.all([
+            loadDisabledFilter(FILTER_ID),
+            loadDisabledFilter(LARGE_FILTER_ID),
         ]);
-        expect(staticRulesets[1].getSafeRulesCount()).toBe(largeRules.length);
+
+        expect(maxActive).toBe(1);
+        createRulesetSpy.mockRestore();
     });
 });

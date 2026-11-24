@@ -17,9 +17,13 @@ describe('HitsStorage', () => {
         expect(hitsStorage.isCounted(element, testRuleText)).toBe(true);
         expect(hitsStorage.isCounted(element, anOtherRuleText)).toBe(false);
 
-        // The storage keeps only the latest rule per element.
+        // Several rules can match one element, so the storage keeps them all.
         hitsStorage.setCounted(element, anOtherRuleText);
-        expect(hitsStorage.isCounted(element, testRuleText)).toBe(false);
+        expect(hitsStorage.isCounted(element, testRuleText)).toBe(true);
         expect(hitsStorage.isCounted(element, anOtherRuleText)).toBe(true);
+
+        // A repeated rule is not counted twice.
+        hitsStorage.setCounted(element, testRuleText);
+        expect(hitsStorage.isCounted(element, testRuleText)).toBe(true);
     });
 });

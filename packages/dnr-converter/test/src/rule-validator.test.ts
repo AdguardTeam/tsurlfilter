@@ -211,6 +211,55 @@ describe('RuleDeclarativeValidator', () => {
         });
     });
 
+    describe('shouldProcessCspException', () => {
+        it.each([
+            "@@||example.com^$csp=script-src 'none'",
+            "@@||example.com^$csp=script-src 'none',header=x-test",
+            "@@||example.com^$csp=script-src 'none',domain=site.example",
+            "@@||example.com^$csp=script-src 'none',denyallow=blocked.example",
+        ])('accepts a condition-only CSP exception: %s', (ruleText) => {
+            const [rule] = Rule.createFromText(1, 0, ruleText);
+
+            expect(RuleDeclarativeValidator.shouldProcessCspException(rule)).toBe(true);
+        });
+
+        it.each([
+            "||example.com^$csp=script-src 'none'",
+            '@@||example.com^$script',
+        ])('returns false for a non-CSP-exception rule: %s', (ruleText) => {
+            const [rule] = Rule.createFromText(1, 0, ruleText);
+
+            expect(RuleDeclarativeValidator.shouldProcessCspException(rule)).toBe(false);
+        });
+
+        it.each([
+            'document',
+            'popup',
+            'redirect=noopjs',
+            'removeheader=refresh',
+        ])('rejects the action-bearing $%s modifier', (modifier) => {
+            const [rule] = Rule.createFromText(
+                1,
+                0,
+                `@@||example.com^$csp=script-src 'none',${modifier}`,
+            );
+
+            expect(() => RuleDeclarativeValidator.shouldProcessCspException(rule))
+                .toThrow(UnsupportedModifierError);
+        });
+
+        it('preserves existing condition validation', () => {
+            const [rule] = Rule.createFromText(
+                1,
+                0,
+                "@@||example.com^$csp=script-src 'none',method=trace",
+            );
+
+            expect(() => RuleDeclarativeValidator.shouldProcessCspException(rule))
+                .toThrow(UnsupportedModifierError);
+        });
+    });
+
     describe('corpus-based validation', () => {
         const invalidRules = loadCorpus('network-rule-invalid-corpus.txt');
 

@@ -10,12 +10,21 @@ export type PreparedCosmeticResultCommon = {
      * CSS styles extracted from the cosmetic result.
      */
     cssText?: string;
+
+    /**
+     * Whether {@link cssText} was built with native hit markers.
+     *
+     * The setting can change after the stylesheet is prepared, so the marker
+     * state must travel with the prepared result instead of being read again
+     * when the content script asks for cosmetic data.
+     */
+    areHitsStatsCollected: boolean;
 };
 
 /**
  * Frame constructor properties.
  */
-type FrameConstructorProps = {
+export type FrameConstructorProps = {
     /**
      * Frame url.
      */

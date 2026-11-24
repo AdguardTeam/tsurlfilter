@@ -113,20 +113,25 @@ export const SUPPORTED_EXT_CSS_ATTRIBUTE_SELECTORS: ReadonlySet<string> = new Se
 
 /**
  * Known CSS functions that aren't allowed in CSS injection rules, because they
- * able to load external resources. Please, keep this list sorted.
+ * able to load external resources. Members are lowercased on creation, as the
+ * validator compares them against the ASCII-lowercased function name.
+ *
+ * Please, keep this list sorted.
  */
-export const FORBIDDEN_CSS_FUNCTIONS: ReadonlySet<string> = new Set([
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/cross-fade
-    '-webkit-cross-fade',
-    'cross-fade',
+export const FORBIDDEN_CSS_FUNCTIONS: ReadonlySet<string> = new Set(
+    [
+        // https://developer.mozilla.org/en-US/docs/Web/CSS/cross-fade
+        '-webkit-cross-fade',
+        'cross-fade',
 
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/image
-    'image',
+        // https://developer.mozilla.org/en-US/docs/Web/CSS/image
+        'image',
 
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/image-set
-    '-webkit-image-set',
-    'image-set',
+        // https://developer.mozilla.org/en-US/docs/Web/CSS/image-set
+        '-webkit-image-set',
+        'image-set',
 
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/url
-    'url',
-]);
+        // https://developer.mozilla.org/en-US/docs/Web/CSS/url
+        'url',
+    ].map((name) => name.toLowerCase()),
+);

@@ -1,8 +1,21 @@
 import { CSP_HEADER_NAME } from '../constants';
-import { type DeclarativeRule, type ModifyHeaderInfo } from '../declarative-rule';
+import { type DeclarativeRule, type ModifyHeaderInfo, RuleActionType } from '../declarative-rule';
+import { type Rule } from '../rule/rule';
 
 import { type ConvertedRules } from './converted-rules';
 import { RegularRuleConverter } from './regular-rule-converter';
+
+/**
+ * Checks whether a declarative rule appends a CSP response header.
+ *
+ * @param rule Declarative rule to check.
+ *
+ * @returns `true` for CSP declarative rules.
+ */
+export function isCspDeclarativeRule(rule: DeclarativeRule): boolean {
+    return rule.action.type === RuleActionType.ModifyHeaders
+        && rule.action.responseHeaders?.some(({ header }) => header === CSP_HEADER_NAME) === true;
+}
 
 /**
  * Describes how to convert `$csp` rules.
@@ -10,6 +23,41 @@ import { RegularRuleConverter } from './regular-rule-converter';
  * @see {@link RegularRuleConverter} parent class.
  */
 export class CspConverter extends RegularRuleConverter {
+    /**
+     * Creates a CSP converter.
+     *
+     * @param webAccessibleResourcesPath Path to web-accessible resources.
+     * @param excludedRequestDomains Request domains excluded from source rules.
+     */
+    constructor(
+        webAccessibleResourcesPath?: string,
+        private readonly excludedRequestDomains: Map<Rule, string[]> = new Map(),
+    ) {
+        super(webAccessibleResourcesPath);
+    }
+
+    /**
+     * Converts one CSP rule and applies domains produced by the resolver.
+     *
+     * @param id Rule ID.
+     * @param rule Source CSP rule.
+     *
+     * @returns Converted DNR rule.
+     */
+    protected override async convertRule(id: number, rule: Rule): Promise<DeclarativeRule> {
+        const declarativeRule = await super.convertRule(id, rule);
+        const domains = this.excludedRequestDomains.get(rule);
+
+        if (domains && domains.length > 0) {
+            declarativeRule.condition.excludedRequestDomains = Array.from(new Set([
+                ...(declarativeRule.condition.excludedRequestDomains ?? []),
+                ...domains,
+            ]));
+        }
+
+        return declarativeRule;
+    }
+
     /**
      * Creates rule template for grouping similar `$csp` rules.
      *
@@ -52,15 +100,128 @@ export class CspConverter extends RegularRuleConverter {
     }
 
     /**
+     * Splits a CSP header value into directives.
+     *
+     * @param value CSP header value.
+     *
+     * @returns Non-empty trimmed directives.
+     */
+    private static splitDirectives(value: string): string[] {
+        return value
+            .split(';')
+            .map((directive) => directive.trim())
+            .filter((directive) => directive.length > 0);
+    }
+
+    /**
+     * Returns the lowercased directive name.
+     *
+     * Directive names are case-insensitive, while directive values are not, so
+     * only the name is lowercased.
+     *
+     * @param directive CSP directive.
+     *
+     * @returns Lowercased directive name.
+     */
+    private static getDirectiveName(directive: string): string {
+        const [name] = directive.split(/\s/, 1);
+
+        return name.toLowerCase();
+    }
+
+    /**
+     * Returns the arguments of a CSP directive.
+     *
+     * @param directive CSP directive.
+     *
+     * @returns Arguments as written, or an empty string for a value-less directive.
+     */
+    private static getDirectiveArguments(directive: string): string {
+        const match = /^\S+\s+(.*)$/.exec(directive);
+
+        return match ? match[1] : '';
+    }
+
+    /**
+     * Collects the CSP header value of a declarative rule.
+     *
+     * @param rule Declarative rule.
+     *
+     * @returns CSP header value or `null` if the rule has no CSP header.
+     */
+    private static getCspValue(rule: DeclarativeRule): string | null {
+        const header = rule.action.responseHeaders?.find(CspConverter.isCspHeader);
+
+        return header?.value ?? null;
+    }
+
+    /**
+     * Checks whether two CSP header values express the same policy.
+     *
+     * Merged directives form a single policy, so merging different ones can
+     * change what is blocked through the `default-src` fallback:
+     * `default-src 'none'` plus `script-src 'self'` in one header allow
+     * same-origin scripts, while the same directives in two headers block
+     * them, because a browser applies every header of the response. Two
+     * identical policies, on the other hand, are applied once either way, so
+     * only such values are merged.
+     *
+     * @param currentValue Current CSP header value.
+     * @param valueToMerge CSP header value to append.
+     *
+     * @returns `true` if the values express the same policy.
+     */
+    private static canMergeCspValues(currentValue: string, valueToMerge: string): boolean {
+        const currentArguments = CspConverter.mapDirectiveArguments(currentValue);
+        const mergeArguments = CspConverter.mapDirectiveArguments(valueToMerge);
+
+        if (currentArguments.size !== mergeArguments.size) {
+            return false;
+        }
+
+        for (const [name, args] of mergeArguments) {
+            if (currentArguments.get(name) !== args) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Lists the directives of a CSP header value with their arguments.
+     *
+     * @param value CSP header value.
+     *
+     * @returns Arguments by lowercased directive name.
+     */
+    private static mapDirectiveArguments(value: string): Map<string, string> {
+        const argumentsByName = new Map<string, string>();
+
+        CspConverter.splitDirectives(value).forEach((directive) => {
+            const name = CspConverter.getDirectiveName(directive);
+            if (!argumentsByName.has(name)) {
+                argumentsByName.set(name, CspConverter.getDirectiveArguments(directive));
+            }
+        });
+
+        return argumentsByName;
+    }
+
+    /**
      * Combines two similar `$csp` {@link DeclarativeRule}
-     * rules into one by merging their CSP header values.
+     * rules into one when they carry the same policy.
      *
      * @param sourceRule The source rule to merge into.
      * @param ruleToMerge The rule to merge into the source rule.
      *
-     * @returns The combined {@link DeclarativeRule}.
+     * @returns The combined {@link DeclarativeRule}, or `null` if the two rules
+     * carry different policies and must stay separate.
      */
-    private static combineRulePair(sourceRule: DeclarativeRule, ruleToMerge: DeclarativeRule): DeclarativeRule {
+    private static combineRulePair(
+        sourceRule: DeclarativeRule,
+        ruleToMerge: DeclarativeRule,
+    ): DeclarativeRule | null {
         // Deep copy to drop references to source rule
         const resultRule: DeclarativeRule = JSON.parse(JSON.stringify(sourceRule));
 
@@ -74,6 +235,13 @@ export class CspConverter extends RegularRuleConverter {
         let cspHeaderInfoToMerge = headersToMerge.find(CspConverter.isCspHeader);
         if (!cspHeaderInfoToMerge) {
             return resultRule;
+        }
+
+        const currentValue = CspConverter.getCspValue(resultRule);
+        if (currentValue !== null
+            && cspHeaderInfoToMerge.value !== undefined
+            && !CspConverter.canMergeCspValues(currentValue, cspHeaderInfoToMerge.value)) {
+            return null;
         }
 
         // Deep copy to avoid reference issues
@@ -92,15 +260,8 @@ export class CspConverter extends RegularRuleConverter {
                 return resultRule;
             }
 
-            /**
-             * Check if the CSP header value is already set in the result rule:
-             * - if `true` - append value from the rule to merge;
-             * - if `false` - set value from the rule to merge.
-             */
-            const cspHeaderValue = resultHeaders[cspHeaderIndex].value;
-            if (cspHeaderValue) {
-                resultHeaders[cspHeaderIndex].value = `${cspHeaderValue}; ${cspHeaderInfoToMerge.value}`;
-            } else {
+            // Only identical policies reach this point, so a set value is kept.
+            if (!resultHeaders[cspHeaderIndex].value) {
                 resultHeaders[cspHeaderIndex].value = cspHeaderInfoToMerge.value;
             }
         } else {

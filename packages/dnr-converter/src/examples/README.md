@@ -78,31 +78,34 @@ For a full description of each modifier, see the knowledgebase https://adguard.c
 # MV3 specific limitations
 <a name="mv3_specific_limitations__$badfilter"></a>
 ## $badfilter
-In the current implementation, rules with `$badfilter` work across all filters.
-From these three filters:
+A `$badfilter` rule applies within one conversion batch. By default, static
+filter lists are converted separately, so a `$badfilter` rule in one list does
+not cancel a rule in another list; with `combine: true` all input filters are
+converted as one batch, so it can. Dynamic rules (custom filters and user
+rules) are combined into one ruleset, so a `$badfilter` rule there applies to
+all dynamic rules. `badFilterRules` applies static badfilters to dynamic rules
+during conversion, together with the filter's own badfilters, and
+`computeRulesToDisable()` applies dynamic badfilters to an already-built static
+ruleset, disabling whole declarative rules.
+
+From these two filters:
 ```adblock
 !filter 1
 ||example.org^
 ```
 ```adblock
 !filter 2
-||example.com^
-||example.com^$badfilter
-||example.org^$badfilter
-||persistent.com^
-```
-```adblock
-!filter3
 ||example.org^$badfilter
 ```
 
-The output will contain only one rule:
+The output contains the rule from filter 1, because the badfilter from filter
+2 does not apply to another filter:
 ```json
 {
   "id": "<ruleId>",
   "action": {"type": "block"},
   "condition": {
-    "urlFilter": "||persistent.com^",
+    "urlFilter": "||example.org^",
     "isUrlFilterCaseSensitive": "false"
   },
   "priority": "1"
@@ -111,18 +114,59 @@ The output will contain only one rule:
 
 <b> Please note </b> that in the current approach, the application of
 `$badfilter` rules affects the filtering process, but we do not currently
-display this in the declarative filtering log, as declarative rules are canceled.
+display the application in the declarative filtering log for rules that a
+badfilter cancels completely, as declarative rules are canceled. A partly
+cancelled rule stays in the ruleset with a narrowed `$domain` list, and the
+declarative filtering log shows it with a condition that no longer matches
+the written `$domain` list.
 
 <a name="mv3_specific_limitations__$badfilter__problem_1"></a>
 ### Problem 1
-But the current algorithm does not cover rules with `$domain` intersections, for example,
-for these two rules:
+When neither rule negates a domain (`~domain`) and the two `$domain` lists
+share an entry that compares equal after domain-name normalization, a
+`$badfilter` rule cancels the target rule only for the domains that the
+badfilter covers. The converter narrows the `$domain` list of the target rule:
+it removes a target entry that a badfilter entry covers, and it excludes a
+badfilter entry that overlaps a kept target entry. A `$badfilter` without
+`$domain` cancels the target rule completely. While either rule negates a
+domain, the `$domain` entries stay in the text and the whole text is compared,
+so the rule is cancelled only when the whole text matches. For example, for
+these two rules:
 ```adblock
 /some$domain=example.com|example.org
 /some$domain=example.com,badfilter
 ```
-A rule with `$badfilter` will fully negate the first rule and the output array of
-declarative rules will be empty.
+the output contains the first rule with `initiatorDomains` set to
+`["example.org"]`.
+
+Five cases are still not covered:
+- a target rule without `$domain` is cancelled completely: the converter
+  narrows only an existing permitted `$domain` list, although DNR could express
+  the exclusion with `excludedInitiatorDomains`;
+- a regexp entry in the badfilter's `$domain` list cancels a blocking target
+  rule completely unless it is an anchored literal domain that cannot match a
+  kept target entry or only matches a domain that the narrowed rule already
+  excludes; an exception target rule is narrowed instead, so it may keep
+  allowing domains that the regexp cancels: DNR cannot exclude initiator
+  domains that match a regexp, so a narrowed rule would keep applying where
+  the badfilter cancels it;
+- a `$badfilter` rule from a dynamic ruleset disables a whole declarative rule
+  from an already-built static ruleset, because such a rule can only be
+  disabled as a whole, not narrowed. This applies even when the static rule
+  was already narrowed by a badfilter in its own filter list, so the dynamic
+  rule cancels the remaining domains too;
+- wildcard-TLD entries (`example.*`) are expanded with a popular TLD list, so
+  an entry outside that list is not covered, and the full public suffix list
+  is not used;
+- for a document rule, MV2 matches `$domain` on either end of the navigation,
+  and the badfilter does too, so MV2 cancels both directions. The converter
+  instead emits the base rule with `initiatorDomains: ["bar.com"]` and an
+  additional `main_frame` rule with `requestDomains: ["bar.com"]`, so the
+  narrowed rule still applies to both `foo.com` → `bar.com` and
+  `bar.com` → `foo.com`: with
+  `*$document,csp=script-src 'none',domain=foo.com|bar.com` and the same rule
+  with `domain=foo.com,badfilter`, the converted rules keep applying in both
+  directions.
 
 <a name="mv3_specific_limitations__$badfilter__problem_2"></a>
 ### Problem 2
@@ -144,7 +188,6 @@ Allowlist rules are currently not supported for these modifiers:
 1. `$redirect`
 1. `$removeparam`
 1. `$removeheader`
-1. `$csp`
 
 <a name="mv3_specific_limitations__$document"></a>
 ## $document
@@ -484,7 +527,7 @@ example 5 (regexp syntax — not supported in MV3; output reflects current parse
 []
 ```
 
-> ⚠️ Conversion errors: Conversion initiatorDomains is empty, but original rule's domains not: "||baddomain.com^$domain=/(^\\|.+\\.)example\\.(com\\|org)\\$/"
+> ⚠️ Conversion errors: Conversion initiatorDomains is empty, but the rule's permitted domains are not representable in DNR: "/(^\\|.+\\.)example\\.(com\\|org)\\$/" (rule: "||baddomain.com^$domain=/(^\\|.+\\.)example\\.(com\\|org)\\$/")
 example 6 (regexp syntax — not supported in MV3; output reflects current parser behavior only)
 
 ```adblock
@@ -2379,8 +2422,18 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
 <br/>
 <b>MV3 limitations:</b>
 <br/>
-In the current implementation, it works across all filters, but it does not cover
-rules with `$domain` intersections.
+Within one conversion batch, a `$badfilter` rule applies to the other rules of
+that batch. Static filters are converted separately by default, so a badfilter
+in one filter list does not affect a rule in another list; `combine: true`
+merges them into one batch. Dynamic rules (custom filters and user rules) are
+combined into one ruleset, so a badfilter there applies to all dynamic rules.
+`badFilterRules` applies static badfilters to dynamic rules during conversion,
+together with the filter's own badfilters, and `computeRulesToDisable()` applies
+dynamic badfilters to an already-built static ruleset, disabling whole
+declarative rules. A `$domain` list cancels the target
+rule only for the domains that the badfilter covers, and only while neither
+rule negates a domain (`~domain`). A target rule without `$domain` is still
+cancelled completely.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -2453,7 +2506,22 @@ example 5
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 1019790748,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "/some",
+      "initiatorDomains": [
+        "example.org",
+        "example.io"
+      ]
+    },
+    "priority": 135
+  }
+]
 ```
 example 6
 
@@ -2465,7 +2533,21 @@ example 6
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 1019790748,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "/some",
+      "initiatorDomains": [
+        "example.io"
+      ]
+    },
+    "priority": 135
+  }
+]
 ```
 example 7
 
@@ -2919,11 +3001,23 @@ example 10
 <br/>
 <b>MV3 limitations:</b>
 <br/>
-Allowlist rules are not supported
+Exceptions are resolved only by the standalone CSP conversion
+(`convertCspRules()`): the regular `convert()` still rejects an allowlist
+`$csp` rule. An exception is applied when it has the exact conditions of the
+blocker, when it is wider than the blocker's domain (`@@||example.org^$csp`
+also cancels `||example.org/path$csp=...` and `||sub.example.org^$csp=...`),
+or when it has no pattern and covers the whole blocker (`@@$csp=...`).
+Path-level subtraction is not expressible in DNR. Any exception applies only when it
+outranks the blocking rule, so an `$important` blocking rule keeps its policy
+against a value-less and against a valued exception, while MV2 cancels it.
+Examples with exceptions below are converted by that pass, the rest by
+`convert()`.
 <br/>
-Rules with the same matching condition are combined into one, but only within
-the scope of one static filter or within the scope of all dynamic rules
-(custom filters and user rules).
+Rules with the same matching condition and the same policy are combined into
+one, but only within the scope of one static filter or within the scope of all
+dynamic rules (custom filters and user rules). Different policies stay in
+separate headers, where a browser enforces both: merged, they would change
+what the `default-src` fallback blocks.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -2976,20 +3070,57 @@ example 1
 example 2
 
 ```adblock
-@@||example.org/page/*$csp=frame-src 'none'
+$csp=frame-src 'none'
+@@||cdn.example.org^$csp
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 499316868,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Content-Security-Policy",
+          "value": "frame-src 'none'"
+        }
+      ]
+    },
+    "condition": {
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "csp_report",
+        "media",
+        "websocket",
+        "webtransport",
+        "webbundle",
+        "other"
+      ],
+      "excludedRequestDomains": [
+        "cdn.example.org"
+      ]
+    },
+    "priority": 1
+  }
+]
 ```
-
-> ⚠️ Conversion errors: Network allowlist rule with $csp modifier is not supported
 example 3
 
 ```adblock
-@@||example.org/page/*$csp
+||example.org^$csp=frame-src 'none'
+@@||example.org^$csp
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
@@ -2997,8 +3128,6 @@ example 3
 ```json
 []
 ```
-
-> ⚠️ Conversion errors: Network allowlist rule with $csp modifier is not supported
 example 4
 
 ```adblock
@@ -3838,7 +3967,7 @@ example 3
 []
 ```
 
-> ⚠️ Conversion errors: Network allowlist rule with $removeheader modifier is not supported
+> ⚠️ Conversion errors: "Invalid $removeheader rule: removeheader value must not be empty" in the rule: "@@||example.org^$removeheader"
 example 4 (with limitations)
 
 ```adblock
