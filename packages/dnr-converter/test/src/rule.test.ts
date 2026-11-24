@@ -87,6 +87,15 @@ describe('Rule', () => {
         });
 
         it.each([
+            '||example.org^$domain=/a[/',
+            '||example.org^$denyallow=/(/',
+        ])('rejects a regexp literal that does not compile: %s', (text) => {
+            expect(() => {
+                Rule.createFromText(1, 0, text);
+            }).toThrow('Invalid regular expression as domain pattern');
+        });
+
+        it.each([
             String.raw`||example.org^$domain=~/a\/|example.org`,
             '||example.org^$domain=~/|example.org',
         ])('rejects an unclosed regexp literal in a domain list: %s', (text) => {

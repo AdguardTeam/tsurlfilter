@@ -6,6 +6,8 @@ import {
     vi,
 } from 'vitest';
 
+import { RegExpUtils } from '@adguard/agtree';
+
 import * as errorUtilsModule from '../../../src/utils/error';
 import {
     encodeNonAscii,
@@ -227,16 +229,25 @@ describe('String utils', () => {
     });
 
     describe('isRegexPattern', () => {
-        it.each([
-            ['/a/', true],
-            ['//', false],
-            ['/', false],
-            [String.raw`/a\/`, false],
-            [String.raw`/a\\/`, true],
-            [String.raw`/a\\\/`, false],
-            ['abc', false],
-            ['/abc', false],
-        ])('returns %s for %j', (pattern, expected) => {
+        const patterns = [
+            { pattern: '/a/', expected: true },
+            { pattern: '//', expected: false },
+            { pattern: '/', expected: false },
+            { pattern: String.raw`/a\/`, expected: false },
+            { pattern: String.raw`/a\\/`, expected: true },
+            { pattern: String.raw`/a\\\/`, expected: false },
+            { pattern: 'abc', expected: false },
+            { pattern: '/abc', expected: false },
+        ];
+
+        it.each(patterns)('returns $expected for $pattern', ({ pattern, expected }) => {
+            expect(isRegexPattern(pattern)).toBe(expected);
+        });
+
+        // Delegating to RegExpUtils is not an option: it trims the value,
+        // while this helper mirrors SimpleRegex and keeps the value as is.
+        it.each(patterns)('agrees with RegExpUtils for $pattern', ({ pattern, expected }) => {
+            expect(RegExpUtils.isRegexPattern(pattern)).toBe(expected);
             expect(isRegexPattern(pattern)).toBe(expected);
         });
     });

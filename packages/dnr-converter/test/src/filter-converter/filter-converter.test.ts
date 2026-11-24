@@ -146,6 +146,19 @@ describe('FilterConverter', () => {
             expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
         });
 
+        it.each([
+            '||example.org^$domain=/a[/',
+            '||example.org^$denyallow=/(/',
+        ])('reports a regexp domain literal that does not compile: %s', async (text) => {
+            const filter = createFilter([text]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toBeInstanceOf(RuleScanError);
+            expect(errors[0].message).toContain('Invalid regular expression as domain pattern');
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
         it('still converts a plain domain value', async () => {
             const filter = createFilter(['||example.org^$domain=example.com']);
             const [{ ruleset, errors }] = await converter.convert([filter]);

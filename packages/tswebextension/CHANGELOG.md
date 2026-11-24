@@ -55,6 +55,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   never matched a host, so a negated value left an empty restriction and
   the rule applied on every site. `$domain=/a\/` was already rejected
   because its pattern did not compile.
+- In Manifest V3, a `$domain`, `$to` or `$denyallow` value that starts with
+  a slash but is not a regexp literal, e.g. `$domain=~/a\/`, is now a
+  conversion error instead of being dropped from the DNR domain condition,
+  and a pattern with an escaped closing slash, e.g. `/a\/$script`, becomes
+  a basic rule instead of an unsupported regexp (via
+  [@adguard/dnr-converter]).
 - Path-relative URLs passed to `history.pushState()` and
   `history.replaceState()` are now resolved against the base URI from
   before the navigation, so `$removeparam` rules remove tracking
