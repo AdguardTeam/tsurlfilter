@@ -7,6 +7,8 @@ import {
     vi,
 } from 'vitest';
 
+import { type NetworkRule } from '@adguard/tsurlfilter';
+
 import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../../../src/lib/common/constants';
 import { Frames } from '../../../../src/lib/common/tabs/frames';
 import { type TabInfo } from '../../../../src/lib/common/tabs/tabs-api';
@@ -66,6 +68,26 @@ describe('TabContext', () => {
                 url: tabInfo.pendingUrl!,
                 timeStamp: 0,
             }));
+        });
+
+        it('should store the matched rule as the main frame rule', () => {
+            Object.assign(tabInfo, { pendingUrl: 'https://another.com' });
+            const mainFrameRule = {} as NetworkRule;
+            vi.mocked(engineApi.matchFrame).mockReturnValue(mainFrameRule);
+
+            const context = TabContext.createNewTabContext(tabInfo);
+
+            expect(context.mainFrameRule).toBe(mainFrameRule);
+        });
+
+        it('should not create a main frame for a non-http url', () => {
+            tabInfo.url = 'about:blank';
+
+            const context = TabContext.createNewTabContext(tabInfo);
+
+            expect(engineApi.matchFrame).not.toBeCalled();
+            expect(context.mainFrameRule).toBeNull();
+            expect(context.frames.get(MAIN_FRAME_ID)).toBeUndefined();
         });
     });
 
