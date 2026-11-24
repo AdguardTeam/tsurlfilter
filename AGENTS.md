@@ -131,9 +131,9 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
 - `publish-release.yml` — publishes a package after the release PR merges
   (Docker test/build → npm → tag `<package>-v<version>` — created only after
   the publish succeeds → mirror → GitHub Release → Slack); thin caller of
-  `_publish-release-monorepo.yml`. dnr-rulesets releases skip npm (registry
-  429 throttling, AG-58865) and publish to the internal Artifact Keeper
-  instead.
+  `_publish-release-monorepo.yml`. dnr-rulesets releases skip npm and publish
+  to the internal Artifact Keeper instead; its npm package is fed by the weekly
+  `latest`-line snapshot of the stable workflow below (AG-59859).
 - `_publish-release-monorepo.yml` — reusable monorepo publish engine
   (Docker test/build → npm or Artifact Keeper (`publish_target` input; the AK
   leg is ungated, like the stable line) → tag after publish → mirror → GitHub
@@ -157,10 +157,14 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   out, stamps a `<line>.<timestamp>` version, builds the Docker target, and
   publishes the tarball to the internal Artifact Keeper npm registry (shared
   `deploy-to-ak-npm.yml`), where the browser-extension auto-build installs
-  rulesets from. The npm leg (version check, publish, one retry after a
-  backoff) is disabled again while npm throttles the package (AG-58867); the
-  one-off try re-enabled in AG-60418 still got HTTP 429. A failure-notify job
-  alerts Slack when any leg fails.
+  rulesets from. The public npm registry gets the `latest` line only, once a
+  week on the Monday round (`resolve-lines` computes the per-line
+  `publish_npm` flag; a dispatch can force it for the `latest` line); other
+  lines stay Artifact-Keeper-only. There is no automatic retry — a failed
+  publish waits for the next weekly round — and the version check fails closed,
+  so a 429/5xx/timeout skips the publish instead of pushing blindly. The
+  cadence is a metadata budget: the packument is ~79 MB of npm's 100 MB limit
+  (AG-59859). A failure-notify job alerts Slack when any leg fails.
 - `mirror.yml` — syncs master to the public `AdguardTeam/tsurlfilter` mirror.
 - `update-companiesdb.yml` — refreshes the tswebextension companies database
   every Tuesday and pushes meaningful changes with Octopass. The push avoids

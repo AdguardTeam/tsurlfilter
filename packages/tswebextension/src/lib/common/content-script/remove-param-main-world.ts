@@ -34,10 +34,13 @@ import { type RemoveParamDescriptor } from '../utils/remove-param-rules';
  * @param rawDescriptors Array of serialized rule descriptors to apply.
  * Passed directly from the background (MV3 via `args`, MV2 via JSON embed).
  * @param nonce Random token used as the window property name for the
- * updater function, making it unguessable by page scripts.
+ * updater function.
  * @param secret Secret token that must be passed to the updater on every
- * call.  Prevents page scripts that discover the property name from
- * tampering with the descriptor list.
+ * call. In MV3 it stops page scripts that find the updater from tampering
+ * with the descriptor list. In MV2 the inline `<script>` element that
+ * `executeInjection()` and `executeUpdate()` add to the page contains both
+ * tokens, so a page script can read them and call the updater, for example
+ * with an empty descriptor list.
  */
 export function patchHistoryForRemoveParam(
     rawDescriptors: RemoveParamDescriptor[],
@@ -273,23 +276,18 @@ export function patchHistoryForRemoveParam(
     }
 
     /**
-     * Applies all loaded descriptors to a URL, returning the cleaned URL
-     * and the list of descriptors that actually modified it.
+     * Applies all loaded descriptors to a URL.
      *
      * @param url The URL to process.
      *
-     * @returns Object with cleaned URL and applied descriptors, or null if
-     * no changes were made.
+     * @returns The cleaned URL, or null if no changes were made.
      */
-    function applyDescriptors(
-        url: string,
-    ): { cleanedUrl: string; applied: Descriptor[] } | null {
+    function applyDescriptors(url: string): string | null {
         if (!descriptors || descriptors.length === 0) {
             return null;
         }
 
         let purgedUrl = url;
-        const applied: Descriptor[] = [];
 
         for (const desc of descriptors) {
             if (desc.isAllowlist) {
@@ -312,27 +310,19 @@ export function patchHistoryForRemoveParam(
                 const queryIndex = urlWithoutHash.indexOf('?');
 
                 if (queryIndex >= 0) {
-                    const newUrl = urlWithoutHash.substring(0, queryIndex) + hashSuffix;
-                    if (newUrl !== purgedUrl) {
-                        applied.push(desc);
-                        purgedUrl = newUrl;
-                    }
+                    purgedUrl = urlWithoutHash.substring(0, queryIndex) + hashSuffix;
                 }
                 continue;
             }
 
-            const modifiedUrl = cleanUrlParams(purgedUrl, desc.valueRegExp, desc.isNegated);
-            if (modifiedUrl !== purgedUrl) {
-                applied.push(desc);
-                purgedUrl = modifiedUrl;
-            }
+            purgedUrl = cleanUrlParams(purgedUrl, desc.valueRegExp, desc.isNegated);
         }
 
         if (purgedUrl === url) {
             return null;
         }
 
-        return { cleanedUrl: purgedUrl, applied };
+        return purgedUrl;
     }
 
     /**
@@ -343,20 +333,21 @@ export function patchHistoryForRemoveParam(
      * @param absoluteUrl Absolute URL to process.
      */
     function processUrl(state: unknown, title: string, absoluteUrl: string): void {
-        const result = applyDescriptors(absoluteUrl);
-        if (!result) {
+        const cleanedUrl = applyDescriptors(absoluteUrl);
+        if (cleanedUrl === null) {
             return;
         }
 
-        if (result.cleanedUrl !== absoluteUrl && window.location.href === absoluteUrl) {
-            originalReplaceState.call(window.history, state, title, result.cleanedUrl);
+        if (window.location.href === absoluteUrl) {
+            originalReplaceState.call(window.history, state, title, cleanedUrl);
         }
     }
 
     /**
      * Creates a patched version of a History API method that preserves the
-     * native method's observable properties (name, length, toString) to
-     * reduce detectability.
+     * native method's observable properties (`name`, `length`) to reduce
+     * detectability. The `toString()` output is not spoofed and returns the
+     * source of the wrapper.
      *
      * @param originalMethod The original `pushState` or `replaceState`.
      * @param methodName The name of the method being patched.
