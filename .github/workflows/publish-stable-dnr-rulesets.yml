@@ -1,13 +1,14 @@
 name: Publish stable DNR rulesets
 
-# Once daily (00:17 UTC, ahead of the 00:30 extension auto-build), build and
-# publish @adguard/dnr-rulesets from each of the
-# supported stable/dnr-rulesets-* branches (5.0, 6.0).
-# The lines carry incompatible ruleset formats: 6.0 is built with
+# Once daily (00:17 UTC, ahead of the 12:00 and 17:00 UTC extension
+# auto-builds), build and publish @adguard/dnr-rulesets from each of the
+# supported stable/dnr-rulesets-* branches (5.0, 6.0, 6.1).
+# The lines carry incompatible ruleset formats: 6.0 and 6.1 are built with
 # @adguard/dnr-converter 2.x (metadata split into `metadata.chunk` rules) and
 # 5.0 with 1.x; neither reader loads the other format. So each line has its
 # own dist-tag: `latest` stays on LATEST_LINE until consumers migrate, every
-# other line publishes under `stable-<line>` (6.0 under `stable-6.0`).
+# other line publishes under `stable-<line>` (6.0 under `stable-6.0`, 6.1
+# under `stable-6.1`).
 # 5.0 introduced the switch to the standalone @adguard/dnr-converter,
 # replacing @adguard/tsurlfilter's DNR APIs; older lines are not published.
 #
@@ -16,18 +17,19 @@ name: Publish stable DNR rulesets
 # deploy-to-ak-npm.yml workflow), which the extension auto-build installs
 # rulesets from. The npm leg is disabled again (AG-58867, npm 429) — the
 # one-off try re-enabled in AG-60418 still got HTTP 429; see the note in that
-# workflow. resolve-lines skips a line whose branch isn't on the current CI yet.
+# workflow. resolve-lines skips a line whose branch is absent or lacks the probe
+# files; a branch that exists but cannot be fetched fails the round.
 
 on:
   schedule:
-    # Once a day, ahead of the 00:30 extension auto-build. The round was cut
-    # from twice a day to one in AG-60418 (to hold npm traffic down) and the
-    # cadence stays with the npm leg disabled again (AG-58867).
+    # Once a day, ahead of the 12:00 and 17:00 UTC extension auto-builds. The
+    # round was cut from twice a day to one in AG-60418 (to hold npm traffic
+    # down), and the cadence stays with the npm leg disabled again (AG-58867).
     - cron: '17 0 * * *'
   workflow_dispatch:
     inputs:
       line:
-        description: 'Stable line to publish (5.0 or 6.0); empty = all lines'
+        description: 'Stable line to publish (5.0, 6.0 or 6.1); empty = all lines'
         required: false
         type: string
 
@@ -62,7 +64,7 @@ jobs:
 
           # Single source of truth for the published stable lines — the
           # check-package-lists.mjs drift guard asserts this assignment.
-          ALL_LINES="5.0 6.0"
+          ALL_LINES="5.0 6.0 6.1"
           # The line that owns `latest`. Move it to 6.0 once consumers read
           # the 6.0 format; every other line publishes under stable-<line>.
           # The drift guard asserts it is in ALL_LINES and matches the
@@ -88,7 +90,12 @@ jobs:
             # Branch is "on the current CI" if these probe files exist at its
             # tip; probed shallowly — no full clone, no gh dep.
             ref="refs/heads/stable/dnr-rulesets-${line}"
-            if git fetch -q --depth=1 origin "${ref}" 2>/dev/null \
+            FETCH_OK=false
+            FETCH_ERR=""
+            if FETCH_ERR="$(git fetch -q --depth=1 origin "${ref}" 2>&1)"; then
+              FETCH_OK=true
+            fi
+            if [ "$FETCH_OK" = true ] \
               && git cat-file -e "FETCH_HEAD:scripts/inject-package-versions.mjs" 2>/dev/null \
               && git cat-file -e "FETCH_HEAD:.github/actions/docker-build/action.yml" 2>/dev/null \
               && git cat-file -e "FETCH_HEAD:scripts/ci/timeout-wrapper.sh" 2>/dev/null \
@@ -101,12 +108,31 @@ jobs:
               fi
               echo "Line ${line}: publish under '${tag}'"
               INCLUDE="${INCLUDE:+${INCLUDE},}{\"line\":\"${line}\",\"tag\":\"${tag}\"}"
-            elif [ -n "$REQUESTED_LINE" ]; then
-              # An explicit dispatch must not silently publish nothing.
-              echo "::error::Line ${line} is not on the current CI (no stable/dnr-rulesets-${line} branch, or it lacks scripts/inject-package-versions.mjs, .github/actions/docker-build, scripts/ci helpers, or the dnr-rulesets-auto-build-output target); backport the CI first"
-              exit 1
             else
-              echo "Line ${line} is not on the current CI yet; skipping it this round"
+              # A failed fetch reads the same as a branch that is not on the
+              # current CI: a scheduled round would skip that line, stay
+              # green, and notify-failure would not fire. Tell them apart and
+              # fail the round when the branch exists but the fetch failed.
+              if [ "$FETCH_OK" = false ]; then
+                if git ls-remote --exit-code --heads origin "${ref}" >/dev/null 2>&1; then
+                  echo "::error::Could not fetch ${ref} although the branch exists on origin; a scheduled round must not skip it: ${FETCH_ERR%%$'\n'*}"
+                  exit 1
+                else
+                  ls_exit=$?
+                  # ls-remote exits 2 when no ref matches: the branch is absent.
+                  if [ "$ls_exit" -ne 2 ]; then
+                    echo "::error::Could not check whether ${ref} exists on origin (git ls-remote exit ${ls_exit}): ${FETCH_ERR%%$'\n'*}"
+                    exit 1
+                  fi
+                fi
+              fi
+              if [ -n "$REQUESTED_LINE" ]; then
+                # An explicit dispatch must not silently publish nothing.
+                echo "::error::Line ${line} is not on the current CI (no stable/dnr-rulesets-${line} branch, or it lacks scripts/inject-package-versions.mjs, .github/actions/docker-build, scripts/ci helpers, or the dnr-rulesets-auto-build-output target); backport the CI first"
+                exit 1
+              else
+                echo "Line ${line} is not on the current CI yet; skipping it this round"
+              fi
             fi
           done
 
