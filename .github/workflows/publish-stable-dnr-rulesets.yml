@@ -1,5 +1,10 @@
 name: Publish stable DNR rulesets
 
+# A scheduled round keeps the workflow name; a dispatch also shows the line it
+# asked for and whether it publishes to npm, so the run list tells the two
+# apart (`inputs` is empty when the run is not a dispatch).
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Publish DNR rulesets {0}{1}', inputs.line || 'all lines', inputs.publish_npm && ' + npm' || '') || github.workflow }}
+
 # Once daily (00:17 UTC, ahead of the 12:00 and 17:00 UTC extension
 # auto-builds), build and publish @adguard/dnr-rulesets from each of the
 # supported stable/dnr-rulesets-* branches (5.0, 6.0, 6.1).
@@ -26,9 +31,12 @@ on:
   schedule:
     # Once a day, ahead of the 12:00 and 17:00 UTC extension auto-builds. The
     # round was cut from twice a day to one in AG-60418. The npm leg rides on
-    # the Monday round only (resolve-lines decides), so AK stays daily and npm
-    # weekly.
-    - cron: '17 0 * * *'
+    # the Monday round only, so AK stays daily and npm weekly. The two entries
+    # fire at the same minute and exist to name the round: resolve-lines reads
+    # `github.event.schedule`, which keeps the original cron string on a
+    # re-run, while the wall clock does not.
+    - cron: '17 0 * * 1'
+    - cron: '17 0 * * 0,2-6'
   workflow_dispatch:
     inputs:
       line:
@@ -36,7 +44,7 @@ on:
         required: false
         type: string
       publish_npm:
-        description: 'Also publish to the public npm registry. Only the latest line can go to npm; the Monday round does this without the input.'
+        description: 'Also publish to the public npm registry. Only the line published under `latest` can go to npm; the Monday round does this without the input.'
         required: false
         type: boolean
         default: false
@@ -55,8 +63,8 @@ jobs:
     runs-on: team-extensions
     timeout-minutes: 10
     outputs:
-      # {"include":[{"line":"5.0","tag":"latest","npm":true},...]}: one entry
-      # per line whose branch is on the current CI.
+      # {"include":[{"line":"5.0","tag":"latest","publish_npm":true},...]}: one
+      # entry per line whose branch is on the current CI.
       matrix: ${{ steps.lines.outputs.matrix }}
     steps:
       - name: Checkout
@@ -69,6 +77,7 @@ jobs:
           REQUESTED_LINE: ${{ inputs.line || '' }}
           REQUESTED_PUBLISH_NPM: ${{ inputs.publish_npm || false }}
           EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule || '' }}
         run: |
           set -euo pipefail
 
@@ -97,12 +106,16 @@ jobs:
 
           # The public npm registry receives the `latest` line only, once a week
           # (the Monday round) or on an explicit dispatch — AG-59859. Every
-          # other line stays AK-only: doubling the npm versions doubles the
-          # packument growth, and a non-latest npm tag never existed.
+          # other line stays AK-only: three lines publishing would triple the
+          # packument growth, and nothing can depend on the npm tags of 6.0 and
+          # 6.1 because those never existed (`stable-5.0`, `stable-4.x` and
+          # `stable-3.3` do).
           if [ "$EVENT_NAME" = "schedule" ]; then
-            # %u: 1 = Monday. The cron fires at 00:17 UTC, so the weekday is
-            # the one the round is scheduled for.
-            if [ "$(date -u +%u)" = "1" ]; then NPM_ROUND=true; else NPM_ROUND=false; fi
+            # The cron string of this round, not the wall clock: a re-run keeps
+            # `github.event.schedule`, so a re-run of the Monday round still
+            # publishes to npm on a Tuesday, and a re-run of a midweek round on
+            # a Monday stays AK-only. Must match the Monday `cron:` entry above.
+            if [ "$EVENT_SCHEDULE" = "17 0 * * 1" ]; then NPM_ROUND=true; else NPM_ROUND=false; fi
           elif [ "$REQUESTED_PUBLISH_NPM" = "true" ]; then
             NPM_ROUND=true
           else
@@ -135,12 +148,12 @@ jobs:
               else
                 tag="stable-${line}"
               fi
-              npm=false
+              publish_npm=false
               if [ "$NPM_ROUND" = "true" ] && [ "$line" = "$LATEST_LINE" ]; then
-                npm=true
+                publish_npm=true
               fi
-              echo "Line ${line}: publish under '${tag}' (npm: ${npm})"
-              INCLUDE="${INCLUDE:+${INCLUDE},}{\"line\":\"${line}\",\"tag\":\"${tag}\",\"npm\":${npm}}"
+              echo "Line ${line}: publish under '${tag}' (npm: ${publish_npm})"
+              INCLUDE="${INCLUDE:+${INCLUDE},}{\"line\":\"${line}\",\"tag\":\"${tag}\",\"publish_npm\":${publish_npm}}"
             else
               # A failed fetch reads the same as a branch that is not on the
               # current CI: a scheduled round would skip that line, stay
@@ -185,7 +198,7 @@ jobs:
     with:
       line: ${{ matrix.line }}
       tag: ${{ matrix.tag }}
-      publish_npm: ${{ matrix.npm }}
+      publish_npm: ${{ matrix.publish_npm }}
     # The AK publish inside needs ARTIFACT_KEEPER_API_KEY, which the shared
     # deploy-to-ak-npm.yml only receives through `secrets: inherit` (see the
     # publish-ak job there).

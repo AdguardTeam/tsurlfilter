@@ -163,9 +163,12 @@ jobs:
     with:
       artifact-name: dnr-rulesets-${{ inputs.line }}
       package-file: dnr-rulesets.tgz
-      # No environment so unattended runs don't wait on approval.
       tag: ${{ inputs.tag }}
-      environment: ''
+      # Unattended: this environment has no required reviewers, only a
+      # deployment-branch restriction to master. Without it npm accepts a
+      # publish from any branch, so a dispatch from a branch could put that
+      # build on `latest` — see DEPLOYMENT.md ("GitHub Environment").
+      environment: npm-stable-dnr-rulesets
     permissions:
       contents: read
       id-token: write

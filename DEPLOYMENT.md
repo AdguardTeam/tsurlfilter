@@ -140,11 +140,12 @@ section instead.
     ~0.2 MB a year; daily publishing of every line (three today) adds ~4.6 MB a
     year and hits the limit in under 5 years, after which npm rejects every
     publish with `E406 ... metadata is too large`. Check the size before raising
-    the cadence:
+    the cadence — a one-byte range request answers with the total in
+    `content-range`, without downloading the 79 MB document:
 
     ```bash
-    curl -sS -o /dev/null -w '%{size_download} bytes\n' \
-      https://registry.npmjs.org/@adguard%2Fdnr-rulesets
+    curl -sS -r 0-0 -D - -o /dev/null \
+      https://registry.npmjs.org/@adguard%2Fdnr-rulesets | grep -i '^content-range'
     ```
 
     Above ~85 MB, treat it as a project (a new package name or another
@@ -203,11 +204,21 @@ publisher for the workflow that actually invokes `deploy-to-npm.yml`:
   it to the `npm` environment.
 - **`@adguard/dnr-rulesets`** — the stable line is the only npm publisher:
   `publish-stable-dnr-rulesets.yml` publishes the `latest` line once a week
-  (see "Scheduled automation"), so its OIDC trusted publisher stays registered
-  with **no** `npm` environment restriction — the round is unattended and must
-  not wait on approval. Normal releases keep `publish_target: ak` and skip
-  `deploy-to-npm.yml`. The AK publish also runs without a GitHub environment
-  (no approval gate), like the stable line.
+  (see "Scheduled automation"). Its OIDC trusted publisher must be registered
+  against a dedicated environment, `npm-stable-dnr-rulesets` — the value
+  `_publish-stable-dnr-rulesets-line.yml` passes as `environment` — with:
+  - **no** required reviewers: the round is unattended and must not wait on
+    approval;
+  - **deployment branches limited to `master`**.
+
+  An environment does not have to mean approval. Without the branch
+  restriction npm accepts a publish from any branch, so anyone who can push a
+  branch could dispatch the workflow from it and put that build on `latest`.
+  Do not reuse the `npm` environment: its `extensions` reviewer would block the
+  unattended round. Provision the environment in `terraform-github`. Normal
+  releases keep `publish_target: ak` and skip `deploy-to-npm.yml`. The AK
+  publish runs without a GitHub environment (no approval gate), like the
+  stable line.
 
 ## External setup checklist
 
@@ -226,7 +237,8 @@ operational. Before enabling the workflows, verify:
 - The nine normal npm packages trust `AdGuardSoftwareLimited/ext-tsurlfilter`,
   workflow `publish-release.yml`, with the `npm` environment restriction.
   `@adguard/dnr-rulesets` trusts workflow `publish-stable-dnr-rulesets.yml`
-  with **no** environment restriction (weekly `latest`-line publish — see
+  with the `npm-stable-dnr-rulesets` environment — no required reviewers,
+  deployment branches limited to `master` (weekly `latest`-line publish — see
   "GitHub Environment" above).
 - `AdguardTeam/tsurlfilter` exists as the public mirror, its workflows are
   disabled by the shared mirror action, and the previous Bitbucket mirror is

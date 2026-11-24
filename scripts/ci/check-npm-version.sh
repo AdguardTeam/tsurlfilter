@@ -30,7 +30,8 @@ PKG="${2:-@adguard/dnr-rulesets}"
 VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
 
 # `|| HTTP=000` maps curl failures (timeout/DNS/refused) onto a non-200 code.
-HTTP=$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/${PKG}/${VERSION}" 2>/dev/null) || HTTP=000
+# No `2>/dev/null`: `-S` then prints the cause, so a `000` in the log says why.
+HTTP=$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/${PKG}/${VERSION}") || HTTP=000
 
 EXISTS=false
 case "$HTTP" in
