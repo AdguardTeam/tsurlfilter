@@ -11,7 +11,8 @@ import { TokenType } from '../../common/enums/token-types';
 import { type TokenizerContextFunction } from '../../common/types/function-prototypes';
 
 /**
- * Finds the end of the `:xpath()` pseudo-class argument.
+ * Finds the closing parenthesis of the `:xpath()` argument with the XPath 1.0
+ * literal rules.
  *
  * XPath 1.0 literals can be single-quoted or double-quoted, and they have no escape
  * sequences. Only the matching quotation mark closes a literal, so a reverse solidus
@@ -19,15 +20,136 @@ import { type TokenizerContextFunction } from '../../common/types/function-proto
  * the next code point, except a quotation mark: a quotation mark starts a literal
  * even after a reverse solidus, because after CSS unescaping it delimits a literal.
  *
- * If a literal does not close before the end of the source, the scan is repeated with
- * its opening quotation mark treated as plain text when that quotation mark is
- * CSS-escaped or an apostrophe. A CSS-escaped quotation mark may be a plain character
- * of a malformed argument instead of the start of a literal, e.g. in
- * `:xpath(//div[contains(text(),\')])`. An apostrophe may be plain too: the previous
- * handler ignored apostrophes, so such arguments loaded before. A plain double
- * quotation mark that never closes leaves the argument unterminated instead, because
- * the previous handler already rejected such arguments, so the missing parenthesis is
- * reported rather than hidden.
+ * @param context Reference to the tokenizer context instance, positioned at the start
+ * of the argument.
+ * @param length Length of the source after the argument start.
+ *
+ * @returns Offset of the closing parenthesis relative to the argument start, or `-1`
+ * if the scan ends inside a literal or at the end of the source.
+ */
+const findXpathArgumentEnd = (context: TokenizerContext, length: number): number => {
+    // Parenthesis balance: 1, because we start after the opening parenthesis:
+    // :xpath(param)
+    //        ^ we starts from here, so we already have 1 open parenthesis
+    let balance = 1;
+
+    // The quotation mark of the currently open XPath literal, if any
+    let stringQuote: number | null = null;
+
+    // XPath literals have no escape sequences, so escapes are tracked only outside
+    // literals. Two reverse solidi in a row cancel each other.
+    let escaped = false;
+
+    // Consume until we find the closing parenthesis or we reach the end of the source
+    for (let index = 0; index < length; index += 1) {
+        const code = context.getRelativeCode(index);
+
+        if (stringQuote !== null) {
+            // Inside a literal, only the matching quotation mark closes the literal
+            if (code === stringQuote) {
+                stringQuote = null;
+            }
+
+            continue;
+        }
+
+        if (code === CodePoint.Apostrophe || code === CodePoint.QuotationMark) {
+            // A quotation mark starts a literal even after a reverse solidus, because
+            // XPath literals have no escape sequences. The reverse solidus is consumed
+            // and must not escape the code point after the quotation mark.
+            stringQuote = code;
+            escaped = false;
+
+            continue;
+        }
+
+        if (escaped) {
+            // The escaped code point is plain text, so it must not change the balance
+            escaped = false;
+        } else if (code === CodePoint.ReverseSolidus) {
+            // Outside a literal, a reverse solidus escapes the next code point
+            escaped = true;
+        } else if (code === CodePoint.LeftParenthesis) {
+            // If we find an unescaped opening parenthesis, we increase the balance
+            balance += 1;
+        } else if (code === CodePoint.RightParenthesis) {
+            // If we find an unescaped closing parenthesis, we decrease the balance
+            balance -= 1;
+
+            // If the balance is 0, it means that we found the closing parenthesis of
+            // the pseudo-class
+            if (balance === 0) {
+                return index;
+            }
+        }
+    }
+
+    return -1;
+};
+
+/**
+ * Finds the closing parenthesis of the `:xpath()` argument with the rules of the
+ * handler which this fix replaces.
+ *
+ * The previous handler tracked only a plain double quotation mark and tested a single
+ * preceding code unit for an escape. Such arguments are invalid XPath and never
+ * matched anything, but their rules loaded, so they must keep loading. This scan is
+ * used only when {@link findXpathArgumentEnd} does not find the closing parenthesis,
+ * for example for `:xpath(//div[@a="x\""])`: the escaped `"` is plain text for the
+ * previous handler, which closes the literal at the next `"`.
+ *
+ * @param context Reference to the tokenizer context instance, positioned at the start
+ * of the argument.
+ * @param length Length of the source after the argument start.
+ *
+ * @returns Offset of the closing parenthesis relative to the argument start, or
+ * `length` if the parenthesis is missing.
+ */
+const findPreviousHandlerArgumentEnd = (context: TokenizerContext, length: number): number => {
+    // Parenthesis balance: 1, because we start after the opening parenthesis
+    let balance = 1;
+
+    // Whether a double-quoted literal is open
+    let inString = false;
+
+    for (let index = 0; index < length; index += 1) {
+        const code = context.getRelativeCode(index);
+
+        // The previous handler tested only the code unit right before the current one
+        const escaped = context.getRelativeCode(index - 1) === CodePoint.ReverseSolidus;
+
+        if (code === CodePoint.QuotationMark && !escaped) {
+            inString = !inString;
+        }
+
+        if (inString || escaped) {
+            continue;
+        }
+
+        if (code === CodePoint.LeftParenthesis) {
+            balance += 1;
+        } else if (code === CodePoint.RightParenthesis) {
+            balance -= 1;
+
+            if (balance === 0) {
+                return index;
+            }
+        }
+    }
+
+    return length;
+};
+
+/**
+ * Finds the end of the `:xpath()` pseudo-class argument.
+ *
+ * The argument is scanned with the XPath 1.0 literal rules first, because they are
+ * correct for a well-formed XPath expression. If that scan does not find the closing
+ * parenthesis, the argument is scanned again with the rules of the previous handler,
+ * so malformed arguments which loaded before this fix keep loading, for example
+ * `:xpath(//div[@a="x\""])`. A plain double quotation mark that never closes keeps
+ * the argument unterminated in both scans, so a missing parenthesis in a typo such as
+ * `:xpath(//div[@a="x])` is reported instead of hidden.
  *
  * @param context Reference to the tokenizer context instance, positioned at the start
  * of the argument.
@@ -39,87 +161,13 @@ import { type TokenizerContextFunction } from '../../common/types/function-proto
 const findArgumentEnd = (context: TokenizerContext): number => {
     const length = context.length - context.offset;
 
-    // Positions of CSS-escaped quotation marks which must stay plain text, because the
-    // scan reached the end of the source inside the literal they started
-    const plainQuotes = new Set<number>();
+    const xpathEnd = findXpathArgumentEnd(context, length);
 
-    for (;;) {
-        // Parenthesis balance: 1, because we start after the opening parenthesis:
-        // :xpath(param)
-        //        ^ we starts from here, so we already have 1 open parenthesis
-        let balance = 1;
-
-        // The quotation mark of the currently open XPath literal, if any
-        let stringQuote: number | null = null;
-
-        // The position of the quotation mark which opened the currently open literal
-        let openingQuote = -1;
-
-        // Whether the quotation mark which opened the currently open literal is CSS-escaped
-        let openingQuoteEscaped = false;
-
-        // XPath literals have no escape sequences, so escapes are tracked only outside
-        // literals. Two reverse solidi in a row cancel each other.
-        let escaped = false;
-
-        // Consume until we find the closing parenthesis or we reach the end of the source
-        for (let index = 0; index < length; index += 1) {
-            const code = context.getRelativeCode(index);
-
-            if (stringQuote !== null) {
-                // Inside a literal, only the matching quotation mark closes the literal
-                if (code === stringQuote) {
-                    stringQuote = null;
-                }
-            } else if (code === CodePoint.Apostrophe || code === CodePoint.QuotationMark) {
-                // A quotation mark starts a literal even after a reverse solidus, because
-                // XPath literals have no escape sequences. The reverse solidus is consumed
-                // and must not escape the code point after the quotation mark.
-                const quoteEscaped = escaped;
-                escaped = false;
-
-                if (!plainQuotes.has(index)) {
-                    stringQuote = code;
-                    openingQuote = index;
-                    openingQuoteEscaped = quoteEscaped;
-                }
-            } else if (escaped) {
-                // The escaped code point is plain text, so it must not change the balance
-                escaped = false;
-            } else if (code === CodePoint.ReverseSolidus) {
-                // Outside a literal, a reverse solidus escapes the next code point
-                escaped = true;
-            } else if (code === CodePoint.LeftParenthesis) {
-                // If we find an unescaped opening parenthesis, we increase the balance
-                balance += 1;
-            } else if (code === CodePoint.RightParenthesis) {
-                // If we find an unescaped closing parenthesis, we decrease the balance
-                balance -= 1;
-
-                // If the balance is 0, it means that we found the closing parenthesis of
-                // the pseudo-class
-                if (balance === 0) {
-                    return index;
-                }
-            }
-        }
-
-        if (stringQuote === null) {
-            return length;
-        }
-
-        // A plain double quotation mark that never closes is a typo, not a literal. The
-        // argument stays unterminated, so the closing parenthesis inside the literal is
-        // not tokenized and the parser reports the error. An apostrophe is retried
-        // instead, because the previous handler ignored apostrophes, so such rules
-        // loaded before.
-        if (!openingQuoteEscaped && stringQuote !== CodePoint.Apostrophe) {
-            return length;
-        }
-
-        // The quotation mark is plain text, so the scan is repeated without it
-        plainQuotes.add(openingQuote);
+    if (xpathEnd >= 0) {
+        return xpathEnd;
     }
+
+    return findPreviousHandlerArgumentEnd(context, length);
 };
 
 /**
@@ -163,8 +211,8 @@ export const handleXpathExtendedCssPseudo: TokenizerContextFunction = (context: 
     // XPath literals, like this:
     // :xpath(//div[@class="foo(bar)"])
     // but the whole XPath expression does not need to be a string in this case.
-    // The argument end is found before consuming anything, so an unterminated literal
-    // can be rescanned.
+    // The argument end is found before consuming anything, so the scan can be repeated
+    // with the previous handler's rules when the XPath rules do not find the end.
     const argumentLength = findArgumentEnd(context);
 
     // Consume the argument as delim-tokens, leaving the closing parenthesis to the

@@ -95,9 +95,12 @@ const PSEUDO_VALUES: PseudoValues = {
         // a dangling CSS-escaped quote does not start a literal
         String.raw`//div[contains(text(),\')]`,
         String.raw`//div[@a=\"x]`,
-        // a plain apostrophe that never closes is retried as plain text, because the
-        // previous handler ignored apostrophes, so such arguments loaded before
+        // a plain apostrophe that never closes is plain text for the previous handler,
+        // so such arguments keep their previous boundary
         String.raw`//div[@a='x]`,
+        // the XPath scan ends inside the literal opened by the last quote, so the
+        // previous handler's boundary is used
+        String.raw`//div[@a="x\""]`,
         // XPath literals have no escape sequences, so a reverse solidus does not escape the closing quote
         String.raw`//div[@a='C:\']`,
         String.raw`//div[@a="C:\"]`,
