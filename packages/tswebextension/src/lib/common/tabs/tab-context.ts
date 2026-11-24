@@ -3,17 +3,18 @@ import browser, { type Tabs } from 'webextension-polyfill';
 
 import { type NetworkRule } from '@adguard/tsurlfilter';
 
-import { MAIN_FRAME_ID } from '../constants';
+import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../constants';
 import { defaultFilteringLog, type FilteringLog } from '../filtering-log';
+import { isHttpOrWsRequest } from '../utils/url';
 
-import { type FrameCommon } from './frame';
+import { type FrameCommon, type FrameConstructorProps } from './frame';
 import { Frames } from './frames';
 import { type TabInfo } from './tabs-api';
 
 /**
  * Tab context common class.
  */
-export class TabContextCommon<F extends FrameCommon> {
+export abstract class TabContextCommon<F extends FrameCommon> {
     /**
      * Frames context.
      *
@@ -76,6 +77,50 @@ export class TabContextCommon<F extends FrameCommon> {
         protected readonly filteringLog: FilteringLog = defaultFilteringLog,
     ) {
         this.createdAtMs = Date.now();
+    }
+
+    /**
+     * Matches a network rule for the frame url.
+     *
+     * @param url Frame url.
+     *
+     * @returns Matched network rule or null.
+     */
+    protected abstract matchFrame(url: string): NetworkRule | null;
+
+    /**
+     * Creates a frame instance.
+     *
+     * @param props Frame constructor properties.
+     *
+     * @returns Frame instance.
+     */
+    protected abstract createFrame(props: FrameConstructorProps): F;
+
+    /**
+     * Initializes the main frame from the tab data.
+     *
+     * @param tab Webextension API tab data.
+     */
+    protected initMainFrameFromTab(tab: TabInfo): void {
+        // In some cases, tab is created while browser navigation processing.
+        // For example: when you navigate outside the browser or create new empty tab.
+        // `pendingUrl` represent url navigated to. We check it first.
+        // If server returns redirect, new main frame url will be processed in WebRequestApi.
+        const url = tab.pendingUrl || tab.url;
+
+        if (url && isHttpOrWsRequest(url)) {
+            this.mainFrameRule = this.matchFrame(url);
+
+            this.frames.set(MAIN_FRAME_ID, this.createFrame({
+                tabId: tab.id,
+                frameId: MAIN_FRAME_ID,
+                parentFrameId: NO_PARENT_FRAME_ID,
+                url,
+                // timestamp is 0, so that it will be recalculated in the next event
+                timeStamp: 0,
+            }));
+        }
     }
 
     /**

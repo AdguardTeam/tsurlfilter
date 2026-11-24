@@ -2,7 +2,6 @@ import browser, { type Tabs } from 'webextension-polyfill';
 
 import { type NetworkRule, type RequestType } from '@adguard/tsurlfilter';
 
-import { type DocumentApi } from '../../mv2/background/document-api';
 import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../constants';
 import { type FrameAncestor } from '../interfaces';
 import { EventChannel } from '../utils/channels';
@@ -138,10 +137,8 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
 
     /**
      * Tabs API constructor.
-     *
-     * @param documentApi Optional, Document API instance. Needed for MV2.
      */
-    constructor(protected readonly documentApi?: DocumentApi) {
+    constructor() {
         this.handleTabCreate = this.handleTabCreate.bind(this);
         this.handleTabUpdate = this.handleTabUpdate.bind(this);
         this.handleTabActivate = this.handleTabActivate.bind(this);
