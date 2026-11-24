@@ -34,6 +34,14 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
   turn a plain-text argument into a regexp. A right parenthesis after an
   escaped reverse solidus, e.g. `:has-text(/(a\\)/)`, now closes the
   argument as well.
+- A regexp literal in a following extended CSS pseudo-class no longer extends
+  the argument of the previous one, so `:contains(foo):matches-css(color: /red/)`
+  and `:matches-css(position: fixed):matches-css(z-index: /\d+/)` tokenize as
+  two separate pseudo-classes. The search for a literal opener stops at the
+  class-blind closing parenthesis of the current argument, so it cannot reach
+  a later pseudo-class and no longer scans the rest of the selector for every
+  pseudo-class. A literal that starts inside the argument may still run past
+  that parenthesis, e.g. `:has-text(/a[)]b/)`.
 
 ### Security
 

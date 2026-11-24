@@ -256,12 +256,18 @@ const findArgumentEnd = (context: TokenizerContext): number => {
     // argument may end after the literal, at the parenthesis that follows it. If there
     // is no candidate, the class-blind scan saw unbalanced parentheses, so a complete
     // literal followed by the closing parenthesis is used as well.
+    //
+    // The search stops at the candidate, because only a literal that starts inside the
+    // argument can change its end. A literal of a following pseudo-class starts after
+    // the candidate and must not extend this argument. This bound also keeps the scan
+    // proportional to the length of the argument instead of the rest of the selector.
     const hasCandidate = candidate < length;
+    const scanLimit = hasCandidate ? candidate : length;
     let index = 0;
     let quote: number | null = null;
     escaped = false;
 
-    while (index < length) {
+    while (index < scanLimit) {
         const code = context.getRelativeCode(index);
 
         if (escaped) {

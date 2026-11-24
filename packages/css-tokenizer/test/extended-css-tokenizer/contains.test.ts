@@ -145,6 +145,57 @@ describe(`Extended CSS's :${PSEUDO_NAMES.join(', :')}`, () => {
     )("should tokenize '$actual' as $as", (testData) => testTokenization(testData, tokenizeExtended));
 });
 
+/**
+ * Collects the raw arguments of the top-level function tokens.
+ *
+ * The argument text is rebuilt from the source between a function name and its
+ * matching closing parenthesis. A nested function stays a part of the outer
+ * argument.
+ *
+ * @param actual Source string to tokenize.
+ *
+ * @returns Argument text of each top-level function, in source order.
+ */
+const collectFunctionArguments = (actual: string): string[] => {
+    const tokens: Array<[TokenType, number, number]> = [];
+
+    tokenizeExtended(actual, (type, start, end) => {
+        tokens.push([type, start, end]);
+    });
+
+    const result: string[] = [];
+    let index = 0;
+
+    while (index < tokens.length) {
+        if (tokens[index][0] !== TokenType.Function) {
+            index += 1;
+            continue;
+        }
+
+        let depth = 1;
+        let endIndex = index + 1;
+
+        while (endIndex < tokens.length && depth > 0) {
+            const type = tokens[endIndex][0];
+
+            if (type === TokenType.Function || type === TokenType.OpenParenthesis) {
+                depth += 1;
+            } else if (type === TokenType.CloseParenthesis) {
+                depth -= 1;
+            }
+
+            endIndex += 1;
+        }
+
+        result.push(
+            tokens.slice(index + 1, endIndex - 1).map(([, start, end]) => actual.slice(start, end)).join(''),
+        );
+        index = endIndex;
+    }
+
+    return result;
+};
+
 describe('Extended CSS pseudo-class argument boundaries', () => {
     test.each([
         {
@@ -218,6 +269,17 @@ describe('Extended CSS pseudo-class argument boundaries', () => {
             actual: 'div:has-text(/foo[bar) + [href="/x]y/"])',
             expectedArgument: '/foo[bar',
         },
+        {
+            // a regexp in the following pseudo-class must not extend the previous
+            // argument
+            actual: 'div:contains(foo):matches-css(color: /red/)',
+            expectedArgument: 'foo',
+        },
+        {
+            // the same for a chain of matches-css pseudo-classes
+            actual: 'nyafilmer.lol#?#body > div[class]:empty:matches-css(position: fixed):matches-css(z-index: /\\d+/)',
+            expectedArgument: 'position: fixed',
+        },
     ])("should close the $actual pseudo-class after '$expectedArgument'", ({ actual, expectedArgument }) => {
         const tokens: Array<[TokenType, number, number]> = [];
 
@@ -237,5 +299,22 @@ describe('Extended CSS pseudo-class argument boundaries', () => {
             .join('');
 
         expect(argument).toBe(expectedArgument);
+    });
+
+    test.each([
+        {
+            actual: 'div:contains(foo):matches-css(color: /red/)',
+            expected: ['foo', 'color: /red/'],
+        },
+        {
+            actual: 'nyafilmer.lol#?#body > div[class]:empty:matches-css(position: fixed):matches-css(z-index: /\\d+/)',
+            expected: ['position: fixed', 'z-index: /\\d+/'],
+        },
+        {
+            actual: 'div:has(> a:contains(ad)):matches-css(display: /block/)',
+            expected: ['> a:contains(ad)', 'display: /block/'],
+        },
+    ])("should tokenize '$actual' as separate pseudo-classes", ({ actual, expected }) => {
+        expect(collectFunctionArguments(actual)).toEqual(expected);
     });
 });

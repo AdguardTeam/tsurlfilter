@@ -67,6 +67,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   keeps the backslash, and its negated form produces a valid regexp
   instead of `/^((?!a\).)*$/`. A value that ends with an escaped
   backslash, e.g. `/a\\/`, stays a RegExp literal.
+- The CSS selector parser now parses the arguments of adjacent extended CSS
+  pseudo-classes separately, e.g. `div:contains(foo):matches-css(color: /red/)`
+  and `div:has(> a:contains(ad)):matches-css(display: /block/)`. Previously a
+  regexp in the following pseudo-class extended the previous argument, so the
+  parser produced one pseudo-class or failed with an unexpected end of input.
 
 ### Security
 

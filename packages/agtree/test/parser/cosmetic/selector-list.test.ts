@@ -7,7 +7,7 @@ import {
 
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { SelectorListGenerator } from '../../../src/generator/cosmetic/selector/selector-list-generator';
-import { type SelectorList } from '../../../src/nodes';
+import { type PseudoClassSelector, type SelectorList } from '../../../src/nodes';
 import { SelectorListParser } from '../../../src/parser/cosmetic/selector/selector-list-parser';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 
@@ -1889,6 +1889,54 @@ describe('CssSelectorListParser', () => {
             expect(SelectorListParser.parse(actual)).toEqual(
                 expectedFn(new NodeExpectContext(actual)),
             );
+        });
+    });
+
+    describe('CssSelectorListParser.parse - extended CSS pseudo-classes after each other', () => {
+        test.each([
+            {
+                // a regexp in the following pseudo-class must not extend the
+                // argument of the previous one
+                actual: 'div:contains(foo):matches-css(color: /red/)',
+                expected: [
+                    { name: 'contains', argument: 'foo' },
+                    { name: 'matches-css', argument: 'color: /red/' },
+                ],
+            },
+            {
+                // the same for a chain of matches-css pseudo-classes
+                actual: String.raw`body > div[class]:empty:matches-css(position: fixed):matches-css(z-index: /\d+/)`,
+                expected: [
+                    { name: 'empty', argument: undefined },
+                    { name: 'matches-css', argument: 'position: fixed' },
+                    { name: 'matches-css', argument: String.raw`z-index: /\d+/` },
+                ],
+            },
+            {
+                // a nested pseudo-class stays inside the outer argument, and the
+                // following pseudo-class stays outside it
+                actual: 'div:has(> a:contains(ad)):matches-css(display: /block/)',
+                expected: [
+                    { name: 'has', argument: '> a:contains(ad)' },
+                    { name: 'matches-css', argument: 'display: /block/' },
+                ],
+            },
+        ])("should parse '$actual' as separate pseudo-classes", ({ actual, expected }) => {
+            const selectorList = SelectorListParser.parse(actual);
+
+            if (selectorList === null) {
+                throw new Error(`Failed to parse '${actual}' as a selector list`);
+            }
+
+            const pseudoClasses = selectorList.children[0].children
+                .filter((child): child is PseudoClassSelector => child.type === 'PseudoClassSelector')
+                .map((pseudoClass) => ({
+                    name: pseudoClass.name.value,
+                    argument: pseudoClass.argument?.value,
+                }));
+
+            expect(pseudoClasses).toEqual(expected);
+            expect(SelectorListGenerator.generate(selectorList)).toBe(actual);
         });
     });
 
