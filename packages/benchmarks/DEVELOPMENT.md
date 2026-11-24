@@ -36,6 +36,7 @@ pnpm install
 | `agtree` | `test/parser.bench.ts`, `test/converter.bench.ts` | AGTree parse/convert vs `agtree-v2` |
 | `css-tokenizer` | `test/tokenizer.bench.ts` | Tokenizer vs `css-tree`, `@csstools/*`, `parse-css`, `csslex` |
 | `tsurlfilter` | `test/engine/*.bench.ts` | Engine startup (network/cosmetic/engine) vs `tsurlfilter-v3`; request matching over the committed request corpus |
+| `tswebextension` | `test/lib/mv3/background/extcss-apply-fn.bench.ts` | Re-apply latency of the MV3 ExtendedCss injection payload for a 100-rule set (jsdom) |
 
 All benchmarks use Vitest 5's `test(({ bench }) => …)` context-fixture API and
 `bench.compare()` for A/B comparisons.
