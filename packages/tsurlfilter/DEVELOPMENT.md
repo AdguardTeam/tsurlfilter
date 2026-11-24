@@ -79,6 +79,11 @@ pnpm --filter @adguard/tsurlfilter lint:types
 pnpm --filter @adguard/tsurlfilter lint
 ```
 
+Do not write a regular expression literal inside a function or method. Define
+it once as a module-level `const` or a private class member, and give it a name
+that says what it matches. A named expression has one owner and one place to
+change.
+
 ### Running Tests
 
 ```bash

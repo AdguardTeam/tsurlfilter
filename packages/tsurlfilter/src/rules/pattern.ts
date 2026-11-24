@@ -3,6 +3,11 @@ import { type Request } from '../request';
 import { SimpleRegex } from './simple-regex';
 
 /**
+ * A plain hostname without a path, a wildcard, an anchor, or a port.
+ */
+const PLAIN_HOSTNAME_REGEXP = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$/i;
+
+/**
  * Rule pattern class.
  *
  * This class parses rule pattern text to simple fields.
@@ -285,6 +290,6 @@ export class Pattern {
         }
 
         // A plain hostname only: no path, wildcard, or anchor characters left.
-        return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$/i.test(hostname);
+        return PLAIN_HOSTNAME_REGEXP.test(hostname);
     }
 }
