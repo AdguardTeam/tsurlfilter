@@ -44,9 +44,10 @@ derived from the package changelog and injected temporarily by
 2. **Merge**: review and merge the release PR into `master`.
 3. **Publish**: `publish-release.yml` auto-fires on the merged
    `release-bump/<package>-v<version>` PR — Docker test + build → npm publish
-   (`@adguard/dnr-rulesets` publishes to the internal Artifact Keeper instead;
-   its npm publish is paused while npm throttles the shared GitHub egress IP,
-   see AG-58865) → tag `<package>-v<version>` (created only after the publish
+   (`@adguard/dnr-rulesets` releases publish to the internal Artifact Keeper
+   instead of npm; its npm package is fed by the weekly `latest`-line snapshot
+   of `publish-stable-dnr-rulesets.yml`, see AG-59859) → tag
+   `<package>-v<version>` (created only after the publish
    succeeds) → mirror to `AdguardTeam/tsurlfilter` + GitHub Release → Slack.
 
 There is no version-increment workflow. Start the next release by dispatching
@@ -120,12 +121,36 @@ section instead.
    Each line runs `_publish-stable-dnr-rulesets-line.yml` and publishes its
    tarball to the internal Artifact Keeper npm registry (shared
    `deploy-to-ak-npm.yml`), where the browser-extension auto-build installs
-   rulesets from. The npm leg (idempotency check with
-   `scripts/ci/check-npm-version.sh`, publish, one retry after a backoff) is
-   disabled again while npm throttles the package (AG-58867); the one-off try
-   re-enabled in AG-60418 still got HTTP 429. A manual dispatch with
+   rulesets from. The public npm registry receives the `latest` line only,
+   once a week — on the Monday round; `resolve-lines` computes the per-line
+   `publish_npm` flag, and a manual dispatch can force it with
+   `publish_npm: true` for the `latest` line (a dispatch that asks for npm on
+   another line fails). Other lines stay Artifact-Keeper-only: their npm tags
+   never existed, so nothing can depend on them. The npm leg is an
+   idempotency check with `scripts/ci/check-npm-version.sh` followed by the
+   publish; the check fails closed, so a 429, 5xx or timeout skips the publish
+   instead of pushing blindly, and there is no automatic retry (a failed
+   publish waits for the next weekly round, AG-59859). A manual dispatch with
    `line` set publishes one line; an empty `line` publishes all of them.
    Failures are reported to Slack.
+  - **npm metadata budget**: the packument
+    (`https://registry.npmjs.org/@adguard%2Fdnr-rulesets`) is ~79 MB of the
+    registry's 100 MB limit, from 22 000+ versions at ~4 KB each, and it only
+    grows — published versions cannot be removed. The weekly `latest` line adds
+    ~0.2 MB a year; daily publishing of every line (three today) adds ~4.6 MB a
+    year and hits the limit in under 5 years, after which npm rejects every
+    publish with `E406 ... metadata is too large`. Check the size before raising
+    the cadence — a one-byte range request answers with the total in
+    `content-range`, without downloading the 79 MB document:
+
+    ```bash
+    curl -sS -r 0-0 -D - -o /dev/null \
+      https://registry.npmjs.org/@adguard%2Fdnr-rulesets | grep -i '^content-range'
+    ```
+
+    Above ~85 MB, treat it as a project (a new package name or another
+    registry), not a routine publish. npm support asked for this lower cadence
+    after lifting the 429 throttle (AG-58867, AG-59859).
   - **Prerequisite — the branch must be on the current CI** (root
     `Dockerfile` with a `dnr-rulesets-auto-build-output` target,
     `scripts/inject-package-versions.mjs`, `.github/actions/docker-build`
@@ -138,16 +163,18 @@ section instead.
     release commit of that version, add the line to `ALL_LINES` in the
     workflow and to this list and `AGENTS.md`
     (`scripts/ci/check-package-lists.mjs` fails on a mismatch).
-  - **Branch protection required**: the pipeline runs without a GitHub
-    environment and publishes straight from the tip of each stable
-    branch, so push access to `stable/dnr-rulesets-*` is effectively
-    publish access (bypassing the `npm` environment review that gates
-    normal releases). These branches are covered only by the
-    organization-wide rulesets (no force push, committer email, no bare
-    issue references); the terraform-github repository rulesets
-    (`strict-master`, `require-ci-before-merge`) protect only `master` and
-    `release/**`. Provision a ruleset for `stable/dnr-rulesets-*` in
-    terraform-github to restrict pushes and deletion.
+  - **Branch protection required**: the pipeline publishes straight from
+    the tip of each stable branch, and its only environment,
+    `npm-stable-dnr-rulesets`, restricts the workflow ref (limited to
+    `master`), not the stable branch it builds, so push access to
+    `stable/dnr-rulesets-*` is effectively publish access (bypassing the
+    `npm` environment review that gates normal releases). These branches
+    are covered only by the organization-wide rulesets (no force push,
+    committer email, no bare issue references); the terraform-github
+    repository rulesets (`strict-master`, `require-ci-before-merge`)
+    protect only `master` and `release/**`. Provision a ruleset for
+    `stable/dnr-rulesets-*` in terraform-github to restrict pushes and
+    deletion.
 
 ## Publishing order
 
@@ -177,15 +204,23 @@ publisher for the workflow that actually invokes `deploy-to-npm.yml`:
 - **Nine normal packages** — register the trusted publisher for this repo's
   `publish-release.yml` (which calls the monorepo publish engine) and restrict
   it to the `npm` environment.
-- **`@adguard/dnr-rulesets`** — its npm publish is paused everywhere while
-  npm throttles the shared GitHub egress IP: both the stable path
-  (`publish-stable-dnr-rulesets.yml`) and normal releases
-  (`publish-release.yml` with `publish_target: ak`) skip `deploy-to-npm.yml`
-  and publish to the internal Artifact Keeper instead. The OIDC trusted
-  publisher for `publish-stable-dnr-rulesets.yml` (no `npm` environment
-  restriction) can stay registered until npm publishing is re-enabled;
-  while paused, no dnr-rulesets workflow run contacts npm. The AK publish
-  runs without a GitHub environment (no approval gate), like the stable line.
+- **`@adguard/dnr-rulesets`** — the stable line is the only npm publisher:
+  `publish-stable-dnr-rulesets.yml` publishes the `latest` line once a week
+  (see "Scheduled automation"). Its OIDC trusted publisher must be registered
+  against a dedicated environment, `npm-stable-dnr-rulesets` — the value
+  `_publish-stable-dnr-rulesets-line.yml` passes as `environment` — with:
+  - **no** required reviewers: the round is unattended and must not wait on
+    approval;
+  - **deployment branches limited to `master`**.
+
+  An environment does not have to mean approval. Without the branch
+  restriction npm accepts a publish from any branch, so anyone who can push a
+  branch could dispatch the workflow from it and put that build on `latest`.
+  Do not reuse the `npm` environment: its `extensions` reviewer would block the
+  unattended round. Provision the environment in `terraform-github`. Normal
+  releases keep `publish_target: ak` and skip `deploy-to-npm.yml`. The AK
+  publish runs without a GitHub environment (no approval gate), like the
+  stable line.
 
 ## External setup checklist
 
@@ -204,7 +239,9 @@ operational. Before enabling the workflows, verify:
 - The nine normal npm packages trust `AdGuardSoftwareLimited/ext-tsurlfilter`,
   workflow `publish-release.yml`, with the `npm` environment restriction.
   `@adguard/dnr-rulesets` trusts workflow `publish-stable-dnr-rulesets.yml`
-  with **no** environment restriction (see "GitHub Environment" above).
+  with the `npm-stable-dnr-rulesets` environment — no required reviewers,
+  deployment branches limited to `master` (weekly `latest`-line publish — see
+  "GitHub Environment" above).
 - `AdguardTeam/tsurlfilter` exists as the public mirror, its workflows are
   disabled by the shared mirror action, and the previous Bitbucket mirror is
   disabled.
