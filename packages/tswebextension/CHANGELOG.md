@@ -125,6 +125,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   mode a list that ends up without expressible entries becomes such a rule too, so
   network filtering matches frame matching. A disabled allowlist now adds no rule
   at all: in the inverted mode it used to add one that allowed every document.
+- Canvas protection keeps the script that the browser acknowledged across
+  service worker restarts, instead of removing it and registering it again on
+  every start.
 - MV3: the engine no longer prepares the enabled static filter lists again on
   every start; it gets them from IndexedDB with their conversion data. Cached
   filter lists are prepared again when the versions of the libraries that

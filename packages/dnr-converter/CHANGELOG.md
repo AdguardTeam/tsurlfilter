@@ -68,6 +68,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a declarative rule merged from several source rules adds several ids. The
   unsafe list does not include unsafe rules that the regexp limit drops, so its
   length can differ from the number of excluded unsafe rules.
+- `$badfilter` comparison no longer uses a regexp lookbehind literal, so the
+  package loads in browsers without lookbehind support, e.g. Safari before
+  16.4.
 - Non-ASCII values no longer break the conversion: a hostname in a URL filter is
   converted to punycode, also after a `*` or `*.` wildcard and in unanchored or
   scheme-prefixed patterns, the rest of the pattern is percent-encoded, and
