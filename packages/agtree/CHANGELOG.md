@@ -81,6 +81,40 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   scan only inside an attribute selector. A quote outside an attribute
   selector, e.g. in `:has-text(It's)`, stays plain text. An unterminated
   quote is still a plain token.
+- The domain list parser now throws an `AdblockSyntaxError` with
+  `Unclosed regexp literal, no closing delimiter found` when a list item
+  starts with `/` and a real separator follows it, but no closing
+  delimiter is followed by that separator or ends the value, e.g.
+  `$domain=~/a\/|example.org`, `$domain=~/|example.org` or
+  `$domain=/a/x|example.org`. Previously every separator inside such a
+  value was lost. An escaped separator and a separator inside a character
+  class or a regexp group do not count, so `$domain=/a\|b`,
+  `$domain=/a[|]b` and `$domain=/a(b|c)` stay one item. A trailing item
+  with no separator after it stays opaque too, e.g. `example.org|/a\/`.
+- uBO→ADG conversion of HTML filtering `:has-text()` and `:contains()` now
+  mirrors uBlock for plain text: one pair of outer quotes is removed and
+  the text is matched case-insensitively through an escaped `:contains()`
+  regexp with the `i` flag, e.g. `##^script:has-text("admc")` becomes
+  `$$script:contains(/admc/i)`. The `i` flag folds ASCII case only, because
+  CoreLibs compiles `:contains()` regexps with `PCRE2_NEVER_UTF`. The
+  argument is not trimmed, so `##^div:has-text( "foo" )` keeps its spaces
+  and quotes. A rule with characters after the closing quote, e.g.
+  `##^div:has-text("foo"bar)`, is rejected, as in uBlock.
+- Chained text constraints of one compound selector are merged into a single
+  `:contains()` regexp, because CoreLibs allows at most one regexp
+  `:contains()` per element selector: `##^div:has-text(a):has-text(/b/)`
+  becomes `$$div:contains(/^(?=[\s\S]*?[aA])(?=[\s\S]*?(?:b))/)`, and several
+  `:min-text-length()` collapse to the largest one. The lookaheads use a lazy
+  scan, so a long script is not rescanned from every position. A plain text
+  in a case-sensitive chain is emitted as ASCII case-fold classes, so it keeps
+  matching like uBlock's plain text; a regexp argument with the `i` flag
+  becomes case-sensitive in such a mixed chain, because a merged regexp has a
+  single flag set.
+- HTML filtering rules with a right parenthesis inside a regexp character
+  class now parse and convert, e.g. `##^div:has-text(/a[)]b/)` and
+  `##^div:contains(/a[)]b/)` become `$$div:contains(/a[)]b/)`. Previously
+  the `)` closed the pseudo-class argument early, and tokenization threw
+  `Expected '<unknown-token>', but got '<]-token>'`.
 - A value whose closing slash is escaped, e.g. `/a\/`, is no longer
   treated as a RegExp literal. `RegExpUtils.isRegexPattern()` now checks
   the consecutive backslashes before the closing slash: an odd count

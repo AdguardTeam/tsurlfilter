@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Rule text for error reporting is derived from node `start`/`end` offsets
   instead of the removed `raws.text` property.
 
+### Fixed
+
+- Rules with an unclosed regexp literal that is followed by another list
+  item in a `$domain`, `$denyallow` or `$to` value are now rejected during
+  parsing instead of producing an invalid DNR domain, e.g.
+  `$domain=~/a\/|example.org` (via `@adguard/agtree`).
+
 ## [2.1.1] - 2026-11-17
 
 ### Fixed
