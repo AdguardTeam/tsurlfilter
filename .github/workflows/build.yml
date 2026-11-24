@@ -156,8 +156,10 @@ jobs:
           bash -n tests/finalize-changelog.sh
           bash -n scripts/ci/resolve-release-inputs.sh
           bash -n scripts/ci/verify-tarball.sh
+          bash -n scripts/ci/check-npm-version.sh
           bash -n tests/verify-tarball.test.sh
           bash -n tests/check-pr-open.test.sh
+          bash -n tests/check-npm-version.test.sh
           node --check scripts/ci/check-pr-open.mjs
           node --check .github/actions/finalize-changelog/finalize-changelog.mjs
           node --check scripts/inject-package-versions.mjs
@@ -176,6 +178,9 @@ jobs:
 
       - name: Run check-pr-open regression tests
         run: bash tests/check-pr-open.test.sh
+
+      - name: Run check-npm-version regression tests
+        run: bash tests/check-npm-version.test.sh
 
   notify-failure:
     name: Notify master CI failure
