@@ -10,7 +10,7 @@ and a rule converter for translating rules between syntaxes.
 
 ## Technical Context
 
-- **Language/Version**: TypeScript (ESM-only output), Node.js ≥ 22
+- **Language/Version**: TypeScript (ESM-only output), Node.js ≥ 22.23.5
 - **Primary Dependencies**: `@adguard/css-tokenizer` (CSS selector parsing),
   `zod` (schema validation), `tldts` (domain parsing), `is-ip`, `json5`,
   `sprintf-js`

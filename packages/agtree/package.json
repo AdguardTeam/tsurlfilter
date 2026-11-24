@@ -54,7 +54,7 @@
         "dist/**"
     ],
     "engines": {
-        "node": ">=22"
+        "node": ">=22.23.5"
     },
     "scripts": {
         "build": "pnpm clean && pnpm build-compatibility-tables-wiki && pnpm build-rollup && pnpm build-types",

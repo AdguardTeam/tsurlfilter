@@ -9,7 +9,7 @@ and loaded into a browser for testing.
 
 ## Technical Context
 
-- **Language/Version**: TypeScript, Node.js ≥ 22
+- **Language/Version**: TypeScript, Node.js ≥ 22.23.5
 - **Build Toolchain**: Webpack (via custom `tsx` build scripts)
 - **Target Platform**: Browser extensions (Chromium, Firefox)
 - **Project Type**: Example packages inside the `tsurlfilter` pnpm monorepo

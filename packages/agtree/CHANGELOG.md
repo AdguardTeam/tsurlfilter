@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- **BREAKING:** `engines.node` now requires Node.js `22.23.5` or newer, so
+  the package no longer installs on older Node.js versions.
 - uBO→ADG conversion now accepts `:contains()` in uBlock HTML filtering
   rules and converts it like `:has-text()`, e.g. `##^div:contains(foo)`
   becomes `$$div:contains(/foo/i)`. uBlock Origin accepts this pseudo-class

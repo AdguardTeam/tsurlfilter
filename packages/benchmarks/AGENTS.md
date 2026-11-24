@@ -9,7 +9,7 @@ benchmark packages; it only holds the benchmark development guide
 
 ## Technical Context
 
-- **Language/Version**: TypeScript, Node.js ≥ 22
+- **Language/Version**: TypeScript, Node.js ≥ 22.23.5
 - **Benchmark Framework**: Vitest 5 (`test(({ bench }) => …)` context fixture,
   Tinybench provider) — the only benchmark toolchain in the repository
 - **Runner**: `vitest bench` (per-package `pnpm bench` script)

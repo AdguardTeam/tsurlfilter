@@ -10,7 +10,7 @@ Declarative Net Request (DNR) integration and service worker lifecycle.
 
 ## Technical Context
 
-- **Language/Version**: TypeScript, Node.js ≥ 22
+- **Language/Version**: TypeScript, Node.js ≥ 22.23.5
 - **Primary Dependencies**: `@adguard/tswebextension` (content blocking
   engine wrapper), `zod` (schema validation)
 - **Build Toolchain**: Rollup (with `@rollup/plugin-swc`), `tsc` for type

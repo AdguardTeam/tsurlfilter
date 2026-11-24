@@ -9,7 +9,7 @@ converting both static rulesets (for extension assembly) and dynamic rules
 
 ## Technical Context
 
-- **Language/Version**: TypeScript (ESM-only output), Node.js ≥ 22
+- **Language/Version**: TypeScript (ESM-only output), Node.js ≥ 22.23.5
 - **Primary Dependencies**: `@adguard/agtree` (rule parsing),
   `@adguard/logger` (logging), `@adguard/scriptlets` (scriptlet injection),
   `valibot` (schema validation), `punycode` (IDN encoding)

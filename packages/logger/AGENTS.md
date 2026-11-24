@@ -8,7 +8,7 @@ formatted timestamped output for debugging and runtime diagnostics.
 
 ## Technical Context
 
-- **Language/Version**: TypeScript, Node.js ≥ 22
+- **Language/Version**: TypeScript, Node.js ≥ 22.23.5
 - **Build Toolchain**: Rollup (with `@rollup/plugin-typescript`), separate type
   declaration build via `tsc`
 - **Testing**: Vitest

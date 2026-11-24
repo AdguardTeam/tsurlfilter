@@ -23,7 +23,7 @@ integration into custom build scripts.
   manifests)
 - **Testing**: Vitest (with 100 % coverage thresholds configured for
   `test:coverage` runs)
-- **Target Platform**: Node.js ≥ 22 (CLI tool and build-time library; ESM
+- **Target Platform**: Node.js ≥ 22.23.5 (CLI tool and build-time library; ESM
   output for lib, CJS output for CLI binary)
 - **Project Type**: Package inside the `tsurlfilter` pnpm monorepo
 - **Constraints**: CLI binary is CJS because `@adguard/re2-wasm` uses raw

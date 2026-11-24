@@ -10,7 +10,7 @@ traceability across large codebases.
 
 ## Technical Context
 
-- **Language/Version**: TypeScript, Node.js ≥ 22
+- **Language/Version**: TypeScript, Node.js ≥ 22.23.5
 - **Primary Dependencies**: `@typescript-eslint/utils` (ESLint rule utilities)
 - **Build Toolchain**: Rollup (with `@rollup/plugin-typescript`),
   `rollup-plugin-node-externals`, `tsc` for type declarations

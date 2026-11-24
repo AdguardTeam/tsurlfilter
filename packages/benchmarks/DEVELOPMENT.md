@@ -5,7 +5,7 @@ This guide covers the development workflow for benchmarks, which are now
 
 ## Prerequisites
 
-- **Node.js**: v22 or later
+- **Node.js**: v22.23.5 or later
 - **pnpm**: v10 (managed via the monorepo root)
 - **Playwright**: required for browser benchmarks (`pnpm bench:browser`),
   Chromium only for now

@@ -9,7 +9,7 @@ tables.
 
 ## Technical Context
 
-- **Language/Version**: TypeScript (ESM-only primary output), Node.js ≥ 22
+- **Language/Version**: TypeScript (ESM-only primary output), Node.js ≥ 22.23.5
 - **Primary Dependencies**: `@adguard/agtree` (rule parsing),
   `@adguard/css-tokenizer` (CSS parsing), `@adguard/logger` (logging),
   `@adguard/scriptlets` (scriptlet injection), `zod` (schema validation),

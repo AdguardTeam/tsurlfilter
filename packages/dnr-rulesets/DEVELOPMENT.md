@@ -5,7 +5,7 @@ practices for contributing to `@adguard/dnr-rulesets`.
 
 ## Prerequisites
 
-- **Required Tools**: Node.js 22.x or later
+- **Required Tools**: Node.js 22.23.5 or later
 - **Package Manager**: pnpm (managed via the monorepo root)
 - **Optional Tools**: `tsx` (installed as a devDependency, used to run task
   scripts)

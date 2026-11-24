@@ -40,7 +40,7 @@
     },
     "license": "GPL-3.0-only",
     "engines": {
-        "node": ">=22"
+        "node": ">=22.23.5"
     },
     "bugs": {
         "url": "https://github.com/AdguardTeam/tsurlfilter/issues"

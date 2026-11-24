@@ -11,7 +11,7 @@ content scripts and a CLI for build-time tasks.
 
 ## Technical Context
 
-- **Language/Version**: TypeScript (ESM-only output), Node.js ≥ 22
+- **Language/Version**: TypeScript (ESM-only output), Node.js ≥ 22.23.5
 - **Primary Dependencies**: `@adguard/tsurlfilter` (blocking engine),
   `@adguard/dnr-converter` (DNR rule conversion), `@adguard/agtree` (rule
   parsing), `@adguard/logger` (logging), `@adguard/scriptlets`,

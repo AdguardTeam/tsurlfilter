@@ -11,7 +11,7 @@ engine.
 
 ## Technical Context
 
-- **Language/Version**: TypeScript, Node.js ≥ 22
+- **Language/Version**: TypeScript, Node.js ≥ 22.23.5
 - **Primary Dependencies**: `@adguard/tswebextension` (content blocking
   engine wrapper), `@adguard/assistant` (user assistant UI),
   `@adguard/filters-downloader` (filter list downloading),

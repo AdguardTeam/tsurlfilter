@@ -11,7 +11,7 @@ AdGuard's Extended CSS syntax. It is used by `@adguard/agtree` and
 
 ## Technical Context
 
-- **Language/Version**: TypeScript, Node.js ≥ 22
+- **Language/Version**: TypeScript, Node.js ≥ 22.23.5
 - **Build Toolchain**: Rollup (with `@rollup/plugin-typescript`,
   `@rollup/plugin-terser`), `rollup-plugin-dts` (type bundling)
 - **Testing**: Vitest (with `@vitest/coverage-v8`)
