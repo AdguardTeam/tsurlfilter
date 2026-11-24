@@ -1,8 +1,9 @@
-import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../../common/constants';
+import { type NetworkRule } from '@adguard/tsurlfilter';
+
 import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
+import { type FrameConstructorProps } from '../../../common/tabs/frame';
 import { TabContextCommon } from '../../../common/tabs/tab-context';
 import { type TabInfo } from '../../../common/tabs/tabs-api';
-import { isHttpOrWsRequest } from '../../../common/utils/url';
 import { type DocumentApi } from '../document-api';
 
 import { FrameMV2 } from './frame';
@@ -26,7 +27,21 @@ export class TabContext extends TabContextCommon<FrameMV2> {
         super(info, filteringLog);
     }
 
-    // TODO: consider moving to common class AG-39552.
+    /**
+     * @inheritdoc
+     */
+    protected matchFrame(url: string): NetworkRule | null {
+        return this.documentApi.matchFrame(url);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    // eslint-disable-next-line class-methods-use-this
+    protected createFrame(props: FrameConstructorProps): FrameMV2 {
+        return new FrameMV2(props);
+    }
+
     /**
      * Creates context for new tab.
      *
@@ -38,24 +53,7 @@ export class TabContext extends TabContextCommon<FrameMV2> {
     public static createNewTabContext(tab: TabInfo, documentApi: DocumentApi): TabContext {
         const tabContext = new TabContext(tab, documentApi);
 
-        // In some cases, tab is created while browser navigation processing.
-        // For example: when you navigate outside the browser or create new empty tab.
-        // `pendingUrl` represent url navigated to. We check it first.
-        // If server returns redirect, new main frame url will be processed in WebRequestApi.
-        const url = tab.pendingUrl || tab.url;
-
-        if (url && isHttpOrWsRequest(url)) {
-            tabContext.mainFrameRule = documentApi.matchFrame(url);
-
-            tabContext.frames.set(MAIN_FRAME_ID, new FrameMV2({
-                tabId: tab.id,
-                frameId: MAIN_FRAME_ID,
-                parentFrameId: NO_PARENT_FRAME_ID,
-                url,
-                // timestamp is 0, so that it will be recalculated in the next event
-                timeStamp: 0,
-            }));
-        }
+        tabContext.initMainFrameFromTab(tab);
 
         return tabContext;
     }
