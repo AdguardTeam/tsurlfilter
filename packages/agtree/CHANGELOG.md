@@ -74,6 +74,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- ABP CSS injection detection (`##selector { declarations }`) no longer
+  counts `[` / `]` inside a quoted attribute value, so
+  `##div[data-v="["] {color:red}` is parsed as a CSS injection rule instead
+  of an element hiding rule. CSS string spans are skipped during the bracket
+  scan only inside an attribute selector. A quote outside an attribute
+  selector, e.g. in `:has-text(It's)`, stays plain text. An unterminated
+  quote is still a plain token.
 - A value whose closing slash is escaped, e.g. `/a\/`, is no longer
   treated as a RegExp literal. `RegExpUtils.isRegexPattern()` now checks
   the consecutive backslashes before the closing slash: an odd count

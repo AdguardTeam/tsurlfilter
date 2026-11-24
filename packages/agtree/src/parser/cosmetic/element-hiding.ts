@@ -493,8 +493,8 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
         // Requirements for a positive match:
         //   1. Body ends with a CloseBrace token (ignoring trailing whitespace)
         //   2. There is a top-level OpenBrace (outside square brackets and
-        //      CSS strings) that is not the very first non-whitespace token
-        //      (there must be a selector)
+        //      attribute-value CSS strings) that is not the very first
+        //      non-whitespace token (there must be a selector)
         //   3. The OpenBrace has the matching CloseBrace at the end
         if (uboModCount === 0 && !hasAdgMods) {
             const { types } = ctx;
@@ -511,12 +511,22 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                 for (let ti = bodyStartTi; ti < lastNonWsTi; ti += 1) {
                     const tt = types[ti];
 
-                    // Skip a terminated CSS string span so that brackets and
-                    // braces inside quoted attribute values do not affect the
-                    // scan. An unterminated quote stays a plain token.
+                    // Skip a CSS string span that ends at a closing quote or
+                    // a bad-string line break (see
+                    // `isCssStringUnterminated()`); an unterminated quote
+                    // stays a plain token. A quote is a string delimiter only
+                    // inside an attribute selector, so an apostrophe in, for
+                    // example, `:has-text(It's)` stays plain text.
                     if (tt === TokenType.Quote || tt === TokenType.Apostrophe) {
-                        const spanLength = cssStringLength(types, ti, endTi);
-                        if (!isCssStringUnterminated(types, ti, spanLength)) {
+                        const insideAttribute = bracketDepth > 0;
+                        const spanLength = cssStringSpanLength(
+                            types,
+                            ti,
+                            endTi,
+                            insideAttribute,
+                            insideAttribute,
+                        );
+                        if (spanLength > 0) {
                             ti += spanLength - 1;
                             continue;
                         }
