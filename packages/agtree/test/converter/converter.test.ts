@@ -98,6 +98,27 @@ describe('Converter integration tests', () => {
             });
         });
 
+        describe('should load an unterminated single-quoted :xpath() literal', () => {
+            test.each([
+                {
+                    // The previous handler ignored apostrophes, so a single-quoted literal
+                    // that never closes did not stop the rule from loading
+                    actual: String.raw`example.com##^div:xpath(//div[@a='x])`,
+                    expected: [String.raw`example.com$$div:xpath(//div[@a='x])`],
+                },
+                {
+                    // The escaped quote opens a literal, a later apostrophe closes it, and
+                    // the apostrophe that never closes is retried as plain text
+                    actual: String.raw`example.com#?#div:xpath(//div[contains(text(),\')]):style(content:')')`,
+                    // eslint-disable-next-line max-len
+                    expected: [String.raw`example.com#?#div:xpath(//div[contains(text(),\')]):style(content:')')`],
+                    shouldConvert: false,
+                },
+            ])("should not throw on '$actual'", (testData) => {
+                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+            });
+        });
+
         describe('should throw error on invalid uBO HTML filtering rules', () => {
             test.each([
                 {
