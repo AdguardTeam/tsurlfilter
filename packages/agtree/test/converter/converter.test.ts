@@ -88,7 +88,8 @@ describe('Converter integration tests', () => {
             test.each([
                 {
                     // A plain quotation mark that never closes is a typo, not a literal.
-                    // The argument stays unterminated, so the rule must not load silently.
+                    // Neither the XPath scan nor the previous handler's scan finds the
+                    // closing parenthesis, so the rule must not load silently.
                     actual: String.raw`example.com##^div:xpath(//div[@a="x])`,
                     expected: "Expected '<)-token>', but got 'end of input'",
                 },
@@ -98,7 +99,7 @@ describe('Converter integration tests', () => {
             });
         });
 
-        describe('should load an unterminated single-quoted :xpath() literal', () => {
+        describe('should keep the previous :xpath() argument boundary', () => {
             test.each([
                 {
                     // The previous handler ignored apostrophes, so a single-quoted literal
@@ -107,14 +108,39 @@ describe('Converter integration tests', () => {
                     expected: [String.raw`example.com$$div:xpath(//div[@a='x])`],
                 },
                 {
-                    // The escaped quote opens a literal, a later apostrophe closes it, and
-                    // the apostrophe that never closes is retried as plain text
-                    actual: String.raw`example.com#?#div:xpath(//div[contains(text(),\')]):style(content:')')`,
-                    // eslint-disable-next-line max-len
-                    expected: [String.raw`example.com#?#div:xpath(//div[contains(text(),\')]):style(content:')')`],
-                    shouldConvert: false,
+                    // The XPath scan ends inside the literal opened by the last quote. The
+                    // previous handler treated the escaped `"` as plain text, so it closed
+                    // the literal at the next `"` and the rule keeps loading.
+                    actual: String.raw`example.com##^div:xpath(//div[@a="x\""])`,
+                    expected: [String.raw`example.com$$div:xpath(//div[@a="x\""])`],
                 },
-            ])("should not throw on '$actual'", (testData) => {
+                {
+                    // The XPath scan ends inside the apostrophe literal that the final quote
+                    // opens. The previous handler treated apostrophes as plain text, so the
+                    // `:style()` stays outside the argument and the rule converts as before.
+                    actual: String.raw`example.com#?#div:xpath(//div[contains(text(),\')]):style(content:'x')`,
+                    expected: [
+                        String.raw`example.com#$?#div:xpath(//div[contains(text(),\')]) { content:'x' }`,
+                    ],
+                },
+                {
+                    // Same as above: the XPath scan ends inside the apostrophe literal that
+                    // the `url()` argument opens, and the previous handler keeps the
+                    // `:style()` value outside the argument.
+                    actual: String.raw`example.com#?#div:xpath(//div[@a='x]):style(background:url('a'))`,
+                    expected: [
+                        String.raw`example.com#$?#div:xpath(//div[@a='x]) { background:url('a') }`,
+                    ],
+                },
+                {
+                    // The same boundary applies when the `:style()` value contains a
+                    // parenthesis between the quotes
+                    actual: String.raw`example.com#?#div:xpath(//div[contains(text(),\')]):style(content:')')`,
+                    expected: [
+                        String.raw`example.com#$?#div:xpath(//div[contains(text(),\')]) { content:')' }`,
+                    ],
+                },
+            ])("should keep the previous boundary on '$actual'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
