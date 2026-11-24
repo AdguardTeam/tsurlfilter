@@ -280,6 +280,22 @@ describe('Extended CSS pseudo-class argument boundaries', () => {
             actual: 'nyafilmer.lol#?#body > div[class]:empty:matches-css(position: fixed):matches-css(z-index: /\\d+/)',
             expectedArgument: 'position: fixed',
         },
+        {
+            // a right parenthesis inside a quoted value does not close the argument
+            actual: 'div:matches-css(a: "x)y", b: /c/)',
+            expectedArgument: 'a: "x)y", b: /c/',
+        },
+        {
+            // the same when the quoted value is the whole argument
+            actual: 'div:matches-css(a: "x)y")',
+            expectedArgument: 'a: "x)y"',
+        },
+        {
+            // an apostrophe in plain text does not open a quoted value, so the
+            // following parenthesis still closes the argument
+            actual: "div:contains(it's):matches-css(color: /red/)",
+            expectedArgument: "it's",
+        },
     ])("should close the $actual pseudo-class after '$expectedArgument'", ({ actual, expectedArgument }) => {
         const tokens: Array<[TokenType, number, number]> = [];
 
@@ -313,6 +329,14 @@ describe('Extended CSS pseudo-class argument boundaries', () => {
         {
             actual: 'div:has(> a:contains(ad)):matches-css(display: /block/)',
             expected: ['> a:contains(ad)', 'display: /block/'],
+        },
+        {
+            actual: "div:contains(it's):matches-css(color: /red/)",
+            expected: ["it's", 'color: /red/'],
+        },
+        {
+            actual: 'div:matches-css(a: "x)y", b: /c/):matches-css(z-index: /\\d+/)',
+            expected: ['a: "x)y", b: /c/', 'z-index: /\\d+/'],
         },
     ])("should tokenize '$actual' as separate pseudo-classes", ({ actual, expected }) => {
         expect(collectFunctionArguments(actual)).toEqual(expected);

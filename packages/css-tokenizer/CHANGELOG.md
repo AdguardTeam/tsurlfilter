@@ -42,6 +42,11 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
   a later pseudo-class and no longer scans the rest of the selector for every
   pseudo-class. A literal that starts inside the argument may still run past
   that parenthesis, e.g. `:has-text(/a[)]b/)`.
+- A right parenthesis inside a quoted value no longer closes an extended CSS
+  pseudo-class argument early, e.g. `:matches-css(a: "x)y", b: /c/)` keeps
+  the whole argument. An apostrophe in plain text, e.g. `:contains(it's)`,
+  does not start a quoted value, so it does not hide the closing
+  parenthesis.
 
 ### Security
 

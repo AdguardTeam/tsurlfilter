@@ -143,6 +143,72 @@ const isRegexpLiteralStart = (context: TokenizerContext, index: number): boolean
 };
 
 /**
+ * Checks whether the quote at the given index opens a quoted value.
+ *
+ * A quoted value follows a colon or a comma, as in
+ * `:matches-css(a: "x)y", b: 'z)')`. A quote in plain text, e.g. in
+ * `:contains(it's)`, does not open a quoted value, so it must not hide the
+ * parenthesis that closes the argument.
+ *
+ * @param context Reference to the tokenizer context instance.
+ * @param index Index of the quote relative to the argument start.
+ *
+ * @returns `true` if the quote opens a quoted value, `false` otherwise.
+ */
+const isQuotedValueStart = (context: TokenizerContext, index: number): boolean => {
+    if (index === 0) {
+        return true;
+    }
+
+    let previousIndex = index - 1;
+    while (previousIndex >= 0 && isWhitespace(context.getRelativeCode(previousIndex) ?? 0)) {
+        previousIndex -= 1;
+    }
+
+    const previous = context.getRelativeCode(previousIndex);
+
+    return previous === CodePoint.Colon || previous === CodePoint.Comma;
+};
+
+/**
+ * Finds the closing quote of a quoted value.
+ *
+ * Escapes are read in pairs, so a quote preceded by an odd number of reverse solidi
+ * is plain text.
+ *
+ * @param context Reference to the tokenizer context instance.
+ * @param start Index of the opening quote relative to the argument start.
+ * @param limit End of the source range to scan, relative to the argument start.
+ *
+ * @returns Index of the closing quote relative to the argument start, or `-1` if the
+ * quoted value has no closing quote.
+ */
+const findQuoteEnd = (context: TokenizerContext, start: number, limit: number): number => {
+    const quote = context.getRelativeCode(start);
+    let escaped = false;
+
+    for (let index = start + 1; index < limit; index += 1) {
+        const code = context.getRelativeCode(index);
+
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+
+        if (code === CodePoint.ReverseSolidus) {
+            escaped = true;
+            continue;
+        }
+
+        if (code === quote) {
+            return index;
+        }
+    }
+
+    return -1;
+};
+
+/**
  * Finds the closing parenthesis of the pseudo-class argument after a regexp literal.
  *
  * The literal may be followed by more text of the same argument, e.g.
@@ -202,10 +268,11 @@ const findClosingParenAfterLiteral = (
  * The argument ends at the first unescaped right parenthesis which closes it. A
  * parenthesis inside a regexp character class does not close the argument when a
  * complete literal spans that parenthesis and another parenthesis that closes the
- * argument follows the literal. When the class-blind scan finds no closing parenthesis
- * at all, a complete literal followed by one is used instead. Otherwise the argument
- * keeps its class-blind end, so a later part of the selector cannot turn a plain-text
- * argument into a regexp.
+ * argument follows the literal. A parenthesis inside a quoted value, e.g.
+ * `:matches-css(a: "x)y", b: /c/)`, does not close the argument either. When the
+ * class-blind scan finds no closing parenthesis at all, a complete literal followed
+ * by one is used instead. Otherwise the argument keeps its class-blind end, so a later
+ * part of the selector cannot turn a plain-text argument into a regexp.
  *
  * @param context Reference to the tokenizer context instance, positioned at the start
  * of the argument.
@@ -234,6 +301,17 @@ const findArgumentEnd = (context: TokenizerContext): number => {
         if (code === CodePoint.ReverseSolidus) {
             escaped = true;
             continue;
+        }
+
+        // Skip a quoted value, where a right parenthesis is plain text
+        if ((code === CodePoint.Apostrophe || code === CodePoint.QuotationMark)
+            && isQuotedValueStart(context, index)) {
+            const quoteEnd = findQuoteEnd(context, index, length);
+
+            if (quoteEnd >= 0) {
+                index = quoteEnd;
+                continue;
+            }
         }
 
         if (code === CodePoint.LeftParenthesis) {
