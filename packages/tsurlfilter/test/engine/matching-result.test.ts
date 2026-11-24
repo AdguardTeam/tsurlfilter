@@ -1373,6 +1373,40 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
         expect(result.cosmeticExceptionRule).toMatchNetworkRule(createNetworkRule(rule, 0));
         expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionNone);
     });
+
+    it('keeps the blocking rule as a basic result when a cosmetic exception matches', () => {
+        const blockingRuleText = '||h.seznam.cz^';
+        const cosmeticExceptionRuleText = '@@||seznam.cz^$generichide';
+
+        const rules = [
+            createNetworkRule(blockingRuleText, 0),
+            createNetworkRule(cosmeticExceptionRuleText, 0),
+        ];
+        const result = new MatchingResult(rules, null);
+
+        expect(result.cosmeticExceptionRule).toMatchNetworkRule(createNetworkRule(cosmeticExceptionRuleText, 0));
+
+        const basicResult = result.getBasicResult();
+        expect(basicResult).not.toBeNull();
+        expect(basicResult).toMatchNetworkRule(createNetworkRule(blockingRuleText, 0));
+
+        // The cosmetic exception is still applied to cosmetics.
+        expect(result.getCosmeticOption()).toEqual(
+            CosmeticOption.CosmeticOptionSpecificCSS
+            | CosmeticOption.CosmeticOptionJS
+            | CosmeticOption.CosmeticOptionHtml,
+        );
+    });
+
+    it('returns the cosmetic exception as a basic result when nothing blocks the request', () => {
+        const cosmeticExceptionRuleText = '@@||seznam.cz^$generichide';
+
+        const result = new MatchingResult([createNetworkRule(cosmeticExceptionRuleText, 0)], null);
+
+        const basicResult = result.getBasicResult();
+        expect(basicResult).not.toBeNull();
+        expect(basicResult).toMatchNetworkRule(createNetworkRule(cosmeticExceptionRuleText, 0));
+    });
 });
 
 describe('getResponseHeadersResult', () => {

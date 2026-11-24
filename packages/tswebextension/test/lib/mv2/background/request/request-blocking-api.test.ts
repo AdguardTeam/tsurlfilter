@@ -630,3 +630,23 @@ describe('Request Blocking Api - closeTab publishes PopupBlocked event (AG-3736)
         resolveRemove!();
     });
 });
+
+describe('Request Blocking Api - cosmetics exception rules do not allow requests', () => {
+    const RULES = ['||h.seznam.cz^', '@@||seznam.cz^$generichide'];
+    const REQUEST_URL = 'https://h.seznam.cz/hit';
+
+    afterEach(() => {
+        vi.resetAllMocks();
+    });
+
+    it('cancels a subdocument request blocked by a rule', () => {
+        const data = getGetBlockingResponseParamsData(
+            RULES,
+            REQUEST_URL,
+            RequestType.SubDocument,
+            ContentType.Subdocument,
+        );
+
+        expect(RequestBlockingApi.getBlockingResponse(data)).toEqual({ cancel: true });
+    });
+});

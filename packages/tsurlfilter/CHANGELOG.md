@@ -52,12 +52,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Empty `:contains()` arguments in HTML filtering rules are now rejected.
 - `:-abp-contains()` and `:has-text()` are now treated as aliases of
   `:contains()` in HTML filtering rules.
+- A cosmetic exception rule (`$elemhide`, `$generichide`, `$specifichide`,
+  `$jsinject`) no longer affects network filtering: it no longer allows a
+  request blocked by a rule matched for the same request, and no longer
+  suppresses a redirect, replace or popup rule. Only document and subdocument
+  requests are involved, because that is the only request types a cosmetic
+  modifier can match. A `$document` exception of the frame stays in effect as
+  well, so a filtering-disabled page keeps `$csp`, `$header`, `$cookie` and
+  `$removeheader` rules off its sub-requests. E.g. `||h.seznam.cz^` stays
+  applied when `@@||seznam.cz^$generichide` matches
+  [AdguardBrowserExtension#3006].
 
 ### Security
 
 [Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.4...HEAD
 [#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
+[AdguardBrowserExtension#3006]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3006
 [AdguardBrowserExtension#3605]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3605
 
 ## [6.0.4] - 2026-10-15

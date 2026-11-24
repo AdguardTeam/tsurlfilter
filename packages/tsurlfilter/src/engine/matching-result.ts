@@ -280,16 +280,6 @@ export class MatchingResult {
     public getBasicResult(): NetworkRule | null {
         let basic = this.basicRule;
 
-        // e.g. @@||example.com^$generichide
-        if (this.cosmeticExceptionRule && (!basic || this.cosmeticExceptionRule.isHigherPriority(basic))) {
-            // special case: `||example.org^$document` should not be allowlisted by cosmetic exception rules
-            if (basic && !basic.isAllowlist() && MatchingResult.isDocumentRule(basic)) {
-                return basic;
-            }
-
-            return this.cosmeticExceptionRule;
-        }
-
         if (!basic) {
             // Only document-level frame rule would be returned as a basic result,
             // cause only those rules could block or modify page sub-requests.
@@ -328,7 +318,18 @@ export class MatchingResult {
         }
 
         if (!basic) {
-            return this.popupRule;
+            basic = this.popupRule;
+        }
+
+        // A cosmetic exception (`$elemhide`, `$generichide`, `$specifichide`,
+        // `$jsinject`) only disables cosmetic rules: it must not allow, block,
+        // redirect or replace a request that a network rule has already decided.
+        // It is reported only when no network rule decides the request, and
+        // instead of an allowlist rule it outranks, so that the filtering log
+        // keeps showing it.
+        if (this.cosmeticExceptionRule
+            && (!basic || (basic.isAllowlist() && this.cosmeticExceptionRule.isHigherPriority(basic)))) {
+            return this.cosmeticExceptionRule;
         }
 
         return basic;

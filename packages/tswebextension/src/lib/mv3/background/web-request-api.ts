@@ -743,18 +743,13 @@ export class WebRequestApi {
         /**
          * When handling document blocking, we need to retrieve the rule responsible for the blocking.
          *
-         * MatchingResult.getBasicResult() is not good enough, because it may return an exception rule,
-         * while a blocking rule is still applied in MV3. For example, if there are two rules:
-         * `||example.com^$document` and
-         * `@@||example.com^$generichide`,
-         * the first rule is converted and applied as DNR rule by browser (so here we are handling the error),
-         * the second one is not related to the blocking and error handling.
+         * MatchingResult.getBasicResult() is not good enough, because the DNR rule that
+         * blocked the request is chosen by the browser and may differ from the single rule
+         * the matching engine reports for the same request. This handler needs exactly the
+         * rule that blocked the document, not the engine's overall verdict.
          *
          * This behaviour is expected, correct, and consistent with the CoreLibs apps:
          * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3260.
-         *
-         * TODO: fix incorrect logic for the MV2 extension:
-         * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3262.
          */
         const rule = matchingResult.getDocumentBlockingResult();
         if (!rule) {

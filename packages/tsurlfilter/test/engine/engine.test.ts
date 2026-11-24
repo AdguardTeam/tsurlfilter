@@ -1675,3 +1675,253 @@ describe('Domain-scoped rules on trailing underscore labels', () => {
         expect(result.JS.generic.map((rule) => rule.getContent())).toEqual([genericJs]);
     });
 });
+
+describe('Cosmetic exceptions and network blocking', () => {
+    const blockingRuleText = '||h.seznam.cz^';
+    const cosmeticExceptionRuleText = '@@||seznam.cz^$generichide';
+
+    /**
+     * Returns the text of the basic result rule of the match.
+     *
+     * @param engine Engine to match the request with.
+     * @param request Request to match.
+     *
+     * @returns Rule text as written in the filter list or `null`.
+     */
+    const getBasicResultText = (engine: Engine, request: Request): string | null => {
+        const basicResult = engine.matchRequest(request).getBasicResult();
+
+        if (!basicResult) {
+            return null;
+        }
+
+        return engine.retrieveRuleText(basicResult.getFilterListId(), basicResult.getIndex());
+    };
+
+    // Only document and subdocument requests are listed: a cosmetic modifier
+    // restricts its rule to those two request types (`network-rule.ts`
+    // `setRequestType(Document|SubDocument)`), so for any other type the rule is
+    // not matched at all and the case cannot fail.
+    // The document row asserts the engine decision only: MV2 deliberately does
+    // not block the main frame with rules that do not permit document requests
+    // (`request-blocking-api.ts`, `getPermittedRequestTypes` check).
+    it.each([
+        ['document', RequestType.Document],
+        ['subdocument', RequestType.SubDocument],
+    ])('keeps the blocking rule for a %s request', (_name, requestType) => {
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: [blockingRuleText, cosmeticExceptionRuleText].join('\n'),
+            }],
+        });
+
+        const request = new Request(
+            'https://h.seznam.cz/hit',
+            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            requestType,
+        );
+
+        expect(getBasicResultText(engine, request)).toBe(blockingRuleText);
+    });
+
+    it.each([
+        '@@||seznam.cz^$elemhide',
+        '@@||seznam.cz^$specifichide',
+        '@@||seznam.cz^$jsinject',
+    ])('keeps the blocking rule with the %s exception', (exceptionRule) => {
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: [blockingRuleText, exceptionRule].join('\n'),
+            }],
+        });
+
+        const request = new Request(
+            'https://h.seznam.cz/hit',
+            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            RequestType.SubDocument,
+        );
+
+        expect(getBasicResultText(engine, request)).toBe(blockingRuleText);
+    });
+
+    it('keeps the blocking rule when it comes from another filter list', () => {
+        const engine = Engine.createSync({
+            filters: [
+                { id: 1, content: blockingRuleText },
+                { id: 2, content: cosmeticExceptionRuleText },
+            ],
+        });
+
+        const request = new Request(
+            'https://h.seznam.cz/hit',
+            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            RequestType.SubDocument,
+        );
+
+        expect(getBasicResultText(engine, request)).toBe(blockingRuleText);
+    });
+
+    it.each([
+        ['a domain-scoped blocking rule', '||h.seznam.cz^$domain=cmp.seznam.cz', cosmeticExceptionRuleText],
+        ['an $important cosmetic exception', blockingRuleText, '@@||seznam.cz^$generichide,important'],
+    ])('keeps the blocking rule next to %s', (_name, blockingRule, exceptionRule) => {
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: [blockingRule, exceptionRule].join('\n'),
+            }],
+        });
+
+        const request = new Request(
+            'https://h.seznam.cz/hit',
+            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            RequestType.SubDocument,
+        );
+
+        expect(getBasicResultText(engine, request)).toBe(blockingRule);
+    });
+
+    it('still disables generic cosmetic rules of the document', () => {
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: ['||cmp.seznam.cz^', cosmeticExceptionRuleText].join('\n'),
+            }],
+        });
+
+        const request = new Request(
+            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            null,
+            RequestType.Document,
+        );
+
+        expect(engine.matchRequest(request).getCosmeticOption()).toEqual(
+            CosmeticOption.CosmeticOptionSpecificCSS
+            | CosmeticOption.CosmeticOptionJS
+            | CosmeticOption.CosmeticOptionHtml,
+        );
+    });
+
+    it('keeps a network allowlist rule as a basic result', () => {
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: ['@@||h.seznam.cz^', cosmeticExceptionRuleText].join('\n'),
+            }],
+        });
+
+        const request = new Request(
+            'https://h.seznam.cz/hit',
+            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            RequestType.SubDocument,
+        );
+
+        const basicResult = engine.matchRequest(request).getBasicResult();
+
+        expect(basicResult).not.toBeNull();
+        expect(basicResult!.isAllowlist()).toBe(true);
+    });
+
+    it('keeps an $important blocking rule blocking', () => {
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: ['||h.seznam.cz^$important', cosmeticExceptionRuleText].join('\n'),
+            }],
+        });
+
+        const request = new Request(
+            'https://h.seznam.cz/hit',
+            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            RequestType.SubDocument,
+        );
+
+        expect(getBasicResultText(engine, request)).toBe('||h.seznam.cz^$important');
+    });
+
+    it.each([
+        // The engine normalizes the resource name: `noop.js` becomes `noopjs`.
+        ['a redirect rule', ['||h.seznam.cz^$redirect=noop.js'], '||h.seznam.cz^$redirect=noopjs'],
+        [
+            'a redirect rule over a blocking rule',
+            ['||h.seznam.cz^', '||h.seznam.cz^$redirect=noop.js'],
+            '||h.seznam.cz^$redirect=noopjs',
+        ],
+        ['a popup rule', ['||h.seznam.cz^$popup'], '||h.seznam.cz^$popup'],
+    ])('does not suppress %s', (_name, rules, expected) => {
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: [...rules, cosmeticExceptionRuleText].join('\n'),
+            }],
+        });
+
+        const request = new Request(
+            'https://h.seznam.cz/hit',
+            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            RequestType.Document,
+        );
+
+        expect(getBasicResultText(engine, request)).toBe(expected);
+    });
+
+    it('does not suppress $replace rules', () => {
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: ['||h.seznam.cz^$replace=/X/Y/', cosmeticExceptionRuleText].join('\n'),
+            }],
+        });
+
+        const request = new Request(
+            'https://h.seznam.cz/hit',
+            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            RequestType.Document,
+        );
+
+        // `null` means «allow the request, the response will be modified».
+        expect(getBasicResultText(engine, request)).toBeNull();
+    });
+
+    it('keeps the document-level exception of the frame next to a cosmetic exception', () => {
+        const frameRuleText = '@@||example.org^$document';
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: [cosmeticExceptionRuleText, frameRuleText].join('\n'),
+            }],
+        });
+
+        const frameUrl = 'https://example.org/page';
+        const frameRule = engine.matchFrame(frameUrl);
+        const request = new Request('https://h.seznam.cz/hit', frameUrl, RequestType.SubDocument);
+        const basicResult = engine.matchRequest(request, frameRule).getBasicResult();
+
+        expect(basicResult).not.toBeNull();
+        expect(
+            engine.retrieveRuleText(basicResult!.getFilterListId(), basicResult!.getIndex()),
+        ).toBe(frameRuleText);
+        // The filtering-disabled state of the frame is what gates `$csp`, `$header`,
+        // `$cookie` and `$removeheader` rules for its sub-requests.
+        expect(basicResult!.isFilteringDisabled()).toBe(true);
+    });
+
+    it('returns the cosmetic exception when no rule blocks the request', () => {
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: [cosmeticExceptionRuleText].join('\n'),
+            }],
+        });
+
+        const request = new Request(
+            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            null,
+            RequestType.Document,
+        );
+
+        expect(getBasicResultText(engine, request)).toBe(cosmeticExceptionRuleText);
+    });
+});
