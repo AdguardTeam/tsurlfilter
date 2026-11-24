@@ -23,7 +23,9 @@ export interface ExceptionSource {
     filterId: number;
 
     /**
-     * Candidate lines of the filter (see {@link collectExceptionLines}).
+     * Candidate lines of the filter as written in the list: `$badfilter`
+     * compares the written text, so a converted line would not cancel its
+     * counterpart (see {@link collectExceptionLines}).
      */
     lines: readonly string[];
 }
@@ -699,8 +701,13 @@ const buildHostExclusions = (
 
         // A rule that covers every URL of the host would exclude the whole
         // registration: the host then stays on the dynamic path, which is the
-        // same thing without a registration to maintain.
-        if (patternHost.rest === '' || patternHost.rest === '^') {
+        // same thing without a registration to maintain. A trailing `/`
+        // reaches every path too, but a scheme-anchored one still spares the
+        // other scheme, so only the scheme-agnostic spelling lands here.
+        const coversEveryUrl = patternHost.rest === ''
+            || patternHost.rest === '^'
+            || (patternHost.rest === '/' && patternHost.scheme === ANY_SCHEME);
+        if (coversEveryUrl) {
             return { patterns: [], dynamic: text };
         }
 

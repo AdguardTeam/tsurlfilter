@@ -80,6 +80,29 @@ describe('EngineApi.startEngine — exception sources', () => {
         ]);
     });
 
+    it('keeps the written text of a converted local filter', async () => {
+        // `$badfilter` compares the rule as written, and the stored list is
+        // converted: `$3p` becomes `$third-party`, so the converted line no
+        // longer cancels the exception the engine cancels.
+        vi.spyOn(Engine, 'createAsync').mockResolvedValue(undefined as never);
+        const stored = new FilterList('@@||youtube.com/ads$document,3p', 2);
+        expect(stored.getContent()).not.toBe(stored.getOriginalContent());
+        vi.spyOn(FiltersApi, 'loadFilterContent').mockResolvedValue(stored);
+
+        const api = new EngineApi();
+        await api.startEngine({
+            verbose: false,
+            localFilters: [makeFilter(2, '')],
+            remoteFilters: [],
+            userRulesFilter: makeFilter(0, ''),
+            allowlistRulesList: null,
+        });
+
+        expect(api.getExceptionSources()).toEqual([
+            { filterId: 2, lines: ['@@||youtube.com/ads$document,3p'] },
+        ]);
+    });
+
     it('collects the generated rule of the user allowlist', async () => {
         // The allowlist is a document-level exception on the hosts the user
         // allowlisted: the engine disables JS there, so the scan has to see it.

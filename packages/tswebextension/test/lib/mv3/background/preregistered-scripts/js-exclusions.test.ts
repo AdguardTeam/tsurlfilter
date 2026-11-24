@@ -87,6 +87,32 @@ describe('resolveHostExclusions', () => {
         expect(dynamicHosts.get('youtube.com')).toBe('@@||youtube.com^$document');
     });
 
+    it('keeps a host dynamic when the exception names the root page only', () => {
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@||youtube.com/$document\n',
+        }]);
+
+        // `*://youtube.com/*` would be identical to the registration's
+        // `matches`: the registration could never inject, so the host takes
+        // the dynamic path instead of counting as covered.
+        expect(exclusions.size).toBe(0);
+        expect(dynamicHosts.get('youtube.com')).toBe('@@||youtube.com/$document');
+    });
+
+    it('keeps a root-page exception that names one scheme as an exclusion', () => {
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@|https://www.youtube.com/$document\n',
+        }]);
+
+        // The exception disables JS on https only, so the http pages of the
+        // host stay preregistered: the exclusion still says something the
+        // registration's `matches` does not.
+        expect(exclusions.get('www.youtube.com')).toEqual(['https://www.youtube.com/*']);
+        expect(dynamicHosts.size).toBe(0);
+    });
+
     it('ignores an exception of another site', () => {
         const { exclusions, dynamicHosts } = scan([{
             filterId: 2,

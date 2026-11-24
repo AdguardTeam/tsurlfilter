@@ -145,7 +145,12 @@ export class EngineApi {
                     ignoreJS: false,
                     ignoreUnsafe: false,
                 });
-                exceptionSources.push({ filterId: filter.getId(), lines: collectExceptionLines(content.getContent()) });
+                // `$badfilter` compares the rule as written, and the stored
+                // list is converted: the scan reads the original spelling.
+                exceptionSources.push({
+                    filterId: filter.getId(),
+                    lines: collectExceptionLines(content.getOriginalContent()),
+                });
             } catch (e) {
                 const filterId = localFilters[i].getId();
                 logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for filter ${filterId} due to: `, e);
