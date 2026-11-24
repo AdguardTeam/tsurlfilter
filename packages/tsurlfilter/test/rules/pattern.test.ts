@@ -160,3 +160,33 @@ describe('Pattern Tests', () => {
         )).toBeFalsy();
     });
 });
+
+describe('Pattern.isPathIndependent', () => {
+    it.each([
+        '*',
+        '||example.com^',
+        '||example.com',
+        '||sub.example.com^',
+        '||EXAMPLE.COM^',
+        '||localhost^',
+    ])('returns true for the path-independent pattern %s', (text) => {
+        expect(new Pattern(text).isPathIndependent()).toBe(true);
+    });
+
+    it.each([
+        '||check24.de/suche/?q',
+        '||tiktok.com/@*/video/*',
+        '||kickstarter.com/projects',
+        '|https://example.com/',
+        '||example.com^|',
+        '||example.com/',
+        String.raw`/^https:\/\/example\.com\/search/`,
+        'example.com/path',
+        'example.com',
+        '||example.com^*',
+        '||example.com:8080^',
+        '||',
+    ])('returns false for the path-scoped or unproven pattern %s', (text) => {
+        expect(new Pattern(text).isPathIndependent()).toBe(false);
+    });
+});

@@ -17,6 +17,15 @@ export interface RemoveParamDescriptor {
     value: string;
     isAllowlist: boolean;
     isImportant: boolean;
+    /**
+     * Whether the rule pattern matches the whole host regardless of the path
+     * and the query.
+     *
+     * A path-independent descriptor is safe to apply to any same-origin
+     * History API destination URL. A path-scoped descriptor must wait for the
+     * background to re-match the destination URL.
+     */
+    isPathIndependent: boolean;
     filterId: number;
     ruleIndex: number;
     ruleText: string;
@@ -104,6 +113,7 @@ export function getRemoveParamDescriptors(
             value: modifierValue || '',
             isAllowlist: rule.isAllowlist(),
             isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+            isPathIndependent: rule.isPatternPathIndependent(),
             filterId: rule.getFilterListId(),
             ruleIndex: rule.getIndex(),
             ruleText: appliedRuleText,

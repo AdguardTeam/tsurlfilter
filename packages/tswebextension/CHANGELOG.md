@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `$removeparam` rules with a path-scoped pattern are no longer applied
+  synchronously to a History API navigation to another path. The patched
+  `pushState` and `replaceState` apply only the rules whose pattern matches the
+  whole host, and the background re-match handles the rest. As a result, a
+  parameter of the destination URL stays when the rule does not match that URL,
+  for example `||check24.de/suche/?q$removeparam=source` no longer removes
+  `source` on `/checkout/`. Rules with a path-independent pattern, such as `*`
+  or `||example.com^`, keep the synchronous removal.
 - The MV3 rules-limits page could overcount unsafe rules, because the
   excluded-rule list shared by the total and unsafe limit errors included rules
   dropped by the other limit. The total limit error now carries only the rules

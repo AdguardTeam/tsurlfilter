@@ -23,8 +23,14 @@ import { type RemoveParamDescriptor } from '../utils/remove-param-rules';
  * 1. Capture `document.baseURI` before calling the original method, so a
  * path-relative URL is resolved against the pre-navigation base.
  * 2. Call the original method immediately (SPA behaviour is preserved).
- * 3. If the URL contains query parameters, apply parameter removal synchronously.
+ * 3. If the URL contains query parameters, apply the path-independent
+ * descriptors synchronously. A path-scoped descriptor is left to the
+ * background re-match, because the page cannot prove that its pattern matches
+ * the destination path.
  * 4. If the URL changed, call `replaceState` to update the address bar.
+ *
+ * The initial and the updater calls apply the full descriptor list, because
+ * those lists were computed for the exact current URL.
  *
  * **Important**: every constant and helper referenced inside the function
  * body is declared as a local variable so that
@@ -54,6 +60,7 @@ export function patchHistoryForRemoveParam(
         valueRegExp: RegExp | null;
         isAllowlist: boolean;
         isNegated: boolean;
+        isPathIndependent: boolean;
     }
 
     /**
@@ -154,6 +161,7 @@ export function patchHistoryForRemoveParam(
                     valueRegExp: regex,
                     isAllowlist: rawDesc.isAllowlist,
                     isNegated,
+                    isPathIndependent: rawDesc.isPathIndependent === true,
                 });
             } catch {
                 // Skip the descriptor: one invalid value must not disable
@@ -276,13 +284,16 @@ export function patchHistoryForRemoveParam(
     }
 
     /**
-     * Applies all loaded descriptors to a URL.
+     * Applies loaded descriptors to a URL.
      *
      * @param url The URL to process.
+     * @param pathIndependentOnly If true, apply only the descriptors whose
+     * rule pattern matches the whole host. The other descriptors are left to
+     * the background re-match.
      *
      * @returns The cleaned URL, or null if no changes were made.
      */
-    function applyDescriptors(url: string): string | null {
+    function applyDescriptors(url: string, pathIndependentOnly = false): string | null {
         if (!descriptors || descriptors.length === 0) {
             return null;
         }
@@ -290,10 +301,24 @@ export function patchHistoryForRemoveParam(
         let purgedUrl = url;
 
         for (const desc of descriptors) {
+            if (pathIndependentOnly && !desc.isPathIndependent) {
+                continue;
+            }
+
             if (desc.isAllowlist) {
                 // Allowlist rules are handled by MatchingResult in the
                 // background — if an allowlist rule is present, the
                 // corresponding blocking rule should have been filtered out.
+                //
+                // The page cannot know about allowlist rules that apply only
+                // to the destination route. A document-wide allowlist already
+                // produces no descriptors, so the remaining exposure is
+                // limited to destination-scoped allowlist rules: a blocking
+                // rule from the previous route can clean the destination.
+                // The background re-match corrects the descriptor list for
+                // later navigations, but an already applied removal cannot be
+                // reverted. We accept this limitation instead of building a
+                // page-side rule-matching engine.
                 continue;
             }
 
@@ -331,9 +356,17 @@ export function patchHistoryForRemoveParam(
      * @param state History state.
      * @param title Page title.
      * @param absoluteUrl Absolute URL to process.
+     * @param pathIndependentOnly If true, apply only the path-independent
+     * descriptors. Used by the synchronous pass of the patched History API
+     * methods.
      */
-    function processUrl(state: unknown, title: string, absoluteUrl: string): void {
-        const cleanedUrl = applyDescriptors(absoluteUrl);
+    function processUrl(
+        state: unknown,
+        title: string,
+        absoluteUrl: string,
+        pathIndependentOnly = false,
+    ): void {
+        const cleanedUrl = applyDescriptors(absoluteUrl, pathIndependentOnly);
         if (cleanedUrl === null) {
             return;
         }
@@ -385,7 +418,10 @@ export function patchHistoryForRemoveParam(
                 return;
             }
 
-            processUrl(state, title, absoluteUrl);
+            // Apply only the path-independent descriptors here. The background
+            // re-matches the destination URL on `onHistoryStateUpdated` and
+            // sends the correct full list through the updater.
+            processUrl(state, title, absoluteUrl, true);
         };
 
         // Match the native method's observable properties.

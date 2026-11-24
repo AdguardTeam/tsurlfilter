@@ -56,6 +56,7 @@ describe('getRemoveParamDescriptors', () => {
             getAdvancedModifierValue: vi.fn().mockReturnValue('utm_source'),
             isAllowlist: vi.fn().mockReturnValue(false),
             isOptionEnabled: vi.fn().mockReturnValue(false),
+            isPatternPathIndependent: vi.fn().mockReturnValue(true),
             getFilterListId: vi.fn().mockReturnValue(1),
             getIndex: vi.fn().mockReturnValue(42),
             getText: vi.fn().mockReturnValue('||example.com^$removeparam=utm_source'),
@@ -83,6 +84,7 @@ describe('getRemoveParamDescriptors', () => {
             value: 'utm_source',
             isAllowlist: false,
             isImportant: false,
+            isPathIndependent: true,
             filterId: 1,
             ruleIndex: 42,
             ruleText: '||example.com^$removeparam=utm_source',
@@ -94,6 +96,7 @@ describe('getRemoveParamDescriptors', () => {
             getAdvancedModifierValue: vi.fn().mockReturnValue(null),
             isAllowlist: vi.fn().mockReturnValue(false),
             isOptionEnabled: vi.fn().mockReturnValue(false),
+            isPatternPathIndependent: vi.fn().mockReturnValue(true),
             getFilterListId: vi.fn().mockReturnValue(1),
             getIndex: vi.fn().mockReturnValue(10),
             getText: vi.fn().mockReturnValue('||example.com^$removeparam'),
@@ -126,6 +129,7 @@ describe('getRemoveParamDescriptors', () => {
                 getAdvancedModifierValue: vi.fn().mockReturnValue('utm_source'),
                 isAllowlist: vi.fn().mockReturnValue(false),
                 isOptionEnabled: vi.fn().mockReturnValue(false),
+                isPatternPathIndependent: vi.fn().mockReturnValue(true),
                 getFilterListId: vi.fn().mockReturnValue(1),
                 getIndex: vi.fn().mockReturnValue(0),
                 getText: vi.fn().mockReturnValue('||example.com^$removeparam=utm_source'),
@@ -134,6 +138,7 @@ describe('getRemoveParamDescriptors', () => {
                 getAdvancedModifierValue: vi.fn().mockReturnValue('utm_medium'),
                 isAllowlist: vi.fn().mockReturnValue(false),
                 isOptionEnabled: vi.fn().mockReturnValue(true),
+                isPatternPathIndependent: vi.fn().mockReturnValue(true),
                 getFilterListId: vi.fn().mockReturnValue(2),
                 getIndex: vi.fn().mockReturnValue(5),
                 getText: vi.fn().mockReturnValue('||example.com^$removeparam=utm_medium,important'),
@@ -169,6 +174,39 @@ describe('getRemoveParamDescriptors', () => {
             filterId: 2,
             ruleIndex: 5,
         });
+    });
+
+    it('marks a path-scoped rule descriptor as not path-independent', () => {
+        const mockRule = {
+            getAdvancedModifierValue: vi.fn().mockReturnValue('source'),
+            isAllowlist: vi.fn().mockReturnValue(false),
+            isOptionEnabled: vi.fn().mockReturnValue(false),
+            isPatternPathIndependent: vi.fn().mockReturnValue(false),
+            getFilterListId: vi.fn().mockReturnValue(1),
+            getIndex: vi.fn().mockReturnValue(7),
+            getText: vi.fn().mockReturnValue('||check24.de/suche/?q$removeparam=source'),
+        };
+        const mockMatchingResult = {
+            getRemoveParamRules: vi.fn().mockReturnValue([mockRule]),
+        };
+        const mockEngineApi = {
+            matchRequest: vi.fn().mockReturnValue(mockMatchingResult),
+            retrieveRuleText: vi.fn().mockReturnValue('||check24.de/suche/?q$removeparam=source'),
+            retrieveOriginalRuleText: vi.fn().mockReturnValue(null),
+        };
+
+        const result = getRemoveParamDescriptors({
+            requestUrl: 'https://check24.de/suche/?q=1',
+            frameUrl: 'https://check24.de/suche/?q=1',
+            frameRule: null,
+            engineApi: mockEngineApi,
+        });
+
+        expect(result).not.toBeNull();
+        expect(result!.descriptors[0]).toMatchObject({
+            value: 'source',
+            isPathIndependent: false,
+        } satisfies Partial<RemoveParamDescriptor>);
     });
 });
 

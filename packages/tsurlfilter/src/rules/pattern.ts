@@ -44,6 +44,11 @@ export class Pattern {
     private patternDomainSpecific: boolean | undefined;
 
     /**
+     * Path-independent pattern flag.
+     */
+    private pathIndependent: boolean | undefined;
+
+    /**
      * If true, pattern and shortcut are the same.
      * In this case, we don't actually need to use `matchPattern`
      * if shortcut was already matched.
@@ -234,5 +239,52 @@ export class Pattern {
         }
 
         return this.patternDomainSpecific;
+    }
+
+    /**
+     * Checks if this pattern matches the whole host regardless of the path and
+     * the query.
+     *
+     * A path-independent pattern is the full wildcard (`*`) or a
+     * domain-anchored host pattern (`||example.com` or `||example.com^`) without
+     * a path, a wildcard, or an end-of-URL anchor. Such a pattern matches every
+     * URL of the host, so its match does not depend on the current path.
+     * Every other pattern may target a path or a full URL, so this method
+     * returns `false` for it.
+     *
+     * @returns True if the pattern is path-independent.
+     */
+    public isPathIndependent(): boolean {
+        if (this.pathIndependent === undefined) {
+            this.pathIndependent = Pattern.isPathIndependentPattern(this.pattern);
+        }
+
+        return this.pathIndependent;
+    }
+
+    /**
+     * Checks if a pattern text matches the whole host regardless of the path
+     * and the query.
+     *
+     * @param pattern Pattern text.
+     *
+     * @returns True if the pattern is path-independent.
+     */
+    private static isPathIndependentPattern(pattern: string): boolean {
+        if (pattern === SimpleRegex.MASK_ANY_CHARACTER) {
+            return true;
+        }
+
+        if (!pattern.startsWith(SimpleRegex.MASK_START_URL)) {
+            return false;
+        }
+
+        let hostname = pattern.slice(SimpleRegex.MASK_START_URL.length);
+        if (hostname.endsWith(SimpleRegex.MASK_SEPARATOR)) {
+            hostname = hostname.slice(0, -1);
+        }
+
+        // A plain hostname only: no path, wildcard, or anchor characters left.
+        return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$/i.test(hostname);
     }
 }

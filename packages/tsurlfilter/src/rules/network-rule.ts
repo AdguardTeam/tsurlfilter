@@ -842,6 +842,16 @@ export class NetworkRule implements IRule {
     }
 
     /**
+     * Checks if the rule pattern matches the whole host regardless of the path
+     * and the query.
+     *
+     * @returns True if the rule pattern is path-independent.
+     */
+    public isPatternPathIndependent(): boolean {
+        return this.pattern.isPathIndependent();
+    }
+
+    /**
      * Returns `true` if the rule is "allowlist", e.g. if it disables other
      * rules when the pattern matches the request.
      *

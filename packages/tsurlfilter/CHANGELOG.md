@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added `Pattern.isPathIndependent()` and
+  `NetworkRule.isPatternPathIndependent()` — they report whether a rule pattern
+  matches the whole host regardless of the path and the query.
 - Added `normalizeAllowlistDomain()` — it turns an allowlist entry into the domain
   it describes: lower case, without the scheme, the credentials, the port, the path,
   the query or the fragment that an imported or an old entry may carry, and without

@@ -43,6 +43,8 @@ describe('patchHistoryForRemoveParam', () => {
      * @param isAllowlist Whether the rule is an allowlist rule.
      * @param filterId Filter ID.
      * @param ruleIndex Rule index inside the filter.
+     * @param isPathIndependent Whether the rule pattern matches the whole
+     * host regardless of the path and the query.
      *
      * @returns A descriptor for `patchHistoryForRemoveParam`.
      */
@@ -51,10 +53,12 @@ describe('patchHistoryForRemoveParam', () => {
         isAllowlist = false,
         filterId = 1,
         ruleIndex = 0,
+        isPathIndependent = true,
     ): RemoveParamDescriptor => ({
         value,
         isAllowlist,
         isImportant: false,
+        isPathIndependent,
         filterId,
         ruleIndex,
         ruleText: `${isAllowlist ? '@@' : ''}||example.com^$removeparam${value ? `=${value}` : ''}`,
@@ -614,6 +618,118 @@ describe('patchHistoryForRemoveParam', () => {
             window.history.pushState({}, '', url);
 
             expect(window.location.href).toBe('https://example.com/page?safe=1');
+        });
+    });
+
+    describe('path independence of descriptors', () => {
+        // Keep the real `replaceState` so that the assertions read the actual
+        // address bar, as a page would see it.
+        beforeEach(() => {
+            History.prototype.replaceState = saveReplaceState;
+            window.history.replaceState({}, '', '/dir/start');
+        });
+
+        /**
+         * Patches the History API with one `source` descriptor.
+         *
+         * @param isPathIndependent Whether the descriptor is path-independent.
+         */
+        function patchWithDescriptor(isPathIndependent: boolean): void {
+            patchHistoryForRemoveParam(
+                [descriptor('source', false, 1, 0, isPathIndependent)],
+                TEST_NONCE,
+                TEST_SECRET,
+            );
+        }
+
+        it.each([
+            ['path-relative', 'checkout/?source=partner&x=1', 'https://example.com/dir/checkout/?source=partner&x=1'],
+            ['root-relative', '/checkout/?source=partner&x=1', 'https://example.com/checkout/?source=partner&x=1'],
+            [
+                'absolute',
+                'https://example.com/checkout/?source=partner&x=1',
+                'https://example.com/checkout/?source=partner&x=1',
+            ],
+        ])('keeps a parameter for the %s path-scoped pushState URL', (_, url, expected) => {
+            patchWithDescriptor(false);
+
+            window.history.pushState({}, '', url);
+
+            expect(window.location.href).toBe(expected);
+        });
+
+        it.each([
+            ['path-relative', 'checkout/?source=partner&x=1', 'https://example.com/dir/checkout/?source=partner&x=1'],
+            ['root-relative', '/checkout/?source=partner&x=1', 'https://example.com/checkout/?source=partner&x=1'],
+            [
+                'absolute',
+                'https://example.com/checkout/?source=partner&x=1',
+                'https://example.com/checkout/?source=partner&x=1',
+            ],
+        ])('keeps a parameter for the %s path-scoped replaceState URL', (_, url, expected) => {
+            patchWithDescriptor(false);
+
+            window.history.replaceState({}, '', url);
+
+            expect(window.location.href).toBe(expected);
+        });
+
+        it('removes the parameter after the background sends the re-matched list', () => {
+            patchWithDescriptor(false);
+
+            window.history.pushState({}, '', '/checkout/?source=partner&x=1');
+            expect(window.location.href).toBe('https://example.com/checkout/?source=partner&x=1');
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const updater = (window as any)[TEST_NONCE];
+            expect(typeof updater).toBe('function');
+
+            updater(TEST_SECRET, [descriptor('source', false, 1, 0, false)]);
+
+            expect(window.location.href).toBe('https://example.com/checkout/?x=1');
+        });
+
+        it.each([
+            ['path-relative', 'checkout/?source=partner&x=1', 'https://example.com/dir/checkout/?x=1'],
+            ['root-relative', '/checkout/?source=partner&x=1', 'https://example.com/checkout/?x=1'],
+            [
+                'absolute',
+                'https://example.com/checkout/?source=partner&x=1',
+                'https://example.com/checkout/?x=1',
+            ],
+        ])('removes a parameter for the %s path-independent pushState URL', (_, url, expected) => {
+            patchWithDescriptor(true);
+
+            window.history.pushState({}, '', url);
+
+            expect(window.location.href).toBe(expected);
+        });
+
+        it.each([
+            ['path-relative', 'checkout/?source=partner&x=1', 'https://example.com/dir/checkout/?x=1'],
+            ['root-relative', '/checkout/?source=partner&x=1', 'https://example.com/checkout/?x=1'],
+            [
+                'absolute',
+                'https://example.com/checkout/?source=partner&x=1',
+                'https://example.com/checkout/?x=1',
+            ],
+        ])('removes a parameter for the %s path-independent replaceState URL', (_, url, expected) => {
+            patchWithDescriptor(true);
+
+            window.history.replaceState({}, '', url);
+
+            expect(window.location.href).toBe(expected);
+        });
+
+        it('applies only the path-independent descriptor synchronously', () => {
+            patchHistoryForRemoveParam([
+                descriptor('utm_source', false, 1, 0, true),
+                descriptor('source', false, 1, 1, false),
+            ], TEST_NONCE, TEST_SECRET);
+
+            window.history.pushState({}, '', '/checkout/?utm_source=a&source=partner&x=1');
+
+            expect(window.location.href).toBe('https://example.com/checkout/?source=partner&x=1');
         });
     });
 });
