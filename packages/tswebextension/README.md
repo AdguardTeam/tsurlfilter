@@ -224,9 +224,9 @@ filled only from `<video>` elements or `putImageData()` is read natively.
   covers the domain and its subdomains, and the full wildcard `*.*` leaves
   every document protected. MV3 adds a `*.` twin to every plain entry, so
   plain entries also cover subdomains there, and follows its DNR rule for
-  entries it cannot express: a wildcard inside a label leaves every document
-  as is, and a wildcard TLD covers only the popular top-level domains of the
-  converter.
+  entries it cannot express: a wildcard inside a label is ignored, so its
+  hosts are not selected and protection stays off there, and a wildcard TLD
+  covers only the popular top-level domains of the converter.
   Hosts that only start with an entry, such as `example.community` for
   `example.com`, never match.
 - `$badfilter` cancels an exception. Other forms, including paths,

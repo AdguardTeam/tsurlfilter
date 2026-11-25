@@ -66,11 +66,6 @@ export interface HostCondition {
     readonly domains: readonly string[];
 
     /**
-     * Domains whose subdomains one level below match after stripping `www.`.
-     */
-    readonly parents: readonly string[];
-
-    /**
      * Regular expression for allowlist entries with a wildcard, tested against the whole hostname.
      */
     readonly pattern?: string;

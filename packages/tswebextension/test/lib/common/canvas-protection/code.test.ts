@@ -60,7 +60,6 @@ describe('generated canvas delivery code', () => {
             type: CanvasConditionType.Host,
             hosts: ['canvas.test'],
             domains: [],
-            parents: [],
         }] satisfies typeof policy.documentExclusions;
         const code = CanvasProtectionCode.create({
             session: { root: '11111111111111111111111111111111', generation: '22222222222222222222222222222222' },

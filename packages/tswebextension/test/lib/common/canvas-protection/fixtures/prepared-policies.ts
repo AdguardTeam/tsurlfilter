@@ -41,7 +41,6 @@ export const hostCondition = (lookups: Partial<Omit<HostCondition, 'type'>>): Ho
     type: CanvasConditionType.Host,
     hosts: [],
     domains: [],
-    parents: [],
     ...lookups,
 });
 
@@ -55,7 +54,6 @@ export const EXCLUDE_EVERY_HOSTED_DOCUMENT: readonly PreparedCondition[] = [{
 
 const hosts = hostCondition({ hosts: ['a.example.com', 'b.example.com'] });
 const domains = hostCondition({ domains: ['example.com'] });
-const parents = hostCondition({ parents: ['example.com'] });
 
 const cases: [string, PreparedCondition, string, boolean][] = [
     ['host', hosts, 'https://a.example.com/', true],
@@ -68,11 +66,6 @@ const cases: [string, PreparedCondition, string, boolean][] = [
     ['domain', domains, 'https://example.com/', true],
     ['domain subdomains', domains, 'https://a.b.example.com/', true],
     ['domain suffix', domains, 'https://notexample.com/', false],
-    ['parent one level below', parents, 'https://a.example.com/', true],
-    ['parent one level below www', parents, 'https://www.a.example.com/', true],
-    ['parent itself', parents, 'https://example.com/', false],
-    ['parent with www', parents, 'https://www.example.com/', false],
-    ['parent two levels below', parents, 'https://a.b.example.com/', false],
     ['pattern', hostCondition({ pattern: String.raw`^example\..*$` }), 'https://example.org/', true],
     ['pattern case', hostCondition({ pattern: String.raw`^EXAMPLE\.org$` }), 'https://example.org/', false],
 ];

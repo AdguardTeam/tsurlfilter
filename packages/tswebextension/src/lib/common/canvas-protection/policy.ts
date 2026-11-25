@@ -57,10 +57,6 @@ const matchHost = (condition: HostCondition, hostname: string): boolean => {
     if (hosts.has(hostname) || hosts.has(domain)) {
         return true;
     }
-    const firstDot = domain.indexOf('.');
-    if (firstDot > 0 && new Set(condition.parents).has(domain.slice(firstDot + 1))) {
-        return true;
-    }
     const domains = new Set(condition.domains);
     const labels = hostname.split('.');
     if (labels.some((label, index) => domains.has(labels.slice(index).join('.')))) {

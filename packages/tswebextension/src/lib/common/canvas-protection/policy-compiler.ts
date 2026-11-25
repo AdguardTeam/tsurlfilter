@@ -240,8 +240,8 @@ export class CanvasPolicyCompiler {
 
     /**
      * Matches top-level documents outside the inverted allowlist. The selected hosts are the ones
-     * frame matching selects, so protection stays off exactly on the documents that inverted
-     * filtering keeps enabled. The full wildcard selects every host and leaves no exclusion.
+     * frame matching selects, so protection stays off exactly where inverted filtering is off. The
+     * full wildcard selects every host and leaves no exclusion.
      *
      * @param match Hosts selected by the inverted allowlist.
      *
@@ -287,7 +287,6 @@ export class CanvasPolicyCompiler {
             type: CanvasConditionType.Host,
             hosts,
             domains,
-            parents: [],
         };
         return patterns.length > 0
             ? { ...condition, pattern: `^(?:${patterns.map((source) => `(?:${source})`).join('|')})$` }

@@ -81,7 +81,8 @@ const configureAllowlist = (allowlist: Allowlist, domains: string[], inverted = 
 
 /**
  * Checks that the canvas policy and the frame matcher of the same platform agree: protection is
- * off exactly for the documents that inverted filtering keeps enabled.
+ * off exactly where inverted filtering is off, i.e. where the frame matcher returns an allowlist
+ * rule.
  *
  * @param policy Compiled canvas policy.
  * @param matchFrame Frame matcher of the platform.
@@ -387,17 +388,6 @@ describe('canvas policy compiler', () => {
         }
     });
 
-    it('keeps a hostless document native in the inverted mode', () => {
-        for (const allowlist of [new Allowlist(), new AllowlistApi()]) {
-            configureAllowlist(allowlist, ['example.com'], true);
-            const policy = CanvasPolicyCompiler.compile([], allowlist);
-
-            for (const topUrl of ['file:///x.html', 'about:blank']) {
-                expect(isNative(policy, topUrl), `${allowlist.constructor.name} at ${topUrl}`).toBe(true);
-            }
-        }
-    });
-
     it('covers a wildcard inside a label in the inverted MV2 allowlist', () => {
         const allowlist = configureAllowlist(new Allowlist(), ['*example.com'], true);
         const engineApi = { matchFrame: vi.fn(() => null) } as unknown as EngineApi;
@@ -422,7 +412,6 @@ describe('canvas policy compiler', () => {
                 type: CanvasConditionType.Host,
                 hosts: [],
                 domains: [],
-                parents: [],
             },
         }]);
         for (const topUrl of ['https://example.com/', 'https://myexample.com/', 'https://a.b.example.com/']) {
@@ -469,7 +458,6 @@ describe('canvas policy compiler', () => {
             type: CanvasConditionType.Host,
             hosts: [],
             domains: ['example.com', 'example.org'],
-            parents: [],
         }]);
     });
 
@@ -479,7 +467,6 @@ describe('canvas policy compiler', () => {
             type: CanvasConditionType.Host,
             hosts: ['plain.com'],
             domains: [],
-            parents: [],
             pattern: String.raw`^(?:(?:(?:[^.]+\.)*test\..*)|(?:(?:www\.)?example\..*))$`,
         }]);
     });

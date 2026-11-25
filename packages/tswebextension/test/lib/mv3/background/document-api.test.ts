@@ -174,6 +174,14 @@ describe('Document Api', () => {
                 expectedEngineMatch: false,
             },
             {
+                title: 'reads the www prefix of a TLD wildcard from the full host',
+                enabled: true,
+                inverted: true,
+                url: 'https://www.com',
+                domains: ['www.*'],
+                expectedEngineMatch: true,
+            },
+            {
                 title: 'drops an imported entry that has no allowlist rule',
                 enabled: true,
                 inverted: true,
