@@ -6,26 +6,31 @@ import {
     vi,
 } from 'vitest';
 
-import { Filter, type IFilter } from '@adguard/dnr-converter';
+import { Filter } from '@adguard/dnr-converter';
 import { Engine, FilterList } from '@adguard/tsurlfilter';
 
 import { CanvasExceptionRules } from '../../../../src/lib/common/canvas-protection/exception-rules';
 import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../../../src/lib/common/constants';
 import { EngineApi } from '../../../../src/lib/mv3/background/engine-api';
 import FiltersApi from '../../../../src/lib/mv3/background/filters-api';
+import { type ITrustedFilter } from '../../../../src/lib/mv3/background/trusted-filter';
+import { UserScriptsApi } from '../../../../src/lib/mv3/background/user-scripts-api';
 
 /**
  * Builds a minimal filter stub.
  *
  * @param id Filter id.
  * @param content Filter list content.
+ * @param trusted Whether the filter is trusted, true by default.
  *
  * @returns Filter stub.
  */
-const makeFilter = (id: number, content: string): IFilter => ({
+const makeFilter = (id: number, content: string, trusted = true): ITrustedFilter => ({
     getId: (): number => id,
     getContent: async (): Promise<string> => content,
-    unloadContent: async (): Promise<void> => undefined,
+    unloadContent: (): void => undefined,
+    isTrusted: (): boolean => trusted,
+    getConversionErrors: () => [],
 });
 
 /**
@@ -150,6 +155,39 @@ describe('EngineApi.startEngine — exception sources', () => {
         const api = new EngineApi();
 
         expect(api.getExceptionSources()).toEqual([]);
+    });
+
+    it('marks the sources of untrusted remote filters as unsafe-ignored', async () => {
+        // The engine creates such a filter with `ignoreUnsafe`, so its
+        // advanced-modifier rules never reach the engine and must not decide
+        // a page in the scan either.
+        vi.spyOn(Engine, 'createAsync').mockResolvedValue(undefined as never);
+        vi.spyOn(UserScriptsApi, 'isEnabled', 'get').mockReturnValue(true);
+
+        const api = new EngineApi();
+        await api.startEngine({
+            verbose: false,
+            localFilters: [],
+            remoteFilters: [
+                makeFilter(5, '@@||youtube.com/ads$document,cookie=foo', false),
+                makeFilter(6, '@@||youtube.com/watch$document', true),
+            ],
+            userRulesFilter: makeFilter(0, ''),
+            allowlistRulesList: null,
+        });
+
+        expect(api.getExceptionSources()).toEqual([
+            {
+                filterId: 5,
+                lines: ['@@||youtube.com/ads$document,cookie=foo'],
+                unsafeIgnored: true,
+            },
+            {
+                filterId: 6,
+                lines: ['@@||youtube.com/watch$document'],
+                unsafeIgnored: false,
+            },
+        ]);
     });
 });
 

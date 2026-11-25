@@ -171,7 +171,11 @@ export class EngineApi {
                         ignoreJS: !filter.isTrusted(),
                         ignoreUnsafe: !filter.isTrusted(),
                     });
-                    exceptionSources.push({ filterId: filter.getId(), lines: collectExceptionLines(content) });
+                    exceptionSources.push({
+                        filterId: filter.getId(),
+                        lines: collectExceptionLines(content),
+                        unsafeIgnored: !filter.isTrusted(),
+                    });
                 } catch (e) {
                     const filterId = remoteFilters[i].getId();
                     logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for filter ${filterId} due to: `, e);

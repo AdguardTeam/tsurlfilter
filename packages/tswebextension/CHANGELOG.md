@@ -50,6 +50,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The `$domain` value was split on every `|`, so a regular expression
+  containing one was torn into pieces and the rule was filed under keys that
+  never match; an escaped separator, spaces around a separator and an uppercase
+  name had the same effect. Such values are now read the way the parser reads
+  them (via [@adguard/tsurlfilter]).
+- The `shortcut*` fast path is skipped for `$match-case` rules, so `/ads/*` no
+  longer matches `/ADS/` (via [@adguard/tsurlfilter]).
 - The MV3 rules-limits page could overcount unsafe rules, because the
   excluded-rule list shared by the total and unsafe limit errors included rules
   dropped by the other limit. The total limit error now carries only the rules

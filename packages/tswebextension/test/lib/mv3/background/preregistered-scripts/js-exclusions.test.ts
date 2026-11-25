@@ -17,10 +17,14 @@ const HOSTNAMES = ['youtube.com', 'www.youtube.com'];
  * @returns Scan result.
  */
 const scan = (
-    lists: { filterId: number; content: string }[],
+    lists: { filterId: number; content: string; unsafeIgnored?: boolean }[],
     hostnames: string[] = HOSTNAMES,
 ): JsExclusions => resolveHostExclusions(
-    lists.map(({ filterId, content }) => ({ filterId, lines: collectExceptionLines(content) })),
+    lists.map(({ filterId, content, unsafeIgnored }) => ({
+        filterId,
+        lines: collectExceptionLines(content),
+        unsafeIgnored,
+    })),
     hostnames,
 );
 
@@ -85,6 +89,48 @@ describe('resolveHostExclusions', () => {
         // the host at all, which is what the dynamic path does.
         expect(exclusions.size).toBe(0);
         expect(dynamicHosts.get('youtube.com')).toBe('@@||youtube.com^$document');
+    });
+
+    it('keeps a host dynamic when an outranking host-less exception keeps JS on', () => {
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@/ads$elemhide,important\n@@||youtube.com/ads$jsinject\n',
+        }]);
+
+        // The host-less rule wins the cosmetic slot and does not clear the JS
+        // bit, so the engine keeps JS on while the exclusion would drop it:
+        // the host has to stay dynamic.
+        expect(exclusions.size).toBe(0);
+        expect(dynamicHosts.get('youtube.com'))
+            .toContain('an exception ranked at least as high keeps JS injection on');
+
+        // A host-less rule without `$important` is scanned as well, so the
+        // shield sees it and the host still falls back instead of being baked.
+        const quiet = scan([{
+            filterId: 2,
+            content: '@@/ads$elemhide\n@@||youtube.com/ads$jsinject\n',
+        }]);
+
+        expect(quiet.exclusions.size).toBe(0);
+    });
+
+    it('drops an unsafe exception of an untrusted remote filter', () => {
+        // The engine creates such a filter with `ignoreUnsafe`, so a rule with
+        // an advanced modifier never decides a page there.
+        const { exclusions } = scan([{
+            filterId: 3,
+            content: '@@||youtube.com/ads$document,cookie=foo\n',
+            unsafeIgnored: true,
+        }]);
+
+        expect(exclusions.size).toBe(0);
+
+        const trusted = scan([{
+            filterId: 3,
+            content: '@@||youtube.com/ads$document,cookie=foo\n',
+        }]);
+
+        expect(trusted.exclusions.get('youtube.com')).toEqual(['*://youtube.com/ads*']);
     });
 
     it('keeps a host dynamic when the exception names the root page only', () => {
@@ -581,6 +627,20 @@ describe('resolveHostExclusions', () => {
         // text against the whole URL.
         expect(exclusions.size).toBe(0);
         expect(dynamicHosts.has('www.youtube.com')).toBe(true);
+    });
+
+    it('keeps a host dynamic when a bare wildcard token runs into the path', () => {
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@youtube.com*ads$document\n',
+        }]);
+
+        // `youtube.com*ads` is a substring regexp over the whole URL, and the
+        // `*` reaches past the hostname into the path: the engine disables JS
+        // on `/ads`, while the token cannot be anchored to the host name.
+        expect(exclusions.size).toBe(0);
+        expect(dynamicHosts.get('youtube.com'))
+            .toContain('reaches the host but is not anchored to its name');
     });
 
     it('keeps a host dynamic when a host-less exception is pinned by $domain', () => {

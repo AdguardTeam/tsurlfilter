@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   it describes: lower case, without the scheme, the credentials, the port, the path,
   the query or the fragment that an imported or an old entry may carry, and without
   the `www.` prefix and the root label dot the generated rule covers anyway.
+- `NetworkRule.matchModifiers()` — checks a rule's modifier conditions
+  without testing the pattern, for callers that replicate the engine's
+  decision, e.g. the preregistered-scriptlet scan in
+  `@adguard/tswebextension`.
+- `NetworkRule.isInDomainsTable()` — whether the engine files the rule in the
+  domains lookup table, which cannot match a request without a source.
+- `MASK_ALLOWLIST` is exported for callers that prefilter a list without
+  parsing every line.
 
 ### Changed
 
@@ -95,6 +103,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `image()`, `cross-fade()` and their `-webkit-*` variants) now match
   case-insensitively, so mixed-case function names such as `URL("...")` or
   `Image-Set("..." 1x)` can no longer be used to load external resources.
+- The `$domain` value was split on every `|`, so a regular expression
+  containing one (`$domain=/a|b/`) was torn into pieces and the rule was filed
+  under keys that never match; an escaped separator, spaces around a separator
+  and an uppercase name had the same effect. The value is now split and
+  normalized the way the parser reads it: a `|` inside `/.../` stays in the
+  pattern, values are trimmed, and plain domain names are lowercased.
+- The `shortcut*` fast path is skipped for `$match-case` rules: `/ads/*`
+  matches `/ADS/` only when the modifier is absent, and the pattern is compiled
+  as a case-sensitive regex otherwise.
 
 ### Security
 
@@ -118,14 +135,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Engine.getCosmeticResult()` accepts an `ignorePath` option, and
   `CosmeticRule.match()` — a new `ignorePath` parameter, both skipping the
   `$path` modifier check.
-- `NetworkRule.matchModifiers()` — checks a rule's modifier conditions
-  without testing the pattern, for callers that replicate the engine's
-  decision, e.g. the preregistered-scriptlet scan in
-  `@adguard/tswebextension`.
-- `NetworkRule.isInDomainsTable()` — whether the engine files the rule in the
-  domains lookup table, which cannot match a request without a source.
-- `MASK_ALLOWLIST` is exported for callers that prefilter a list without
-  parsing every line.
 
 ### Changed
 
@@ -186,15 +195,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   trimmed (via [@adguard/agtree]): the argument is the raw text between the
   pseudo-class parentheses, so `$$div:contains( "foo" )` now matches the text
   `"foo"` with a space on each side.
-- The `$domain` value was split on every `|`, so a regular expression
-  containing one (`$domain=/a|b/`) was torn into pieces and the rule was filed
-  under keys that never match; an escaped separator, spaces around a separator
-  and an uppercase name had the same effect. The value is now split and
-  normalized the way the parser reads it: a `|` inside `/.../` stays in the
-  pattern, values are trimmed, and plain domain names are lowercased.
-- The `shortcut*` fast path is skipped for `$match-case` rules: `/ads/*`
-  matches `/ADS/` only when the modifier is absent, and the pattern is compiled
-  as a case-sensitive regex otherwise.
 
 [#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538

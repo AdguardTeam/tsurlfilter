@@ -540,10 +540,11 @@ Known limitations:
 - An exception that cannot be written as a match pattern (a wildcard inside
   the path, a query, a host-wide exception, an uppercase path without
   `$match-case`, an uppercase spelling of the host, an exception ranked at
-  least as high that keeps JS injection on) keeps its host on the dynamic path: the
-  registration cannot exclude the page, and
-  running the script there would contradict the engine. Only the affected
-  host falls back.
+  least as high that keeps JS injection on) keeps its host on the dynamic
+  path. For most of these the registration cannot exclude the page; the
+  uppercase host is the other direction — the engine matches no URL there, so
+  an exclusion anchored to the lowercased host would drop pages the engine
+  allows. Only the affected host falls back.
 - The path of a match pattern is compared case-sensitively by the browser and
   case-insensitively by the engine, so an uppercase spelling of an excluded
   path (`/ADS` for `/ads`) still receives the scriptlets. A rule whose path is
@@ -560,9 +561,10 @@ Known limitations:
   injects there. Probed in Chromium: a pattern without a port matches any port,
   a pattern with a port matches only that one, so "no explicit port" cannot be
   expressed.
-- A bare pattern of another site (`@@example.org/ads$document`) is ignored,
-  although the engine matches its text anywhere in a URL: a registered page
-  whose path or query happens to contain that text still receives the
+- A bare pattern that names another site (`@@example.org/ads$document`,
+  `@@https://example.org/ads$document`, `@@://example.org/ads$document`) is
+  ignored, although the engine matches its text anywhere in a URL: a registered
+  page whose path or query happens to contain that text still receives the
   scriptlets while the engine injects nothing there. Treating every such pattern
   as reaching every host would keep every registered host on the dynamic path —
   the base filter alone carries six of them — so the fast path is kept and this

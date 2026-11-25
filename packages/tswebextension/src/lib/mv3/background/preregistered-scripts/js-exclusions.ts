@@ -28,6 +28,14 @@ export interface ExceptionSource {
      * counterpart (see {@link collectExceptionLines}).
      */
     lines: readonly string[];
+
+    /**
+     * Whether the engine drops the rules with an advanced modifier from this
+     * filter: remote filters of an untrusted author are created with
+     * `ignoreUnsafe: true`, so a rule with `$cookie`, `$replace` and the like
+     * never reaches the engine (see `RuleStorage`).
+     */
+    unsafeIgnored?: boolean;
 }
 
 /**
@@ -133,14 +141,15 @@ type PatternHost = {
     /**
      * Scheme of an anchored pattern, or {@link ANY_SCHEME}. A wildcard scheme
      * (`|*://`, `|http*://`, `|h*ps://`) is narrowed to the document schemes
-     * it matches, so the exclusion carries no wildcard.
+     * it matches, so the exclusion names a concrete scheme or `*`, never a
+     * partial glob such as `h*`.
      */
     scheme: string;
 
     /**
      * Scheme as the pattern spells it, before narrowing: a `$match-case`
      * pattern compares it case-sensitively, so the written spelling decides
-     * whether an exclusion may be baked at all.
+     * whether an exclusion can be built at all.
      */
     rawScheme: string;
 
@@ -155,20 +164,65 @@ type PatternHost = {
 /**
  * What a pattern can reach, read once per rule.
  */
-type PatternParse =
+enum PatternReach {
     /**
      * The pattern names a host.
      */
-    | { kind: 'host'; host: PatternHost }
+    Host = 'host',
+
     /**
      * The pattern names no host but can match any URL: a regexp, a bare path
      * or a plain substring.
      */
-    | { kind: 'hostless' }
+    Hostless = 'hostless',
+
     /**
      * No http(s) document can match the pattern: `|ftp://…`, `|//…`, `|/…`.
      */
-    | { kind: 'unreachable' };
+    Unreachable = 'unreachable',
+}
+
+/**
+ * How a candidate rule relates to the registered hostname.
+ */
+enum Scope {
+    /**
+     * The pattern is pinned to the hostname.
+     */
+    Host = 'host',
+
+    /**
+     * The pattern reaches the hostname but cannot be anchored to its name.
+     */
+    Unknown = 'unknown',
+
+    /**
+     * The pattern belongs to another site.
+     */
+    Other = 'other',
+
+    /**
+     * The pattern names no host at all.
+     */
+    Hostless = 'hostless',
+}
+
+/**
+ * What a pattern can reach.
+ */
+type PatternParse =
+    /**
+     * The pattern names a host.
+     */
+    | { kind: PatternReach.Host; host: PatternHost }
+    /**
+     * The pattern names no host but can match any URL.
+     */
+    | { kind: PatternReach.Hostless }
+    /**
+     * No http(s) document can match the pattern.
+     */
+    | { kind: PatternReach.Unreachable };
 
 /**
  * Escapes a literal for a regular expression.
@@ -234,21 +288,21 @@ const parsePattern = (pattern: string): PatternParse => {
         // A document URL starts with its scheme, so neither a path nor a
         // protocol-relative prefix can start one.
         if (pipeAnchored.startsWith('/')) {
-            return { kind: 'unreachable' };
+            return { kind: PatternReach.Unreachable };
         }
 
         const schemeIndex = pipeAnchored.indexOf(SCHEME_SEPARATOR);
         if (schemeIndex < 0) {
             // Plain text: `|http` prefixes every http(s) URL, so it reaches
             // any page while naming no host.
-            return { kind: 'hostless' };
+            return { kind: PatternReach.Hostless };
         }
 
         rawScheme = pipeAnchored.slice(0, schemeIndex);
 
         const narrowed = narrowDocumentScheme(rawScheme);
         if (narrowed === undefined) {
-            return { kind: 'unreachable' };
+            return { kind: PatternReach.Unreachable };
         }
         scheme = narrowed;
 
@@ -271,18 +325,18 @@ const parsePattern = (pattern: string): PatternParse => {
         const bare = pattern.startsWith('.') ? pattern.slice(1) : pattern;
         const [firstToken = ''] = bare.split(/[/^?#]/);
         if (!/^[\w*%-]+(\.[\w*%-]+)+$/.test(firstToken)) {
-            return { kind: 'hostless' };
+            return { kind: PatternReach.Hostless };
         }
         rest = bare;
     }
 
     const host = rest.split(/[:/^?#]/)[0];
     if (!host) {
-        return { kind: 'hostless' };
+        return { kind: PatternReach.Hostless };
     }
 
     return {
-        kind: 'host',
+        kind: PatternReach.Host,
         host: {
             host,
             allowSubdomains,
@@ -300,14 +354,12 @@ const parsePattern = (pattern: string): PatternParse => {
  * and no exclusion can express it.
  *
  * @param rule Candidate rule.
- * @param hostname Hostname of the registration.
+ * @param rootRequests Root-page requests of the registration's hostname.
  *
  * @returns True when the rule matches a root page of the host.
  */
-const reachesRootPage = (rule: NetworkRule, hostname: string): boolean => (
-    [`https://${hostname}/`, `http://${hostname}/`].some((url) => (
-        rule.match(new Request(url, '', RequestType.Document))
-    ))
+const reachesRootPage = (rule: NetworkRule, rootRequests: readonly Request[]): boolean => (
+    rootRequests.some((request) => rule.match(request))
 );
 
 /**
@@ -354,20 +406,48 @@ const matchesWildcardHostOrSubdomain = (host: string, hostname: string): boolean
     return false;
 };
 
+const matchesWildcardHostPrefix = (
+    host: string,
+    hostname: string,
+    allowSubdomains: boolean,
+): boolean => {
+    const prefix = host.slice(0, host.indexOf('*'));
+
+    // A token that starts with `*` is decided by the full-glob comparison.
+    if (!prefix) {
+        return false;
+    }
+
+    let candidate: string | undefined = hostname;
+
+    while (candidate) {
+        if (candidate.startsWith(prefix)) {
+            return true;
+        }
+
+        candidate = allowSubdomains && candidate.includes('.')
+            ? candidate.slice(candidate.indexOf('.') + 1)
+            : undefined;
+    }
+
+    return false;
+};
+
 /**
  * Resolves how a pattern's host part relates to the registered hostname.
  *
  * @param patternHost Host part of the pattern.
  * @param hostname Hostname the registration is for.
  *
- * @returns `"host"` when the pattern is pinned to this hostname, `"unknown"`
- * when the engine reaches the host but a match-pattern anchor cannot express
- * it, `"other"` when the pattern belongs to another site.
+ * @returns Scope member of the pattern: `Scope.Host` when it is pinned to this
+ * hostname, `Scope.Unknown` when the engine reaches the host but a
+ * match-pattern anchor cannot express it, `Scope.Other` when the pattern
+ * belongs to another site.
  */
 const resolveScope = (
     patternHost: PatternHost,
     hostname: string,
-): 'host' | 'unknown' | 'other' => {
+): Scope => {
     const host = patternHost.host.toLowerCase();
 
     if (!patternHost.anchored) {
@@ -382,14 +462,22 @@ const resolveScope = (
             // glob, not a host-anchored one: `youtube.*` also occurs inside
             // `www.youtube.com`.
             const wildcard = new RegExp(host.split('*').map(escapeRegExp).join('.*'));
-            return wildcard.test(hostname) ? 'unknown' : 'other';
+            if (wildcard.test(hostname)) {
+                return Scope.Unknown;
+            }
+
+            // The `*` may consume the rest of the hostname and the path, so
+            // the text before the first `*` is what has to occur in the host.
+            const [prefix = ''] = host.split('*');
+
+            return prefix !== '' && hostname.includes(prefix) ? Scope.Unknown : Scope.Other;
         }
 
-        return hostname.includes(host) ? 'unknown' : 'other';
+        return hostname.includes(host) ? Scope.Unknown : Scope.Other;
     }
 
     if (hostname === host || (patternHost.allowSubdomains && hostname.endsWith(`.${host}`))) {
-        return 'host';
+        return Scope.Host;
     }
 
     // A wildcard host (`||*.youtube.com`) reaches the hostname in the engine,
@@ -401,7 +489,18 @@ const resolveScope = (
             ? matchesWildcardHostOrSubdomain(host, hostname)
             : matchesWildcardHost(host, hostname);
 
-        return reaches ? 'unknown' : 'other';
+        if (reaches) {
+            return Scope.Unknown;
+        }
+
+        // The engine expands `*` to `.*` and leaves the end of the pattern
+        // open, so a token can run past the hostname into the path:
+        // `||youtube.com*ads` matches `https://youtube.com/ads`. The text
+        // before the first `*` is what the engine anchors, so it decides the
+        // reach of such a token.
+        return matchesWildcardHostPrefix(host, hostname, patternHost.allowSubdomains)
+            ? Scope.Unknown
+            : Scope.Other;
     }
 
     // An unterminated host part is a prefix match: `||youtube` and `||youtube.`
@@ -409,8 +508,8 @@ const resolveScope = (
     const terminated = /^[/^?#]/.test(patternHost.rest);
 
     return !terminated && (hostname.startsWith(host) || hostname.includes(`.${host}`))
-        ? 'unknown'
-        : 'other';
+        ? Scope.Unknown
+        : Scope.Other;
 };
 
 /**
@@ -492,6 +591,12 @@ const collectCandidates = (sources: readonly ExceptionSource[]): Candidate[] => 
                     continue;
                 }
 
+                // The engine drops such a rule for this filter, so it cannot
+                // decide a page either.
+                if (source.unsafeIgnored && rule.isUnsafe()) {
+                    continue;
+                }
+
                 if (!rule.hasCosmeticOption() && !rule.isDocumentLevelAllowlistRule()) {
                     continue;
                 }
@@ -501,14 +606,14 @@ const collectCandidates = (sources: readonly ExceptionSource[]): Candidate[] => 
 
                 // A pattern no http(s) document can match can neither exclude
                 // a page nor widen the fallback, so it is not a candidate.
-                if (parsed.kind === 'unreachable') {
+                if (parsed.kind === PatternReach.Unreachable) {
                     continue;
                 }
 
                 candidates.push({
                     rule,
                     writtenText: line,
-                    patternHost: parsed.kind === 'host' ? parsed.host : undefined,
+                    patternHost: parsed.kind === PatternReach.Host ? parsed.host : undefined,
                     inDomainsTable: rule.isInDomainsTable(),
                 });
             }
@@ -594,6 +699,13 @@ const buildHostExclusions = (
     const cosmeticRequest = createPreregisteredPageRequest(hostname);
     const documentRequest = new Request(rootUrl, '', RequestType.Document);
 
+    // The host-less pass compares every such rule with the root page, so the
+    // two requests are built once per host: `new Request()` parses the URL.
+    const rootPageRequests: readonly Request[] = [
+        documentRequest,
+        new Request(`http://${hostname}/`, '', RequestType.Document),
+    ];
+
     // Reach is a lexical question, so it is answered before the modifier
     // passes: `matchModifiers()` is the expensive half of the scan, and a rule
     // whose pattern names another site can never decide this host. A pattern
@@ -603,9 +715,9 @@ const buildHostExclusions = (
             candidate,
             scope: candidate.patternHost
                 ? resolveScope(candidate.patternHost, hostname)
-                : 'hostless' as const,
+                : Scope.Hostless,
         }))
-        .filter(({ scope }) => scope !== 'other');
+        .filter(({ scope }) => scope !== Scope.Other);
 
     const cosmeticRules: NetworkRule[] = [];
     const documentRules: NetworkRule[] = [];
@@ -670,14 +782,24 @@ const buildHostExclusions = (
                 };
             }
 
-            // The extension generates such a rule for its own allowlist
-            // (`@@///(www\.)?host/$document,important`): it names no host but
-            // matches the root page, so the host cannot stay preregistered.
-            if (reachesRootPage(rule, hostname)) {
+            // The extension generates such a rule for its own allowlist: the
+            // host pattern with `$document,important`
+            // (`createAllowlistRuleNode()` in `@adguard/tsurlfilter`). It names
+            // no host but matches the page, so the host cannot stay
+            // preregistered.
+            if (reachesRootPage(rule, rootPageRequests)) {
                 return {
                     patterns: [],
                     dynamic: `${text}: the exception names no host but matches the page`,
                 };
+            }
+
+            // A rule that keeps JS injection on cannot decide a page on its
+            // own, but it can outrank a disabling rule of another slot, so it
+            // has to reach the shield below instead of the report.
+            if (!rule.isOptionEnabled(NetworkRuleOption.Jsinject)) {
+                keeping.push({ rule, writtenText: text });
+                continue;
             }
 
             unanchored.push(text);
@@ -687,7 +809,7 @@ const buildHostExclusions = (
         // A pattern that reaches the host but cannot be anchored to its name
         // (a wildcard or a truncated host part) may decide a page of the
         // host, and no exclusion can express it.
-        if (scope === 'unknown') {
+        if (scope === Scope.Unknown) {
             return {
                 patterns: [],
                 dynamic: `${text}: the pattern reaches the host but is not anchored to its name`,
