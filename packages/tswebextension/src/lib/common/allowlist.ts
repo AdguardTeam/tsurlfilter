@@ -4,9 +4,9 @@ import {
     type NetworkRule,
     normalizeAllowlistDomain,
     RuleFactory,
-    SimpleRegex,
 } from '@adguard/tsurlfilter';
 
+import { AllowlistPattern } from './allowlist-pattern';
 import { type Configuration } from './configuration';
 import { ALLOWLIST_FILTER_ID } from './constants';
 
@@ -36,7 +36,7 @@ export interface InvertedAllowlistMatch {
     readonly domains: readonly string[];
 
     /**
-     * Hostname regular expression sources of entries with a wildcard inside a label.
+     * Hostname regular expression sources of entries with a wildcard.
      */
     readonly patterns: readonly string[];
 }
@@ -49,16 +49,6 @@ export interface InvertedAllowlistMatch {
  * sites added to this list.
  */
 export abstract class Allowlist {
-    /**
-     * Optional `www.` subdomain of a plain entry, which the generated rule matches.
-     */
-    private static readonly WWW = String.raw`(?:www\.)?`;
-
-    /**
-     * Any number of subdomain labels, each ending with a dot.
-     */
-    private static readonly SUBDOMAINS = String.raw`(?:[^.]+\.)*`;
-
     /**
      * Indicates whether the allowlist is enabled.
      */
@@ -197,10 +187,11 @@ export abstract class Allowlist {
     }
 
     /**
-     * Describes the hosts an inverted allowlist selects, reproducing what the generated allowlist
-     * rules match: a plain entry covers its host and the `www.` variant, a `*.` entry covers the
-     * domain and every subdomain, and an entry with a wildcard TLD covers the domain, its `www.`
-     * variant and their subdomains, as the frame decision does.
+     * Describes the hosts an inverted allowlist selects: a plain entry covers its host and the
+     * `www.` variant, a `*.` entry covers the domain and every subdomain, and an entry with a
+     * wildcard TLD covers the domain, its `www.` variant and their subdomains. The last one goes
+     * beyond the generated allowlist rule of that entry, which covers only the host and `www.`, so
+     * that inverted filtering stays on for the subdomains too.
      *
      * @param domains Normalized allowlist entries.
      *
@@ -228,12 +219,12 @@ export abstract class Allowlist {
                 continue;
             }
 
-            // A wildcard TLD entry reaches beyond its own host: the entry covers subdomains at any
-            // depth as well. A wildcard inside a label without the `*.` prefix covers only the host.
+            // A wildcard TLD entry covers subdomains at any depth as well, unlike its own generated
+            // rule. A wildcard inside a label without the `*.` prefix covers the host and `www.`,
+            // and the wildcard may cross label dots, as in the generated rule.
             const subdomains = domain.startsWith('*.') || domain.endsWith('.*');
-            const prefix = subdomains ? Allowlist.SUBDOMAINS : Allowlist.WWW;
 
-            patterns.push(`${prefix}${Allowlist.toHostnamePattern(base)}`);
+            patterns.push(AllowlistPattern.hostname(base, subdomains));
         }
 
         return {
@@ -260,8 +251,9 @@ export abstract class Allowlist {
                 try {
                     return Allowlist.createAllowlistRule(domain) !== null;
                 } catch {
-                    // An imported entry that only looks like a domain, e.g. a hosts-file line, has
-                    // no allowlist rule and must not reach frame matching.
+                    // An entry that only looks like a domain, e.g. a hosts-file line from an
+                    // import, produces no allowlist rule, so it must not reach the generated rules
+                    // or the DNR `$to` list either.
                     return false;
                 }
             });
@@ -275,18 +267,6 @@ export abstract class Allowlist {
      */
     protected compileInvertedMatch(): InvertedAllowlistMatch {
         return Allowlist.getInvertedMatch(this.domains);
-    }
-
-    /**
-     * Escapes a wildcard entry for the hostname regular expression of the canvas policy, where a
-     * `*` matches any characters of the hostname, as `HOST_WILDCARD` does in the generated rule.
-     *
-     * @param domain Normalized allowlist entry part.
-     *
-     * @returns Hostname regular expression source.
-     */
-    private static toHostnamePattern(domain: string): string {
-        return SimpleRegex.escapeRegexSpecials(domain).replaceAll('\\*', '.*');
     }
 
     /**

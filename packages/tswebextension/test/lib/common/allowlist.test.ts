@@ -100,6 +100,10 @@ describe('Allowlist Api', () => {
             { input: ['**'], expected: [] },
             { input: ['*.'], expected: [] },
             { input: ['www.', 'example.com'], expected: ['example.com'] },
+            // An entry that fails rule creation, e.g. a hosts-file line from an import, is dropped
+            // instead of reaching the generated rules or the DNR `$to` list.
+            { input: ['0.0.0.0 example.com'], expected: [] },
+            { input: ['0.0.0.0 example.com', 'example.org'], expected: ['example.org'] },
         ];
 
         it.each(cases)('should parse $input to $expected for MV2', ({ input, expected }) => {

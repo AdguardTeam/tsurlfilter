@@ -15,7 +15,14 @@ import { type CanvasProtectionRegistration } from '../../../../src/lib/common/ca
 
 type Configuration = NonNullable<ReturnType<ConstructorParameters<typeof CanvasProtectionController>[1]>>;
 
-const disabledAllowlist = { enabled: false, inverted: false, domains: [] };
+const disabledAllowlist = {
+    enabled: false,
+    inverted: false,
+    domains: [],
+    invertedMatch: {
+        all: false, hosts: [], domains: [], patterns: [],
+    },
+};
 const policy = CanvasPolicyCompiler.compile([], disabledAllowlist);
 const enabled = { filteringEnabled: true, stealthModeEnabled: true, protectCanvas: true };
 

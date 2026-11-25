@@ -4,14 +4,10 @@ import {
     PIPE_MODIFIER_SEPARATOR,
     RuleParser,
 } from '@adguard/agtree';
-import {
-    fastHash,
-    NETWORK_RULE_OPTIONS,
-    SimpleRegex,
-    StealthOptionName,
-} from '@adguard/tsurlfilter';
+import { fastHash, NETWORK_RULE_OPTIONS, StealthOptionName } from '@adguard/tsurlfilter';
 
-import { Allowlist, type InvertedAllowlistMatch } from '../allowlist';
+import { type InvertedAllowlistMatch } from '../allowlist';
+import { AllowlistPattern } from '../allowlist-pattern';
 import { logger } from '../utils/logger';
 
 import { CanvasConditionType, CanvasRuleSkipReason } from './constants';
@@ -26,10 +22,10 @@ export interface PolicyAllowlist {
     readonly domains: readonly string[];
 
     /**
-     * Hosts selected by the inverted allowlist, when the platform network layer selects them
-     * differently from {@link domains}, as MV3 does with its DNR rule.
+     * Hosts selected by the inverted allowlist, as frame matching and the platform network layer
+     * select them.
      */
-    readonly invertedMatch?: InvertedAllowlistMatch;
+    readonly invertedMatch: InvertedAllowlistMatch;
 }
 
 /**
@@ -56,21 +52,6 @@ export interface CanvasRuleExclusion {
  * Prepares deterministic canvas exclusions from filter rules and the configured allowlist.
  */
 export class CanvasPolicyCompiler {
-    /**
-     * Optional `www.` subdomain.
-     */
-    private static readonly WWW = '(?:www\\.)?';
-
-    /**
-     * Optional subdomain labels.
-     */
-    private static readonly SUBDOMAINS = '(?:[^.]+\\.)*';
-
-    /**
-     * Wildcard of an allowlist domain.
-     */
-    private static readonly HOST_WILDCARD = '.*';
-
     /**
      * Characters a rule host may contain. URL parsing would rewrite or drop the others,
      * while filtering compares the host as written.
@@ -126,7 +107,7 @@ export class CanvasPolicyCompiler {
                 const subdomains = domain.startsWith('*.');
                 const host = subdomains ? domain.slice(2) : domain;
                 if (host.includes('*')) {
-                    patterns.push(CanvasPolicyCompiler.wildcardPattern(host, subdomains));
+                    patterns.push(AllowlistPattern.hostname(host, subdomains));
                 } else {
                     (subdomains ? domains : hosts).push(host);
                 }
@@ -137,8 +118,7 @@ export class CanvasPolicyCompiler {
             documentExclusions.push(CanvasPolicyCompiler.hostCondition({ hosts, domains, patterns }));
         }
         if (allowlist.enabled && allowlist.inverted) {
-            const match = allowlist.invertedMatch ?? Allowlist.getInvertedMatch(allowlist.domains);
-            const exclusion = CanvasPolicyCompiler.invertedAllowlistExclusion(match);
+            const exclusion = CanvasPolicyCompiler.invertedAllowlistExclusion(allowlist.invertedMatch);
 
             if (exclusion) {
                 documentExclusions.push(exclusion);
@@ -259,26 +239,9 @@ export class CanvasPolicyCompiler {
     }
 
     /**
-     * Matches the hostname of a top-level document allowlisted by a normal-mode entry with
-     * a wildcard: the domain and its `www.` subdomain, or the domain with all subdomains for
-     * a `*.` entry. A `*` in the domain matches within the host.
-     *
-     * @param host Allowlist entry without the `*.` prefix.
-     * @param subdomains Whether the entry has the `*.` prefix.
-     *
-     * @returns Hostname regular expression source.
-     */
-    private static wildcardPattern(host: string, subdomains: boolean): string {
-        const prefix = subdomains ? CanvasPolicyCompiler.SUBDOMAINS : CanvasPolicyCompiler.WWW;
-        const pattern = SimpleRegex.escapeRegexSpecials(host).replaceAll('\\*', CanvasPolicyCompiler.HOST_WILDCARD);
-        return `${prefix}${pattern}`;
-    }
-
-    /**
-     * Matches top-level documents outside the inverted allowlist. The selected hosts come from
-     * {@link Allowlist.getInvertedMatch}, which resolves every entry form the same way frame
-     * matching does, so protection stays off exactly on the documents that inverted filtering
-     * keeps enabled. The full wildcard selects every host and leaves no exclusion.
+     * Matches top-level documents outside the inverted allowlist. The selected hosts are the ones
+     * frame matching selects, so protection stays off exactly on the documents that inverted
+     * filtering keeps enabled. The full wildcard selects every host and leaves no exclusion.
      *
      * @param match Hosts selected by the inverted allowlist.
      *
@@ -302,10 +265,9 @@ export class CanvasPolicyCompiler {
     /**
      * Combines lookups into a single predicate evaluated against the top document's hostname.
      *
-     * @param lookups Hosts, domains, parent domains and hostname regular expression sources.
+     * @param lookups Hosts, domains and hostname regular expression sources.
      * @param lookups.hosts Hosts matched as written or with a `www.` prefix.
      * @param lookups.domains Domains matched together with their subdomains.
-     * @param lookups.parents Domains whose subdomains one level below match after stripping `www.`.
      * @param lookups.patterns Regular expression sources of wildcard entries.
      *
      * @returns Host predicate with deterministic, deduplicated lookups.
@@ -313,7 +275,6 @@ export class CanvasPolicyCompiler {
     private static hostCondition(lookups: {
         hosts?: readonly string[];
         domains?: readonly string[];
-        parents?: readonly string[];
         patterns?: readonly string[];
     }): HostCondition {
         const unique = (values: readonly string[] = []): string[] => [...new Set(values)].sort();
@@ -326,7 +287,7 @@ export class CanvasPolicyCompiler {
             type: CanvasConditionType.Host,
             hosts,
             domains,
-            parents: unique(lookups.parents),
+            parents: [],
         };
         return patterns.length > 0
             ? { ...condition, pattern: `^(?:${patterns.map((source) => `(?:${source})`).join('|')})$` }

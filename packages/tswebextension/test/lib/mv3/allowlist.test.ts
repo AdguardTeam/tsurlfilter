@@ -151,6 +151,23 @@ describe('Allowlist Api', () => {
                 inverted: true,
                 expected: '@@$document,important',
             },
+            // An entry that fails rule creation, e.g. a hosts-file line from an import, is dropped
+            // and never reaches `$to`.
+            {
+                input: ['0.0.0.0 example.com', 'example.org'],
+                inverted: false,
+                expected: '@@$document,important,to=example.org',
+            },
+            {
+                input: ['0.0.0.0 example.com', 'example.org'],
+                inverted: true,
+                expected: '@@$document,important,to=~example.org',
+            },
+            {
+                input: ['0.0.0.0 example.com'],
+                inverted: false,
+                expected: '',
+            },
             {
                 input: ['*.example.*'],
                 inverted: true,

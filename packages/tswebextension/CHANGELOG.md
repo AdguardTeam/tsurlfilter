@@ -19,15 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed inverted allowlist wildcard matching. The page-level decision, canvas
   protection and the network layer now select the same hosts: a `*.example.com`
-  entry covers the apex and every subdomain depth, and a `example.*` entry covers
-  the supported domains and their subdomains. In MV2 a plain entry still covers
-  only the host and its `www.` subdomain, while in MV3 it covers every subdomain
-  through the `*.` twin the DNR rule needs. In MV3 the page-level decision follows
-  what the DNR rule can express: entries with a wildcard inside a label are
-  ignored, a wildcard TLD covers only the popular top-level domains of the
-  converter, and the inverted full wildcard `*.*` adds no allowlist rule, so
-  network filtering stays on everywhere. An imported entry that produces no
-  allowlist rule is dropped instead of throwing during frame matching.
+  entry covers the apex and every subdomain depth, and an `example.*` entry
+  covers the supported domains and their subdomains. In MV2 a plain entry still
+  covers only the host and its `www.` subdomain, while in MV3 it covers every
+  subdomain through the `*.` twin the DNR rule needs. In MV3 the page-level
+  decision also follows what the DNR rule can express: entries with a wildcard
+  inside a label are ignored, and a wildcard TLD covers only the popular
+  top-level domains of the converter. An entry that produces no allowlist rule,
+  such as a hosts-file line from an imported list, no longer ends up in the
+  generated allowlist rules or in the DNR `$to` list.
 - The MV3 rules-limits page could overcount unsafe rules, because the
   excluded-rule list shared by the total and unsafe limit errors included rules
   dropped by the other limit. The total limit error now carries only the rules

@@ -9,7 +9,10 @@ import {
 import { CanvasConditionType } from '../../../../src/lib/common/canvas-protection/constants';
 import { type ProtectionPolicyArtifact } from '../../../../src/lib/common/canvas-protection/contracts';
 import { resolveProtectedSite } from '../../../../src/lib/common/canvas-protection/policy';
-import { CanvasPolicyCompiler } from '../../../../src/lib/common/canvas-protection/policy-compiler';
+import {
+    CanvasPolicyCompiler,
+    type PolicyAllowlist,
+} from '../../../../src/lib/common/canvas-protection/policy-compiler';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
 import { DocumentApi } from '../../../../src/lib/mv2/background/document-api';
@@ -19,7 +22,27 @@ import { AllowlistApi, allowlistApi as mv3AllowlistApi } from '../../../../src/l
 import { DocumentApi as Mv3DocumentApi } from '../../../../src/lib/mv3/background/document-api';
 import { getConfigurationMv2Fixture } from '../../mv2/background/fixtures/configuration';
 
-const disabledAllowlist = { enabled: false, inverted: false, domains: [] };
+/**
+ * Builds a platform allowlist for a test that does not configure an instance.
+ *
+ * @param domains Normalized allowlist entries.
+ * @param enabled Whether the allowlist is enabled.
+ * @param inverted Whether the entries select protected domains.
+ *
+ * @returns Platform allowlist with its inverted selection.
+ */
+const policyAllowlist = (
+    domains: string[],
+    enabled = false,
+    inverted = false,
+): PolicyAllowlist => ({
+    enabled,
+    inverted,
+    domains,
+    invertedMatch: Allowlist.getInvertedMatch(domains),
+});
+
+const disabledAllowlist = policyAllowlist([]);
 
 /**
  * Evaluates delivery selectors and document exclusions.
@@ -285,7 +308,7 @@ describe('canvas policy compiler', () => {
         ['example.*.com', 'https://example.org:8080/.com/', false],
         ['example.*.com', 'https://example.org.com:8080/x', true],
     ])('matches allowlist entry %s only within the top host: %s → %s', (domain, topUrl, excluded) => {
-        const policy = CanvasPolicyCompiler.compile([], { enabled: true, inverted: false, domains: [domain] });
+        const policy = CanvasPolicyCompiler.compile([], policyAllowlist([domain], true));
         // A valid frame URL keeps an invalid top hostname from looking like a policy exclusion.
         expect(isNative(policy, 'https://frame.example/', topUrl)).toBe(excluded);
     });
@@ -421,7 +444,7 @@ describe('canvas policy compiler', () => {
     });
 
     it('excludes hosted documents for an empty inverted allowlist, preserving unknown and hostless tops', () => {
-        const policy = CanvasPolicyCompiler.compile([], { enabled: true, inverted: true, domains: [] });
+        const policy = CanvasPolicyCompiler.compile([], policyAllowlist([], true, true));
         expect(policy.documentExclusions).toHaveLength(1);
         expect(isNative(policy, 'https://example.com/')).toBe(true);
         for (const topUrl of ['file:///x.html', 'about:blank', 'data:text/html,top', '']) {
@@ -451,9 +474,7 @@ describe('canvas policy compiler', () => {
     });
 
     it('keeps wildcard allowlist entries in one hostname pattern', () => {
-        const policy = CanvasPolicyCompiler.compile([], {
-            enabled: true, inverted: false, domains: ['example.*', '*.test.*', 'plain.com'],
-        });
+        const policy = CanvasPolicyCompiler.compile([], policyAllowlist(['example.*', '*.test.*', 'plain.com'], true));
         expect(policy.documentExclusions).toEqual([{
             type: CanvasConditionType.Host,
             hosts: ['plain.com'],
@@ -465,9 +486,10 @@ describe('canvas policy compiler', () => {
 
     it.each([false, true])('uses at most two document exclusions for rules and entries (inverted %s)', (inverted) => {
         const hosts = Array.from({ length: 20 }, (_, index) => `site${index}.example`);
-        const policy = CanvasPolicyCompiler.compile(hosts.map((host) => `@@||${host}^$document`), {
-            enabled: true, inverted, domains: hosts.map((_, index) => `allowed${index}.example`),
-        });
+        const policy = CanvasPolicyCompiler.compile(
+            hosts.map((host) => `@@||${host}^$document`),
+            policyAllowlist(hosts.map((_, index) => `allowed${index}.example`), true, inverted),
+        );
         expect(policy.documentExclusions.length).toBeLessThanOrEqual(2);
         for (const [index, host] of hosts.entries()) {
             expect(isNative(policy, `https://${host}/`)).toBe(true);
@@ -481,11 +503,13 @@ describe('canvas policy compiler', () => {
     it('produces the same policy for the same input in any order', () => {
         const texts = ['@@||b.org^$document', '@@||a.org^$stealth', '@@||b.org^$stealth'];
         for (const inverted of [false, true]) {
-            const allowlist = { enabled: true, inverted, domains: ['b.com', 'a.com'] };
+            const domains = ['b.com', 'a.com'];
+            const allowlist = policyAllowlist(domains, true, inverted);
             const policy = CanvasPolicyCompiler.compile(texts, allowlist);
-            expect(CanvasPolicyCompiler.compile([...texts].reverse().concat(texts), {
-                ...allowlist, domains: [...allowlist.domains].reverse().concat(allowlist.domains),
-            })).toEqual(policy);
+            expect(CanvasPolicyCompiler.compile(
+                [...texts].reverse().concat(texts),
+                policyAllowlist([...domains].reverse().concat(domains), true, inverted),
+            )).toEqual(policy);
             expect(CanvasPolicyCompiler.compile([], allowlist).revision).not.toBe(policy.revision);
         }
     });
