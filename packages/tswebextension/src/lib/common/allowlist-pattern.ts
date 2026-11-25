@@ -8,12 +8,12 @@ export class AllowlistPattern {
     /**
      * Optional `www.` subdomain of a plain entry, which the generated allowlist rule matches.
      */
-    public static readonly WWW = String.raw`(?:www\.)?`;
+    private static readonly WWW = String.raw`(?:www\.)?`;
 
     /**
      * Any number of subdomain labels, each ending with a dot.
      */
-    public static readonly SUBDOMAINS = String.raw`(?:[^.]+\.)*`;
+    private static readonly SUBDOMAINS = String.raw`(?:[^.]+\.)*`;
 
     /**
      * Builds the hostname pattern of an entry with a wildcard. A `*` matches any characters of the

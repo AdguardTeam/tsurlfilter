@@ -189,9 +189,9 @@ export abstract class Allowlist {
     /**
      * Describes the hosts an inverted allowlist selects: a plain entry covers its host and the
      * `www.` variant, a `*.` entry covers the domain and every subdomain, and an entry with a
-     * wildcard TLD covers the domain, its `www.` variant and their subdomains. The last one goes
-     * beyond the generated allowlist rule of that entry, which covers only the host and `www.`, so
-     * that inverted filtering stays on for the subdomains too.
+     * wildcard TLD covers the domain, its `www.` variant and their subdomains. An `example.*`
+     * entry without the `*.` prefix goes beyond its generated allowlist rule, which covers only
+     * the host and `www.`, so that inverted filtering stays on for its subdomains too.
      *
      * @param domains Normalized allowlist entries.
      *
@@ -219,9 +219,9 @@ export abstract class Allowlist {
                 continue;
             }
 
-            // A wildcard TLD entry covers subdomains at any depth as well, unlike its own generated
-            // rule. A wildcard inside a label without the `*.` prefix covers the host and `www.`,
-            // and the wildcard may cross label dots, as in the generated rule.
+            // A `*.` entry already covers subdomains in its own generated rule; a wildcard TLD
+            // without the prefix adds them here. A wildcard inside a label covers the host and
+            // `www.`, and the wildcard may cross label dots, as in the generated rule.
             const subdomains = domain.startsWith('*.') || domain.endsWith('.*');
 
             patterns.push(AllowlistPattern.hostname(base, subdomains));

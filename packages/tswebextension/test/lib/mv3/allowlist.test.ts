@@ -175,7 +175,7 @@ describe('Allowlist Api', () => {
             },
         ];
 
-        it.each(cases)('should combine $input rules to $expected for MV2', ({ input, inverted, expected }) => {
+        it.each(cases)('should combine $input rules to $expected', ({ input, inverted, expected }) => {
             const config = getConfigurationMv3Fixture();
 
             config.allowlist = input;
