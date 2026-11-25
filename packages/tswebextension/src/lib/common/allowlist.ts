@@ -3,9 +3,8 @@ import {
     createAllowlistRuleNode,
     type NetworkRule,
     normalizeAllowlistDomain,
-    Request,
-    RequestType,
     RuleFactory,
+    SimpleRegex,
 } from '@adguard/tsurlfilter';
 
 import { type Configuration } from './configuration';
@@ -17,6 +16,32 @@ import { ALLOWLIST_FILTER_ID } from './constants';
 export type AllowlistConfiguration = Pick<Configuration, 'allowlist' | 'settings'>;
 
 /**
+ * Hosts selected by the inverted allowlist, in a form that can be serialized into the canvas
+ * protection policy and compared against a hostname.
+ */
+export interface InvertedAllowlistMatch {
+    /**
+     * Whether every host is selected, as with the full wildcard entry `*.*`.
+     */
+    readonly all: boolean;
+
+    /**
+     * Hosts selected as written or with a `www.` prefix.
+     */
+    readonly hosts: readonly string[];
+
+    /**
+     * Domains selected together with all their subdomains.
+     */
+    readonly domains: readonly string[];
+
+    /**
+     * Hostname regular expression sources of entries with a wildcard inside a label.
+     */
+    readonly patterns: readonly string[];
+}
+
+/**
  * The allowlist is used to exclude certain websites from filtering.
  * Blocking rules are not applied to the sites in the list.
  * The allow list can also be inverted.
@@ -24,6 +49,16 @@ export type AllowlistConfiguration = Pick<Configuration, 'allowlist' | 'settings
  * sites added to this list.
  */
 export abstract class Allowlist {
+    /**
+     * Optional `www.` subdomain of a plain entry, which the generated rule matches.
+     */
+    private static readonly WWW = String.raw`(?:www\.)?`;
+
+    /**
+     * Any number of subdomain labels, each ending with a dot.
+     */
+    private static readonly SUBDOMAINS = String.raw`(?:[^.]+\.)*`;
+
     /**
      * Indicates whether the allowlist is enabled.
      */
@@ -36,10 +71,62 @@ export abstract class Allowlist {
     public inverted = false;
 
     /**
+     * Normalized entries that produce an allowlist rule.
+     */
+    private domainList: string[] = [];
+
+    /**
+     * Hosts selected by the inverted allowlist, rebuilt on every {@link domains} change.
+     */
+    private invertedMatchValue: InvertedAllowlistMatch = Allowlist.getInvertedMatch([]);
+
+    /**
+     * Hosts of {@link invertedMatchValue} as a set.
+     */
+    private invertedHosts: Set<string> = new Set();
+
+    /**
+     * Domains of {@link invertedMatchValue} as a set.
+     */
+    private invertedDomains: Set<string> = new Set();
+
+    /**
+     * Compiled patterns of {@link invertedMatchValue}, anchored to the whole hostname.
+     */
+    private invertedPatterns: RegExp[] = [];
+
+    /**
      * List of domains which are allowed (by default)
      * or blocked (if the allowlist is inverted).
+     *
+     * @returns Normalized allowlist entries.
      */
-    public domains: string[] = [];
+    public get domains(): string[] {
+        return this.domainList;
+    }
+
+    /**
+     * Replaces the entry list and rebuilds the inverted allowlist match.
+     *
+     * @param domains Normalized allowlist entries.
+     */
+    public set domains(domains: string[]) {
+        this.domainList = domains;
+        this.invertedMatchValue = this.compileInvertedMatch();
+        this.invertedHosts = new Set(this.invertedMatchValue.hosts);
+        this.invertedDomains = new Set(this.invertedMatchValue.domains);
+        this.invertedPatterns = this.invertedMatchValue.patterns
+            .map((pattern) => new RegExp(`^(?:${pattern})$`));
+    }
+
+    /**
+     * Hosts selected by the inverted allowlist.
+     *
+     * @returns Host selection of the inverted allowlist.
+     */
+    public get invertedMatch(): InvertedAllowlistMatch {
+        return this.invertedMatchValue;
+    }
 
     /**
      * Configures allowlist state based on app configuration.
@@ -64,32 +151,97 @@ export abstract class Allowlist {
     }
 
     /**
-     * Checks whether a host is selected by any configured allowlist entry.
+     * Checks whether the host is selected by the inverted allowlist, i.e. whether filtering stays
+     * enabled on it. The result is meaningful only in the inverted mode: {@link enabled} and
+     * {@link inverted} are not checked here.
      *
-     * @param domain Hostname to match.
+     * @param host Hostname to match, with or without the `www.` prefix.
      *
-     * @returns True if at least one entry matches the host.
+     * @returns True if filtering stays enabled on the host in the inverted mode.
      */
-    public isDomainListed(domain: string): boolean {
-        const request = new Request(`https://${domain}/`, null, RequestType.Document);
+    public isDomainListed(host: string): boolean {
+        if (this.invertedMatchValue.all) {
+            return true;
+        }
 
-        return this.domains.some((listedDomain) => {
-            const rule = Allowlist.createAllowlistRule(listedDomain);
+        const hostname = host.toLowerCase().replace(/\.$/, '');
+        const domain = hostname.startsWith('www.') ? hostname.slice(4) : hostname;
 
-            if (rule?.match(request)) {
+        if (this.invertedHosts.has(hostname) || this.invertedHosts.has(domain)) {
+            return true;
+        }
+
+        for (let suffix = hostname; ; suffix = suffix.slice(suffix.indexOf('.') + 1)) {
+            if (this.invertedDomains.has(suffix)) {
                 return true;
             }
 
-            // A trailing-TLD wildcard also selects subdomains in inverted mode.
-            // Leading-subdomain wildcards already include the apex and every depth.
-            if (!listedDomain.endsWith('.*') || listedDomain.startsWith('*.')) {
-                return false;
+            if (!suffix.includes('.')) {
+                break;
+            }
+        }
+
+        return this.invertedPatterns.some((pattern) => pattern.test(hostname));
+    }
+
+    /**
+     * Checks whether the entry is the full wildcard — `*.*` and its `*.**` spelling — which selects
+     * every host.
+     *
+     * @param domain Normalized allowlist entry.
+     *
+     * @returns True for an entry without a concrete label.
+     */
+    public static isFullWildcardEntry(domain: string): boolean {
+        return /^\*\.\*+$/.test(domain);
+    }
+
+    /**
+     * Describes the hosts an inverted allowlist selects, reproducing what the generated allowlist
+     * rules match: a plain entry covers its host and the `www.` variant, a `*.` entry covers the
+     * domain and every subdomain, and an entry with a wildcard TLD covers the domain, its `www.`
+     * variant and their subdomains, as the frame decision does.
+     *
+     * @param domains Normalized allowlist entries.
+     *
+     * @returns Host selection of the inverted allowlist.
+     */
+    public static getInvertedMatch(domains: readonly string[]): InvertedAllowlistMatch {
+        const hosts: string[] = [];
+        const selectedDomains: string[] = [];
+        const patterns: string[] = [];
+
+        for (const domain of domains) {
+            if (Allowlist.isFullWildcardEntry(domain)) {
+                return {
+                    all: true,
+                    hosts: [],
+                    domains: [],
+                    patterns: [],
+                };
             }
 
-            const subdomainRule = Allowlist.createAllowlistRule(`*.${listedDomain}`);
+            const base = domain.startsWith('*.') ? domain.slice(2) : domain;
 
-            return subdomainRule?.match(request) ?? false;
-        });
+            if (!base.includes('*')) {
+                (domain.startsWith('*.') ? selectedDomains : hosts).push(base);
+                continue;
+            }
+
+            // A wildcard TLD entry reaches beyond its own host: the entry covers subdomains at any
+            // depth as well. A wildcard inside a label without the `*.` prefix covers only the host.
+            const subdomains = domain.startsWith('*.') || domain.endsWith('.*');
+            const prefix = subdomains ? Allowlist.SUBDOMAINS : Allowlist.WWW;
+
+            patterns.push(`${prefix}${Allowlist.toHostnamePattern(base)}`);
+        }
+
+        return {
+            all: false,
+            hosts,
+            domains: selectedDomains,
+            patterns,
+        };
     }
 
     /**
@@ -104,7 +256,37 @@ export abstract class Allowlist {
     protected static prepareDomains(allowlist: string[]): string[] {
         return allowlist
             .map((hostname) => normalizeAllowlistDomain(hostname))
-            .filter((domain) => createAllowlistRuleNode(domain) !== null);
+            .filter((domain) => {
+                try {
+                    return Allowlist.createAllowlistRule(domain) !== null;
+                } catch {
+                    // An imported entry that only looks like a domain, e.g. a hosts-file line, has
+                    // no allowlist rule and must not reach frame matching.
+                    return false;
+                }
+            });
+    }
+
+    /**
+     * Describes the hosts an inverted allowlist selects. Platforms whose network layer matches
+     * differently from the generated rules override it.
+     *
+     * @returns Host selection of the inverted allowlist.
+     */
+    protected compileInvertedMatch(): InvertedAllowlistMatch {
+        return Allowlist.getInvertedMatch(this.domains);
+    }
+
+    /**
+     * Escapes a wildcard entry for the hostname regular expression of the canvas policy, where a
+     * `*` matches any characters of the hostname, as `HOST_WILDCARD` does in the generated rule.
+     *
+     * @param domain Normalized allowlist entry part.
+     *
+     * @returns Hostname regular expression source.
+     */
+    private static toHostnamePattern(domain: string): string {
+        return SimpleRegex.escapeRegexSpecials(domain).replaceAll('\\*', '.*');
     }
 
     /**

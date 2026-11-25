@@ -393,95 +393,95 @@ describe('Allowlist Api', () => {
 
     describe('isDomainListed method', () => {
         const cases = [
+            // A `*.` entry covers the apex and every subdomain depth in both manifests.
             {
-                entries: ['*.example.com'],
-                domain: 'example.com',
-                expectedMv2: true,
-                expectedMv3: true,
+                entries: ['*.example.com'], host: 'example.com', expectedMv2: true, expectedMv3: true,
             },
             {
-                entries: ['*.example.com'],
-                domain: 'b.example.com',
-                expectedMv2: true,
-                expectedMv3: true,
+                entries: ['*.example.com'], host: 'b.example.com', expectedMv2: true, expectedMv3: true,
             },
             {
-                entries: ['*.example.com'],
-                domain: 'a.b.example.com',
-                expectedMv2: true,
-                expectedMv3: true,
+                entries: ['*.example.com'], host: 'a.b.example.com', expectedMv2: true, expectedMv3: true,
+            },
+            // A wildcard TLD covers every TLD in MV2 and the DNR-expanded popular TLDs in MV3.
+            {
+                entries: ['example.*'], host: 'example.com', expectedMv2: true, expectedMv3: true,
             },
             {
-                entries: ['example.*'],
-                domain: 'example.com',
-                expectedMv2: true,
-                expectedMv3: true,
+                entries: ['example.*'], host: 'www.example.co.uk', expectedMv2: true, expectedMv3: true,
             },
             {
-                entries: ['example.*'],
-                domain: 'b.example.com',
-                expectedMv2: true,
-                expectedMv3: true,
+                entries: ['example.*'], host: 'b.example.com', expectedMv2: true, expectedMv3: true,
             },
             {
-                entries: ['example.*'],
-                domain: 'a.b.example.com',
-                expectedMv2: true,
-                expectedMv3: true,
+                entries: ['example.*'], host: 'a.b.example.com', expectedMv2: true, expectedMv3: true,
             },
             {
-                entries: ['example.com'],
-                domain: 'example.com',
-                expectedMv2: true,
-                expectedMv3: true,
+                entries: ['example.*'], host: 'example.ly', expectedMv2: true, expectedMv3: false,
+            },
+            // A plain entry covers the host and `www.`; MV3 adds the `*.` twin for DNR.
+            {
+                entries: ['example.com'], host: 'example.com', expectedMv2: true, expectedMv3: true,
             },
             {
-                entries: ['example.com'],
-                domain: 'www.example.com',
-                expectedMv2: true,
-                expectedMv3: true,
+                entries: ['example.com'], host: 'www.example.com', expectedMv2: true, expectedMv3: true,
             },
             {
-                entries: ['example.com'],
-                domain: 'b.example.com',
-                expectedMv2: false,
-                expectedMv3: true,
+                entries: ['example.com'], host: 'b.example.com', expectedMv2: false, expectedMv3: true,
             },
             {
-                entries: ['example.com'],
-                domain: 'a.b.example.com',
-                expectedMv2: false,
-                expectedMv3: true,
+                entries: ['example.com'], host: 'a.b.example.com', expectedMv2: false, expectedMv3: true,
+            },
+            // `www.*` keeps the prefix: it describes the hosts under `www.`, which DNR narrows to
+            // the popular TLDs like every other wildcard TLD entry.
+            {
+                entries: ['www.*'], host: 'www.com', expectedMv2: true, expectedMv3: true,
             },
             {
-                entries: ['other.org', 'example.*'],
-                domain: 'b.example.com',
-                expectedMv2: true,
-                expectedMv3: true,
+                entries: ['www.*'], host: 'www.example.com', expectedMv2: true, expectedMv3: false,
             },
             {
-                entries: ['*.example.com'],
-                domain: 'example.com.evil.org',
-                expectedMv2: false,
-                expectedMv3: false,
+                entries: ['www.*'], host: 'example.com', expectedMv2: false, expectedMv3: false,
+            },
+            // A wildcard inside a label is matched literally by the rules, but DNR drops it.
+            {
+                entries: ['*example.com'], host: 'myexample.com', expectedMv2: true, expectedMv3: false,
             },
             {
-                entries: ['example.*'],
-                domain: 'other.org',
-                expectedMv2: false,
-                expectedMv3: false,
+                entries: ['*example.com'], host: 'example.com', expectedMv2: true, expectedMv3: false,
             },
             {
-                entries: [],
-                domain: 'example.com',
-                expectedMv2: false,
-                expectedMv3: false,
+                entries: ['example.co*'], host: 'example.community', expectedMv2: true, expectedMv3: false,
+            },
+            // The full wildcard selects every host; no inverted DNR rule is needed to filter them.
+            {
+                entries: ['*.*'], host: 'example.com', expectedMv2: true, expectedMv3: true,
+            },
+            {
+                entries: ['*.*'], host: 'other.org', expectedMv2: true, expectedMv3: true,
+            },
+            // Unrelated hosts, partial-label hosts and empty lists stay unselected.
+            {
+                entries: ['other.org', 'example.*'], host: 'b.example.com', expectedMv2: true, expectedMv3: true,
+            },
+            {
+                entries: ['*.example.com'], host: 'example.com.evil.org', expectedMv2: false, expectedMv3: false,
+            },
+            {
+                entries: ['example.*'], host: 'other.org', expectedMv2: false, expectedMv3: false,
+            },
+            {
+                entries: [], host: 'example.com', expectedMv2: false, expectedMv3: false,
+            },
+            // An imported entry without an allowlist rule is dropped instead of throwing.
+            {
+                entries: ['0.0.0.0 example.com'], host: 'example.com', expectedMv2: false, expectedMv3: false,
             },
         ];
 
-        it.each(cases)('matches $domain against $entries', ({
+        it.each(cases)('matches $host against $entries', ({
             entries,
-            domain,
+            host,
             expectedMv2,
             expectedMv3,
         }) => {
@@ -491,7 +491,7 @@ describe('Allowlist Api', () => {
             mv2Config.settings.allowlistInverted = true;
             allowlist.configure(mv2Config);
 
-            expect(allowlist.isDomainListed(domain)).toBe(expectedMv2);
+            expect(allowlist.isDomainListed(host)).toBe(expectedMv2);
 
             const mv3Config = getConfigurationMv3Fixture();
             mv3Config.allowlist = entries;
@@ -500,7 +500,18 @@ describe('Allowlist Api', () => {
             const allowlistApi = new AllowlistApi();
             allowlistApi.configure(mv3Config);
 
-            expect(allowlistApi.isDomainListed(domain)).toBe(expectedMv3);
+            expect(allowlistApi.isDomainListed(host)).toBe(expectedMv3);
+        });
+
+        it('rebuilds the match when the entry list is assigned directly', () => {
+            const mv2 = new Allowlist();
+            mv2.domains = ['example.com'];
+            expect(mv2.isDomainListed('example.com')).toBe(true);
+            expect(mv2.isDomainListed('other.org')).toBe(false);
+
+            mv2.domains = ['other.org'];
+            expect(mv2.isDomainListed('example.com')).toBe(false);
+            expect(mv2.isDomainListed('other.org')).toBe(true);
         });
     });
 });

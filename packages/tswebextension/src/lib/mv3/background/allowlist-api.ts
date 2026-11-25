@@ -1,17 +1,12 @@
 import { PIPE_MODIFIER_SEPARATOR } from '@adguard/agtree';
+import { POPULAR_TLDS } from '@adguard/dnr-converter';
 
-import { type AllowlistConfiguration, Allowlist as CommonAllowlist } from '../../common/allowlist';
+import {
+    type AllowlistConfiguration,
+    Allowlist as CommonAllowlist,
+    type InvertedAllowlistMatch,
+} from '../../common/allowlist';
 import { getUpperLevelDomain } from '../../common/utils/url';
-
-/**
- * Checks whether the entry is the full wildcard — `*.*` and its `*.**` spelling — which the
- * generated rules translate into a pattern that covers every document.
- *
- * @param domain Normalized allowlist entry.
- *
- * @returns True for an entry without any concrete label.
- */
-const isFullWildcardEntry = (domain: string): boolean => /^\*\.\*+$/.test(domain);
 
 /**
  * Checks whether the host ends with a wildcard TLD, e.g. `example.*`. DNR expresses it by
@@ -121,11 +116,11 @@ export class AllowlistApi extends CommonAllowlist {
         }
 
         /**
-         * The full wildcard covers every site, and DNR expresses that with a rule without `$to`.
-         * In the inverted mode it excludes nothing, so it is dropped by the filter below.
+         * The full wildcard selects every host. In the regular mode DNR expresses that with a rule
+         * without `$to`; in the inverted mode it excludes nothing, which is the absence of a rule.
          */
-        if (!this.inverted && this.domains.some(isFullWildcardEntry)) {
-            return '@@$document,important';
+        if (this.domains.some(CommonAllowlist.isFullWildcardEntry)) {
+            return this.inverted ? '' : '@@$document,important';
         }
 
         /**
@@ -157,6 +152,56 @@ export class AllowlistApi extends CommonAllowlist {
         }
 
         return AllowlistApi.getAllowlistRule(allDomains);
+    }
+
+    /**
+     * Describes the hosts the inverted allowlist selects. Unlike MV2, the network layer expresses
+     * it with one DNR rule, so the page-level decision and canvas protection follow what that rule
+     * can match.
+     *
+     * @returns Host selection of the inverted DNR allowlist rule.
+     */
+    protected override compileInvertedMatch(): InvertedAllowlistMatch {
+        const { domains } = this;
+
+        if (domains.some(CommonAllowlist.isFullWildcardEntry)) {
+            return {
+                all: true,
+                hosts: [],
+                domains: [],
+                patterns: [],
+            };
+        }
+
+        const selected = new Set<string>();
+
+        for (const domain of domains) {
+            // A wildcard inside a label has no DNR equivalent: the combined rule drops the entry,
+            // so the page-level decision must ignore it too.
+            if (!isExpressibleInDnr(domain)) {
+                continue;
+            }
+
+            const host = domain.startsWith('*.') ? getUpperLevelDomain(domain) : domain;
+
+            if (!isWildcardTld(host)) {
+                selected.add(host);
+                continue;
+            }
+
+            // The converter expands a wildcard TLD into the popular top-level domains, so the
+            // network layer excludes those hosts and no other.
+            const prefix = host.slice(0, -'.*'.length);
+
+            POPULAR_TLDS.forEach((tld) => selected.add(`${prefix}.${tld}`));
+        }
+
+        return {
+            all: false,
+            hosts: [],
+            domains: [...selected],
+            patterns: [],
+        };
     }
 }
 

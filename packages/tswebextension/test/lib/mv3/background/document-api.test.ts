@@ -1,5 +1,6 @@
 import {
     afterEach,
+    beforeEach,
     describe,
     expect,
     it,
@@ -16,6 +17,12 @@ import { getConfigurationMv3Fixture } from '../fixtures/configuration';
 vi.mock('../../../../src/lib/mv3/background/engine-api');
 
 describe('Document Api', () => {
+    const engineRule = new NetworkRule('||engine.example^', 1);
+
+    beforeEach(() => {
+        vi.mocked(engineApi.matchFrame).mockReturnValue(engineRule);
+    });
+
     afterEach(() => {
         vi.resetAllMocks();
     });
@@ -134,6 +141,46 @@ describe('Document Api', () => {
                 domains: [],
                 expectedEngineMatch: false,
             },
+            {
+                title: 'filters every host for the inverted full wildcard',
+                enabled: true,
+                inverted: true,
+                url: 'https://other.org',
+                domains: ['*.*'],
+                expectedEngineMatch: true,
+            },
+            {
+                title: 'disables filtering for an entry DNR cannot express',
+                enabled: true,
+                inverted: true,
+                url: 'https://myexample.com',
+                domains: ['*example.com'],
+                expectedEngineMatch: false,
+            },
+            {
+                title: 'disables filtering on a TLD outside the DNR expansion',
+                enabled: true,
+                inverted: true,
+                url: 'https://example.ly',
+                domains: ['example.*'],
+                expectedEngineMatch: false,
+            },
+            {
+                title: 'does not extend a TLD wildcard to every www host',
+                enabled: true,
+                inverted: true,
+                url: 'https://www.example.com',
+                domains: ['www.*'],
+                expectedEngineMatch: false,
+            },
+            {
+                title: 'drops an imported entry that has no allowlist rule',
+                enabled: true,
+                inverted: true,
+                url: 'https://example.com',
+                domains: ['0.0.0.0 example.com'],
+                expectedEngineMatch: false,
+            },
         ];
 
         it.each(cases)('$title', ({
@@ -153,6 +200,7 @@ describe('Document Api', () => {
 
             if (expectedEngineMatch) {
                 expect(engineApi.matchFrame).toHaveBeenCalledWith(url);
+                expect(result).toBe(engineRule);
                 return;
             }
 

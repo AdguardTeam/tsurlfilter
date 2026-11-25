@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `POPULAR_TLDS` is now exported: the top-level domains that a wildcard TLD entry
+  such as `example.*` is expanded into for DNR, so consumers can match the same
+  hosts as the converted rule.
 - `Rule.applyBadfilters()` applies `$badfilter` rules to a rule and returns the
   narrowed copy, or `null` when a badfilter cancels the rule completely.
   `Rule.withPermittedDomains()` and `Rule.withExcludedDomains()` create copies

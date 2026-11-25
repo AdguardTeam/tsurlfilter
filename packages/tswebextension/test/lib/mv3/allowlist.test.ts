@@ -127,24 +127,25 @@ describe('Allowlist Api', () => {
                 inverted: false,
                 expected: '@@$document,important',
             },
-            // In the inverted mode the full wildcard excludes nothing, so it is skipped.
+            // In the inverted mode the full wildcard excludes nothing, so no rule can select the
+            // hosts it should keep filtered.
             {
                 input: ['*.*', 'example.com'],
                 inverted: true,
-                expected: '@@$document,important,to=~example.com',
+                expected: '',
             },
             {
                 input: ['*example.com', 'example.org'],
                 inverted: true,
                 expected: '@@$document,important,to=~example.org',
             },
-            // A list without expressible entries means "block nothing" in the inverted mode, the
-            // same answer `matchFrameInverted()` gives, so it must not end up as an empty rule.
             {
                 input: ['*.*'],
                 inverted: true,
-                expected: '@@$document,important',
+                expected: '',
             },
+            // A list without expressible entries means "block nothing" in the inverted mode, the
+            // same answer `matchFrameInverted()` gives, so it must not end up as an empty rule.
             {
                 input: ['*example.com'],
                 inverted: true,
@@ -257,9 +258,60 @@ describe('Allowlist Api', () => {
         });
 
         it('excludes the entries in the inverted mode', async () => {
-            const rule = await convertCombinedRule(['*.*', 'example.com'], true);
+            const rule = await convertCombinedRule(['example.org', 'example.com'], true);
 
             expect(rule?.condition.excludedRequestDomains).toContain('example.com');
+            expect(rule?.condition.excludedRequestDomains).toContain('example.org');
+        });
+
+        it('installs no rule for the full wildcard in the inverted mode', async () => {
+            // No rule keeps network filtering on everywhere, as the page decision keeps it on.
+            expect(await convertCombinedRule(['*.*'], true)).toBeUndefined();
+            expect(await convertCombinedRule(['*.*', 'example.com'], true)).toBeUndefined();
+        });
+
+        it.each([
+            'example.com', '*.example.com', 'example.*', '*.example.*', 'www.*',
+            '*example.com', 'example.ly', '*.*', '*.ex*ple.com',
+        ])('lists the hosts the inverted DNR rule filters for %s', async (entry) => {
+            const hosts = [
+                'example.com', 'www.example.com', 'b.example.com', 'a.b.example.com',
+                'example.ly', 'www.example.co.uk', 'example.community', 'myexample.com',
+                'www.a.com', 'a.www.com', 'other.org',
+            ];
+
+            /**
+             * Whether the converted rule keeps network filtering on for the host. Without a rule DNR
+             * filters every host; a rule without exclusions allows every host.
+             *
+             * @param rule Installed allowlist rule.
+             * @param host Hostname to check.
+             *
+             * @returns True if the network layer filters the host.
+             */
+            const dnrFilters = (rule: DeclarativeRule | undefined, host: string): boolean => {
+                if (!rule) {
+                    return true;
+                }
+
+                const excluded = rule.condition.excludedRequestDomains;
+
+                return excluded?.some((domain) => host === domain || host.endsWith(`.${domain}`)) ?? false;
+            };
+
+            const rule = await convertCombinedRule([entry], true);
+            const config = getConfigurationMv3Fixture();
+            config.allowlist = [entry];
+            config.settings.allowlistEnabled = true;
+            config.settings.allowlistInverted = true;
+
+            const allowlistApi = new AllowlistApi();
+            allowlistApi.configure(config);
+
+            for (const host of hosts) {
+                expect(allowlistApi.isDomainListed(host), `page decision for ${entry} at ${host}`)
+                    .toBe(dnrFilters(rule, host));
+            }
         });
     });
 });

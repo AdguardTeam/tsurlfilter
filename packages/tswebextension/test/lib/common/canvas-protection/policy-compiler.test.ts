@@ -12,8 +12,11 @@ import { resolveProtectedSite } from '../../../../src/lib/common/canvas-protecti
 import { CanvasPolicyCompiler } from '../../../../src/lib/common/canvas-protection/policy-compiler';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
+import { DocumentApi } from '../../../../src/lib/mv2/background/document-api';
+import { type EngineApi } from '../../../../src/lib/mv2/background/engine-api';
 import { MatchPatterns } from '../../../../src/lib/mv2/background/utils/match-patterns';
 import { AllowlistApi, allowlistApi as mv3AllowlistApi } from '../../../../src/lib/mv3/background/allowlist-api';
+import { DocumentApi as Mv3DocumentApi } from '../../../../src/lib/mv3/background/document-api';
 import { getConfigurationMv2Fixture } from '../../mv2/background/fixtures/configuration';
 
 const disabledAllowlist = { enabled: false, inverted: false, domains: [] };
@@ -51,6 +54,25 @@ const configureAllowlist = (allowlist: Allowlist, domains: string[], inverted = 
     config.settings.allowlistInverted = inverted;
     allowlist.configure(config);
     return allowlist;
+};
+
+/**
+ * Checks that the canvas policy and the frame matcher of the same platform agree: protection is
+ * off exactly for the documents that inverted filtering keeps enabled.
+ *
+ * @param policy Compiled canvas policy.
+ * @param matchFrame Frame matcher of the platform.
+ * @param topUrl Top-level document URL.
+ */
+const expectConsistentCanvas = (
+    policy: ProtectionPolicyArtifact,
+    matchFrame: (url: string) => unknown,
+    topUrl: string,
+): void => {
+    const filteringOff = matchFrame(topUrl) !== null;
+
+    expect(isNative(policy, topUrl), `canvas at ${topUrl}`).toBe(filteringOff);
+    expect(isNative(policy, 'https://frame.example/', topUrl), `frame at ${topUrl}`).toBe(filteringOff);
 };
 
 afterEach(() => {
@@ -269,13 +291,13 @@ describe('canvas policy compiler', () => {
     });
 
     it.each([
-        ['https://example.com/', true, false],
-        ['https://www.example.com/', true, false],
+        ['https://example.com/', true, true],
+        ['https://www.example.com/', true, true],
         ['https://sub.example.com/', false, true],
         ['http://sub.example.com/', false, true],
         ['https://www.sub.example.com/', false, true],
-        ['https://a.b.example.com/', false, false],
-        ['https://www.a.b.example.com/', false, false],
+        ['https://a.b.example.com/', false, true],
+        ['https://www.a.b.example.com/', false, true],
         ['https://www.www.example.com/', false, true],
         ['https://sub.example.com.:8080/x', false, true],
         ['https://sub.example.com?x', false, true],
@@ -286,7 +308,7 @@ describe('canvas policy compiler', () => {
         ['https://example.com.evil.org/', false, false],
         ['https://example.comx.org/', false, false],
         ['https://other.org/?next=https://sub.example.com/', false, false],
-    ])('compiles inverted allowlist matching at %s', (topUrl, plainListed, wildcardListed) => {
+    ])('compiles inverted MV2 allowlist matching at %s', (topUrl, plainListed, wildcardListed) => {
         const cases = [
             { domains: ['example.com'], listed: plainListed },
             { domains: ['*.example.com'], listed: wildcardListed },
@@ -294,52 +316,108 @@ describe('canvas policy compiler', () => {
         ];
         for (const { domains, listed } of cases) {
             const allowlist = configureAllowlist(new Allowlist(), domains, true);
+            const engineApi = { matchFrame: vi.fn(() => null) } as unknown as EngineApi;
+            const documentApi = new DocumentApi(allowlist, engineApi);
             const policy = CanvasPolicyCompiler.compile([], allowlist);
-            expect(isNative(policy, topUrl)).toBe(!listed);
-            expect(isNative(policy, 'https://frame.example/', topUrl)).toBe(!listed);
-        }
-    });
 
-    it('compiles configured inverted allowlists including the MV3 subdomain twins', () => {
-        const platforms = [
-            { allowlist: new Allowlist(), directSubdomainListed: false },
-            { allowlist: mv3AllowlistApi, directSubdomainListed: true },
-        ];
-        for (const { allowlist, directSubdomainListed } of platforms) {
-            configureAllowlist(allowlist, ['example.com'], true);
-            const policy = CanvasPolicyCompiler.compile([], allowlist);
-            for (const [topUrl, excluded] of [
-                ['https://example.com/', false],
-                ['https://www.example.com/', false],
-                ['https://sub.example.com/', !directSubdomainListed],
-                ['https://www.sub.example.com/', !directSubdomainListed],
-                ['https://a.b.example.com/', true],
-                ['https://www.a.b.example.com/', true],
-                ['https://example.community/', true],
-                ['https://sub.example.com.evil.org/', true],
-                ['file:///x.html', false],
-            ] as const) {
-                expect(
-                    isNative(policy, 'https://frame.example/', topUrl),
-                    `${allowlist.constructor.name} at ${topUrl}`,
-                ).toBe(excluded);
-            }
+            expect(isNative(policy, topUrl), `${domains} at ${topUrl}`).toBe(!listed);
+            expectConsistentCanvas(policy, (url) => documentApi.matchFrame(url), topUrl);
         }
     });
 
     it.each([
-        ['https://example.com/', true],
-        ['https://www.example.com/', true],
-        ['https://sub.example.com/', true],
-        ['https://www.sub.example.com/', true],
-        ['https://a.b.example.com/', false],
-        ['https://example.community/', false],
-        ['https://sub.example.com.evil.org/', false],
-    ])('matches the configured inverted MV3 allowlist at %s → listed %s', (topUrl, listed) => {
-        configureAllowlist(mv3AllowlistApi, ['example.com'], true);
+        ['https://example.com/', true, true, true],
+        ['https://www.example.com/', true, true, true],
+        ['https://sub.example.com/', true, true, true],
+        ['https://www.sub.example.com/', true, true, true],
+        ['https://a.b.example.com/', true, true, true],
+        ['https://www.a.b.example.com/', true, true, true],
+        ['https://example.ly/', false, false, false],
+        ['https://example.community/', false, false, false],
+        ['https://sub.example.com.evil.org/', false, false, false],
+    ])('compiles inverted MV3 allowlist matching at %s', (topUrl, plainListed, wildcardListed, tldListed) => {
+        const cases = [
+            { domains: ['example.com'], listed: plainListed },
+            { domains: ['*.example.com'], listed: wildcardListed },
+            { domains: ['example.*'], listed: tldListed },
+        ];
+        for (const { domains, listed } of cases) {
+            const allowlist = configureAllowlist(mv3AllowlistApi, domains, true);
+            const policy = CanvasPolicyCompiler.compile([], allowlist);
+
+            expect(isNative(policy, topUrl), `${domains} at ${topUrl}`).toBe(!listed);
+            expectConsistentCanvas(policy, (url) => Mv3DocumentApi.matchFrame(url), topUrl);
+        }
+    });
+
+    it('keeps every host filtered for the inverted full wildcard', () => {
+        for (const allowlist of [new Allowlist(), new AllowlistApi()]) {
+            configureAllowlist(allowlist, ['*.*'], true);
+            const policy = CanvasPolicyCompiler.compile([], allowlist);
+
+            // Nothing is excluded: the full wildcard selects every host.
+            expect(policy.documentExclusions).toHaveLength(0);
+
+            for (const topUrl of ['https://example.com/', 'https://other.org/', 'https://a.b.example.com/']) {
+                expect(isNative(policy, topUrl), `${allowlist.constructor.name} at ${topUrl}`).toBe(false);
+            }
+        }
+    });
+
+    it('keeps a hostless document native in the inverted mode', () => {
+        for (const allowlist of [new Allowlist(), new AllowlistApi()]) {
+            configureAllowlist(allowlist, ['example.com'], true);
+            const policy = CanvasPolicyCompiler.compile([], allowlist);
+
+            for (const topUrl of ['file:///x.html', 'about:blank']) {
+                expect(isNative(policy, topUrl), `${allowlist.constructor.name} at ${topUrl}`).toBe(true);
+            }
+        }
+    });
+
+    it('covers a wildcard inside a label in the inverted MV2 allowlist', () => {
+        const allowlist = configureAllowlist(new Allowlist(), ['*example.com'], true);
+        const engineApi = { matchFrame: vi.fn(() => null) } as unknown as EngineApi;
+        const documentApi = new DocumentApi(allowlist, engineApi);
+        const policy = CanvasPolicyCompiler.compile([], allowlist);
+
+        for (const topUrl of ['https://example.com/', 'https://myexample.com/', 'https://a.b.example.com/']) {
+            expect(isNative(policy, topUrl), `canvas at ${topUrl}`).toBe(false);
+            expectConsistentCanvas(policy, (url) => documentApi.matchFrame(url), topUrl);
+        }
+        expect(isNative(policy, 'https://other.org/')).toBe(true);
+    });
+
+    it('leaves protection off for an entry the inverted MV3 DNR rule cannot express', () => {
+        configureAllowlist(mv3AllowlistApi, ['*example.com'], true);
         const policy = CanvasPolicyCompiler.compile([], mv3AllowlistApi);
-        expect(isNative(policy, topUrl)).toBe(!listed);
-        expect(isNative(policy, 'https://frame.example/', topUrl)).toBe(!listed);
+
+        // The combined DNR rule drops the entry, so no host is excluded and network filtering is off.
+        expect(policy.documentExclusions).toEqual([{
+            type: CanvasConditionType.Not,
+            operand: {
+                type: CanvasConditionType.Host,
+                hosts: [],
+                domains: [],
+                parents: [],
+            },
+        }]);
+        for (const topUrl of ['https://example.com/', 'https://myexample.com/', 'https://a.b.example.com/']) {
+            expect(isNative(policy, topUrl), `canvas at ${topUrl}`).toBe(true);
+            expect(Mv3DocumentApi.matchFrame(topUrl), `frame at ${topUrl}`).not.toBeNull();
+        }
+    });
+
+    it('covers the www hosts of an inverted TLD wildcard entry', () => {
+        const mv2 = configureAllowlist(new Allowlist(), ['www.*'], true);
+        expect(isNative(CanvasPolicyCompiler.compile([], mv2), 'https://www.example.com/')).toBe(false);
+        expect(isNative(CanvasPolicyCompiler.compile([], mv2), 'https://example.com/')).toBe(true);
+
+        const mv3 = configureAllowlist(new AllowlistApi(), ['www.*'], true);
+        const mv3Policy = CanvasPolicyCompiler.compile([], mv3);
+        // DNR expands `www.*` to `www.<popular tld>`, which does not cover `www.example.com`.
+        expect(isNative(mv3Policy, 'https://www.com/')).toBe(false);
+        expect(isNative(mv3Policy, 'https://www.example.com/')).toBe(true);
     });
 
     it('excludes hosted documents for an empty inverted allowlist, preserving unknown and hostless tops', () => {

@@ -20,6 +20,8 @@ vi.mock('../../../../src/lib/mv2/background/stealth-api');
 vi.mock('../../../../src/lib/mv2/background/app-context');
 
 describe('Document Api', () => {
+    const engineRule = new NetworkRule('||engine.example^', 1);
+
     let documentApi: DocumentApi;
     let engineApi: EngineApi;
     let allowlist: Allowlist;
@@ -27,6 +29,7 @@ describe('Document Api', () => {
     beforeEach(() => {
         allowlist = new Allowlist();
         engineApi = new EngineApi(allowlist, appContext, stealthApi);
+        vi.mocked(engineApi.matchFrame).mockReturnValue(engineRule);
         documentApi = new DocumentApi(allowlist, engineApi);
     });
 
@@ -156,6 +159,38 @@ describe('Document Api', () => {
                 domains: [],
                 expectedEngineMatch: false,
             },
+            {
+                title: 'filters every host for the inverted full wildcard',
+                enabled: true,
+                inverted: true,
+                url: 'https://other.org',
+                domains: ['*.*'],
+                expectedEngineMatch: true,
+            },
+            {
+                title: 'matches a wildcard inside a label',
+                enabled: true,
+                inverted: true,
+                url: 'https://myexample.com',
+                domains: ['*example.com'],
+                expectedEngineMatch: true,
+            },
+            {
+                title: 'matches the www host of a TLD wildcard',
+                enabled: true,
+                inverted: true,
+                url: 'https://www.example.com',
+                domains: ['www.*'],
+                expectedEngineMatch: true,
+            },
+            {
+                title: 'drops an imported entry that has no allowlist rule',
+                enabled: true,
+                inverted: true,
+                url: 'https://example.com',
+                domains: ['0.0.0.0 example.com'],
+                expectedEngineMatch: false,
+            },
         ];
 
         it.each(cases)('$title', ({
@@ -173,6 +208,7 @@ describe('Document Api', () => {
 
             if (expectedEngineMatch) {
                 expect(engineApi.matchFrame).toHaveBeenCalledWith(url);
+                expect(result).toBe(engineRule);
                 return;
             }
 

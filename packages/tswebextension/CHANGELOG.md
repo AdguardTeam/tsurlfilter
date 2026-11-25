@@ -32,8 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   MV2 with `stealth.protectCanvas` and methods to update protection.
   Exceptions are compiled from filter rules and the allowlist, including
   `$stealth=fingerprinting` and `$document`, with host boundaries preserved
-  and inverted wildcard entries covering one level below the domain, as frame
-  matching does. The filtering log shows the `$stealth` exception that keeps
+  and inverted allowlist entries using the same host selection as frame
+  matching, wildcard entries and every subdomain depth included. The filtering
+  log shows the `$stealth` exception that keeps
   a document native [AdguardBrowserExtension#3475].
 - MV3: `ConfigurationResult.loadDisabledStaticFilter()` and
   `loadDisabledStaticFilters()` create the static rulesets of the filters not
@@ -64,10 +65,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed inverted allowlist wildcard matching so `*.example.com` covers the
-  apex and every subdomain depth, and `example.*` covers supported domains and
-  their subdomains consistently for network, cosmetic, and scriptlet filtering
-  in MV2 and MV3.
+- Fixed inverted allowlist wildcard matching. The page-level decision, canvas
+  protection and the network layer now select the same hosts: a `*.example.com`
+  entry covers the apex and every subdomain depth, and a `example.*` entry covers
+  the supported domains and their subdomains. In MV2 a plain entry still covers
+  only the host and its `www.` subdomain, while in MV3 it covers every subdomain
+  through the `*.` twin the DNR rule needs. In MV3 the page-level decision follows
+  what the DNR rule can express: entries with a wildcard inside a label are
+  ignored, a wildcard TLD covers only the popular top-level domains of the
+  converter, and the inverted full wildcard `*.*` adds no allowlist rule, so
+  network filtering stays on everywhere. An imported entry that produces no
+  allowlist rule is dropped instead of throwing during frame matching.
 - The MV3 rules-limits page could overcount unsafe rules, because the
   excluded-rule list shared by the total and unsafe limit errors included rules
   dropped by the other limit. The total limit error now carries only the rules
@@ -118,8 +126,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   domains of the converter: `example.*` becomes `example.<tld>` for those, and
   `www.*` becomes `www.<tld>`, so a host like `www.example.com` stays filtered
   there. The full wildcard `*.*` becomes a rule without `$to`, and in the inverted
-  mode a list that ends up without expressible entries becomes such a rule too, so
-  network filtering matches frame matching. A disabled allowlist now adds no rule
+  mode it adds no rule at all, so network filtering stays on everywhere as the
+  page decision does; a list that ends up without expressible entries becomes
+  a rule without `$to` instead, which allows every document like frame matching.
+  A disabled allowlist now adds no rule
   at all: in the inverted mode it used to add one that allowed every document.
 - MV3: the engine no longer prepares the enabled static filter lists again on
   every start; it gets them from IndexedDB with their conversion data. Cached

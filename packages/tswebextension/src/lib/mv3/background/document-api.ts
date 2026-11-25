@@ -1,6 +1,6 @@
 import { type NetworkRule } from '@adguard/tsurlfilter';
 
-import { getDomain } from '../../common/utils/url';
+import { getDomain, getHost } from '../../common/utils/url';
 
 import { allowlistApi, AllowlistApi } from './allowlist-api';
 import { engineApi } from './engine-api';
@@ -33,7 +33,7 @@ export class DocumentApi {
     }
 
     /**
-     * Creates allowlist rule for domains that are not in the inverted list.
+     * Creates an allowlist rule for hosts that are not selected by the inverted list.
      * In other cases returns engine matched rule.
      *
      * @param frameUrl Frame url.
@@ -41,13 +41,14 @@ export class DocumentApi {
      * @returns Matched rule or null.
      */
     private static matchFrameInverted(frameUrl: string): NetworkRule | null {
+        const host = getHost(frameUrl);
         const domain = getDomain(frameUrl);
 
-        if (!domain) {
+        if (!host || !domain) {
             return null;
         }
 
-        if (!allowlistApi.isDomainListed(domain)) {
+        if (!allowlistApi.isDomainListed(host)) {
             return AllowlistApi.createAllowlistRule(domain);
         }
 

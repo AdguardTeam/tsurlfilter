@@ -11,6 +11,7 @@ import {
     StealthOptionName,
 } from '@adguard/tsurlfilter';
 
+import { Allowlist, type InvertedAllowlistMatch } from '../allowlist';
 import { logger } from '../utils/logger';
 
 import { CanvasConditionType, CanvasRuleSkipReason } from './constants';
@@ -23,6 +24,12 @@ export interface PolicyAllowlist {
     readonly enabled: boolean;
     readonly inverted: boolean;
     readonly domains: readonly string[];
+
+    /**
+     * Hosts selected by the inverted allowlist, when the platform network layer selects them
+     * differently from {@link domains}, as MV3 does with its DNR rule.
+     */
+    readonly invertedMatch?: InvertedAllowlistMatch;
 }
 
 /**
@@ -130,7 +137,12 @@ export class CanvasPolicyCompiler {
             documentExclusions.push(CanvasPolicyCompiler.hostCondition({ hosts, domains, patterns }));
         }
         if (allowlist.enabled && allowlist.inverted) {
-            documentExclusions.push(CanvasPolicyCompiler.invertedAllowlistExclusion(allowlist.domains));
+            const match = allowlist.invertedMatch ?? Allowlist.getInvertedMatch(allowlist.domains);
+            const exclusion = CanvasPolicyCompiler.invertedAllowlistExclusion(match);
+
+            if (exclusion) {
+                documentExclusions.push(exclusion);
+            }
         }
         const policy = {
             selectors: { matches: ['<all_urls>'], excludeMatches: [...new Set(excludeMatches)].sort() },
@@ -263,28 +275,27 @@ export class CanvasPolicyCompiler {
     }
 
     /**
-     * Matches hosted top-level documents outside the inverted allowlist. Plain entries cover the
-     * host and `www.`, while `*.` entries cover subdomains one level below the domain after
-     * stripping `www.`, mirroring the upper-level domain lookup of frame matching.
-     * Top-level documents without a hostname stay protected, as frame matching finds no domain there.
+     * Matches top-level documents outside the inverted allowlist. The selected hosts come from
+     * {@link Allowlist.getInvertedMatch}, which resolves every entry form the same way frame
+     * matching does, so protection stays off exactly on the documents that inverted filtering
+     * keeps enabled. The full wildcard selects every host and leaves no exclusion.
      *
-     * @param domains Allowlist entries.
+     * @param match Hosts selected by the inverted allowlist.
      *
-     * @returns Document exclusion.
+     * @returns Document exclusion, or undefined when every host is selected.
      */
-    private static invertedAllowlistExclusion(domains: readonly string[]): PreparedCondition {
-        const hosts: string[] = [];
-        const parents: string[] = [];
-        for (const domain of domains) {
-            if (domain.startsWith('*.')) {
-                parents.push(domain.slice(2));
-            } else {
-                hosts.push(domain);
-            }
+    private static invertedAllowlistExclusion(match: InvertedAllowlistMatch): PreparedCondition | undefined {
+        if (match.all) {
+            return undefined;
         }
+
         return {
             type: CanvasConditionType.Not,
-            operand: CanvasPolicyCompiler.hostCondition({ hosts, parents }),
+            operand: CanvasPolicyCompiler.hostCondition({
+                hosts: match.hosts,
+                domains: match.domains,
+                patterns: match.patterns,
+            }),
         };
     }
 

@@ -1,4 +1,5 @@
 export { DNR_CONVERTER_VERSION } from './version';
+export { POPULAR_TLDS } from './constants/popular-tlds';
 export { isCspDeclarativeRule } from './rule-converters/csp-converter';
 export {
     type ComputedWithSourceMapOptions,

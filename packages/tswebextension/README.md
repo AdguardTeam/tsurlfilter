@@ -218,11 +218,15 @@ filled only from `<video>` elements or `putImageData()` is read natively.
   In normal mode, MV2 entries such as `example.com` cover the host and
   `www.`, while `*.example.com` covers the host and all its subdomains.
   In MV3, every entry also covers subdomains.
-  In inverted mode, protection stays on for listed hosts: a plain entry
-  covers the host and `www.`, and a `*.` entry covers subdomains one level
-  below the domain after stripping `www.`, as frame matching does.
-  MV3 adds a `*.` twin to every plain entry, so plain entries also cover
-  one-level subdomains there.
+  In inverted mode, protection follows the same host selection as frame
+  matching: a plain entry covers the host and `www.`, a `*.` entry covers the
+  host and all its subdomains, a wildcard TLD entry such as `example.*`
+  covers the domain and its subdomains, and the full wildcard `*.*` leaves
+  every document protected. MV3 adds a `*.` twin to every plain entry, so
+  plain entries also cover subdomains there, and follows its DNR rule for
+  entries it cannot express: a wildcard inside a label leaves every document
+  as is, and a wildcard TLD covers only the popular top-level domains of the
+  converter.
   Hosts that only start with an entry, such as `example.community` for
   `example.com`, never match.
 - `$badfilter` cancels an exception. Other forms, including paths,
@@ -477,9 +481,13 @@ An entry that describes no host, such as `*`, `**` or `*.`, is ignored; the
 full wildcard is `*.*`.
 
 In MV3, every entry also covers subdomains in the regular allowlist mode. In the
-inverted mode the network filtering excludes the listed domain together with all
-its subdomains, while frame matching and canvas protection look at the host and
-one level below it.
+inverted mode network filtering, frame matching and canvas protection select the
+same hosts: the listed domain together with all its subdomains, the `www.`
+variant of a plain entry, and for a wildcard TLD only the popular top-level
+domains of the DNR converter. A plain entry covers subdomains in MV3 as well,
+through the `*.` twin that its DNR rule needs. An entry the DNR rule cannot
+express, such as `*example.com`, is ignored, and the full wildcard `*.*` filters
+every host.
 
 #### trustedDomains
 
