@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@adguard/assistant':
-      specifier: ^4.4.12
-      version: 4.4.12
+      specifier: ^4.4.17
+      version: 4.4.17
     '@adguard/scriptlets':
       specifier: 2.6.0
       version: 2.6.0
@@ -288,7 +288,7 @@ importers:
     dependencies:
       '@adguard/assistant':
         specifier: 'catalog:'
-        version: 4.4.12
+        version: 4.4.17
       '@adguard/filters-downloader':
         specifier: ^2.4.2
         version: 2.4.2
@@ -1726,7 +1726,7 @@ importers:
         version: link:../agtree
       '@adguard/assistant':
         specifier: 'catalog:'
-        version: 4.4.12
+        version: 4.4.17
       '@adguard/css-tokenizer':
         specifier: workspace:^
         version: link:../css-tokenizer
@@ -1934,8 +1934,9 @@ packages:
     resolution: {integrity: sha512-T838KvYtWu3K6whQ46YLaIXYA7PbszX9QRp4dvNfF8iWdp98tcKHxXWslBwUN1DkcBOqqj4rrkarLmcwT2iAbg==}
     engines: {node: '>=22'}
 
-  '@adguard/assistant@4.4.12':
-    resolution: {integrity: sha512-a/WtbTtGWqqdTOHtz7Nq+swu78+2w6qeEssvvpjaQZddSkc6+uYCBJ3PIBQFfzNd7z8zX6q7nj5QeZT06oQI0w==}
+  '@adguard/assistant@4.4.17':
+    resolution: {integrity: sha512-4nfrOMLWQrq9kN0rja2mzx06BR/JqhTsK3Z7QbC2x8PeW9rJ+pllZQcAEVy4Wnavu/LgYookn8KjrNB3atuNTw==}
+    engines: {node: '>=22.12', pnpm: '>=10.33.4 <11'}
 
   '@adguard/css-tokenizer@1.2.0':
     resolution: {integrity: sha512-cUj5j/AU5z/T4//5M6KnIJBpykAY4QbDsoiQ2DaWX/r2XkepMkTb8DhIbUHJD/QLGEyLeQLpi+nlxAgf4NTRRQ==}
@@ -9761,7 +9762,7 @@ snapshots:
       xregexp: 5.1.2
       zod: 3.24.4
 
-  '@adguard/assistant@4.4.12': {}
+  '@adguard/assistant@4.4.17': {}
 
   '@adguard/css-tokenizer@1.2.0': {}
 

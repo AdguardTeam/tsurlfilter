@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Updated [@adguard/assistant] to `v4.4.17`.
+
 ### Deprecated
 
 ### Removed
