@@ -25,8 +25,9 @@ topological publish order.
 3. **Publish** — publishes the `.tgz` to npm with OIDC trusted publishing,
    under the computed dist-tag. With the `publish_target: ak` input the npm
    leg is skipped and the `.tgz` goes to the internal Artifact Keeper npm
-   registry instead (used for dnr-rulesets while npm throttles the shared
-   GitHub egress IP).
+   registry instead (used for dnr-rulesets releases, whose public npm package
+   is fed by the weekly `latest`-line snapshot of
+   `publish-stable-dnr-rulesets.yml`).
 4. **Tag** — creates the `<package>-v<version>` tag on the target ref **only
    after the publish leg has succeeded** (npm or Artifact Keeper;
    `force: false`, the shared `git-tag.yml` default, so an existing tag is never

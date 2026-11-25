@@ -1,35 +1,53 @@
 name: Publish stable DNR rulesets
 
-# Once daily (00:17 UTC, ahead of the 00:30 extension auto-build), build and
-# publish @adguard/dnr-rulesets from each of the
-# supported stable/dnr-rulesets-* branches (5.0, 6.0).
-# The lines carry incompatible ruleset formats: 6.0 is built with
+# A scheduled round keeps the workflow name; a dispatch also shows the line it
+# asked for and whether it publishes to npm, so the run list tells the two
+# apart (`inputs` is empty when the run is not a dispatch).
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Publish DNR rulesets {0}{1}', inputs.line || 'all lines', inputs.publish_npm && ' + npm' || '') || github.workflow }}
+
+# Once daily (00:17 UTC, ahead of the 12:00 and 17:00 UTC extension
+# auto-builds), build and publish @adguard/dnr-rulesets from each of the
+# supported stable/dnr-rulesets-* branches (5.0, 6.0, 6.1).
+# The lines carry incompatible ruleset formats: 6.0 and 6.1 are built with
 # @adguard/dnr-converter 2.x (metadata split into `metadata.chunk` rules) and
 # 5.0 with 1.x; neither reader loads the other format. So each line has its
 # own dist-tag: `latest` stays on LATEST_LINE until consumers migrate, every
-# other line publishes under `stable-<line>` (6.0 under `stable-6.0`).
+# other line publishes under `stable-<line>` (6.0 under `stable-6.0`, 6.1
+# under `stable-6.1`).
 # 5.0 introduced the switch to the standalone @adguard/dnr-converter,
 # replacing @adguard/tsurlfilter's DNR APIs; older lines are not published.
 #
 # Each line is built and published by _publish-stable-dnr-rulesets-line.yml:
 # the tarball goes to the internal Artifact Keeper (AK) npm registry (shared
 # deploy-to-ak-npm.yml workflow), which the extension auto-build installs
-# rulesets from. The npm leg is disabled again (AG-58867, npm 429) — the
-# one-off try re-enabled in AG-60418 still got HTTP 429; see the note in that
-# workflow. resolve-lines skips a line whose branch isn't on the current CI yet.
+# rulesets from. The public npm registry gets the line that owns `latest` only,
+# once a week (the Monday round): npm lifted the 429 throttle in AG-59859 but
+# asked for a lower cadence, and the packument is ~79 MB of the registry's
+# 100 MB metadata limit. Every other line stays AK-only. resolve-lines skips a
+# line whose branch is absent or lacks the probe files; a branch that exists
+# but cannot be fetched fails the round.
 
 on:
   schedule:
-    # Once a day, ahead of the 00:30 extension auto-build. The round was cut
-    # from twice a day to one in AG-60418 (to hold npm traffic down) and the
-    # cadence stays with the npm leg disabled again (AG-58867).
-    - cron: '17 0 * * *'
+    # Once a day, ahead of the 12:00 and 17:00 UTC extension auto-builds. The
+    # round was cut from twice a day to one in AG-60418. The npm leg rides on
+    # the Monday round only, so AK stays daily and npm weekly. The two entries
+    # fire at the same minute and exist to name the round: resolve-lines reads
+    # `github.event.schedule`, which keeps the original cron string on a
+    # re-run, while the wall clock does not.
+    - cron: '17 0 * * 1'
+    - cron: '17 0 * * 0,2-6'
   workflow_dispatch:
     inputs:
       line:
-        description: 'Stable line to publish (5.0 or 6.0); empty = all lines'
+        description: 'Stable line to publish (5.0, 6.0 or 6.1); empty = all lines'
         required: false
         type: string
+      publish_npm:
+        description: 'Also publish to the public npm registry. Only the line published under `latest` can go to npm; the Monday round does this without the input.'
+        required: false
+        type: boolean
+        default: false
 
 # Serialize runs so two rounds never publish colliding timestamped versions.
 concurrency:
@@ -45,8 +63,8 @@ jobs:
     runs-on: team-extensions
     timeout-minutes: 10
     outputs:
-      # {"include":[{"line":"5.0","tag":"latest"},...]}: one entry per line
-      # whose branch is on the current CI.
+      # {"include":[{"line":"5.0","tag":"latest","publish_npm":true},...]}: one
+      # entry per line whose branch is on the current CI.
       matrix: ${{ steps.lines.outputs.matrix }}
     steps:
       - name: Checkout
@@ -57,12 +75,15 @@ jobs:
         shell: bash
         env:
           REQUESTED_LINE: ${{ inputs.line || '' }}
+          REQUESTED_PUBLISH_NPM: ${{ inputs.publish_npm || false }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule || '' }}
         run: |
           set -euo pipefail
 
           # Single source of truth for the published stable lines — the
           # check-package-lists.mjs drift guard asserts this assignment.
-          ALL_LINES="5.0 6.0"
+          ALL_LINES="5.0 6.0 6.1"
           # The line that owns `latest`. Move it to 6.0 once consumers read
           # the 6.0 format; every other line publishes under stable-<line>.
           # The drift guard asserts it is in ALL_LINES and matches the
@@ -83,12 +104,53 @@ jobs:
             LINES="$ALL_LINES"
           fi
 
+          # The public npm registry receives the `latest` line only, once a week
+          # (the Monday round) or on an explicit dispatch — AG-59859. Every
+          # other line stays AK-only: three lines publishing would triple the
+          # packument growth, and nothing can depend on the npm tags of 6.0 and
+          # 6.1 because those never existed (`stable-5.0`, `stable-4.x` and
+          # `stable-3.3` do).
+          if [ "$EVENT_NAME" = "schedule" ]; then
+            # The cron string of this round, not the wall clock: a re-run keeps
+            # `github.event.schedule`, so a re-run of the Monday round still
+            # publishes to npm on a Tuesday, and a re-run of a midweek round on
+            # a Monday stays AK-only. Both `cron:` entries are named here, and
+            # an unknown one fails the round instead of dropping the weekly npm
+            # publish silently.
+            case "$EVENT_SCHEDULE" in
+              '17 0 * * 1')
+                NPM_ROUND=true
+                ;;
+              '17 0 * * 0,2-6')
+                NPM_ROUND=false
+                ;;
+              *)
+                echo "::error::Unknown schedule '$EVENT_SCHEDULE'; the npm cadence knows only '17 0 * * 1' (Monday, npm) and '17 0 * * 0,2-6' (other days, AK only); update this case together with the cron entries"
+                exit 1
+                ;;
+            esac
+          elif [ "$REQUESTED_PUBLISH_NPM" = "true" ]; then
+            NPM_ROUND=true
+          else
+            NPM_ROUND=false
+          fi
+
+          if [ "$NPM_ROUND" = "true" ] && [ -n "$REQUESTED_LINE" ] && [ "$REQUESTED_LINE" != "$LATEST_LINE" ]; then
+            echo "::error::Line ${REQUESTED_LINE} cannot be published to npm: only the latest line (${LATEST_LINE}) goes to npm; drop publish_npm to publish this line to Artifact Keeper only"
+            exit 1
+          fi
+
           INCLUDE=""
           for line in $LINES; do
             # Branch is "on the current CI" if these probe files exist at its
             # tip; probed shallowly — no full clone, no gh dep.
             ref="refs/heads/stable/dnr-rulesets-${line}"
-            if git fetch -q --depth=1 origin "${ref}" 2>/dev/null \
+            FETCH_OK=false
+            FETCH_ERR=""
+            if FETCH_ERR="$(git fetch -q --depth=1 origin "${ref}" 2>&1)"; then
+              FETCH_OK=true
+            fi
+            if [ "$FETCH_OK" = true ] \
               && git cat-file -e "FETCH_HEAD:scripts/inject-package-versions.mjs" 2>/dev/null \
               && git cat-file -e "FETCH_HEAD:.github/actions/docker-build/action.yml" 2>/dev/null \
               && git cat-file -e "FETCH_HEAD:scripts/ci/timeout-wrapper.sh" 2>/dev/null \
@@ -99,14 +161,37 @@ jobs:
               else
                 tag="stable-${line}"
               fi
-              echo "Line ${line}: publish under '${tag}'"
-              INCLUDE="${INCLUDE:+${INCLUDE},}{\"line\":\"${line}\",\"tag\":\"${tag}\"}"
-            elif [ -n "$REQUESTED_LINE" ]; then
-              # An explicit dispatch must not silently publish nothing.
-              echo "::error::Line ${line} is not on the current CI (no stable/dnr-rulesets-${line} branch, or it lacks scripts/inject-package-versions.mjs, .github/actions/docker-build, scripts/ci helpers, or the dnr-rulesets-auto-build-output target); backport the CI first"
-              exit 1
+              publish_npm=false
+              if [ "$NPM_ROUND" = "true" ] && [ "$line" = "$LATEST_LINE" ]; then
+                publish_npm=true
+              fi
+              echo "Line ${line}: publish under '${tag}' (npm: ${publish_npm})"
+              INCLUDE="${INCLUDE:+${INCLUDE},}{\"line\":\"${line}\",\"tag\":\"${tag}\",\"publish_npm\":${publish_npm}}"
             else
-              echo "Line ${line} is not on the current CI yet; skipping it this round"
+              # A failed fetch reads the same as a branch that is not on the
+              # current CI: a scheduled round would skip that line, stay
+              # green, and notify-failure would not fire. Tell them apart and
+              # fail the round when the branch exists but the fetch failed.
+              if [ "$FETCH_OK" = false ]; then
+                if git ls-remote --exit-code --heads origin "${ref}" >/dev/null 2>&1; then
+                  echo "::error::Could not fetch ${ref} although the branch exists on origin; a scheduled round must not skip it: ${FETCH_ERR%%$'\n'*}"
+                  exit 1
+                else
+                  ls_exit=$?
+                  # ls-remote exits 2 when no ref matches: the branch is absent.
+                  if [ "$ls_exit" -ne 2 ]; then
+                    echo "::error::Could not check whether ${ref} exists on origin (git ls-remote exit ${ls_exit}): ${FETCH_ERR%%$'\n'*}"
+                    exit 1
+                  fi
+                fi
+              fi
+              if [ -n "$REQUESTED_LINE" ]; then
+                # An explicit dispatch must not silently publish nothing.
+                echo "::error::Line ${line} is not on the current CI (no stable/dnr-rulesets-${line} branch, or it lacks scripts/inject-package-versions.mjs, .github/actions/docker-build, scripts/ci helpers, or the dnr-rulesets-auto-build-output target); backport the CI first"
+                exit 1
+              else
+                echo "Line ${line} is not on the current CI yet; skipping it this round"
+              fi
             fi
           done
 
@@ -126,12 +211,13 @@ jobs:
     with:
       line: ${{ matrix.line }}
       tag: ${{ matrix.tag }}
+      publish_npm: ${{ matrix.publish_npm }}
     # The AK publish inside needs ARTIFACT_KEEPER_API_KEY, which the shared
     # deploy-to-ak-npm.yml only receives through `secrets: inherit` (see the
     # publish-ak job there).
     secrets: inherit
-    # id-token: write is for the (disabled) npm OIDC publish: a called
-    # workflow cannot raise the caller's permissions.
+    # id-token: write is for the npm OIDC publish (latest line, weekly): a
+    # called workflow cannot raise the caller's permissions.
     permissions:
       contents: read
       id-token: write

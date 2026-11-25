@@ -24,7 +24,7 @@ export type PreparedCosmeticResultCommon = {
 /**
  * Frame constructor properties.
  */
-type FrameConstructorProps = {
+export type FrameConstructorProps = {
     /**
      * Frame url.
      */
