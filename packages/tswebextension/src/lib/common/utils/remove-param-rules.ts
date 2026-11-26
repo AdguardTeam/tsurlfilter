@@ -21,9 +21,11 @@ export interface RemoveParamDescriptor {
      * Whether the rule pattern matches the whole host regardless of the path
      * and the query.
      *
-     * A path-independent descriptor is safe to apply to any same-origin
-     * History API destination URL. A path-scoped descriptor must wait for the
-     * background to re-match the destination URL.
+     * The flag describes the pattern only. A path-independent descriptor can
+     * be applied to any same-origin History API destination URL as far as the
+     * pattern goes. It does not cover allowlist rules for the destination:
+     * the page cannot evaluate them. A path-scoped descriptor must wait for
+     * the background to re-match the destination URL.
      */
     isPathIndependent: boolean;
     filterId: number;

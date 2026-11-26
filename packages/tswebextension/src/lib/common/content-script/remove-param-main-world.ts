@@ -310,18 +310,18 @@ export function patchHistoryForRemoveParam(
 
             if (desc.isAllowlist) {
                 // Allowlist rules are handled by MatchingResult in the
-                // background — if an allowlist rule is present, the
+                // background: if an allowlist rule is present, the
                 // corresponding blocking rule should have been filtered out.
                 //
-                // The page cannot know about allowlist rules that apply only
-                // to the destination route. A document-wide allowlist already
-                // produces no descriptors, so the remaining exposure is
-                // limited to destination-scoped allowlist rules: a blocking
-                // rule from the previous route can clean the destination.
-                // The background re-match corrects the descriptor list for
-                // later navigations, but an already applied removal cannot be
-                // reverted. We accept this limitation instead of building a
-                // page-side rule-matching engine.
+                // The page cannot evaluate allowlist rules. The background
+                // filters the list against the document URL, but it does not
+                // account for a destination-scoped allowlist rule, and a
+                // document-wide allowlist rule does not yet clear the list.
+                // A blocking rule can therefore clean a URL that an allowlist
+                // rule covers. The background re-match corrects the descriptor
+                // list for later navigations, but an already applied removal
+                // cannot be reverted. We accept this limitation instead of
+                // building a page-side rule-matching engine.
                 continue;
             }
 
