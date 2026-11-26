@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Allowlist `$popup` rules now reliably unblock popups blocked by a blocking
+  `$popup` rule: the popup rule is now chosen by priority instead of by the
+  order the rules are matched in, e.g. `@@test.php$popup,domain=example.org`
+  unblocks the popup blocked by `/^https?:\/\/.*\.php/$popup,domain=example.org`
+  no matter which rule comes first in the filter list.
 - Allowlist rules generated for a domain are now anchored to the URL host, so an
   entry for `example.com` no longer disables filtering on hosts that only start
   with it, e.g. `example.community` or `example.com.evil.org`, and no longer

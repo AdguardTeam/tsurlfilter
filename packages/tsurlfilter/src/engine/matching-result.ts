@@ -237,7 +237,14 @@ export class MatchingResult {
             if (rule.isOptionEnabled(NetworkRuleOption.Popup)
                 // This check needed to split $all rules from $popup rules
                 && !MatchingResult.isDocumentRule(rule)) {
-                this.popupRule = rule;
+                // Pick the highest priority $popup rule, otherwise a blocking
+                // $popup rule may override an allowlist one (or vice versa)
+                // depending on the order the rules are matched in: the lookup
+                // tables return rules ordered by their table and by the
+                // position of the match in the URL, not by priority.
+                if (!this.popupRule || rule.isHigherPriority(this.popupRule)) {
+                    this.popupRule = rule;
+                }
                 continue;
             }
 

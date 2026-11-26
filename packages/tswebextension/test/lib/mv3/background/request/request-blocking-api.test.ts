@@ -103,6 +103,74 @@ const makeBlockingResponseParams = (
     };
 };
 
+describe('MV3 RequestBlockingApi - allowlist $popup rule prevents closing the tab', () => {
+    let tabsRemoveSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+        vi.mocked(tabsApi.isNewPopupTab).mockReturnValue(true);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tabsRemoveSpy = vi.spyOn(browser.tabs, 'remove' as any).mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+        vi.resetAllMocks();
+    });
+
+    it('blocking basic rule and allowlist popup rule, document request - do not close tab', () => {
+        // An allowlist $popup rule unblocks the popup, so a blocking basic
+        // rule matched together with it should not close the tab.
+        const rules = [
+            '||example.com^',
+            '@@example.com$popup',
+        ];
+        const data = makeBlockingResponseParams(
+            rules,
+            'http://example.com',
+            RequestType.Document,
+            ContentType.Document,
+        );
+        const response = RequestBlockingApi.getBlockingResponse(data);
+        expect(response).toEqual(undefined);
+        expect(tabsRemoveSpy).not.toHaveBeenCalled();
+    });
+
+    it('blocking popup rule and allowlist popup rule, document request - do not close tab', () => {
+        // The allowlist $popup rule has a higher priority than the blocking
+        // one, so the popup should not be closed.
+        const rules = [
+            '||example.com^$popup',
+            '@@example.com$popup',
+        ];
+        const data = makeBlockingResponseParams(
+            rules,
+            'http://example.com',
+            RequestType.Document,
+            ContentType.Document,
+        );
+        const response = RequestBlockingApi.getBlockingResponse(data);
+        expect(response).toEqual(undefined);
+        expect(tabsRemoveSpy).not.toHaveBeenCalled();
+    });
+
+    it('important blocking popup rule and allowlist popup rule, document request - close tab', () => {
+        // The $important blocking $popup rule has a higher priority than the
+        // allowlist $popup rule, so the popup should still be closed.
+        const rules = [
+            '||example.com^$popup,important',
+            '@@example.com$popup',
+        ];
+        const data = makeBlockingResponseParams(
+            rules,
+            'http://example.com',
+            RequestType.Document,
+            ContentType.Document,
+        );
+        const response = RequestBlockingApi.getBlockingResponse(data);
+        expect(response).toEqual({ cancel: true });
+        expect(tabsRemoveSpy).toHaveBeenCalledTimes(1);
+    });
+});
+
 describe('MV3 RequestBlockingApi - closeTab publishes PopupBlocked event (AG-3736)', () => {
     let tabsRemoveSpy: ReturnType<typeof vi.spyOn>;
 

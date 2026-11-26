@@ -849,6 +849,188 @@ describe('TestEngineMatchRequest - popup modifier', () => {
     });
 });
 
+describe('TestEngineMatchRequest - popup rules priority', () => {
+    const blockerRegexpText = '/^https?:\\/\\/.*\\.php/$popup,domain=example.org';
+    const exceptionShortcutText = '@@test.php$popup,domain=example.org';
+    const exceptionRegexpText = '@@/test\\.php/$popup,domain=example.org';
+
+    // A popup opened by window.open() arrives as a document request of a
+    // freshly created tab, see RequestBlockingApi.getBlockingResponse.
+    const popupRequest = new Request(
+        'http://example.org/test.php',
+        'http://example.org/',
+        RequestType.Document,
+    );
+
+    const cannaPowerRequest = new Request(
+        'http://canna-power.to/links.php?action=xyz',
+        'http://canna-power.to/',
+        RequestType.Document,
+    );
+
+    /**
+     * Helper to match the popup request against the given rules and resolve
+     * the texts of the popup rule and of the basic result.
+     *
+     * @param rules Rule texts.
+     * @param request Request to match, the example.org popup by default.
+     *
+     * @returns Texts of the popup rule and of the basic result, null if absent.
+     */
+    const matchPopupRequest = (
+        rules: string[],
+        request: Request = popupRequest,
+    ): { popupText: string | null; basicText: string | null } => {
+        const engine = Engine.createSync({
+            filters: [{ id: 1, content: rules.join('\n') }],
+        });
+
+        const result = engine.matchRequest(request);
+
+        const popupRule = result.getPopupRule();
+        const basicResult = result.getBasicResult();
+
+        return {
+            popupText: popupRule
+                ? engine.retrieveRuleText(popupRule.getFilterListId(), popupRule.getIndex())
+                : null,
+            basicText: basicResult
+                ? engine.retrieveRuleText(basicResult.getFilterListId(), basicResult.getIndex())
+                : null,
+        };
+    };
+
+    it.each([
+        ['blocking rule first', [blockerRegexpText, exceptionShortcutText]],
+        ['allowlist rule first', [exceptionShortcutText, blockerRegexpText]],
+    ])('allowlist $popup rule unblocks a popup regardless of the rules order (%s)', (_name, rules) => {
+        const { popupText, basicText } = matchPopupRequest(rules);
+
+        expect(popupText).toBe(exceptionShortcutText);
+        expect(basicText).toBe(exceptionShortcutText);
+    });
+
+    it.each([
+        ['blocking rule first', [blockerRegexpText, exceptionRegexpText]],
+        ['allowlist rule first', [exceptionRegexpText, blockerRegexpText]],
+    ])('regexp allowlist $popup rule unblocks a popup regardless of the rules order (%s)', (_name, rules) => {
+        const { popupText, basicText } = matchPopupRequest(rules);
+
+        expect(popupText).toBe(exceptionRegexpText);
+        expect(basicText).toBe(exceptionRegexpText);
+    });
+
+    it.each([
+        ['blocking rule first', [
+            '/^https?:\\/\\/.*\\.(jpg|jpeg|gif|png|php|svg|ico|js|txt|css)/$popup,domain=canna-power.to',
+            '@@||canna-power.to/links.php?action=$popup,domain=canna-power.to',
+        ]],
+        ['allowlist rule first', [
+            '@@||canna-power.to/links.php?action=$popup,domain=canna-power.to',
+            '/^https?:\\/\\/.*\\.(jpg|jpeg|gif|png|php|svg|ico|js|txt|css)/$popup,domain=canna-power.to',
+        ]],
+    ])('canna-power case: allowlist $popup rule unblocks a popup regardless of the order (%s)', (_name, rules) => {
+        const exceptionText = '@@||canna-power.to/links.php?action=$popup,domain=canna-power.to';
+        const { popupText, basicText } = matchPopupRequest(rules, cannaPowerRequest);
+
+        expect(popupText).toBe(exceptionText);
+        expect(basicText).toBe(exceptionText);
+    });
+
+    it('important blocking $popup rule still blocks a popup allowed by a plain $popup exception', () => {
+        const importantBlockerText = '/^https?:\\/\\/.*\\.php/$popup,important,domain=example.org';
+
+        const { popupText, basicText } = matchPopupRequest([
+            importantBlockerText,
+            exceptionShortcutText,
+        ]);
+
+        expect(popupText).toBe(importantBlockerText);
+        expect(basicText).toBe(importantBlockerText);
+    });
+
+    it('important allowlist $popup rule unblocks a popup blocked by an important $popup rule', () => {
+        const importantBlockerText = '/^https?:\\/\\/.*\\.php/$popup,important,domain=example.org';
+        const importantExceptionText = '@@test.php$popup,important,domain=example.org';
+
+        const { popupText, basicText } = matchPopupRequest([
+            importantBlockerText,
+            importantExceptionText,
+        ]);
+
+        expect(popupText).toBe(importantExceptionText);
+        expect(basicText).toBe(importantExceptionText);
+    });
+
+    it.each([
+        ['generic rule first', ['||example.org^$popup', '||example.org^$popup,domain=example.org']],
+        ['specific rule first', ['||example.org^$popup,domain=example.org', '||example.org^$popup']],
+    ])('several blocking $popup rules still block the popup and the most specific one wins (%s)', (_name, rules) => {
+        const specificBlockerText = '||example.org^$popup,domain=example.org';
+        const { popupText, basicText } = matchPopupRequest(rules);
+
+        expect(popupText).toBe(specificBlockerText);
+        expect(basicText).toBe(specificBlockerText);
+    });
+
+    it('$all rule stays out of the popup rule slot', () => {
+        const blockingAllRuleText = '||example.org^$all';
+        const popupBlockerText = '||example.org^$popup,domain=example.org';
+
+        const { popupText } = matchPopupRequest([
+            blockingAllRuleText,
+            popupBlockerText,
+        ]);
+
+        expect(popupText).toBe(popupBlockerText);
+    });
+
+    it('$badfilter removes a $popup rule', () => {
+        const { popupText, basicText } = matchPopupRequest([
+            blockerRegexpText,
+            `${blockerRegexpText},badfilter`,
+        ]);
+
+        expect(popupText).toBeNull();
+        expect(basicText).toBeNull();
+    });
+
+    it('document-level exception still disables popup blocking', () => {
+        const documentExceptionText = '@@||example.org^$document';
+
+        const { basicText } = matchPopupRequest([
+            documentExceptionText,
+            blockerRegexpText,
+        ]);
+
+        expect(basicText).toBe(documentExceptionText);
+    });
+
+    it('$popup,third-party keeps matching as before', () => {
+        const thirdPartyBlockerText = '||example.org^$popup,third-party';
+
+        // First-party popup: the rule should not match.
+        expect(matchPopupRequest([thirdPartyBlockerText])).toStrictEqual({
+            popupText: null,
+            basicText: null,
+        });
+
+        // Third-party popup: the rule should match.
+        const thirdPartyEngine = Engine.createSync({
+            filters: [{ id: 1, content: thirdPartyBlockerText }],
+        });
+        const thirdPartyResult = thirdPartyEngine.matchRequest(new Request(
+            'http://example.org/',
+            'http://other.org/',
+            RequestType.Document,
+        ));
+        const popupRule = thirdPartyResult.getPopupRule();
+        expect(popupRule).toBeTruthy();
+        expect(thirdPartyEngine.retrieveRuleText(popupRule!.getFilterListId(), popupRule!.getIndex()))
+            .toBe(thirdPartyBlockerText);
+    });
+});
+
 describe('TestEngineCosmeticResult - elemhide', () => {
     const specificRuleContent = 'banner_specific';
     const specificRule = `example.org##${specificRuleContent}`;
