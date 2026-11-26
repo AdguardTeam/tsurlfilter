@@ -1686,6 +1686,7 @@ describe('Cosmetic exceptions and network blocking', () => {
      *
      * @param engine Engine to match the request with.
      * @param request Request to match.
+     * @param frameRule Frame rule to pass to the engine, if the case needs one.
      *
      * @returns Converted rule text (read back from the filter list) or `null`.
      */
