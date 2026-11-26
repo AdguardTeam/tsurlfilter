@@ -1029,6 +1029,13 @@ export class Rule {
      * Parses a pipe-separated domain list, keeping `/regex/` tokens intact
      * (so `|` inside a regexp is not treated as a domain separator).
      *
+     * A value that starts with a slash but is not a regexp literal, and a
+     * regexp literal whose pattern does not compile, are rejected for all
+     * three modifiers. MV2 rejects such a value only in `$domain` and
+     * `$denyallow`: `ToModifier` does not validate `$to`, so MV2 keeps a
+     * rule with an invalid `$to` value (a negated one applies on every site)
+     * while MV3 reports it.
+     *
      * @param value Raw `$domain` / `$to` / `$denyallow` modifier value.
      *
      * @returns Permitted and restricted domain lists.
@@ -1061,9 +1068,11 @@ export class Rule {
                 }
             } else {
                 try {
-                    // Validate compilability once at parse time, the same way
-                    // the pattern is compiled at match time.
-                    // eslint-disable-next-line no-new
+                    // A regexp value never reaches a DNR condition, because
+                    // `isRepresentableDomain()` drops it, so this call only
+                    // checks that the pattern compiles. It keeps a value such
+                    // as `$domain=/a[/` a reported error instead of silently
+                    // dropping the restriction, like `DomainModifier` in MV2.
                     new RegExp(domain.slice(1, -1), 'i');
                 } catch {
                     throw new SyntaxError(`Invalid regular expression as domain pattern: "${domain}"`);
