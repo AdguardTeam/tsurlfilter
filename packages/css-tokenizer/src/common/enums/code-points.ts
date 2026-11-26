@@ -137,6 +137,11 @@ export const enum CodePoint {
     LessThanSign = 0x3C,
 
     /**
+     * U+003D EQUALS SIGN: `=`
+     */
+    EqualsSign = 0x3D,
+
+    /**
      * U+003E GREATER-THAN SIGN: `>`
      */
     GreaterThanSign = 0x3E,

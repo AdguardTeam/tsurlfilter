@@ -50,16 +50,25 @@ const isPseudoClassFunctionOpening = (context: TokenizerContext, index: number):
  * not make the argument a regexp. A bracket that immediately follows the parenthesis,
  * as in `:has-text(/[)[]/)`, stays a part of the class.
  *
+ * A character class that has no closing square bracket in the scanned range makes the
+ * literal incomplete, so the scan stops as soon as such a class opens instead of
+ * scanning the rest of the source.
+ *
  * @param context Reference to the tokenizer context instance.
  * @param start Index of the opening solidus relative to the argument start.
- * @param limit End of the source range to scan, relative to the argument start. Callers
- * pass the rest of the source; the literal is used only when a parenthesis closing the
- * argument follows it.
+ * @param limit End of the source range to scan, relative to the argument start.
+ * @param lastRightSquareBracket Index of the last right square bracket in the scanned
+ * range, relative to the argument start, or `-1` if the range has none.
  *
  * @returns Index of the closing solidus relative to the argument start, or `-1` if the
  * solidus does not open a complete regexp literal.
  */
-const findRegexpLiteralEnd = (context: TokenizerContext, start: number, limit: number): number => {
+const findRegexpLiteralEnd = (
+    context: TokenizerContext,
+    start: number,
+    limit: number,
+    lastRightSquareBracket: number,
+): number => {
     let inClass = false;
     let classHasParenthesis = false;
     let depth = 0;
@@ -97,6 +106,12 @@ const findRegexpLiteralEnd = (context: TokenizerContext, start: number, limit: n
         }
 
         if (code === CodePoint.LeftSquareBracket) {
+            // A class without a closing bracket cannot end before the limit, so the
+            // literal is incomplete. Stop instead of scanning the rest of the source.
+            if (lastRightSquareBracket <= index) {
+                return -1;
+            }
+
             inClass = true;
             classHasParenthesis = false;
         } else if (code === CodePoint.LeftParenthesis) {
@@ -145,9 +160,9 @@ const isRegexpLiteralStart = (context: TokenizerContext, index: number): boolean
 /**
  * Checks whether the quote at the given index opens a quoted value.
  *
- * A quoted value follows a colon or a comma, as in
- * `:matches-css(a: "x)y", b: 'z)')`. A quote in plain text, e.g. in
- * `:contains(it's)`, does not open a quoted value, so it must not hide the
+ * A quoted value follows a colon, a comma or an equals sign, as in
+ * `:matches-css(a: "x)y", b: 'z)')` or `:matches-attr(data-x="a)b")`. A quote in plain
+ * text, e.g. in `:contains(it's)`, does not open a quoted value, so it must not hide the
  * parenthesis that closes the argument.
  *
  * @param context Reference to the tokenizer context instance.
@@ -156,10 +171,6 @@ const isRegexpLiteralStart = (context: TokenizerContext, index: number): boolean
  * @returns `true` if the quote opens a quoted value, `false` otherwise.
  */
 const isQuotedValueStart = (context: TokenizerContext, index: number): boolean => {
-    if (index === 0) {
-        return true;
-    }
-
     let previousIndex = index - 1;
     while (previousIndex >= 0 && isWhitespace(context.getRelativeCode(previousIndex) ?? 0)) {
         previousIndex -= 1;
@@ -167,21 +178,27 @@ const isQuotedValueStart = (context: TokenizerContext, index: number): boolean =
 
     const previous = context.getRelativeCode(previousIndex);
 
-    return previous === CodePoint.Colon || previous === CodePoint.Comma;
+    return previous === CodePoint.Colon
+        || previous === CodePoint.Comma
+        || previous === CodePoint.EqualsSign;
 };
 
 /**
  * Finds the closing quote of a quoted value.
  *
- * Escapes are read in pairs, so a quote preceded by an odd number of reverse solidi
- * is plain text.
+ * Escapes are read in pairs, so a quote preceded by an odd number of reverse solidi is
+ * plain text. The quote ends the value only when the rest of the argument follows it,
+ * i.e. whitespace, a comma, a semicolon or the closing parenthesis. Otherwise it is more
+ * likely an opening quote of a value in a following pseudo-class, e.g. in
+ * `div:contains(/a:"b/), span:contains("c")` the first quote must not pair with the
+ * quote in `span:contains("c")`.
  *
  * @param context Reference to the tokenizer context instance.
  * @param start Index of the opening quote relative to the argument start.
  * @param limit End of the source range to scan, relative to the argument start.
  *
  * @returns Index of the closing quote relative to the argument start, or `-1` if the
- * quoted value has no closing quote.
+ * quote does not open a quoted value that ends inside the argument.
  */
 const findQuoteEnd = (context: TokenizerContext, start: number, limit: number): number => {
     const quote = context.getRelativeCode(start);
@@ -201,7 +218,19 @@ const findQuoteEnd = (context: TokenizerContext, start: number, limit: number): 
         }
 
         if (code === quote) {
-            return index;
+            const next = index + 1 < limit ? context.getRelativeCode(index + 1) : undefined;
+
+            if (next === undefined
+                || next === CodePoint.Comma
+                || next === CodePoint.SemiColon
+                || next === CodePoint.RightParenthesis
+                || isWhitespace(next)) {
+                return index;
+            }
+
+            // The quote opens another quoted value, so this one has no closing quote
+            // inside the argument.
+            return -1;
         }
     }
 
@@ -213,8 +242,10 @@ const findQuoteEnd = (context: TokenizerContext, start: number, limit: number): 
  *
  * The literal may be followed by more text of the same argument, e.g.
  * `:has-text(/a[)]b/ + a)`, so the search continues from the literal end and returns
- * the first unescaped parenthesis that closes the argument. If the rest of the source
- * has no such parenthesis, the literal is not a part of the argument, e.g.
+ * the first unescaped parenthesis that closes the argument. A parenthesis inside a
+ * quoted value, e.g. the one in the `e: "f)g"` part of
+ * `:matches-css(a: /c[)]d/, e: "f)g")`, does not close the argument. If the rest of the
+ * source has no such parenthesis, the literal is not a part of the argument, e.g.
  * `:has-text(/a[)]b/ + a[href="/x]y/"]`.
  *
  * @param context Reference to the tokenizer context instance.
@@ -243,6 +274,17 @@ const findClosingParenAfterLiteral = (
         if (code === CodePoint.ReverseSolidus) {
             escaped = true;
             continue;
+        }
+
+        // Skip a quoted value, where a right parenthesis is plain text
+        if ((code === CodePoint.Apostrophe || code === CodePoint.QuotationMark)
+            && isQuotedValueStart(context, index)) {
+            const quoteEnd = findQuoteEnd(context, index, length);
+
+            if (quoteEnd >= 0) {
+                index = quoteEnd;
+                continue;
+            }
         }
 
         if (code === CodePoint.LeftParenthesis) {
@@ -284,8 +326,21 @@ const findClosingParenAfterLiteral = (
 const findArgumentEnd = (context: TokenizerContext): number => {
     const length = context.length - context.offset;
 
+    // The index of the last right square bracket, used to stop a regexp literal scan at
+    // a class that never closes instead of scanning the rest of the source.
+    let lastRightSquareBracket = -1;
+
+    for (let index = length - 1; index >= 0; index -= 1) {
+        if (context.getRelativeCode(index) === CodePoint.RightSquareBracket) {
+            lastRightSquareBracket = index;
+            break;
+        }
+    }
+
     // Find the first right parenthesis that closes the argument when character classes
-    // are not taken into account. This is the previous behavior, used as a fallback.
+    // are not taken into account. This is the previous behavior, used as a fallback. A
+    // quoted value is skipped, but only when its closing quote is followed by the rest
+    // of the argument, so a quote cannot hide a parenthesis of a following pseudo-class.
     let depth = 0;
     let escaped = false;
     let candidate = length;
@@ -340,7 +395,7 @@ const findArgumentEnd = (context: TokenizerContext): number => {
     // the candidate and must not extend this argument. This bound also keeps the scan
     // proportional to the length of the argument instead of the rest of the selector.
     const hasCandidate = candidate < length;
-    const scanLimit = hasCandidate ? candidate : length;
+    const scanLimit = candidate;
     let index = 0;
     let quote: number | null = null;
     escaped = false;
@@ -380,7 +435,7 @@ const findArgumentEnd = (context: TokenizerContext): number => {
             continue;
         }
 
-        const literalEnd = findRegexpLiteralEnd(context, index, length);
+        const literalEnd = findRegexpLiteralEnd(context, index, length, lastRightSquareBracket);
 
         if (literalEnd < 0) {
             index += 1;

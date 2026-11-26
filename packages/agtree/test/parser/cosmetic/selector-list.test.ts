@@ -1921,12 +1921,32 @@ describe('CssSelectorListParser', () => {
                     { name: 'matches-css', argument: 'display: /block/' },
                 ],
             },
+            {
+                // a right parenthesis inside a quoted value does not close the argument
+                actual: 'div:matches-css(a: "x)y", b: /c/)',
+                expected: [
+                    { name: 'matches-css', argument: 'a: "x)y", b: /c/' },
+                ],
+            },
+            {
+                // a right parenthesis inside a quoted value does not close the
+                // argument, and the following pseudo-class stays outside it
+                actual: 'div:contains(Ready: "a)b"):contains(/two/)',
+                expected: [
+                    { name: 'contains', argument: 'Ready: "a)b"' },
+                    { name: 'contains', argument: '/two/' },
+                ],
+            },
+            {
+                // an apostrophe in plain text does not open a quoted value
+                actual: "div:contains(it's):matches-css(color: /red/)",
+                expected: [
+                    { name: 'contains', argument: "it's" },
+                    { name: 'matches-css', argument: 'color: /red/' },
+                ],
+            },
         ])("should parse '$actual' as separate pseudo-classes", ({ actual, expected }) => {
             const selectorList = SelectorListParser.parse(actual);
-
-            if (selectorList === null) {
-                throw new Error(`Failed to parse '${actual}' as a selector list`);
-            }
 
             const pseudoClasses = selectorList.children[0].children
                 .filter((child): child is PseudoClassSelector => child.type === 'PseudoClassSelector')

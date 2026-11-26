@@ -155,6 +155,8 @@ describe(`Extended CSS's :${PSEUDO_NAMES.join(', :')}`, () => {
  * @param actual Source string to tokenize.
  *
  * @returns Argument text of each top-level function, in source order.
+ *
+ * @throws If a top-level function has no closing parenthesis in the source.
  */
 const collectFunctionArguments = (actual: string): string[] => {
     const tokens: Array<[TokenType, number, number]> = [];
@@ -185,6 +187,10 @@ const collectFunctionArguments = (actual: string): string[] => {
             }
 
             endIndex += 1;
+        }
+
+        if (depth !== 0) {
+            throw new Error(`The function at index ${index} in '${actual}' has no closing parenthesis`);
         }
 
         result.push(
@@ -286,9 +292,25 @@ describe('Extended CSS pseudo-class argument boundaries', () => {
             expectedArgument: 'a: "x)y", b: /c/',
         },
         {
-            // the same when the quoted value is the whole argument
+            // the same when the quoted value is the value of the only property
             actual: 'div:matches-css(a: "x)y")',
             expectedArgument: 'a: "x)y"',
+        },
+        {
+            // the same when the property is not a `matches-css` declaration
+            actual: 'div:matches-attr(data-x="a)b")',
+            expectedArgument: 'data-x="a)b"',
+        },
+        {
+            // the same for an apostrophe-quoted value
+            actual: "div:matches-css(a: 'x)y', b: 'z)w')",
+            expectedArgument: "a: 'x)y', b: 'z)w'",
+        },
+        {
+            // a quoted value that contains the character class parenthesis does not
+            // hide the right parenthesis of the following `property: value` part
+            actual: 'div:matches-css(a: /c[)]d/, e: "f)g")',
+            expectedArgument: 'a: /c[)]d/, e: "f)g"',
         },
         {
             // an apostrophe in plain text does not open a quoted value, so the
@@ -296,25 +318,19 @@ describe('Extended CSS pseudo-class argument boundaries', () => {
             actual: "div:contains(it's):matches-css(color: /red/)",
             expectedArgument: "it's",
         },
+        {
+            // an unclosed quote inside a regexp literal must not pair with a quote in
+            // a following pseudo-class
+            actual: 'div:contains(/a:"b/), span:contains("c")',
+            expectedArgument: '/a:"b/',
+        },
+        {
+            // the same for a quote inside a regexp literal of a nested pseudo-class
+            actual: 'div:has(:contains(/label:"open/)):contains("next")',
+            expectedArgument: ':contains(/label:"open/)',
+        },
     ])("should close the $actual pseudo-class after '$expectedArgument'", ({ actual, expectedArgument }) => {
-        const tokens: Array<[TokenType, number, number]> = [];
-
-        tokenizeExtended(actual, (type, start, end) => {
-            tokens.push([type, start, end]);
-        });
-
-        // The argument starts after the function token and ends at the first closing
-        // parenthesis that follows it
-        const functionIndex = tokens.findIndex(([type]) => type === TokenType.Function);
-        const closingParenthesisIndex = tokens.findIndex(
-            ([type], index) => index > functionIndex && type === TokenType.CloseParenthesis,
-        );
-        const argument = tokens
-            .slice(functionIndex + 1, closingParenthesisIndex)
-            .map(([, start, end]) => actual.slice(start, end))
-            .join('');
-
-        expect(argument).toBe(expectedArgument);
+        expect(collectFunctionArguments(actual)[0]).toBe(expectedArgument);
     });
 
     test.each([
@@ -337,6 +353,21 @@ describe('Extended CSS pseudo-class argument boundaries', () => {
         {
             actual: 'div:matches-css(a: "x)y", b: /c/):matches-css(z-index: /\\d+/)',
             expected: ['a: "x)y", b: /c/', 'z-index: /\\d+/'],
+        },
+        {
+            // a quote inside a regexp literal must not pair with a quote in the
+            // following pseudo-class
+            actual: 'div:contains(/a:"b/), span:contains("c")',
+            expected: ['/a:"b/', '"c"'],
+        },
+        {
+            // the same for a regexp literal of a nested pseudo-class
+            actual: 'div:has(:contains(/label:"open/)):contains("next")',
+            expected: [':contains(/label:"open/)', '"next"'],
+        },
+        {
+            actual: 'div:matches-attr(data-x="a)b"):matches-css(a: /c/)',
+            expected: ['data-x="a)b"', 'a: /c/'],
         },
     ])("should tokenize '$actual' as separate pseudo-classes", ({ actual, expected }) => {
         expect(collectFunctionArguments(actual)).toEqual(expected);
