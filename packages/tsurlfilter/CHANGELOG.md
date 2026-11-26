@@ -74,6 +74,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   chain needs a case-sensitive match. In such a mixed chain, a
   case-insensitive regexp becomes case-sensitive, because the merged regexp has
   a single flag set.
+- Rule texts returned by `Engine.retrieveRuleText()`, rules held in
+  `MatchingResult` and `CosmeticResult`, and the originals and conversion
+  errors of a `FilterList` no longer keep the whole filter list text in
+  memory. Previously one retained rule text, matching result or conversion
+  error kept its filter list alive after the engine was replaced, so a
+  long-lived consumer, such as a filtering log or a per-tab cache, held the
+  filter lists of every replaced engine.
 
 ### Security
 

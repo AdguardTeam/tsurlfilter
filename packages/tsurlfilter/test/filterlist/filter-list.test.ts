@@ -253,4 +253,39 @@ describe('FilterList', () => {
         // No errors for valid rules
         expect(list.getConversionErrors()).toHaveLength(0);
     });
+
+    it('getRuleText returns the text of the first, middle and last line', () => {
+        const firstRule = '||example.com^';
+        const middleRule = '||example.org^$third-party';
+        const lastRule = 'example.net##.banner';
+        const list = new FilterList([firstRule, middleRule, lastRule].join('\n'));
+        const content = list.getContent();
+
+        expect(list.getRuleText(0)).toBe(firstRule);
+        expect(list.getRuleText(content.indexOf(middleRule))).toBe(middleRule);
+        expect(list.getRuleText(content.indexOf(lastRule))).toBe(lastRule);
+    });
+
+    it('getRuleText returns null for an offset past the content end', () => {
+        const list = new FilterList('||example.com^');
+
+        expect(list.getRuleText(list.getContent().length)).toBeNull();
+    });
+
+    it('getRuleText returns a rule with non-Latin characters unchanged', () => {
+        const rule = 'example.org##.реклама-баннер-広告-😀';
+        const list = new FilterList(rule);
+
+        expect(list.getRuleText(0)).toBe(rule);
+    });
+
+    it('returns the original of a converted rule with non-Latin characters', () => {
+        const original = 'example.com##+js(set-constant, ключ.значение, true)';
+        const list = new FilterList(original);
+        const converted = "example.com#%#//scriptlet('ubo-set-constant', 'ключ.значение', 'true')";
+        const convertedOffset = list.getContent().indexOf(converted);
+
+        expect(list.getConvertedRuleOriginal(convertedOffset)).toBe(original);
+        expect(list.getOriginalRuleText(convertedOffset)).toBe(original);
+    });
 });
