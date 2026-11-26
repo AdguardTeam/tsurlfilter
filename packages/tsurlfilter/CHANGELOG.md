@@ -66,6 +66,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   chain needs a case-sensitive match. In such a mixed chain, a
   case-insensitive regexp becomes case-sensitive, because the merged regexp has
   a single flag set.
+- Extended CSS pseudo-class arguments with a right parenthesis inside a quoted
+  value now load, e.g.
+  `example.com#?#div:matches-css(a: "x)y", b: /c/)`,
+  `example.com#?#div:matches-attr(data-x="a)b")` and
+  `example.com$$div:contains(Ready: "a)b"):contains(/two/)` (via
+  [@adguard/agtree]). The last one parses as two pseudo-classes instead of one
+  and is no longer rejected.
 
 ### Security
 

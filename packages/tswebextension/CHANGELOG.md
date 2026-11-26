@@ -59,6 +59,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `history.replaceState()` are now resolved against the base URI from
   before the navigation, so `$removeparam` rules remove tracking
   parameters synchronously instead of leaving them in the address bar.
+- Extended CSS pseudo-class arguments with a right parenthesis inside a quoted
+  value now load, e.g.
+  `example.com#?#div:matches-css(a: "x)y", b: /c/)`,
+  `example.com#?#div:matches-attr(data-x="a)b")` and
+  `example.com$$div:contains(Ready: "a)b"):contains(/two/)` (via
+  [@adguard/tsurlfilter]). The last one parses as two pseudo-classes instead of
+  one and is no longer rejected.
 
 ### Security
 

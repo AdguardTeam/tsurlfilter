@@ -72,6 +72,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   and `div:has(> a:contains(ad)):matches-css(display: /block/)`. Previously a
   regexp in the following pseudo-class extended the previous argument, so the
   parser produced one pseudo-class or failed with an unexpected end of input.
+- A right parenthesis inside a quoted value no longer closes an extended CSS
+  pseudo-class argument early, e.g. `div:matches-css(a: "x)y", b: /c/)` keeps
+  the whole argument. A quote whose closing quote is not followed by the rest
+  of the argument is plain text, so it cannot pair with a quote of a following
+  pseudo-class, and an apostrophe in plain text, e.g. `div:contains(it's)`,
+  stays plain text. Selectors such as
+  `div:contains(Ready: "a)b"):contains(/two/)` parse as two pseudo-classes.
 
 ### Security
 

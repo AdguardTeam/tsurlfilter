@@ -44,9 +44,20 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
   that parenthesis, e.g. `:has-text(/a[)]b/)`.
 - A right parenthesis inside a quoted value no longer closes an extended CSS
   pseudo-class argument early, e.g. `:matches-css(a: "x)y", b: /c/)` keeps
-  the whole argument. An apostrophe in plain text, e.g. `:contains(it's)`,
-  does not start a quoted value, so it does not hide the closing
-  parenthesis.
+  the whole argument. A quoted value is recognized after a colon, a comma or
+  an equals sign, so `:matches-attr(data-x="a)b")` and
+  `:matches-css(a: /c[)]d/, e: "f)g")` keep their arguments as well. An
+  apostrophe in plain text, e.g. `:contains(it's)`, does not start a quoted
+  value, so it does not hide the closing parenthesis.
+- A quote inside a regexp literal no longer pairs with a quote of a following
+  pseudo-class, and a quote whose closing quote is not followed by the rest of
+  the argument is plain text. Selectors such as
+  `:contains(/a:"b/), span:contains("c")` and
+  `:has(:contains(/label:"open/)):contains("next")` tokenize as separate
+  pseudo-classes.
+- A character class of a regexp literal that has no closing square bracket no
+  longer makes the scan run to the end of the selector for every regexp
+  literal opener. Such a literal is rejected as soon as the class opens.
 
 ### Security
 
