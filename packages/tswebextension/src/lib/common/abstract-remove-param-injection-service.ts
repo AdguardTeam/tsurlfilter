@@ -123,6 +123,8 @@ export abstract class AbstractRemoveParamInjectionService {
      * @param secret Secret token for updater authentication.
      * @param descriptors Updated descriptors.
      * @param nonce The nonce (window property name) of the existing injection.
+     * @param url URL the descriptors were matched for. The page applies the
+     * update only when its current URL still equals this URL.
      */
     protected abstract executeUpdate(
         tabId: number,
@@ -130,6 +132,7 @@ export abstract class AbstractRemoveParamInjectionService {
         secret: string,
         descriptors: RemoveParamDescriptor[],
         nonce: string,
+        url: string,
     ): void;
 
     /**
@@ -239,7 +242,7 @@ export abstract class AbstractRemoveParamInjectionService {
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
-     * @param url Current URL after the History API navigation.
+     * @param url URL the descriptors were matched for.
      * @param injection The nonce and secret of the existing injection.
      * @param injection.nonce The injection nonce.
      * @param injection.secret The secret token.
@@ -263,6 +266,7 @@ export abstract class AbstractRemoveParamInjectionService {
             injection.secret,
             descriptors,
             injection.nonce,
+            url,
         );
 
         if (result.status === ResolveDescriptorsStatus.Match) {

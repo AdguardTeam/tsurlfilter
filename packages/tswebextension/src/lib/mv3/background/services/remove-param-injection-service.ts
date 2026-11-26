@@ -83,12 +83,18 @@ export class RemoveParamInjectionService extends AbstractRemoveParamInjectionSer
         secret: string,
         descriptors: RemoveParamDescriptor[],
         nonce: string,
+        url: string,
     ): void {
-        const scriptFunction = (token: string, descs: RemoveParamDescriptor[], nonceProp: string): void => {
+        const scriptFunction = (
+            token: string,
+            descs: RemoveParamDescriptor[],
+            nonceProp: string,
+            matchedUrl: string,
+        ): void => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const updater = (window as any)[nonceProp];
             if (typeof updater === 'function') {
-                updater(token, descs);
+                updater(token, descs, matchedUrl);
             }
         };
 
@@ -96,7 +102,7 @@ export class RemoveParamInjectionService extends AbstractRemoveParamInjectionSer
             tabId,
             frameId,
             scriptFunction: scriptFunction as LocalScriptFunction,
-            args: [secret, descriptors, nonce],
+            args: [secret, descriptors, nonce, url],
         }).catch((e) => {
             logger.error('[tsweb.RemoveParamInjectionService.executeUpdate]: failed to send descriptor update:', e);
         });

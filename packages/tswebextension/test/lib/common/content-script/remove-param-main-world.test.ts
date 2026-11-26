@@ -37,32 +37,64 @@ describe('patchHistoryForRemoveParam', () => {
     });
 
     /**
+     * Descriptor fields that differ from the defaults.
+     */
+    interface DescriptorOptions {
+        /**
+         * Whether the rule is an allowlist rule.
+         */
+        isAllowlist?: boolean;
+
+        /**
+         * Filter ID.
+         */
+        filterId?: number;
+
+        /**
+         * Rule index inside the filter.
+         */
+        ruleIndex?: number;
+
+        /**
+         * Whether the rule pattern matches the whole host regardless of the
+         * path and the query.
+         */
+        isPathIndependent?: boolean;
+    }
+
+    /**
      * Creates a `$removeparam` descriptor for tests.
      *
+     * The rule text is generated from the same flags as the descriptor, so a
+     * path-scoped descriptor cannot carry a host-wide rule text.
+     *
      * @param value Modifier value.
-     * @param isAllowlist Whether the rule is an allowlist rule.
-     * @param filterId Filter ID.
-     * @param ruleIndex Rule index inside the filter.
-     * @param isPathIndependent Whether the rule pattern matches the whole
-     * host regardless of the path and the query.
+     * @param options Descriptor fields that differ from the defaults.
      *
      * @returns A descriptor for `patchHistoryForRemoveParam`.
      */
     const descriptor = (
         value: string,
-        isAllowlist = false,
-        filterId = 1,
-        ruleIndex = 0,
-        isPathIndependent = true,
-    ): RemoveParamDescriptor => ({
-        value,
-        isAllowlist,
-        isImportant: false,
-        isPathIndependent,
-        filterId,
-        ruleIndex,
-        ruleText: `${isAllowlist ? '@@' : ''}||example.com^$removeparam${value ? `=${value}` : ''}`,
-    });
+        options: DescriptorOptions = {},
+    ): RemoveParamDescriptor => {
+        const {
+            isAllowlist = false,
+            filterId = 1,
+            ruleIndex = 0,
+            isPathIndependent = true,
+        } = options;
+        const pattern = isPathIndependent ? '||example.com^' : '||example.com/path^';
+
+        return {
+            value,
+            isAllowlist,
+            isImportant: false,
+            isPathIndependent,
+            filterId,
+            ruleIndex,
+            ruleText: `${isAllowlist ? '@@' : ''}${pattern}$removeparam${value ? `=${value}` : ''}`,
+        };
+    };
 
     it('is self-contained (no external references in serialized body)', () => {
         const body = patchHistoryForRemoveParam.toString();
@@ -140,7 +172,7 @@ describe('patchHistoryForRemoveParam', () => {
 
     it('skips allowlisted parameters', () => {
         const descriptors: RemoveParamDescriptor[] = [
-            descriptor('utm_source', true, 2, 1),
+            descriptor('utm_source', { isAllowlist: true, filterId: 2, ruleIndex: 1 }),
         ];
 
         patchHistoryForRemoveParam(descriptors, TEST_NONCE, TEST_SECRET);
@@ -199,7 +231,7 @@ describe('patchHistoryForRemoveParam', () => {
     it('parses a regexp literal with an escaped slash and names other params', () => {
         const descriptors: RemoveParamDescriptor[] = [
             descriptor('/utm_\\/(a|b)'),
-            descriptor('utm_source', false, 1, 1),
+            descriptor('utm_source', { ruleIndex: 1 }),
         ];
 
         patchHistoryForRemoveParam(descriptors, TEST_NONCE, TEST_SECRET);
@@ -253,7 +285,7 @@ describe('patchHistoryForRemoveParam', () => {
             descriptor('/utm_('),
             // Invalid flags.
             descriptor('/utm_/zz'),
-            descriptor('utm_source', false, 1, 2),
+            descriptor('utm_source', { ruleIndex: 2 }),
         ];
 
         expect(() => patchHistoryForRemoveParam(descriptors, TEST_NONCE, TEST_SECRET)).not.toThrow();
@@ -416,7 +448,7 @@ describe('patchHistoryForRemoveParam', () => {
     it('applies multiple descriptors cumulatively', () => {
         const descriptors: RemoveParamDescriptor[] = [
             descriptor('utm_source'),
-            descriptor('utm_medium', false, 1, 1),
+            descriptor('utm_medium', { ruleIndex: 1 }),
         ];
 
         patchHistoryForRemoveParam(descriptors, TEST_NONCE, TEST_SECRET);
@@ -443,7 +475,7 @@ describe('patchHistoryForRemoveParam', () => {
 
         updater(TEST_SECRET, [
             descriptor('track'),
-        ]);
+        ], window.location.href);
 
         // The updater should have immediately cleaned the current URL
         expect(mockReplaceState).toHaveBeenCalled();
@@ -473,8 +505,8 @@ describe('patchHistoryForRemoveParam', () => {
             expect(typeof updater).toBe('function');
 
             updater(SECRET, [
-                descriptor('new_param', false, 2),
-            ]);
+                descriptor('new_param', { filterId: 2 }),
+            ], window.location.href);
 
             // Clear any replaceState calls from the updater applying to current URL
             mockReplaceState.mockClear();
@@ -508,7 +540,7 @@ describe('patchHistoryForRemoveParam', () => {
             // Now the background sends updated descriptors.
             updater(SECRET, [
                 descriptor('utm_source'),
-            ]);
+            ], window.location.href);
 
             // The updater should have applied the new descriptors to the
             // current URL and called replaceState with the cleaned URL.
@@ -535,8 +567,8 @@ describe('patchHistoryForRemoveParam', () => {
             // Broken descriptors must not abort the update.
             expect(() => updater(SECRET, [
                 ...invalidDescriptors,
-                descriptor('utm_source', false, 2, 2),
-            ])).not.toThrow();
+                descriptor('utm_source', { filterId: 2, ruleIndex: 2 }),
+            ], window.location.href)).not.toThrow();
 
             // The valid descriptor is applied to the current URL.
             expect(mockReplaceState).toHaveBeenCalled();
@@ -556,7 +588,7 @@ describe('patchHistoryForRemoveParam', () => {
 
         it('clears descriptors when empty array is received', () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any)[NONCE](SECRET, []);
+            (window as any)[NONCE](SECRET, [], window.location.href);
 
             // pushState with initial_param — should NOT be removed (descriptors cleared)
             window.history.pushState({}, '', '/page?initial_param=val');
@@ -572,8 +604,8 @@ describe('patchHistoryForRemoveParam', () => {
 
             // Call with wrong token — should be silently ignored
             updater('wrong-secret', [
-                descriptor('injected_param', false, 99),
-            ]);
+                descriptor('injected_param', { filterId: 99 }),
+            ], window.location.href);
 
             mockReplaceState.mockClear();
 
@@ -636,7 +668,7 @@ describe('patchHistoryForRemoveParam', () => {
          */
         function patchWithDescriptor(isPathIndependent: boolean): void {
             patchHistoryForRemoveParam(
-                [descriptor('source', false, 1, 0, isPathIndependent)],
+                [descriptor('source', { isPathIndependent })],
                 TEST_NONCE,
                 TEST_SECRET,
             );
@@ -684,7 +716,7 @@ describe('patchHistoryForRemoveParam', () => {
             const updater = (window as any)[TEST_NONCE];
             expect(typeof updater).toBe('function');
 
-            updater(TEST_SECRET, [descriptor('source', false, 1, 0, false)]);
+            updater(TEST_SECRET, [descriptor('source', { isPathIndependent: false })], window.location.href);
 
             expect(window.location.href).toBe('https://example.com/checkout/?x=1');
         });
@@ -723,13 +755,58 @@ describe('patchHistoryForRemoveParam', () => {
 
         it('applies only the path-independent descriptor synchronously', () => {
             patchHistoryForRemoveParam([
-                descriptor('utm_source', false, 1, 0, true),
-                descriptor('source', false, 1, 1, false),
+                descriptor('utm_source'),
+                descriptor('source', { ruleIndex: 1, isPathIndependent: false }),
             ], TEST_NONCE, TEST_SECRET);
 
             window.history.pushState({}, '', '/checkout/?utm_source=a&source=partner&x=1');
 
             expect(window.location.href).toBe('https://example.com/checkout/?source=partner&x=1');
+        });
+
+        it('applies a path-scoped descriptor during the initial pass', () => {
+            window.history.replaceState({}, '', '/start?source=partner&x=1');
+
+            patchWithDescriptor(false);
+
+            expect(window.location.href).toBe('https://example.com/start?x=1');
+        });
+
+        it('ignores an update whose matched URL is no longer current', () => {
+            patchWithDescriptor(false);
+
+            window.history.pushState({}, '', '/checkout/?source=partner&x=1');
+            expect(window.location.href).toBe('https://example.com/checkout/?source=partner&x=1');
+
+            // The background matched this list for `/suche/`, but the page
+            // already redirected to `/checkout/` before the update arrived.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const updater = (window as any)[TEST_NONCE];
+            updater(
+                TEST_SECRET,
+                [descriptor('source', { isPathIndependent: false })],
+                'https://example.com/suche/?source=partner&x=1',
+            );
+
+            expect(window.location.href).toBe('https://example.com/checkout/?source=partner&x=1');
+        });
+
+        it('keeps the active descriptors when a stale update arrives', () => {
+            patchHistoryForRemoveParam([descriptor('utm_source')], TEST_NONCE, TEST_SECRET);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const updater = (window as any)[TEST_NONCE];
+
+            window.history.pushState({}, '', '/checkout/?utm_source=a&source=partner&x=1');
+            expect(window.location.href).toBe('https://example.com/checkout/?source=partner&x=1');
+
+            updater(
+                TEST_SECRET,
+                [descriptor('source', { isPathIndependent: false })],
+                'https://example.com/suche/?source=partner',
+            );
+
+            window.history.pushState({}, '', '/other?utm_source=b&source=partner');
+            expect(window.location.href).toBe('https://example.com/other?source=partner');
         });
     });
 });

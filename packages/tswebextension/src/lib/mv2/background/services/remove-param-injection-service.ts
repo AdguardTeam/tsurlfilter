@@ -106,11 +106,13 @@ export class RemoveParamInjectionService extends AbstractRemoveParamInjectionSer
         secret: string,
         descriptors: RemoveParamDescriptor[],
         nonce: string,
+        url: string,
     ): void {
         const descsJson = JSON.stringify(descriptors);
         const secretJson = JSON.stringify(secret);
+        const urlJson = JSON.stringify(url);
         // eslint-disable-next-line max-len
-        const mainWorldCode = `if(typeof window[${JSON.stringify(nonce)}]=="function"){window[${JSON.stringify(nonce)}](${secretJson},${descsJson})}`;
+        const mainWorldCode = `if(typeof window[${JSON.stringify(nonce)}]=="function"){window[${JSON.stringify(nonce)}](${secretJson},${descsJson},${urlJson})}`;
 
         // Inject a <script> element from the isolated world to execute
         // code in the main world, then remove it immediately.

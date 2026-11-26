@@ -289,7 +289,7 @@ describe('RemoveParamInjectionService (MV3)', () => {
                 expect.objectContaining({
                     tabId: 1,
                     frameId: MAIN_FRAME_ID,
-                    args: ['existing-secret', [], 'existing-nonce'],
+                    args: ['existing-secret', [], 'existing-nonce', 'https://example.com/spa-page'],
                 }),
             );
             expect(ScriptingApi.executeScriptFunc).not.toHaveBeenCalledWith(

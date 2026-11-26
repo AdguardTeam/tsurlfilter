@@ -271,6 +271,7 @@ describe('RemoveParamInjectionService (MV2)', () => {
                 1,
                 expect.objectContaining({
                     frameId: MAIN_FRAME_ID,
+                    code: expect.stringContaining('https://example.com/spa-page'),
                 }),
             );
         });

@@ -29,8 +29,11 @@ import { type RemoveParamDescriptor } from '../utils/remove-param-rules';
  * the destination path.
  * 4. If the URL changed, call `replaceState` to update the address bar.
  *
- * The initial and the updater calls apply the full descriptor list, because
- * those lists were computed for the exact current URL.
+ * The initial call applies the full descriptor list, because the list was
+ * computed for the document URL. The updater also applies the full list, but
+ * only when the current URL still equals the URL the background matched. A
+ * redirect that happens before the update arrives is ignored, so a stale list
+ * cannot clean the new URL.
  *
  * **Important**: every constant and helper referenced inside the function
  * body is declared as a local variable so that
@@ -161,7 +164,7 @@ export function patchHistoryForRemoveParam(
                     valueRegExp: regex,
                     isAllowlist: rawDesc.isAllowlist,
                     isNegated,
-                    isPathIndependent: rawDesc.isPathIndependent === true,
+                    isPathIndependent: rawDesc.isPathIndependent,
                 });
             } catch {
                 // Skip the descriptor: one invalid value must not disable
@@ -293,7 +296,7 @@ export function patchHistoryForRemoveParam(
      *
      * @returns The cleaned URL, or null if no changes were made.
      */
-    function applyDescriptors(url: string, pathIndependentOnly = false): string | null {
+    function applyDescriptors(url: string, pathIndependentOnly: boolean): string | null {
         if (!descriptors || descriptors.length === 0) {
             return null;
         }
@@ -364,7 +367,7 @@ export function patchHistoryForRemoveParam(
         state: unknown,
         title: string,
         absoluteUrl: string,
-        pathIndependentOnly = false,
+        pathIndependentOnly: boolean,
     ): void {
         const cleanedUrl = applyDescriptors(absoluteUrl, pathIndependentOnly);
         if (cleanedUrl === null) {
@@ -445,7 +448,7 @@ export function patchHistoryForRemoveParam(
         value: createPatchedMethod(originalReplaceState, 'replaceState'),
     });
 
-    processUrl(window.history.state, document.title, window.location.href);
+    processUrl(window.history.state, document.title, window.location.href, false);
 
     // Expose a non-enumerable updater function on `window` keyed by the
     // injection nonce.  The background calls this directly via
@@ -453,8 +456,23 @@ export function patchHistoryForRemoveParam(
     // `<script>` element injection (MV2), so no broadcasting through
     // `window.postMessage` or extension messaging is needed.
     Object.defineProperty(window, nonce, {
-        value: (token: string, rawDescs: RemoveParamDescriptor[]) => {
+        value: (
+            token: string,
+            rawDescs: RemoveParamDescriptor[],
+            matchedUrl: string,
+        ) => {
             if (token !== secret) {
+                return;
+            }
+
+            const currentUrl = window.location.href;
+
+            // The background matched this list for `matchedUrl`. When the
+            // page navigated again before the update arrived, the list is
+            // stale: do not overwrite the current descriptors or clean a URL
+            // that they were not matched for. The update for the newer URL
+            // arrives on its own.
+            if (currentUrl !== matchedUrl) {
                 return;
             }
 
@@ -470,9 +488,8 @@ export function patchHistoryForRemoveParam(
             // before descriptors were available — the SPA navigation that
             // triggered onHistoryStateUpdated may have already placed
             // tracking params in the address bar.
-            const currentUrl = window.location.href;
             if (currentUrl.startsWith('http') && currentUrl.includes('?')) {
-                processUrl(window.history.state, '', currentUrl);
+                processUrl(window.history.state, '', currentUrl, false);
             }
         },
         configurable: false,
