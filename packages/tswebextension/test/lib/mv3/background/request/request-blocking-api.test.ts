@@ -136,10 +136,13 @@ describe('MV3 RequestBlockingApi - allowlist $popup rule prevents closing the ta
 
     it('blocking popup rule and allowlist popup rule, document request - do not close tab', () => {
         // The allowlist $popup rule has a higher priority than the blocking
-        // one, so the popup should not be closed.
+        // one, so the engine picks it as the popup rule and the basic result
+        // allowlists the request: the popup should not be closed. The rules
+        // are listed allowlist-first on purpose: with the last-match-wins
+        // selection this test would close the tab and fail.
         const rules = [
-            '||example.com^$popup',
             '@@example.com$popup',
+            '||example.com^$popup',
         ];
         const data = makeBlockingResponseParams(
             rules,
@@ -158,6 +161,28 @@ describe('MV3 RequestBlockingApi - allowlist $popup rule prevents closing the ta
         const rules = [
             '||example.com^$popup,important',
             '@@example.com$popup',
+        ];
+        const data = makeBlockingResponseParams(
+            rules,
+            'http://example.com',
+            RequestType.Document,
+            ContentType.Document,
+        );
+        const response = RequestBlockingApi.getBlockingResponse(data);
+        expect(response).toEqual({ cancel: true });
+        expect(tabsRemoveSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('blocking $all rule and allowlist popup rule, document request - close tab', () => {
+        // Deliberate edge, deferred by the ticket: a document-level rule with
+        // the $popup option enabled ($all, $popup,document) is stored as the
+        // basic rule, and the close-tab branch for such rules does not check
+        // the popup rule for allowlist, so the popup is closed even though an
+        // allowlist $popup rule matched. The document-level allowlist (e.g.
+        // @@||example.com^$document) is the correct exception for these rules.
+        const rules = [
+            '||example.com^$all',
+            '@@||example.com^$popup',
         ];
         const data = makeBlockingResponseParams(
             rules,

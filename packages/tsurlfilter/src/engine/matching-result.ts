@@ -111,10 +111,14 @@ export class MatchingResult {
     public readonly cosmeticExceptionRule: NetworkRule | null;
 
     /**
-     * PopupRule - this is a rule that specified which way should be used
-     * to blocking document request: close the tab or open dummy blocking page.
-     * We should store it separately from other blocking rules, because $popup
-     * has an intersection by use cases with $all.
+     * PopupRule - the highest priority matched $popup rule.
+     * It can be either a blocking rule, which specifies that the document
+     * request should be blocked by closing the tab or opening a dummy
+     * blocking page, or an allowlist rule, which unblocks the popup:
+     * consumers must check `isAllowlist()` before closing the tab.
+     * We should store it separately from other rules, because $popup
+     * has an intersection by use cases with $all, which is stored
+     * as a basic rule.
      *
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#popup-modifier}
      */
@@ -242,6 +246,7 @@ export class MatchingResult {
                 // depending on the order the rules are matched in: the lookup
                 // tables return rules ordered by their table and by the
                 // position of the match in the URL, not by priority.
+                // Rules of equal priority keep the first matched one.
                 if (!this.popupRule || rule.isHigherPriority(this.popupRule)) {
                     this.popupRule = rule;
                 }
@@ -265,7 +270,10 @@ export class MatchingResult {
     }
 
     /**
-     * Returns popup rule.
+     * Returns the popup rule.
+     *
+     * Note: it can be an allowlist rule, which unblocks the popup,
+     * so consumers must check `isAllowlist()` before closing the tab.
      *
      * @returns The popup rule or null if not found.
      */

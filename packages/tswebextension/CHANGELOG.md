@@ -18,9 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Popups are no longer closed when an allowlist `$popup` rule matches the
-  popup together with a blocking rule: with `||example.org^` and
-  `@@test.php$popup,domain=example.org` in the filter lists, a popup to
-  `test.php` stays open.
+  popup together with a blocking rule without `$popup` or `$all`: with
+  `||example.org^` and `@@test.php$popup,domain=example.org` in the filter
+  lists, a popup to `test.php` stays open.
 - The MV3 rules-limits page could overcount unsafe rules, because the
   excluded-rule list shared by the total and unsafe limit errors included rules
   dropped by the other limit. The total limit error now carries only the rules
