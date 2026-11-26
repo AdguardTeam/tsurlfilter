@@ -95,10 +95,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `image()`, `cross-fade()` and their `-webkit-*` variants) now match
   case-insensitively, so mixed-case function names such as `URL("...")` or
   `Image-Set("..." 1x)` can no longer be used to load external resources.
+- The `$popup` slot now keeps the rule with the highest priority instead of
+  the last matched one, so `@@||x.com^$popup,important` wins over
+  `||x.com^$popup` regardless of the rule order in the filter list.
+- A cosmetic exception rule (`$elemhide`, `$generichide`, `$specifichide`,
+  `$jsinject`) no longer decides a network request: it no longer allows a
+  request blocked by a rule matched for the same request, and no longer
+  suppresses a redirect or popup rule. A cosmetic modifier with an explicit
+  request type, e.g. `$generichide,script`, matches that type too, and the
+  blocking rule wins there as well. E.g. `||h.seznam.cz^` stays applied when
+  `@@||seznam.cz^$generichide` matches [AdguardBrowserExtension#3006].
+  `$replace` rules were already applied next to such an exception, only their
+  filtering log attribution changes. A `$content` exception still decides the
+  request, because the `$replace` handling relies on it landing in the basic
+  rule, and a document-level allowlist of the frame (`$document`, `$urlblock`,
+  `$genericblock`) keeps disabling filtering for its sub-requests.
 
 ### Security
 
 [Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.1.0...HEAD
+[AdguardBrowserExtension#3006]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3006
 
 ## [6.1.0] - 2026-11-12
 
@@ -171,20 +187,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   trimmed (via [@adguard/agtree]): the argument is the raw text between the
   pseudo-class parentheses, so `$$div:contains( "foo" )` now matches the text
   `"foo"` with a space on each side.
-- A cosmetic exception rule (`$elemhide`, `$generichide`, `$specifichide`,
-  `$jsinject`) no longer affects network filtering: it no longer allows a
-  request blocked by a rule matched for the same request, and no longer
-  suppresses a redirect, replace or popup rule. Only document and subdocument
-  requests are involved, because that is the only request types a cosmetic
-  modifier can match. A `$document` exception of the frame stays in effect as
-  well, so a filtering-disabled page keeps `$csp`, `$header`, `$cookie` and
-  `$removeheader` rules off its sub-requests. E.g. `||h.seznam.cz^` stays
-  applied when `@@||seznam.cz^$generichide` matches
-  [AdguardBrowserExtension#3006].
 
 [#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
 [AdguardBrowserExtension#3538]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3538
-[AdguardBrowserExtension#3006]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3006
 [AdguardBrowserExtension#3605]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3605
 [6.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v6.1.0
 

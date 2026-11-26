@@ -172,9 +172,8 @@ export class MatchingResult {
         // Iterate through the list of rules and fill the MatchingResult
         for (const rule of rules) {
             if (rule.hasCosmeticOption()) {
-                if (!this.cosmeticExceptionRule || rule.isHigherPriority(this.cosmeticExceptionRule)) {
-                    this.cosmeticExceptionRule = rule;
-                }
+                this.cosmeticExceptionRule = MatchingResult
+                    .pickWithHigherPriority(this.cosmeticExceptionRule, rule);
 
                 /**
                  * Some rules include both cosmetic options and network modifiers,
@@ -237,7 +236,10 @@ export class MatchingResult {
             if (rule.isOptionEnabled(NetworkRuleOption.Popup)
                 // This check needed to split $all rules from $popup rules
                 && !MatchingResult.isDocumentRule(rule)) {
-                this.popupRule = rule;
+                // A single-rule slot: the highest priority rule wins, so
+                // `@@||x.com^$popup,important` beats `||x.com^$popup` regardless
+                // of the filter list order.
+                this.popupRule = MatchingResult.pickWithHigherPriority(this.popupRule, rule);
                 continue;
             }
 
@@ -251,10 +253,32 @@ export class MatchingResult {
                 }
             }
 
-            if (!this.basicRule || rule.isHigherPriority(this.basicRule)) {
-                this.basicRule = rule;
-            }
+            this.basicRule = MatchingResult.pickWithHigherPriority(this.basicRule, rule);
         }
+    }
+
+    /**
+     * Picks the rule to keep in a single-rule slot.
+     *
+     * Three slots keep exactly one rule and therefore compare priorities on
+     * insert: `basicRule`, `cosmeticExceptionRule` and `popupRule`. Without the
+     * comparison the winner would be the last matched rule, i.e. the result
+     * would depend on the order of rules in the filter lists. Slots that keep an
+     * array do not need it here: their getters resolve blocking/allowlist
+     * conflicts with {@link MatchingResult.filterAdvancedModifierRules} and
+     * {@link MatchingResult.getHighestPriorityRule}.
+     *
+     * @param current Rule currently kept in the slot.
+     * @param candidate Rule matched for the same request.
+     *
+     * @returns The rule with the higher priority.
+     */
+    private static pickWithHigherPriority(current: NetworkRule | null, candidate: NetworkRule): NetworkRule {
+        if (!current || candidate.isHigherPriority(current)) {
+            return candidate;
+        }
+
+        return current;
     }
 
     /**
@@ -325,10 +349,21 @@ export class MatchingResult {
         // `$jsinject`) only disables cosmetic rules: it must not allow, block,
         // redirect or replace a request that a network rule has already decided.
         // It is reported only when no network rule decides the request, and
-        // instead of an allowlist rule it outranks, so that the filtering log
-        // keeps showing it.
+        // instead of a plain allowlist rule it outranks, so that the filtering
+        // log keeps showing it.
+        //
+        // A document-level allowlist (`$document`, `$urlblock`, `$genericblock`,
+        // `$content`) is not such a rule: it disables filtering for the document
+        // and its sub-requests, so it stays the basic result and keeps
+        // `isFilteringDisabled()` and the `$cookie`/`$csp`/`$removeheader`
+        // handling of those sub-requests intact. A `$content` exception never
+        // reaches this branch at all: it is stored in `basicRule` on purpose,
+        // because the `$replace` handling above relies on it.
         if (this.cosmeticExceptionRule
-            && (!basic || (basic.isAllowlist() && this.cosmeticExceptionRule.isHigherPriority(basic)))) {
+            && (!basic
+                || (basic.isAllowlist()
+                    && !basic.isDocumentLevelAllowlistRule()
+                    && this.cosmeticExceptionRule.isHigherPriority(basic)))) {
             return this.cosmeticExceptionRule;
         }
 

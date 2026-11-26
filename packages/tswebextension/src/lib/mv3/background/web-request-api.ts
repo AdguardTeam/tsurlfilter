@@ -743,10 +743,13 @@ export class WebRequestApi {
         /**
          * When handling document blocking, we need to retrieve the rule responsible for the blocking.
          *
-         * MatchingResult.getBasicResult() is not good enough, because the DNR rule that
-         * blocked the request is chosen by the browser and may differ from the single rule
-         * the matching engine reports for the same request. This handler needs exactly the
-         * rule that blocked the document, not the engine's overall verdict.
+         * MatchingResult.getBasicResult() is not good enough: it answers "what decides this
+         * request", which is not the same question as "what blocked this document". A matching
+         * `$replace` rule makes it return `null` while the browser has already blocked the
+         * document by DNR, and a cosmetic exception that outranks a blocking rule makes it
+         * return the exception. `getDocumentBlockingResult()` answers the narrow question
+         * instead: it returns the basic rule only when that rule is a document blocking rule
+         * and the request is not covered by a document-level allowlist.
          *
          * This behaviour is expected, correct, and consistent with the CoreLibs apps:
          * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3260.

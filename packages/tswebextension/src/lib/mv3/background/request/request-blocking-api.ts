@@ -182,7 +182,9 @@ export class RequestBlockingApi {
             // Blocking rule can be with $popup modifier - in this case we need
             // to close the tab as soon as possible.
             // https://adguard.com/kb/general/ad-filtering/create-own-filters/#popup-modifier
-            if (popupRule && tabsApi.isNewPopupTab(tabId)) {
+            // A popup exception such as `@@||x.com^$popup` also occupies the slot:
+            // it only disables closing, so it must not close the tab either.
+            if (popupRule && !popupRule.isAllowlist() && tabsApi.isNewPopupTab(tabId)) {
                 return RequestBlockingApi.closeTab(data, popupRule);
             }
             // to handle rules with $all modifier, where popup was added implicitly

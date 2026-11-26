@@ -87,12 +87,13 @@ const getGetBlockingResponseParamsData = (
 };
 
 describe('Request Blocking Api - shouldCollapseElement', () => {
-    const mockMatchingResult = (ruleText?: string): void => {
+    const mockMatchingResult = (ruleText?: string | string[]): void => {
         let matchingResult: MatchingResult | null = null;
 
         if (ruleText) {
-            const rule = createNetworkRule(ruleText, 0);
-            matchingResult = new MatchingResult([rule], null);
+            const ruleTexts = Array.isArray(ruleText) ? ruleText : [ruleText];
+            const rules = ruleTexts.map((text) => createNetworkRule(text, 0));
+            matchingResult = new MatchingResult(rules, null);
         }
 
         vi.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
@@ -103,6 +104,21 @@ describe('Request Blocking Api - shouldCollapseElement', () => {
 
         expect(
             RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document),
+        ).toBe(true);
+    });
+
+    it('collapses a frame blocked by a rule that a cosmetic exception does not outrank', () => {
+        // Before the fix the cosmetic exception was the basic result, so a
+        // blocked frame was never collapsed and stayed visible on the page.
+        mockMatchingResult(['||h.seznam.cz^', '@@||seznam.cz^$generichide']);
+
+        expect(
+            RequestBlockingApi.shouldCollapseElement(
+                1,
+                'https://h.seznam.cz/hit',
+                'https://seznam.cz/',
+                RequestType.SubDocument,
+            ),
         ).toBe(true);
     });
 
@@ -187,6 +203,24 @@ describe('Request Blocking Api - getBlockingResponse', () => {
             );
             const response = RequestBlockingApi.getBlockingResponse(data);
             expect(response).toEqual({ cancel: true });
+        });
+
+        it('the popup exception, document request - do not close tab', () => {
+            const rules = [
+                '||example.com^',
+                '@@||example.com^$popup',
+            ];
+            const data = getGetBlockingResponseParamsData(
+                rules,
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            );
+
+            // The popup slot holds an allowlist rule: it disables closing, so the
+            // main page is not blocked either (a plain rule does not permit
+            // document requests).
+            expect(RequestBlockingApi.getBlockingResponse(data)).toBeUndefined();
         });
 
         it('explicit modifiers popup and document, document request - close tab', () => {
@@ -631,7 +665,7 @@ describe('Request Blocking Api - closeTab publishes PopupBlocked event (AG-3736)
     });
 });
 
-describe('Request Blocking Api - cosmetics exception rules do not allow requests', () => {
+describe('Request Blocking Api - cosmetic exception rules do not allow requests', () => {
     const RULES = ['||h.seznam.cz^', '@@||seznam.cz^$generichide'];
     const REQUEST_URL = 'https://h.seznam.cz/hit';
 

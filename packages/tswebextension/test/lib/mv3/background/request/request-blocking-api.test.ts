@@ -176,6 +176,43 @@ describe('MV3 RequestBlockingApi - closeTab publishes PopupBlocked event (AG-373
         );
     });
 
+    it('does not close the tab when the popup slot holds an exception', () => {
+        const TAB_ID = 12;
+        const data = {
+            ...makeBlockingResponseParams(
+                ['||example.com^', '@@||example.com^$popup'],
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            ),
+            tabId: TAB_ID,
+        };
+
+        RequestBlockingApi.getBlockingResponse(data);
+
+        // `@@||example.com^$popup` disables closing the popup, so the tab stays.
+        expect(tabsRemoveSpy).not.toHaveBeenCalled();
+    });
+
+    it('closes the popup even when a cosmetic exception matches the same request', () => {
+        const TAB_ID = 11;
+        const data = {
+            ...makeBlockingResponseParams(
+                ['||h.seznam.cz^$popup', '@@||seznam.cz^$generichide'],
+                'http://h.seznam.cz/popup',
+                RequestType.Document,
+                ContentType.Document,
+            ),
+            tabId: TAB_ID,
+        };
+
+        RequestBlockingApi.getBlockingResponse(data);
+
+        // The cosmetic exception only disables cosmetic rules, so the popup rule
+        // still closes the tab; before the fix the exception hid the popup rule.
+        expect(tabsRemoveSpy).toHaveBeenCalledWith(TAB_ID);
+    });
+
     it('publishes PopupBlocked for explicit $popup,$document rule with the real tabId, removes the actual tab', () => {
         const TAB_ID = 15;
         const data = {

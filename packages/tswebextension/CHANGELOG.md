@@ -119,6 +119,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CSS injection rules with mixed-case forbidden functions such as `URL(...)` or
   `Image-Set(...)` are now rejected and can no longer load external resources
   (via [@adguard/tsurlfilter]).
+- A popup exception such as `@@||example.com^$popup` no longer closes the popup
+  tab in MV2 and MV3: the popup slot occupies such a rule, and it only disables
+  closing.
+- MV2 now cancels a subdocument request blocked by a rule even when a cosmetic
+  exception (`$elemhide`, `$generichide`, `$specifichide`, `$jsinject`) matches
+  the same request, keeps `$popup` and `$redirect` rules applied next to such an
+  exception and collapses the blocked frame. MV3 closes such popup tabs and
+  reports the blocking rule instead of the exception for such documents. Only
+  requests matched by the exception are involved; see `@adguard/tsurlfilter`
+  for the rule-matching side.
 
 ### Security
 

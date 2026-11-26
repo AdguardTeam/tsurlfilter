@@ -6,6 +6,7 @@ import { CosmeticOption } from '../../src/engine/cosmetic-option';
 import { Engine } from '../../src/engine/engine';
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
+import type { NetworkRule } from '../../src/rules/network-rule';
 
 const createRequest = (url: string): Request => new Request(url, null, RequestType.Document);
 
@@ -1686,10 +1687,14 @@ describe('Cosmetic exceptions and network blocking', () => {
      * @param engine Engine to match the request with.
      * @param request Request to match.
      *
-     * @returns Rule text as written in the filter list or `null`.
+     * @returns Converted rule text (read back from the filter list) or `null`.
      */
-    const getBasicResultText = (engine: Engine, request: Request): string | null => {
-        const basicResult = engine.matchRequest(request).getBasicResult();
+    const getBasicResultText = (
+        engine: Engine,
+        request: Request,
+        frameRule?: NetworkRule | null,
+    ): string | null => {
+        const basicResult = engine.matchRequest(request, frameRule).getBasicResult();
 
         if (!basicResult) {
             return null;
@@ -1699,9 +1704,11 @@ describe('Cosmetic exceptions and network blocking', () => {
     };
 
     // Only document and subdocument requests are listed: a cosmetic modifier
-    // restricts its rule to those two request types (`network-rule.ts`
-    // `setRequestType(Document|SubDocument)`), so for any other type the rule is
-    // not matched at all and the case cannot fail.
+    // without an explicit request type restricts its rule to those two types
+    // (`network-rule.ts`, `setRequestType(Document|SubDocument)`), so for any
+    // other type the rule is not matched at all and the case cannot fail. A
+    // modifier with an explicit type, e.g. `$generichide,script`, is matched
+    // against that type too — see the separate case below.
     // The document row asserts the engine decision only: MV2 deliberately does
     // not block the main frame with rules that do not permit document requests
     // (`request-blocking-api.ts`, `getPermittedRequestTypes` check).
@@ -1804,7 +1811,7 @@ describe('Cosmetic exceptions and network blocking', () => {
         );
     });
 
-    it('keeps a network allowlist rule as a basic result', () => {
+    it('reports the cosmetic exception when it outranks an allowlist rule', () => {
         const engine = Engine.createSync({
             filters: [{
                 id: 1,
@@ -1818,10 +1825,92 @@ describe('Cosmetic exceptions and network blocking', () => {
             RequestType.SubDocument,
         );
 
-        const basicResult = engine.matchRequest(request).getBasicResult();
+        // Both rules are allowlist rules, and the cosmetic exception has the
+        // higher priority, so it is the one reported.
+        expect(getBasicResultText(engine, request)).toBe(cosmeticExceptionRuleText);
+    });
 
-        expect(basicResult).not.toBeNull();
-        expect(basicResult!.isAllowlist()).toBe(true);
+    it('keeps the blocking rule for a request type named by a cosmetic modifier', () => {
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: ['||ads.example^', '@@||ads.example^$generichide,script'].join('\n'),
+            }],
+        });
+
+        const request = new Request(
+            'https://ads.example/a.js',
+            'https://example.com/',
+            RequestType.Script,
+        );
+
+        // An explicit request type lifts the document-only restriction of the
+        // cosmetic modifier, so the exception matches a script request too.
+        expect(getBasicResultText(engine, request)).toBe('||ads.example^');
+    });
+
+    it('keeps a $content exception as the rule that decides the request', () => {
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: ['||h.seznam.cz^', '@@||seznam.cz^$content'].join('\n'),
+            }],
+        });
+
+        const request = new Request(
+            'https://h.seznam.cz/hit',
+            'https://seznam.cz/',
+            RequestType.SubDocument,
+        );
+
+        // `$content` is stored in the cosmetic exception group, but it is kept in
+        // `basicRule` on purpose: the `$replace` handling relies on it, so it
+        // still decides the request.
+        expect(getBasicResultText(engine, request)).toBe('@@||seznam.cz^$content');
+    });
+
+    it('keeps the document-level allowlist of the frame next to a cosmetic exception', () => {
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: [
+                    '@@||example.org^$urlblock',
+                    '@@||ads.net^$generichide,domain=example.org',
+                    '||ads.net^$cookie',
+                ].join('\n'),
+            }],
+        });
+
+        const frameRule = engine.matchFrame('https://example.org/');
+        const request = new Request(
+            'https://ads.net/frame',
+            'https://example.org/',
+            RequestType.SubDocument,
+        );
+
+        const result = engine.matchRequest(request, frameRule);
+
+        // `$urlblock` disables the network rules for the document and its
+        // sub-requests: reporting the cosmetic exception instead would re-enable
+        // the `$cookie` rule for the iframe request.
+        expect(getBasicResultText(engine, request, frameRule)).toBe('@@||example.org^$urlblock');
+        expect(result.getCookieRules()).toHaveLength(0);
+    });
+
+    it.each([
+        ['the blocking rule comes first', ['||x.com^$popup', '@@||x.com^$popup,important']],
+        ['the exception comes first', ['@@||x.com^$popup,important', '||x.com^$popup']],
+    ])('keeps the higher priority popup rule when %s', (_name, rules) => {
+        const engine = Engine.createSync({ filters: [{ id: 1, content: rules.join('\n') }] });
+
+        const request = new Request('https://x.com/popup', 'https://example.org/', RequestType.Document);
+        const popupRule = engine.matchRequest(request).getPopupRule();
+
+        // The popup slot keeps the highest priority rule, not the last matched
+        // one, so the order of the rules does not decide whether the popup of an
+        // excepted site is closed.
+        expect(engine.retrieveRuleText(popupRule!.getFilterListId(), popupRule!.getIndex()))
+            .toBe('@@||x.com^$popup,important');
     });
 
     it('keeps an $important blocking rule blocking', () => {
