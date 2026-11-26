@@ -164,10 +164,17 @@ describe('Pattern Tests', () => {
 describe('Pattern.isPathIndependent', () => {
     it.each([
         '*',
+        '',
+        '|',
+        '||',
         '||example.com^',
         '||example.com',
         '||sub.example.com^',
-        '||EXAMPLE.COM^',
+        // The hostname shortcut in `prepare()` compares the hostname as
+        // written, so an uppercase `^`-anchored pattern never matches. The
+        // no-caret form goes through the case-insensitive regexp and does
+        // match, so it is the uppercase shape worth covering here.
+        '||EXAMPLE.COM',
         '||localhost^',
     ])('returns true for the path-independent pattern %s', (text) => {
         expect(new Pattern(text).isPathIndependent()).toBe(true);
@@ -185,7 +192,6 @@ describe('Pattern.isPathIndependent', () => {
         'example.com',
         '||example.com^*',
         '||example.com:8080^',
-        '||',
     ])('returns false for the path-scoped or unproven pattern %s', (text) => {
         expect(new Pattern(text).isPathIndependent()).toBe(false);
     });

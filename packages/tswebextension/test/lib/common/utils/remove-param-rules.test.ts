@@ -12,6 +12,7 @@ import {
     filterEffectiveRemoveParamRules,
     getRemoveParamDescriptors,
 } from '../../../../src/lib/common/utils/remove-param-rules';
+import { createNetworkRule } from '../../../helpers/rule-creator';
 
 describe('getRemoveParamDescriptors', () => {
     it('returns null when matchingResult is null', () => {
@@ -207,6 +208,36 @@ describe('getRemoveParamDescriptors', () => {
             value: 'source',
             isPathIndependent: false,
         } satisfies Partial<RemoveParamDescriptor>);
+    });
+});
+
+describe('getRemoveParamDescriptors with real NetworkRule instances', () => {
+    it.each([
+        '$removeparam=utm_source',
+        '|$removeparam=utm_source',
+        '||$removeparam=utm_source',
+        '*$removeparam=utm_source',
+        '||example.com^$removeparam=utm_source',
+    ])('marks the host-wide rule %s as path-independent', (ruleText) => {
+        const rule = createNetworkRule(ruleText, 1, -1);
+        const mockMatchingResult = {
+            getRemoveParamRules: vi.fn().mockReturnValue([rule]),
+        };
+        const mockEngineApi = {
+            matchRequest: vi.fn().mockReturnValue(mockMatchingResult),
+            retrieveRuleText: vi.fn(),
+            retrieveOriginalRuleText: vi.fn(),
+        };
+
+        const result = getRemoveParamDescriptors({
+            requestUrl: 'https://example.com/?utm_source=test',
+            frameUrl: 'https://example.com/',
+            frameRule: null,
+            engineApi: mockEngineApi,
+        });
+
+        expect(result).not.toBeNull();
+        expect(result!.descriptors[0].isPathIndependent).toBe(true);
     });
 });
 

@@ -250,12 +250,16 @@ export class Pattern {
      * Checks if this pattern matches the whole host regardless of the path and
      * the query.
      *
-     * A path-independent pattern is the full wildcard (`*`) or a
-     * domain-anchored host pattern (`||example.com` or `||example.com^`) without
-     * a path, a wildcard, or an end-of-URL anchor. Such a pattern matches every
-     * URL of the host, so its match does not depend on the current path.
-     * Every other pattern may target a path or a full URL, so this method
-     * returns `false` for it.
+     * A path-independent pattern is the full wildcard (`*`), an empty pattern,
+     * a lone pipe (`|` or `||`), or a domain-anchored host pattern
+     * (`||example.com` or `||example.com^`) without a path, a wildcard, or an
+     * end-of-URL anchor. Such a pattern matches every URL of the host, so its
+     * match does not depend on the current path. Every other pattern may target
+     * a path or a full URL, so this method returns `false` for it.
+     *
+     * The empty pattern, `|`, `||` and `*` are the same pattern for
+     * {@link SimpleRegex.patternToRegexp}: all four compile to
+     * {@link SimpleRegex.REGEX_ANY_CHARACTER}.
      *
      * @returns True if the pattern is path-independent.
      */
@@ -276,7 +280,12 @@ export class Pattern {
      * @returns True if the pattern is path-independent.
      */
     private static isPathIndependentPattern(pattern: string): boolean {
-        if (pattern === SimpleRegex.MASK_ANY_CHARACTER) {
+        if (
+            pattern === ''
+            || pattern === SimpleRegex.MASK_ANY_CHARACTER
+            || pattern === SimpleRegex.MASK_PIPE
+            || pattern === SimpleRegex.MASK_START_URL
+        ) {
             return true;
         }
 

@@ -1932,6 +1932,30 @@ describe('NetworkRule.isUnsafe', () => {
     });
 });
 
+describe('NetworkRule.isPatternPathIndependent', () => {
+    it.each([
+        '*$removeparam=utm_source',
+        '$removeparam=utm_source',
+        '|$removeparam=utm_source',
+        '||$removeparam=utm_source',
+        '||example.com^$removeparam=utm_source',
+        '||example.com$removeparam=utm_source',
+        '||EXAMPLE.COM$removeparam=utm_source',
+    ])('returns true for the host-wide rule %s', (ruleText) => {
+        expect(createNetworkRule(ruleText, 0).isPatternPathIndependent()).toBe(true);
+    });
+
+    it.each([
+        '||example.com/path$removeparam=utm_source',
+        '||example.com/suche/?q$removeparam=source',
+        '||example.com:8080^$removeparam=utm_source',
+        'example.com$removeparam=utm_source',
+        String.raw`/^https:\/\/example\.com\//$removeparam=utm_source`,
+    ])('returns false for the path-scoped or unproven rule %s', (ruleText) => {
+        expect(createNetworkRule(ruleText, 0).isPatternPathIndependent()).toBe(false);
+    });
+});
+
 describe('Misc', () => {
     it('checks isHostLevelNetworkRule', () => {
         let rule;
