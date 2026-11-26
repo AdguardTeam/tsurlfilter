@@ -95,21 +95,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `image()`, `cross-fade()` and their `-webkit-*` variants) now match
   case-insensitively, so mixed-case function names such as `URL("...")` or
   `Image-Set("..." 1x)` can no longer be used to load external resources.
-- The `$popup` slot now keeps the rule with the highest priority instead of
-  the last matched one, so `@@||x.com^$popup,important` wins over
-  `||x.com^$popup` regardless of the rule order in the filter list.
-- A cosmetic exception rule (`$elemhide`, `$generichide`, `$specifichide`,
-  `$jsinject`) no longer decides a network request: it no longer allows a
-  request blocked by a rule matched for the same request, and no longer
-  suppresses a redirect or popup rule. A cosmetic modifier with an explicit
-  request type, e.g. `$generichide,script`, matches that type too, and the
-  blocking rule wins there as well. E.g. `||h.seznam.cz^` stays applied when
-  `@@||seznam.cz^$generichide` matches [AdguardBrowserExtension#3006].
-  `$replace` rules were already applied next to such an exception, only their
-  filtering log attribution changes. A `$content` exception still decides the
-  request, because the `$replace` handling relies on it landing in the basic
-  rule, and a document-level allowlist of the frame (`$document`, `$urlblock`,
-  `$genericblock`) keeps disabling filtering for its sub-requests.
+- `$popup` rules now follow rule priority instead of the filter list order,
+  so `@@||example.com^$popup,important` overrides `||example.com^$popup`.
+- Cosmetic exceptions (`$elemhide`, `$generichide`, `$specifichide`,
+  `$jsinject`) no longer allow requests blocked by network rules or cancel
+  `$redirect` and `$popup` rules, e.g. `||ads.example.com^` now applies next
+  to `@@||example.com^$generichide` [AdguardBrowserExtension#3006].
 
 ### Security
 

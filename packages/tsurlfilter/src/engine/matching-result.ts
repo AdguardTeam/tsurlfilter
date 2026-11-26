@@ -585,33 +585,29 @@ export class MatchingResult {
             return blockingRules;
         }
 
-        if (allowlistRules.length > 0) {
-            const allowlistRuleWithEmptyOption = allowlistRules
-                .find((allowlistRule) => allowlistRule.getAdvancedModifierValue() === '');
+        const allowlistRuleWithEmptyOption = allowlistRules
+            .find((allowlistRule) => allowlistRule.getAdvancedModifierValue() === '');
 
-            const result: NetworkRule[] = [];
-            blockingRules.forEach((blockRule) => {
-                if (allowlistRuleWithEmptyOption
-                    && !blockRule.isHigherPriority(allowlistRuleWithEmptyOption)) {
-                    result.push(allowlistRuleWithEmptyOption);
-                    return;
-                }
+        const result: NetworkRule[] = [];
+        blockingRules.forEach((blockRule) => {
+            if (allowlistRuleWithEmptyOption
+                && !blockRule.isHigherPriority(allowlistRuleWithEmptyOption)) {
+                result.push(allowlistRuleWithEmptyOption);
+                return;
+            }
 
-                const allowlistingRule = allowlistRules.find((a) => {
-                    return !blockRule.isHigherPriority(a) && allowlistPredicate.call(this, blockRule)(a);
-                });
-
-                if (allowlistingRule) {
-                    result.push(allowlistingRule);
-                } else {
-                    result.push(blockRule);
-                }
+            const allowlistingRule = allowlistRules.find((a) => {
+                return !blockRule.isHigherPriority(a) && allowlistPredicate.call(this, blockRule)(a);
             });
 
-            return result.filter((item, pos) => result.indexOf(item) === pos);
-        }
+            if (allowlistingRule) {
+                result.push(allowlistingRule);
+            } else {
+                result.push(blockRule);
+            }
+        });
 
-        return blockingRules;
+        return result.filter((item, pos) => result.indexOf(item) === pos);
     }
 
     /**

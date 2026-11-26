@@ -110,13 +110,13 @@ describe('Request Blocking Api - shouldCollapseElement', () => {
     it('collapses a frame blocked by a rule that a cosmetic exception does not outrank', () => {
         // Before the fix the cosmetic exception was the basic result, so a
         // blocked frame was never collapsed and stayed visible on the page.
-        mockMatchingResult(['||h.seznam.cz^', '@@||seznam.cz^$generichide']);
+        mockMatchingResult(['||ads.example.com^', '@@||example.com^$generichide']);
 
         expect(
             RequestBlockingApi.shouldCollapseElement(
                 1,
-                'https://h.seznam.cz/hit',
-                'https://seznam.cz/',
+                'https://ads.example.com/hit',
+                'https://example.com/',
                 RequestType.SubDocument,
             ),
         ).toBe(true);
@@ -179,6 +179,17 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         vi.resetAllMocks();
     });
 
+    it('blocking rule cancels a subdocument request despite a $generichide exception', () => {
+        const data = getGetBlockingResponseParamsData(
+            ['||ads.example.com^', '@@||example.com^$generichide'],
+            'https://ads.example.com/hit',
+            RequestType.SubDocument,
+            ContentType.Subdocument,
+        );
+
+        expect(RequestBlockingApi.getBlockingResponse(data)).toEqual({ cancel: true });
+    });
+
     describe('tab is new', () => {
         beforeEach(() => {
             vi.spyOn(tabsApi, 'isNewPopupTab').mockReturnValue(true);
@@ -205,7 +216,7 @@ describe('Request Blocking Api - getBlockingResponse', () => {
             expect(response).toEqual({ cancel: true });
         });
 
-        it('the popup exception, document request - do not close tab', () => {
+        it('does not close the tab when a $popup exception matches', () => {
             const rules = [
                 '||example.com^',
                 '@@||example.com^$popup',
@@ -662,25 +673,5 @@ describe('Request Blocking Api - closeTab publishes PopupBlocked event (AG-3736)
         expect(defaultFilteringLog.publishEvent).toHaveBeenCalledTimes(1);
 
         resolveRemove!();
-    });
-});
-
-describe('Request Blocking Api - cosmetic exception rules do not allow requests', () => {
-    const RULES = ['||h.seznam.cz^', '@@||seznam.cz^$generichide'];
-    const REQUEST_URL = 'https://h.seznam.cz/hit';
-
-    afterEach(() => {
-        vi.resetAllMocks();
-    });
-
-    it('cancels a subdocument request blocked by a rule', () => {
-        const data = getGetBlockingResponseParamsData(
-            RULES,
-            REQUEST_URL,
-            RequestType.SubDocument,
-            ContentType.Subdocument,
-        );
-
-        expect(RequestBlockingApi.getBlockingResponse(data)).toEqual({ cancel: true });
     });
 });
