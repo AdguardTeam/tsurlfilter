@@ -7,6 +7,7 @@ import {
 } from 'vitest';
 
 import { RegExpUtils } from '@adguard/agtree';
+import { SimpleRegex } from '@adguard/tsurlfilter';
 
 import * as errorUtilsModule from '../../../src/utils/error';
 import {
@@ -244,11 +245,13 @@ describe('String utils', () => {
             expect(isRegexPattern(pattern)).toBe(expected);
         });
 
-        // Delegating to RegExpUtils is not an option: it trims the value,
+        // The local copy cannot be replaced by RegExpUtils: it trims the value,
         // while this helper mirrors SimpleRegex and keeps the value as is.
-        it.each(patterns)('agrees with RegExpUtils for $pattern', ({ pattern, expected }) => {
+        // Both external predicates are checked, so a change in either package
+        // shows up here.
+        it.each(patterns)('agrees with RegExpUtils and SimpleRegex for $pattern', ({ pattern, expected }) => {
             expect(RegExpUtils.isRegexPattern(pattern)).toBe(expected);
-            expect(isRegexPattern(pattern)).toBe(expected);
+            expect(SimpleRegex.isRegexPattern(pattern)).toBe(expected);
         });
     });
 
