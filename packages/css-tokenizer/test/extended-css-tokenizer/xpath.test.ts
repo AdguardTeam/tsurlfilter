@@ -92,7 +92,8 @@ const PSEUDO_VALUES: PseudoValues = {
         String.raw`//div[@a="x'y"]`,
         // mixed quotes
         String.raw`//div[contains(text(),'x') and @a="y"]`,
-        // a dangling CSS-escaped quote does not start a literal
+        // an escaped quote opens a literal that never closes, so the previous
+        // handler's boundary is used
         String.raw`//div[contains(text(),\')]`,
         String.raw`//div[@a=\"x]`,
         // a plain apostrophe that never closes is plain text for the previous handler,
