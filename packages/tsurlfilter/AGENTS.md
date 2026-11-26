@@ -20,8 +20,7 @@ tables.
 - **Testing**: Vitest (with `@vitest/coverage-v8`)
 - **Linting**: ESLint (airbnb-typescript base), `eslint-plugin-jsdoc`,
   `eslint-plugin-boundaries`
-- **Output Formats**: ESM (`dist/es/`), UMD (`dist/tsurlfilter.umd.js`),
-  IIFE (`dist/tsurlfilter.iife.js`), type declarations (`dist/types/`)
+- **Output Formats**: ESM (`dist/es/`) and type declarations (`dist/types/`)
 - **Target Platform**: Node.js and browser environments
 - **Project Type**: Package inside the `tsurlfilter` pnpm monorepo
 

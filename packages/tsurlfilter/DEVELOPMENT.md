@@ -48,8 +48,7 @@ npx lerna run build --scope @adguard/tsurlfilter --include-dependencies
 pnpm --filter @adguard/tsurlfilter build
 ```
 
-This cleans `dist/`, emits type declarations, bundles via Rollup (ESM + UMD +
-IIFE), and builds metadata.
+This cleans `dist/`, emits type declarations, and bundles via Rollup (ESM).
 
 ### Running Locally
 
@@ -79,10 +78,11 @@ pnpm --filter @adguard/tsurlfilter lint:types
 pnpm --filter @adguard/tsurlfilter lint
 ```
 
-Do not write a regular expression literal inside a function or method. Define
-it once as a module-level `const` or a private class member, and give it a name
-that says what it matches. A named expression has one owner and one place to
-change.
+Prefer a module-level `const` or a private class member for a regular
+expression that is reused or that needs a name. Give it a name that says what
+it matches: a named expression has one owner and one place to change. A
+one-off literal may stay inside the function or method, and a `g` or `y`
+expression may need a local copy so that `lastIndex` starts from zero.
 
 ### Running Tests
 
@@ -118,8 +118,6 @@ pnpm --filter @adguard/tsurlfilter build
 Build output goes to `dist/`:
 
 - `dist/es/` — ESM bundles (main + subpath entries)
-- `dist/tsurlfilter.umd.js` — UMD bundle
-- `dist/tsurlfilter.iife.js` — IIFE bundle
 - `dist/types/` — TypeScript declarations
 
 ## Common Tasks

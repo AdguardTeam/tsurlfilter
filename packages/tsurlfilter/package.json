@@ -3,7 +3,6 @@
     "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
     "main": "dist/es/index.js",
     "module": "dist/es/index.js",
-    "iife": "dist/tsurlfilter.iife.js",
     "types": "dist/types/src/index.d.ts",
     "type": "module",
     "sideEffects": false,
@@ -13,8 +12,7 @@
     "exports": {
         ".": {
             "types": "./dist/types/src/index.d.ts",
-            "import": "./dist/es/index.js",
-            "require": "./dist/tsurlfilter.umd.js"
+            "import": "./dist/es/index.js"
         },
         "./es/request-type": {
             "import": "./dist/es/request-type.js",
@@ -28,8 +26,7 @@
             "import": "./dist/es/simple-regex.js",
             "types": "./dist/types/src/rules/simple-regex.d.ts"
         },
-        "./es/*": "./dist/es/*.js",
-        "./umd": "./dist/tsurlfilter.umd.js"
+        "./es/*": "./dist/es/*.js"
     },
     "typesVersions": {
         "*": {

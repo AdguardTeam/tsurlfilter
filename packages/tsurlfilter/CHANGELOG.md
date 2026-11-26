@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The package manifest no longer advertises UMD, IIFE and CommonJS entry points
+  that the ESM-only build does not produce. The `iife`, `exports.require` and
+  `./umd` entries are gone, so `require('@adguard/tsurlfilter')` fails with an
+  explicit `ERR_PACKAGE_PATH_NOT_EXPORTED` error instead of a missing
+  `dist/tsurlfilter.umd.js` file.
 - Allowlist rules generated for a domain are now anchored to the URL host, so an
   entry for `example.com` no longer disables filtering on hosts that only start
   with it, e.g. `example.community` or `example.com.evil.org`, and no longer
