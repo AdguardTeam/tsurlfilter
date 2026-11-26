@@ -6,6 +6,7 @@ import { RawRuleConverter } from '@adguard/agtree';
 import { EMPTY_STRING, LF } from '../common/constants';
 import { getErrorMessage } from '../common/error';
 import { FILTER_LIST_ID_NONE } from '../rules/rule';
+import { detachString } from '../utils/detach-string';
 import { findNextLineBreakIndex } from '../utils/string-utils';
 
 /**
@@ -195,7 +196,7 @@ export class FilterList {
                 const conversionResult = RawRuleConverter.convertToAdg(line);
                 if (conversionResult.isConverted) {
                     const originalIndex = data.originals.length;
-                    data.originals.push(line);
+                    data.originals.push(detachString(line));
 
                     for (let i = 0; i < conversionResult.result.length; i += 1) {
                         const conversionIndex = convertedBuffer.length;
@@ -218,9 +219,9 @@ export class FilterList {
                 }
             } catch (e) {
                 this.errors.push({
-                    rule: line,
+                    rule: detachString(line),
                     offset,
-                    message: getErrorMessage(e),
+                    message: detachString(getErrorMessage(e)),
                     filterId: this.filterId,
                 });
 
@@ -251,7 +252,7 @@ export class FilterList {
         }
 
         const [lineBreakStartIndex] = findNextLineBreakIndex(this.content, offset);
-        return this.content.slice(offset, lineBreakStartIndex);
+        return detachString(this.content.slice(offset, lineBreakStartIndex));
     }
 
     /**

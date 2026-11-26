@@ -103,6 +103,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `image()`, `cross-fade()` and their `-webkit-*` variants) now match
   case-insensitively, so mixed-case function names such as `URL("...")` or
   `Image-Set("..." 1x)` can no longer be used to load external resources.
+- Rule texts returned by `Engine.retrieveRuleText()`, rules held in
+  `MatchingResult` and `CosmeticResult`, and the originals and conversion
+  errors of a `FilterList` no longer keep the whole filter list text in
+  memory. Previously one retained rule text, matching result or conversion
+  error kept its filter list alive after the engine was replaced, so a
+  long-lived consumer, such as a filtering log or a per-tab cache, held the
+  filter lists of every replaced engine.
 
 ### Security
 

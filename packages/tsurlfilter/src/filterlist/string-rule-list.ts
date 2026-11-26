@@ -1,3 +1,4 @@
+import { detachString } from '../utils/detach-string';
 import { findNextLineBreakIndex } from '../utils/string-utils';
 
 import { StringLineReader } from './reader/string-line-reader';
@@ -103,10 +104,7 @@ export class StringRuleList implements IRuleList {
 
         const [endOfLine] = findNextLineBreakIndex(this.rulesText, ruleIdx);
 
-        // Prevent memory leaks by splitting the string into an array and then joining it back.
-        // This ensures the returned string is a completely new copy, rather than a slice referencing the original,
-        // which could prevent the original string from being garbage collected.
-        const line = this.rulesText.slice(ruleIdx, endOfLine).split('').join('');
+        const line = detachString(this.rulesText.slice(ruleIdx, endOfLine));
 
         if (!line) {
             return null;
