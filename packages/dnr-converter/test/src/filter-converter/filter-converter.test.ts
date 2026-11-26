@@ -136,7 +136,7 @@ describe('FilterConverter', () => {
             '||example.org^$domain=~//',
             '||example.org^$denyallow=/',
             String.raw`||example.org^$denyallow=/a\/`,
-            '||example.org^$domain=~/|example.org',
+            String.raw`||example.org^$domain=/a\/`,
         ])('reports a slash-led domain value that is not a regexp literal: %s', async (text) => {
             const filter = createFilter([text]);
             const [{ ruleset, errors }] = await converter.convert([filter]);
@@ -176,7 +176,7 @@ describe('FilterConverter', () => {
             const declarativeRules = ruleset.getDeclarativeRules();
             expect(errors).toHaveLength(0);
             expect(declarativeRules).toHaveLength(1);
-            expect(declarativeRules[0].condition.urlFilter).toBeDefined();
+            expect(declarativeRules[0].condition.urlFilter).toBe(String.raw`/a\/`);
             expect(declarativeRules[0].condition.regexFilter).toBeUndefined();
             expect(ruleset.getRegexpRulesCount()).toBe(0);
         });
