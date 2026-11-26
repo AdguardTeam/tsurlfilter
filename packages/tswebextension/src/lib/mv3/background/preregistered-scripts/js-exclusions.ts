@@ -406,6 +406,21 @@ const matchesWildcardHostOrSubdomain = (host: string, hostname: string): boolean
     return false;
 };
 
+/**
+ * Checks whether the text before the first `*` of a token matches the hostname
+ * or, for a `||` anchor, one of its label-boundary parents.
+ *
+ * The engine expands `*` to `.*` and leaves the end of the pattern open, so the
+ * token can run past the hostname into the path: `||youtube.com*ads` matches
+ * `https://youtube.com/ads`, and the tail can be completed by any path. The
+ * anchored text is therefore the whole reach condition.
+ *
+ * @param host Host token of the pattern.
+ * @param hostname Hostname to check.
+ * @param allowSubdomains Whether the pattern anchor accepts subdomains.
+ *
+ * @returns True when the token may run past the hostname.
+ */
 const matchesWildcardHostPrefix = (
     host: string,
     hostname: string,
@@ -830,7 +845,7 @@ const buildHostExclusions = (
             || patternHost.rest === '^'
             || (patternHost.rest === '/' && patternHost.scheme === ANY_SCHEME);
         if (coversEveryUrl) {
-            return { patterns: [], dynamic: text };
+            return { patterns: [], dynamic: `${text}: the exception covers every URL of the host` };
         }
 
         disabling.push({ rule, patternHost, writtenText: text });

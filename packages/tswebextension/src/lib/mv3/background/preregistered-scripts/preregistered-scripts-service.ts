@@ -45,7 +45,9 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  */
 type RegistrationPlan = {
     /**
-     * Hostnames the descriptors cover.
+     * Hostnames eligible for registration: the denominator of the coverage
+     * log. A host without rules or without committed files counts as
+     * uncovered although it cannot be registered at all.
      */
     registeredHostnames: readonly string[];
 

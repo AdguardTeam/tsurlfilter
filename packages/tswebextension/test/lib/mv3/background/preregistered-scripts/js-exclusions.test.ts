@@ -88,7 +88,8 @@ describe('resolveHostExclusions', () => {
         // Excluding `*://youtube.com/*` would be the same as not registering
         // the host at all, which is what the dynamic path does.
         expect(exclusions.size).toBe(0);
-        expect(dynamicHosts.get('youtube.com')).toBe('@@||youtube.com^$document');
+        expect(dynamicHosts.get('youtube.com'))
+            .toBe('@@||youtube.com^$document: the exception covers every URL of the host');
     });
 
     it('keeps a host dynamic when an outranking host-less exception keeps JS on', () => {
@@ -143,7 +144,8 @@ describe('resolveHostExclusions', () => {
         // `matches`: the registration could never inject, so the host takes
         // the dynamic path instead of counting as covered.
         expect(exclusions.size).toBe(0);
-        expect(dynamicHosts.get('youtube.com')).toBe('@@||youtube.com/$document');
+        expect(dynamicHosts.get('youtube.com'))
+            .toBe('@@||youtube.com/$document: the exception covers every URL of the host');
     });
 
     it('keeps a root-page exception that names one scheme as an exclusion', () => {
