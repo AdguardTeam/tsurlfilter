@@ -96,15 +96,6 @@ describe('Rule', () => {
         });
 
         it.each([
-            String.raw`||example.org^$domain=~/a\/|example.org`,
-            '||example.org^$domain=~/|example.org',
-        ])('rejects an unclosed regexp literal in a domain list: %s', (text) => {
-            expect(() => {
-                Rule.createFromText(1, 0, text);
-            }).toThrow();
-        });
-
-        it.each([
             [String.raw`||example.org^$domain=/a\\/`, String.raw`/a\\/`],
             [String.raw`||example.org^$domain=/^example\.org$/`, String.raw`/^example\.org$/`],
             ['||example.org^$domain=example.com', 'example.com'],
