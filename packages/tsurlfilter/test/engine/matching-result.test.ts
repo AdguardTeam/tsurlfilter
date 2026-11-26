@@ -1375,8 +1375,8 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
     });
 
     it('keeps the blocking rule as a basic result when a cosmetic exception matches', () => {
-        const blockingRuleText = '||h.seznam.cz^';
-        const cosmeticExceptionRuleText = '@@||seznam.cz^$generichide';
+        const blockingRuleText = '||ads.example.com^';
+        const cosmeticExceptionRuleText = '@@||example.com^$generichide';
 
         const rules = [
             createNetworkRule(blockingRuleText, 0),
@@ -1399,7 +1399,7 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
     });
 
     it('returns the cosmetic exception as a basic result when nothing blocks the request', () => {
-        const cosmeticExceptionRuleText = '@@||seznam.cz^$generichide';
+        const cosmeticExceptionRuleText = '@@||example.com^$generichide';
 
         const result = new MatchingResult([createNetworkRule(cosmeticExceptionRuleText, 0)], null);
 

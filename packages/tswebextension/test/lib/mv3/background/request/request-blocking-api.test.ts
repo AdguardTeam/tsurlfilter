@@ -198,8 +198,8 @@ describe('MV3 RequestBlockingApi - closeTab publishes PopupBlocked event (AG-373
         const TAB_ID = 11;
         const data = {
             ...makeBlockingResponseParams(
-                ['||h.seznam.cz^$popup', '@@||seznam.cz^$generichide'],
-                'http://h.seznam.cz/popup',
+                ['||ads.example.com^$popup', '@@||example.com^$generichide'],
+                'http://ads.example.com/popup',
                 RequestType.Document,
                 ContentType.Document,
             ),

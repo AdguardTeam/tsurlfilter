@@ -746,8 +746,7 @@ export class WebRequestApi {
          * MatchingResult.getBasicResult() is not good enough: it answers "what decides this
          * request", which is not the same question as "what blocked this document". A matching
          * `$replace` rule makes it return `null` while the browser has already blocked the
-         * document by DNR, and a cosmetic exception that outranks a blocking rule makes it
-         * return the exception. `getDocumentBlockingResult()` answers the narrow question
+         * document by DNR. `getDocumentBlockingResult()` answers the narrow question
          * instead: it returns the basic rule only when that rule is a document blocking rule
          * and the request is not covered by a document-level allowlist.
          *

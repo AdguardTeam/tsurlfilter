@@ -264,9 +264,7 @@ export class MatchingResult {
      * insert: `basicRule`, `cosmeticExceptionRule` and `popupRule`. Without the
      * comparison the winner would be the last matched rule, i.e. the result
      * would depend on the order of rules in the filter lists. Slots that keep an
-     * array do not need it here: their getters resolve blocking/allowlist
-     * conflicts with {@link MatchingResult.filterAdvancedModifierRules} and
-     * {@link MatchingResult.getHighestPriorityRule}.
+     * array resolve priorities in their getters.
      *
      * @param current Rule currently kept in the slot.
      * @param candidate Rule matched for the same request.
@@ -353,12 +351,8 @@ export class MatchingResult {
         // log keeps showing it.
         //
         // A document-level allowlist (`$document`, `$urlblock`, `$genericblock`,
-        // `$content`) is not such a rule: it disables filtering for the document
-        // and its sub-requests, so it stays the basic result and keeps
-        // `isFilteringDisabled()` and the `$cookie`/`$csp`/`$removeheader`
-        // handling of those sub-requests intact. A `$content` exception never
-        // reaches this branch at all: it is stored in `basicRule` on purpose,
-        // because the `$replace` handling above relies on it.
+        // `$content`) stays the basic result: `isFilteringDisabled()` and
+        // `getCookieRules()` of the frame's sub-requests depend on it.
         if (this.cosmeticExceptionRule
             && (!basic
                 || (basic.isAllowlist()

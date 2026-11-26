@@ -107,7 +107,7 @@ describe('Request Blocking Api - shouldCollapseElement', () => {
         ).toBe(true);
     });
 
-    it('collapses a frame blocked by a rule that a cosmetic exception does not outrank', () => {
+    it('collapses a frame blocked by a rule despite a $generichide exception', () => {
         // Before the fix the cosmetic exception was the basic result, so a
         // blocked frame was never collapsed and stayed visible on the page.
         mockMatchingResult(['||ads.example.com^', '@@||example.com^$generichide']);

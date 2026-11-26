@@ -1678,8 +1678,8 @@ describe('Domain-scoped rules on trailing underscore labels', () => {
 });
 
 describe('Cosmetic exceptions and network blocking', () => {
-    const blockingRuleText = '||h.seznam.cz^';
-    const cosmeticExceptionRuleText = '@@||seznam.cz^$generichide';
+    const blockingRuleText = '||ads.example.com^';
+    const cosmeticExceptionRuleText = '@@||example.com^$generichide';
 
     /**
      * Returns the text of the basic result rule of the match.
@@ -1725,8 +1725,8 @@ describe('Cosmetic exceptions and network blocking', () => {
         });
 
         const request = new Request(
-            'https://h.seznam.cz/hit',
-            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            'https://ads.example.com/hit',
+            'https://example.com/nastaveni-souhlasu',
             requestType,
         );
 
@@ -1734,9 +1734,9 @@ describe('Cosmetic exceptions and network blocking', () => {
     });
 
     it.each([
-        '@@||seznam.cz^$elemhide',
-        '@@||seznam.cz^$specifichide',
-        '@@||seznam.cz^$jsinject',
+        '@@||example.com^$elemhide',
+        '@@||example.com^$specifichide',
+        '@@||example.com^$jsinject',
     ])('keeps the blocking rule with the %s exception', (exceptionRule) => {
         const engine = Engine.createSync({
             filters: [{
@@ -1746,8 +1746,8 @@ describe('Cosmetic exceptions and network blocking', () => {
         });
 
         const request = new Request(
-            'https://h.seznam.cz/hit',
-            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            'https://ads.example.com/hit',
+            'https://example.com/nastaveni-souhlasu',
             RequestType.SubDocument,
         );
 
@@ -1763,8 +1763,8 @@ describe('Cosmetic exceptions and network blocking', () => {
         });
 
         const request = new Request(
-            'https://h.seznam.cz/hit',
-            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            'https://ads.example.com/hit',
+            'https://example.com/nastaveni-souhlasu',
             RequestType.SubDocument,
         );
 
@@ -1772,8 +1772,8 @@ describe('Cosmetic exceptions and network blocking', () => {
     });
 
     it.each([
-        ['a domain-scoped blocking rule', '||h.seznam.cz^$domain=cmp.seznam.cz', cosmeticExceptionRuleText],
-        ['an $important cosmetic exception', blockingRuleText, '@@||seznam.cz^$generichide,important'],
+        ['a domain-scoped blocking rule', '||ads.example.com^$domain=example.com', cosmeticExceptionRuleText],
+        ['an $important cosmetic exception', blockingRuleText, '@@||example.com^$generichide,important'],
     ])('keeps the blocking rule next to %s', (_name, blockingRule, exceptionRule) => {
         const engine = Engine.createSync({
             filters: [{
@@ -1783,8 +1783,8 @@ describe('Cosmetic exceptions and network blocking', () => {
         });
 
         const request = new Request(
-            'https://h.seznam.cz/hit',
-            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            'https://ads.example.com/hit',
+            'https://example.com/nastaveni-souhlasu',
             RequestType.SubDocument,
         );
 
@@ -1795,12 +1795,12 @@ describe('Cosmetic exceptions and network blocking', () => {
         const engine = Engine.createSync({
             filters: [{
                 id: 1,
-                content: ['||cmp.seznam.cz^', cosmeticExceptionRuleText].join('\n'),
+                content: ['||example.com^', cosmeticExceptionRuleText].join('\n'),
             }],
         });
 
         const request = new Request(
-            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            'https://example.com/nastaveni-souhlasu',
             null,
             RequestType.Document,
         );
@@ -1816,13 +1816,13 @@ describe('Cosmetic exceptions and network blocking', () => {
         const engine = Engine.createSync({
             filters: [{
                 id: 1,
-                content: ['@@||h.seznam.cz^', cosmeticExceptionRuleText].join('\n'),
+                content: ['@@||ads.example.com^', cosmeticExceptionRuleText].join('\n'),
             }],
         });
 
         const request = new Request(
-            'https://h.seznam.cz/hit',
-            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            'https://ads.example.com/hit',
+            'https://example.com/nastaveni-souhlasu',
             RequestType.SubDocument,
         );
 
@@ -1854,20 +1854,20 @@ describe('Cosmetic exceptions and network blocking', () => {
         const engine = Engine.createSync({
             filters: [{
                 id: 1,
-                content: ['||h.seznam.cz^', '@@||seznam.cz^$content'].join('\n'),
+                content: ['||ads.example.com^', '@@||example.com^$content'].join('\n'),
             }],
         });
 
         const request = new Request(
-            'https://h.seznam.cz/hit',
-            'https://seznam.cz/',
+            'https://ads.example.com/hit',
+            'https://example.com/',
             RequestType.SubDocument,
         );
 
         // `$content` is stored in the cosmetic exception group, but it is kept in
         // `basicRule` on purpose: the `$replace` handling relies on it, so it
         // still decides the request.
-        expect(getBasicResultText(engine, request)).toBe('@@||seznam.cz^$content');
+        expect(getBasicResultText(engine, request)).toBe('@@||example.com^$content');
     });
 
     it('keeps the document-level allowlist of the frame next to a cosmetic exception', () => {
@@ -1899,47 +1899,47 @@ describe('Cosmetic exceptions and network blocking', () => {
     });
 
     it.each([
-        ['the blocking rule comes first', ['||x.com^$popup', '@@||x.com^$popup,important']],
-        ['the exception comes first', ['@@||x.com^$popup,important', '||x.com^$popup']],
+        ['the blocking rule comes first', ['||example.com^$popup', '@@||example.com^$popup,important']],
+        ['the exception comes first', ['@@||example.com^$popup,important', '||example.com^$popup']],
     ])('keeps the higher priority popup rule when %s', (_name, rules) => {
         const engine = Engine.createSync({ filters: [{ id: 1, content: rules.join('\n') }] });
 
-        const request = new Request('https://x.com/popup', 'https://example.org/', RequestType.Document);
+        const request = new Request('https://example.com/popup', 'https://example.org/', RequestType.Document);
         const popupRule = engine.matchRequest(request).getPopupRule();
 
         // The popup slot keeps the highest priority rule, not the last matched
         // one, so the order of the rules does not decide whether the popup of an
         // excepted site is closed.
         expect(engine.retrieveRuleText(popupRule!.getFilterListId(), popupRule!.getIndex()))
-            .toBe('@@||x.com^$popup,important');
+            .toBe('@@||example.com^$popup,important');
     });
 
     it('keeps an $important blocking rule blocking', () => {
         const engine = Engine.createSync({
             filters: [{
                 id: 1,
-                content: ['||h.seznam.cz^$important', cosmeticExceptionRuleText].join('\n'),
+                content: ['||ads.example.com^$important', cosmeticExceptionRuleText].join('\n'),
             }],
         });
 
         const request = new Request(
-            'https://h.seznam.cz/hit',
-            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            'https://ads.example.com/hit',
+            'https://example.com/nastaveni-souhlasu',
             RequestType.SubDocument,
         );
 
-        expect(getBasicResultText(engine, request)).toBe('||h.seznam.cz^$important');
+        expect(getBasicResultText(engine, request)).toBe('||ads.example.com^$important');
     });
 
     it.each([
         // The engine normalizes the resource name: `noop.js` becomes `noopjs`.
-        ['a redirect rule', ['||h.seznam.cz^$redirect=noop.js'], '||h.seznam.cz^$redirect=noopjs'],
+        ['a redirect rule', ['||ads.example.com^$redirect=noop.js'], '||ads.example.com^$redirect=noopjs'],
         [
             'a redirect rule over a blocking rule',
-            ['||h.seznam.cz^', '||h.seznam.cz^$redirect=noop.js'],
-            '||h.seznam.cz^$redirect=noopjs',
+            ['||ads.example.com^', '||ads.example.com^$redirect=noop.js'],
+            '||ads.example.com^$redirect=noopjs',
         ],
-        ['a popup rule', ['||h.seznam.cz^$popup'], '||h.seznam.cz^$popup'],
+        ['a popup rule', ['||ads.example.com^$popup'], '||ads.example.com^$popup'],
     ])('does not suppress %s', (_name, rules, expected) => {
         const engine = Engine.createSync({
             filters: [{
@@ -1949,8 +1949,8 @@ describe('Cosmetic exceptions and network blocking', () => {
         });
 
         const request = new Request(
-            'https://h.seznam.cz/hit',
-            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            'https://ads.example.com/hit',
+            'https://example.com/nastaveni-souhlasu',
             RequestType.Document,
         );
 
@@ -1961,13 +1961,13 @@ describe('Cosmetic exceptions and network blocking', () => {
         const engine = Engine.createSync({
             filters: [{
                 id: 1,
-                content: ['||h.seznam.cz^$replace=/X/Y/', cosmeticExceptionRuleText].join('\n'),
+                content: ['||ads.example.com^$replace=/X/Y/', cosmeticExceptionRuleText].join('\n'),
             }],
         });
 
         const request = new Request(
-            'https://h.seznam.cz/hit',
-            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            'https://ads.example.com/hit',
+            'https://example.com/nastaveni-souhlasu',
             RequestType.Document,
         );
 
@@ -1986,7 +1986,7 @@ describe('Cosmetic exceptions and network blocking', () => {
 
         const frameUrl = 'https://example.org/page';
         const frameRule = engine.matchFrame(frameUrl);
-        const request = new Request('https://h.seznam.cz/hit', frameUrl, RequestType.SubDocument);
+        const request = new Request('https://ads.example.com/hit', frameUrl, RequestType.SubDocument);
         const basicResult = engine.matchRequest(request, frameRule).getBasicResult();
 
         expect(basicResult).not.toBeNull();
@@ -2007,7 +2007,7 @@ describe('Cosmetic exceptions and network blocking', () => {
         });
 
         const request = new Request(
-            'https://cmp.seznam.cz/nastaveni-souhlasu',
+            'https://example.com/nastaveni-souhlasu',
             null,
             RequestType.Document,
         );
