@@ -55,23 +55,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   never matched a host, so a negated value left an empty restriction and
   the rule applied on every site. `$domain=/a\/` was already rejected
   because its pattern did not compile.
-- In MV3, a `$domain`, `$to` or `$denyallow` value that starts with a slash
-  but is not a regexp literal, e.g. `$domain=~/a\/`, is now a conversion
-  error. Previously the converter dropped such a value from the DNR domain
-  condition. As a result, a negated value, a `$to` value or a `$denyallow`
-  value no longer limited the rule. A permitted value disappeared from a longer
-  `$domain` list, e.g. `$domain=example.com|/a\/`. A permitted `$domain` value
-  alone in the list was reported as an empty `initiatorDomains` error because
-  the list became empty. A value without a closing slash, e.g. `$domain=/a/i`,
-  stayed in the condition as an invalid `initiatorDomains` entry. MV2 rejects
-  such a value in `$domain` and `$denyallow` too. MV2 does not validate `$to`,
-  so it keeps such a rule. A negated `$to` value applies the rule on every site
-  in MV2, while MV3 now reports the rule (via [@adguard/dnr-converter]).
-- In MV3, a regexp-literal `$domain`, `$to` or `$denyallow` value whose
-  pattern does not compile, e.g. `$domain=/a[/`, is now rejected at parse
-  time instead of being dropped from the domain condition. MV2 rejects such a
-  `$domain` and `$denyallow` value too. MV2 does not validate `$to`. In MV2, a
-  permitted value never matches a host, and a negated value applies the rule on
+- In MV3, a `$domain`, `$to` or `$denyallow` value with an invalid regexp,
+  e.g. `$domain=~/a\/` or `$domain=~/a[/`, is now a conversion error instead
+  of producing a rule with a wrong domain condition, e.g. one that applies on
   every site (via [@adguard/dnr-converter]).
 - A rule pattern with an escaped closing slash, e.g. `/a\/$script`, is now a
   basic MV3 rule instead of an unsupported regexp (via
