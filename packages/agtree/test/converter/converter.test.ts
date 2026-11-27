@@ -69,7 +69,78 @@ describe('Converter integration tests', () => {
                     actual: "example.com##^script:has-text(d.createElement('script'))",
                     expected: ["example.com$$script:contains(/d\\.createElement\\('script'\\)/i)"],
                 },
+                {
+                    // A right parenthesis inside a single-quoted XPath literal must not close the pseudo-class
+                    actual: String.raw`example.com##^div:xpath(//div[contains(text(),')')])`,
+                    expected: [String.raw`example.com$$div:xpath(//div[contains(text(),')')])`],
+                },
+                {
+                    // XPath literals have no escapes, so a reverse solidus does not escape the closing quote
+                    actual: String.raw`example.com##^div:xpath(//div[@a="C:\"])`,
+                    expected: [String.raw`example.com$$div:xpath(//div[@a="C:\"])`],
+                },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+            });
+        });
+
+        describe('should throw error on an unterminated :xpath() literal', () => {
+            test.each([
+                {
+                    // A plain quotation mark that never closes is a typo, not a literal.
+                    // Neither the XPath scan nor the previous handler's scan finds the
+                    // closing parenthesis, so the rule must not load silently.
+                    actual: String.raw`example.com##^div:xpath(//div[@a="x])`,
+                    expected: "Expected '<)-token>', but got 'end of input'",
+                },
+            ])("should throw error '$expected' on '$actual'", ({ actual, expected }) => {
+                expect(() => RuleConverter.convertToAdg(RuleParser.parse(actual)))
+                    .toThrowError(expected);
+            });
+        });
+
+        describe('should keep the previous :xpath() argument boundary', () => {
+            test.each([
+                {
+                    // The previous handler ignored apostrophes, so a single-quoted literal
+                    // that never closes did not stop the rule from loading
+                    actual: String.raw`example.com##^div:xpath(//div[@a='x])`,
+                    expected: [String.raw`example.com$$div:xpath(//div[@a='x])`],
+                },
+                {
+                    // The XPath scan ends inside the literal opened by the last quote. The
+                    // previous handler treated the escaped `"` as plain text, so it closed
+                    // the literal at the next `"` and the rule keeps loading.
+                    actual: String.raw`example.com##^div:xpath(//div[@a="x\""])`,
+                    expected: [String.raw`example.com$$div:xpath(//div[@a="x\""])`],
+                },
+                {
+                    // The XPath scan ends inside the apostrophe literal that the final quote
+                    // opens. The previous handler treated apostrophes as plain text, so the
+                    // `:style()` stays outside the argument and the rule converts as before.
+                    actual: String.raw`example.com#?#div:xpath(//div[contains(text(),\')]):style(content:'x')`,
+                    expected: [
+                        String.raw`example.com#$?#div:xpath(//div[contains(text(),\')]) { content:'x' }`,
+                    ],
+                },
+                {
+                    // Same as above: the XPath scan ends inside the apostrophe literal that
+                    // the `url()` argument opens, and the previous handler keeps the
+                    // `:style()` value outside the argument.
+                    actual: String.raw`example.com#?#div:xpath(//div[@a='x]):style(background:url('a'))`,
+                    expected: [
+                        String.raw`example.com#$?#div:xpath(//div[@a='x]) { background:url('a') }`,
+                    ],
+                },
+                {
+                    // The same boundary applies when the `:style()` value contains a
+                    // parenthesis between the quotes
+                    actual: String.raw`example.com#?#div:xpath(//div[contains(text(),\')]):style(content:')')`,
+                    expected: [
+                        String.raw`example.com#$?#div:xpath(//div[contains(text(),\')]) { content:')' }`,
+                    ],
+                },
+            ])("should keep the previous boundary on '$actual'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
@@ -353,6 +424,11 @@ describe('Converter integration tests', () => {
                 {
                     actual: 'example.org#?##case26:remove()',
                     expected: ['example.org#$?##case26 { remove: true; }'],
+                },
+                {
+                    // A right parenthesis inside a single-quoted XPath literal must not close the pseudo-class
+                    actual: String.raw`example.com#?#div:xpath(//div[contains(text(),')')]):style(color:red)`,
+                    expected: [String.raw`example.com#$?#div:xpath(//div[contains(text(),')')]) { color:red }`],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
