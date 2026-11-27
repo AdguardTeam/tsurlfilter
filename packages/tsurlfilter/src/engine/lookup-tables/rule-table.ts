@@ -7,8 +7,9 @@ import { TrieLookupTable } from './trie-lookup-table';
 /**
  * Lookup table a network rule is stored in.
  *
- * The order is the order `NetworkEngine.matchAll()` walks the tables in, and
- * it decides a tie between two matched rules of equal priority.
+ * The order of the members carries no meaning: the order the engine walks the
+ * tables in — including the tie between two matched rules of equal priority —
+ * lives in {@link RULE_TABLE_ORDER}.
  */
 export enum RuleTable {
     /**

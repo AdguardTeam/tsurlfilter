@@ -115,6 +115,43 @@ describe('resolveHostExclusions', () => {
         expect(quiet.exclusions.size).toBe(0);
     });
 
+    it('keeps a host registered when a host-less keeping exception is its only exception', () => {
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@$generichide,domain=youtube.com\n',
+        }]);
+
+        // The engine keeps JS on: `$generichide` disables cosmetic filtering
+        // only. Such a rule must not cost the host its registration, whatever
+        // its pattern — the base filter ships exactly this shape.
+        expect(exclusions.size).toBe(0);
+        expect(dynamicHosts.size).toBe(0);
+    });
+
+    it('keeps a host registered when an unanchored keeping exception carries a wildcard host', () => {
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@||youtube.*^$generichide\n',
+        }]);
+
+        // A wildcard host would otherwise send the host dynamic, but a rule
+        // that keeps JS injection on cannot decide a page.
+        expect(exclusions.size).toBe(0);
+        expect(dynamicHosts.size).toBe(0);
+    });
+
+    it('excludes the pages of a scheme-anchored host-wide exception', () => {
+        const { exclusions, dynamicHosts } = scan([{
+            filterId: 2,
+            content: '@@|https://youtube.com^$document\n',
+        }]);
+
+        // The exception disables https pages only, so the exclusion still says
+        // something the registration's `matches` does not.
+        expect(exclusions.get('youtube.com')).toEqual(['https://youtube.com/*']);
+        expect(dynamicHosts.size).toBe(0);
+    });
+
     it('drops an unsafe exception of an untrusted remote filter', () => {
         // The engine creates such a filter with `ignoreUnsafe`, so a rule with
         // an advanced modifier never decides a page there.

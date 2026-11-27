@@ -775,6 +775,17 @@ const buildHostExclusions = (
             continue;
         }
 
+        // Checked before any reach branch: a rule that keeps JS injection on
+        // cannot decide a page on its own, whatever its pattern — the engine
+        // keeps JS on where such a rule wins the cosmetic slot. It only
+        // matters as a shield against a disabling rule, so it never makes a
+        // host dynamic by itself, and a host-less `$generichide,domain=…` rule
+        // of the base filter must not cost the host its registration.
+        if (!rule.isOptionEnabled(NetworkRuleOption.Jsinject)) {
+            keeping.push({ rule, writtenText: text });
+            continue;
+        }
+
         // A pattern that names no host can still match every URL: `@@$document`
         // and `@@$jsinject` decide every page of every host, so no
         // registration of any host is safe there.
@@ -809,14 +820,6 @@ const buildHostExclusions = (
                 };
             }
 
-            // A rule that keeps JS injection on cannot decide a page on its
-            // own, but it can outrank a disabling rule of another slot, so it
-            // has to reach the shield below instead of the report.
-            if (!rule.isOptionEnabled(NetworkRuleOption.Jsinject)) {
-                keeping.push({ rule, writtenText: text });
-                continue;
-            }
-
             unanchored.push(text);
             continue;
         }
@@ -831,21 +834,25 @@ const buildHostExclusions = (
             };
         }
 
-        if (!rule.isOptionEnabled(NetworkRuleOption.Jsinject)) {
-            keeping.push({ rule, writtenText: text });
-            continue;
-        }
-
-        // A rule that covers every URL of the host would exclude the whole
-        // registration: the host then stays on the dynamic path, which is the
-        // same thing without a registration to maintain. A trailing `/`
-        // reaches every path too, but a scheme-anchored one still spares the
-        // other scheme, so only the scheme-agnostic spelling lands here.
-        const coversEveryUrl = patternHost.rest === ''
+        // `''`, `'^'` and `'/'` are the three spellings of "every path" of the
+        // host. A scheme-agnostic one would exclude the whole registration,
+        // so the host stays on the dynamic path instead; a scheme-anchored one
+        // still spares the other scheme, where the engine keeps JS on, and is
+        // read as `/` before the pattern is built.
+        const coversEveryPath = patternHost.rest === ''
             || patternHost.rest === '^'
-            || (patternHost.rest === '/' && patternHost.scheme === ANY_SCHEME);
-        if (coversEveryUrl) {
-            return { patterns: [], dynamic: `${text}: the exception covers every URL of the host` };
+            || patternHost.rest === '/';
+        if (coversEveryPath) {
+            if (patternHost.scheme === ANY_SCHEME) {
+                return { patterns: [], dynamic: `${text}: the exception covers every URL of the host` };
+            }
+
+            disabling.push({
+                rule,
+                patternHost: { ...patternHost, rest: '/' },
+                writtenText: text,
+            });
+            continue;
         }
 
         disabling.push({ rule, patternHost, writtenText: text });

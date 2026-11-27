@@ -10,15 +10,18 @@ import { NetworkRule } from '../../../src/rules/network-rule';
 import { createRuleStorage } from './lookup-table';
 
 describe('getRuleTable', () => {
-    it('walks every table exactly once, in the order the engine uses', () => {
-        // The engine adds, matches and counts through this array; a table left
+    it('lists every table exactly once', () => {
+        // The engine adds, matches and counts through this array: a table left
         // out of it would never be filled, and a duplicate would be visited
-        // twice.
+        // twice. Which table comes first is decided by the array itself, not
+        // by the enum, so only the membership is checked here.
         const everyTable = Object.values(RuleTable)
-            .filter((value): value is RuleTable => typeof value === 'number');
+            .filter((value): value is RuleTable => typeof value === 'number')
+            .sort((a, b) => a - b);
 
-        expect([...RULE_TABLE_ORDER].sort()).toEqual(everyTable.sort());
+        expect([...RULE_TABLE_ORDER].sort((a, b) => a - b)).toEqual(everyTable);
     });
+
     it.each([
         // `||host^` and `||host/path` are keyed by hostname.
         ['||example.org^', RuleTable.Hostname],

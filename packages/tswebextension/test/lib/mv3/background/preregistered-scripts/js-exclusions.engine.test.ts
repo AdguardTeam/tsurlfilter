@@ -90,6 +90,14 @@ const CASES: { name: string; content: string; dynamic: string[] }[] = [
         dynamic: HOSTS,
     },
     { name: 'wildcard token of another site', content: '@@||tube.com*ads$document', dynamic: [] },
+    { name: 'host-less keeping exception with $domain', content: '@@$generichide,domain=youtube.com', dynamic: [] },
+    {
+        name: 'unanchored keeping exception with a wildcard host',
+        content: '@@||youtube.*^$generichide',
+        dynamic: [],
+    },
+    { name: 'scheme-anchored host-wide exception', content: '@@|https://youtube.com^$document', dynamic: [] },
+    { name: 'scheme-anchored root-page exception', content: '@@|https://youtube.com/$document', dynamic: [] },
 ];
 
 /**
