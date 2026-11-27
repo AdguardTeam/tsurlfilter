@@ -205,6 +205,12 @@ You MUST follow the following rules for EVERY task that you perform:
   changelogs are user-facing. Only user-visible behavioral changes belong in
   them; describe internal changes in the PR or commit message instead.
 
+- Each `CHANGELOG.md` entry MUST be written for a user: one or two sentences
+  about what changes for them, about as long as the neighboring entries, one
+  bullet per user-visible effect. Do not narrate the old behavior or what did
+  not change, and leave out internal mechanics and follow-up tickets. When an
+  example needs a domain, use `example.com` or `example.org`.
+
 - When making changes to a package, consider updating changelogs of dependent
   packages that may be affected.
 
