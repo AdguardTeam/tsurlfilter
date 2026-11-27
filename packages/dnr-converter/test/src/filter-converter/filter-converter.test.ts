@@ -131,6 +131,67 @@ describe('FilterConverter', () => {
             expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
         });
 
+        it.each([
+            String.raw`||example.org^$domain=~/a\/`,
+            '||example.org^$domain=~//',
+            '||example.org^$denyallow=/',
+            String.raw`||example.org^$denyallow=/a\/`,
+            String.raw`||example.org^$domain=/a\/`,
+        ])('reports a slash-led domain value that is not a regexp literal: %s', async (text) => {
+            const filter = createFilter([text]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toBeInstanceOf(RuleScanError);
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it.each([
+            '||example.org^$domain=/a[/',
+            '||example.org^$denyallow=/(/',
+        ])('reports a regexp domain literal that does not compile: %s', async (text) => {
+            const filter = createFilter([text]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toBeInstanceOf(RuleScanError);
+            expect(errors[0].message).toContain('Invalid regular expression as domain pattern');
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+        });
+
+        it('still converts a plain domain value', async () => {
+            const filter = createFilter(['||example.org^$domain=example.com']);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(errors).toHaveLength(0);
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['example.com']);
+        });
+
+        it('treats an escaped closing slash in the pattern as a basic rule', async () => {
+            const filter = createFilter([String.raw`/a\/$script`]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.urlFilter).toBe(String.raw`/a\/`);
+            expect(declarativeRules[0].condition.regexFilter).toBeUndefined();
+            expect(ruleset.getRegexpRulesCount()).toBe(0);
+        });
+
+        it('treats an unescaped closing slash in the pattern as a regexp rule', async () => {
+            const filter = createFilter([String.raw`/a\\/$script`]);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.regexFilter).toBe(String.raw`a\\`);
+            expect(ruleset.getRegexpRulesCount()).toBe(1);
+        });
+
         it('converts a non-ASCII hostname of a wildcard subdomain to punycode', async () => {
             const filter = createFilter(['||*.пример.рф^']);
             const [{ ruleset }] = await converter.convert([filter]);

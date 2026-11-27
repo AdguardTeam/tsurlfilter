@@ -1174,6 +1174,30 @@ describe('RuleConverter', () => {
             expect(condition.regexFilter).toBe('asciiPrepared(removedSlashes(/some-regex-pattern/))');
         });
 
+        it.each([
+            String.raw`||example.org^$domain=/a\\/`,
+            String.raw`||example.org^$domain=/^example\.org$/`,
+        ])('drops a regexp $domain value from initiatorDomains: %s', (text) => {
+            const [rule] = Rule.createFromText(0, 0, text);
+            const condition = RegularRuleConverter.getCondition(rule);
+
+            expect(condition.initiatorDomains).toBeUndefined();
+        });
+
+        it('drops a negated regexp $domain value from excludedInitiatorDomains', () => {
+            const [rule] = Rule.createFromText(0, 0, String.raw`||example.org^$domain=~/^example\.org$/`);
+            const condition = RegularRuleConverter.getCondition(rule);
+
+            expect(condition.excludedInitiatorDomains).toBeUndefined();
+        });
+
+        it('keeps a plain $domain value in initiatorDomains', () => {
+            const [rule] = Rule.createFromText(0, 0, '||example.org^$domain=example.com');
+            const condition = RegularRuleConverter.getCondition(rule);
+
+            expect(condition.initiatorDomains).toEqual(['example.com']);
+        });
+
         it('correctly specifies domainType (third-party)', () => {
             const rule = createRuleMock({
                 enabledOptions: [OPTION_NAMES.THIRD_PARTY],

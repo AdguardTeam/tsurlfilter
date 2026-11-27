@@ -19,7 +19,12 @@ import { RuleGenerator } from '@adguard/agtree/generator';
 import { MASK_REGEX_RULE } from '../constants';
 import { type RequestMethod, ResourceType } from '../declarative-rule/rule-condition';
 import { getErrorMessage } from '../utils/error';
-import { fastHash, fastHash31, hasSpaces } from '../utils/string';
+import {
+    fastHash,
+    fastHash31,
+    hasSpaces,
+    isRegexPattern,
+} from '../utils/string';
 
 import { OPTION_NAMES } from './option-names';
 import { RuleBadfilter } from './rule-badfilter';
@@ -935,8 +940,7 @@ export class Rule {
      * @returns `true` if the rule pattern is a regex.
      */
     public isRegexRule(): boolean {
-        return this.pattern.startsWith(MASK_REGEX_RULE)
-            && this.pattern.endsWith(MASK_REGEX_RULE);
+        return isRegexPattern(this.pattern);
     }
 
     /**
@@ -1025,6 +1029,13 @@ export class Rule {
      * Parses a pipe-separated domain list, keeping `/regex/` tokens intact
      * (so `|` inside a regexp is not treated as a domain separator).
      *
+     * A value that starts with a slash but is not a regexp literal, and a
+     * regexp literal whose pattern does not compile, are rejected for all
+     * three modifiers. MV2 rejects such a value only in `$domain` and
+     * `$denyallow`: `ToModifier` does not validate `$to`, so MV2 keeps a
+     * rule with an invalid `$to` value (a negated one applies on every site)
+     * while MV3 reports it.
+     *
      * @param value Raw `$domain` / `$to` / `$denyallow` modifier value.
      *
      * @returns Permitted and restricted domain lists.
@@ -1046,6 +1057,28 @@ export class Rule {
             if (!domain) {
                 continue;
             }
+
+            if (!isRegexPattern(domain)) {
+                // A value that starts with a slash is not a plain domain
+                // either, since a domain name never starts with a slash.
+                // Reject it: a negated value would otherwise become an empty
+                // restriction and turn the rule on for every site.
+                if (domain.startsWith(MASK_REGEX_RULE)) {
+                    throw new SyntaxError(`Invalid regular expression as domain pattern: "${domain}"`);
+                }
+            } else {
+                try {
+                    // A regexp value never reaches a DNR condition, because
+                    // `isRepresentableDomain()` drops it, so this call only
+                    // checks that the pattern compiles. It keeps a value such
+                    // as `$domain=~/a[/` a reported error instead of silently
+                    // dropping the restriction, like `DomainModifier` in MV2.
+                    new RegExp(domain.slice(1, -1), 'i');
+                } catch {
+                    throw new SyntaxError(`Invalid regular expression as domain pattern: "${domain}"`);
+                }
+            }
+
             if (exception) {
                 restricted.push(domain);
             } else {

@@ -139,14 +139,38 @@ export function removeSlashes(str: string): string {
 }
 
 /**
- * Check if pattern is Regex.
+ * Checks if a string is a regexp literal.
+ *
+ * A regexp literal must be longer than the two delimiters, start and end with
+ * `/`, and its closing slash must not be escaped. The predicate counts the
+ * consecutive backslashes immediately before the closing slash: an odd count
+ * means the slash is escaped, so `/a\/` is a basic pattern, while an even
+ * count means the string is a regexp literal, so `/a\\/` is one.
+ *
+ * This predicate mirrors `SimpleRegex.isRegexPattern()` in
+ * `@adguard/tsurlfilter` and must stay in sync with it, so that Manifest V2
+ * and Manifest V3 treat the same rule the same way.
  *
  * @param str The string to check.
  *
- * @returns True if the string is a regex pattern, false otherwise.
+ * @returns True if the string is a regexp literal, false otherwise.
  */
 export function isRegexPattern(str: string): boolean {
-    return str.startsWith(MASK_REGEX_RULE) && str.endsWith(MASK_REGEX_RULE);
+    if (str.length <= MASK_REGEX_RULE.length * 2
+        || !str.startsWith(MASK_REGEX_RULE)
+        || !str.endsWith(MASK_REGEX_RULE)) {
+        return false;
+    }
+
+    const closingMarkerIndex = str.length - MASK_REGEX_RULE.length;
+
+    // Count the consecutive backslashes before the closing slash.
+    let backslashes = 0;
+    for (let i = closingMarkerIndex - 1; i >= 0 && str[i] === '\\'; i -= 1) {
+        backslashes += 1;
+    }
+
+    return backslashes % 2 === 0;
 }
 
 /**

@@ -72,6 +72,38 @@ describe('Rule', () => {
                 Rule.createFromText(1, 0, String.raw`||example.org^$domain=~/a\/|example.org`);
             }).toThrow('Unclosed regexp literal, no closing delimiter found');
         });
+
+        it.each([
+            String.raw`||example.org^$domain=~/a\/`,
+            '||example.org^$domain=~//',
+            '||example.org^$domain=/',
+            '||example.org^$denyallow=/',
+            String.raw`||example.org^$denyallow=/a\/`,
+            String.raw`||example.org^$to=~/a\/`,
+        ])('rejects a slash-led value that is not a regexp literal: %s', (text) => {
+            expect(() => {
+                Rule.createFromText(1, 0, text);
+            }).toThrow('Invalid regular expression as domain pattern');
+        });
+
+        it.each([
+            '||example.org^$domain=/a[/',
+            '||example.org^$denyallow=/(/',
+        ])('rejects a regexp literal that does not compile: %s', (text) => {
+            expect(() => {
+                Rule.createFromText(1, 0, text);
+            }).toThrow('Invalid regular expression as domain pattern');
+        });
+
+        it.each([
+            [String.raw`||example.org^$domain=/a\\/`, String.raw`/a\\/`],
+            [String.raw`||example.org^$domain=/^example\.org$/`, String.raw`/^example\.org$/`],
+            ['||example.org^$domain=example.com', 'example.com'],
+        ])('accepts a valid domain value: %s', (text, expectedDomain) => {
+            const [rule] = Rule.createFromText(1, 0, text);
+
+            expect(rule.permittedDomains).toEqual([expectedDomain]);
+        });
     });
 
     describe('getText', () => {

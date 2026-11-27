@@ -6,6 +6,9 @@ import {
     vi,
 } from 'vitest';
 
+import { RegExpUtils } from '@adguard/agtree';
+import { SimpleRegex } from '@adguard/tsurlfilter';
+
 import * as errorUtilsModule from '../../../src/utils/error';
 import {
     encodeNonAscii,
@@ -227,24 +230,28 @@ describe('String utils', () => {
     });
 
     describe('isRegexPattern', () => {
-        it('returns true for leading and trailing slashes', () => {
-            expect(isRegexPattern('/pattern/')).toBe(true);
+        const patterns = [
+            { pattern: '/a/', expected: true },
+            { pattern: '//', expected: false },
+            { pattern: '/', expected: false },
+            { pattern: String.raw`/a\/`, expected: false },
+            { pattern: String.raw`/a\\/`, expected: true },
+            { pattern: String.raw`/a\\\/`, expected: false },
+            { pattern: 'abc', expected: false },
+            { pattern: '/abc', expected: false },
+        ];
+
+        it.each(patterns)('returns $expected for $pattern', ({ pattern, expected }) => {
+            expect(isRegexPattern(pattern)).toBe(expected);
         });
 
-        it('returns true for single slash', () => {
-            expect(isRegexPattern('/')).toBe(true);
-        });
-
-        it('returns false for missing leading slash', () => {
-            expect(isRegexPattern('pattern/')).toBe(false);
-        });
-
-        it('returns false for missing trailing slash', () => {
-            expect(isRegexPattern('/pattern')).toBe(false);
-        });
-
-        it('returns false for no slashes', () => {
-            expect(isRegexPattern('pattern')).toBe(false);
+        // The local copy cannot be replaced by RegExpUtils: it trims the value,
+        // while this helper mirrors SimpleRegex and keeps the value as is.
+        // Both external predicates are checked, so a change in either package
+        // shows up here.
+        it.each(patterns)('agrees with RegExpUtils and SimpleRegex for $pattern', ({ pattern, expected }) => {
+            expect(RegExpUtils.isRegexPattern(pattern)).toBe(expected);
+            expect(SimpleRegex.isRegexPattern(pattern)).toBe(expected);
         });
     });
 

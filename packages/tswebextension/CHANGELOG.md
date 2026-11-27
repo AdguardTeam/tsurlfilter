@@ -55,6 +55,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   never matched a host, so a negated value left an empty restriction and
   the rule applied on every site. `$domain=/a\/` was already rejected
   because its pattern did not compile.
+- In MV3, a `$domain`, `$to` or `$denyallow` value with an invalid regexp,
+  e.g. `$domain=~/a\/` or `$domain=~/a[/`, is now a conversion error instead
+  of producing a rule with a wrong domain condition, e.g. one that applies on
+  every site (via [@adguard/dnr-converter]).
+- A rule pattern with an escaped closing slash, e.g. `/a\/$script`, is now a
+  basic MV3 rule instead of an unsupported regexp (via
+  [@adguard/dnr-converter]).
 - Path-relative URLs passed to `history.pushState()` and
   `history.replaceState()` are now resolved against the base URI from
   before the navigation, so `$removeparam` rules remove tracking
