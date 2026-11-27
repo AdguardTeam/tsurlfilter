@@ -1993,8 +1993,8 @@ describe('Cosmetic exceptions and network blocking', () => {
         expect(
             engine.retrieveRuleText(basicResult!.getFilterListId(), basicResult!.getIndex()),
         ).toBe(frameRuleText);
-        // The filtering-disabled state of the frame is what gates `$csp`, `$header`,
-        // `$cookie` and `$removeheader` rules for its sub-requests.
+        // The filtering-disabled state of the frame is what gates `$csp`, `$header`
+        // and `$cookie` rules for its sub-requests.
         expect(basicResult!.isFilteringDisabled()).toBe(true);
     });
 
