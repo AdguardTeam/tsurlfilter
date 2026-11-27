@@ -1071,7 +1071,7 @@ export class Rule {
                     // A regexp value never reaches a DNR condition, because
                     // `isRepresentableDomain()` drops it, so this call only
                     // checks that the pattern compiles. It keeps a value such
-                    // as `$domain=/a[/` a reported error instead of silently
+                    // as `$domain=~/a[/` a reported error instead of silently
                     // dropping the restriction, like `DomainModifier` in MV2.
                     new RegExp(domain.slice(1, -1), 'i');
                 } catch {
